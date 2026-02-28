@@ -127,6 +127,9 @@ internal class HttpPageLoader(
         scope.cancel()
         queue.clear()
 
+        // Release stream lambdas so the captured imageUrl strings and file references can be GC'd
+        chapter.pages?.forEach { it.stream = null }
+
         // Cache current page list progress for online chapters to allow a faster reopen
         chapter.pages?.let { pages ->
             launchIO {
