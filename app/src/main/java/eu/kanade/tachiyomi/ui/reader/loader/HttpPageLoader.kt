@@ -187,8 +187,7 @@ internal class HttpPageLoader(
 
                 if (!chapterCache.isImageInCache(imageUrl)) {
                     page.status = Page.State.DownloadImage
-                    val imageResponse = source.getImage(page)
-                    chapterCache.putImageToCache(imageUrl, imageResponse)
+                    chapterCache.fetchAndCacheImage(imageUrl) { source.getImage(page) }
                 }
 
                 page.stream = { chapterCache.getImageFile(imageUrl).inputStream() }

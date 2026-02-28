@@ -77,28 +77,18 @@ class ChapterCache(
     fun putPageListToCache(chapter: Chapter, pages: List<Page>) {
         // Convert list of pages to json string.
         val cachedValue = json.encodeToString(pages)
-
-        // Initialize the editor (edits the values for an entry).
-        var editor: DiskLruCache.Editor? = null
-
+        val key = DiskUtil.hashKeyForDisk(getKey(chapter))
         try {
-            // Get editor from md5 key.
-            val key = DiskUtil.hashKeyForDisk(getKey(chapter))
-            editor = diskCache.edit(key) ?: return
-
-            // Write chapter urls to cache.
-            editor.newOutputStream(0).sink().buffer().use {
-                it.write(cachedValue.toByteArray())
-                it.flush()
+            editEntry(key) { editor ->
+                // Write chapter urls to cache.
+                editor.newOutputStream(0).sink().buffer().use {
+                    it.write(cachedValue.toByteArray())
+                    it.flush()
+                }
             }
-
-            editor.commit()
-            diskCache.flush()
         } catch (e: Exception) {
             logcat(LogPriority.WARN, e) { "Failed to put page list to cache" }
             // Ignore.
-        } finally {
-            editor?.abortUnlessCommitted()
         }
     }
 
@@ -137,21 +127,44 @@ class ChapterCache(
      */
     @Throws(IOException::class)
     fun putImageToCache(imageUrl: String, response: Response) {
-        // Initialize editor (edits the values for an entry).
-        var editor: DiskLruCache.Editor? = null
-
+        val key = DiskUtil.hashKeyForDisk(imageUrl)
         try {
-            // Get editor from md5 key.
-            val key = DiskUtil.hashKeyForDisk(imageUrl)
-            editor = diskCache.edit(key) ?: return
-
             // Get OutputStream and write image with Okio.
-            response.body.source().saveTo(editor.newOutputStream(0))
+            editEntry(key) { editor ->
+                response.body.source().saveTo(editor.newOutputStream(0))
+            }
+        } finally {
+            response.body.close()
+        }
+    }
 
+    /**
+     * Fetches the image via [fetchImage] and stores it under [imageUrl] in the cache. If the
+     * entry already has an in-progress write (another coroutine is downloading the same image),
+     * this method returns without making a network request. The response body returned by
+     * [fetchImage] is always closed by this method.
+     *
+     * @param imageUrl url of image.
+     * @param fetchImage suspending lambda that fetches the image from the network.
+     * @throws IOException on network or disk error.
+     */
+    @Throws(IOException::class)
+    suspend fun fetchAndCacheImage(imageUrl: String, fetchImage: suspend () -> Response) {
+        val key = DiskUtil.hashKeyForDisk(imageUrl)
+        // edit() returns null if another edit is already in progress for this key, which
+        // prevents duplicate network requests for the same image.
+        var editor: DiskLruCache.Editor? = null
+        try {
+            editor = diskCache.edit(key) ?: return
+            val response = fetchImage()
+            try {
+                response.body.source().saveTo(editor.newOutputStream(0))
+            } finally {
+                response.body.close()
+            }
             editor.commit()
             diskCache.flush()
         } finally {
-            response.body.close()
             editor?.abortUnlessCommitted()
         }
     }
@@ -191,6 +204,25 @@ class ChapterCache(
 
     private fun getKey(chapter: Chapter): String {
         return "${chapter.mangaId}${chapter.url}"
+    }
+
+    /**
+     * Opens a [DiskLruCache.Editor] for [key], executes [block] with the editor, then commits
+     * and flushes the journal on success. If no editor can be obtained (another edit is already
+     * in progress for this key), returns `null` without calling [block]. On any exception the
+     * editor is aborted via [DiskLruCache.Editor.abortUnlessCommitted].
+     */
+    private fun <T> editEntry(key: String, block: (DiskLruCache.Editor) -> T): T? {
+        var editor: DiskLruCache.Editor? = null
+        try {
+            editor = diskCache.edit(key) ?: return null
+            val result = block(editor)
+            editor.commit()
+            diskCache.flush()
+            return result
+        } finally {
+            editor?.abortUnlessCommitted()
+        }
     }
 }
 
