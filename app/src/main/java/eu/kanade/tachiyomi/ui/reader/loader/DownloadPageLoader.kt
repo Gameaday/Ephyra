@@ -33,6 +33,7 @@ internal class DownloadPageLoader(
     override var isLocal: Boolean = true
 
     override suspend fun getPages(): List<ReaderPage> {
+        check(!isRecycled)
         val dbChapter = chapter.chapter
         val chapterPath = downloadProvider.findChapterDir(
             dbChapter.name,

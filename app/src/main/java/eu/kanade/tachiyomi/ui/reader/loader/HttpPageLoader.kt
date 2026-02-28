@@ -65,6 +65,7 @@ internal class HttpPageLoader(
      * otherwise fallbacks to network.
      */
     override suspend fun getPages(): List<ReaderPage> {
+        check(!isRecycled)
         val pages = try {
             chapterCache.getPageListFromCache(chapter.chapter.toDomainChapter()!!)
         } catch (e: Throwable) {
@@ -83,6 +84,7 @@ internal class HttpPageLoader(
      * Loads a page through the queue. Handles re-enqueueing pages if they were evicted from the cache.
      */
     override suspend fun loadPage(page: ReaderPage) = withIOContext {
+        check(!isRecycled)
         val imageUrl = page.imageUrl
 
         // Check if the image has been deleted
@@ -116,6 +118,7 @@ internal class HttpPageLoader(
      * Retries a page. This method is only called from user interaction on the viewer.
      */
     override fun retryPage(page: ReaderPage) {
+        check(!isRecycled)
         if (page.status is Page.State.Error) {
             page.status = Page.State.Queue
         }
