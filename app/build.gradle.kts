@@ -318,6 +318,19 @@ androidComponents {
         // Layout Inspector's Compose tree
         it.packaging.resources.excludes.add("META-INF/*.version")
     }
+    onVariants(selector().withBuildType("nightly")) { variant ->
+        // Use the versionCode Gradle property (set to GITHUB_RUN_NUMBER in CI) so that
+        // each nightly build gets a unique, monotonically increasing version code that
+        // allows in-place upgrades between successive nightly releases.
+        val nightlyVersionCodeStr = project.findProperty("versionCode") as String?
+        if (nightlyVersionCodeStr != null) {
+            val nightlyVersionCode = nightlyVersionCodeStr.toIntOrNull()
+                ?: error("Gradle property 'versionCode' must be a valid integer, got: '$nightlyVersionCodeStr'")
+            variant.outputs.forEach { output ->
+                output.versionCode.set(nightlyVersionCode)
+            }
+        }
+    }
 }
 
 buildscript {
