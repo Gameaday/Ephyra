@@ -92,9 +92,8 @@ class ChapterCache(
                 it.flush()
             }
 
-            diskCache.flush()
             editor.commit()
-            editor.abortUnlessCommitted()
+            diskCache.flush()
         } catch (e: Exception) {
             logcat(LogPriority.WARN, e) { "Failed to put page list to cache" }
             // Ignore.
@@ -150,6 +149,7 @@ class ChapterCache(
             response.body.source().saveTo(editor.newOutputStream(0))
 
             editor.commit()
+            diskCache.flush()
         } finally {
             response.body.close()
             editor?.abortUnlessCommitted()
