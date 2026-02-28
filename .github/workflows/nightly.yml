@@ -50,8 +50,12 @@ jobs:
           set -e
           cd app/build/outputs/apk/nightly
           SHORT_SHA="${GITHUB_SHA::7}"
+          # Remove unsigned APKs if signed versions exist to avoid uploading unsigned APKs
+          if ls *-signed.apk 2>/dev/null | grep -q .; then
+            rm -f *-unsigned.apk
+          fi
           for apk in *.apk; do
-            new_name=$(echo "$apk" | sed 's/-unsigned[^.]*\.apk$//')
+            new_name=$(echo "$apk" | sed 's/-nightly-unsigned[^.]*\.apk$//')
             mv "$apk" "${new_name}-nightly-${SHORT_SHA}.apk"
           done
 
