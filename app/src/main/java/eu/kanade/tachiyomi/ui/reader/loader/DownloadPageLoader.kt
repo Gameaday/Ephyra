@@ -27,6 +27,7 @@ internal class DownloadPageLoader(
 
     private val context: Application by injectLazy()
 
+    @Volatile
     private var archivePageLoader: ArchivePageLoader? = null
 
     override var isLocal: Boolean = true
