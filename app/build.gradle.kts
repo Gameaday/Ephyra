@@ -23,9 +23,9 @@ shortcutHelper.setFilePath("./shortcuts.xml")
 android {
     namespace = "eu.kanade.tachiyomi"
 
-    // NDK r27+ is required for ARMv9.2-A (arm64-v8a with SVE2/SME) support used by
+    // NDK r29+ is required for ARMv9.2-A (arm64-v8a with SVE2/SME) support used by
     // devices such as the Samsung Galaxy S24 series (Snapdragon 8 Gen 3 / Exynos 2400).
-    ndkVersion = "27.2.12479018"
+    ndkVersion = "29.0.14206865"
 
     defaultConfig {
         applicationId = "app.mihon"
