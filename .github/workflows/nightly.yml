@@ -30,7 +30,7 @@ jobs:
         uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
 
       - name: Build app
-        run: ./gradlew assembleNightly -Penable-updater
+        run: ./gradlew assembleNightly -Penable-updater -PversionCode=${{ github.run_number }}
 
       - name: Sign APK
         if: ${{ env.SIGNING_KEY != '' }}
@@ -45,6 +45,46 @@ jobs:
           BUILD_TOOLS_VERSION: '36.0.0'
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
 
+      - name: Sign APK with debug keystore (fallback when SIGNING_KEY is not configured)
+        if: ${{ env.SIGNING_KEY == '' }}
+        run: |
+          set -e
+          # Generate a temporary keystore so the APK is always installable
+          keytool -genkeypair -v \
+            -keystore /tmp/mihon-nightly.keystore \
+            -storepass android \
+            -alias nightlykey \
+            -keypass android \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 3650 \
+            -dname "CN=Mihon Nightly,O=Mihon,C=US"
+
+          # Locate apksigner from the Android SDK (installed by the Gradle build step)
+          APKSIGNER="${ANDROID_HOME}/build-tools/36.0.0/apksigner"
+          if [ ! -f "$APKSIGNER" ]; then
+            # Fallback: find any available version
+            APKSIGNER=$(find "${ANDROID_HOME}/build-tools" -name "apksigner" -type f 2>/dev/null | sort -t. -k1,1n -k2,2n -k3,3n | tail -1)
+          fi
+          if [ -z "$APKSIGNER" ] || [ ! -f "$APKSIGNER" ]; then
+            echo "::error::apksigner not found under ${ANDROID_HOME}/build-tools. Configure the SIGNING_KEY secret for production signing."
+            exit 1
+          fi
+
+          for apk in app/build/outputs/apk/nightly/*-unsigned.apk; do
+            [ -f "$apk" ] || continue
+            signed="${apk%-unsigned.apk}-unsigned-signed.apk"
+            "$APKSIGNER" sign \
+              --ks /tmp/mihon-nightly.keystore \
+              --ks-pass pass:android \
+              --key-pass pass:android \
+              --ks-key-alias nightlykey \
+              --out "$signed" \
+              "$apk"
+          done
+        env:
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+
       - name: Rename APKs
         run: |
           set -e
@@ -55,7 +95,7 @@ jobs:
             rm -f *-unsigned.apk
           fi
           for apk in *.apk; do
-            new_name=$(echo "$apk" | sed 's/-nightly-unsigned[^.]*\.apk$//')
+            new_name=$(echo "$apk" | sed -E 's/-nightly(-unsigned(-signed)?)?\.apk$//')
             mv "$apk" "${new_name}-nightly-${SHORT_SHA}.apk"
           done
 
