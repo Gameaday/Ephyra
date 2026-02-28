@@ -1,27 +1,33 @@
 <div align="center">
 
-<a href="https://mihon.app">
-    <img src="./.github/assets/logo.png" alt="Mihon logo" title="Mihon logo" width="80"/>
-</a>
+<img src="./.github/assets/logo.png" alt="Mihon Nightly logo" title="Mihon Nightly logo" width="80"/>
 
-# Mihon [App](#)
+# Mihon Nightly
 
-### Full-featured reader
+### Full-featured reader — hardened nightly builds
 Discover and read manga, webtoons, comics, and more – easier than ever on your Android device.
 
-[![Discord server](https://img.shields.io/discord/1195734228319617024.svg?label=&labelColor=6A7EC2&color=7389D8&logo=discord&logoColor=FFFFFF)](https://discord.gg/mihon)
-[![GitHub downloads](https://img.shields.io/github/downloads/mihonapp/mihon/total?label=downloads&labelColor=27303D&color=0D1117&logo=github&logoColor=FFFFFF&style=flat)](https://mihon.app/download)
+> **⚠️ This is an unofficial fork. It is not affiliated with, endorsed by, or connected to the [mihonapp/mihon](https://github.com/mihonapp/mihon) project or its team.**
 
-[![CI](https://img.shields.io/github/actions/workflow/status/mihonapp/mihon/build.yml?labelColor=27303D)](https://github.com/mihonapp/mihon/actions/workflows/build_push.yml)
-[![License: Apache-2.0](https://img.shields.io/github/license/mihonapp/mihon?labelColor=27303D&color=0877d2)](/LICENSE)
-[![Translation status](https://img.shields.io/weblate/progress/mihon?labelColor=27303D&color=946300)](https://hosted.weblate.org/engage/mihon/)
+[![GitHub downloads](https://img.shields.io/github/downloads/Gameaday/mihon/total?label=downloads&labelColor=27303D&color=0D1117&logo=github&logoColor=FFFFFF&style=flat)](https://github.com/Gameaday/mihon/releases)
+
+[![CI](https://img.shields.io/github/actions/workflow/status/Gameaday/mihon/build_push.yml?labelColor=27303D)](https://github.com/Gameaday/mihon/actions/workflows/build_push.yml)
+[![License: Apache-2.0](https://img.shields.io/github/license/Gameaday/mihon?labelColor=27303D&color=0877d2)](/LICENSE)
 
 ## Download
 
-[![Mihon Stable](https://img.shields.io/github/release/mihonapp/mihon.svg?maxAge=3600&label=Stable&labelColor=06599d&color=043b69)](https://mihon.app/download)
-[![Mihon Beta](https://img.shields.io/github/v/release/mihonapp/mihon-preview.svg?maxAge=3600&label=Beta&labelColor=2c2c47&color=1c1c39)](https://mihon.app/download)
+[![Mihon Nightly](https://img.shields.io/github/release/Gameaday/mihon.svg?maxAge=3600&label=Nightly&labelColor=2c2c47&color=1c1c39)](https://github.com/Gameaday/mihon/releases/latest)
 
 *Requires Android 8.0 or higher.*
+
+## About this fork
+
+Mihon Nightly is a hardened, up-to-date build of [Mihon](https://github.com/mihonapp/mihon) that tracks the upstream project closely. It prioritises keeping the latest improvements available, at a trade-off of possible reduced stability compared to official releases.
+
+**This fork:**
+- Is not affiliated with the upstream Mihon team or project.
+- Does not include upstream donation links.
+- Routes its in-app updater to [Gameaday/mihon](https://github.com/Gameaday/mihon) releases.
 
 ## Features
 
@@ -44,17 +50,11 @@ Discover and read manga, webtoons, comics, and more – easier than ever on your
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
-Before reporting a new issue, take a look at the [FAQ](https://mihon.app/docs/faq/general), the [changelog](https://mihon.app/changelogs/) and the already opened [issues](https://github.com/mihonapp/mihon/issues); if you got any questions, join our [Discord server](https://discord.gg/mihon).
-
-
-### Repositories
-
-[![mihonapp/website - GitHub](https://github-readme-stats.vercel.app/api/pin/?username=mihonapp&repo=website&bg_color=161B22&text_color=c9d1d9&title_color=0877d2&icon_color=0877d2&border_radius=8&hide_border=true&description_lines_count=2)](https://github.com/mihonapp/website/)
-[![mihonapp/bitmap.kt - GitHub](https://github-readme-stats.vercel.app/api/pin/?username=mihonapp&repo=bitmap.kt&bg_color=161B22&text_color=c9d1d9&title_color=0877d2&icon_color=0877d2&border_radius=8&hide_border=true&description_lines_count=2)](https://github.com/mihonapp/bitmap.kt/)
+Before reporting a new issue, take a look at the already opened [issues](https://github.com/Gameaday/mihon/issues).
 
 ### Credits
 
-Thank you to all the people who have contributed!
+Thank you to all the people who have contributed to the upstream Mihon project and this fork!
 
 <a href="https://github.com/mihonapp/mihon/graphs/contributors">
     <img src="https://contrib.rocks/image?repo=mihonapp/mihon" alt="Mihon app contributors" title="Mihon app contributors" width="800"/>
@@ -62,7 +62,7 @@ Thank you to all the people who have contributed!
 
 ### Disclaimer
 
-The developer(s) of this application does not have any affiliation with the content providers available, and this application hosts zero content.
+This is an unofficial fork of Mihon and is **not affiliated with the Mihon Open Source Project**. The developer(s) of this application do not have any affiliation with the content providers available, and this application hosts zero content.
 
 ### License
 
