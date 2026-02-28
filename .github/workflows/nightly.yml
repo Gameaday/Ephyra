@@ -1,0 +1,69 @@
+name: Nightly Build
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Publish Nightly
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up JDK
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+        with:
+          java-version: 17
+          distribution: temurin
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
+
+      - name: Build app
+        run: ./gradlew assembleRelease -Penable-updater
+
+      - name: Sign APK
+        if: ${{ env.SIGNING_KEY != '' }}
+        uses: r0adkll/sign-android-release@f30bdd30588842ac76044ecdbd4b6d0e3e813478
+        with:
+          releaseDirectory: app/build/outputs/apk/release
+          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          alias: ${{ secrets.ALIAS }}
+          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+        env:
+          BUILD_TOOLS_VERSION: '35.0.1'
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+
+      - name: Rename APKs
+        run: |
+          set -e
+          cd app/build/outputs/apk/release
+          SHORT_SHA="${GITHUB_SHA::7}"
+          for apk in *.apk; do
+            new_name=$(echo "$apk" | sed 's/-unsigned[^.]*\.apk$//')
+            mv "$apk" "${new_name}-nightly-${SHORT_SHA}.apk"
+          done
+
+      - name: Create or update nightly release
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
+        with:
+          tag_name: nightly
+          name: Nightly Build
+          body: |
+            Automated nightly build from commit ${{ github.sha }}.
+
+            Built from branch `${{ github.ref_name }}` at ${{ github.event.head_commit.timestamp }}.
+          files: app/build/outputs/apk/release/*.apk
+          prerelease: true
+          make_latest: false
