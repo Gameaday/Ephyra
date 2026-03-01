@@ -553,7 +553,18 @@ class ReaderViewModel @JvmOverloads constructor(
         if (!incognitoMode && page.status !is Page.State.Error) {
             readerChapter.chapter.last_page_read = pageIndex
 
-            if (readerChapter.pages?.lastIndex == pageIndex) {
+            // A page is the effective last page either when it literally is the last page
+            // in the chapter's page list, or when it is a merged page (mergedBytes != null)
+            // and all subsequent pages in the list were absorbed as stubs. This ensures the
+            // chapter is marked as read even when the final page(s) are watermark stubs that
+            // get merged invisibly into the previous page.
+            val chapterPages = readerChapter.pages
+            val isEffectivelyLastPage = pageIndex == chapterPages?.lastIndex ||
+                (
+                    (page as? ReaderPage)?.mergedBytes != null &&
+                        chapterPages?.drop(pageIndex + 1)?.all { it.isAbsorbed } == true
+                    )
+            if (isEffectivelyLastPage) {
                 updateChapterProgressOnComplete(readerChapter)
             }
 
