@@ -344,7 +344,8 @@ class Downloader(
             download.chapter.scanlator,
             download.chapter.url,
         )
-        val tmpDir = mangaDir.createDirectory(chapterDirname + TMP_DIR_SUFFIX)!!
+        val tmpDir = mangaDir.createDirectory(chapterDirname + TMP_DIR_SUFFIX)
+            ?: error("Failed to create temporary download directory for chapter ${download.chapter.name}")
 
         try {
             // If the page list already exists, start from the file
@@ -488,7 +489,8 @@ class Downloader(
         page.progress = 0
         return flow {
             val response = source.getImage(page)
-            val file = tmpDir.createFile("$filename.tmp")!!
+            val file = tmpDir.createFile("$filename.tmp")
+                ?: error("Failed to create temporary file for page $filename")
             try {
                 response.body.source().saveTo(file.openOutputStream())
                 val extension = getImageExtension(response, file)
@@ -728,8 +730,8 @@ class Downloader(
         const val WARNING_NOTIF_TIMEOUT_MS = 30_000L
         const val CHAPTERS_PER_SOURCE_QUEUE_WARNING_THRESHOLD = 15
         private const val DOWNLOADS_QUEUED_WARNING_THRESHOLD = 30
+
+        // Arbitrary minimum required space to start a download: 200 MB
+        const val MIN_DISK_SPACE = 200L * 1024 * 1024
     }
 }
-
-// Arbitrary minimum required space to start a download: 200 MB
-private const val MIN_DISK_SPACE = 200L * 1024 * 1024
