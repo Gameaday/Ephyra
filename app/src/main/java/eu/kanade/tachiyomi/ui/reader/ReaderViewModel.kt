@@ -430,7 +430,6 @@ class ReaderViewModel @JvmOverloads constructor(
                 dbChapter.url,
                 manga.title,
                 manga.source,
-                skipCache = true,
             )
             if (isDownloaded) {
                 chapter.state = ReaderChapter.State.Wait

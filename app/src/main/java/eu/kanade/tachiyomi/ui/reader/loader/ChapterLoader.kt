@@ -100,7 +100,6 @@ class ChapterLoader(
             dbChapter.url,
             manga.title,
             manga.source,
-            skipCache = true,
         )
         return when {
             isDownloaded -> DownloadPageLoader(
