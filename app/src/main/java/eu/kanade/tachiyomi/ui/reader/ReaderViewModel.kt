@@ -175,6 +175,12 @@ class ReaderViewModel @JvmOverloads constructor(
     private suspend fun getChapterList(): List<ReaderChapter> {
         chapterListCache?.let { return it }
 
+        // Ensure the DownloadCache has finished reading its on-disk snapshot before we
+        // run any filter that calls isChapterDownloaded() (skipFiltered branch and the
+        // downloadedOnly filter below). On the warm path this is a single deferred check
+        // with no suspension. On a cold start it waits for the brief disk-cache read.
+        downloadManager.awaitCacheReady()
+
         val manga = manga!!
         val chapters = getChaptersByMangaId.await(manga.id, applyScanlatorFilter = true)
 
@@ -424,6 +430,10 @@ class ReaderViewModel @JvmOverloads constructor(
         if (chapter.pageLoader?.isLocal == false) {
             val manga = manga ?: return
             val dbChapter = chapter.chapter
+            // Ensure the DownloadCache is ready before querying: on the fast path (deferred
+            // already complete) this is a single non-suspending check; on a cold start it
+            // waits for the disk-cache read so we don't incorrectly skip the reload.
+            downloadManager.awaitCacheReady()
             val isDownloaded = downloadManager.isChapterDownloaded(
                 dbChapter.name,
                 dbChapter.scanlator,
