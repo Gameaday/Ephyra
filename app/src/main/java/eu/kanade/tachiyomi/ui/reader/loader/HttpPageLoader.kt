@@ -18,8 +18,10 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.suspendCancellableCoroutine
+import logcat.LogPriority
 import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.core.common.util.lang.withIOContext
+import tachiyomi.core.common.util.system.logcat
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.io.IOException
@@ -168,14 +170,38 @@ internal class HttpPageLoader(
 
     override fun recycle() {
         super.recycle()
+        // Cancel all in-flight download coroutines. Any page whose download is interrupted here
+        // will have its disk-cache editor aborted (see ChapterCache.fetchAndCacheImage), so no
+        // partial data is committed. The page status may be left in a transient state
+        // (LoadPage/DownloadImage); we reset it below so external observers never see a ghost
+        // "downloading" indicator for a cancelled operation.
         scope.cancel()
         queue.clear()
 
-        // Release stream lambdas so the captured imageUrl strings and file references can be GC'd
-        chapter.pages?.forEach { it.stream = null }
+        // Reset pages stuck in transient states so that:
+        //  • any viewer holding a reference to the old ReaderPage sees a retryable state, and
+        //  • if this chapter is re-entered later, new ReaderPage objects start with Queue status
+        //    (they are always created fresh in getPages(), but defensive reset costs nothing).
+        val pages = chapter.pages
+        if (pages != null) {
+            var cancelledCount = 0
+            for (page in pages) {
+                val status = page.status
+                if (status == Page.State.LoadPage || status == Page.State.DownloadImage) {
+                    page.status = Page.State.Queue
+                    cancelledCount++
+                }
+            }
+            if (cancelledCount > 0) {
+                logcat(LogPriority.DEBUG) {
+                    "Recycled ${chapter.chapter.name}: cancelled $cancelledCount in-flight download(s)"
+                }
+            }
 
-        // Cache current page list progress for online chapters to allow a faster reopen
-        chapter.pages?.let { pages ->
+            // Release stream lambdas so the captured imageUrl strings and file references can be GC'd
+            pages.forEach { it.stream = null }
+
+            // Cache current page list progress for online chapters to allow a faster reopen
             launchIO {
                 try {
                     // Convert to pages without reader information
