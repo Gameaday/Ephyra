@@ -127,11 +127,11 @@ internal class HttpPageLoader(
         scope.launchIO {
             flow {
                 while (true) {
-                    emit(runInterruptible { queue.take() }.page)
+                    emit(runInterruptible { queue.take() })
                 }
             }
-                .filter { it.status == Page.State.Queue }
-                .collect(::internalLoadPage)
+                .filter { it.page.status == Page.State.Queue }
+                .collect { internalLoadPage(it.page, it.priority) }
         }
     }
 
@@ -348,17 +348,37 @@ internal class HttpPageLoader(
      * [MAX_PAGE_LOAD_RETRIES] times with exponential backoff before marking the page as failed.
      * Downloaded images are stored in the chapter cache.
      *
+     * If a higher-priority page enters the queue while this page is still waiting to start or
+     * between the URL-fetch and image-download phases, this method yields immediately: the page
+     * is reset to [Page.State.Queue] and re-enqueued at its original [priority] so that a free
+     * worker can pick up the urgent page without delay.
+     *
+     * **Concurrency safety**: re-enqueueing a page sets its status back to [Page.State.Queue],
+     * but the worker collecting from the queue always filters with
+     * `it.page.status == Page.State.Queue`. This ensures that if a second queue entry for this
+     * page already exists (e.g. added by [loadPage]) and is dequeued by another worker before
+     * the reset, that worker starts the load and this one's re-queued entry is simply skipped
+     * by the filter when it is eventually dequeued — no double-download occurs.
+     *
      * @param page the page whose source image has to be downloaded.
+     * @param priority the queue priority at which this page was dequeued.
      */
-    private suspend fun internalLoadPage(page: ReaderPage) {
+    private suspend fun internalLoadPage(page: ReaderPage, priority: Int) {
         var retries = 0
         while (true) {
             try {
+                // Yield to a higher-priority page before starting the URL fetch.
+                if (requeueAndYield(page, priority)) return
+
                 if (page.imageUrl.isNullOrEmpty()) {
                     page.status = Page.State.LoadPage
                     page.imageUrl = source.getImageUrl(page)
                 }
                 val imageUrl = requireNotNull(page.imageUrl) { "Image URL is null after being fetched from source" }
+
+                // Yield again after the URL fetch (which can be slow) and before the potentially
+                // large image download, giving the urgent page a chance to start promptly.
+                if (requeueAndYield(page, priority)) return
 
                 if (!chapterCache.isImageInCache(imageUrl)) {
                     page.status = Page.State.DownloadImage
@@ -386,6 +406,31 @@ internal class HttpPageLoader(
                 }
             }
         }
+    }
+
+    /**
+     * If there is a page in the queue with strictly higher [priority] than [currentPriority],
+     * resets [page] to [Page.State.Queue] and re-enqueues it at [currentPriority] so the
+     * calling worker is freed to service the more urgent request instead. Returns `true` when
+     * the caller should `return` immediately (yield occurred), `false` otherwise.
+     *
+     * Uses [PriorityBlockingQueue.peek] which is non-blocking and O(1), so calling this at
+     * natural suspension points adds no measurable overhead on the common path.
+     */
+    private fun requeueAndYield(page: ReaderPage, currentPriority: Int): Boolean {
+        if (!shouldYield(currentPriority)) return false
+        page.status = Page.State.Queue
+        queue.offer(PriorityPage(page, currentPriority))
+        return true
+    }
+
+    /**
+     * Returns `true` if there is a page in the queue whose priority is strictly greater than
+     * [currentPriority].
+     */
+    private fun shouldYield(currentPriority: Int): Boolean {
+        val next = queue.peek() ?: return false
+        return next.priority > currentPriority
     }
 
     companion object {
