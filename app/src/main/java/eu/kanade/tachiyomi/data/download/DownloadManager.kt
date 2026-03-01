@@ -177,9 +177,9 @@ class DownloadManager(
      *
      * @param chapterName the name of the chapter to query.
      * @param chapterScanlator scanlator of the chapter to query
+     * @param chapterUrl the url of the chapter to query
      * @param mangaTitle the title of the manga to query.
      * @param sourceId the id of the source of the chapter.
-     * @param skipCache whether to skip the directory cache and check in the filesystem.
      */
     fun isChapterDownloaded(
         chapterName: String,
@@ -187,9 +187,8 @@ class DownloadManager(
         chapterUrl: String,
         mangaTitle: String,
         sourceId: Long,
-        skipCache: Boolean = false,
     ): Boolean {
-        return cache.isChapterDownloaded(chapterName, chapterScanlator, chapterUrl, mangaTitle, sourceId, skipCache)
+        return cache.isChapterDownloaded(chapterName, chapterScanlator, chapterUrl, mangaTitle, sourceId)
     }
 
     /**
