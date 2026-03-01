@@ -6,6 +6,7 @@ import eu.kanade.tachiyomi.data.download.DownloadProvider
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.ui.reader.model.ReaderChapter
+import eu.kanade.tachiyomi.util.system.DeviceUtil
 import mihon.core.archive.archiveReader
 import mihon.core.archive.epubReader
 import tachiyomi.core.common.i18n.stringResource
@@ -27,6 +28,9 @@ class ChapterLoader(
     private val manga: Manga,
     private val source: Source,
 ) {
+
+    // Computed once and reused for every chapter loaded in this session.
+    private val performanceTier by lazy { DeviceUtil.performanceTier(context) }
 
     /**
      * Assigns the chapter's page loader and loads the its pages. Returns immediately if the chapter
@@ -100,7 +104,7 @@ class ChapterLoader(
                     is Format.Epub -> EpubPageLoader(format.file.epubReader(context))
                 }
             }
-            source is HttpSource -> HttpPageLoader(chapter, source)
+            source is HttpSource -> HttpPageLoader(chapter, source, performanceTier = performanceTier)
             source is StubSource -> error(context.stringResource(MR.strings.source_not_installed, source.toString()))
             else -> error(context.stringResource(MR.strings.loader_not_implemented_error))
         }

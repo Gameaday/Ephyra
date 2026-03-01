@@ -7,6 +7,7 @@ import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.ui.reader.model.ReaderChapter
 import eu.kanade.tachiyomi.ui.reader.model.ReaderPage
+import eu.kanade.tachiyomi.util.system.DeviceUtil
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,6 +36,13 @@ internal class HttpPageLoader(
     private val chapter: ReaderChapter,
     private val source: HttpSource,
     private val chapterCache: ChapterCache = Injekt.get(),
+    /**
+     * Device performance tier used to scale preload window sizes and worker concurrency.
+     * Defaults to [DeviceUtil.PerformanceTier.MEDIUM] so that the loader is safe to instantiate
+     * in tests or other contexts where a [Context] is unavailable. Production callers (i.e.
+     * [eu.kanade.tachiyomi.ui.reader.loader.ChapterLoader]) always supply the real tier.
+     */
+    performanceTier: DeviceUtil.PerformanceTier = DeviceUtil.PerformanceTier.MEDIUM,
 ) : PageLoader() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -44,17 +52,45 @@ internal class HttpPageLoader(
      */
     private val queue = PriorityBlockingQueue<PriorityPage>()
 
-    private val preloadSize = 4
+    /**
+     * Number of pages ahead of the current page to preload — scaled by device capability.
+     */
+    private val preloadSize = when (performanceTier) {
+        DeviceUtil.PerformanceTier.LOW -> 2
+        DeviceUtil.PerformanceTier.MEDIUM -> 4
+        DeviceUtil.PerformanceTier.HIGH -> 6
+    }
+
+    /**
+     * Number of pages behind the current page to preload — scaled by device capability.
+     */
+    private val preloadBackwardSize = when (performanceTier) {
+        DeviceUtil.PerformanceTier.LOW -> 1
+        DeviceUtil.PerformanceTier.MEDIUM -> 2
+        DeviceUtil.PerformanceTier.HIGH -> 3
+    }
+
+    /**
+     * Number of concurrent page-download workers — scaled by device capability so high-end
+     * devices can saturate their network connection without starving low-end ones.
+     */
+    private val workerCount = when (performanceTier) {
+        DeviceUtil.PerformanceTier.LOW -> 1
+        DeviceUtil.PerformanceTier.MEDIUM -> 2
+        DeviceUtil.PerformanceTier.HIGH -> 3
+    }
 
     init {
-        scope.launchIO {
-            flow {
-                while (true) {
-                    emit(runInterruptible { queue.take() }.page)
+        repeat(workerCount) {
+            scope.launchIO {
+                flow {
+                    while (true) {
+                        emit(runInterruptible { queue.take() }.page)
+                    }
                 }
+                    .filter { it.status == Page.State.Queue }
+                    .collect(::internalLoadPage)
             }
-                .filter { it.status == Page.State.Queue }
-                .collect(::internalLoadPage)
         }
     }
 
@@ -106,7 +142,7 @@ internal class HttpPageLoader(
             queuedPages += PriorityPage(page, 1).also { queue.offer(it) }
         }
         queuedPages += preloadNextPages(page, preloadSize)
-        queuedPages += preloadPrevPages(page, PRELOAD_BACKWARD_SIZE)
+        queuedPages += preloadPrevPages(page, preloadBackwardSize)
 
         suspendCancellableCoroutine<Nothing> { continuation ->
             continuation.invokeOnCancellation {
@@ -274,9 +310,6 @@ internal class HttpPageLoader(
 
         /** Maximum delay cap in milliseconds between retry attempts. */
         private const val MAX_PAGE_LOAD_RETRY_DELAY_MS = 8_000L
-
-        /** Number of pages before the current page to preload for backward navigation. */
-        private const val PRELOAD_BACKWARD_SIZE = 2
     }
 }
 

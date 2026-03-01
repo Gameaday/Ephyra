@@ -40,6 +40,7 @@ import eu.kanade.tachiyomi.util.editCover
 import eu.kanade.tachiyomi.util.lang.byteSize
 import eu.kanade.tachiyomi.util.storage.DiskUtil
 import eu.kanade.tachiyomi.util.storage.cacheImageDir
+import eu.kanade.tachiyomi.util.system.DeviceUtil
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -107,6 +108,18 @@ class ReaderViewModel @JvmOverloads constructor(
 
     private val eventChannel = Channel<Event>()
     val eventFlow = eventChannel.receiveAsFlow()
+
+    /**
+     * Number of pages to proactively start loading when an adjacent chapter is preloaded,
+     * scaled to the device's performance tier so high-end devices prefetch more aggressively.
+     */
+    private val preloadChapterAheadPages: Int by lazy {
+        when (DeviceUtil.performanceTier(Injekt.get<Application>())) {
+            DeviceUtil.PerformanceTier.LOW -> 2
+            DeviceUtil.PerformanceTier.MEDIUM -> 4
+            DeviceUtil.PerformanceTier.HIGH -> 6
+        }
+    }
 
     /**
      * The manga loaded in the reader. It can be null when instantiated for a short time.
@@ -427,7 +440,7 @@ class ReaderViewModel @JvmOverloads constructor(
             loader.loadChapter(chapter)
             // After fetching the page list, proactively start loading the first few images at
             // background priority so they are cached before the user scrolls to this chapter.
-            chapter.pageLoader?.preloadFirstPages(PRELOAD_CHAPTER_AHEAD_PAGES)
+            chapter.pageLoader?.preloadFirstPages(preloadChapterAheadPages)
         } catch (e: Throwable) {
             if (e is CancellationException) {
                 throw e
@@ -966,11 +979,6 @@ class ReaderViewModel @JvmOverloads constructor(
         viewModelScope.launchNonCancellable {
             downloadManager.deletePendingChapters()
         }
-    }
-
-    companion object {
-        /** Number of pages to proactively start loading when an adjacent chapter is preloaded. */
-        private const val PRELOAD_CHAPTER_AHEAD_PAGES = 4
     }
 
     @Immutable
