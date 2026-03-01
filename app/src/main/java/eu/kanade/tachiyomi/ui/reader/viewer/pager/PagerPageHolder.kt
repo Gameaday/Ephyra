@@ -91,6 +91,8 @@ class PagerPageHolder(
         super.onDetachedFromWindow()
         loadJob?.cancel()
         loadJob = null
+        smartCombineRetryJob?.cancel()
+        smartCombineRetryJob = null
         scope.cancel()
     }
 

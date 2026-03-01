@@ -336,10 +336,10 @@ abstract class PagerViewer(val activity: ReaderActivity) : Viewer {
         preScanJob = scope.launch {
             withIOContext {
                 pages.forEachIndexed { index, page ->
-                    if (page is InsertPage || page.mergedBytes != null) return@forEachIndexed
+                    if (page is InsertPage || page.mergedBytes != null || page.isAbsorbed) return@forEachIndexed
                     if (page.status != Page.State.Ready) return@forEachIndexed
                     val nextPage = pages.getOrNull(index + 1) ?: return@forEachIndexed
-                    if (nextPage.status != Page.State.Ready) return@forEachIndexed
+                    if (nextPage.isAbsorbed || nextPage.status != Page.State.Ready) return@forEachIndexed
                     val streamFn = page.stream ?: return@forEachIndexed
                     val nextStreamFn = nextPage.stream ?: return@forEachIndexed
                     try {
