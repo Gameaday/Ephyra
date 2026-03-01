@@ -65,8 +65,9 @@ internal class HttpPageLoader(
      * otherwise fallbacks to network.
      */
     override suspend fun getPages(): List<ReaderPage> {
+        check(!isRecycled)
         val pages = try {
-            chapterCache.getPageListFromCache(chapter.chapter.toDomainChapter()!!)
+            chapterCache.getPageListFromCache(requireNotNull(chapter.chapter.toDomainChapter()) { "Chapter has no database ID" })
         } catch (e: Throwable) {
             if (e is CancellationException) {
                 throw e
@@ -83,6 +84,7 @@ internal class HttpPageLoader(
      * Loads a page through the queue. Handles re-enqueueing pages if they were evicted from the cache.
      */
     override suspend fun loadPage(page: ReaderPage) = withIOContext {
+        check(!isRecycled)
         val imageUrl = page.imageUrl
 
         // Check if the image has been deleted
@@ -116,6 +118,7 @@ internal class HttpPageLoader(
      * Retries a page. This method is only called from user interaction on the viewer.
      */
     override fun retryPage(page: ReaderPage) {
+        check(!isRecycled)
         if (page.status is Page.State.Error) {
             page.status = Page.State.Queue
         }
@@ -136,7 +139,7 @@ internal class HttpPageLoader(
                 try {
                     // Convert to pages without reader information
                     val pagesToSave = pages.map { Page(it.index, it.url, it.imageUrl) }
-                    chapterCache.putPageListToCache(chapter.chapter.toDomainChapter()!!, pagesToSave)
+                    chapterCache.putPageListToCache(requireNotNull(chapter.chapter.toDomainChapter()) { "Chapter has no database ID" }, pagesToSave)
                 } catch (e: Throwable) {
                     if (e is CancellationException) {
                         throw e
@@ -183,12 +186,11 @@ internal class HttpPageLoader(
                     page.status = Page.State.LoadPage
                     page.imageUrl = source.getImageUrl(page)
                 }
-                val imageUrl = page.imageUrl!!
+                val imageUrl = requireNotNull(page.imageUrl) { "Image URL is null after being fetched from source" }
 
                 if (!chapterCache.isImageInCache(imageUrl)) {
                     page.status = Page.State.DownloadImage
-                    val imageResponse = source.getImage(page)
-                    chapterCache.putImageToCache(imageUrl, imageResponse)
+                    chapterCache.fetchAndCacheImage(imageUrl) { source.getImage(page) }
                 }
 
                 page.stream = { chapterCache.getImageFile(imageUrl).inputStream() }

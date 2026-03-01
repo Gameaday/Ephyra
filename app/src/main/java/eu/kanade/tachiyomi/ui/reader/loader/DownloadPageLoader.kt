@@ -27,11 +27,13 @@ internal class DownloadPageLoader(
 
     private val context: Application by injectLazy()
 
+    @Volatile
     private var archivePageLoader: ArchivePageLoader? = null
 
     override var isLocal: Boolean = true
 
     override suspend fun getPages(): List<ReaderPage> {
+        check(!isRecycled)
         val dbChapter = chapter.chapter
         val chapterPath = downloadProvider.findChapterDir(
             dbChapter.name,
@@ -58,10 +60,10 @@ internal class DownloadPageLoader(
     }
 
     private fun getPagesFromDirectory(): List<ReaderPage> {
-        val pages = downloadManager.buildPageList(source, manga, chapter.chapter.toDomainChapter()!!)
+        val pages = downloadManager.buildPageList(source, manga, requireNotNull(chapter.chapter.toDomainChapter()) { "Chapter has no database ID" })
         return pages.map { page ->
             ReaderPage(page.index, page.url, page.imageUrl) {
-                context.contentResolver.openInputStream(page.uri ?: Uri.EMPTY)!!
+                requireNotNull(context.contentResolver.openInputStream(page.uri ?: Uri.EMPTY)) { "Could not open input stream for page URI: ${page.uri}" }
             }.apply {
                 status = Page.State.Ready
             }
@@ -69,6 +71,7 @@ internal class DownloadPageLoader(
     }
 
     override suspend fun loadPage(page: ReaderPage) {
+        check(!isRecycled)
         archivePageLoader?.loadPage(page)
     }
 }

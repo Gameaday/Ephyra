@@ -14,6 +14,7 @@ internal class DirectoryPageLoader(val file: UniFile) : PageLoader() {
     override var isLocal: Boolean = true
 
     override suspend fun getPages(): List<ReaderPage> {
+        check(!isRecycled)
         return file.listFiles()
             ?.filter { !it.isDirectory && ImageUtil.isImage(it.name) { it.openInputStream() } }
             ?.sortedWith { f1, f2 -> f1.name.orEmpty().compareToCaseInsensitiveNaturalOrder(f2.name.orEmpty()) }
@@ -25,5 +26,11 @@ internal class DirectoryPageLoader(val file: UniFile) : PageLoader() {
                 }
             }
             .orEmpty()
+    }
+
+    // All pages are marked Ready immediately in getPages(), so there is no loading work to do
+    // here. The guard ensures the loader has not been recycled before any stream lambda is used.
+    override suspend fun loadPage(page: ReaderPage) {
+        check(!isRecycled)
     }
 }

@@ -54,14 +54,20 @@ class CoverCache(private val context: Context) {
     /**
      * Saves the given stream as the manga's custom cover to cache.
      *
+     * **Stream ownership:** this method takes ownership of [inputStream] and always closes it
+     * before returning (whether or not an exception occurs). Callers must not close the stream
+     * themselves after passing it here.
+     *
      * @param manga the manga.
-     * @param inputStream the stream to copy.
+     * @param inputStream the stream to copy. Closed by this method.
      * @throws IOException if there's any error.
      */
     @Throws(IOException::class)
     fun setCustomCoverToCache(manga: Manga, inputStream: InputStream) {
-        getCustomCoverFile(manga.id).outputStream().use {
-            inputStream.copyTo(it)
+        getCustomCoverFile(manga.id).outputStream().use { output ->
+            inputStream.use { input ->
+                input.copyTo(output)
+            }
         }
     }
 
