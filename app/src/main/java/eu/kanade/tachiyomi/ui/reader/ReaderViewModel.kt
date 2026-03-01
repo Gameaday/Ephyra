@@ -437,10 +437,36 @@ class ReaderViewModel @JvmOverloads constructor(
         val loader = loader ?: return
         try {
             logcat { "Preloading ${chapter.chapter.url}" }
-            loader.loadChapter(chapter)
-            // After fetching the page list, proactively start loading the first few images at
-            // background priority so they are cached before the user scrolls to this chapter.
-            chapter.pageLoader?.preloadFirstPages(preloadChapterAheadPages)
+            // Load with isPreloadOnly=true so the underlying HttpPageLoader spawns only a single
+            // background worker. This prevents the speculative preload from competing with the
+            // active chapter's downloads for network bandwidth.
+            loader.loadChapter(chapter, isPreloadOnly = true)
+
+            // Only proactively start downloading the first few images of the preloaded chapter
+            // if the current chapter's buffer is healthy. If the user is outpacing the current
+            // buffer (i.e. there are still many unloaded pages ahead of the reading position),
+            // skip image preloading so all available bandwidth stays with the active chapter.
+            // This makes cross-chapter image prefetch purely opportunistic.
+            val currentPages = getCurrentChapter()?.pages
+            val pendingAhead = if (currentPages != null) {
+                currentPages
+                    .asSequence()
+                    .drop(chapterPageIndex + 1)
+                    .count {
+                        it.status == Page.State.Queue || it.status == Page.State.LoadPage ||
+                            it.status == Page.State.DownloadImage
+                    }
+            } else {
+                0
+            }
+            if (pendingAhead < preloadChapterAheadPages) {
+                logcat { "Current buffer healthy ($pendingAhead pending ahead); starting next-chapter image preload" }
+                chapter.pageLoader?.preloadFirstPages(preloadChapterAheadPages)
+            } else {
+                logcat {
+                    "Buffer thin ($pendingAhead pending ahead >= $preloadChapterAheadPages threshold); deferring next-chapter image preload"
+                }
+            }
         } catch (e: Throwable) {
             if (e is CancellationException) {
                 throw e

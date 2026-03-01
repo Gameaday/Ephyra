@@ -45,6 +45,15 @@ internal class HttpPageLoader(
      * [eu.kanade.tachiyomi.ui.reader.loader.ChapterLoader]) always supply the real tier.
      */
     performanceTier: DeviceUtil.PerformanceTier = DeviceUtil.PerformanceTier.MEDIUM,
+    /**
+     * When `true` the loader is being used to preload a chapter that is not yet the active
+     * reading chapter. In this mode only a single background worker is spawned, regardless of
+     * the device performance tier, so the preload never competes with the active chapter's
+     * downloads for network bandwidth. The worker count is raised to the full tier value the
+     * moment the chapter becomes active (i.e. a new [HttpPageLoader] is created for it via the
+     * active-chapter path in [ChapterLoader]).
+     */
+    isPreloadOnly: Boolean = false,
 ) : PageLoader() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -73,13 +82,20 @@ internal class HttpPageLoader(
     }
 
     /**
-     * Number of concurrent page-download workers — scaled by device capability so high-end
-     * devices can saturate their network connection without starving low-end ones.
+     * Number of concurrent page-download workers.
+     *
+     * For preload-only loaders a single worker is always used so that background chapter
+     * prefetch never steals bandwidth from the active chapter. The full worker count (scaled
+     * by device tier) is only used once the chapter becomes the active reading chapter.
      */
-    private val workerCount = when (performanceTier) {
-        DeviceUtil.PerformanceTier.LOW -> 1
-        DeviceUtil.PerformanceTier.MEDIUM -> 2
-        DeviceUtil.PerformanceTier.HIGH -> 3
+    private val workerCount = if (isPreloadOnly) {
+        1
+    } else {
+        when (performanceTier) {
+            DeviceUtil.PerformanceTier.LOW -> 1
+            DeviceUtil.PerformanceTier.MEDIUM -> 2
+            DeviceUtil.PerformanceTier.HIGH -> 3
+        }
     }
 
     init {

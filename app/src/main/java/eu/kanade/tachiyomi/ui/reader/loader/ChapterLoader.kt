@@ -35,8 +35,14 @@ class ChapterLoader(
     /**
      * Assigns the chapter's page loader and loads the its pages. Returns immediately if the chapter
      * is already loaded.
+     *
+     * @param chapter the chapter to load.
+     * @param isPreloadOnly when `true` the chapter is being preloaded speculatively before the
+     *   reader actually navigates to it. The underlying [HttpPageLoader] will be created with a
+     *   single background worker so it cannot compete with the active chapter's downloads for
+     *   network bandwidth.
      */
-    suspend fun loadChapter(chapter: ReaderChapter) {
+    suspend fun loadChapter(chapter: ReaderChapter, isPreloadOnly: Boolean = false) {
         if (chapterIsReady(chapter)) {
             return
         }
@@ -45,7 +51,7 @@ class ChapterLoader(
         withIOContext {
             logcat { "Loading pages for ${chapter.chapter.name}" }
             try {
-                val loader = getPageLoader(chapter)
+                val loader = getPageLoader(chapter, isPreloadOnly)
                 chapter.pageLoader = loader
 
                 val pages = loader.getPages()
@@ -79,7 +85,7 @@ class ChapterLoader(
     /**
      * Returns the page loader to use for this [chapter].
      */
-    private fun getPageLoader(chapter: ReaderChapter): PageLoader {
+    private fun getPageLoader(chapter: ReaderChapter, isPreloadOnly: Boolean = false): PageLoader {
         val dbChapter = chapter.chapter
         val isDownloaded = downloadManager.isChapterDownloaded(
             dbChapter.name,
@@ -104,7 +110,12 @@ class ChapterLoader(
                     is Format.Epub -> EpubPageLoader(format.file.epubReader(context))
                 }
             }
-            source is HttpSource -> HttpPageLoader(chapter, source, performanceTier = performanceTier)
+            source is HttpSource -> HttpPageLoader(
+                chapter,
+                source,
+                performanceTier = performanceTier,
+                isPreloadOnly = isPreloadOnly,
+            )
             source is StubSource -> error(context.stringResource(MR.strings.source_not_installed, source.toString()))
             else -> error(context.stringResource(MR.strings.loader_not_implemented_error))
         }
