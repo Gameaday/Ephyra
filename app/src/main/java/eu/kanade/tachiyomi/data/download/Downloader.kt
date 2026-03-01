@@ -60,6 +60,7 @@ import tachiyomi.i18n.MR
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.io.File
+import java.io.IOException
 import java.util.Locale
 
 /**
@@ -640,7 +641,9 @@ class Downloader(
 
         // Remove the old file
         dir.findFile(COMIC_INFO_FILE)?.delete()
-        dir.createFile(COMIC_INFO_FILE)!!.openOutputStream().use {
+        val comicInfoFile = dir.createFile(COMIC_INFO_FILE)
+            ?: throw IOException("Could not create $COMIC_INFO_FILE")
+        comicInfoFile.openOutputStream().use {
             val comicInfoString = xml.encodeToString(ComicInfo.serializer(), comicInfo)
             it.write(comicInfoString.toByteArray())
         }

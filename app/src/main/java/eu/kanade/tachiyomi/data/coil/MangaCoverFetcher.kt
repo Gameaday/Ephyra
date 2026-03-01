@@ -93,8 +93,9 @@ class MangaCoverFetcher(
     }
 
     private fun fileUriLoader(uri: String): FetchResult {
-        val source = UniFile.fromUri(options.context, uri.toUri())!!
-            .openInputStream()
+        val uniFile = UniFile.fromUri(options.context, uri.toUri())
+            ?: throw IOException("Could not open file at the specified URI")
+        val source = uniFile.openInputStream()
             .source()
             .buffer()
         return SourceFetchResult(
