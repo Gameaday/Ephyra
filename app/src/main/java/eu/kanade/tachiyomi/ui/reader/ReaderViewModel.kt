@@ -425,6 +425,9 @@ class ReaderViewModel @JvmOverloads constructor(
         try {
             logcat { "Preloading ${chapter.chapter.url}" }
             loader.loadChapter(chapter)
+            // After fetching the page list, proactively start loading the first few images at
+            // background priority so they are cached before the user scrolls to this chapter.
+            chapter.pageLoader?.preloadFirstPages(PRELOAD_CHAPTER_AHEAD_PAGES)
         } catch (e: Throwable) {
             if (e is CancellationException) {
                 throw e
@@ -963,6 +966,11 @@ class ReaderViewModel @JvmOverloads constructor(
         viewModelScope.launchNonCancellable {
             downloadManager.deletePendingChapters()
         }
+    }
+
+    companion object {
+        /** Number of pages to proactively start loading when an adjacent chapter is preloaded. */
+        private const val PRELOAD_CHAPTER_AHEAD_PAGES = 4
     }
 
     @Immutable

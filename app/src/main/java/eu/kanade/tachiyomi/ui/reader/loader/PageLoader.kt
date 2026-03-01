@@ -37,6 +37,17 @@ abstract class PageLoader {
     open fun retryPage(page: ReaderPage) {}
 
     /**
+     * Proactively starts loading the first [amount] pages of this chapter so that their images
+     * are cached before the user scrolls to them. Called after the chapter's page list has been
+     * fetched but before the user reaches the chapter boundary. Implementations should enqueue
+     * pages at background (lowest) priority; the default no-op is appropriate for local loaders
+     * whose pages are already ready on disk.
+     *
+     * @param amount the number of pages from the beginning of the chapter to preload.
+     */
+    open fun preloadFirstPages(amount: Int) {}
+
+    /**
      * Recycles this loader. Implementations must override this method to clean up any active
      * resources.
      */

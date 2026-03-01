@@ -106,6 +106,7 @@ internal class HttpPageLoader(
             queuedPages += PriorityPage(page, 1).also { queue.offer(it) }
         }
         queuedPages += preloadNextPages(page, preloadSize)
+        queuedPages += preloadPrevPages(page, PRELOAD_BACKWARD_SIZE)
 
         suspendCancellableCoroutine<Nothing> { continuation ->
             continuation.invokeOnCancellation {
@@ -180,6 +181,45 @@ internal class HttpPageLoader(
     }
 
     /**
+     * Preloads the given [amount] of pages before the [currentPage] with a lower priority.
+     * This avoids stutter when the user navigates backward through a chapter.
+     *
+     * @param currentPage the page the user is currently viewing.
+     * @param amount the number of pages before [currentPage] to preload.
+     * @return a list of [PriorityPage] that were added to the [queue]
+     */
+    private fun preloadPrevPages(currentPage: ReaderPage, amount: Int): List<PriorityPage> {
+        val pageIndex = currentPage.index
+        if (pageIndex == 0) return emptyList()
+        val pages = currentPage.chapter.pages ?: return emptyList()
+
+        return pages
+            .subList(maxOf(0, pageIndex - amount), pageIndex)
+            .mapNotNull {
+                if (it.status == Page.State.Queue) {
+                    PriorityPage(it, 0).apply { queue.offer(this) }
+                } else {
+                    null
+                }
+            }
+    }
+
+    /**
+     * Proactively starts loading the first [amount] pages of this chapter at background priority.
+     * Called after the page list has been fetched so that images begin downloading before the user
+     * actually scrolls to this chapter, reducing wait time at chapter boundaries.
+     */
+    override fun preloadFirstPages(amount: Int) {
+        if (isRecycled) return
+        val pages = chapter.pages?.take(amount) ?: return
+        pages.forEach { page ->
+            if (page.status == Page.State.Queue) {
+                queue.offer(PriorityPage(page, 0))
+            }
+        }
+    }
+
+    /**
      * Loads the page, retrieving the image URL and downloading the image if necessary.
      * Automatically retries on transient network errors (IO errors, HTTP 429 and 5xx) up to
      * [MAX_PAGE_LOAD_RETRIES] times with exponential backoff before marking the page as failed.
@@ -234,6 +274,9 @@ internal class HttpPageLoader(
 
         /** Maximum delay cap in milliseconds between retry attempts. */
         private const val MAX_PAGE_LOAD_RETRY_DELAY_MS = 8_000L
+
+        /** Number of pages before the current page to preload for backward navigation. */
+        private const val PRELOAD_BACKWARD_SIZE = 2
     }
 }
 
