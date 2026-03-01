@@ -201,7 +201,11 @@ object ImageUtil {
 
     /**
      * Check whether the image is a small "stub" relative to a reference image.
-     * A stub has approximately the same width as the reference but a much smaller height (< 30%).
+     * A stub has approximately the same width as the reference but a height between
+     * [STUB_MIN_HEIGHT_FRACTION] and [STUB_MAX_HEIGHT_FRACTION] of the reference.
+     *
+     * The lower bound filters out near-empty or 1-pixel filler images that should never
+     * trigger a merge; the upper bound stays at 30 % to catch typical watermark strips.
      */
     fun isSmallPage(imageSource: BufferedSource, referenceSource: BufferedSource): Boolean {
         val options = extractImageOptions(imageSource)
@@ -212,7 +216,27 @@ object ImageUtil {
         val widthSimilar = abs(options.outWidth - refOptions.outWidth) <= refOptions.outWidth * 0.05f
         if (!widthSimilar) return false
         val heightFraction = options.outHeight.toFloat() / refOptions.outHeight.toFloat()
-        return heightFraction < 0.3f
+        return heightFraction in STUB_MIN_HEIGHT_FRACTION..<STUB_MAX_HEIGHT_FRACTION
+    }
+
+    /**
+     * Lightweight overload that accepts a raw [InputStream] for the candidate stub so that
+     * callers can check dimensions without having to buffer the entire image in memory first.
+     * Only the image headers are read from [imageStream].
+     */
+    fun isSmallPage(imageStream: InputStream, referenceSource: BufferedSource): Boolean {
+        val options = BitmapFactory.Options().apply {
+            inJustDecodeBounds = true
+            BitmapFactory.decodeStream(imageStream, null, this)
+        }
+        val refOptions = extractImageOptions(referenceSource)
+        if (options.outWidth <= 0 || options.outHeight <= 0 || refOptions.outWidth <= 0 || refOptions.outHeight <= 0) {
+            return false
+        }
+        val widthSimilar = abs(options.outWidth - refOptions.outWidth) <= refOptions.outWidth * 0.05f
+        if (!widthSimilar) return false
+        val heightFraction = options.outHeight.toFloat() / refOptions.outHeight.toFloat()
+        return heightFraction in STUB_MIN_HEIGHT_FRACTION..<STUB_MAX_HEIGHT_FRACTION
     }
 
     /**
@@ -241,6 +265,12 @@ object ImageUtil {
         RIGHT,
         LEFT,
     }
+
+    /** Minimum height fraction for a page to be considered a watermark stub (2 % of reference). */
+    private const val STUB_MIN_HEIGHT_FRACTION = 0.02f
+
+    /** Maximum height fraction for a page to be considered a watermark stub (30 % of reference). */
+    private const val STUB_MAX_HEIGHT_FRACTION = 0.3f
 
     /**
      * Check whether the image is considered a tall image.

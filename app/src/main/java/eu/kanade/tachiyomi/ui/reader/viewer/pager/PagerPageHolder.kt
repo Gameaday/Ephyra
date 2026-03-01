@@ -17,6 +17,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import logcat.LogPriority
@@ -62,6 +64,19 @@ class PagerPageHolder(
      * Job for loading the page and processing changes to the page's status.
      */
     private var loadJob: Job? = null
+
+    /**
+     * Job that watches the next page's status and re-triggers [setImage] once it loads,
+     * allowing smart combine to fire even when page N+1 wasn't ready at display time.
+     */
+    private var smartCombineRetryJob: Job? = null
+
+    /**
+     * Dimensions of the most recently displayed image, cached so that [setupSmartCombineRetry]
+     * can perform a stub check without re-buffering the current page's stream.
+     */
+    private var cachedPageWidth = 0
+    private var cachedPageHeight = 0
 
     init {
         loadJob = scope.launch { loadPageAndProcessStatus() }
@@ -179,11 +194,41 @@ class PagerPageHolder(
                 }
                 removeErrorLayout()
             }
+            // If smart combine was enabled but the next page wasn't ready yet, watch for it
+            // and re-render once it arrives so the merge still fires automatically.
+            setupSmartCombineRetry()
         } catch (e: Throwable) {
             logcat(LogPriority.ERROR, e)
             withUIContext {
                 setError(e)
             }
+        }
+    }
+
+    /**
+     * If [ViewerConfig.smartCombine] is on and the neighbouring stub page has not yet
+     * finished loading, launches a coroutine that suspends until it does and then
+     * re-triggers [setImage] so the merge fires automatically without requiring a
+     * manual page flip.
+     */
+    private fun setupSmartCombineRetry() {
+        smartCombineRetryJob?.cancel()
+        smartCombineRetryJob = null
+        if (!viewer.config.smartCombine || page is InsertPage) return
+        val nextPage = page.chapter.pages?.getOrNull(page.index + 1) ?: return
+        // If the next page was already ready, trySmartCombine already had a chance to handle it.
+        if (nextPage.status == Page.State.Ready) return
+        smartCombineRetryJob = scope.launch {
+            // Wait for the stub candidate to finish loading.
+            nextPage.statusFlow.filter { it == Page.State.Ready }.first()
+            // Don't disturb the UI if this holder is no longer on screen.
+            if (!isAttachedToWindow()) return@launch
+            // Cheaply verify the now-ready page is actually a stub before re-rendering.
+            val currentStreamFn = page.stream ?: return@launch
+            val nextStreamFn = nextPage.stream ?: return@launch
+            val currentSource = currentStreamFn().use { Buffer().readFrom(it) }
+            val isStub = nextStreamFn().use { ImageUtil.isSmallPage(it, currentSource) }
+            if (isStub) setImage()
         }
     }
 
@@ -212,15 +257,28 @@ class PagerPageHolder(
 
     private fun trySmartCombine(page: ReaderPage, imageSource: BufferedSource): BufferedSource? {
         if (!viewer.config.smartCombine || page is InsertPage) return null
+        // Animated images (GIF, animated WebP/HEIF) must not be merged.
+        if (ImageUtil.isAnimatedAndSupported(imageSource)) return null
         val nextPage = page.chapter.pages?.getOrNull(page.index + 1) ?: return null
         if (nextPage.status != Page.State.Ready) return null
         val nextStreamFn = nextPage.stream ?: return null
 
-        val nextSource = nextStreamFn().use { Buffer().readFrom(it) }
-        if (!ImageUtil.isSmallPage(nextSource, imageSource)) return null
+        // Read only the image headers of the next page to decide if it is a stub.
+        // This avoids buffering the entire stream into memory for pages that are not stubs.
+        if (!nextStreamFn().use { ImageUtil.isSmallPage(it, imageSource) }) return null
 
-        onPageAbsorb(nextPage)
-        return ImageUtil.mergePages(imageSource, nextSource)
+        // Confirmed stub: now load the full stream for bitmap decoding.
+        val nextSource = nextStreamFn().use { Buffer().readFrom(it) }
+        return try {
+            val merged = ImageUtil.mergePages(imageSource, nextSource)
+            // Absorb the stub only after a successful merge so that a decode failure
+            // does not silently remove a page from the reader.
+            onPageAbsorb(nextPage)
+            merged
+        } catch (e: Exception) {
+            logcat(LogPriority.WARN, e) { "Smart combine merge failed; showing pages separately" }
+            null
+        }
     }
 
     private fun rotateDualPage(imageSource: BufferedSource): BufferedSource {
