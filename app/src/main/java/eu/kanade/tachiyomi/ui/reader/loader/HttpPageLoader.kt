@@ -95,6 +95,24 @@ internal class HttpPageLoader(
         DeviceUtil.PerformanceTier.HIGH -> 3
     }
 
+    /**
+     * Whether the page list loaded in [getPages] had any pages with an unresolved image URL
+     * (i.e. [Page.imageUrl] was null or empty). This drives the decision at [recycle] time:
+     *
+     * - `true`  → the cache entry was incomplete when loaded (fresh network fetch, or a
+     *             previous session that ended before all URLs were resolved). The [recycle]
+     *             save is needed to persist newly-resolved image URLs so the next open can
+     *             skip the [HttpSource.getImageUrl] calls.
+     * - `false` → every page already had a resolved image URL when loaded from cache. Nothing
+     *             changed during this session that the cache doesn't already reflect, so the
+     *             [recycle] disk write is skipped to avoid redundant I/O.
+     *
+     * Starts as `true` so that a conservative save is always attempted if [getPages] never
+     * runs (e.g. the loader is recycled before it is used).
+     */
+    @Volatile
+    private var cacheHadMissingImageUrls = true
+
     /** Guards [promoteToActive] so the promotion is applied at most once. */
     @OptIn(ExperimentalAtomicApi::class)
     private val promoted = AtomicBoolean(!isPreloadOnly)
@@ -149,11 +167,14 @@ internal class HttpPageLoader(
     override suspend fun getPages(): List<ReaderPage> {
         check(!isRecycled)
         val pages = try {
-            chapterCache.getPageListFromCache(
+            val cachedPages = chapterCache.getPageListFromCache(
                 requireNotNull(chapter.chapter.toDomainChapter()) {
                     "Chapter has no database ID"
                 },
             )
+            // All image URLs are already resolved: the recycle() save can be skipped.
+            cacheHadMissingImageUrls = cachedPages.any { it.imageUrl.isNullOrEmpty() }
+            cachedPages
         } catch (e: Throwable) {
             if (e is CancellationException) {
                 throw e
@@ -170,6 +191,7 @@ internal class HttpPageLoader(
                     }
                 }
             }
+            // cacheHadMissingImageUrls stays true (network pages have no imageUrls yet)
             networkPages
         }
         return pages.mapIndexed { index, page ->
@@ -257,20 +279,26 @@ internal class HttpPageLoader(
             // Release stream lambdas so the captured imageUrl strings and file references can be GC'd
             pages.forEach { it.stream = null }
 
-            // Cache current page list progress for online chapters to allow a faster reopen
-            launchIO {
-                try {
-                    // Convert to pages without reader information
-                    val pagesToSave = pages.map { Page(it.index, it.url, it.imageUrl) }
-                    chapterCache.putPageListToCache(
-                        requireNotNull(chapter.chapter.toDomainChapter()) {
-                            "Chapter has no database ID"
-                        },
-                        pagesToSave,
-                    )
-                } catch (e: Throwable) {
-                    if (e is CancellationException) {
-                        throw e
+            // Cache current page list progress for online chapters to allow a faster reopen.
+            // Skip the write if the page list was loaded from cache with all image URLs already
+            // resolved: nothing changed during this session that the cache doesn't already
+            // reflect, so the disk write would be redundant.
+            if (cacheHadMissingImageUrls) {
+                launchIO {
+                    try {
+                        // Convert to pages without reader information
+                        val pagesToSave = pages.map { Page(it.index, it.url, it.imageUrl) }
+                        chapterCache.putPageListToCache(
+                            requireNotNull(chapter.chapter.toDomainChapter()) {
+                                "Chapter has no database ID"
+                            },
+                            pagesToSave,
+                        )
+                    } catch (e: Throwable) {
+                        if (e is CancellationException) {
+                            throw e
+                        }
+                        logcat(LogPriority.WARN, e) { "Failed to persist page list on recycle for ${chapter.chapter.name}" }
                     }
                 }
             }
