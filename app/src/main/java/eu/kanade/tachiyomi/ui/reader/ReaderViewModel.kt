@@ -78,6 +78,7 @@ import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.time.Instant
 import java.util.Date
+import java.io.InputStream
 
 /**
  * Presenter used by the activity to perform background operations.
@@ -173,6 +174,12 @@ class ReaderViewModel @JvmOverloads constructor(
     private var chapterListCache: List<ReaderChapter>? = null
     private suspend fun getChapterList(): List<ReaderChapter> {
         chapterListCache?.let { return it }
+
+        // Ensure the DownloadCache has finished reading its on-disk snapshot before we
+        // run any filter that calls isChapterDownloaded() (skipFiltered branch and the
+        // downloadedOnly filter below). On the warm path this is a single deferred check
+        // with no suspension. On a cold start it waits for the brief disk-cache read.
+        downloadManager.awaitCacheReady()
 
         val manga = manga!!
         val chapters = getChaptersByMangaId.await(manga.id, applyScanlatorFilter = true)
@@ -334,6 +341,12 @@ class ReaderViewModel @JvmOverloads constructor(
     ): ViewerChapters {
         loader.loadChapter(chapter)
 
+        // Queue every page at the lowest background priority so the smart-combine pre-scan
+        // can process the entire chapter without waiting for the user to scroll to each page.
+        // Priority is kept below the nearby-page preload (0) and current-page load (1) so
+        // this never competes for bandwidth with what the user is actively reading.
+        chapter.pageLoader?.preloadAllPages()
+
         val chapterList = getChapterList()
         val chapterPos = chapterList.indexOf(chapter)
         val newChapters = ViewerChapters(
@@ -417,13 +430,16 @@ class ReaderViewModel @JvmOverloads constructor(
         if (chapter.pageLoader?.isLocal == false) {
             val manga = manga ?: return
             val dbChapter = chapter.chapter
+            // Ensure the DownloadCache is ready before querying: on the fast path (deferred
+            // already complete) this is a single non-suspending check; on a cold start it
+            // waits for the disk-cache read so we don't incorrectly skip the reload.
+            downloadManager.awaitCacheReady()
             val isDownloaded = downloadManager.isChapterDownloaded(
                 dbChapter.name,
                 dbChapter.scanlator,
                 dbChapter.url,
                 manga.title,
                 manga.source,
-                skipCache = true,
             )
             if (isDownloaded) {
                 chapter.state = ReaderChapter.State.Wait
@@ -555,6 +571,11 @@ class ReaderViewModel @JvmOverloads constructor(
         val nextChapter = state.value.viewerChapters?.nextChapter?.chapter ?: return
 
         viewModelScope.launchIO {
+            // Ensure the DownloadCache has finished reading its on-disk snapshot before
+            // querying it. On the warm path this is a non-suspending check; on a cold
+            // start it waits for the brief disk-cache read to avoid a false negative that
+            // would suppress the download-ahead even though the next chapter is on disk.
+            downloadManager.awaitCacheReady()
             val isNextChapterDownloaded = downloadManager.isChapterDownloaded(
                 nextChapter.name,
                 nextChapter.scanlator,
@@ -922,9 +943,14 @@ class ReaderViewModel @JvmOverloads constructor(
         // Copy file in background.
         viewModelScope.launchNonCancellable {
             try {
+                // If the page was smart-combined with a stub, save the merged image so the saved
+                // file reflects exactly what the reader showed rather than just the first page.
+                val inputStream: () -> InputStream = page.mergedBytes?.let { bytes ->
+                    { bytes.inputStream() }
+                } ?: page.stream!!
                 val uri = imageSaver.save(
                     image = Image.Page(
-                        inputStream = page.stream!!,
+                        inputStream = inputStream,
                         name = filename,
                         location = Location.Pictures.create(relativePath),
                     ),
@@ -960,9 +986,14 @@ class ReaderViewModel @JvmOverloads constructor(
         try {
             viewModelScope.launchNonCancellable {
                 destDir.deleteRecursively()
+                // If the page was smart-combined with a stub, share the merged image so the
+                // recipient sees the same combined view that the reader displayed.
+                val inputStream: () -> InputStream = page.mergedBytes?.let { bytes ->
+                    { bytes.inputStream() }
+                } ?: page.stream!!
                 val uri = imageSaver.save(
                     image = Image.Page(
-                        inputStream = page.stream!!,
+                        inputStream = inputStream,
                         name = filename,
                         location = Location.Cache,
                     ),

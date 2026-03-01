@@ -40,7 +40,6 @@ class ReaderTransitionView @JvmOverloads constructor(context: Context, attrs: At
                             chapterUrl = goingToChapter.url,
                             mangaTitle = manga.title,
                             sourceId = manga.source,
-                            skipCache = true,
                         )
                     } ?: false,
             )

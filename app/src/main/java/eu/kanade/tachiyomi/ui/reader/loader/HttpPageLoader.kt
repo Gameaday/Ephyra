@@ -95,6 +95,24 @@ internal class HttpPageLoader(
         DeviceUtil.PerformanceTier.HIGH -> 3
     }
 
+    /**
+     * Whether the page list loaded in [getPages] had any pages with an unresolved image URL
+     * (i.e. [Page.imageUrl] was null or empty). This drives the decision at [recycle] time:
+     *
+     * - `true`  → the cache entry was incomplete when loaded (fresh network fetch, or a
+     *             previous session that ended before all URLs were resolved). The [recycle]
+     *             save is needed to persist newly-resolved image URLs so the next open can
+     *             skip the [HttpSource.getImageUrl] calls.
+     * - `false` → every page already had a resolved image URL when loaded from cache. Nothing
+     *             changed during this session that the cache doesn't already reflect, so the
+     *             [recycle] disk write is skipped to avoid redundant I/O.
+     *
+     * Starts as `true` so that a conservative save is always attempted if [getPages] never
+     * runs (e.g. the loader is recycled before it is used).
+     */
+    @Volatile
+    private var cacheHadMissingImageUrls = true
+
     /** Guards [promoteToActive] so the promotion is applied at most once. */
     @OptIn(ExperimentalAtomicApi::class)
     private val promoted = AtomicBoolean(!isPreloadOnly)
@@ -127,11 +145,11 @@ internal class HttpPageLoader(
         scope.launchIO {
             flow {
                 while (true) {
-                    emit(runInterruptible { queue.take() }.page)
+                    emit(runInterruptible { queue.take() })
                 }
             }
-                .filter { it.status == Page.State.Queue }
-                .collect(::internalLoadPage)
+                .filter { it.page.status == Page.State.Queue }
+                .collect { internalLoadPage(it.page, it.priority) }
         }
     }
 
@@ -140,20 +158,41 @@ internal class HttpPageLoader(
     /**
      * Returns the page list for a chapter. It tries to return the page list from the local cache,
      * otherwise fallbacks to network.
+     *
+     * When the page list is fetched from the network, it is immediately persisted to
+     * [ChapterCache] in the background. This means a process death or force-close before the
+     * normal [recycle] call does not lose the page URLs — the next chapter open will be served
+     * from cache rather than making another [source.getPageList] network call.
      */
     override suspend fun getPages(): List<ReaderPage> {
         check(!isRecycled)
         val pages = try {
-            chapterCache.getPageListFromCache(
+            val cachedPages = chapterCache.getPageListFromCache(
                 requireNotNull(chapter.chapter.toDomainChapter()) {
                     "Chapter has no database ID"
                 },
             )
+            // All image URLs are already resolved: the recycle() save can be skipped.
+            cacheHadMissingImageUrls = cachedPages.any { it.imageUrl.isNullOrEmpty() }
+            cachedPages
         } catch (e: Throwable) {
             if (e is CancellationException) {
                 throw e
             }
-            source.getPageList(chapter.chapter)
+            val networkPages = source.getPageList(chapter.chapter)
+            // Persist immediately so a crash before recycle() doesn't lose the page list.
+            chapter.chapter.toDomainChapter()?.let { domainChapter ->
+                scope.launchIO {
+                    try {
+                        chapterCache.putPageListToCache(domainChapter, networkPages)
+                    } catch (ex: Throwable) {
+                        if (ex is CancellationException) throw ex
+                        logcat(LogPriority.WARN, ex) { "Failed to persist page list to cache after network fetch" }
+                    }
+                }
+            }
+            // cacheHadMissingImageUrls stays true (network pages have no imageUrls yet)
+            networkPages
         }
         return pages.mapIndexed { index, page ->
             // Don't trust sources and use our own indexing
@@ -240,20 +279,26 @@ internal class HttpPageLoader(
             // Release stream lambdas so the captured imageUrl strings and file references can be GC'd
             pages.forEach { it.stream = null }
 
-            // Cache current page list progress for online chapters to allow a faster reopen
-            launchIO {
-                try {
-                    // Convert to pages without reader information
-                    val pagesToSave = pages.map { Page(it.index, it.url, it.imageUrl) }
-                    chapterCache.putPageListToCache(
-                        requireNotNull(chapter.chapter.toDomainChapter()) {
-                            "Chapter has no database ID"
-                        },
-                        pagesToSave,
-                    )
-                } catch (e: Throwable) {
-                    if (e is CancellationException) {
-                        throw e
+            // Cache current page list progress for online chapters to allow a faster reopen.
+            // Skip the write if the page list was loaded from cache with all image URLs already
+            // resolved: nothing changed during this session that the cache doesn't already
+            // reflect, so the disk write would be redundant.
+            if (cacheHadMissingImageUrls) {
+                launchIO {
+                    try {
+                        // Convert to pages without reader information
+                        val pagesToSave = pages.map { Page(it.index, it.url, it.imageUrl) }
+                        chapterCache.putPageListToCache(
+                            requireNotNull(chapter.chapter.toDomainChapter()) {
+                                "Chapter has no database ID"
+                            },
+                            pagesToSave,
+                        )
+                    } catch (e: Throwable) {
+                        if (e is CancellationException) {
+                            throw e
+                        }
+                        logcat(LogPriority.WARN, e) { "Failed to persist page list on recycle for ${chapter.chapter.name}" }
                     }
                 }
             }
@@ -321,22 +366,64 @@ internal class HttpPageLoader(
     }
 
     /**
+     * Queues every page in this chapter at the lowest background priority so that the
+     * smart-combine pre-scan can process the entire chapter without waiting for the user to
+     * navigate to each page. Pages are enqueued at priority [BACKGROUND_PRELOAD_PRIORITY]
+     * (below the nearby-page preload priority of 0), so they never compete for bandwidth with
+     * the page the user is actively reading or about to read.
+     *
+     * Only pages in [Page.State.Queue] are enqueued. Pages already downloading, ready, or in
+     * an error state are intentionally skipped: pages in progress or already cached need no
+     * action, and errored pages are retried through the user-facing [retryPage] path rather
+     * than being silently re-queued here.
+     */
+    override fun preloadAllPages() {
+        if (isRecycled) return
+        val pages = chapter.pages ?: return
+        pages.forEach { page ->
+            if (page.status == Page.State.Queue) {
+                queue.offer(PriorityPage(page, BACKGROUND_PRELOAD_PRIORITY))
+            }
+        }
+    }
+
+    /**
      * Loads the page, retrieving the image URL and downloading the image if necessary.
      * Automatically retries on transient network errors (IO errors, HTTP 429 and 5xx) up to
      * [MAX_PAGE_LOAD_RETRIES] times with exponential backoff before marking the page as failed.
      * Downloaded images are stored in the chapter cache.
      *
+     * If a higher-priority page enters the queue while this page is still waiting to start or
+     * between the URL-fetch and image-download phases, this method yields immediately: the page
+     * is reset to [Page.State.Queue] and re-enqueued at its original [priority] so that a free
+     * worker can pick up the urgent page without delay.
+     *
+     * **Concurrency safety**: re-enqueueing a page sets its status back to [Page.State.Queue],
+     * but the worker collecting from the queue always filters with
+     * `it.page.status == Page.State.Queue`. This ensures that if a second queue entry for this
+     * page already exists (e.g. added by [loadPage]) and is dequeued by another worker before
+     * the reset, that worker starts the load and this one's re-queued entry is simply skipped
+     * by the filter when it is eventually dequeued — no double-download occurs.
+     *
      * @param page the page whose source image has to be downloaded.
+     * @param priority the queue priority at which this page was dequeued.
      */
-    private suspend fun internalLoadPage(page: ReaderPage) {
+    private suspend fun internalLoadPage(page: ReaderPage, priority: Int) {
         var retries = 0
         while (true) {
             try {
+                // Yield to a higher-priority page before starting the URL fetch.
+                if (requeueAndYield(page, priority)) return
+
                 if (page.imageUrl.isNullOrEmpty()) {
                     page.status = Page.State.LoadPage
                     page.imageUrl = source.getImageUrl(page)
                 }
                 val imageUrl = requireNotNull(page.imageUrl) { "Image URL is null after being fetched from source" }
+
+                // Yield again after the URL fetch (which can be slow) and before the potentially
+                // large image download, giving the urgent page a chance to start promptly.
+                if (requeueAndYield(page, priority)) return
 
                 if (!chapterCache.isImageInCache(imageUrl)) {
                     page.status = Page.State.DownloadImage
@@ -366,6 +453,31 @@ internal class HttpPageLoader(
         }
     }
 
+    /**
+     * If there is a page in the queue with strictly higher [priority] than [currentPriority],
+     * resets [page] to [Page.State.Queue] and re-enqueues it at [currentPriority] so the
+     * calling worker is freed to service the more urgent request instead. Returns `true` when
+     * the caller should `return` immediately (yield occurred), `false` otherwise.
+     *
+     * Uses [PriorityBlockingQueue.peek] which is non-blocking and O(1), so calling this at
+     * natural suspension points adds no measurable overhead on the common path.
+     */
+    private fun requeueAndYield(page: ReaderPage, currentPriority: Int): Boolean {
+        if (!shouldYield(currentPriority)) return false
+        page.status = Page.State.Queue
+        queue.offer(PriorityPage(page, currentPriority))
+        return true
+    }
+
+    /**
+     * Returns `true` if there is a page in the queue whose priority is strictly greater than
+     * [currentPriority].
+     */
+    private fun shouldYield(currentPriority: Int): Boolean {
+        val next = queue.peek() ?: return false
+        return next.priority > currentPriority
+    }
+
     companion object {
         /** Maximum number of automatic retry attempts for transient page-load failures. */
         private const val MAX_PAGE_LOAD_RETRIES = 3
@@ -375,6 +487,13 @@ internal class HttpPageLoader(
 
         /** Maximum delay cap in milliseconds between retry attempts. */
         private const val MAX_PAGE_LOAD_RETRY_DELAY_MS = 8_000L
+
+        /**
+         * Priority assigned to pages queued by [preloadAllPages]. Set below the nearby-page
+         * preload priority (0) so that background full-chapter downloads never steal bandwidth
+         * from pages the user is actively reading or about to reach.
+         */
+        private const val BACKGROUND_PRELOAD_PRIORITY = -1
     }
 }
 

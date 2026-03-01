@@ -6,6 +6,7 @@ import com.jakewharton.disklrucache.DiskLruCache
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.util.storage.DiskUtil
 import eu.kanade.tachiyomi.util.storage.saveTo
+import eu.kanade.tachiyomi.util.system.DeviceUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -38,8 +39,32 @@ class ChapterCache(
         /** The number of values per cache entry. Must be positive. */
         private const val PARAMETER_VALUE_COUNT = 1
 
-        /** The maximum number of bytes this cache should use to store. */
-        const val PARAMETER_CACHE_SIZE = 100L * 1024 * 1024
+        /** Cache size for low-RAM devices (< 2 GB total RAM): 100 MB. */
+        const val CACHE_SIZE_LOW = 100L * 1024 * 1024
+
+        /** Cache size for mid-range devices (2–3.9 GB total RAM): 256 MB. */
+        const val CACHE_SIZE_MEDIUM = 256L * 1024 * 1024
+
+        /** Cache size for high-end devices (≥ 4 GB total RAM): 512 MB. */
+        const val CACHE_SIZE_HIGH = 512L * 1024 * 1024
+
+        /**
+         * The maximum number of bytes this cache should use to store.
+         * Kept for backward-compatibility; new code should use [CACHE_SIZE_LOW],
+         * [CACHE_SIZE_MEDIUM], and [CACHE_SIZE_HIGH] directly.
+         */
+        const val PARAMETER_CACHE_SIZE = CACHE_SIZE_LOW
+    }
+
+    /**
+     * The effective cache capacity chosen at construction time based on the device's
+     * [DeviceUtil.PerformanceTier]. Exposed so the settings UI can display the true cap
+     * rather than always showing the LOW-tier constant.
+     */
+    val cacheSize: Long = when (DeviceUtil.performanceTier(context)) {
+        DeviceUtil.PerformanceTier.LOW -> CACHE_SIZE_LOW
+        DeviceUtil.PerformanceTier.MEDIUM -> CACHE_SIZE_MEDIUM
+        DeviceUtil.PerformanceTier.HIGH -> CACHE_SIZE_HIGH
     }
 
     /** Cache class used for cache management. */
@@ -47,7 +72,7 @@ class ChapterCache(
         File(context.cacheDir, "chapter_disk_cache"),
         PARAMETER_APP_VERSION,
         PARAMETER_VALUE_COUNT,
-        PARAMETER_CACHE_SIZE,
+        cacheSize,
     )
 
     /**
