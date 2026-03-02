@@ -236,6 +236,8 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
         val failedUpdates = CopyOnWriteArrayList<Pair<Manga, String?>>()
         val hasDownloads = AtomicBoolean(false)
         val fetchWindow = fetchInterval.getWindow(ZonedDateTime.now())
+        val autoUpdateMetadata = libraryPreferences.autoUpdateMetadata().get()
+        val newUpdatesCount = AtomicInt(0)
 
         coroutineScope {
             mangaToUpdate.groupBy { it.manga.source }.values
@@ -257,7 +259,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                                     manga,
                                 ) {
                                     try {
-                                        val newChapters = updateManga(manga, fetchWindow)
+                                        val newChapters = updateManga(manga, fetchWindow, autoUpdateMetadata)
                                             .sortedByDescending { it.sourceOrder }
 
                                         if (newChapters.isNotEmpty()) {
@@ -268,7 +270,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                                                 hasDownloads.store(true)
                                             }
 
-                                            libraryPreferences.newUpdatesCount().getAndSet { it + newChapters.size }
+                                            newUpdatesCount.fetchAndAdd(newChapters.size)
 
                                             // Convert to the manga that contains new chapters
                                             newUpdates.add(manga to newChapters.toTypedArray())
@@ -295,6 +297,13 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
         }
 
         notifier.cancelProgressNotification()
+
+        // Write accumulated new-chapter count to preferences in a single call instead of
+        // one per updated manga (which previously caused N concurrent preference read-modify-writes).
+        val totalNewUpdates = newUpdatesCount.load()
+        if (totalNewUpdates > 0) {
+            libraryPreferences.newUpdatesCount().getAndSet { it + totalNewUpdates }
+        }
 
         if (newUpdates.isNotEmpty()) {
             notifier.showUpdateNotifications(newUpdates)
@@ -324,11 +333,11 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
      * @param manga the manga to update.
      * @return a pair of the inserted and removed chapters.
      */
-    private suspend fun updateManga(manga: Manga, fetchWindow: Pair<Long, Long>): List<Chapter> {
+    private suspend fun updateManga(manga: Manga, fetchWindow: Pair<Long, Long>, autoUpdateMetadata: Boolean): List<Chapter> {
         val source = sourceManager.getOrStub(manga.source)
 
         // Update manga metadata if needed
-        if (libraryPreferences.autoUpdateMetadata().get()) {
+        if (autoUpdateMetadata) {
             val networkManga = source.getMangaDetails(manga.toSManga())
             updateManga.awaitUpdateFromSource(manga, networkManga, manualFetch = false, coverCache)
         }

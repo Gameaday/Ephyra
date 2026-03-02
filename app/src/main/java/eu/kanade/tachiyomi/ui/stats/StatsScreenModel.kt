@@ -112,21 +112,17 @@ class StatsScreenModel(
     }
 
     private fun getScoredMangaTrackMap(mangaTrackMap: Map<Long, List<Track>>): Map<Long, List<Track>> {
-        return mangaTrackMap.mapNotNull { (mangaId, tracks) ->
-            val trackList = tracks.mapNotNull { track ->
-                track.takeIf { it.score > 0.0 }
+        return buildMap {
+            mangaTrackMap.forEach { (mangaId, tracks) ->
+                val trackList = tracks.filter { it.score > 0.0 }
+                if (trackList.isNotEmpty()) put(mangaId, trackList)
             }
-            if (trackList.isEmpty()) return@mapNotNull null
-            mangaId to trackList
-        }.toMap()
+        }
     }
 
     private fun getTrackMeanScore(scoredMangaTrackMap: Map<Long, List<Track>>): Double {
-        return scoredMangaTrackMap
-            .map { (_, tracks) ->
-                tracks.map(::get10PointScore).average()
-            }
-            .fastFilter { !it.isNaN() }
+        return scoredMangaTrackMap.values
+            .mapNotNull { tracks -> tracks.map(::get10PointScore).average().takeIf { !it.isNaN() } }
             .average()
     }
 
