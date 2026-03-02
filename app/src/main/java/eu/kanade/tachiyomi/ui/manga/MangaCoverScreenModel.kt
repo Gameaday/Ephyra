@@ -144,6 +144,37 @@ class MangaCoverScreenModel(
         }
     }
 
+    /**
+     * Set cover from a URL by downloading the image and saving it as a custom cover.
+     *
+     * @param context Context.
+     * @param coverUrl URL of the cover image to download.
+     * @param sourceId ID of the source to use for network headers.
+     */
+    fun setCoverFromUrl(context: Context, coverUrl: String, sourceId: Long) {
+        val manga = state.value ?: return
+        screenModelScope.launchIO {
+            try {
+                val req = ImageRequest.Builder(context)
+                    .data(coverUrl)
+                    .size(Size.ORIGINAL)
+                    .build()
+                val result = context.imageLoader.execute(req)
+                val bitmap = result.image?.asDrawable(context.resources)?.getBitmapOrNull()
+                    ?: throw IllegalStateException("Failed to decode cover image")
+
+                val stream = java.io.ByteArrayOutputStream()
+                bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, stream)
+                val inputStream = java.io.ByteArrayInputStream(stream.toByteArray())
+
+                manga.editCover(Injekt.get(), inputStream, updateManga, coverCache)
+                notifyCoverUpdated(context)
+            } catch (e: Exception) {
+                notifyFailedCoverUpdate(context, e)
+            }
+        }
+    }
+
     private fun notifyCoverUpdated(context: Context) {
         screenModelScope.launch {
             snackbarHostState.showSnackbar(
