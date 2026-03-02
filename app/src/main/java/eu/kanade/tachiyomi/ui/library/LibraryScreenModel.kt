@@ -273,6 +273,8 @@ class LibraryScreenModel(
         loggedInTrackerIds: Set<Long>,
     ): Map<Category, List</* LibraryItem */ Long>> {
         val sortAlphabetically: (LibraryItem, LibraryItem) -> Int = { manga1, manga2 ->
+            // No .lowercase() needed: collator is configured with Collator.PRIMARY strength,
+            // which ignores case (case is tertiary strength per Java Collator spec).
             manga1.libraryManga.manga.title.compareToWithCollator(manga2.libraryManga.manga.title)
         }
 
@@ -471,6 +473,19 @@ class LibraryScreenModel(
         val uniqueCategories = mangaCategories.flatMapTo(HashSet()) { it }
         uniqueCategories.removeAll(common)
         return uniqueCategories
+    }
+
+    /**
+     * Returns common and mix category sets for [mangas] in a single DB pass.
+     * Avoids fetching per-manga categories twice when both are needed together.
+     */
+    private suspend fun getCommonAndMixCategories(mangas: List<Manga>): Pair<Collection<Category>, Collection<Category>> {
+        if (mangas.isEmpty()) return Pair(emptyList(), emptyList())
+        val mangaCategories = mangas.map { getCategories.await(it.id).toSet() }
+        val common = mangaCategories.reduce { set1, set2 -> set1.intersect(set2) }
+        val uniqueCategories = mangaCategories.flatMapTo(HashSet()) { it }
+        uniqueCategories.removeAll(common)
+        return Pair(common, uniqueCategories)
     }
 
     /**
@@ -714,10 +729,8 @@ class LibraryScreenModel(
             // Hide the default category because it has a different behavior than the ones from db.
             val categories = state.value.displayedCategories.filter { it.id != 0L }
 
-            // Get indexes of the common categories to preselect.
-            val common = getCommonCategories(mangaList)
-            // Get indexes of the mix categories to preselect.
-            val mix = getMixCategories(mangaList)
+            // Get common and mix categories in a single DB pass (avoids querying per-manga categories twice).
+            val (common, mix) = getCommonAndMixCategories(mangaList)
             val preselected = categories
                 .map {
                     when (it) {

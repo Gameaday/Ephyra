@@ -167,35 +167,38 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
         val skippedUpdates = mutableListOf<Pair<Manga, String?>>()
         val (_, fetchWindowUpperBound) = fetchInterval.getWindow(ZonedDateTime.now())
 
+        // Pre-resolve skip-reason strings once; each is identical for every manga that fails the same check.
+        val skipReasonNotAlwaysUpdate = context.stringResource(MR.strings.skipped_reason_not_always_update)
+        val skipReasonCompleted = if (MANGA_NON_COMPLETED in restrictions) context.stringResource(MR.strings.skipped_reason_completed) else null
+        val skipReasonNotCaughtUp = if (MANGA_HAS_UNREAD in restrictions) context.stringResource(MR.strings.skipped_reason_not_caught_up) else null
+        val skipReasonNotStarted = if (MANGA_NON_READ in restrictions) context.stringResource(MR.strings.skipped_reason_not_started) else null
+        val skipReasonOutsideReleasePeriod = if (MANGA_OUTSIDE_RELEASE_PERIOD in restrictions) context.stringResource(MR.strings.skipped_reason_not_in_release_period) else null
+
         mangaToUpdate = listToUpdate
             .filter {
                 when {
                     it.manga.updateStrategy == UpdateStrategy.ONLY_FETCH_ONCE && it.totalChapters > 0L -> {
-                        skippedUpdates.add(
-                            it.manga to context.stringResource(MR.strings.skipped_reason_not_always_update),
-                        )
+                        skippedUpdates.add(it.manga to skipReasonNotAlwaysUpdate)
                         false
                     }
 
-                    MANGA_NON_COMPLETED in restrictions && it.manga.status.toInt() == SManga.COMPLETED -> {
-                        skippedUpdates.add(it.manga to context.stringResource(MR.strings.skipped_reason_completed))
+                    skipReasonCompleted != null && it.manga.status.toInt() == SManga.COMPLETED -> {
+                        skippedUpdates.add(it.manga to skipReasonCompleted)
                         false
                     }
 
-                    MANGA_HAS_UNREAD in restrictions && it.unreadCount != 0L -> {
-                        skippedUpdates.add(it.manga to context.stringResource(MR.strings.skipped_reason_not_caught_up))
+                    skipReasonNotCaughtUp != null && it.unreadCount != 0L -> {
+                        skippedUpdates.add(it.manga to skipReasonNotCaughtUp)
                         false
                     }
 
-                    MANGA_NON_READ in restrictions && it.totalChapters > 0L && !it.hasStarted -> {
-                        skippedUpdates.add(it.manga to context.stringResource(MR.strings.skipped_reason_not_started))
+                    skipReasonNotStarted != null && it.totalChapters > 0L && !it.hasStarted -> {
+                        skippedUpdates.add(it.manga to skipReasonNotStarted)
                         false
                     }
 
-                    MANGA_OUTSIDE_RELEASE_PERIOD in restrictions && it.manga.nextUpdate > fetchWindowUpperBound -> {
-                        skippedUpdates.add(
-                            it.manga to context.stringResource(MR.strings.skipped_reason_not_in_release_period),
-                        )
+                    skipReasonOutsideReleasePeriod != null && it.manga.nextUpdate > fetchWindowUpperBound -> {
+                        skippedUpdates.add(it.manga to skipReasonOutsideReleasePeriod)
                         false
                     }
 

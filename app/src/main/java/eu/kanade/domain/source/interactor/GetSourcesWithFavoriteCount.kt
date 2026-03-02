@@ -36,6 +36,7 @@ class GetSourcesWithFavoriteCount(
                     when {
                         a.first.isStub && !b.first.isStub -> -1
                         b.first.isStub && !a.first.isStub -> 1
+                        // No .lowercase() needed: collator uses Collator.PRIMARY strength (case-insensitive).
                         else -> a.first.name.compareToWithCollator(b.first.name)
                     }
                 }
