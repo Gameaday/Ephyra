@@ -167,7 +167,10 @@ private fun ExtensionContent(
         state.items.forEach { (header, items) ->
             item(
                 contentType = "header",
-                key = "extensionHeader-${header.hashCode()}",
+                key = when (header) {
+                    is ExtensionUiModel.Header.Resource -> "extensionHeader-res-${header.textRes}"
+                    is ExtensionUiModel.Header.Text -> "extensionHeader-txt-${header.text}"
+                },
             ) {
                 when (header) {
                     is ExtensionUiModel.Header.Resource -> {
