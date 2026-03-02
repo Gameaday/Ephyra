@@ -22,8 +22,6 @@ dependencies {
 
     api(libs.logcat)
 
-    api(libs.rxjava)
-
     api(libs.okhttp.core)
     api(libs.okhttp.logging)
     api(libs.okhttp.brotli)
