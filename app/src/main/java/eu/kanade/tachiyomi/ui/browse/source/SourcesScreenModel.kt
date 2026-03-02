@@ -69,9 +69,9 @@ class SourcesScreenModel(
             state.copy(
                 isLoading = false,
                 items = buildList(sources.size + byLang.size) {
-                    byLang.forEach { (key, sources) ->
+                    byLang.forEach { (key, langSources) ->
                         add(SourceUiModel.Header(key))
-                        sources.mapTo(this) { SourceUiModel.Item(it) }
+                        langSources.mapTo(this) { SourceUiModel.Item(it) }
                     }
                 }.toImmutableList(),
             )
