@@ -622,7 +622,8 @@ class LibraryScreenModel(
             val removeCategorySet = removeCategories.toHashSet()
             mangaList.forEach { manga ->
                 val categoryIds = getCategories.await(manga.id)
-                    .mapNotNullTo(mutableListOf()) { if (it.id !in removeCategorySet) it.id else null }
+                    .filterNot { it.id in removeCategorySet }
+                    .mapTo(mutableListOf()) { it.id }
                     .apply { addAll(addCategories) }
 
                 setMangaCategories.await(manga.id, categoryIds)
