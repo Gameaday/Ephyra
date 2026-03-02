@@ -390,7 +390,7 @@ class LibraryScreenModel(
             // Build a source→language map once per emission instead of once per manga, so a library
             // with 1 000 manga from 10 sources makes 10 getOrStub calls instead of 1 000.
             val sourceLangMap = if (preferences.languageBadge) {
-                libraryManga.map { it.manga.source }.toSet()
+                libraryManga.mapTo(HashSet()) { it.manga.source }
                     .associateWith { sourceManager.getOrStub(it).lang }
             } else {
                 emptyMap()
@@ -470,7 +470,9 @@ class LibraryScreenModel(
         if (mangas.isEmpty()) return emptyList()
         val mangaCategories = mangas.map { getCategories.await(it.id).toSet() }
         val common = mangaCategories.reduce { set1, set2 -> set1.intersect(set2) }
-        return mangaCategories.flatten().distinct().subtract(common)
+        val all = mangaCategories.flatMapTo(HashSet()) { it }
+        all.removeAll(common)
+        return all
     }
 
     /**
@@ -592,10 +594,11 @@ class LibraryScreenModel(
      */
     fun setMangaCategories(mangaList: List<Manga>, addCategories: List<Long>, removeCategories: List<Long>) {
         screenModelScope.launchNonCancellable {
+            val removeCategorySet = removeCategories.toHashSet()
             mangaList.forEach { manga ->
                 val categoryIds = getCategories.await(manga.id)
                     .map { it.id }
-                    .subtract(removeCategories.toSet())
+                    .subtract(removeCategorySet)
                     .plus(addCategories)
                     .toList()
 

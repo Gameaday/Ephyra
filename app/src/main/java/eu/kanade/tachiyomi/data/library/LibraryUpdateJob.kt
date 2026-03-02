@@ -153,12 +153,12 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
         val listToUpdate = if (categoryId != -1L) {
             libraryManga.filter { categoryId in it.categories }
         } else {
-            val includedCategories = libraryPreferences.updateCategories().get().map { it.toLong() }
-            val excludedCategories = libraryPreferences.updateCategoriesExclude().get().map { it.toLong() }
+            val includedCategories = libraryPreferences.updateCategories().get().mapTo(HashSet()) { it.toLong() }
+            val excludedCategories = libraryPreferences.updateCategoriesExclude().get().mapTo(HashSet()) { it.toLong() }
 
             libraryManga.filter {
-                val included = includedCategories.isEmpty() || it.categories.intersect(includedCategories).isNotEmpty()
-                val excluded = it.categories.intersect(excludedCategories).isNotEmpty()
+                val included = includedCategories.isEmpty() || it.categories.any { cat -> cat in includedCategories }
+                val excluded = it.categories.any { cat -> cat in excludedCategories }
                 included && !excluded
             }
         }

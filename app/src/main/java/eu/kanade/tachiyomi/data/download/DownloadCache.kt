@@ -136,7 +136,7 @@ class DownloadCache(
             cacheReady.complete(Unit)
 
             sourceManager.catalogueSources
-                .map { sources -> sources.map { it.id }.toSet() }
+                .map { sources -> sources.mapTo(HashSet()) { it.id } }
                 .distinctUntilChanged()
                 .collect {
                     restartRenewal()

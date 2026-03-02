@@ -53,7 +53,7 @@ class GetApplicationRelease(
         versionTag: String,
     ): Boolean {
         // Removes prefixes like "r" or "v"
-        val newVersion = versionTag.replace("[^\\d.]".toRegex(), "")
+        val newVersion = versionTag.replace(NON_DIGIT_REGEX, "")
         return when {
             isPreview -> {
                 // Preview builds: based on releases in "mihonapp/mihon-preview" repo
@@ -68,7 +68,7 @@ class GetApplicationRelease(
             else -> {
                 // Release builds: based on releases in "mihonapp/mihon" repo
                 // tagged as something like "v0.1.2"
-                val oldVersion = versionName.replace("[^\\d.]".toRegex(), "")
+                val oldVersion = versionName.replace(NON_DIGIT_REGEX, "")
 
                 val newSemVer = newVersion.split(".").map { it.toInt() }
                 val oldSemVer = oldVersion.split(".").map { it.toInt() }
@@ -99,5 +99,10 @@ class GetApplicationRelease(
         data class NewUpdate(val release: Release) : Result
         data object NoNewUpdate : Result
         data object OsTooOld : Result
+    }
+
+    companion object {
+        /** Pre-compiled regex used to strip non-digit, non-dot characters from version strings. */
+        private val NON_DIGIT_REGEX = "[^\\d.]".toRegex()
     }
 }
