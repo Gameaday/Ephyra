@@ -138,8 +138,8 @@ object SettingsLibraryScreen : SearchableSettings {
                 itemLabel = { it.visualName },
                 onDismissRequest = { showCategoriesDialog = false },
                 onValueChanged = { newIncluded, newExcluded ->
-                    autoUpdateCategoriesPref.set(newIncluded.map { it.id.toString() }.toSet())
-                    autoUpdateCategoriesExcludePref.set(newExcluded.map { it.id.toString() }.toSet())
+                    autoUpdateCategoriesPref.set(newIncluded.mapTo(HashSet()) { it.id.toString() })
+                    autoUpdateCategoriesExcludePref.set(newExcluded.mapTo(HashSet()) { it.id.toString() })
                     showCategoriesDialog = false
                 },
             )

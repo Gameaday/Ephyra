@@ -399,13 +399,14 @@ class DownloadCache(
             rootDownloadsDirMutex.withLock {
                 val updatedRootDir = RootDirectory(storageManager.getDownloadsDirectory())
 
-                updatedRootDir.sourceDirs = updatedRootDir.dir?.listFiles().orEmpty()
-                    .filter { it.isDirectory && !it.name.isNullOrBlank() }
-                    .mapNotNull { dir ->
-                        val sourceId = sourceMap[dir.name!!.lowercase()]
-                        sourceId?.let { it to SourceDirectory(dir) }
-                    }
-                    .toMap()
+                updatedRootDir.sourceDirs = buildMap {
+                    updatedRootDir.dir?.listFiles().orEmpty()
+                        .filter { it.isDirectory && !it.name.isNullOrBlank() }
+                        .forEach { dir ->
+                            val sourceId = sourceMap[dir.name!!.lowercase()]
+                            if (sourceId != null) put(sourceId, SourceDirectory(dir))
+                        }
+                }
 
                 updatedRootDir.sourceDirs.values.map { sourceDir ->
                     async {
