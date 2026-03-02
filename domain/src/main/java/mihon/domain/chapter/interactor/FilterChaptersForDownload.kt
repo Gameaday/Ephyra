@@ -38,10 +38,9 @@ class FilterChaptersForDownload(
         if (!downloadPreferences.downloadNewUnreadChaptersOnly().get()) return newChapters
 
         val readChapterNumbers = getChaptersByMangaId.await(manga.id)
-            .asSequence()
-            .filter { it.read && it.isRecognizedNumber }
-            .map { it.chapterNumber }
-            .toSet()
+            .mapNotNullTo(HashSet()) { chapter ->
+                chapter.chapterNumber.takeIf { chapter.read && chapter.isRecognizedNumber }
+            }
 
         return newChapters.filterNot { it.chapterNumber in readChapterNumbers }
     }

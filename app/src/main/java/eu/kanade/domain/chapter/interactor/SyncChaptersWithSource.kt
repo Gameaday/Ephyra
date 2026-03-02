@@ -160,10 +160,9 @@ class SyncChaptersWithSource(
         val deletedBookmarkedChapterNumbers = TreeSet<Double>()
 
         val readChapterNumbers = dbChapters
-            .asSequence()
-            .filter { it.read && it.isRecognizedNumber }
-            .map { it.chapterNumber }
-            .toSet()
+            .mapNotNullTo(HashSet()) { chapter ->
+                chapter.chapterNumber.takeIf { chapter.read && chapter.isRecognizedNumber }
+            }
 
         removedChapters.forEach { chapter ->
             if (chapter.read) deletedReadChapterNumbers.add(chapter.chapterNumber)

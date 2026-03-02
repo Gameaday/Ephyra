@@ -334,7 +334,7 @@ class MigrationConfigScreen(private val mangaIds: Collection<Long>) : Screen() {
         private fun updateSources(action: (List<MigrationSource>) -> List<MigrationSource>) {
             mutableState.update { state ->
                 val updatedSources = action(state.sources)
-                val includedSources = updatedSources.mapNotNull { if (!it.isSelected) null else it.id }
+                val includedSources = updatedSources.filter { it.isSelected }.map { it.id }
                 state.copy(sources = updatedSources.sortedWith(sourcesComparator(includedSources)))
             }
             saveSources()
