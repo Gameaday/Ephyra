@@ -3,7 +3,6 @@ package eu.kanade.tachiyomi.ui.manga
 import androidx.compose.runtime.Immutable
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -12,7 +11,6 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import tachiyomi.domain.source.service.SourceManager
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
@@ -55,11 +53,9 @@ class CoverSearchScreenModel(
 
         searchJob = screenModelScope.launch {
             sources.map { source ->
-                async {
+                async(coroutineDispatcher) {
                     try {
-                        val page = withContext(coroutineDispatcher) {
-                            source.getSearchManga(1, query, source.getFilterList())
-                        }
+                        val page = source.getSearchManga(1, query, source.getFilterList())
 
                         val covers = page.mangas
                             .mapNotNull { manga ->

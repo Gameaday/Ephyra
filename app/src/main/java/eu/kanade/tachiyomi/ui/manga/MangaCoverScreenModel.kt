@@ -163,12 +163,18 @@ class MangaCoverScreenModel(
                 val bitmap = result.image?.asDrawable(context.resources)?.getBitmapOrNull()
                     ?: throw IllegalStateException("Failed to decode cover image")
 
-                val stream = java.io.ByteArrayOutputStream()
-                bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, stream)
-                val inputStream = java.io.ByteArrayInputStream(stream.toByteArray())
-
-                manga.editCover(Injekt.get(), inputStream, updateManga, coverCache)
-                notifyCoverUpdated(context)
+                val tempFile = java.io.File.createTempFile("cover", ".jpg", context.cacheDir)
+                try {
+                    tempFile.outputStream().use { output ->
+                        bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, output)
+                    }
+                    tempFile.inputStream().use { input ->
+                        manga.editCover(Injekt.get(), input, updateManga, coverCache)
+                    }
+                    notifyCoverUpdated(context)
+                } finally {
+                    tempFile.delete()
+                }
             } catch (e: Exception) {
                 notifyFailedCoverUpdate(context, e)
             }
