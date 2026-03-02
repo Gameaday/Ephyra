@@ -239,9 +239,6 @@ dependencies {
     // Job scheduling
     implementation(androidx.workmanager)
 
-    // RxJava
-    implementation(libs.rxjava)
-
     // Networking
     implementation(libs.bundles.okhttp)
     implementation(libs.okio)
