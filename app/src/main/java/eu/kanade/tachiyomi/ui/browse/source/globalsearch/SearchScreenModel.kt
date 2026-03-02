@@ -58,10 +58,12 @@ abstract class SearchScreenModel(
     protected var extensionFilter: String? = null
 
     open val sortComparator = { map: Map<CatalogueSource, SearchItemResult> ->
+        val sortKeys = HashMap<Long, String>((map.size / 0.75f + 1).toInt())
+        map.keys.forEach { sortKeys[it.id] = "${it.name.lowercase()} (${it.lang})" }
         compareBy<CatalogueSource>(
             { (map[it] as? SearchItemResult.Success)?.isEmpty ?: true },
             { it.id !in pinnedSourceIds },
-            { "${it.name.lowercase()} (${it.lang})" },
+            { sortKeys.getValue(it.id) },
         )
     }
 
@@ -225,7 +227,7 @@ abstract class SearchScreenModel(
     ) {
         val progress: Int = items.count { it.value !is SearchItemResult.Loading }
         val total: Int = items.size
-        val filteredItems = items.filter { (_, result) -> result.isVisible(onlyShowHasResults) }
+        val filteredItems = if (!onlyShowHasResults) items else items.filter { (_, result) -> result.isVisible(onlyShowHasResults) }
     }
 
     sealed interface Dialog {

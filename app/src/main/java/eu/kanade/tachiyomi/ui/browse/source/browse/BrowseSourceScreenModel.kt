@@ -114,7 +114,7 @@ class BrowseSourceScreenModel(
                         .map { it ?: manga }
                         .stateIn(ioCoroutineScope)
                 }
-                    .filter { !hideInLibraryItems || !it.value.favorite }
+                    .let { pd -> if (hideInLibraryItems) pd.filter { !it.value.favorite } else pd }
             }
                 .cachedIn(ioCoroutineScope)
         }
