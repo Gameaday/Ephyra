@@ -11,6 +11,7 @@ android {
 kotlin {
     compilerOptions {
         freeCompilerArgs.addAll(
+            "-opt-in=kotlinx.coroutines.DelicateCoroutinesApi",
             "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
             "-opt-in=kotlinx.serialization.ExperimentalSerializationApi",
         )

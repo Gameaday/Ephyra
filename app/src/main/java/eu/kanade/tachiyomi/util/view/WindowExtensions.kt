@@ -46,7 +46,7 @@ fun Activity.overrideTransitionCompat(overrideTransitionType: Int, enterAnim: In
  * boosting back to the high rate the moment the user touches or scrolls.
  */
 fun Window.applyHighRefreshRate() {
-    val display = context.display ?: return
+    val display = context.display
     val supportedModes = display.supportedModes
     if (supportedModes.isEmpty()) return
 
