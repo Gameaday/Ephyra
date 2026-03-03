@@ -14,12 +14,15 @@ import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.data.saver.Image
 import eu.kanade.tachiyomi.data.saver.ImageSaver
 import eu.kanade.tachiyomi.data.saver.Location
+import eu.kanade.tachiyomi.network.NetworkHelper
+import eu.kanade.tachiyomi.network.await
 import eu.kanade.tachiyomi.util.editCover
 import eu.kanade.tachiyomi.util.system.getBitmapOrNull
 import eu.kanade.tachiyomi.util.system.toShareIntent
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
+import okhttp3.Request
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.core.common.util.lang.withIOContext
@@ -145,36 +148,32 @@ class MangaCoverScreenModel(
     }
 
     /**
-     * Set cover from a URL by downloading the image and saving it as a custom cover.
+     * Set cover from a URL by downloading the original image bytes and saving
+     * them as a custom cover. Streams raw bytes directly to avoid any lossy
+     * bitmap decode/re-encode steps, preserving the original image format and
+     * full fidelity.
      *
      * @param context Context.
      * @param coverUrl URL of the cover image to download.
-     * @param sourceId ID of the source to use for network headers.
+     * @param sourceId ID of the source (unused, kept for API compatibility).
      */
-    fun setCoverFromUrl(context: Context, coverUrl: String, sourceId: Long) {
+    fun setCoverFromUrl(context: Context, coverUrl: String, @Suppress("UNUSED_PARAMETER") sourceId: Long) {
         val manga = state.value ?: return
         screenModelScope.launchIO {
             try {
-                val req = ImageRequest.Builder(context)
-                    .data(coverUrl)
-                    .size(Size.ORIGINAL)
-                    .build()
-                val result = context.imageLoader.execute(req)
-                val bitmap = result.image?.asDrawable(context.resources)?.getBitmapOrNull()
-                    ?: throw IllegalStateException("Failed to decode cover image")
-
-                val tempFile = java.io.File.createTempFile("cover", ".jpg", context.cacheDir)
-                try {
-                    tempFile.outputStream().use { output ->
-                        bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, output)
-                    }
-                    tempFile.inputStream().use { input ->
-                        manga.editCover(Injekt.get(), input, updateManga, coverCache)
-                    }
-                    notifyCoverUpdated(context)
-                } finally {
-                    tempFile.delete()
+                val networkHelper: NetworkHelper = Injekt.get()
+                val request = Request.Builder().url(coverUrl).build()
+                val response = networkHelper.client.newCall(request).await()
+                if (!response.isSuccessful) {
+                    response.close()
+                    throw IllegalStateException("Failed to download cover: ${response.code}")
                 }
+                val body = response.body
+
+                body.byteStream().use { input ->
+                    manga.editCover(Injekt.get(), input, updateManga, coverCache)
+                }
+                notifyCoverUpdated(context)
             } catch (e: Exception) {
                 notifyFailedCoverUpdate(context, e)
             }

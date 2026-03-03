@@ -18,6 +18,8 @@ import uy.kohesive.injekt.api.get
 /**
  * Screen model for searching cover images across sources.
  * Uses limited parallelism to be respectful of source server resources.
+ * Caches results in memory so reopening the search for the same manga
+ * does not trigger additional API calls.
  */
 class CoverSearchScreenModel(
     private val mangaTitle: String,
@@ -30,12 +32,40 @@ class CoverSearchScreenModel(
 
     /**
      * Search across all enabled catalogue sources for covers matching the manga title.
+     * Returns cached results if available to avoid redundant API calls.
      * Only fetches the first page and extracts thumbnail URLs to minimize network calls.
      */
     fun search() {
         val query = mangaTitle
         if (query.isBlank()) return
 
+        // Return cached results if available
+        val cached = coverResultsCache[query]
+        if (cached != null) {
+            mutableState.update {
+                it.copy(
+                    isLoading = false,
+                    results = cached,
+                    fromCache = true,
+                )
+            }
+            return
+        }
+
+        fetchFromSources(query)
+    }
+
+    /**
+     * Force a fresh search, bypassing the in-memory cache.
+     */
+    fun refresh() {
+        val query = mangaTitle
+        if (query.isBlank()) return
+        coverResultsCache.remove(query)
+        fetchFromSources(query)
+    }
+
+    private fun fetchFromSources(query: String) {
         searchJob?.cancel()
 
         val sources = sourceManager.getCatalogueSources()
@@ -48,6 +78,7 @@ class CoverSearchScreenModel(
                 results = emptyList(),
                 total = sources.size,
                 progress = 0,
+                fromCache = false,
             )
         }
 
@@ -92,6 +123,12 @@ class CoverSearchScreenModel(
                 }
             }.awaitAll()
 
+            // Cache results for future use
+            val results = state.value.results
+            if (results.isNotEmpty()) {
+                coverResultsCache[query] = results
+            }
+
             mutableState.update { it.copy(isLoading = false) }
         }
     }
@@ -107,7 +144,17 @@ class CoverSearchScreenModel(
         val results: List<CoverResult> = emptyList(),
         val progress: Int = 0,
         val total: Int = 0,
+        val fromCache: Boolean = false,
     )
+
+    companion object {
+        /**
+         * In-memory cache of cover search results keyed by manga title.
+         * Persists across screen model instances within the same app session,
+         * so reopening the cover search for the same manga is instant and free.
+         */
+        private val coverResultsCache = mutableMapOf<String, List<CoverResult>>()
+    }
 }
 
 @Immutable

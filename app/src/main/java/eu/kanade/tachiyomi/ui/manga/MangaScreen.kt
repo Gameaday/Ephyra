@@ -265,6 +265,7 @@ class MangaScreen(
                                 sm.setCoverFromUrl(context, cover.thumbnailUrl, cover.sourceId)
                                 showCoverSearch = false
                             },
+                            onRefresh = { coverSearchSm.refresh() },
                             onDismissRequest = { showCoverSearch = false },
                         )
                     } else {

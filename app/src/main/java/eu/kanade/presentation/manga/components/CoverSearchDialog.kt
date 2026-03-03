@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -44,6 +45,7 @@ import tachiyomi.presentation.core.i18n.stringResource
 fun CoverSearchDialog(
     state: CoverSearchScreenModel.State,
     onCoverSelected: (CoverResult) -> Unit,
+    onRefresh: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
     Scaffold(
@@ -58,6 +60,17 @@ fun CoverSearchDialog(
                             Icon(
                                 imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                                 contentDescription = stringResource(MR.strings.action_close),
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = onRefresh,
+                            enabled = !state.isLoading,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Refresh,
+                                contentDescription = stringResource(MR.strings.action_webview_refresh),
                             )
                         }
                     },
