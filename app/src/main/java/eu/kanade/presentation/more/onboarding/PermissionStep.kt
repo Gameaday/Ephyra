@@ -86,20 +86,18 @@ internal class PermissionStep : OnboardingStep {
                 },
             )
 
-            run {
-                val permissionRequester = rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.RequestPermission(),
-                    onResult = {
-                        // no-op. resulting checks is being done on resume
-                    },
-                )
-                PermissionCheckbox(
-                    title = stringResource(MR.strings.onboarding_permission_notifications),
-                    subtitle = stringResource(MR.strings.onboarding_permission_notifications_description),
-                    granted = notificationGranted,
-                    onButtonClick = { permissionRequester.launch(Manifest.permission.POST_NOTIFICATIONS) },
-                )
-            }
+            val permissionRequester = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.RequestPermission(),
+                onResult = {
+                    // no-op. resulting checks is being done on resume
+                },
+            )
+            PermissionCheckbox(
+                title = stringResource(MR.strings.onboarding_permission_notifications),
+                subtitle = stringResource(MR.strings.onboarding_permission_notifications_description),
+                granted = notificationGranted,
+                onButtonClick = { permissionRequester.launch(Manifest.permission.POST_NOTIFICATIONS) },
+            )
 
             PermissionCheckbox(
                 title = stringResource(MR.strings.onboarding_permission_ignore_battery_opts),
