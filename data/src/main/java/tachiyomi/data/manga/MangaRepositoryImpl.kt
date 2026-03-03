@@ -118,6 +118,16 @@ class MangaRepositoryImpl(
         }
     }
 
+    override suspend fun clearMetadataSource(mangaId: Long): Boolean {
+        return try {
+            handler.await { mangasQueries.clearMetadataSource(mangaId) }
+            true
+        } catch (e: Exception) {
+            logcat(LogPriority.ERROR, e)
+            false
+        }
+    }
+
     override suspend fun insertNetworkManga(manga: List<Manga>): List<Manga> {
         return handler.await(inTransaction = true) {
             manga.map {

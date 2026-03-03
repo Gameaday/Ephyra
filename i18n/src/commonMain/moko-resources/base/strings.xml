@@ -99,6 +99,7 @@
     <string name="delete_category_confirmation">Do you wish to delete the category \"%s\"?</string>
     <string name="delete_category">Delete category</string>
     <string name="action_edit_cover">Edit cover</string>
+    <string name="action_set_as_cover">Set as cover</string>
     <string name="action_search_cover">Search for cover</string>
     <string name="cover_search_source_count">%1$s (+%2$d)</string>
     <string name="action_set_metadata_source">Use source for metadata</string>

@@ -227,6 +227,11 @@ UPDATE mangas SET
     metadata_url = coalesce(:metadataUrl, metadata_url)
 WHERE _id = :mangaId;
 
+clearMetadataSource:
+UPDATE mangas
+SET metadata_source = NULL, metadata_url = NULL
+WHERE _id = :mangaId;
+
 selectLastInsertedRowId:
 SELECT last_insert_rowid();
 

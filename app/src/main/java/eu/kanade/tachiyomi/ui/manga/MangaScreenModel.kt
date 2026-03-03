@@ -332,13 +332,7 @@ class MangaScreenModel(
     fun clearMetadataSource() {
         val manga = successState?.manga ?: return
         screenModelScope.launchIO {
-            updateManga.await(
-                tachiyomi.domain.manga.model.MangaUpdate(
-                    id = manga.id,
-                    metadataSource = 0L,
-                    metadataUrl = "",
-                ),
-            )
+            mangaRepository.clearMetadataSource(manga.id)
             snackbarHostState.showSnackbar(
                 context.stringResource(MR.strings.metadata_source_cleared),
                 withDismissAction = true,

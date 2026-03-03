@@ -124,12 +124,24 @@ class CoverSearchScreenModel(
                                     )
                                 }
                             }
-                            .take(3) // Limit to 3 covers per source to reduce resource usage
 
-                        if (isActive && covers.isNotEmpty()) {
+                        // Take the best match (first result) per source.
+                        // Only include additional results from the same source if they
+                        // represent the same series (matching title) with a different cover.
+                        val bestMatch = covers.firstOrNull()
+                        val seriesCovers = if (bestMatch != null) {
+                            val normalizedTitle = bestMatch.mangaTitle.lowercase().trim()
+                            covers.filter {
+                                it.mangaTitle.lowercase().trim() == normalizedTitle
+                            }.distinctBy { it.thumbnailUrl }
+                        } else {
+                            emptyList()
+                        }
+
+                        if (isActive && seriesCovers.isNotEmpty()) {
                             mutableState.update { state ->
                                 state.copy(
-                                    results = deduplicateResults(state.results + covers),
+                                    results = deduplicateResults(state.results + seriesCovers),
                                     progress = state.progress + 1,
                                 )
                             }
