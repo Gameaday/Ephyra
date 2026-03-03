@@ -194,7 +194,7 @@ private fun CoverSearchItem(
                 onDismissRequest = { showMenu = false },
             ) {
                 DropdownMenuItem(
-                    text = { Text(text = stringResource(MR.strings.action_edit_cover)) },
+                    text = { Text(text = stringResource(MR.strings.action_set_as_cover)) },
                     onClick = {
                         showMenu = false
                         onClick()

@@ -23,6 +23,7 @@ import eu.kanade.domain.manga.interactor.UpdateManga
 import eu.kanade.domain.manga.model.chaptersFiltered
 import eu.kanade.domain.manga.model.downloadedFilter
 import eu.kanade.domain.manga.model.toSManga
+import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.domain.track.interactor.AddTracks
 import eu.kanade.domain.track.interactor.RefreshTracks
 import eu.kanade.domain.track.interactor.TrackChapter
@@ -174,10 +175,14 @@ class MangaScreenModel(
             ) { mangaAndChapters, _, _ -> mangaAndChapters }
                 .flowWithLifecycle(lifecycle)
                 .collectLatest { (manga, chapters) ->
+                    val metadataSourceName = manga.metadataSource?.takeIf { it > 0 }?.let { id ->
+                        Injekt.get<SourceManager>().get(id)?.name
+                    }
                     updateSuccessState {
                         it.copy(
                             manga = manga,
                             chapters = chapters.toChapterListItems(manga),
+                            metadataSourceName = metadataSourceName,
                         )
                     }
                 }
@@ -221,9 +226,13 @@ class MangaScreenModel(
 
             // Show what we have earlier
             mutableState.update {
+                val sourceManager = Injekt.get<SourceManager>()
+                val metadataSourceName = manga.metadataSource?.takeIf { it > 0 }?.let { id ->
+                    sourceManager.get(id)?.name
+                }
                 State.Success(
                     manga = manga,
-                    source = Injekt.get<SourceManager>().getOrStub(manga.source),
+                    source = sourceManager.getOrStub(manga.source),
                     isFromSource = isFromSource,
                     chapters = chapters,
                     availableScanlators = getAvailableScanlators.await(mangaId),
@@ -231,6 +240,7 @@ class MangaScreenModel(
                     isRefreshingData = needRefreshInfo || needRefreshChapter,
                     dialog = null,
                     hideMissingChapters = libraryPreferences.hideMissingChapters().get(),
+                    metadataSourceName = metadataSourceName,
                 )
             }
 
@@ -269,6 +279,7 @@ class MangaScreenModel(
      * Fetch manga information from source.
      * If a metadata source is configured, uses that for metadata instead of the chapter source.
      * The updateStrategy is preserved from the chapter source since it controls chapter fetching.
+     * If the metadata source fails, falls back to the chapter source automatically.
      */
     private suspend fun fetchMangaFromSource(manualFetch: Boolean = false) {
         val state = successState ?: return
@@ -278,19 +289,32 @@ class MangaScreenModel(
                 val metadataSourceId = manga.metadataSource?.takeIf { it > 0 }
                 val metadataUrl = manga.metadataUrl?.takeIf { it.isNotEmpty() }
                 val usingMetadataSource = metadataSourceId != null && metadataUrl != null
-                val (source, sManga) = if (usingMetadataSource) {
-                    val metaSrc = Injekt.get<SourceManager>().getOrStub(metadataSourceId!!)
-                    val sM = manga.toSManga().apply { url = metadataUrl!! }
-                    metaSrc to sM
-                } else {
-                    state.source to manga.toSManga()
-                }
-                val networkManga = source.getMangaDetails(sManga)
-                // When using a metadata source, preserve the chapter source's updateStrategy
-                // since it controls chapter fetching behavior, not metadata
+
+                var networkManga: SManga? = null
+
+                // Try metadata source first if configured
                 if (usingMetadataSource) {
-                    networkManga.update_strategy = manga.updateStrategy
+                    try {
+                        val msId = metadataSourceId ?: error("unreachable")
+                        val msUrl = metadataUrl ?: error("unreachable")
+                        val metaSrc = Injekt.get<SourceManager>().getOrStub(msId)
+                        val sM = manga.toSManga().apply { url = msUrl }
+                        networkManga = metaSrc.getMangaDetails(sM).also {
+                            // Preserve the chapter source's updateStrategy
+                            it.update_strategy = manga.updateStrategy
+                        }
+                    } catch (e: Throwable) {
+                        logcat(LogPriority.WARN, e) {
+                            "Metadata source failed for ${manga.title}, falling back to chapter source"
+                        }
+                    }
                 }
+
+                // Fall back to chapter source if metadata source wasn't used or failed
+                if (networkManga == null) {
+                    networkManga = state.source.getMangaDetails(manga.toSManga())
+                }
+
                 updateManga.awaitUpdateFromSource(manga, networkManga, manualFetch)
             }
         } catch (e: Throwable) {
@@ -1195,6 +1219,7 @@ class MangaScreenModel(
             val dialog: Dialog? = null,
             val hasPromptedToAddBefore: Boolean = false,
             val hideMissingChapters: Boolean = false,
+            val metadataSourceName: String? = null,
         ) : State {
             val processedChapters by lazy {
                 chapters.applyFilters(manga).toList()

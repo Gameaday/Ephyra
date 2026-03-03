@@ -385,6 +385,7 @@ private fun MangaScreenSmallImpl(
                             manga = state.manga,
                             sourceName = remember { state.source.getNameForMangaInfo() },
                             isStubSource = remember { state.source is StubSource },
+                            metadataSourceName = state.metadataSourceName,
                             onCoverClick = onCoverClicked,
                             doSearch = onSearch,
                         )
@@ -623,6 +624,7 @@ fun MangaScreenLargeImpl(
                             manga = state.manga,
                             sourceName = remember { state.source.getNameForMangaInfo() },
                             isStubSource = remember { state.source is StubSource },
+                            metadataSourceName = state.metadataSourceName,
                             onCoverClick = onCoverClicked,
                             doSearch = onSearch,
                         )
