@@ -148,6 +148,9 @@ sealed class Image(
         val bitmap: Bitmap,
         override val name: String,
         override val location: Location,
+        val encoder: (Bitmap, java.io.OutputStream) -> Unit = { bmp, os ->
+            bmp.compress(Bitmap.CompressFormat.PNG, 100, os)
+        },
     ) : Image(name, location)
 
     data class Page(
@@ -162,7 +165,7 @@ sealed class Image(
                 is Cover -> {
                     {
                         val buffer = Buffer()
-                        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, buffer.outputStream())
+                        encoder(bitmap, buffer.outputStream())
                         buffer.inputStream()
                     }
                 }

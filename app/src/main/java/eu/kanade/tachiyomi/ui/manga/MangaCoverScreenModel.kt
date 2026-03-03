@@ -14,19 +14,26 @@ import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.data.saver.Image
 import eu.kanade.tachiyomi.data.saver.ImageSaver
 import eu.kanade.tachiyomi.data.saver.Location
+import eu.kanade.tachiyomi.network.NetworkHelper
+import eu.kanade.tachiyomi.network.await
+import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.util.editCover
+import eu.kanade.tachiyomi.util.system.encoder
 import eu.kanade.tachiyomi.util.system.getBitmapOrNull
 import eu.kanade.tachiyomi.util.system.toShareIntent
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
+import okhttp3.Request
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.core.common.util.lang.withIOContext
 import tachiyomi.core.common.util.lang.withUIContext
 import tachiyomi.core.common.util.system.logcat
+import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.domain.manga.interactor.GetManga
 import tachiyomi.domain.manga.model.Manga
+import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.i18n.MR
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
@@ -86,6 +93,10 @@ class MangaCoverScreenModel(
     /**
      * Save manga cover Bitmap to picture or temporary share directory.
      *
+     * When sharing (temp = true), always uses PNG for universal compatibility.
+     * When saving to Pictures, uses the user's preferred [LibraryPreferences.ImageFormat]
+     * (WebP lossless by default) for efficient storage.
+     *
      * @param context The context for building and executing the ImageRequest
      * @return the uri to saved file
      */
@@ -95,6 +106,14 @@ class MangaCoverScreenModel(
             .data(manga)
             .size(Size.ORIGINAL)
             .build()
+
+        val libraryPreferences: LibraryPreferences = Injekt.get()
+        // Shares always use PNG for compatibility; internal saves use user's preferred format
+        val encoder: (android.graphics.Bitmap, java.io.OutputStream) -> Unit = if (temp) {
+            { bmp, os -> bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, os) }
+        } else {
+            libraryPreferences.imageFormat().get().encoder()
+        }
 
         return withIOContext {
             val result = context.imageLoader.execute(req).image?.asDrawable(context.resources)
@@ -106,6 +125,7 @@ class MangaCoverScreenModel(
                     bitmap = bitmap,
                     name = manga.title,
                     location = if (temp) Location.Cache else Location.Pictures.create(),
+                    encoder = encoder,
                 ),
             )
         }
@@ -137,6 +157,47 @@ class MangaCoverScreenModel(
             try {
                 coverCache.deleteCustomCover(mangaId)
                 updateManga.awaitUpdateCoverLastModified(mangaId)
+                notifyCoverUpdated(context)
+            } catch (e: Exception) {
+                notifyFailedCoverUpdate(context, e)
+            }
+        }
+    }
+
+    /**
+     * Set cover from a URL by downloading the image and saving it as a custom cover.
+     * The raw bytes from the source are always streamed directly to preserve the original
+     * format. The [ImageFormat] preference only affects *derived* images (splits, merges,
+     * save/share); custom covers are stored as received to maintain byte-for-byte fidelity.
+     *
+     * Uses [sourceId] to look up the [HttpSource] and apply its headers/client so that
+     * sources requiring Referer/User-Agent/cookies work correctly.
+     *
+     * @param context Context.
+     * @param coverUrl URL of the cover image to download.
+     * @param sourceId ID of the source that owns this cover URL.
+     */
+    fun setCoverFromUrl(context: Context, coverUrl: String, sourceId: Long) {
+        val manga = state.value ?: return
+        screenModelScope.launchIO {
+            try {
+                val sourceManager: SourceManager = Injekt.get()
+                val source = sourceManager.get(sourceId)
+                val httpSource = source as? HttpSource
+                val client = httpSource?.client ?: Injekt.get<NetworkHelper>().client
+                val request = Request.Builder()
+                    .url(coverUrl)
+                    .apply { httpSource?.headers?.let { headers(it) } }
+                    .build()
+                val response = client.newCall(request).await()
+                response.use { resp ->
+                    if (!resp.isSuccessful) {
+                        throw IllegalStateException("Failed to download cover: ${resp.code}")
+                    }
+                    resp.body.byteStream().use { input ->
+                        manga.editCover(Injekt.get(), input, updateManga, coverCache)
+                    }
+                }
                 notifyCoverUpdated(context)
             } catch (e: Exception) {
                 notifyFailedCoverUpdate(context, e)

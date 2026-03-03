@@ -10,7 +10,10 @@ import tachiyomi.core.common.preference.Preference
 /**
  * Common configuration for all viewers.
  */
-abstract class ViewerConfig(readerPreferences: ReaderPreferences, private val scope: CoroutineScope) {
+abstract class ViewerConfig(
+    readerPreferences: ReaderPreferences,
+    private val scope: CoroutineScope,
+) {
 
     var imagePropertyChangedListener: (() -> Unit)? = null
 

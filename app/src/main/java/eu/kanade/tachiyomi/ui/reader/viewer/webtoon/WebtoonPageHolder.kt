@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi.ui.reader.viewer.webtoon
 
 import android.content.res.Resources
+import android.graphics.Bitmap
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
@@ -183,6 +184,11 @@ class WebtoonPageHolder(
 
     /**
      * Called when the page is ready.
+     *
+     * Two render paths:
+     * - **Bitmap path** (transform applied): the [Bitmap] goes directly to SSIV.
+     * - **Source path** (no transform): the raw [BufferedSource] enables tiled decoding or
+     *   Coil-based decode in webtoon mode.
      */
     private suspend fun setImage() {
         progressIndicator.setProgress(0)
@@ -190,21 +196,23 @@ class WebtoonPageHolder(
         val streamFn = page?.stream ?: return
 
         try {
-            val (source, isAnimated) = withIOContext {
-                val source = streamFn().use { process(Buffer().readFrom(it)) }
-                val isAnimated = ImageUtil.isAnimatedAndSupported(source)
-                Pair(source, isAnimated)
+            val (source, bitmap, isAnimated) = withIOContext {
+                val source = streamFn().use { Buffer().readFrom(it) }
+                val bitmap = process(source)
+                val isAnimated = bitmap == null && ImageUtil.isAnimatedAndSupported(source)
+                Triple(source, bitmap, isAnimated)
             }
             withUIContext {
-                frame.setImage(
-                    source,
-                    isAnimated,
-                    ReaderPageImageView.Config(
-                        zoomDuration = viewer.config.doubleTapAnimDuration,
-                        minimumScaleType = SubsamplingScaleImageView.SCALE_TYPE_FIT_WIDTH,
-                        cropBorders = viewer.config.imageCropBorders,
-                    ),
+                val config = ReaderPageImageView.Config(
+                    zoomDuration = viewer.config.doubleTapAnimDuration,
+                    minimumScaleType = SubsamplingScaleImageView.SCALE_TYPE_FIT_WIDTH,
+                    cropBorders = viewer.config.imageCropBorders,
                 )
+                if (bitmap != null) {
+                    frame.setImage(bitmap, config)
+                } else {
+                    frame.setImage(source, isAnimated, config)
+                }
                 removeErrorLayout()
             }
         } catch (e: Throwable) {
@@ -215,7 +223,11 @@ class WebtoonPageHolder(
         }
     }
 
-    private fun process(imageSource: BufferedSource): BufferedSource {
+    /**
+     * Apply reader transforms. Returns a [Bitmap] if a transform was applied,
+     * or `null` if the original source should be used as-is.
+     */
+    private fun process(imageSource: BufferedSource): Bitmap? {
         if (viewer.config.dualPageRotateToFit) {
             val degrees = if (viewer.config.dualPageRotateToFitInvert) -90f else 90f
             return ImageUtil.rotateDualPageIfWide(imageSource, degrees)
@@ -229,7 +241,7 @@ class WebtoonPageHolder(
             }
         }
 
-        return imageSource
+        return null
     }
 
     /**

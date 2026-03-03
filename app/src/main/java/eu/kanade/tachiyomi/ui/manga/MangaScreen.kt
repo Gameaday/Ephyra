@@ -32,6 +32,7 @@ import eu.kanade.presentation.manga.ChapterSettingsDialog
 import eu.kanade.presentation.manga.DuplicateMangaDialog
 import eu.kanade.presentation.manga.EditCoverAction
 import eu.kanade.presentation.manga.MangaScreen
+import eu.kanade.presentation.manga.components.CoverSearchDialog
 import eu.kanade.presentation.manga.components.DeleteChaptersDialog
 import eu.kanade.presentation.manga.components.MangaCoverDialog
 import eu.kanade.presentation.manga.components.ScanlatorFilterDialog
@@ -248,20 +249,44 @@ class MangaScreen(
                         if (it == null) return@rememberLauncherForActivityResult
                         sm.editCover(context, it)
                     }
-                    MangaCoverDialog(
-                        manga = manga!!,
-                        snackbarHostState = sm.snackbarHostState,
-                        isCustomCover = remember(manga) { manga!!.hasCustomCover() },
-                        onShareClick = { sm.shareCover(context) },
-                        onSaveClick = { sm.saveCover(context) },
-                        onEditClick = {
-                            when (it) {
-                                EditCoverAction.EDIT -> getContent.launch("image/*")
-                                EditCoverAction.DELETE -> sm.deleteCustomCover(context)
-                            }
-                        },
-                        onDismissRequest = onDismissRequest,
-                    )
+                    var showCoverSearch by remember { mutableStateOf(false) }
+                    if (showCoverSearch) {
+                        val coverSearchSm = rememberScreenModel {
+                            CoverSearchScreenModel(
+                                mangaTitle = manga!!.title,
+                                currentSourceId = successState.source.id,
+                            )
+                        }
+                        val coverSearchState by coverSearchSm.state.collectAsState()
+                        LaunchedEffect(Unit) { coverSearchSm.search() }
+                        CoverSearchDialog(
+                            state = coverSearchState,
+                            onCoverSelected = { cover ->
+                                sm.setCoverFromUrl(context, cover.thumbnailUrl, cover.sourceId)
+                                showCoverSearch = false
+                            },
+                            onRefresh = { coverSearchSm.refresh() },
+                            onDismissRequest = { showCoverSearch = false },
+                        )
+                    } else {
+                        MangaCoverDialog(
+                            manga = manga!!,
+                            snackbarHostState = sm.snackbarHostState,
+                            isCustomCover = remember(manga) { manga!!.hasCustomCover() },
+                            onShareClick = { sm.shareCover(context) },
+                            onSaveClick = { sm.saveCover(context) },
+                            onEditClick = {
+                                when (it) {
+                                    EditCoverAction.EDIT -> getContent.launch("image/*")
+                                    EditCoverAction.DELETE -> sm.deleteCustomCover(context)
+                                    EditCoverAction.SEARCH -> {
+                                        showCoverSearch = true
+                                    }
+                                }
+                            },
+                            onDismissRequest = onDismissRequest,
+                        )
+                    }
                 } else {
                     LoadingScreen(Modifier.systemBarsPadding())
                 }

@@ -15,6 +15,7 @@ import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
 import eu.kanade.tachiyomi.util.storage.DiskUtil
 import eu.kanade.tachiyomi.util.storage.DiskUtil.NOMEDIA_FILE
 import eu.kanade.tachiyomi.util.storage.saveTo
+import eu.kanade.tachiyomi.util.system.encoder
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -55,6 +56,7 @@ import tachiyomi.core.metadata.comicinfo.ComicInfo
 import tachiyomi.domain.category.interactor.GetCategories
 import tachiyomi.domain.chapter.model.Chapter
 import tachiyomi.domain.download.service.DownloadPreferences
+import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.domain.track.interactor.GetTracks
@@ -78,6 +80,7 @@ class Downloader(
     private val chapterCache: ChapterCache = Injekt.get(),
     private val downloadPreferences: DownloadPreferences = Injekt.get(),
     private val readerPreferences: ReaderPreferences = Injekt.get(),
+    private val libraryPreferences: LibraryPreferences = Injekt.get(),
     private val xml: XML = Injekt.get(),
     private val getCategories: GetCategories = Injekt.get(),
     private val getTracks: GetTracks = Injekt.get(),
@@ -560,6 +563,16 @@ class Downloader(
         return ImageUtil.getExtensionFromMimeType(mime) { file.openInputStream() }
     }
 
+    /**
+     * Returns the encoder function and file extension for the user's preferred image format.
+     * Used by every code path that creates a derived (split / merged / rotated) image so
+     * that all such images within a chapter use the same format.
+     */
+    private fun derivedImageEncoder(): Pair<(android.graphics.Bitmap, java.io.OutputStream) -> Unit, String> {
+        val fmt = libraryPreferences.imageFormat().get()
+        return fmt.encoder() to fmt.extension
+    }
+
     private fun splitTallImageIfNeeded(page: Page, tmpDir: UniFile) {
         if (!downloadPreferences.splitTallImages().get()) return
 
@@ -571,7 +584,8 @@ class Downloader(
             // If the original page was previously split, then skip
             if (imageFile.name.orEmpty().startsWith("${filenamePrefix}__")) return
 
-            ImageUtil.splitTallImage(tmpDir, imageFile, filenamePrefix)
+            val (encoder, ext) = derivedImageEncoder()
+            ImageUtil.splitTallImage(tmpDir, imageFile, filenamePrefix, encoder, ext)
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e) { "Failed to split downloaded image" }
         }
@@ -580,7 +594,7 @@ class Downloader(
     /**
      * After all pages are downloaded and verified, merges consecutive stub pages (narrow
      * watermark strips) into the preceding page using the same smart-combine logic as the
-     * reader. The merged result is written as a JPEG back to the preceding page's file; the
+     * reader. The merged result uses the user's preferred [ImageFormat]; the
      * stub file is deleted so the saved chapter has the correct final page count immediately.
      *
      * Only runs when [ReaderPreferences.smartCombinePaged] is enabled. Stub detection uses
@@ -592,10 +606,12 @@ class Downloader(
     private fun mergeStubPagesInDownload(tmpDir: UniFile) {
         if (!readerPreferences.smartCombinePaged().get()) return
 
+        val (encoder, ext) = derivedImageEncoder()
+
         // Build a sorted mutable list of primary page image files, excluding:
         //  • temporary files (.tmp)
         //  • metadata files (ComicInfo.xml, .nomedia)
-        //  • secondary split pages (e.g. "001__002.jpg") — first split ("001__001.jpg") is kept
+        //  • secondary split pages (e.g. "001__002.webp") — first split ("001__001.webp") is kept
         val pageFiles = tmpDir.listFiles()
             ?.filter { file ->
                 val name = file.name.orEmpty()
@@ -633,27 +649,28 @@ class Downloader(
                 // Stub confirmed: open the next page again for full bitmap decode and merge.
                 // currentSource still holds all its data (peek() was used above).
                 val nextSource = next.openInputStream().use { Buffer().readFrom(it) }
-                val mergedBytes = ImageUtil.mergePages(currentSource, nextSource).readByteArray()
+                val mergedBitmap = ImageUtil.mergePages(currentSource, nextSource)
 
-                // Write the merged JPEG to a temp file, swap it in for the current file,
+                // Write the merged image to a temp file, swap it in for the current file,
                 // and delete the stub.  Using a temp file prevents data loss if the write fails.
                 val baseName = current.name!!.substringBeforeLast(".")
-                val mergedTmp = tmpDir.createFile("$baseName.jpg.tmp")
+                val mergedTmp = tmpDir.createFile("$baseName.$ext.tmp")
                     ?: throw IOException("Could not create temp file for merged stub page")
-                mergedTmp.openOutputStream().use { it.write(mergedBytes) }
+                mergedTmp.openOutputStream().use { encoder(mergedBitmap, it) }
+                mergedBitmap.recycle()
                 current.delete()
                 next.delete()
                 pageFiles.removeAt(i + 1)
-                mergedTmp.renameTo("$baseName.jpg")
+                mergedTmp.renameTo("$baseName.$ext")
                 // Update our list to point to the freshly renamed file so the next
                 // iteration can check the merged page against the new next page.
-                val mergedFile = tmpDir.findFile("$baseName.jpg")
+                val mergedFile = tmpDir.findFile("$baseName.$ext")
                 if (mergedFile != null) {
                     pageFiles[i] = mergedFile
                     // Do NOT increment i — check the merged page against the new next page
                 } else {
                     // Rename succeeded but we cannot locate the file — unusual; skip forward
-                    logcat(LogPriority.WARN) { "Could not locate merged file $baseName.jpg after rename; skipping" }
+                    logcat(LogPriority.WARN) { "Could not locate merged file $baseName.$ext after rename; skipping" }
                     i++
                 }
             } catch (e: Exception) {
@@ -690,7 +707,7 @@ class Downloader(
                 fileName in listOf(COMIC_INFO_FILE, NOMEDIA_FILE) -> false
                 fileName.endsWith(".tmp") -> false
                 // Only count the first split page and not the others
-                fileName.contains("__") && !fileName.endsWith("__001.jpg") -> false
+                fileName.contains("__") && !fileName.contains("__001.") -> false
                 else -> true
             }
         }

@@ -12,6 +12,7 @@ enum class DownloadAction {
 enum class EditCoverAction {
     EDIT,
     DELETE,
+    SEARCH,
 }
 
 enum class MangaScreenItem {

@@ -196,11 +196,47 @@ class LibraryPreferences(
 
     // endregion
 
+    // region Image Format
+
+    /**
+     * User preference for the lossless image format used when the app creates derived images
+     * (cover saves/shares, tall-image splits, page merges, rotations, etc.).
+     *
+     * This does **not** affect untouched downloads: pages that arrive from the source in their
+     * original format are always stored as-is.  The preference only applies when the app must
+     * produce a new bitmap (e.g. splitting a tall image into parts).
+     *
+     * Having a single, app-wide setting ensures **format consistency** within a chapter —
+     * every derived image uses the same container.
+     */
+    fun imageFormat() = preferenceStore.getEnum("pref_image_format", ImageFormat.WEBP)
+
+    // endregion
+
     enum class ChapterSwipeAction {
         ToggleRead,
         ToggleBookmark,
         Download,
         Disabled,
+    }
+
+    /**
+     * Lossless image format for derived images (splits, merges, cover saves).
+     *
+     * Both options are **lossless** — pixel-identical to the decoded source.
+     * Derived images start from already-compressed data, so lossy re-encoding
+     * would introduce generational quality loss for marginal size benefit.
+     *
+     * WebP lossless is the default: it has hardware-accelerated decoding on all
+     * Android devices, produces files ~25 % smaller than PNG, and encodes quickly
+     * using the platform's native codec.  PNG is offered for maximum compatibility.
+     *
+     * @property extension file extension (without dot)
+     * @property mime      MIME type
+     */
+    enum class ImageFormat(val extension: String, val mime: String) {
+        WEBP("webp", "image/webp"),
+        PNG("png", "image/png"),
     }
 
     companion object {

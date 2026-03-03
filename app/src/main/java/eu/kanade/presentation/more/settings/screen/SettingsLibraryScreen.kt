@@ -59,6 +59,7 @@ object SettingsLibraryScreen : SearchableSettings {
         return listOf(
             getCategoriesGroup(LocalNavigator.currentOrThrow, allCategories, libraryPreferences),
             getGlobalUpdateGroup(allCategories, libraryPreferences),
+            getCoverQualityGroup(libraryPreferences),
             getBehaviorGroup(libraryPreferences),
         )
     }
@@ -207,6 +208,28 @@ object SettingsLibraryScreen : SearchableSettings {
                 Preference.PreferenceItem.SwitchPreference(
                     preference = libraryPreferences.newShowUpdatesCount(),
                     title = stringResource(MR.strings.pref_library_update_show_tab_badge),
+                ),
+            ),
+        )
+    }
+
+    @Composable
+    private fun getCoverQualityGroup(
+        libraryPreferences: LibraryPreferences,
+    ): Preference.PreferenceGroup {
+        return Preference.PreferenceGroup(
+            title = stringResource(MR.strings.pref_image_format),
+            preferenceItems = persistentListOf(
+                Preference.PreferenceItem.ListPreference(
+                    preference = libraryPreferences.imageFormat(),
+                    entries = persistentMapOf(
+                        LibraryPreferences.ImageFormat.WEBP to
+                            stringResource(MR.strings.image_format_webp),
+                        LibraryPreferences.ImageFormat.PNG to
+                            stringResource(MR.strings.image_format_png),
+                    ),
+                    title = stringResource(MR.strings.pref_image_format),
+                    subtitle = stringResource(MR.strings.pref_image_format_summary),
                 ),
             ),
         )

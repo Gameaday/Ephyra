@@ -12,7 +12,6 @@ import android.graphics.Rect
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
-import android.os.Build
 import androidx.annotation.ColorInt
 import androidx.core.graphics.alpha
 import androidx.core.graphics.applyCanvas
@@ -26,9 +25,9 @@ import eu.kanade.tachiyomi.util.system.GLUtil
 import logcat.LogPriority
 import okio.Buffer
 import okio.BufferedSource
-import tachiyomi.decoder.Format
-import tachiyomi.decoder.ImageDecoder
 import java.io.InputStream
+import java.io.OutputStream
+import java.nio.ByteBuffer
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.max
@@ -49,16 +48,8 @@ object ImageUtil {
 
     fun findImageType(stream: InputStream): ImageType? {
         return try {
-            when (getImageType(stream)?.format) {
-                Format.Avif -> ImageType.AVIF
-                Format.Gif -> ImageType.GIF
-                Format.Heif -> ImageType.HEIF
-                Format.Jpeg -> ImageType.JPEG
-                Format.Jxl -> ImageType.JXL
-                Format.Png -> ImageType.PNG
-                Format.Webp -> ImageType.WEBP
-                else -> null
-            }
+            val bytes = readMagicBytes(stream) ?: return null
+            detectImageType(bytes)
         } catch (e: Exception) {
             null
         }
@@ -71,14 +62,12 @@ object ImageUtil {
 
     fun isAnimatedAndSupported(source: BufferedSource): Boolean {
         return try {
-            val type = getImageType(source.peek().inputStream()) ?: return false
-            // https://coil-kt.github.io/coil/getting_started/#supported-image-formats
-            when (type.format) {
-                Format.Gif -> true
-                // Animated WebP supported from Android 9 (our minimum)
-                Format.Webp -> type.isAnimated
-                // Animated HEIF supported from Android 11 (our minimum)
-                Format.Heif -> type.isAnimated
+            val bytes = readMagicBytes(source.peek().inputStream()) ?: return false
+            val type = detectImageType(bytes) ?: return false
+            when (type) {
+                ImageType.GIF -> true
+                ImageType.WEBP -> isAnimatedWebP(bytes)
+                ImageType.HEIF -> isAnimatedHeif(bytes)
                 else -> false
             }
         } catch (e: Exception) {
@@ -86,21 +75,155 @@ object ImageUtil {
         }
     }
 
-    private fun getImageType(stream: InputStream): tachiyomi.decoder.ImageType? {
+    /**
+     * Read up to 32 bytes from [stream] for magic-byte detection.
+     * If the stream supports mark/reset the position is restored.
+     */
+    private fun readMagicBytes(stream: InputStream): ByteArray? {
         val bytes = ByteArray(32)
-
         val length = if (stream.markSupported()) {
             stream.mark(bytes.size)
             stream.read(bytes, 0, bytes.size).also { stream.reset() }
         } else {
             stream.read(bytes, 0, bytes.size)
         }
+        return if (length == -1) null else bytes
+    }
 
-        if (length == -1) {
-            return null
+    /**
+     * Detect image type from the first 32 bytes of the file using magic byte signatures.
+     */
+    private fun detectImageType(bytes: ByteArray): ImageType? {
+        // PNG: 89 50 4E 47 0D 0A 1A 0A
+        if (bytes.size >= 8 &&
+            bytes[0] == 0x89.toByte() && bytes[1] == 0x50.toByte() &&
+            bytes[2] == 0x4E.toByte() && bytes[3] == 0x47.toByte() &&
+            bytes[4] == 0x0D.toByte() && bytes[5] == 0x0A.toByte() &&
+            bytes[6] == 0x1A.toByte() && bytes[7] == 0x0A.toByte()
+        ) {
+            return ImageType.PNG
         }
 
-        return ImageDecoder.findType(bytes)
+        // GIF: "GIF87a" or "GIF89a"
+        if (bytes.size >= 6 &&
+            bytes[0] == 0x47.toByte() && bytes[1] == 0x49.toByte() &&
+            bytes[2] == 0x46.toByte() && bytes[3] == 0x38.toByte() &&
+            (bytes[4] == 0x37.toByte() || bytes[4] == 0x39.toByte()) &&
+            bytes[5] == 0x61.toByte()
+        ) {
+            return ImageType.GIF
+        }
+
+        // JPEG: FF D8 FF
+        if (bytes.size >= 3 &&
+            bytes[0] == 0xFF.toByte() && bytes[1] == 0xD8.toByte() &&
+            bytes[2] == 0xFF.toByte()
+        ) {
+            return ImageType.JPEG
+        }
+
+        // WebP: "RIFF" at 0..3 and "WEBP" at 8..11
+        if (bytes.size >= 12 &&
+            bytes[0] == 0x52.toByte() && bytes[1] == 0x49.toByte() &&
+            bytes[2] == 0x46.toByte() && bytes[3] == 0x46.toByte() &&
+            bytes[8] == 0x57.toByte() && bytes[9] == 0x45.toByte() &&
+            bytes[10] == 0x42.toByte() && bytes[11] == 0x50.toByte()
+        ) {
+            return ImageType.WEBP
+        }
+
+        // JXL: FF 0A (bare codestream) or 00 00 00 0C 4A 58 4C 20 (ISOBMFF container)
+        if (bytes.size >= 2 && bytes[0] == 0xFF.toByte() && bytes[1] == 0x0A.toByte()) {
+            return ImageType.JXL
+        }
+        if (bytes.size >= 12 &&
+            bytes[0] == 0x00.toByte() && bytes[1] == 0x00.toByte() &&
+            bytes[2] == 0x00.toByte() && bytes[3] == 0x0C.toByte() &&
+            bytes[4] == 0x4A.toByte() && bytes[5] == 0x58.toByte() &&
+            bytes[6] == 0x4C.toByte() && bytes[7] == 0x20.toByte() &&
+            bytes[8] == 0x0D.toByte() && bytes[9] == 0x0A.toByte() &&
+            bytes[10] == 0x87.toByte() && bytes[11] == 0x0A.toByte()
+        ) {
+            return ImageType.JXL
+        }
+
+        // AVIF / HEIF: ISOBMFF boxes — "ftyp" at offset 4, scan major + compatible brands
+        if (bytes.size >= 12 &&
+            bytes[4] == 0x66.toByte() && bytes[5] == 0x74.toByte() &&
+            bytes[6] == 0x79.toByte() && bytes[7] == 0x70.toByte()
+        ) {
+            return detectIsobmffType(bytes)
+        }
+
+        return null
+    }
+
+    /**
+     * Check if the WebP image (from its first 32 bytes) is animated.
+     * Animated WebP uses "VP8X" chunk with the animation flag (bit 1 of byte 20).
+     */
+    private fun isAnimatedWebP(bytes: ByteArray): Boolean {
+        if (bytes.size < 21) return false
+        // VP8X chunk starts at byte 12: "VP8X"
+        if (bytes[12] == 0x56.toByte() && bytes[13] == 0x50.toByte() &&
+            bytes[14] == 0x38.toByte() && bytes[15] == 0x58.toByte()
+        ) {
+            // Byte 20 is the VP8X flags; bit 1 = animation
+            return (bytes[20].toInt() and 0x02) != 0
+        }
+        return false
+    }
+
+    /**
+     * Check if the HEIF/AVIF image is animated by scanning the ftyp box for
+     * sequence brands (`avis`, `msf1`) in both major and compatible brand lists.
+     */
+    private fun isAnimatedHeif(bytes: ByteArray): Boolean {
+        if (bytes.size < 12) return false
+        val animationBrands = setOf("avis", "msf1")
+        return collectFtypBrands(bytes).any { it in animationBrands }
+    }
+
+    /**
+     * Detect AVIF vs HEIF by scanning both the major brand and all compatible brands
+     * from the ISOBMFF `ftyp` box. Many files use a generic major brand like `mif1`
+     * with the actual format brand (e.g. `avif`, `heic`) only in compatible brands.
+     */
+    private fun detectIsobmffType(bytes: ByteArray): ImageType? {
+        val avifBrands = setOf("avif", "avis")
+        val heifBrands = setOf("heic", "heix", "hevc", "hevx", "mif1", "msf1")
+        val brands = collectFtypBrands(bytes)
+        // Check AVIF first — a file that lists both avif and mif1 is AVIF
+        if (brands.any { it in avifBrands }) return ImageType.AVIF
+        if (brands.any { it in heifBrands }) return ImageType.HEIF
+        return null
+    }
+
+    /**
+     * Collect all 4-byte brand strings from an ISOBMFF `ftyp` box:
+     * major brand (bytes 8..11) plus every compatible brand (bytes 16..N).
+     * Callers must have verified `ftyp` signature at bytes 4..7.
+     */
+    private fun collectFtypBrands(bytes: ByteArray): List<String> {
+        // Box size is a big-endian uint32 at bytes 0..3
+        val boxSize = ((bytes[0].toInt() and 0xFF) shl 24) or
+            ((bytes[1].toInt() and 0xFF) shl 16) or
+            ((bytes[2].toInt() and 0xFF) shl 8) or
+            (bytes[3].toInt() and 0xFF)
+        // Clamp to available data
+        val end = minOf(boxSize, bytes.size)
+        return buildList {
+            // Major brand at offset 8
+            if (bytes.size >= 12) {
+                add(String(bytes, 8, 4, Charsets.ISO_8859_1))
+            }
+            // Compatible brands start at offset 16, each 4 bytes
+            var offset = 16
+            while (offset + 4 <= end) {
+                add(String(bytes, offset, 4, Charsets.ISO_8859_1))
+                offset += 4
+            }
+        }
     }
 
     enum class ImageType(val mime: String, val extension: String) {
@@ -124,52 +247,57 @@ object ImageUtil {
     }
 
     /**
-     * Extract the 'side' part from [BufferedSource] and return it as [BufferedSource].
+     * Lossless encoder used only for **persistent** disk operations (download tall-image splits).
+     *
+     * Reader transforms (split, rotate, merge) return [Bitmap] directly — no encoding is
+     * needed since [SubsamplingScaleImageView] accepts bitmaps via [ImageSource.bitmap].
+     *
+     * Callers that persist to disk should supply their own encoder via
+     * [ImageFormat.encoder()][tachiyomi.domain.library.service.LibraryPreferences.ImageFormat].
      */
-    fun splitInHalf(imageSource: BufferedSource, side: Side): BufferedSource {
-        val imageBitmap = BitmapFactory.decodeStream(imageSource.inputStream())
-        val height = imageBitmap.height
-        val width = imageBitmap.width
-
-        val singlePage = Rect(0, 0, width / 2, height)
-
-        val half = createBitmap(width / 2, height)
-        val part = when (side) {
-            Side.RIGHT -> Rect(width - width / 2, 0, width, height)
-            Side.LEFT -> Rect(0, 0, width / 2, height)
-        }
-        half.applyCanvas {
-            drawBitmap(imageBitmap, part, singlePage, null)
-        }
-        imageBitmap.recycle()
-        val output = Buffer()
-        half.compress(Bitmap.CompressFormat.PNG, 100, output.outputStream())
-        half.recycle()
-
-        return output
-    }
-
-    fun rotateImage(imageSource: BufferedSource, degrees: Float): BufferedSource {
-        val imageBitmap = BitmapFactory.decodeStream(imageSource.inputStream())
-        val rotated = rotateBitMap(imageBitmap, degrees)
-        imageBitmap.recycle()
-
-        val output = Buffer()
-        rotated.compress(Bitmap.CompressFormat.PNG, 100, output.outputStream())
-        rotated.recycle()
-
-        return output
+    val defaultEncoder: (Bitmap, OutputStream) -> Unit = { bitmap, os ->
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, os)
     }
 
     /**
-     * If [imageSource] is a wide (double-page spread) image, rotate it by [degrees];
-     * otherwise return [imageSource] unchanged.
+     * Extract the [side] half from [imageSource] and return it as a [Bitmap].
      *
-     * @param degrees rotation angle in degrees; positive values rotate clockwise,
-     * negative values rotate counter-clockwise.
+     * Uses [android.graphics.ImageDecoder] with [setCrop][android.graphics.ImageDecoder.setCrop]
+     * so only the requested half is decoded — halving peak memory compared to decoding the
+     * full image and copying pixels with [Canvas].
      */
-    fun rotateDualPageIfWide(imageSource: BufferedSource, degrees: Float): BufferedSource =
-        if (isWideImage(imageSource)) rotateImage(imageSource, degrees) else imageSource
+    fun splitInHalf(imageSource: BufferedSource, side: Side): Bitmap {
+        val bytes = imageSource.readByteArray()
+        val source = android.graphics.ImageDecoder.createSource(ByteBuffer.wrap(bytes))
+        return android.graphics.ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
+            val width = info.size.width
+            val height = info.size.height
+            decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
+            decoder.setCrop(
+                when (side) {
+                    Side.RIGHT -> Rect(width - width / 2, 0, width, height)
+                    Side.LEFT -> Rect(0, 0, width / 2, height)
+                },
+            )
+        }
+    }
+
+    /**
+     * Decode [imageSource] and rotate the resulting [Bitmap] by [degrees].
+     */
+    fun rotateImage(imageSource: BufferedSource, degrees: Float): Bitmap {
+        val imageBitmap = BitmapFactory.decodeStream(imageSource.inputStream())
+        val rotated = rotateBitMap(imageBitmap, degrees)
+        imageBitmap.recycle()
+        return rotated
+    }
+
+    /**
+     * If [imageSource] is a wide (double-page spread) image, rotate it by [degrees]
+     * and return the resulting [Bitmap]; otherwise return `null`.
+     */
+    fun rotateDualPageIfWide(imageSource: BufferedSource, degrees: Float): Bitmap? =
+        if (isWideImage(imageSource)) rotateImage(imageSource, degrees) else null
 
     private fun rotateBitMap(bitmap: Bitmap, degrees: Float): Bitmap {
         val matrix = Matrix().apply { postRotate(degrees) }
@@ -177,9 +305,10 @@ object ImageUtil {
     }
 
     /**
-     * Split the image into left and right parts, then merge them into a new image.
+     * Split the image into left and right parts, then merge them into a new [Bitmap]
+     * with the [upperSide] half on top.
      */
-    fun splitAndMerge(imageSource: BufferedSource, upperSide: Side): BufferedSource {
+    fun splitAndMerge(imageSource: BufferedSource, upperSide: Side): Bitmap {
         val imageBitmap = BitmapFactory.decodeStream(imageSource.inputStream())
         val height = imageBitmap.height
         val width = imageBitmap.width
@@ -202,11 +331,7 @@ object ImageUtil {
             drawBitmap(imageBitmap, leftPart, bottomPart, null)
         }
         imageBitmap.recycle()
-
-        val output = Buffer()
-        result.compress(Bitmap.CompressFormat.PNG, 100, output.outputStream())
-        result.recycle()
-        return output
+        return result
     }
 
     /**
@@ -271,8 +396,10 @@ object ImageUtil {
 
     /**
      * Combine two images vertically, placing the second image below the first.
+     * Returns a [Bitmap]; the caller decides whether to display it directly
+     * (reader) or encode it for disk persistence (downloader).
      */
-    fun mergePages(topSource: BufferedSource, bottomSource: BufferedSource): BufferedSource {
+    fun mergePages(topSource: BufferedSource, bottomSource: BufferedSource): Bitmap {
         val topBitmap = BitmapFactory.decodeStream(topSource.inputStream())
         val bottomBitmap = BitmapFactory.decodeStream(bottomSource.inputStream())
 
@@ -284,11 +411,7 @@ object ImageUtil {
         }
         topBitmap.recycle()
         bottomBitmap.recycle()
-
-        val output = Buffer()
-        result.compress(Bitmap.CompressFormat.PNG, 100, output.outputStream())
-        result.recycle()
-        return output
+        return result
     }
 
     enum class Side {
@@ -315,7 +438,13 @@ object ImageUtil {
     /**
      * Splits tall images to improve performance of reader
      */
-    fun splitTallImage(tmpDir: UniFile, imageFile: UniFile, filenamePrefix: String): Boolean {
+    fun splitTallImage(
+        tmpDir: UniFile,
+        imageFile: UniFile,
+        filenamePrefix: String,
+        encoder: (Bitmap, OutputStream) -> Unit = defaultEncoder,
+        formatExtension: String = "png",
+    ): Boolean {
         val imageSource = imageFile.openInputStream().use { Buffer().readFrom(it) }
         if (isAnimatedAndSupported(imageSource) || !isTallImage(imageSource)) {
             return true
@@ -335,7 +464,7 @@ object ImageUtil {
 
         return try {
             splitDataList.forEach { splitData ->
-                val splitImageName = splitImageName(filenamePrefix, splitData.index)
+                val splitImageName = splitImageName(filenamePrefix, splitData.index, formatExtension)
                 // Remove pre-existing split if exists (this split shouldn't exist under normal circumstances)
                 tmpDir.findFile(splitImageName)?.delete()
 
@@ -345,7 +474,7 @@ object ImageUtil {
 
                 splitFile.openOutputStream().use { outputStream ->
                     val splitBitmap = bitmapRegionDecoder.decodeRegion(region, options)
-                    splitBitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+                    encoder(splitBitmap, outputStream)
                     splitBitmap.recycle()
                 }
                 logcat {
@@ -358,7 +487,7 @@ object ImageUtil {
         } catch (e: Exception) {
             // Image splits were not successfully saved so delete them and keep the original image
             splitDataList
-                .map { splitImageName(filenamePrefix, it.index) }
+                .map { splitImageName(filenamePrefix, it.index, formatExtension) }
                 .forEach { tmpDir.findFile(it)?.delete() }
             logcat(LogPriority.ERROR, e)
             false
@@ -367,10 +496,14 @@ object ImageUtil {
         }
     }
 
-    private fun splitImageName(filenamePrefix: String, index: Int) = "${filenamePrefix}__${"%03d".format(
+    private fun splitImageName(
+        filenamePrefix: String,
+        index: Int,
+        extension: String,
+    ) = "${filenamePrefix}__${"%03d".format(
         Locale.ENGLISH,
         index + 1,
-    )}.png"
+    )}.$extension"
 
     private val BitmapFactory.Options.splitData
         get(): List<SplitData> {
@@ -434,9 +567,16 @@ object ImageUtil {
      * Algorithm for determining what background to accompany a comic/manga page
      */
     fun chooseBackground(context: Context, imageStream: InputStream): Drawable {
-        val decoder = ImageDecoder.newInstance(imageStream)
-        val image = decoder?.decode()
-        decoder?.recycle()
+        val imageBytes = imageStream.readBytes()
+        val image: Bitmap? = try {
+            val source = android.graphics.ImageDecoder.createSource(ByteBuffer.wrap(imageBytes))
+            android.graphics.ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
+            }
+        } catch (e: Exception) {
+            // Fallback to BitmapFactory for formats android.graphics.ImageDecoder can't handle
+            BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+        }
 
         val whiteColor = Color.WHITE
         if (image == null) return ColorDrawable(whiteColor)
@@ -670,12 +810,7 @@ object ImageUtil {
     }
 
     private fun getBitmapRegionDecoder(imageStream: InputStream): BitmapRegionDecoder? {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            BitmapRegionDecoder.newInstance(imageStream)
-        } else {
-            @Suppress("DEPRECATION")
-            BitmapRegionDecoder.newInstance(imageStream, false)
-        }
+        return BitmapRegionDecoder.newInstance(imageStream)
     }
 
     private val optimalImageHeight = getDisplayMaxHeightInPx * 2
