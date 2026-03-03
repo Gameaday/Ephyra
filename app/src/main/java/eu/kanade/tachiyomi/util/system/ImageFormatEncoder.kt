@@ -23,6 +23,8 @@ fun ImageFormat.encoder(): (Bitmap, OutputStream) -> Unit = when (this) {
         bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSLESS, 100, os)
     }
     ImageFormat.JXL -> { bitmap, os ->
+        // Effort 7 ("squirrel") balances compression ratio and encode speed.
+        // decodingSpeed=SLOWEST produces the smallest files (decoder can still be fast).
         val bytes = JxlCoder.encode(
             bitmap,
             channelsConfiguration = if (bitmap.hasAlpha()) {
@@ -32,7 +34,6 @@ fun ImageFormat.encoder(): (Bitmap, OutputStream) -> Unit = when (this) {
             },
             compressionOption = JxlCompressionOption.LOSSLESS,
             effort = JxlEffort.SQUIRREL,
-            quality = 100,
             decodingSpeed = JxlDecodingSpeed.SLOWEST,
         )
         os.write(bytes)
