@@ -237,6 +237,7 @@ internal class HttpPageLoader(
      */
     override fun retryPage(page: ReaderPage) {
         check(!isRecycled)
+        page.recycleMergedBitmap()
         if (page.status is Page.State.Error) {
             page.status = Page.State.Queue
         }

@@ -38,6 +38,11 @@ data class ReaderChapter(val chapter: Chapter) {
             }
             pageLoader?.recycle()
             pageLoader = null
+            // Recycle any merged bitmaps held by pages before dropping the page list,
+            // so large native allocations are freed immediately.
+            (state as? State.Loaded)?.pages?.forEach { page ->
+                page.recycleMergedBitmap()
+            }
             state = State.Wait
         }
     }

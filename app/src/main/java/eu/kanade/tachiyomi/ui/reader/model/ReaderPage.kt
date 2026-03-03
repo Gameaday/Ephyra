@@ -17,10 +17,24 @@ open class ReaderPage(
      * Cached [Bitmap] of a smart-combine merge with a following stub page.
      * Non-null once the merge has succeeded; subsequent renders pass this bitmap
      * directly to [SubsamplingScaleImageView] without any encoding or decoding.
-     * Cleared to null when the page is retried so a fresh load starts clean.
+     *
+     * **Lifecycle:** cleared via [recycleMergedBitmap] when the page is retried
+     * or when the owning [ReaderChapter] is disposed, to avoid retaining large
+     * native allocations beyond their useful lifetime.
      */
     @Volatile
     var mergedBitmap: Bitmap? = null
+
+    /**
+     * Recycles the native backing memory of [mergedBitmap] (if any) and sets the
+     * reference to `null` so that the next render triggers a fresh merge.
+     */
+    fun recycleMergedBitmap() {
+        mergedBitmap?.let { bmp ->
+            if (!bmp.isRecycled) bmp.recycle()
+            mergedBitmap = null
+        }
+    }
 
     /**
      * True once this page has been absorbed by the previous page as a stub during smart combine.
