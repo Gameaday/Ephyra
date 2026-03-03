@@ -90,7 +90,7 @@ internal fun Project.configureCompose(commonExtension: CommonExtension<*, *, *, 
 }
 
 internal fun Project.configureTest() {
-    tasks.withType<Test> {
+    tasks.withType<Test>().configureEach {
         useJUnitPlatform()
         testLogging {
             events(TestLogEvent.PASSED, TestLogEvent.SKIPPED, TestLogEvent.FAILED)
