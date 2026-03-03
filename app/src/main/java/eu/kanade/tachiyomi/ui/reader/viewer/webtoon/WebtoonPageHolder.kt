@@ -184,9 +184,6 @@ class WebtoonPageHolder(
 
     /**
      * Called when the page is ready.
-     */
-    /**
-     * Called when the page is ready.
      *
      * Two render paths:
      * - **Bitmap path** (transform applied): the [Bitmap] goes directly to SSIV.

@@ -36,6 +36,17 @@ import tachiyomi.core.common.util.system.logcat
 import tachiyomi.i18n.MR
 
 /**
+ * Intermediate result from the IO context that carries everything the UI
+ * thread needs to display the page. Exactly one of [source]/[bitmap] is non-null.
+ */
+private data class RenderData(
+    val source: BufferedSource?,
+    val bitmap: Bitmap?,
+    val isAnimated: Boolean,
+    val background: Drawable?,
+)
+
+/**
  * View of the ViewPager that contains a page of a chapter.
  */
 @SuppressLint("ViewConstructor")
@@ -188,17 +199,6 @@ class PagerPageHolder(
         val streamFn = if (cachedBitmap == null) page.stream ?: return else null
 
         try {
-            /**
-             * Intermediate result from the IO context that carries everything the UI
-             * thread needs to display the page. Exactly one of [source]/[bitmap] is non-null.
-             */
-            class RenderData(
-                val source: BufferedSource?,
-                val bitmap: Bitmap?,
-                val isAnimated: Boolean,
-                val background: Drawable?,
-            )
-
             val result = withIOContext {
                 if (cachedBitmap != null) {
                     cachedPageWidth = cachedBitmap.width
