@@ -91,6 +91,10 @@ class MangaCoverScreenModel(
      * Save manga cover Bitmap to picture or temporary share directory.
      * Respects the user's cover quality preference for the output format.
      *
+     * Note: This path always goes through Coil (bitmap decode), so the original
+     * source bytes are not available. For Original/Lossless modes we use WebP
+     * lossless to preserve full fidelity; for Balanced we use WebP lossy.
+     *
      * @param context The context for building and executing the ImageRequest
      * @return the uri to saved file
      */
@@ -104,10 +108,9 @@ class MangaCoverScreenModel(
         val libraryPreferences: LibraryPreferences = Injekt.get()
         val coverQuality = libraryPreferences.coverQuality().get()
         val (format, quality) = when (coverQuality) {
-            LibraryPreferences.CoverQuality.Original -> {
-                android.graphics.Bitmap.CompressFormat.WEBP_LOSSLESS to 100
-            }
-            LibraryPreferences.CoverQuality.Lossless -> {
+            LibraryPreferences.CoverQuality.Original,
+            LibraryPreferences.CoverQuality.Lossless,
+            -> {
                 android.graphics.Bitmap.CompressFormat.WEBP_LOSSLESS to 100
             }
             LibraryPreferences.CoverQuality.Balanced -> {
