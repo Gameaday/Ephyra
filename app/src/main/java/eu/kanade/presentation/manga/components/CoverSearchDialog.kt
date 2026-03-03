@@ -153,40 +153,40 @@ private fun CoverSearchItem(
                 ),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-        AsyncImage(
-            model = cover.thumbnailUrl,
-            contentDescription = cover.mangaTitle,
-            placeholder = ColorPainter(Color(0x1F888888)),
-            error = rememberResourceBitmapPainter(id = R.drawable.cover_error),
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .aspectRatio(2f / 3f)
-                .clip(MaterialTheme.shapes.extraSmall),
-        )
-        Text(
-            text = if (cover.sourceCount > 1) {
-                stringResource(MR.strings.cover_search_source_count, cover.sourceName, cover.sourceCount - 1)
-            } else {
-                cover.sourceName
-            },
-            style = MaterialTheme.typography.labelSmall,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 4.dp, bottom = 2.dp),
-        )
-        Text(
-            text = cover.mangaTitle,
-            style = MaterialTheme.typography.bodySmall,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 4.dp),
-        )
+            AsyncImage(
+                model = cover.thumbnailUrl,
+                contentDescription = cover.mangaTitle,
+                placeholder = ColorPainter(Color(0x1F888888)),
+                error = rememberResourceBitmapPainter(id = R.drawable.cover_error),
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .aspectRatio(2f / 3f)
+                    .clip(MaterialTheme.shapes.extraSmall),
+            )
+            Text(
+                text = if (cover.sourceCount > 1) {
+                    stringResource(MR.strings.cover_search_source_count, cover.sourceName, cover.sourceCount - 1)
+                } else {
+                    cover.sourceName
+                },
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp, bottom = 2.dp),
+            )
+            Text(
+                text = cover.mangaTitle,
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 4.dp),
+            )
         }
         if (onLongClick != null) {
             DropdownMenu(

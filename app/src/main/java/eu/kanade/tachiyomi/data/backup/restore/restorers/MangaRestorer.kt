@@ -260,6 +260,8 @@ class MangaRestorer(
                 updateStrategy = manga.updateStrategy,
                 version = manga.version,
                 notes = manga.notes,
+                metadataSource = manga.metadataSource,
+                metadataUrl = manga.metadataUrl,
             )
             mangasQueries.selectLastInsertedRowId()
         }
