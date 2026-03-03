@@ -29,6 +29,7 @@ import okio.BufferedSource
 import tachiyomi.decoder.Format
 import tachiyomi.decoder.ImageDecoder
 import java.io.InputStream
+import java.io.OutputStream
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.max
@@ -124,9 +125,18 @@ object ImageUtil {
     }
 
     /**
+     * Default lossless encoder used for in-memory image operations (reader display).
+     * Callers that persist to disk should supply their own encoder based on the user's
+     * [ImageFormat][tachiyomi.domain.library.service.LibraryPreferences.ImageFormat] preference.
+     */
+    val defaultEncoder: (Bitmap, OutputStream) -> Unit = { bitmap, os ->
+        bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSLESS, 100, os)
+    }
+
+    /**
      * Extract the 'side' part from [BufferedSource] and return it as [BufferedSource].
      */
-    fun splitInHalf(imageSource: BufferedSource, side: Side, format: Bitmap.CompressFormat = Bitmap.CompressFormat.WEBP_LOSSLESS): BufferedSource {
+    fun splitInHalf(imageSource: BufferedSource, side: Side, encoder: (Bitmap, OutputStream) -> Unit = defaultEncoder): BufferedSource {
         val imageBitmap = BitmapFactory.decodeStream(imageSource.inputStream())
         val height = imageBitmap.height
         val width = imageBitmap.width
@@ -143,19 +153,19 @@ object ImageUtil {
         }
         imageBitmap.recycle()
         val output = Buffer()
-        half.compress(format, 100, output.outputStream())
+        encoder(half, output.outputStream())
         half.recycle()
 
         return output
     }
 
-    fun rotateImage(imageSource: BufferedSource, degrees: Float, format: Bitmap.CompressFormat = Bitmap.CompressFormat.WEBP_LOSSLESS): BufferedSource {
+    fun rotateImage(imageSource: BufferedSource, degrees: Float, encoder: (Bitmap, OutputStream) -> Unit = defaultEncoder): BufferedSource {
         val imageBitmap = BitmapFactory.decodeStream(imageSource.inputStream())
         val rotated = rotateBitMap(imageBitmap, degrees)
         imageBitmap.recycle()
 
         val output = Buffer()
-        rotated.compress(format, 100, output.outputStream())
+        encoder(rotated, output.outputStream())
         rotated.recycle()
 
         return output
@@ -179,7 +189,7 @@ object ImageUtil {
     /**
      * Split the image into left and right parts, then merge them into a new image.
      */
-    fun splitAndMerge(imageSource: BufferedSource, upperSide: Side, format: Bitmap.CompressFormat = Bitmap.CompressFormat.WEBP_LOSSLESS): BufferedSource {
+    fun splitAndMerge(imageSource: BufferedSource, upperSide: Side, encoder: (Bitmap, OutputStream) -> Unit = defaultEncoder): BufferedSource {
         val imageBitmap = BitmapFactory.decodeStream(imageSource.inputStream())
         val height = imageBitmap.height
         val width = imageBitmap.width
@@ -204,7 +214,7 @@ object ImageUtil {
         imageBitmap.recycle()
 
         val output = Buffer()
-        result.compress(format, 100, output.outputStream())
+        encoder(result, output.outputStream())
         result.recycle()
         return output
     }
@@ -272,7 +282,7 @@ object ImageUtil {
     /**
      * Combine two images vertically, placing the second image below the first.
      */
-    fun mergePages(topSource: BufferedSource, bottomSource: BufferedSource, format: Bitmap.CompressFormat = Bitmap.CompressFormat.WEBP_LOSSLESS): BufferedSource {
+    fun mergePages(topSource: BufferedSource, bottomSource: BufferedSource, encoder: (Bitmap, OutputStream) -> Unit = defaultEncoder): BufferedSource {
         val topBitmap = BitmapFactory.decodeStream(topSource.inputStream())
         val bottomBitmap = BitmapFactory.decodeStream(bottomSource.inputStream())
 
@@ -286,7 +296,7 @@ object ImageUtil {
         bottomBitmap.recycle()
 
         val output = Buffer()
-        result.compress(format, 100, output.outputStream())
+        encoder(result, output.outputStream())
         result.recycle()
         return output
     }
@@ -319,7 +329,7 @@ object ImageUtil {
         tmpDir: UniFile,
         imageFile: UniFile,
         filenamePrefix: String,
-        format: Bitmap.CompressFormat = Bitmap.CompressFormat.WEBP_LOSSLESS,
+        encoder: (Bitmap, OutputStream) -> Unit = defaultEncoder,
         formatExtension: String = "webp",
     ): Boolean {
         val imageSource = imageFile.openInputStream().use { Buffer().readFrom(it) }
@@ -351,7 +361,7 @@ object ImageUtil {
 
                 splitFile.openOutputStream().use { outputStream ->
                     val splitBitmap = bitmapRegionDecoder.decodeRegion(region, options)
-                    splitBitmap.compress(format, 100, outputStream)
+                    encoder(splitBitmap, outputStream)
                     splitBitmap.recycle()
                 }
                 logcat {

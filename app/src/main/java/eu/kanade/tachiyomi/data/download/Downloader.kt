@@ -15,6 +15,7 @@ import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
 import eu.kanade.tachiyomi.util.storage.DiskUtil
 import eu.kanade.tachiyomi.util.storage.DiskUtil.NOMEDIA_FILE
 import eu.kanade.tachiyomi.util.storage.saveTo
+import eu.kanade.tachiyomi.util.system.encoder
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -563,14 +564,13 @@ class Downloader(
     }
 
     /**
-     * Returns the [Bitmap.CompressFormat] and file extension corresponding to the user's
-     * [LibraryPreferences.ImageFormat] setting.  Used by every code path that creates a
-     * derived (split / merged / rotated) image so that all such images within a chapter
-     * use the same format — avoiding mixed-format folders.
+     * Returns the encoder function and file extension for the user's preferred image format.
+     * Used by every code path that creates a derived (split / merged / rotated) image so
+     * that all such images within a chapter use the same format.
      */
-    private fun derivedImageFormat(): Pair<android.graphics.Bitmap.CompressFormat, String> {
+    private fun derivedImageEncoder(): Pair<(android.graphics.Bitmap, java.io.OutputStream) -> Unit, String> {
         val fmt = libraryPreferences.imageFormat().get()
-        return fmt.compressFormat to fmt.extension
+        return fmt.encoder() to fmt.extension
     }
 
     private fun splitTallImageIfNeeded(page: Page, tmpDir: UniFile) {
@@ -584,8 +584,8 @@ class Downloader(
             // If the original page was previously split, then skip
             if (imageFile.name.orEmpty().startsWith("${filenamePrefix}__")) return
 
-            val (format, ext) = derivedImageFormat()
-            ImageUtil.splitTallImage(tmpDir, imageFile, filenamePrefix, format, ext)
+            val (encoder, ext) = derivedImageEncoder()
+            ImageUtil.splitTallImage(tmpDir, imageFile, filenamePrefix, encoder, ext)
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e) { "Failed to split downloaded image" }
         }
@@ -606,7 +606,7 @@ class Downloader(
     private fun mergeStubPagesInDownload(tmpDir: UniFile) {
         if (!readerPreferences.smartCombinePaged().get()) return
 
-        val (format, ext) = derivedImageFormat()
+        val (encoder, ext) = derivedImageEncoder()
 
         // Build a sorted mutable list of primary page image files, excluding:
         //  • temporary files (.tmp)
@@ -649,7 +649,7 @@ class Downloader(
                 // Stub confirmed: open the next page again for full bitmap decode and merge.
                 // currentSource still holds all its data (peek() was used above).
                 val nextSource = next.openInputStream().use { Buffer().readFrom(it) }
-                val mergedBytes = ImageUtil.mergePages(currentSource, nextSource, format).readByteArray()
+                val mergedBytes = ImageUtil.mergePages(currentSource, nextSource, encoder).readByteArray()
 
                 // Write the merged image to a temp file, swap it in for the current file,
                 // and delete the stub.  Using a temp file prevents data loss if the write fails.

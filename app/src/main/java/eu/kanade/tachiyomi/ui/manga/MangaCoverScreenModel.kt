@@ -17,6 +17,7 @@ import eu.kanade.tachiyomi.data.saver.Location
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.await
 import eu.kanade.tachiyomi.util.editCover
+import eu.kanade.tachiyomi.util.system.encoder
 import eu.kanade.tachiyomi.util.system.getBitmapOrNull
 import eu.kanade.tachiyomi.util.system.toShareIntent
 import kotlinx.coroutines.flow.update
@@ -90,9 +91,8 @@ class MangaCoverScreenModel(
     /**
      * Save manga cover Bitmap to picture or temporary share directory.
      * Uses the user's preferred [LibraryPreferences.ImageFormat] to produce a lossless
-     * output (PNG or WebP lossless). Since the save path always goes through Coil
-     * (bitmap decode), the original source bytes are not available — we re-encode to the
-     * user's chosen lossless container.
+     * output. Since the save path always goes through Coil (bitmap decode), the original
+     * source bytes are not available — we re-encode to the user's chosen lossless container.
      *
      * @param context The context for building and executing the ImageRequest
      * @return the uri to saved file
@@ -117,8 +117,7 @@ class MangaCoverScreenModel(
                     bitmap = bitmap,
                     name = manga.title,
                     location = if (temp) Location.Cache else Location.Pictures.create(),
-                    compressFormat = fmt.compressFormat,
-                    compressQuality = 100,
+                    encoder = fmt.encoder(),
                 ),
             )
         }
