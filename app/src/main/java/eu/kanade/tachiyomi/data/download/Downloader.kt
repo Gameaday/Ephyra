@@ -595,7 +595,7 @@ class Downloader(
         // Build a sorted mutable list of primary page image files, excluding:
         //  • temporary files (.tmp)
         //  • metadata files (ComicInfo.xml, .nomedia)
-        //  • secondary split pages (e.g. "001__002.jpg") — first split ("001__001.jpg") is kept
+        //  • secondary split pages (e.g. "001__002.webp") — first split ("001__001.webp") is kept
         val pageFiles = tmpDir.listFiles()
             ?.filter { file ->
                 val name = file.name.orEmpty()
@@ -635,25 +635,25 @@ class Downloader(
                 val nextSource = next.openInputStream().use { Buffer().readFrom(it) }
                 val mergedBytes = ImageUtil.mergePages(currentSource, nextSource).readByteArray()
 
-                // Write the merged JPEG to a temp file, swap it in for the current file,
+                // Write the merged WebP to a temp file, swap it in for the current file,
                 // and delete the stub.  Using a temp file prevents data loss if the write fails.
                 val baseName = current.name!!.substringBeforeLast(".")
-                val mergedTmp = tmpDir.createFile("$baseName.jpg.tmp")
+                val mergedTmp = tmpDir.createFile("$baseName.webp.tmp")
                     ?: throw IOException("Could not create temp file for merged stub page")
                 mergedTmp.openOutputStream().use { it.write(mergedBytes) }
                 current.delete()
                 next.delete()
                 pageFiles.removeAt(i + 1)
-                mergedTmp.renameTo("$baseName.jpg")
+                mergedTmp.renameTo("$baseName.webp")
                 // Update our list to point to the freshly renamed file so the next
                 // iteration can check the merged page against the new next page.
-                val mergedFile = tmpDir.findFile("$baseName.jpg")
+                val mergedFile = tmpDir.findFile("$baseName.webp")
                 if (mergedFile != null) {
                     pageFiles[i] = mergedFile
                     // Do NOT increment i — check the merged page against the new next page
                 } else {
                     // Rename succeeded but we cannot locate the file — unusual; skip forward
-                    logcat(LogPriority.WARN) { "Could not locate merged file $baseName.jpg after rename; skipping" }
+                    logcat(LogPriority.WARN) { "Could not locate merged file $baseName.webp after rename; skipping" }
                     i++
                 }
             } catch (e: Exception) {
@@ -690,7 +690,7 @@ class Downloader(
                 fileName in listOf(COMIC_INFO_FILE, NOMEDIA_FILE) -> false
                 fileName.endsWith(".tmp") -> false
                 // Only count the first split page and not the others
-                fileName.contains("__") && !fileName.endsWith("__001.jpg") -> false
+                fileName.contains("__") && !fileName.contains("__001.") -> false
                 else -> true
             }
         }

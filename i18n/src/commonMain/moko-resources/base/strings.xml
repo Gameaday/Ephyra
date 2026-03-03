@@ -625,6 +625,11 @@
     <string name="pref_clear_webview_data">Clear WebView data</string>
     <string name="webview_data_deleted">WebView data cleared</string>
     <string name="pref_refresh_library_covers">Refresh library covers</string>
+    <string name="pref_cover_quality">Cover image quality</string>
+    <string name="pref_cover_quality_summary">Controls how cover images are stored and exported</string>
+    <string name="cover_quality_original">Original (preserve source format)</string>
+    <string name="cover_quality_lossless">Lossless (WebP — smaller, no quality loss)</string>
+    <string name="cover_quality_balanced">Balanced (WebP lossy — smallest size)</string>
     <string name="pref_reset_viewer_flags">Reset per-series reader settings</string>
     <string name="pref_reset_viewer_flags_summary">Resets reading mode and orientation of all series</string>
     <string name="pref_reset_viewer_flags_success">All reader settings reset</string>

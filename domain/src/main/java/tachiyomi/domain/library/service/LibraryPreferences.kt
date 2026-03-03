@@ -196,11 +196,29 @@ class LibraryPreferences(
 
     // endregion
 
+    // region Cover Quality
+
+    fun coverQuality() = preferenceStore.getEnum("pref_cover_quality", CoverQuality.Original)
+
+    // endregion
+
     enum class ChapterSwipeAction {
         ToggleRead,
         ToggleBookmark,
         Download,
         Disabled,
+    }
+
+    /**
+     * Controls how cover images are stored and exported.
+     * - [Original]: Preserve the source format byte-for-byte (highest fidelity, largest size).
+     * - [Lossless]: Re-encode as WebP lossless (identical quality to original, smaller file).
+     * - [Balanced]: Re-encode as WebP lossy at high quality (visually near-lossless, smallest file).
+     */
+    enum class CoverQuality {
+        Original,
+        Lossless,
+        Balanced,
     }
 
     companion object {

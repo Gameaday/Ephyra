@@ -148,6 +148,8 @@ sealed class Image(
         val bitmap: Bitmap,
         override val name: String,
         override val location: Location,
+        val compressFormat: Bitmap.CompressFormat = Bitmap.CompressFormat.WEBP_LOSSLESS,
+        val compressQuality: Int = 100,
     ) : Image(name, location)
 
     data class Page(
@@ -162,7 +164,7 @@ sealed class Image(
                 is Cover -> {
                     {
                         val buffer = Buffer()
-                        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, buffer.outputStream())
+                        bitmap.compress(compressFormat, compressQuality, buffer.outputStream())
                         buffer.inputStream()
                     }
                 }
