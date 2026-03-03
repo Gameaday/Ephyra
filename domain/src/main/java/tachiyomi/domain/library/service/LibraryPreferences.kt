@@ -227,16 +227,16 @@ class LibraryPreferences(
      * | Format | Extension | Compression | Size   | Compatibility | Notes |
      * |--------|-----------|-------------|--------|---------------|-------|
      * | [PNG]  | .png      | Lossless    | Largest | Universal     | Max compatibility; all tools/viewers handle PNG. Best choice if you plan to edit images later or share with apps that don't support WebP. |
-     * | [WebP] | .webp     | Lossless    | ~26 % smaller than PNG | Android-native, broad web support | Default. Same pixel-perfect fidelity as PNG but significantly smaller. Supported by all modern browsers and Android since API 14. |
+     * | [WebP] | .webp     | Lossless    | Smaller than PNG | Android-native, broad web support | Default. Same pixel-perfect fidelity as PNG but significantly smaller. Supported by all modern browsers and Android since API 14. |
      *
      * **Why not lossy?** Derived images (splits, merges) start from already-compressed source
      * data, so re-encoding with a lossy codec would introduce generational quality loss for
      * marginal size benefit. Both options here are **lossless** — identical pixel output.
      *
      * **Future: JPEG XL (.jxl)** — When Android adds native encoding support, a `JXL` value
-     * can be added here to offer ~35 % smaller lossless files than PNG with faster
-     * encode/decode. The app already *decodes* JXL images via the bundled image-decoder
-     * library; only encoding support is needed to complete the round-trip.
+     * can be added here to offer smaller lossless files than PNG with fast encode/decode.
+     * The app already *decodes* JXL images via the bundled image-decoder library; only
+     * encoding support is needed to complete the round-trip.
      */
     enum class ImageFormat(val extension: String, val mime: String) {
         PNG("png", "image/png"),

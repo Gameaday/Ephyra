@@ -55,6 +55,7 @@ import tachiyomi.core.metadata.comicinfo.ComicInfo
 import tachiyomi.domain.category.interactor.GetCategories
 import tachiyomi.domain.chapter.model.Chapter
 import tachiyomi.domain.download.service.DownloadPreferences
+import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.domain.track.interactor.GetTracks
@@ -78,7 +79,7 @@ class Downloader(
     private val chapterCache: ChapterCache = Injekt.get(),
     private val downloadPreferences: DownloadPreferences = Injekt.get(),
     private val readerPreferences: ReaderPreferences = Injekt.get(),
-    private val libraryPreferences: tachiyomi.domain.library.service.LibraryPreferences = Injekt.get(),
+    private val libraryPreferences: LibraryPreferences = Injekt.get(),
     private val xml: XML = Injekt.get(),
     private val getCategories: GetCategories = Injekt.get(),
     private val getTracks: GetTracks = Injekt.get(),
@@ -569,9 +570,9 @@ class Downloader(
      */
     private fun derivedImageFormat(): Pair<android.graphics.Bitmap.CompressFormat, String> {
         return when (libraryPreferences.imageFormat().get()) {
-            tachiyomi.domain.library.service.LibraryPreferences.ImageFormat.PNG ->
+            LibraryPreferences.ImageFormat.PNG ->
                 android.graphics.Bitmap.CompressFormat.PNG to "png"
-            tachiyomi.domain.library.service.LibraryPreferences.ImageFormat.WebP ->
+            LibraryPreferences.ImageFormat.WebP ->
                 android.graphics.Bitmap.CompressFormat.WEBP_LOSSLESS to "webp"
         }
     }
