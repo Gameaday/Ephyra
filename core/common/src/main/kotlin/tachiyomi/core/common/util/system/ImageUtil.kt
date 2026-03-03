@@ -12,7 +12,6 @@ import android.graphics.Rect
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
-import android.os.Build
 import androidx.annotation.ColorInt
 import androidx.core.graphics.alpha
 import androidx.core.graphics.applyCanvas
@@ -26,8 +25,6 @@ import eu.kanade.tachiyomi.util.system.GLUtil
 import logcat.LogPriority
 import okio.Buffer
 import okio.BufferedSource
-import tachiyomi.decoder.Format
-import tachiyomi.decoder.ImageDecoder
 import java.io.InputStream
 import java.io.OutputStream
 import java.nio.ByteBuffer
@@ -51,16 +48,8 @@ object ImageUtil {
 
     fun findImageType(stream: InputStream): ImageType? {
         return try {
-            when (getImageType(stream)?.format) {
-                Format.Avif -> ImageType.AVIF
-                Format.Gif -> ImageType.GIF
-                Format.Heif -> ImageType.HEIF
-                Format.Jpeg -> ImageType.JPEG
-                Format.Jxl -> ImageType.JXL
-                Format.Png -> ImageType.PNG
-                Format.Webp -> ImageType.WEBP
-                else -> null
-            }
+            val bytes = readMagicBytes(stream) ?: return null
+            detectImageType(bytes)
         } catch (e: Exception) {
             null
         }
@@ -73,14 +62,12 @@ object ImageUtil {
 
     fun isAnimatedAndSupported(source: BufferedSource): Boolean {
         return try {
-            val type = getImageType(source.peek().inputStream()) ?: return false
-            // https://coil-kt.github.io/coil/getting_started/#supported-image-formats
-            when (type.format) {
-                Format.Gif -> true
-                // Animated WebP supported from Android 9 (our minimum)
-                Format.Webp -> type.isAnimated
-                // Animated HEIF supported from Android 11 (our minimum)
-                Format.Heif -> type.isAnimated
+            val bytes = readMagicBytes(source.peek().inputStream()) ?: return false
+            val type = detectImageType(bytes) ?: return false
+            when (type) {
+                ImageType.GIF -> true
+                ImageType.WEBP -> isAnimatedWebP(bytes)
+                ImageType.HEIF -> isAnimatedHeif(bytes)
                 else -> false
             }
         } catch (e: Exception) {
@@ -88,21 +75,110 @@ object ImageUtil {
         }
     }
 
-    private fun getImageType(stream: InputStream): tachiyomi.decoder.ImageType? {
+    /**
+     * Read up to 32 bytes from [stream] for magic-byte detection.
+     * If the stream supports mark/reset the position is restored.
+     */
+    private fun readMagicBytes(stream: InputStream): ByteArray? {
         val bytes = ByteArray(32)
-
         val length = if (stream.markSupported()) {
             stream.mark(bytes.size)
             stream.read(bytes, 0, bytes.size).also { stream.reset() }
         } else {
             stream.read(bytes, 0, bytes.size)
         }
+        return if (length == -1) null else bytes
+    }
 
-        if (length == -1) {
-            return null
+    /**
+     * Detect image type from the first 32 bytes of the file using magic byte signatures.
+     */
+    private fun detectImageType(bytes: ByteArray): ImageType? {
+        // PNG: 89 50 4E 47 0D 0A 1A 0A
+        if (bytes.size >= 8 &&
+            bytes[0] == 0x89.toByte() && bytes[1] == 0x50.toByte() &&
+            bytes[2] == 0x4E.toByte() && bytes[3] == 0x47.toByte() &&
+            bytes[4] == 0x0D.toByte() && bytes[5] == 0x0A.toByte() &&
+            bytes[6] == 0x1A.toByte() && bytes[7] == 0x0A.toByte()
+        ) return ImageType.PNG
+
+        // GIF: "GIF87a" or "GIF89a"
+        if (bytes.size >= 6 &&
+            bytes[0] == 0x47.toByte() && bytes[1] == 0x49.toByte() &&
+            bytes[2] == 0x46.toByte() && bytes[3] == 0x38.toByte() &&
+            (bytes[4] == 0x37.toByte() || bytes[4] == 0x39.toByte()) &&
+            bytes[5] == 0x61.toByte()
+        ) return ImageType.GIF
+
+        // JPEG: FF D8 FF
+        if (bytes.size >= 3 &&
+            bytes[0] == 0xFF.toByte() && bytes[1] == 0xD8.toByte() &&
+            bytes[2] == 0xFF.toByte()
+        ) return ImageType.JPEG
+
+        // WebP: "RIFF" at 0..3 and "WEBP" at 8..11
+        if (bytes.size >= 12 &&
+            bytes[0] == 0x52.toByte() && bytes[1] == 0x49.toByte() &&
+            bytes[2] == 0x46.toByte() && bytes[3] == 0x46.toByte() &&
+            bytes[8] == 0x57.toByte() && bytes[9] == 0x45.toByte() &&
+            bytes[10] == 0x42.toByte() && bytes[11] == 0x50.toByte()
+        ) return ImageType.WEBP
+
+        // JXL: FF 0A (bare codestream) or 00 00 00 0C 4A 58 4C 20 (ISOBMFF container)
+        if (bytes.size >= 2 && bytes[0] == 0xFF.toByte() && bytes[1] == 0x0A.toByte()) {
+            return ImageType.JXL
+        }
+        if (bytes.size >= 12 &&
+            bytes[0] == 0x00.toByte() && bytes[1] == 0x00.toByte() &&
+            bytes[2] == 0x00.toByte() && bytes[3] == 0x0C.toByte() &&
+            bytes[4] == 0x4A.toByte() && bytes[5] == 0x58.toByte() &&
+            bytes[6] == 0x4C.toByte() && bytes[7] == 0x20.toByte() &&
+            bytes[8] == 0x0D.toByte() && bytes[9] == 0x0A.toByte() &&
+            bytes[10] == 0x87.toByte() && bytes[11] == 0x0A.toByte()
+        ) return ImageType.JXL
+
+        // AVIF / HEIF: ISOBMFF boxes — "ftyp" at offset 4, brand determines format
+        if (bytes.size >= 12 &&
+            bytes[4] == 0x66.toByte() && bytes[5] == 0x74.toByte() &&
+            bytes[6] == 0x79.toByte() && bytes[7] == 0x70.toByte()
+        ) {
+            val brand = String(bytes, 8, 4, Charsets.ISO_8859_1)
+            return when {
+                brand.startsWith("avif") || brand.startsWith("avis") -> ImageType.AVIF
+                brand.startsWith("heic") || brand.startsWith("heix") ||
+                    brand.startsWith("hevc") || brand.startsWith("hevx") ||
+                    brand.startsWith("mif1") || brand.startsWith("msf1") -> ImageType.HEIF
+                else -> null
+            }
         }
 
-        return ImageDecoder.findType(bytes)
+        return null
+    }
+
+    /**
+     * Check if the WebP image (from its first 32 bytes) is animated.
+     * Animated WebP uses "VP8X" chunk with the animation flag (bit 1 of byte 20).
+     */
+    private fun isAnimatedWebP(bytes: ByteArray): Boolean {
+        if (bytes.size < 21) return false
+        // VP8X chunk starts at byte 12: "VP8X"
+        if (bytes[12] == 0x56.toByte() && bytes[13] == 0x50.toByte() &&
+            bytes[14] == 0x38.toByte() && bytes[15] == 0x58.toByte()
+        ) {
+            // Byte 20 is the VP8X flags; bit 1 = animation
+            return (bytes[20].toInt() and 0x02) != 0
+        }
+        return false
+    }
+
+    /**
+     * Check if the HEIF/AVIF image is animated based on the ftyp brand.
+     * "avis" and "msf1" are the sequence (animated) brands.
+     */
+    private fun isAnimatedHeif(bytes: ByteArray): Boolean {
+        if (bytes.size < 12) return false
+        val brand = String(bytes, 8, 4, Charsets.ISO_8859_1)
+        return brand.startsWith("avis") || brand.startsWith("msf1")
     }
 
     enum class ImageType(val mime: String, val extension: String) {
@@ -442,9 +518,16 @@ object ImageUtil {
      * Algorithm for determining what background to accompany a comic/manga page
      */
     fun chooseBackground(context: Context, imageStream: InputStream): Drawable {
-        val decoder = ImageDecoder.newInstance(imageStream)
-        val image = decoder?.decode()
-        decoder?.recycle()
+        val imageBytes = imageStream.readBytes()
+        val image: Bitmap? = try {
+            val source = android.graphics.ImageDecoder.createSource(ByteBuffer.wrap(imageBytes))
+            android.graphics.ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
+            }
+        } catch (e: Exception) {
+            // Fallback to BitmapFactory for formats android.graphics.ImageDecoder can't handle
+            BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+        }
 
         val whiteColor = Color.WHITE
         if (image == null) return ColorDrawable(whiteColor)
@@ -678,12 +761,7 @@ object ImageUtil {
     }
 
     private fun getBitmapRegionDecoder(imageStream: InputStream): BitmapRegionDecoder? {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            BitmapRegionDecoder.newInstance(imageStream)
-        } else {
-            @Suppress("DEPRECATION")
-            BitmapRegionDecoder.newInstance(imageStream, false)
-        }
+        return BitmapRegionDecoder.newInstance(imageStream)
     }
 
     private val optimalImageHeight = getDisplayMaxHeightInPx * 2

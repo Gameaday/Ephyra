@@ -15,7 +15,11 @@ import tachiyomi.core.common.util.system.ImageUtil
 import tachiyomi.decoder.ImageDecoder
 
 /**
- * A [Decoder] that uses built-in [ImageDecoder] to decode images that is not supported by the system.
+ * A [Decoder] that uses the native [ImageDecoder] library to decode JXL images,
+ * which are not supported by the Android platform even at API 34+.
+ *
+ * AVIF and HEIF are handled by the platform's [android.graphics.ImageDecoder] at API 34+,
+ * so they no longer need this custom decoder.
  */
 class TachiyomiImageDecoder(private val resources: ImageSource, private val options: Options) : Decoder {
 
@@ -69,14 +73,14 @@ class TachiyomiImageDecoder(private val resources: ImageSource, private val opti
             }
         }
 
+        /**
+         * Only intercept JXL images — AVIF and HEIF are handled natively at API 34+.
+         */
         private fun isApplicable(source: BufferedSource): Boolean {
             val type = source.peek().inputStream().use {
                 ImageUtil.findImageType(it)
             }
-            return when (type) {
-                ImageUtil.ImageType.AVIF, ImageUtil.ImageType.JXL, ImageUtil.ImageType.HEIF -> true
-                else -> false
-            }
+            return type == ImageUtil.ImageType.JXL
         }
 
         override fun equals(other: Any?) = other is Factory

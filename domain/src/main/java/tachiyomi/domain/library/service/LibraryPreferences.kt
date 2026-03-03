@@ -209,7 +209,7 @@ class LibraryPreferences(
      * Having a single, app-wide setting ensures **format consistency** within a chapter —
      * every derived image uses the same container.
      */
-    fun imageFormat() = preferenceStore.getEnum("pref_image_format", ImageFormat.JXL)
+    fun imageFormat() = preferenceStore.getEnum("pref_image_format", ImageFormat.WEBP)
 
     // endregion
 
@@ -227,11 +227,15 @@ class LibraryPreferences(
      * Derived images start from already-compressed data, so lossy re-encoding
      * would introduce generational quality loss for marginal size benefit.
      *
+     * WebP lossless is the default: it has hardware-accelerated decoding on all
+     * Android devices, produces files ~25 % smaller than PNG, and encodes quickly
+     * using the platform's native codec.  PNG is offered for maximum compatibility.
+     *
      * @property extension file extension (without dot)
      * @property mime      MIME type
      */
     enum class ImageFormat(val extension: String, val mime: String) {
-        JXL("jxl", "image/jxl"),
+        WEBP("webp", "image/webp"),
         PNG("png", "image/png"),
     }
 

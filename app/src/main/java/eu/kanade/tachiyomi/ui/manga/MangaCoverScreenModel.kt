@@ -90,9 +90,10 @@ class MangaCoverScreenModel(
 
     /**
      * Save manga cover Bitmap to picture or temporary share directory.
-     * Uses the user's preferred [LibraryPreferences.ImageFormat] to produce a lossless
-     * output. Since the save path always goes through Coil (bitmap decode), the original
-     * source bytes are not available — we re-encode to the user's chosen lossless container.
+     *
+     * When sharing (temp = true), always uses PNG for universal compatibility.
+     * When saving to Pictures, uses the user's preferred [LibraryPreferences.ImageFormat]
+     * (WebP lossless by default) for efficient storage.
      *
      * @param context The context for building and executing the ImageRequest
      * @return the uri to saved file
@@ -105,7 +106,12 @@ class MangaCoverScreenModel(
             .build()
 
         val libraryPreferences: LibraryPreferences = Injekt.get()
-        val fmt = libraryPreferences.imageFormat().get()
+        // Shares always use PNG for compatibility; internal saves use user's preferred format
+        val encoder: (android.graphics.Bitmap, java.io.OutputStream) -> Unit = if (temp) {
+            { bmp, os -> bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, os) }
+        } else {
+            libraryPreferences.imageFormat().get().encoder()
+        }
 
         return withIOContext {
             val result = context.imageLoader.execute(req).image?.asDrawable(context.resources)
@@ -117,7 +123,7 @@ class MangaCoverScreenModel(
                     bitmap = bitmap,
                     name = manga.title,
                     location = if (temp) Location.Cache else Location.Pictures.create(),
-                    encoder = fmt.encoder(),
+                    encoder = encoder,
                 ),
             )
         }
