@@ -2,15 +2,12 @@ package eu.kanade.tachiyomi.ui.reader.viewer
 
 import android.graphics.Bitmap
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
-import eu.kanade.tachiyomi.util.system.fastEncoder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import tachiyomi.core.common.preference.Preference
-import tachiyomi.domain.library.service.LibraryPreferences
-import uy.kohesive.injekt.Injekt
-import uy.kohesive.injekt.api.get
+import tachiyomi.core.common.util.system.ImageUtil
 import java.io.OutputStream
 
 /**
@@ -19,7 +16,6 @@ import java.io.OutputStream
 abstract class ViewerConfig(
     readerPreferences: ReaderPreferences,
     private val scope: CoroutineScope,
-    libraryPreferences: LibraryPreferences = Injekt.get(),
 ) {
 
     var imagePropertyChangedListener: (() -> Unit)? = null
@@ -56,11 +52,16 @@ abstract class ViewerConfig(
         protected set
 
     /**
-     * Fast lossless encoder for transient reader buffers (splits, merges, rotations).
-     * Uses the user's preferred image format with low encode effort for minimal latency.
+     * Lossless encoder for transient reader buffers (splits, merges, rotations).
+     *
+     * Always PNG — SubsamplingScaleImageView decodes via [BitmapRegionDecoder] /
+     * [BitmapFactory], which do not support JXL on API < 34. PNG is universally
+     * decodable and fast enough for temporary images that are never written to disk.
+     *
+     * Persistent storage (covers, download splits) uses the user's [ImageFormat]
+     * preference via [ImageFormat.encoder()][eu.kanade.tachiyomi.util.system.encoder].
      */
-    val readerEncoder: (Bitmap, OutputStream) -> Unit =
-        libraryPreferences.imageFormat().get().fastEncoder()
+    val readerEncoder: (Bitmap, OutputStream) -> Unit = ImageUtil.defaultEncoder
 
     abstract var navigator: ViewerNavigation
         protected set

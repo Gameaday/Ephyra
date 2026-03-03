@@ -125,9 +125,14 @@ object ImageUtil {
     }
 
     /**
-     * Default lossless encoder used for in-memory image operations (reader display).
-     * Callers that persist to disk should supply their own encoder based on the user's
-     * [ImageFormat][tachiyomi.domain.library.service.LibraryPreferences.ImageFormat] preference.
+     * Default lossless encoder for transient reader buffers (splits, merges, rotations).
+     *
+     * PNG is used because SubsamplingScaleImageView decodes via [BitmapRegionDecoder] /
+     * [BitmapFactory], which do not support JXL on API < 34. PNG is universally
+     * decodable and fast enough for temporary images that are never written to disk.
+     *
+     * Callers that persist to disk should supply their own encoder via
+     * [ImageFormat.encoder()][tachiyomi.domain.library.service.LibraryPreferences.ImageFormat].
      */
     val defaultEncoder: (Bitmap, OutputStream) -> Unit = { bitmap, os ->
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, os)
