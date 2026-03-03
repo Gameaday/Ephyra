@@ -89,11 +89,10 @@ class MangaCoverScreenModel(
 
     /**
      * Save manga cover Bitmap to picture or temporary share directory.
-     * Respects the user's cover quality preference for the output format.
-     *
-     * Note: This path always goes through Coil (bitmap decode), so the original
-     * source bytes are not available. For Original/Lossless modes we use WebP
-     * lossless to preserve full fidelity; for Balanced we use WebP lossy.
+     * Uses the user's preferred [LibraryPreferences.ImageFormat] to produce a lossless
+     * output (PNG or WebP lossless). Since the save path always goes through Coil
+     * (bitmap decode), the original source bytes are not available — we re-encode to the
+     * user's chosen lossless container.
      *
      * @param context The context for building and executing the ImageRequest
      * @return the uri to saved file
@@ -106,15 +105,12 @@ class MangaCoverScreenModel(
             .build()
 
         val libraryPreferences: LibraryPreferences = Injekt.get()
-        val coverQuality = libraryPreferences.coverQuality().get()
-        val (format, quality) = when (coverQuality) {
-            LibraryPreferences.CoverQuality.Original,
-            LibraryPreferences.CoverQuality.Lossless,
-            -> {
-                android.graphics.Bitmap.CompressFormat.WEBP_LOSSLESS to 100
+        val (format, quality) = when (libraryPreferences.imageFormat().get()) {
+            LibraryPreferences.ImageFormat.PNG -> {
+                android.graphics.Bitmap.CompressFormat.PNG to 100
             }
-            LibraryPreferences.CoverQuality.Balanced -> {
-                android.graphics.Bitmap.CompressFormat.WEBP_LOSSY to 90
+            LibraryPreferences.ImageFormat.WebP -> {
+                android.graphics.Bitmap.CompressFormat.WEBP_LOSSLESS to 100
             }
         }
 
@@ -170,10 +166,9 @@ class MangaCoverScreenModel(
 
     /**
      * Set cover from a URL by downloading the image and saving it as a custom cover.
-     * Respects the user's cover quality preference:
-     * - Original: streams raw bytes directly, preserving the source format byte-for-byte.
-     * - Lossless: decodes and re-encodes as WebP lossless (identical quality, smaller file).
-     * - Balanced: decodes and re-encodes as WebP lossy at high quality (smallest file).
+     * The raw bytes from the source are always streamed directly to preserve the original
+     * format. The [ImageFormat] preference only affects *derived* images (splits, merges,
+     * save/share); custom covers are stored as received to maintain byte-for-byte fidelity.
      *
      * @param context Context.
      * @param coverUrl URL of the cover image to download.
@@ -184,37 +179,14 @@ class MangaCoverScreenModel(
         screenModelScope.launchIO {
             try {
                 val networkHelper: NetworkHelper = Injekt.get()
-                val libraryPreferences: LibraryPreferences = Injekt.get()
-                val coverQuality = libraryPreferences.coverQuality().get()
                 val request = Request.Builder().url(coverUrl).build()
                 val response = networkHelper.client.newCall(request).await()
                 response.use { resp ->
                     if (!resp.isSuccessful) {
                         throw IllegalStateException("Failed to download cover: ${resp.code}")
                     }
-                    when (coverQuality) {
-                        LibraryPreferences.CoverQuality.Original -> {
-                            resp.body.byteStream().use { input ->
-                                manga.editCover(Injekt.get(), input, updateManga, coverCache)
-                            }
-                        }
-                        LibraryPreferences.CoverQuality.Lossless,
-                        LibraryPreferences.CoverQuality.Balanced,
-                        -> {
-                            val bytes = resp.body.bytes()
-                            val bitmap = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                                ?: throw IllegalStateException("Failed to decode cover image")
-                            val format = android.graphics.Bitmap.CompressFormat.WEBP_LOSSLESS
-                                .takeIf { coverQuality == LibraryPreferences.CoverQuality.Lossless }
-                                ?: android.graphics.Bitmap.CompressFormat.WEBP_LOSSY
-                            val quality = if (coverQuality == LibraryPreferences.CoverQuality.Lossless) 100 else 90
-                            val buffer = okio.Buffer()
-                            bitmap.compress(format, quality, buffer.outputStream())
-                            bitmap.recycle()
-                            buffer.inputStream().use { input ->
-                                manga.editCover(Injekt.get(), input, updateManga, coverCache)
-                            }
-                        }
+                    resp.body.byteStream().use { input ->
+                        manga.editCover(Injekt.get(), input, updateManga, coverCache)
                     }
                 }
                 notifyCoverUpdated(context)

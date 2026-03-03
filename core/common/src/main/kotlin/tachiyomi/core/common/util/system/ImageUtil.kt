@@ -126,7 +126,7 @@ object ImageUtil {
     /**
      * Extract the 'side' part from [BufferedSource] and return it as [BufferedSource].
      */
-    fun splitInHalf(imageSource: BufferedSource, side: Side): BufferedSource {
+    fun splitInHalf(imageSource: BufferedSource, side: Side, format: Bitmap.CompressFormat = Bitmap.CompressFormat.WEBP_LOSSLESS): BufferedSource {
         val imageBitmap = BitmapFactory.decodeStream(imageSource.inputStream())
         val height = imageBitmap.height
         val width = imageBitmap.width
@@ -143,19 +143,19 @@ object ImageUtil {
         }
         imageBitmap.recycle()
         val output = Buffer()
-        half.compress(Bitmap.CompressFormat.WEBP_LOSSLESS, 100, output.outputStream())
+        half.compress(format, 100, output.outputStream())
         half.recycle()
 
         return output
     }
 
-    fun rotateImage(imageSource: BufferedSource, degrees: Float): BufferedSource {
+    fun rotateImage(imageSource: BufferedSource, degrees: Float, format: Bitmap.CompressFormat = Bitmap.CompressFormat.WEBP_LOSSLESS): BufferedSource {
         val imageBitmap = BitmapFactory.decodeStream(imageSource.inputStream())
         val rotated = rotateBitMap(imageBitmap, degrees)
         imageBitmap.recycle()
 
         val output = Buffer()
-        rotated.compress(Bitmap.CompressFormat.WEBP_LOSSLESS, 100, output.outputStream())
+        rotated.compress(format, 100, output.outputStream())
         rotated.recycle()
 
         return output
@@ -179,7 +179,7 @@ object ImageUtil {
     /**
      * Split the image into left and right parts, then merge them into a new image.
      */
-    fun splitAndMerge(imageSource: BufferedSource, upperSide: Side): BufferedSource {
+    fun splitAndMerge(imageSource: BufferedSource, upperSide: Side, format: Bitmap.CompressFormat = Bitmap.CompressFormat.WEBP_LOSSLESS): BufferedSource {
         val imageBitmap = BitmapFactory.decodeStream(imageSource.inputStream())
         val height = imageBitmap.height
         val width = imageBitmap.width
@@ -204,7 +204,7 @@ object ImageUtil {
         imageBitmap.recycle()
 
         val output = Buffer()
-        result.compress(Bitmap.CompressFormat.WEBP_LOSSLESS, 100, output.outputStream())
+        result.compress(format, 100, output.outputStream())
         result.recycle()
         return output
     }
@@ -272,7 +272,7 @@ object ImageUtil {
     /**
      * Combine two images vertically, placing the second image below the first.
      */
-    fun mergePages(topSource: BufferedSource, bottomSource: BufferedSource): BufferedSource {
+    fun mergePages(topSource: BufferedSource, bottomSource: BufferedSource, format: Bitmap.CompressFormat = Bitmap.CompressFormat.WEBP_LOSSLESS): BufferedSource {
         val topBitmap = BitmapFactory.decodeStream(topSource.inputStream())
         val bottomBitmap = BitmapFactory.decodeStream(bottomSource.inputStream())
 
@@ -286,7 +286,7 @@ object ImageUtil {
         bottomBitmap.recycle()
 
         val output = Buffer()
-        result.compress(Bitmap.CompressFormat.WEBP_LOSSLESS, 100, output.outputStream())
+        result.compress(format, 100, output.outputStream())
         result.recycle()
         return output
     }
@@ -315,7 +315,13 @@ object ImageUtil {
     /**
      * Splits tall images to improve performance of reader
      */
-    fun splitTallImage(tmpDir: UniFile, imageFile: UniFile, filenamePrefix: String): Boolean {
+    fun splitTallImage(
+        tmpDir: UniFile,
+        imageFile: UniFile,
+        filenamePrefix: String,
+        format: Bitmap.CompressFormat = Bitmap.CompressFormat.WEBP_LOSSLESS,
+        formatExtension: String = "webp",
+    ): Boolean {
         val imageSource = imageFile.openInputStream().use { Buffer().readFrom(it) }
         if (isAnimatedAndSupported(imageSource) || !isTallImage(imageSource)) {
             return true
@@ -335,7 +341,7 @@ object ImageUtil {
 
         return try {
             splitDataList.forEach { splitData ->
-                val splitImageName = splitImageName(filenamePrefix, splitData.index)
+                val splitImageName = splitImageName(filenamePrefix, splitData.index, formatExtension)
                 // Remove pre-existing split if exists (this split shouldn't exist under normal circumstances)
                 tmpDir.findFile(splitImageName)?.delete()
 
@@ -345,7 +351,7 @@ object ImageUtil {
 
                 splitFile.openOutputStream().use { outputStream ->
                     val splitBitmap = bitmapRegionDecoder.decodeRegion(region, options)
-                    splitBitmap.compress(Bitmap.CompressFormat.WEBP_LOSSLESS, 100, outputStream)
+                    splitBitmap.compress(format, 100, outputStream)
                     splitBitmap.recycle()
                 }
                 logcat {
@@ -358,7 +364,7 @@ object ImageUtil {
         } catch (e: Exception) {
             // Image splits were not successfully saved so delete them and keep the original image
             splitDataList
-                .map { splitImageName(filenamePrefix, it.index) }
+                .map { splitImageName(filenamePrefix, it.index, formatExtension) }
                 .forEach { tmpDir.findFile(it)?.delete() }
             logcat(LogPriority.ERROR, e)
             false
@@ -367,10 +373,10 @@ object ImageUtil {
         }
     }
 
-    private fun splitImageName(filenamePrefix: String, index: Int) = "${filenamePrefix}__${"%03d".format(
+    private fun splitImageName(filenamePrefix: String, index: Int, extension: String = "webp") = "${filenamePrefix}__${"%03d".format(
         Locale.ENGLISH,
         index + 1,
-    )}.webp"
+    )}.$extension"
 
     private val BitmapFactory.Options.splitData
         get(): List<SplitData> {

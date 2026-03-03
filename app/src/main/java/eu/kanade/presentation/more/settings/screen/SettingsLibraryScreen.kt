@@ -218,20 +218,18 @@ object SettingsLibraryScreen : SearchableSettings {
         libraryPreferences: LibraryPreferences,
     ): Preference.PreferenceGroup {
         return Preference.PreferenceGroup(
-            title = stringResource(MR.strings.pref_cover_quality),
+            title = stringResource(MR.strings.pref_image_format),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.ListPreference(
-                    preference = libraryPreferences.coverQuality(),
+                    preference = libraryPreferences.imageFormat(),
                     entries = persistentMapOf(
-                        LibraryPreferences.CoverQuality.Original to
-                            stringResource(MR.strings.cover_quality_original),
-                        LibraryPreferences.CoverQuality.Lossless to
-                            stringResource(MR.strings.cover_quality_lossless),
-                        LibraryPreferences.CoverQuality.Balanced to
-                            stringResource(MR.strings.cover_quality_balanced),
+                        LibraryPreferences.ImageFormat.PNG to
+                            stringResource(MR.strings.image_format_png),
+                        LibraryPreferences.ImageFormat.WebP to
+                            stringResource(MR.strings.image_format_webp),
                     ),
-                    title = stringResource(MR.strings.pref_cover_quality),
-                    subtitle = stringResource(MR.strings.pref_cover_quality_summary),
+                    title = stringResource(MR.strings.pref_image_format),
+                    subtitle = stringResource(MR.strings.pref_image_format_summary),
                 ),
             ),
         )

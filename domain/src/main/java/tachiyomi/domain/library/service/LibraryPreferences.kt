@@ -196,9 +196,21 @@ class LibraryPreferences(
 
     // endregion
 
-    // region Cover Quality
+    // region Image Format
 
-    fun coverQuality() = preferenceStore.getEnum("pref_cover_quality", CoverQuality.Original)
+    /**
+     * User preference for the lossless image format used when the app creates derived images
+     * (cover saves/shares, tall-image splits, page merges, rotations, etc.).
+     *
+     * This does **not** affect untouched downloads: pages that arrive from the source in their
+     * original format are always stored as-is.  The preference only applies when the app must
+     * produce a new bitmap (e.g. splitting a tall image into parts).
+     *
+     * Having a single, app-wide setting ensures **format consistency** within a chapter —
+     * every derived image uses the same container — and makes it easy to add new formats
+     * (e.g. JPEG XL) later by extending the [ImageFormat] enum.
+     */
+    fun imageFormat() = preferenceStore.getEnum("pref_image_format", ImageFormat.WebP)
 
     // endregion
 
@@ -210,15 +222,25 @@ class LibraryPreferences(
     }
 
     /**
-     * Controls how cover images are stored and exported.
-     * - [Original]: Preserve the source format byte-for-byte (highest fidelity, largest size).
-     * - [Lossless]: Re-encode as WebP lossless (identical quality to original, smaller file).
-     * - [Balanced]: Re-encode as WebP lossy at high quality (visually near-lossless, smallest file).
+     * Preferred image format for derived images created by the app.
+     *
+     * | Format | Extension | Compression | Size   | Compatibility | Notes |
+     * |--------|-----------|-------------|--------|---------------|-------|
+     * | [PNG]  | .png      | Lossless    | Largest | Universal     | Max compatibility; all tools/viewers handle PNG. Best choice if you plan to edit images later or share with apps that don't support WebP. |
+     * | [WebP] | .webp     | Lossless    | ~26 % smaller than PNG | Android-native, broad web support | Default. Same pixel-perfect fidelity as PNG but significantly smaller. Supported by all modern browsers and Android since API 14. |
+     *
+     * **Why not lossy?** Derived images (splits, merges) start from already-compressed source
+     * data, so re-encoding with a lossy codec would introduce generational quality loss for
+     * marginal size benefit. Both options here are **lossless** — identical pixel output.
+     *
+     * **Future: JPEG XL (.jxl)** — When Android adds native encoding support, a `JXL` value
+     * can be added here to offer ~35 % smaller lossless files than PNG with faster
+     * encode/decode. The app already *decodes* JXL images via the bundled image-decoder
+     * library; only encoding support is needed to complete the round-trip.
      */
-    enum class CoverQuality {
-        Original,
-        Lossless,
-        Balanced,
+    enum class ImageFormat(val extension: String, val mime: String) {
+        PNG("png", "image/png"),
+        WebP("webp", "image/webp"),
     }
 
     companion object {
