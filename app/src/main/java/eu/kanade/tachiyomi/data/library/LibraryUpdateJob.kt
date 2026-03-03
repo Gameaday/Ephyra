@@ -370,14 +370,20 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
         if (autoUpdateMetadata) {
             val metadataSourceId = manga.metadataSource?.takeIf { it > 0 }
             val metadataUrl = manga.metadataUrl?.takeIf { it.isNotEmpty() }
-            val (metaSource, metaSManga) = if (metadataSourceId != null && metadataUrl != null) {
-                val metaSrc = sourceManager.getOrStub(metadataSourceId)
-                val sM = manga.toSManga().apply { url = metadataUrl }
+            val usingMetadataSource = metadataSourceId != null && metadataUrl != null
+            val (metaSource, metaSManga) = if (usingMetadataSource) {
+                val metaSrc = sourceManager.getOrStub(metadataSourceId!!)
+                val sM = manga.toSManga().apply { url = metadataUrl!! }
                 metaSrc to sM
             } else {
                 source to sManga
             }
             val networkManga = metaSource.getMangaDetails(metaSManga)
+            // When using a metadata source, preserve the chapter source's updateStrategy
+            // since it controls chapter fetching behavior, not metadata
+            if (usingMetadataSource) {
+                networkManga.update_strategy = manga.updateStrategy
+            }
             updateManga.awaitUpdateFromSource(manga, networkManga, manualFetch = false, coverCache)
         }
 

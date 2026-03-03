@@ -268,6 +268,7 @@ class MangaScreenModel(
     /**
      * Fetch manga information from source.
      * If a metadata source is configured, uses that for metadata instead of the chapter source.
+     * The updateStrategy is preserved from the chapter source since it controls chapter fetching.
      */
     private suspend fun fetchMangaFromSource(manualFetch: Boolean = false) {
         val state = successState ?: return
@@ -276,14 +277,20 @@ class MangaScreenModel(
                 val manga = state.manga
                 val metadataSourceId = manga.metadataSource?.takeIf { it > 0 }
                 val metadataUrl = manga.metadataUrl?.takeIf { it.isNotEmpty() }
-                val (source, sManga) = if (metadataSourceId != null && metadataUrl != null) {
-                    val metaSrc = Injekt.get<SourceManager>().getOrStub(metadataSourceId)
-                    val sM = manga.toSManga().apply { url = metadataUrl }
+                val usingMetadataSource = metadataSourceId != null && metadataUrl != null
+                val (source, sManga) = if (usingMetadataSource) {
+                    val metaSrc = Injekt.get<SourceManager>().getOrStub(metadataSourceId!!)
+                    val sM = manga.toSManga().apply { url = metadataUrl!! }
                     metaSrc to sM
                 } else {
                     state.source to manga.toSManga()
                 }
                 val networkManga = source.getMangaDetails(sManga)
+                // When using a metadata source, preserve the chapter source's updateStrategy
+                // since it controls chapter fetching behavior, not metadata
+                if (usingMetadataSource) {
+                    networkManga.update_strategy = manga.updateStrategy
+                }
                 updateManga.awaitUpdateFromSource(manga, networkManga, manualFetch)
             }
         } catch (e: Throwable) {
