@@ -31,16 +31,16 @@ object ShapeTokens {
     val pill = RoundedCornerShape(percent = 50)
 
     /** Card shape for library items and manga covers. */
-    val card = RoundedCornerShape(16.dp)
+    val card get() = MihonShapes.medium
 
     /** Sheet shape for bottom sheets and modal surfaces. */
     val sheet = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
 
     /** Dialog shape for alert dialogs and confirmation popups. */
-    val dialog = RoundedCornerShape(28.dp)
+    val dialog get() = MihonShapes.extraLarge
 
     /** Image shape for cover thumbnails. */
-    val coverImage = RoundedCornerShape(12.dp)
+    val coverImage get() = MihonShapes.small
 }
 
 /**
