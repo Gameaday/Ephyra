@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import tachiyomi.presentation.core.theme.ShapeTokens
 
 @Composable
 fun Pill(
@@ -25,7 +26,7 @@ fun Pill(
     Surface(
         modifier = modifier
             .padding(start = 4.dp),
-        shape = MaterialTheme.shapes.extraLarge,
+        shape = ShapeTokens.pill,
         color = color,
         contentColor = contentColor,
     ) {

@@ -5,6 +5,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope
@@ -56,6 +57,7 @@ import tachiyomi.presentation.core.components.material.NavigationBar
 import tachiyomi.presentation.core.components.material.NavigationRail
 import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.i18n.pluralStringResource
+import tachiyomi.presentation.core.theme.MotionTokens
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
@@ -66,7 +68,7 @@ object HomeScreen : Screen() {
     private val showBottomNavEvent = Channel<Boolean>()
 
     @Suppress("ConstPropertyName")
-    private const val TabFadeDuration = 200
+    private const val TabFadeDuration = MotionTokens.DurationShort
 
     @Suppress("ConstPropertyName")
     private const val TabNavigatorKey = "HomeTabs"
@@ -105,8 +107,18 @@ object HomeScreen : Screen() {
                             }
                             AnimatedVisibility(
                                 visible = bottomNavVisible,
-                                enter = expandVertically(),
-                                exit = shrinkVertically(),
+                                enter = expandVertically(
+                                    animationSpec = tween(
+                                        durationMillis = MotionTokens.DurationMedium,
+                                        easing = MotionTokens.EasingDecelerate,
+                                    ),
+                                ),
+                                exit = shrinkVertically(
+                                    animationSpec = tween(
+                                        durationMillis = MotionTokens.DurationShort,
+                                        easing = MotionTokens.EasingAccelerate,
+                                    ),
+                                ),
                             ) {
                                 NavigationBar {
                                     TABS.fastForEach {
