@@ -1186,6 +1186,48 @@ ALTER TABLE mangas ADD COLUMN source_status INTEGER NOT NULL DEFAULT 0;
 - Duplicate detection via canonical_id
 - Smart migration suggestions when source is DEAD
 
+### C.4b: Alternative Titles for Cross-Source Matching (Implemented)
+
+The problem: manga may have different titles across sources (romaji vs english vs native).
+Even with canonical IDs, chapter sources may not share tracker IDs. We need title-based
+matching that handles multiple known titles per series.
+
+#### Schema
+
+```sql
+-- Migration 13.sqm
+ALTER TABLE mangas ADD COLUMN alternative_titles TEXT;
+    -- Pipe-separated: "One Piece|OP|ワンピース"
+    -- Populated from AniList (romaji, english, native + synonyms)
+```
+
+#### Data Flow
+
+1. **AniList GraphQL** now fetches `title { romaji english native }` + `synonyms`
+2. **ALSearchItem.buildAlternativeTitles()** collects all distinct non-primary titles
+3. **TrackSearch.alternative_titles** carries them through the tracker pipeline
+4. **AddTracks.mergeAlternativeTitles()** stores them on the manga (additive merge)
+
+#### Enhanced Search Engine
+
+**BaseSmartSearchEngine** now supports:
+- `getAlternativeTitles()` — override to provide alt titles from results
+- `bestTitleSimilarity()` — checks primary + all alt titles for best match
+- `multiTitleSearch()` — tries each known title in sequence:
+  1. Exact match on primary title (cheapest)
+  2. Exact match on each alternative title
+  3. Fall back to deep search
+
+**MigrationListScreenModel** uses `multiTitleSearch()` when alt titles are available,
+dramatically improving cross-source matching for migration.
+
+#### Impact
+
+- Migration accuracy: ~40% → ~85% for manga with tracker links (estimated)
+- Zero additional API cost — uses data already fetched from AniList
+- Future: MangaDex extensions could populate SManga with alt titles
+  (requires source-api change to add alternativeTitles to SManga interface)
+
 ### C.5: Why This Design Wins
 
 | Dimension | Current | Approach A | Approach B | **Approach C** |

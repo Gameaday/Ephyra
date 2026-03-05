@@ -43,7 +43,7 @@ data class ALSearchItem(
             title.native?.let { add(it) }
             synonyms?.let { addAll(it) }
         }
-            .filter { it.isNotBlank() && it != primary }
+            .filterNot { it.isBlank() || it == primary }
             .distinct()
     }
 }

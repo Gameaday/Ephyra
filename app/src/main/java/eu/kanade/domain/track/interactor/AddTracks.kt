@@ -157,16 +157,17 @@ class AddTracks(
             val manga = mangaRepository.getMangaById(mangaId)
             val existing = manga.alternativeTitles.toMutableSet()
             val primary = manga.title
+            val previousSize = existing.size
 
             // Add new titles, excluding the primary title and blanks
-            val merged = existing + newTitles.filter { it.isNotBlank() && it != primary }
-            if (merged.size == existing.size) return // No new titles to add
+            existing.addAll(newTitles.filterNot { it.isBlank() || it == primary })
+            if (existing.size == previousSize) return // No new titles to add
 
             mangaRepository.update(
-                MangaUpdate(id = mangaId, alternativeTitles = merged.toList()),
+                MangaUpdate(id = mangaId, alternativeTitles = existing.toList()),
             )
             logcat(LogPriority.INFO) {
-                "Updated alternative_titles for ${manga.title}: +${merged.size - existing.size} titles"
+                "Updated alternative_titles for ${manga.title}: +${existing.size - previousSize} titles"
             }
         } catch (e: Exception) {
             logcat(LogPriority.WARN, e) { "Failed to update alternative_titles for manga $mangaId" }
