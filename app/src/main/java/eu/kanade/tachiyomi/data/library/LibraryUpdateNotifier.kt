@@ -343,7 +343,7 @@ class LibraryUpdateNotifier(
             setContentText(lines.first())
             setStyle(NotificationCompat.BigTextStyle().bigText(lines.joinToString("\n")))
             setSmallIcon(R.drawable.ic_warning_white_24dp)
-            setContentIntent(getNotificationIntent())
+            setContentIntent(getLibraryIntent())
             setAutoCancel(true)
         }
     }
@@ -382,7 +382,7 @@ class LibraryUpdateNotifier(
             setContentText(lines.first())
             setStyle(NotificationCompat.BigTextStyle().bigText(lines.joinToString("\n")))
             setSmallIcon(R.drawable.ic_warning_white_24dp)
-            setContentIntent(getNotificationIntent())
+            setContentIntent(getLibraryIntent())
             setAutoCancel(true)
         }
     }
@@ -465,6 +465,23 @@ class LibraryUpdateNotifier(
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             action = Constants.SHORTCUT_UPDATES
+        }
+        return PendingIntent.getActivity(
+            context,
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+    }
+
+    /**
+     * Returns an intent to open the library screen.
+     * Used for migration-related notifications so users can use the health filter.
+     */
+    private fun getLibraryIntent(): PendingIntent {
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            action = Constants.SHORTCUT_LIBRARY
         }
         return PendingIntent.getActivity(
             context,
