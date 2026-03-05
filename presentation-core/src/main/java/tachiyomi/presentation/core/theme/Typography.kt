@@ -58,3 +58,9 @@ val Typography.metadata: TextStyle
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         letterSpacing = 0.25.sp,
     )
+
+/**
+ * Compact label for badge counts and small indicators.
+ */
+val Typography.badgeLabel: TextStyle
+    get() = labelSmall.copy(fontSize = 10.sp)

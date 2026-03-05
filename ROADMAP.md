@@ -23,13 +23,11 @@
 | **GetDeadFavorites interactor** — Queries persistently DEAD manga by dead_since cutoff | `GetDeadFavorites`, `mangas.sq:getFavoritesByDeadSinceBefore` | 5 unit tests |
 | **Backup/restore completeness** — `canonicalId`, `sourceStatus`, `deadSince` persisted across backup cycles | `BackupManga`, `MangaBackupCreator`, `MangaRestorer` | Verified via integration |
 | **Library source health filter** — TriState filter toggle to show/hide DEAD/DEGRADED manga in library | `LibraryPreferences`, `LibraryScreenModel`, `LibrarySettingsDialog` | 19 unit tests |
-| **Design token system** — Padding, Shape, Motion, Typography, Color tokens with adoption in 10+ components | `Constants.kt`, `Motion.kt`, `Shapes.kt`, `Typography.kt`, `Color.kt` | N/A |
+| **Design token system** — Padding, Shape, Motion, Typography, Color, Navigation, Badge, Pill tokens with full adoption across all presentation components | `Constants.kt`, `Motion.kt`, `Shapes.kt`, `Typography.kt`, `Color.kt`, `NavigationTokens.kt`, `BadgeTokens.kt`, `PillTokens.kt` | N/A |
 
 ### ⚠️ Partially Implemented
 
-| Feature | What's Done | What's Missing |
-|---------|-------------|----------------|
-| **Design token adoption** | Tokens defined; used in Pill, ListGroupHeader, SectionCard, CollapsibleBox, AdaptiveSheet, InfoScreen, LazyColumnWithAction, LinkIcon, SettingsItems, VerticalFastScroller | ~4 components still use hardcoded dp/sp values (Badges.kt, Pill.kt inner padding, Tabs.kt, NavigationBar/Rail) |
+*None — all tracked features are either complete or not yet started.*
 
 ### ❌ Not Yet Implemented (Documented in BRAINSTORM.md)
 
@@ -47,15 +45,15 @@
 
 | Component | File | Hardcoded Values | Status |
 |-----------|------|------------------|--------|
-| `Badges.kt` | `presentation-core/.../Badges.kt:50,95` | `3.dp` horizontal, `1.dp` vertical | Kept — intentionally tight for badge styling |
-| `Pill.kt` | `presentation-core/.../Pill.kt:35` | `6.dp, 1.dp` | Kept — custom component-specific padding |
+| ~~`Badges.kt`~~ | ~~`presentation-core/.../Badges.kt:50,95`~~ | ~~`3.dp` horizontal, `1.dp` vertical~~ | ✅ Fixed — BadgeTokens.HorizontalPadding, BadgeTokens.VerticalPadding |
+| ~~`Pill.kt`~~ | ~~`presentation-core/.../Pill.kt:35`~~ | ~~`6.dp, 1.dp`~~ | ✅ Fixed — PillTokens.HorizontalPadding, PillTokens.VerticalPadding; `4.dp` → Padding.extraSmall |
 | ~~`LazyColumnWithAction.kt`~~ | ~~`presentation-core/.../LazyColumnWithAction.kt:41`~~ | ~~`16.dp, 8.dp`~~ | ✅ Fixed — Padding.medium, Padding.small |
 | ~~`SettingsItems.kt`~~ | ~~`presentation-core/.../SettingsItems.kt:391,449`~~ | ~~`4.dp`, `24.dp`~~ | ✅ Fixed — Padding.extraSmall, Padding.large |
 | ~~`VerticalFastScroller.kt`~~ | ~~`presentation-core/.../VerticalFastScroller.kt`~~ | ~~`8.dp`~~ | ✅ Fixed — Padding.small (thumb dimensions kept component-specific) |
 | ~~`LinkIcon.kt`~~ | ~~`presentation-core/.../LinkIcon.kt:22`~~ | ~~`4.dp`~~ | ✅ Fixed — Padding.extraSmall |
-| `Tabs.kt` | `presentation-core/.../material/Tabs.kt:29` | `10.sp` | Pending — needs typography token |
-| `NavigationBar.kt` | `presentation-core/.../material/NavigationBar.kt:43` | `80.dp` | Pending — needs component-specific token |
-| `NavigationRail.kt` | `presentation-core/.../material/NavigationRail.kt` | `80.dp` | Pending — needs component-specific token |
+| ~~`Tabs.kt`~~ | ~~`presentation-core/.../material/Tabs.kt:29`~~ | ~~`10.sp`~~ | ✅ Fixed — Typography.badgeLabel extension |
+| ~~`NavigationBar.kt`~~ | ~~`presentation-core/.../material/NavigationBar.kt:43`~~ | ~~`80.dp`~~ | ✅ Fixed — NavigationTokens.NavBarHeight |
+| ~~`NavigationRail.kt`~~ | ~~`presentation-core/.../material/NavigationRail.kt`~~ | ~~`80.dp`~~ | ✅ Fixed — NavigationTokens.NavRailMinWidth, NavigationTokens.NavRailTonalElevation |
 | ~~`CircularProgressIndicator.kt`~~ | ~~`presentation-core/.../CircularProgressIndicator.kt`~~ | ~~`tween(2000)`~~ | ✅ Fixed — ROTATION_DURATION_MS constant |
 
 ### 2. Missing Test Coverage
@@ -90,7 +88,7 @@
 **Done:** Added `SourceHealthBanner` composable with DEGRADED (tertiary) and DEAD (error) color scheme. Wired into both small and large manga detail layouts between action row and description. Added `source_health_degraded` and `source_health_dead` string resources.
 
 #### 1.2 Migrate Remaining Hardcoded Values to Tokens ✅
-**Done:** Migrated 5 files: LazyColumnWithAction (→Padding.medium/small), LinkIcon (→Padding.extraSmall), SettingsItems (→Padding.extraSmall/large), VerticalFastScroller (→Padding.small), CircularProgressIndicator (→ROTATION_DURATION_MS constant). Remaining: Badges.kt (3.dp is intentionally tight), Pill.kt (6.dp/1.dp custom), Tabs.kt (10.sp label), NavigationBar/Rail (80.dp — needs component-specific token).
+**Done:** All presentation components now use design tokens. Initial migration: LazyColumnWithAction (→Padding.medium/small), LinkIcon (→Padding.extraSmall), SettingsItems (→Padding.extraSmall/large), VerticalFastScroller (→Padding.small), CircularProgressIndicator (→ROTATION_DURATION_MS). Final migration: Badges.kt (→BadgeTokens), Pill.kt (→PillTokens + Padding.extraSmall), Tabs.kt (→Typography.badgeLabel), NavigationBar (→NavigationTokens.NavBarHeight), NavigationRail (→NavigationTokens.NavRailMinWidth + NavRailTonalElevation).
 
 #### 1.3 Unit Tests for AddTracks Pipeline ✅
 **Done:** Added 15 tests in `AddTracksTest.kt`: 7 for `setCanonicalIdIfAbsent()` (prefix mapping, first-wins, skip zero/negative/unknown tracker), 8 for `mergeAlternativeTitles()` (add, dedup, case-insensitive, blank filter, preserve existing). Changed method visibility to `internal` for testability.
@@ -150,9 +148,8 @@
 2. ~~**Should alt titles use JSON instead of pipe-delimited?**~~
    ✅ **Resolved:** Migrated to JSON array storage with backward-compatible pipe-separated parsing. Titles with `|` characters are now safe.
 
-3. **Should we add a `Padding.micro` (2.dp) token?**
-   - Some components use `1.dp` or `3.dp` padding that doesn't fit existing tokens.
-   - **Recommendation:** Keep component-specific for truly unique values; add `micro` only if 3+ components need it.
+3. ~~**Should we add a `Padding.micro` (2.dp) token?**~~
+   ✅ **Resolved:** Created component-specific tokens (`BadgeTokens`, `PillTokens`) instead. Values like 1.dp/3.dp/6.dp are component-specific and don't warrant a general-purpose padding token.
 
 ---
 
@@ -164,6 +161,6 @@
 | Canonical ID format | `prefix:remoteId` (e.g., `al:21`) | Human-readable, supports multiple tracker backends |
 | Health detection | Chapter count comparison (70% threshold) | Zero additional API calls, uses data already fetched |
 | Search strategy | 4-tier with cross-title evaluation | Balances API cost vs match quality |
-| Design tokens | Material Expressive system | Padding, Shape, Motion, Typography, Color tokens |
+| Design tokens | Material Expressive system | Padding, Shape, Motion, Typography, Color, Navigation, Badge, Pill tokens |
 | Alt title storage | JSON array (backward-compatible) | Handles `\|` in titles, round-trip safe, legacy pipe-separated still readable |
 | Alt title source | AniList (romaji/english/native/synonyms) | Most complete metadata; MangaDex alt titles planned but SManga lacks field |
