@@ -24,6 +24,9 @@
 | **Backup/restore completeness** — `canonicalId`, `sourceStatus`, `deadSince` persisted across backup cycles | `BackupManga`, `MangaBackupCreator`, `MangaRestorer` | Verified via integration |
 | **Library source health filter** — TriState filter toggle to show/hide DEAD/DEGRADED manga in library | `LibraryPreferences`, `LibraryScreenModel`, `LibrarySettingsDialog` | 19 unit tests |
 | **Design token system** — Padding, Shape, Motion, Typography, Color, Navigation, Badge, Pill tokens with full adoption across all presentation components | `Constants.kt`, `Motion.kt`, `Shapes.kt`, `Typography.kt`, `Color.kt`, `NavigationTokens.kt`, `BadgeTokens.kt`, `PillTokens.kt` | N/A |
+| **Library health summary banner** — Animated banner at top of library showing dead/degraded source counts. Click to enable health filter. | `LibraryHealthBanner.kt`, `LibraryContent.kt`, `LibraryTab.kt` | N/A |
+| **Migration match quality** — Confidence percentage displayed on migration search results. Color-coded: green (≥90%), tertiary (≥70%), red (<70%). Hidden for exact matches. | `MigrationListScreenContent.kt`, `SmartSourceSearchEngine.kt`, `BaseSmartSearchEngine.kt` | 25 unit tests |
+| **Source health color in info header** — Source name tinted red (DEAD) or tertiary/yellow (DEGRADED) in manga detail header | `MangaInfoHeader.kt`, `MangaScreen.kt` | N/A |
 
 ### ⚠️ Partially Implemented
 
@@ -118,19 +121,25 @@
 #### 3.4 Library Source Health Filter ✅
 **Done:** Added `filterSourceHealthDead` TriState preference in `LibraryPreferences`. Filter toggle in `LibrarySettingsDialog` filter tab. `LibraryScreenModel.applyFilters()` checks `sourceStatus` for DEAD/DEGRADED. ENABLED_IS shows only affected manga, ENABLED_NOT hides them.
 
-#### 3.5 Source Health History
+#### 3.5 UX/UI Improvements ✅
+**Done:**
+- **Library Health Summary Banner** — `LibraryHealthBanner` composable with animated visibility at top of library. Shows dead/degraded counts with warning icon. Error container color for dead sources, tertiary for degraded only. Click-to-filter enables health filter (`ENABLED_IS`). Wired into `LibraryContent` between tabs and pager.
+- **Migration Match Quality Indicator** — `multiTitleSearch()` now returns `SearchEntry<T>` with similarity score. `SearchResult.Success.matchConfidence` field (0.0-1.0). Color-coded display: primary (≥90%), tertiary (≥70%), error (<70%). Hidden for exact matches (100%) to reduce clutter. Canonical ID matches get 1.0 confidence.
+- **Source Health Color in Info Header** — Source name in `MangaContentInfo` tinted by health status: error (DEAD), tertiary (DEGRADED), default (HEALTHY). Threaded through `MangaInfoBox` → `MangaAndSourceTitles*` → `MangaContentInfo` in both phone and tablet layouts.
+
+#### 3.6 Source Health History
 **What:** Track status transitions over time to distinguish temporary outages from permanent source death.
 **Why:** A single failed update shouldn't mark a source DEAD permanently.
 **Where:** New column or table for health history timestamps.
 **Effort:** ~6-8 hours
 
-#### 3.6 Cross-Source Discovery
+#### 3.7 Cross-Source Discovery
 **What:** Implement the automated source discovery protocol from BRAINSTORM.md Part 2.
 **Why:** Enables proactive source failover instead of manual migration.
 **Where:** New discovery service, rate limiting, confidence scoring.
 **Effort:** ~20-30 hours (major feature)
 
-#### 3.7 Multi-Source Chapter Resolution
+#### 3.8 Multi-Source Chapter Resolution
 **What:** Implement HIERARCHY/ROUND_ROBIN/QUALITY strategies from BRAINSTORM.md Part 3.
 **Why:** Enables automatic chapter fetching from multiple sources per manga.
 **Where:** New `source_mappings` table, resolution engine.
