@@ -379,7 +379,7 @@ class BaseSmartSearchEngineTest {
     fun `multiTitleSearch primary title empty still searches alt titles`() = runTest {
         // Edge case: primary title is blank but alt titles are provided
         val result = TestResult(title = "Naruto")
-        var searchQueries = mutableListOf<String>()
+        val searchQueries = mutableListOf<String>()
         val found = engine.testMultiTitleSearch(
             { query ->
                 searchQueries.add(query)

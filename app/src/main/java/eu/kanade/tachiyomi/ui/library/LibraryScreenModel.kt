@@ -246,7 +246,7 @@ class LibraryScreenModel(
             !isExcluded && isIncluded
         }
 
-        val filterFnSourceHealthDead: (LibraryItem) -> Boolean = {
+        val filterFnSourceHealthUnhealthy: (LibraryItem) -> Boolean = {
             applyFilter(filterSourceHealthDead) {
                 val status = SourceStatus.fromValue(it.libraryManga.manga.sourceStatus)
                 status == SourceStatus.DEAD || status == SourceStatus.DEGRADED
@@ -261,7 +261,7 @@ class LibraryScreenModel(
                 filterFnCompleted(it) &&
                 filterFnIntervalCustom(it) &&
                 filterFnTracking(it) &&
-                filterFnSourceHealthDead(it)
+                filterFnSourceHealthUnhealthy(it)
         }
     }
 
