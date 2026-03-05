@@ -38,6 +38,7 @@ data class Manga(
     val canonicalId: String?,
     val sourceStatus: Int,
     val alternativeTitles: List<String>,
+    val deadSince: Long?,
 ) : Serializable {
 
     val expectedNextUpdate: Instant?
@@ -138,6 +139,7 @@ data class Manga(
             canonicalId = null,
             sourceStatus = 0,
             alternativeTitles = emptyList(),
+            deadSince = null,
         )
     }
 }

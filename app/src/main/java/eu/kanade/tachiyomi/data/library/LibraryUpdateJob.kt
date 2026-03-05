@@ -361,6 +361,16 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
             }
         }
         notifier.showSourceHealthNotification(deadManga, degradedManga)
+
+        // Check for manga that have been persistently DEAD — suggest bulk migration.
+        // Only prompt if there are manga that have been DEAD for >= DEAD_MIGRATION_THRESHOLD_MS.
+        val persistentlyDead = deadManga.filter { manga ->
+            manga.deadSince != null &&
+                (System.currentTimeMillis() - manga.deadSince!!) >= DEAD_MIGRATION_THRESHOLD_MS
+        }
+        if (persistentlyDead.isNotEmpty()) {
+            notifier.showMigrationSuggestionNotification(persistentlyDead)
+        }
     }
 
     private fun downloadChapters(manga: Manga, chapters: List<Chapter>) {
@@ -464,8 +474,20 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                 "Source health changed for ${manga.title}: $oldStatus → $newStatus " +
                     "(chapters: $previousChapterCount → ${chapters.size})"
             }
+            // Track dead_since: set timestamp when first marked DEAD, clear on recovery
+            val deadSince = when {
+                newStatus == SourceStatus.DEAD && oldStatus != SourceStatus.DEAD ->
+                    System.currentTimeMillis()
+                newStatus != SourceStatus.DEAD && oldStatus == SourceStatus.DEAD ->
+                    DEAD_SINCE_CLEARED
+                else -> null // No change to dead_since
+            }
             updateManga.await(
-                MangaUpdate(id = manga.id, sourceStatus = newStatus.value),
+                MangaUpdate(
+                    id = manga.id,
+                    sourceStatus = newStatus.value,
+                    deadSince = deadSince,
+                ),
             )
         }
 
@@ -548,6 +570,20 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
          */
         internal const val CHAPTER_DROP_THRESHOLD_NUMERATOR = 7
         internal const val CHAPTER_DROP_THRESHOLD_DENOMINATOR = 10
+
+        /**
+         * Sentinel value used when clearing dead_since on recovery.
+         * Using 0 instead of null since SQLDelight coalesce(:deadSince, dead_since)
+         * can't distinguish "set null" from "no change". We use 0 as the SQL update
+         * handles this via a CASE expression.
+         */
+        internal const val DEAD_SINCE_CLEARED = 0L
+
+        /**
+         * How long a manga must be DEAD before suggesting migration (3 days in ms).
+         * This avoids prompting for temporary outages.
+         */
+        internal const val DEAD_MIGRATION_THRESHOLD_MS = 3L * 24 * 60 * 60 * 1000
 
         /**
          * Determines source health status by comparing fetched chapter count to previous count.

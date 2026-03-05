@@ -31,6 +31,7 @@ object Notifications {
     const val CHANNEL_LIBRARY_ERROR = "library_errors_channel"
     const val ID_LIBRARY_ERROR = -102
     const val ID_LIBRARY_DEAD_SOURCES = -104
+    const val ID_LIBRARY_MIGRATION_SUGGESTION = -105
 
     /**
      * Notification channel and ids used by the downloader.

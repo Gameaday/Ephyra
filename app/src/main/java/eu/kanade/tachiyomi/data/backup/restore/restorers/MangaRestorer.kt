@@ -134,6 +134,7 @@ class MangaRestorer(
                 canonicalId = manga.canonicalId,
                 sourceStatus = manga.sourceStatus.toLong(),
                 alternativeTitles = MangaMapper.serializeAlternativeTitles(manga.alternativeTitles),
+                deadSince = manga.deadSince,
             )
         }
         return manga
@@ -270,6 +271,7 @@ class MangaRestorer(
                 canonicalId = manga.canonicalId,
                 sourceStatus = manga.sourceStatus.toLong(),
                 alternativeTitles = MangaMapper.serializeAlternativeTitles(manga.alternativeTitles),
+                deadSince = manga.deadSince,
             )
             mangasQueries.selectLastInsertedRowId()
         }

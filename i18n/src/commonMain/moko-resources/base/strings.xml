@@ -1070,4 +1070,8 @@
     <string name="notification_source_health_title">%d manga with source issues</string>
     <string name="notification_dead_sources">🔴 %d manga with dead sources:</string>
     <string name="notification_degraded_sources">🟡 %d manga with degraded sources:</string>
+
+    <!-- Migration suggestion notifications -->
+    <string name="notification_migration_suggestion_title">Sources still dead — consider migrating</string>
+    <string name="notification_migration_suggestion_body">%d manga have had dead sources for 3+ days</string>
 </resources>

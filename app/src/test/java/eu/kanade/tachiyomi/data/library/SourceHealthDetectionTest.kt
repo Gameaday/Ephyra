@@ -140,4 +140,26 @@ class SourceHealthDetectionTest {
             LibraryUpdateJob.detectSourceHealth(fetchedCount = 0, previousCount = 1),
         )
     }
+
+    // --- dead_since tracking ---
+
+    @Test
+    fun `DEAD_SINCE_CLEARED sentinel value is zero`() {
+        assertEquals(0L, LibraryUpdateJob.DEAD_SINCE_CLEARED)
+    }
+
+    @Test
+    fun `DEAD_MIGRATION_THRESHOLD_MS is 3 days`() {
+        val threeDaysMs = 3L * 24 * 60 * 60 * 1000
+        assertEquals(threeDaysMs, LibraryUpdateJob.DEAD_MIGRATION_THRESHOLD_MS)
+    }
+
+    @Test
+    fun `chapter drop threshold constants produce 70 percent`() {
+        // 7/10 = 0.7, meaning < 70% is DEGRADED
+        val numerator = LibraryUpdateJob.CHAPTER_DROP_THRESHOLD_NUMERATOR
+        val denominator = LibraryUpdateJob.CHAPTER_DROP_THRESHOLD_DENOMINATOR
+        assertEquals(7, numerator)
+        assertEquals(10, denominator)
+    }
 }

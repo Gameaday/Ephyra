@@ -348,6 +348,45 @@ class LibraryUpdateNotifier(
         }
     }
 
+    /**
+     * Shows a notification suggesting the user migrate manga whose sources have been
+     * persistently DEAD. This is separate from the health notification to avoid notification
+     * fatigue — it only fires for manga that have been DEAD for a sustained period.
+     *
+     * @param persistentlyDeadManga manga that have been DEAD for >= DEAD_MIGRATION_THRESHOLD_MS
+     */
+    fun showMigrationSuggestionNotification(persistentlyDeadManga: List<Manga>) {
+        if (persistentlyDeadManga.isEmpty()) return
+
+        val lines = mutableListOf<String>()
+        lines.add(
+            context.stringResource(MR.strings.notification_migration_suggestion_body, persistentlyDeadManga.size),
+        )
+        if (!securityPreferences.hideNotificationContent().get()) {
+            persistentlyDeadManga.take(NOTIF_MAX_HEALTH_ENTRIES).forEach { manga ->
+                val sourceName = sourceManager.getOrStub(manga.source).name
+                lines.add("  • ${manga.title.chop(NOTIF_TITLE_MAX_LEN)} ($sourceName)")
+            }
+            if (persistentlyDeadManga.size > NOTIF_MAX_HEALTH_ENTRIES) {
+                lines.add("  … and ${persistentlyDeadManga.size - NOTIF_MAX_HEALTH_ENTRIES} more")
+            }
+        }
+
+        context.notify(
+            Notifications.ID_LIBRARY_MIGRATION_SUGGESTION,
+            Notifications.CHANNEL_LIBRARY_ERROR,
+        ) {
+            setContentTitle(
+                context.stringResource(MR.strings.notification_migration_suggestion_title),
+            )
+            setContentText(lines.first())
+            setStyle(NotificationCompat.BigTextStyle().bigText(lines.joinToString("\n")))
+            setSmallIcon(R.drawable.ic_warning_white_24dp)
+            setContentIntent(getNotificationIntent())
+            setAutoCancel(true)
+        }
+    }
+
     private suspend fun getMangaIcon(manga: Manga): Bitmap? {
         val request = ImageRequest.Builder(context)
             .data(manga)

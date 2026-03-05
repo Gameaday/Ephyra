@@ -200,6 +200,7 @@ class MangaRepositoryImpl(
                     canonicalId = value.canonicalId,
                     sourceStatus = value.sourceStatus?.toLong(),
                     alternativeTitles = MangaMapper.serializeAlternativeTitles(value.alternativeTitles),
+                    deadSince = value.deadSince,
                 )
             }
         }

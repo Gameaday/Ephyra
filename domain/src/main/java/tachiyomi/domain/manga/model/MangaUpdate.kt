@@ -30,6 +30,7 @@ data class MangaUpdate(
     val canonicalId: String? = null,
     val sourceStatus: Int? = null,
     val alternativeTitles: List<String>? = null,
+    val deadSince: Long? = null,
 )
 
 fun Manga.toMangaUpdate(): MangaUpdate {
@@ -61,5 +62,6 @@ fun Manga.toMangaUpdate(): MangaUpdate {
         canonicalId = canonicalId,
         sourceStatus = sourceStatus,
         alternativeTitles = alternativeTitles,
+        deadSince = deadSince,
     )
 }

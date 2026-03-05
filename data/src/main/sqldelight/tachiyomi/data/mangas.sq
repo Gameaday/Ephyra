@@ -33,7 +33,8 @@ CREATE TABLE mangas(
     metadata_url TEXT,
     canonical_id TEXT,
     source_status INTEGER NOT NULL DEFAULT 0,
-    alternative_titles TEXT
+    alternative_titles TEXT,
+    dead_since INTEGER
 );
 
 CREATE INDEX library_favorite_index ON mangas(favorite) WHERE favorite = 1;
@@ -96,6 +97,16 @@ getFavorites:
 SELECT *
 FROM mangas
 WHERE favorite = 1;
+
+-- Find library manga that have been DEAD since before a given timestamp.
+-- Used to identify manga for bulk migration suggestion.
+getFavoritesByDeadSinceBefore:
+SELECT *
+FROM mangas
+WHERE favorite = 1
+AND source_status = 2
+AND dead_since IS NOT NULL
+AND dead_since < :deadSinceBefore;
 
 getReadMangaNotInLibrary:
 SELECT *
@@ -211,8 +222,8 @@ AND (
 );
 
 insert:
-INSERT INTO mangas(source, url, artist, author, description, genre, title, status, thumbnail_url, favorite, last_update, next_update, initialized, viewer, chapter_flags, cover_last_modified, date_added, update_strategy, calculate_interval, last_modified_at, version, notes, metadata_source, metadata_url, canonical_id, source_status, alternative_titles)
-VALUES (:source, :url, :artist, :author, :description, :genre, :title, :status, :thumbnailUrl, :favorite, :lastUpdate, :nextUpdate, :initialized, :viewerFlags, :chapterFlags, :coverLastModified, :dateAdded, :updateStrategy, :calculateInterval, 0, :version, :notes, :metadataSource, :metadataUrl, :canonicalId, :sourceStatus, :alternativeTitles);
+INSERT INTO mangas(source, url, artist, author, description, genre, title, status, thumbnail_url, favorite, last_update, next_update, initialized, viewer, chapter_flags, cover_last_modified, date_added, update_strategy, calculate_interval, last_modified_at, version, notes, metadata_source, metadata_url, canonical_id, source_status, alternative_titles, dead_since)
+VALUES (:source, :url, :artist, :author, :description, :genre, :title, :status, :thumbnailUrl, :favorite, :lastUpdate, :nextUpdate, :initialized, :viewerFlags, :chapterFlags, :coverLastModified, :dateAdded, :updateStrategy, :calculateInterval, 0, :version, :notes, :metadataSource, :metadataUrl, :canonicalId, :sourceStatus, :alternativeTitles, :deadSince);
 
 update:
 UPDATE mangas SET
@@ -242,7 +253,8 @@ UPDATE mangas SET
     metadata_url = coalesce(:metadataUrl, metadata_url),
     canonical_id = coalesce(:canonicalId, canonical_id),
     source_status = coalesce(:sourceStatus, source_status),
-    alternative_titles = coalesce(:alternativeTitles, alternative_titles)
+    alternative_titles = coalesce(:alternativeTitles, alternative_titles),
+    dead_since = CASE WHEN :deadSince = 0 THEN NULL WHEN :deadSince IS NOT NULL THEN :deadSince ELSE dead_since END
 WHERE _id = :mangaId;
 
 clearMetadataSource:
