@@ -59,7 +59,7 @@ abstract class BaseSmartSearchEngine<T>(
         primaryTitle: String,
         alternativeTitles: List<String> = emptyList(),
         deepSearchFallback: Boolean = true,
-    ): T? {
+    ): SearchEntry<T>? {
         val allTitles = listOf(primaryTitle) + alternativeTitles
 
         // Dedup: skip alt titles nearly identical to primary or each other
@@ -70,7 +70,7 @@ abstract class BaseSmartSearchEngine<T>(
         val primaryMatch = crossTitleSearch(searchAction, primaryTitle, allTitles)
         if (primaryMatch != null) {
             val similarity = bestOverallSimilarity(allTitles, primaryMatch)
-            if (similarity >= EXACT_MATCH_THRESHOLD) return primaryMatch
+            if (similarity >= EXACT_MATCH_THRESHOLD) return SearchEntry(primaryMatch, similarity)
             if (similarity >= eligibleThreshold &&
                 (bestNearMatch == null || similarity > bestNearMatch.distance)
             ) {
@@ -83,7 +83,7 @@ abstract class BaseSmartSearchEngine<T>(
             val match = crossTitleSearch(searchAction, altTitle, allTitles)
             if (match != null) {
                 val similarity = bestOverallSimilarity(allTitles, match)
-                if (similarity >= EXACT_MATCH_THRESHOLD) return match
+                if (similarity >= EXACT_MATCH_THRESHOLD) return SearchEntry(match, similarity)
                 if (similarity >= eligibleThreshold &&
                     (bestNearMatch == null || similarity > bestNearMatch.distance)
                 ) {
@@ -93,11 +93,12 @@ abstract class BaseSmartSearchEngine<T>(
         }
 
         // Step 3: Return best near-match before attempting expensive deep search
-        if (bestNearMatch != null) return bestNearMatch.entry
+        if (bestNearMatch != null) return bestNearMatch
 
         // Step 4: Deep search with all title variants (fail-fast on exact match)
         if (deepSearchFallback) {
-            return deepSearchMultipleTitles(searchAction, allTitles)
+            val deepResult = deepSearchMultipleTitles(searchAction, allTitles)
+            if (deepResult != null) return deepResult
         }
 
         return null
@@ -171,7 +172,7 @@ abstract class BaseSmartSearchEngine<T>(
     private suspend fun deepSearchMultipleTitles(
         searchAction: SearchAction<T>,
         allTitles: List<String>,
-    ): T? {
+    ): SearchEntry<T>? {
         val cleanedTitles = allTitles
             .map { cleanDeepSearchTitle(it) }
             .filter { it.isNotBlank() }
@@ -189,14 +190,14 @@ abstract class BaseSmartSearchEngine<T>(
                 val similarity = cleanedTitles.maxOf { ct ->
                     bestCleanedTitleSimilarity(ct, result)
                 }
-                if (similarity >= EXACT_MATCH_THRESHOLD) return result
+                if (similarity >= EXACT_MATCH_THRESHOLD) return SearchEntry(result, similarity)
                 if (bestResult == null || similarity > bestResult.distance) {
                     bestResult = SearchEntry(result, similarity)
                 }
             }
         }
 
-        return bestResult?.entry
+        return bestResult
     }
 
     /**

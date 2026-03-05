@@ -1080,4 +1080,7 @@
     <string name="library_health_banner_dead">%d dead</string>
     <string name="library_health_banner_degraded">%d degraded</string>
     <string name="library_health_banner_summary">Source issues:</string>
+
+    <!-- Migration match confidence -->
+    <string name="migration_match_confidence">%d%% match</string>
 </resources>

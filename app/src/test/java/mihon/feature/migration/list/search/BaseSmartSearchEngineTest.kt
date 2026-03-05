@@ -80,7 +80,7 @@ class BaseSmartSearchEngineTest {
         val results = listOf(TestResult("One Piece"))
         val found = engine.testMultiTitleSearch({ results }, "One Piece")
         found shouldNotBe null
-        found!!.title shouldBe "One Piece"
+        found!!.entry.title shouldBe "One Piece"
     }
 
     @Test
@@ -98,7 +98,7 @@ class BaseSmartSearchEngineTest {
             alternativeTitles = listOf("Shingeki no Kyojin", "進撃の巨人"),
         )
         found shouldNotBe null
-        found!!.title shouldBe "Shingeki no Kyojin"
+        found!!.entry.title shouldBe "Shingeki no Kyojin"
     }
 
     @Test
@@ -125,7 +125,7 @@ class BaseSmartSearchEngineTest {
             alternativeTitles = listOf("OP", "ワンピース"),
         )
         found shouldNotBe null
-        found!!.title shouldBe "One Piece"
+        found!!.entry.title shouldBe "One Piece"
         // Primary title should be searched first
         queriedTitles.first() shouldBe "One Piece"
     }
@@ -149,7 +149,7 @@ class BaseSmartSearchEngineTest {
             alternativeTitles = listOf("AAAA BBBB CCCC"),
         )
         found shouldNotBe null
-        found!!.title shouldBe "one piece"
+        found!!.entry.title shouldBe "one piece"
         // Should have attempted more than just primary + 1 alt title (deep search generates multiple queries)
         (searchCount > 2) shouldBe true
     }
@@ -193,7 +193,7 @@ class BaseSmartSearchEngineTest {
         )
         found shouldNotBe null
         // Should return the near-match from primary search rather than doing deep search
-        found!!.title shouldBe "One Piece - Special"
+        found!!.entry.title shouldBe "One Piece - Special"
         deepSearchCalled shouldBe false
     }
 
@@ -216,7 +216,7 @@ class BaseSmartSearchEngineTest {
             alternativeTitles = listOf("Shingeki no Kyojin"),
         )
         found shouldNotBe null
-        found!!.title shouldBe "Shingeki no Kyojin"
+        found!!.entry.title shouldBe "Shingeki no Kyojin"
         // Found in step 1 (primary search) via cross-evaluation — no need to search alt title
         searchCount shouldBe 1
     }
@@ -256,7 +256,7 @@ class BaseSmartSearchEngineTest {
             alternativeTitles = listOf("Shingeki no Kyojin!"),
         )
         found shouldNotBe null
-        found!!.title shouldBe "shingeki no kyojin"
+        found!!.entry.title shouldBe "shingeki no kyojin"
         // Regular searches (2) + deep search queries should total more than 2
         (searchCount > 2) shouldBe true
     }
@@ -331,7 +331,7 @@ class BaseSmartSearchEngineTest {
         )
         // Near-match should be returned — similarity("One Piece", "One Piece (2024)") > MIN_ELIGIBLE
         found shouldNotBe null
-        found!!.title shouldBe "One Piece (2024)"
+        found!!.entry.title shouldBe "One Piece (2024)"
     }
 
     @Test
@@ -357,7 +357,7 @@ class BaseSmartSearchEngineTest {
             deepSearchFallback = false,
         )
         found shouldNotBe null
-        found!!.title shouldBe "Attack on Titan"
+        found!!.entry.title shouldBe "Attack on Titan"
     }
 
     @Test
@@ -372,7 +372,7 @@ class BaseSmartSearchEngineTest {
             deepSearchFallback = false,
         )
         found shouldNotBe null
-        found!!.title shouldBe "Shingeki no Kyojin"
+        found!!.entry.title shouldBe "Shingeki no Kyojin"
     }
 
     @Test
@@ -391,7 +391,7 @@ class BaseSmartSearchEngineTest {
         )
         // Should still search alt titles
         found shouldNotBe null
-        found!!.title shouldBe "Naruto"
+        found!!.entry.title shouldBe "Naruto"
     }
 
     @Test

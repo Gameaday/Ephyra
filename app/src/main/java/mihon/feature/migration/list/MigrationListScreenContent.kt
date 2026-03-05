@@ -290,14 +290,35 @@ fun MigrationListItemResult(
                 }
             }
             is MigratingManga.SearchResult.Success -> {
-                MigrationListItem(
-                    modifier = Modifier.fillMaxSize(),
-                    manga = result.manga,
-                    source = result.source,
-                    chapterCount = result.chapterCount,
-                    latestChapter = result.latestChapter,
-                    onClick = { onItemClick(result.manga) },
-                )
+                Column(Modifier.fillMaxSize()) {
+                    MigrationListItem(
+                        modifier = Modifier.fillMaxWidth(),
+                        manga = result.manga,
+                        source = result.source,
+                        chapterCount = result.chapterCount,
+                        latestChapter = result.latestChapter,
+                        onClick = { onItemClick(result.manga) },
+                    )
+                    if (result.matchConfidence < 1.0) {
+                        val confidencePercent = (result.matchConfidence * 100).toInt()
+                        Text(
+                            text = stringResource(
+                                MR.strings.migration_match_confidence,
+                                confidencePercent,
+                            ),
+                            modifier = Modifier.padding(
+                                horizontal = MaterialTheme.padding.extraSmall,
+                            ),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = when {
+                                result.matchConfidence >= 0.9 -> MaterialTheme.colorScheme.primary
+                                result.matchConfidence >= 0.7 -> MaterialTheme.colorScheme.tertiary
+                                else -> MaterialTheme.colorScheme.error
+                            },
+                            maxLines = 1,
+                        )
+                    }
+                }
             }
         }
     }

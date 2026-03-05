@@ -100,7 +100,7 @@ class MigrationListScreenModel(
         )
     }
 
-    private suspend fun Manga.toSuccessSearchResult(): SearchResult.Success {
+    private suspend fun Manga.toSuccessSearchResult(matchConfidence: Double = 1.0): SearchResult.Success {
         val chapterInfo = getChapterInfo(id)
         val source = sourceManager.getOrStub(source).getNameForMangaInfo()
         return SearchResult.Success(
@@ -108,6 +108,7 @@ class MigrationListScreenModel(
             chapterCount = chapterInfo.chapterCount,
             latestChapter = chapterInfo.latestChapter,
             source = source,
+            matchConfidence = matchConfidence,
         )
     }
 
@@ -132,13 +133,13 @@ class MigrationListScreenModel(
                             async innerAsync@{
                                 sourceSemaphore.withPermit {
                                     val result = searchSource(manga.manga, source, deepSearchMode)
-                                    if (result == null || result.second.chapterCount == 0) return@innerAsync null
+                                    if (result == null || result.chapterInfo.chapterCount == 0) return@innerAsync null
                                     result
                                 }
                             }
                         }
                             .mapNotNull { it.await() }
-                            .maxByOrNull { it.second.latestChapter ?: 0.0 }
+                            .maxByOrNull { it.chapterInfo.latestChapter ?: 0.0 }
                     } else {
                         sources.forEach { source ->
                             val result = searchSource(manga.manga, source, deepSearchMode)
@@ -152,24 +153,25 @@ class MigrationListScreenModel(
                 continue
             }
 
-            if (result != null && result.first.thumbnailUrl == null) {
+            if (result != null && result.manga.thumbnailUrl == null) {
                 try {
-                    val newManga = sourceManager.getOrStub(result.first.source).getMangaDetails(result.first.toSManga())
-                    updateManga.awaitUpdateFromSource(result.first, newManga, true)
+                    val newManga = sourceManager.getOrStub(result.manga.source).getMangaDetails(result.manga.toSManga())
+                    updateManga.awaitUpdateFromSource(result.manga, newManga, true)
                 } catch (e: CancellationException) {
                     throw e
                 } catch (_: Exception) {
                 }
             }
 
-            manga.searchResult.value = result?.first?.toSuccessSearchResult() ?: SearchResult.NotFound
+            manga.searchResult.value = result?.manga?.toSuccessSearchResult(result.matchConfidence)
+                ?: SearchResult.NotFound
 
             if (result == null && hideUnmatched) {
                 removeManga(manga)
             }
             if (result != null &&
                 hideWithoutUpdates &&
-                (result.second.latestChapter ?: 0.0) <= (manga.latestChapter ?: 0.0)
+                (result.chapterInfo.latestChapter ?: 0.0) <= (manga.latestChapter ?: 0.0)
             ) {
                 removeManga(manga)
             }
@@ -182,7 +184,7 @@ class MigrationListScreenModel(
         manga: Manga,
         source: CatalogueSource,
         deepSearchMode: Boolean,
-    ): Pair<Manga, ChapterInfo>? {
+    ): SourceSearchResult? {
         return try {
             // Tiered search strategy — each tier is tried only if the previous returned null.
             // Tier 1: Canonical ID (FREE — local DB lookup, 0 API calls)
@@ -191,9 +193,12 @@ class MigrationListScreenModel(
             // Tier 3b: Best near-match from tiers 2–3 (0 additional API calls)
             // Tier 4: Deep search with cleaned/split title (multiple API calls, only if enabled)
             val canonicalMatch = findByCanonicalId(manga, source.id)
-            val searchResult = if (canonicalMatch != null) {
+            val searchResult: Manga?
+            val matchConfidence: Double
+            if (canonicalMatch != null) {
                 logcat(LogPriority.DEBUG) { "Tier 1 (canonical ID) matched ${manga.title} on source ${source.id}" }
-                canonicalMatch
+                searchResult = canonicalMatch
+                matchConfidence = 1.0 // Canonical ID is an exact identity match
             } else {
                 val titleResult = smartSearchEngine.multiTitleSearch(
                     source = source,
@@ -203,8 +208,12 @@ class MigrationListScreenModel(
                 )
                 if (titleResult != null) {
                     logcat(LogPriority.DEBUG) { "Title search matched ${manga.title} on source ${source.id}" }
+                    searchResult = titleResult.first
+                    matchConfidence = titleResult.second
+                } else {
+                    searchResult = null
+                    matchConfidence = 0.0
                 }
-                titleResult
             }
 
             if (searchResult == null || (searchResult.url == manga.url && source.id == manga.source)) return null
@@ -216,7 +225,7 @@ class MigrationListScreenModel(
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e)
             }
-            localManga to getChapterInfo(localManga.id)
+            SourceSearchResult(localManga, getChapterInfo(localManga.id), matchConfidence)
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
@@ -397,6 +406,12 @@ class MigrationListScreenModel(
     data class ChapterInfo(
         val latestChapter: Double?,
         val chapterCount: Int,
+    )
+
+    private data class SourceSearchResult(
+        val manga: Manga,
+        val chapterInfo: ChapterInfo,
+        val matchConfidence: Double,
     )
 
     sealed interface Dialog {
