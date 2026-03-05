@@ -11,14 +11,15 @@
 
 | Feature | Key Files | Tests |
 |---------|-----------|-------|
-| **Database schema** — `canonical_id`, `source_status`, `alternative_titles` columns on `mangas` table | Migrations 12.sqm, 13.sqm, 14.sqm | Schema validated via build |
+| **Database schema** — `canonical_id`, `source_status`, `alternative_titles`, `dead_since` columns on `mangas` table | Migrations 12.sqm–15.sqm | Schema validated via build |
 | **Canonical ID auto-population** — Sets `canonical_id` from tracker remote IDs on first tracker bind (MAL → `mal:`, AniList → `al:`, MangaUpdates → `mu:`) | `AddTracks.setCanonicalIdIfAbsent()` | 7 unit tests |
 | **Alternative titles pipeline** — AniList romaji/english/native/synonyms merged into manga, case-insensitive dedup. JSON array storage with pipe-separated fallback. | `AddTracks.mergeAlternativeTitles()`, `ALSearchItem.buildAlternativeTitles()`, `MangaMapper.parseAlternativeTitles()` | 8 + 16 unit tests |
 | **Tiered search engine** — 4-tier migration search with cross-title evaluation, dedup, near-match tracking | `BaseSmartSearchEngine.multiTitleSearch()`, `MigrationListScreenModel.searchSource()` | 16 unit tests |
 | **Canonical ID lookup** — Zero-API-call local DB match via partial index | `GetFavoritesByCanonicalId`, `mangas.sq:getFavoritesByCanonicalId`, `14.sqm` index | Tested via integration |
-| **Source health detection** — Automatic HEALTHY/DEGRADED/DEAD classification during library updates with recovery support | `LibraryUpdateJob.detectSourceHealth()` | 15 unit tests |
+| **Source health detection** — Automatic HEALTHY/DEGRADED/DEAD classification during library updates with recovery support | `LibraryUpdateJob.detectSourceHealth()` | 18 unit tests |
 | **Source health UI** — Warning banner on manga detail screen for DEGRADED/DEAD sources | `SourceHealthBanner.kt`, `MangaScreen.kt` | Visual |
 | **Source health notification** — Post-update notification listing dead/degraded sources | `LibraryUpdateNotifier.showSourceHealthNotification()` | N/A |
+| **Bulk migration prompt** — `dead_since` timestamp tracks persistently DEAD sources, suggests migration after 3+ days | `LibraryUpdateJob`, `LibraryUpdateNotifier.showMigrationSuggestionNotification()` | 11 unit tests |
 | **Design token system** — Padding, Shape, Motion, Typography, Color tokens with adoption in 10+ components | `Constants.kt`, `Motion.kt`, `Shapes.kt`, `Typography.kt`, `Color.kt` | N/A |
 
 ### ⚠️ Partially Implemented
@@ -31,8 +32,6 @@
 
 | Feature | Brainstorm Section | Complexity |
 |---------|-------------------|------------|
-| **Source health recovery** — Auto-reset to HEALTHY when chapter count recovers | C.5 | Low |
-| **Bulk migration prompt** — Suggest migration when source is DEAD for tracked manga | C.6 | Medium |
 | **source_mappings table** — Full multi-source discovery (Approach A) | Parts 1-12 | High |
 | **Source discovery protocol** — Automated cross-source search with confidence scoring | Part 2 | High |
 | **Chapter resolution strategies** — HIERARCHY, ROUND_ROBIN, QUALITY strategies | Part 3 | High |
@@ -62,7 +61,7 @@
 |------|---------|--------|
 | ~~`AddTracks.setCanonicalIdIfAbsent()`~~ | ~~No unit tests~~ | ✅ 7 tests added |
 | ~~`AddTracks.mergeAlternativeTitles()`~~ | ~~No unit tests~~ | ✅ 8 tests added |
-| ~~`LibraryUpdateJob` health detection~~ | ~~No unit tests~~ | ✅ 15 tests (DEAD, DEGRADED, HEALTHY, recovery, edge cases) |
+| ~~`LibraryUpdateJob` health detection~~ | ~~No unit tests~~ | ✅ 18 tests (DEAD, DEGRADED, HEALTHY, recovery, edge cases, dead_since tracking) |
 | ~~`MangaMapper` alt title parsing~~ | ~~No unit tests~~ | ✅ 16 tests (JSON, pipe, round-trip, special chars) |
 | `GetFavoritesByCanonicalId` | No unit tests | Test: exclude self, match on canonical_id, empty results |
 | Design tokens | No tests | Snapshot tests for token values to prevent regression |
@@ -101,11 +100,8 @@
 
 ### Phase 3: Advanced Features (High Effort)
 
-#### 3.1 Bulk Migration Prompt for DEAD Sources
-**What:** When source is DEAD for 3+ consecutive updates, prompt user to migrate affected manga.
-**Why:** Automates the discovery of migration candidates instead of manual checking.
-**Where:** Track consecutive DEAD count, new notification/dialog triggered from `LibraryUpdateJob`.
-**Effort:** ~4-6 hours
+#### 3.1 Bulk Migration Prompt for DEAD Sources ✅
+**Done:** Added `dead_since` column (Migration 15.sqm) to track when manga first became DEAD. `LibraryUpdateJob` sets timestamp on DEAD transition, clears on recovery. After library update, manga DEAD for 3+ days trigger `showMigrationSuggestionNotification()` with affected titles. SQL query `getFavoritesByDeadSinceBefore` supports direct DB lookup. 11 unit tests covering model, constants, and threshold logic.
 
 #### 3.2 Source Health History
 **What:** Track status transitions over time to distinguish temporary outages from permanent source death.

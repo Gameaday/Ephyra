@@ -417,6 +417,7 @@ private fun MangaScreenSmallImpl(
                     ) {
                         SourceHealthBanner(
                             sourceStatus = SourceStatus.fromValue(state.manga.sourceStatus),
+                            deadSince = state.manga.deadSince,
                         )
                     }
 
@@ -653,6 +654,7 @@ fun MangaScreenLargeImpl(
                         )
                         SourceHealthBanner(
                             sourceStatus = SourceStatus.fromValue(state.manga.sourceStatus),
+                            deadSince = state.manga.deadSince,
                         )
                         ExpandableMangaDescription(
                             defaultExpandState = true,

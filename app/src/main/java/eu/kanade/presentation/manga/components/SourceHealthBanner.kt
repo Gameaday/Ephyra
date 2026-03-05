@@ -21,11 +21,13 @@ import tachiyomi.presentation.core.i18n.stringResource
 /**
  * Banner displayed on the manga detail screen when the source health is not HEALTHY.
  * Shows a warning for DEGRADED sources and an error for DEAD sources.
+ * When [deadSince] is provided for DEAD sources, shows how long the source has been dead.
  */
 @Composable
 fun SourceHealthBanner(
     sourceStatus: SourceStatus,
     modifier: Modifier = Modifier,
+    deadSince: Long? = null,
 ) {
     if (sourceStatus == SourceStatus.HEALTHY || sourceStatus == SourceStatus.REPLACED) return
 
@@ -38,7 +40,11 @@ fun SourceHealthBanner(
         else -> MaterialTheme.colorScheme.onTertiaryContainer
     }
     val text = when (sourceStatus) {
-        SourceStatus.DEAD -> stringResource(MR.strings.source_health_dead)
+        SourceStatus.DEAD -> {
+            val baseText = stringResource(MR.strings.source_health_dead)
+            val durationText = deadSince?.let { formatDeadDuration(it) }
+            if (durationText != null) "$baseText ($durationText)" else baseText
+        }
         else -> stringResource(MR.strings.source_health_degraded)
     }
 
@@ -64,5 +70,19 @@ fun SourceHealthBanner(
                 style = MaterialTheme.typography.bodySmall,
             )
         }
+    }
+}
+
+/**
+ * Formats a dead_since timestamp into a human-readable duration string.
+ */
+internal fun formatDeadDuration(deadSince: Long): String? {
+    if (deadSince <= 0) return null
+    val elapsed = System.currentTimeMillis() - deadSince
+    if (elapsed < 0) return null
+    val days = elapsed / (24 * 60 * 60 * 1000)
+    return when {
+        days >= 1 -> "${days}d"
+        else -> "<1d"
     }
 }
