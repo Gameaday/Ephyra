@@ -44,13 +44,15 @@ abstract class BaseSmartSearchEngine<T>(
      * Searches across all provided titles (primary + alternatives) and returns the best match.
      * Implements a tiered fallback strategy to minimize API calls:
      *
-     * 1. Regular search with primary title (1 API call)
-     * 2. Regular search with each alt title (1 API call each, stop on exact match)
+     * 1. Regular search with primary title, cross-evaluated against all known titles (1 API call)
+     * 2. Regular search with each unique alt title (1 API call each, stop on exact match)
      * 3. Return best near-match if one was found above threshold
-     * 4. Deep search fallback (multiple API calls, only if [deepSearchFallback] is true)
+     * 4. Deep search with all title variants (multiple API calls, only if [deepSearchFallback] is true)
      *
-     * Near-matches are tracked across all title searches so a 0.8 similarity match
-     * from step 1 can be returned in step 3 without wasting API calls on deep search.
+     * Cross-evaluation: each candidate is scored against ALL known titles (primary + alt),
+     * so a search for "Attack on Titan" can match "Shingeki no Kyojin" if that's a known alt title.
+     * Near-matches are tracked across all title searches and returned before expensive deep search.
+     * Similar alt titles are deduplicated to avoid redundant API calls.
      */
     protected suspend fun multiTitleSearch(
         searchAction: SearchAction<T>,
@@ -58,12 +60,16 @@ abstract class BaseSmartSearchEngine<T>(
         alternativeTitles: List<String> = emptyList(),
         deepSearchFallback: Boolean = true,
     ): T? {
+        val allTitles = listOf(primaryTitle) + alternativeTitles
+
+        // Dedup: skip alt titles nearly identical to primary or each other
+        val uniqueAltTitles = filterDistinctTitles(primaryTitle, alternativeTitles)
         var bestNearMatch: SearchEntry<T>? = null
 
-        // Step 1: Try exact match on primary title first (cheapest, 1 API call)
-        val primaryMatch = regularSearch(searchAction, primaryTitle)
+        // Step 1: Regular search with primary title, cross-evaluated against all titles (1 API call)
+        val primaryMatch = crossTitleSearch(searchAction, primaryTitle, allTitles)
         if (primaryMatch != null) {
-            val similarity = bestTitleSimilarity(primaryTitle, primaryMatch)
+            val similarity = bestOverallSimilarity(allTitles, primaryMatch)
             if (similarity >= EXACT_MATCH_THRESHOLD) return primaryMatch
             if (similarity >= eligibleThreshold &&
                 (bestNearMatch == null || similarity > bestNearMatch.distance)
@@ -72,11 +78,11 @@ abstract class BaseSmartSearchEngine<T>(
             }
         }
 
-        // Step 2: Try each alternative title with regular search (1 API call each)
-        for (altTitle in alternativeTitles) {
-            val match = regularSearch(searchAction, altTitle)
+        // Step 2: Regular search with each unique alt title (1 API call each, stop on exact match)
+        for (altTitle in uniqueAltTitles) {
+            val match = crossTitleSearch(searchAction, altTitle, allTitles)
             if (match != null) {
-                val similarity = bestTitleSimilarity(altTitle, match)
+                val similarity = bestOverallSimilarity(allTitles, match)
                 if (similarity >= EXACT_MATCH_THRESHOLD) return match
                 if (similarity >= eligibleThreshold &&
                     (bestNearMatch == null || similarity > bestNearMatch.distance)
@@ -89,9 +95,9 @@ abstract class BaseSmartSearchEngine<T>(
         // Step 3: Return best near-match before attempting expensive deep search
         if (bestNearMatch != null) return bestNearMatch.entry
 
-        // Step 4: Deep search fallback (only if enabled — multiple API calls)
+        // Step 4: Deep search with all title variants (fail-fast on exact match)
         if (deepSearchFallback) {
-            return deepSearch(searchAction, primaryTitle)
+            return deepSearchMultipleTitles(searchAction, allTitles)
         }
 
         return null
@@ -129,6 +135,91 @@ abstract class BaseSmartSearchEngine<T>(
         } ?: 0.0
 
         return maxOf(primarySimilarity, bestAltSimilarity)
+    }
+
+    /**
+     * Evaluates a candidate against all known search titles (primary + alternatives).
+     * For each search title, checks against the candidate's primary + alt titles.
+     * Returns the maximum similarity across all combinations.
+     */
+    private fun bestOverallSimilarity(allSearchTitles: List<String>, candidate: T): Double {
+        return allSearchTitles.maxOf { searchTitle ->
+            bestTitleSimilarity(searchTitle, candidate)
+        }
+    }
+
+    /**
+     * Searches with [queryTitle] but evaluates candidates against [allTitles].
+     * This enables cross-title matching: a search for "Attack on Titan" can match
+     * a result titled "Shingeki no Kyojin" if that's one of our known alternative titles.
+     */
+    private suspend fun crossTitleSearch(
+        searchAction: SearchAction<T>,
+        queryTitle: String,
+        allTitles: List<String>,
+    ): T? {
+        return baseSearch(searchAction, listOf(queryTitle)) {
+            bestOverallSimilarity(allTitles, it)
+        }
+    }
+
+    /**
+     * Deep search across multiple title variants, trying each sequentially.
+     * Stops immediately on an exact match; otherwise returns the best near-match.
+     * Deduplicates cleaned titles to avoid redundant API calls.
+     */
+    private suspend fun deepSearchMultipleTitles(
+        searchAction: SearchAction<T>,
+        allTitles: List<String>,
+    ): T? {
+        val cleanedTitles = allTitles
+            .map { cleanDeepSearchTitle(it) }
+            .filter { it.isNotBlank() }
+            .distinct()
+
+        var bestResult: SearchEntry<T>? = null
+
+        for (cleanedTitle in cleanedTitles) {
+            val queries = getDeepSearchQueries(cleanedTitle)
+            val result = baseSearch(searchAction, queries) { candidate ->
+                cleanedTitles.maxOf { ct -> bestCleanedTitleSimilarity(ct, candidate) }
+            }
+            if (result != null) {
+                val similarity = cleanedTitles.maxOf { ct ->
+                    bestCleanedTitleSimilarity(ct, result)
+                }
+                if (similarity >= EXACT_MATCH_THRESHOLD) return result
+                if (bestResult == null || similarity > bestResult.distance) {
+                    bestResult = SearchEntry(result, similarity)
+                }
+            }
+        }
+
+        return bestResult?.entry
+    }
+
+    /**
+     * Filters alternative titles to remove those nearly identical to the primary title
+     * or to each other (case-insensitive), avoiding redundant API calls.
+     */
+    private fun filterDistinctTitles(primaryTitle: String, alternativeTitles: List<String>): List<String> {
+        val primaryLower = primaryTitle.lowercase(Locale.getDefault())
+        val accepted = mutableListOf<String>()
+
+        for (alt in alternativeTitles) {
+            val altLower = alt.lowercase(Locale.getDefault())
+            if (altLower.isBlank()) continue
+            if (normalizedLevenshtein.similarity(primaryLower, altLower) >= EXACT_MATCH_THRESHOLD) continue
+            if (accepted.any {
+                    normalizedLevenshtein.similarity(it.lowercase(Locale.getDefault()), altLower) >= EXACT_MATCH_THRESHOLD
+                }
+            ) {
+                continue
+            }
+            accepted.add(alt)
+        }
+
+        return accepted
     }
 
     private suspend fun baseSearch(

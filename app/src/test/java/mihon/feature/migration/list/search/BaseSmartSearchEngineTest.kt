@@ -198,6 +198,70 @@ class BaseSmartSearchEngineTest {
     }
 
     @Test
+    fun `multiTitleSearch cross-evaluates candidates against all known titles`() = runTest {
+        // Source returns "Shingeki no Kyojin" for "Attack on Titan" query but not for "Shingeki" query.
+        // Without cross-evaluation: similarity("Attack on Titan", "Shingeki no Kyojin") < threshold → filtered
+        // With cross-evaluation: similarity("Shingeki no Kyojin", "Shingeki no Kyojin") = 1.0 → found in step 1
+        val result = TestResult("Shingeki no Kyojin")
+        var searchCount = 0
+        val found = engine.testMultiTitleSearch(
+            { query ->
+                searchCount++
+                when {
+                    query == "Attack on Titan" -> listOf(result, TestResult("Other Manga"))
+                    else -> emptyList()
+                }
+            },
+            primaryTitle = "Attack on Titan",
+            alternativeTitles = listOf("Shingeki no Kyojin"),
+        )
+        found shouldNotBe null
+        found!!.title shouldBe "Shingeki no Kyojin"
+        // Found in step 1 (primary search) via cross-evaluation — no need to search alt title
+        searchCount shouldBe 1
+    }
+
+    @Test
+    fun `multiTitleSearch deduplicates similar alt titles`() = runTest {
+        var searchCount = 0
+        engine.testMultiTitleSearch(
+            { query ->
+                searchCount++
+                emptyList()
+            },
+            primaryTitle = "One Piece",
+            alternativeTitles = listOf("one piece", "ONE PIECE", "Really Different Title"),
+            deepSearchFallback = false,
+        )
+        // "one piece" and "ONE PIECE" are nearly identical to "One Piece" → skipped
+        // Only primary + "Really Different Title" should be searched
+        searchCount shouldBe 2
+    }
+
+    @Test
+    fun `multiTitleSearch deep search tries alt title variants`() = runTest {
+        // Both regular searches fail, but deep search with alt title variant succeeds
+        var searchCount = 0
+        val found = engine.testMultiTitleSearch(
+            { query ->
+                searchCount++
+                // Only cleaned deep-search queries containing "shingeki" match
+                if (!query.contains("!") && query.contains("shingeki")) {
+                    listOf(TestResult("shingeki no kyojin"))
+                } else {
+                    emptyList()
+                }
+            },
+            primaryTitle = "ZZZZ Attack [Season 1]",
+            alternativeTitles = listOf("Shingeki no Kyojin!"),
+        )
+        found shouldNotBe null
+        found!!.title shouldBe "shingeki no kyojin"
+        // Regular searches (2) + deep search queries should total more than 2
+        (searchCount > 2) shouldBe true
+    }
+
+    @Test
     fun `deepSearch handles cleaned titles`() = runTest {
         val results = listOf(TestResult("one piece"))
         val found = engine.testDeepSearch({ results }, "One Piece [Chapter 1000]")
