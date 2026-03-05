@@ -290,6 +290,64 @@ class LibraryUpdateNotifier(
         context.cancelNotification(Notifications.ID_LIBRARY_PROGRESS)
     }
 
+    /**
+     * Shows a notification warning the user about manga with unhealthy sources.
+     * Groups manga by source and status (DEAD/DEGRADED) for a clear summary.
+     *
+     * @param deadManga list of manga whose sources returned 0 chapters
+     * @param degradedManga list of manga whose sources returned significantly fewer chapters
+     */
+    fun showSourceHealthNotification(deadManga: List<Manga>, degradedManga: List<Manga>) {
+        if (deadManga.isEmpty() && degradedManga.isEmpty()) return
+
+        val totalAffected = deadManga.size + degradedManga.size
+        val lines = mutableListOf<String>()
+
+        if (deadManga.isNotEmpty()) {
+            lines.add(
+                context.stringResource(MR.strings.notification_dead_sources, deadManga.size),
+            )
+            if (!securityPreferences.hideNotificationContent().get()) {
+                deadManga.take(NOTIF_MAX_CHAPTERS).forEach { manga ->
+                    val sourceName = sourceManager.getOrStub(manga.source).name
+                    lines.add("  • ${manga.title.chop(NOTIF_TITLE_MAX_LEN)} ($sourceName)")
+                }
+                if (deadManga.size > NOTIF_MAX_CHAPTERS) {
+                    lines.add("  … and ${deadManga.size - NOTIF_MAX_CHAPTERS} more")
+                }
+            }
+        }
+
+        if (degradedManga.isNotEmpty()) {
+            lines.add(
+                context.stringResource(MR.strings.notification_degraded_sources, degradedManga.size),
+            )
+            if (!securityPreferences.hideNotificationContent().get()) {
+                degradedManga.take(NOTIF_MAX_CHAPTERS).forEach { manga ->
+                    val sourceName = sourceManager.getOrStub(manga.source).name
+                    lines.add("  • ${manga.title.chop(NOTIF_TITLE_MAX_LEN)} ($sourceName)")
+                }
+                if (degradedManga.size > NOTIF_MAX_CHAPTERS) {
+                    lines.add("  … and ${degradedManga.size - NOTIF_MAX_CHAPTERS} more")
+                }
+            }
+        }
+
+        context.notify(
+            Notifications.ID_LIBRARY_DEAD_SOURCES,
+            Notifications.CHANNEL_LIBRARY_ERROR,
+        ) {
+            setContentTitle(
+                context.stringResource(MR.strings.notification_source_health_title, totalAffected),
+            )
+            setContentText(lines.first())
+            setStyle(NotificationCompat.BigTextStyle().bigText(lines.joinToString("\n")))
+            setSmallIcon(R.drawable.ic_warning_white_24dp)
+            setContentIntent(getNotificationIntent())
+            setAutoCancel(true)
+        }
+    }
+
     private suspend fun getMangaIcon(manga: Manga): Bitmap? {
         val request = ImageRequest.Builder(context)
             .data(manga)

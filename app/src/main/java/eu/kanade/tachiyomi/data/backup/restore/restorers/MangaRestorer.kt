@@ -133,7 +133,7 @@ class MangaRestorer(
                 metadataUrl = manga.metadataUrl,
                 canonicalId = manga.canonicalId,
                 sourceStatus = manga.sourceStatus.toLong(),
-                alternativeTitles = manga.alternativeTitles.joinToString(MangaMapper.ALT_TITLE_SEPARATOR),
+                alternativeTitles = MangaMapper.serializeAlternativeTitles(manga.alternativeTitles),
             )
         }
         return manga
@@ -269,7 +269,7 @@ class MangaRestorer(
                 metadataUrl = manga.metadataUrl,
                 canonicalId = manga.canonicalId,
                 sourceStatus = manga.sourceStatus.toLong(),
-                alternativeTitles = manga.alternativeTitles.joinToString(MangaMapper.ALT_TITLE_SEPARATOR),
+                alternativeTitles = MangaMapper.serializeAlternativeTitles(manga.alternativeTitles),
             )
             mangasQueries.selectLastInsertedRowId()
         }

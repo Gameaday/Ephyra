@@ -347,6 +347,20 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                 errorFile.getUriCompat(context),
             )
         }
+
+        // Check for unhealthy sources among the manga we just updated.
+        // This queries the local DB — zero additional API cost.
+        val deadManga = mutableListOf<Manga>()
+        val degradedManga = mutableListOf<Manga>()
+        for (libraryManga in mangaToUpdate) {
+            val refreshed = getManga.await(libraryManga.manga.id) ?: continue
+            when (SourceStatus.fromValue(refreshed.sourceStatus)) {
+                SourceStatus.DEAD -> deadManga.add(refreshed)
+                SourceStatus.DEGRADED -> degradedManga.add(refreshed)
+                else -> { /* HEALTHY or REPLACED — no notification needed */ }
+            }
+        }
+        notifier.showSourceHealthNotification(deadManga, degradedManga)
     }
 
     private fun downloadChapters(manga: Manga, chapters: List<Chapter>) {
@@ -443,15 +457,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
         // Source health detection: compare fetched chapter count against what we had before.
         // This runs on every refresh using data we already fetched — zero additional API cost.
         val previousChapterCount = getChaptersByMangaId.await(manga.id).size
-        val newStatus = when {
-            chapters.isEmpty() && previousChapterCount > 0 -> SourceStatus.DEAD
-            // Use integer comparison to avoid floating-point precision issues:
-            // chapters.size * 10 < previousChapterCount * 7 is equivalent to
-            // chapters.size < previousChapterCount * 0.7
-            previousChapterCount > 0 &&
-                chapters.size * 10 < previousChapterCount * 7 -> SourceStatus.DEGRADED
-            else -> SourceStatus.HEALTHY
-        }
+        val newStatus = detectSourceHealth(chapters.size, previousChapterCount)
         if (newStatus.value != dbManga.sourceStatus) {
             updateManga.await(
                 MangaUpdate(id = manga.id, sourceStatus = newStatus.value),
@@ -529,6 +535,33 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
         private const val ERROR_LOG_HELP_URL = "https://mihon.app/docs/guides/troubleshooting/"
 
         private const val MANGA_PER_SOURCE_QUEUE_WARNING_THRESHOLD = 60
+
+        /**
+         * Chapter drop threshold for DEGRADED detection.
+         * If newCount < previousCount * 0.7, the source is marked DEGRADED.
+         * Uses integer comparison (newCount * 10 < previousCount * 7) to avoid floating-point issues.
+         */
+        internal const val CHAPTER_DROP_THRESHOLD_NUMERATOR = 7
+        internal const val CHAPTER_DROP_THRESHOLD_DENOMINATOR = 10
+
+        /**
+         * Determines source health status by comparing fetched chapter count to previous count.
+         * Pure function extracted for testability.
+         *
+         * Rules:
+         * - DEAD: fetched 0 chapters when previously had > 0
+         * - DEGRADED: fetched < 70% of previous chapter count
+         * - HEALTHY: all other cases (including recovery from DEGRADED/DEAD)
+         */
+        internal fun detectSourceHealth(fetchedCount: Int, previousCount: Int): SourceStatus {
+            return when {
+                fetchedCount == 0 && previousCount > 0 -> SourceStatus.DEAD
+                previousCount > 0 &&
+                    fetchedCount * CHAPTER_DROP_THRESHOLD_DENOMINATOR <
+                    previousCount * CHAPTER_DROP_THRESHOLD_NUMERATOR -> SourceStatus.DEGRADED
+                else -> SourceStatus.HEALTHY
+            }
+        }
 
         /**
          * Minimum number of days between automatic metadata refreshes for manga

@@ -1066,4 +1066,8 @@
     <!-- Source health status -->
     <string name="source_health_degraded">Source may be degraded — fewer chapters than expected</string>
     <string name="source_health_dead">Source appears dead — no chapters found on last update</string>
+    <!-- Source health notifications -->
+    <string name="notification_source_health_title">%d manga with source issues</string>
+    <string name="notification_dead_sources">🔴 %d manga with dead sources:</string>
+    <string name="notification_degraded_sources">🟡 %d manga with degraded sources:</string>
 </resources>
