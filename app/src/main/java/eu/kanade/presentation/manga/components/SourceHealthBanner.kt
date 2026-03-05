@@ -10,6 +10,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,12 +23,14 @@ import tachiyomi.presentation.core.i18n.stringResource
  * Banner displayed on the manga detail screen when the source health is not HEALTHY.
  * Shows a warning for DEGRADED sources and an error for DEAD sources.
  * When [deadSince] is provided for DEAD sources, shows how long the source has been dead.
+ * When [onMigrateClick] is provided and source is DEAD, shows a "Migrate" button.
  */
 @Composable
 fun SourceHealthBanner(
     sourceStatus: SourceStatus,
     modifier: Modifier = Modifier,
     deadSince: Long? = null,
+    onMigrateClick: (() -> Unit)? = null,
 ) {
     if (sourceStatus == SourceStatus.HEALTHY || sourceStatus == SourceStatus.REPLACED) return
 
@@ -68,7 +71,16 @@ fun SourceHealthBanner(
             Text(
                 text = text,
                 style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.weight(1f),
             )
+            if (sourceStatus == SourceStatus.DEAD && onMigrateClick != null) {
+                TextButton(onClick = onMigrateClick) {
+                    Text(
+                        text = stringResource(MR.strings.migrate),
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                }
+            }
         }
     }
 }
