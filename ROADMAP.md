@@ -16,8 +16,8 @@
 | **Alternative titles pipeline** — AniList romaji/english/native/synonyms merged into manga, case-insensitive dedup. JSON array storage with pipe-separated fallback. | `AddTracks.mergeAlternativeTitles()`, `ALSearchItem.buildAlternativeTitles()`, `MangaMapper.parseAlternativeTitles()` | 8 + 16 unit tests |
 | **Tiered search engine** — 4-tier migration search with cross-title evaluation, dedup, near-match tracking | `BaseSmartSearchEngine.multiTitleSearch()`, `MigrationListScreenModel.searchSource()` | 16 unit tests |
 | **Canonical ID lookup** — Zero-API-call local DB match via partial index | `GetFavoritesByCanonicalId`, `mangas.sq:getFavoritesByCanonicalId`, `14.sqm` index | Tested via integration |
-| **Source health detection** — Automatic HEALTHY/DEGRADED/DEAD classification during library updates with recovery support | `LibraryUpdateJob.detectSourceHealth()` | 18 unit tests |
-| **Source health UI** — Warning banner on manga detail screen for DEGRADED/DEAD sources | `SourceHealthBanner.kt`, `MangaScreen.kt` | Visual |
+| **Source health detection** — Automatic HEALTHY/DEGRADED/DEAD classification during library updates with recovery support. Skips local sources. | `LibraryUpdateJob.detectSourceHealth()` | 18 unit tests |
+| **Source health UI** — Warning banner on manga detail screen for DEGRADED/DEAD sources. Skips local manga and stub (uninstalled) sources. | `SourceHealthBanner.kt`, `MangaScreen.kt` | Visual |
 | **Source health notification** — Post-update notification listing dead/degraded sources | `LibraryUpdateNotifier.showSourceHealthNotification()` | N/A |
 | **Bulk migration prompt** — `dead_since` timestamp tracks persistently DEAD sources, suggests migration after 3+ days | `LibraryUpdateJob`, `LibraryUpdateNotifier.showMigrationSuggestionNotification()` | 11 unit tests |
 | **Design token system** — Padding, Shape, Motion, Typography, Color tokens with adoption in 10+ components | `Constants.kt`, `Motion.kt`, `Shapes.kt`, `Typography.kt`, `Color.kt` | N/A |

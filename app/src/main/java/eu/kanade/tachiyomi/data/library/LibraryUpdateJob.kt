@@ -66,6 +66,7 @@ import tachiyomi.domain.manga.model.MangaUpdate
 import tachiyomi.domain.manga.model.SourceStatus
 import tachiyomi.domain.source.model.SourceNotInstalledException
 import tachiyomi.domain.source.service.SourceManager
+import tachiyomi.source.local.isLocal
 import tachiyomi.i18n.MR
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
@@ -354,6 +355,8 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
         val degradedManga = mutableListOf<Manga>()
         for (libraryManga in mangaToUpdate) {
             val refreshed = getManga.await(libraryManga.manga.id) ?: continue
+            // Skip local sources — they don't have network health concerns
+            if (refreshed.isLocal()) continue
             when (SourceStatus.fromValue(refreshed.sourceStatus)) {
                 SourceStatus.DEAD -> deadManga.add(refreshed)
                 SourceStatus.DEGRADED -> degradedManga.add(refreshed)
@@ -466,29 +469,32 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
 
         // Source health detection: compare fetched chapter count against what we had before.
         // This runs on every refresh using data we already fetched — zero additional API cost.
-        val previousChapterCount = getChaptersByMangaId.await(manga.id).size
-        val newStatus = detectSourceHealth(chapters.size, previousChapterCount)
-        if (newStatus.value != dbManga.sourceStatus) {
-            val oldStatus = SourceStatus.fromValue(dbManga.sourceStatus)
-            logcat(LogPriority.INFO) {
-                "Source health changed for ${manga.title}: $oldStatus → $newStatus " +
-                    "(chapters: $previousChapterCount → ${chapters.size})"
+        // Skip for local sources — they don't have network health concerns.
+        if (!manga.isLocal()) {
+            val previousChapterCount = getChaptersByMangaId.await(manga.id).size
+            val newStatus = detectSourceHealth(chapters.size, previousChapterCount)
+            if (newStatus.value != dbManga.sourceStatus) {
+                val oldStatus = SourceStatus.fromValue(dbManga.sourceStatus)
+                logcat(LogPriority.INFO) {
+                    "Source health changed for ${manga.title}: $oldStatus → $newStatus " +
+                        "(chapters: $previousChapterCount → ${chapters.size})"
+                }
+                // Track dead_since: set timestamp when first marked DEAD, clear on recovery
+                val deadSince = when {
+                    newStatus == SourceStatus.DEAD && oldStatus != SourceStatus.DEAD ->
+                        System.currentTimeMillis()
+                    newStatus != SourceStatus.DEAD && oldStatus == SourceStatus.DEAD ->
+                        DEAD_SINCE_CLEARED
+                    else -> null // No change to dead_since
+                }
+                updateManga.await(
+                    MangaUpdate(
+                        id = manga.id,
+                        sourceStatus = newStatus.value,
+                        deadSince = deadSince,
+                    ),
+                )
             }
-            // Track dead_since: set timestamp when first marked DEAD, clear on recovery
-            val deadSince = when {
-                newStatus == SourceStatus.DEAD && oldStatus != SourceStatus.DEAD ->
-                    System.currentTimeMillis()
-                newStatus != SourceStatus.DEAD && oldStatus == SourceStatus.DEAD ->
-                    DEAD_SINCE_CLEARED
-                else -> null // No change to dead_since
-            }
-            updateManga.await(
-                MangaUpdate(
-                    id = manga.id,
-                    sourceStatus = newStatus.value,
-                    deadSince = deadSince,
-                ),
-            )
         }
 
         return syncChaptersWithSource.await(chapters, dbManga, source, false, fetchWindow)

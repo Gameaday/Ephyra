@@ -411,14 +411,17 @@ private fun MangaScreenSmallImpl(
                         )
                     }
 
-                    item(
-                        key = MangaScreenItem.SOURCE_HEALTH_BANNER,
-                        contentType = MangaScreenItem.SOURCE_HEALTH_BANNER,
-                    ) {
-                        SourceHealthBanner(
-                            sourceStatus = SourceStatus.fromValue(state.manga.sourceStatus),
-                            deadSince = state.manga.deadSince,
-                        )
+                    // Only show source health banner for real remote sources (not local or stub)
+                    if (!state.manga.isLocal() && state.source !is StubSource) {
+                        item(
+                            key = MangaScreenItem.SOURCE_HEALTH_BANNER,
+                            contentType = MangaScreenItem.SOURCE_HEALTH_BANNER,
+                        ) {
+                            SourceHealthBanner(
+                                sourceStatus = SourceStatus.fromValue(state.manga.sourceStatus),
+                                deadSince = state.manga.deadSince,
+                            )
+                        }
                     }
 
                     item(
@@ -652,10 +655,13 @@ fun MangaScreenLargeImpl(
                             onEditIntervalClicked = onEditIntervalClicked,
                             onEditCategory = onEditCategoryClicked,
                         )
-                        SourceHealthBanner(
-                            sourceStatus = SourceStatus.fromValue(state.manga.sourceStatus),
-                            deadSince = state.manga.deadSince,
-                        )
+                        // Only show source health banner for real remote sources (not local or stub)
+                        if (!state.manga.isLocal() && state.source !is StubSource) {
+                            SourceHealthBanner(
+                                sourceStatus = SourceStatus.fromValue(state.manga.sourceStatus),
+                                deadSince = state.manga.deadSince,
+                            )
+                        }
                         ExpandableMangaDescription(
                             defaultExpandState = true,
                             description = state.manga.description,
