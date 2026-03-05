@@ -69,6 +69,8 @@
 ### 3. Code-Level Issues
 
 - ~~**Pipe-separated `alternative_titles`** — Stored as `TEXT` with `|` delimiter. If a title contains `|` character, it breaks parsing.~~ ✅ Fixed — now serialized as JSON array, with backward-compatible parsing for legacy pipe-separated data.
+- ~~**`AddTracks.kt:105`** — Non-null assertion `toDomainTrack(idRequired = false)!!` could crash.~~ ✅ Fixed — replaced with safe `?: return@let`.
+- ~~**Backup/restore** — `canonicalId`, `sourceStatus`, `deadSince` not persisted across backups.~~ ✅ Fixed — added to `BackupManga` (ProtoNumber 115-117) and `MangaBackupCreator`.
 - **`AddTracks.kt:52`** — Type check `item is TrackSearch` only works when caller passes `TrackSearch` instance; `Track` instances from general tracker bind paths won't trigger alt title merge. Consider extracting alt titles from the tracker search result before the bind.
 - **`MigrationListScreenModel.kt`** — `findByCanonicalId()` returns first match per source; doesn't consider confidence scoring or prefer certain tracker prefixes.
 

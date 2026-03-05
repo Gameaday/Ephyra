@@ -278,4 +278,68 @@ class BaseSmartSearchEngineTest {
     fun `MIN_ELIGIBLE_THRESHOLD is 0_4`() {
         BaseSmartSearchEngine.MIN_ELIGIBLE_THRESHOLD shouldBe 0.4
     }
+
+    @Test
+    fun `DEDUP_SIMILARITY_THRESHOLD is 0_9`() {
+        BaseSmartSearchEngine.DEDUP_SIMILARITY_THRESHOLD shouldBe 0.9
+    }
+
+    @Test
+    fun `multiTitleSearch with empty primary title returns null`() = runTest {
+        val found = engine.testMultiTitleSearch(
+            { emptyList() },
+            primaryTitle = "",
+            alternativeTitles = emptyList(),
+            deepSearchFallback = false,
+        )
+        found shouldBe null
+    }
+
+    @Test
+    fun `multiTitleSearch with blank alt titles skips them`() = runTest {
+        var searchCount = 0
+        engine.testMultiTitleSearch(
+            { query ->
+                searchCount++
+                emptyList()
+            },
+            primaryTitle = "One Piece",
+            alternativeTitles = listOf("", "  ", "   "),
+            deepSearchFallback = false,
+        )
+        // Only primary title should be searched since all alt titles are blank
+        searchCount shouldBe 1
+    }
+
+    @Test
+    fun `multiTitleSearch near-match returned before deep search`() = runTest {
+        // Primary title search returns a near-match (> 0.4 but < 0.9 similarity)
+        val nearMatch = TestResult("One Piece (2024)")
+        var deepSearchCalled = false
+        val found = engine.testMultiTitleSearch(
+            { query ->
+                if (query.contains("deep") || query.length < 5) {
+                    deepSearchCalled = true
+                    emptyList()
+                } else {
+                    listOf(nearMatch)
+                }
+            },
+            primaryTitle = "One Piece",
+            alternativeTitles = emptyList(),
+            deepSearchFallback = false,
+        )
+        // Near-match should be returned — similarity("One Piece", "One Piece (2024)") > MIN_ELIGIBLE
+        found shouldNotBe null
+        found!!.title shouldBe "One Piece (2024)"
+    }
+
+    @Test
+    fun `regularSearch returns null for empty search results`() = runTest {
+        val found = engine.testRegularSearch(
+            { emptyList() },
+            "Non-existent Manga",
+        )
+        found shouldBe null
+    }
 }
