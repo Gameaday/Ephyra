@@ -190,13 +190,22 @@ class MigrationListScreenModel(
             // Tier 3: Alternative titles search (1 API call per alt title)
             // Tier 3b: Best near-match from tiers 2–3 (0 additional API calls)
             // Tier 4: Deep search with cleaned/split title (multiple API calls, only if enabled)
-            val searchResult = findByCanonicalId(manga, source.id)
-                ?: smartSearchEngine.multiTitleSearch(
+            val canonicalMatch = findByCanonicalId(manga, source.id)
+            val searchResult = if (canonicalMatch != null) {
+                logcat(LogPriority.DEBUG) { "Tier 1 (canonical ID) matched ${manga.title} on source ${source.id}" }
+                canonicalMatch
+            } else {
+                val titleResult = smartSearchEngine.multiTitleSearch(
                     source = source,
                     primaryTitle = manga.title,
                     alternativeTitles = manga.alternativeTitles,
                     deepSearchFallback = deepSearchMode,
                 )
+                if (titleResult != null) {
+                    logcat(LogPriority.DEBUG) { "Title search matched ${manga.title} on source ${source.id}" }
+                }
+                titleResult
+            }
 
             if (searchResult == null || (searchResult.url == manga.url && source.id == manga.source)) return null
 

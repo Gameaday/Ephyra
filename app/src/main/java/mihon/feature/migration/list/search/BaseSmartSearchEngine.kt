@@ -205,18 +205,20 @@ abstract class BaseSmartSearchEngine<T>(
     private fun filterDistinctTitles(primaryTitle: String, alternativeTitles: List<String>): List<String> {
         val primaryLower = primaryTitle.lowercase(Locale.getDefault())
         val accepted = mutableListOf<String>()
+        val acceptedLower = mutableListOf<String>()
 
         for (alt in alternativeTitles) {
             val altLower = alt.lowercase(Locale.getDefault())
             if (altLower.isBlank()) continue
-            if (normalizedLevenshtein.similarity(primaryLower, altLower) >= EXACT_MATCH_THRESHOLD) continue
-            if (accepted.any {
-                    normalizedLevenshtein.similarity(it.lowercase(Locale.getDefault()), altLower) >= EXACT_MATCH_THRESHOLD
+            if (normalizedLevenshtein.similarity(primaryLower, altLower) >= DEDUP_SIMILARITY_THRESHOLD) continue
+            if (acceptedLower.any {
+                    normalizedLevenshtein.similarity(it, altLower) >= DEDUP_SIMILARITY_THRESHOLD
                 }
             ) {
                 continue
             }
             accepted.add(alt)
+            acceptedLower.add(altLower)
         }
 
         return accepted
@@ -331,6 +333,7 @@ abstract class BaseSmartSearchEngine<T>(
     companion object {
         const val MIN_ELIGIBLE_THRESHOLD = 0.4
         const val EXACT_MATCH_THRESHOLD = 0.9
+        const val DEDUP_SIMILARITY_THRESHOLD = 0.9
 
         private val titleRegex = Regex("[^a-zA-Z0-9- ]")
         private val titleCyrillicRegex = Regex("[^\\p{L}0-9- ]")

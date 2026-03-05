@@ -155,16 +155,24 @@ class AddTracks(
     private suspend fun mergeAlternativeTitles(mangaId: Long, newTitles: List<String>) {
         try {
             val manga = mangaRepository.getMangaById(mangaId)
-            val existing = manga.alternativeTitles.toMutableSet()
             val primary = manga.title
+            val existing = manga.alternativeTitles.toMutableList()
             val previousSize = existing.size
 
-            // Add new titles, excluding the primary title and blanks
-            existing.addAll(newTitles.filterNot { it.isBlank() || it == primary })
+            // Add new titles, excluding the primary title, blanks, and case-insensitive duplicates
+            val existingLower = existing.map { it.lowercase() }.toMutableSet()
+            val primaryLower = primary.lowercase()
+            for (title in newTitles) {
+                if (title.isBlank()) continue
+                val titleLower = title.lowercase()
+                if (titleLower == primaryLower) continue
+                if (!existingLower.add(titleLower)) continue
+                existing.add(title)
+            }
             if (existing.size == previousSize) return // No new titles to add
 
             mangaRepository.update(
-                MangaUpdate(id = mangaId, alternativeTitles = existing.toList()),
+                MangaUpdate(id = mangaId, alternativeTitles = existing),
             )
             logcat(LogPriority.INFO) {
                 "Updated alternative_titles for ${manga.title}: +${existing.size - previousSize} titles"
