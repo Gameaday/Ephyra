@@ -37,6 +37,7 @@ object MangaMapper {
         metadataUrl: String?,
         canonicalId: String?,
         sourceStatus: Long,
+        alternativeTitles: String?,
     ): Manga = Manga(
         id = id,
         source = source,
@@ -66,6 +67,7 @@ object MangaMapper {
         metadataUrl = metadataUrl,
         canonicalId = canonicalId,
         sourceStatus = sourceStatus.toInt(),
+        alternativeTitles = alternativeTitles?.split(ALT_TITLE_SEPARATOR)?.filter { it.isNotBlank() } ?: emptyList(),
     )
 
     fun mapLibraryManga(
@@ -98,6 +100,7 @@ object MangaMapper {
         metadataUrl: String?,
         canonicalId: String?,
         sourceStatus: Long,
+        alternativeTitles: String?,
         totalCount: Long,
         readCount: Double,
         latestUpload: Long,
@@ -136,6 +139,7 @@ object MangaMapper {
             metadataUrl,
             canonicalId,
             sourceStatus,
+            alternativeTitles,
         ),
         categories = categories.split(",").map { it.toLong() },
         totalChapters = totalCount,
@@ -176,6 +180,7 @@ object MangaMapper {
         metadataUrl: String?,
         canonicalId: String?,
         sourceStatus: Long,
+        alternativeTitles: String?,
         totalCount: Long,
     ): MangaWithChapterCount = MangaWithChapterCount(
         manga = mapManga(
@@ -208,7 +213,11 @@ object MangaMapper {
             metadataUrl,
             canonicalId,
             sourceStatus,
+            alternativeTitles,
         ),
         chapterCount = totalCount,
     )
+
+    /** Separator used to encode/decode alternative titles as a single TEXT column. */
+    const val ALT_TITLE_SEPARATOR = "|"
 }

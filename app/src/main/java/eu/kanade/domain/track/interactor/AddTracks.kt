@@ -6,6 +6,7 @@ import eu.kanade.tachiyomi.data.database.models.Track
 import eu.kanade.tachiyomi.data.track.EnhancedTracker
 import eu.kanade.tachiyomi.data.track.Tracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
+import eu.kanade.tachiyomi.data.track.model.TrackSearch
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.util.lang.convertEpochMillisZone
 import logcat.LogPriority
@@ -45,6 +46,12 @@ class AddTracks(
             // This links the manga's identity to the tracker's ID (e.g. "al:21" for AniList).
             // Only set on first tracker link — subsequent trackers don't overwrite.
             setCanonicalIdIfAbsent(mangaId, tracker.id, track.remoteId)
+
+            // Collect alternative titles from the tracker search result.
+            // These enable cross-source matching even when canonical IDs differ.
+            if (item is TrackSearch && item.alternative_titles.isNotEmpty()) {
+                mergeAlternativeTitles(mangaId, item.alternative_titles)
+            }
 
             // TODO: merge into [SyncChapterProgressWithTrack]?
             // Update chapter progress if newer chapters marked read locally
@@ -137,6 +144,32 @@ class AddTracks(
             logcat(LogPriority.INFO) { "Set canonical_id=$canonicalId for manga ${manga.title}" }
         } catch (e: Exception) {
             logcat(LogPriority.WARN, e) { "Failed to set canonical_id for manga $mangaId" }
+        }
+    }
+
+    /**
+     * Merges new alternative titles into the manga's existing alternative title list.
+     * Deduplicates and filters blanks. New titles are additive — existing titles are never removed.
+     * Also adds the tracker's title as an alternative if it differs from the manga's primary title.
+     */
+    private suspend fun mergeAlternativeTitles(mangaId: Long, newTitles: List<String>) {
+        try {
+            val manga = mangaRepository.getMangaById(mangaId)
+            val existing = manga.alternativeTitles.toMutableSet()
+            val primary = manga.title
+
+            // Add new titles, excluding the primary title and blanks
+            val merged = existing + newTitles.filter { it.isNotBlank() && it != primary }
+            if (merged.size == existing.size) return // No new titles to add
+
+            mangaRepository.update(
+                MangaUpdate(id = mangaId, alternativeTitles = merged.toList()),
+            )
+            logcat(LogPriority.INFO) {
+                "Updated alternative_titles for ${manga.title}: +${merged.size - existing.size} titles"
+            }
+        } catch (e: Exception) {
+            logcat(LogPriority.WARN, e) { "Failed to update alternative_titles for manga $mangaId" }
         }
     }
 

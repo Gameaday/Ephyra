@@ -182,7 +182,11 @@ class MigrationListScreenModel(
         deepSearchMode: Boolean,
     ): Pair<Manga, ChapterInfo>? {
         return try {
-            val searchResult = if (deepSearchMode) {
+            // Use multi-title search when alternative titles are available,
+            // falling back to the standard search modes otherwise.
+            val searchResult = if (manga.alternativeTitles.isNotEmpty()) {
+                smartSearchEngine.multiTitleSearch(source, manga.title, manga.alternativeTitles)
+            } else if (deepSearchMode) {
                 smartSearchEngine.deepSearch(source, manga.title)
             } else {
                 smartSearchEngine.regularSearch(source, manga.title)

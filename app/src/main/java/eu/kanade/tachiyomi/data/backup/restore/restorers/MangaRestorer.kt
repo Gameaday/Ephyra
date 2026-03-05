@@ -8,6 +8,7 @@ import eu.kanade.tachiyomi.data.backup.models.BackupManga
 import eu.kanade.tachiyomi.data.backup.models.BackupTracking
 import tachiyomi.data.DatabaseHandler
 import tachiyomi.data.UpdateStrategyColumnAdapter
+import tachiyomi.data.manga.MangaMapper
 import tachiyomi.domain.category.interactor.GetCategories
 import tachiyomi.domain.chapter.interactor.GetChaptersByMangaId
 import tachiyomi.domain.chapter.model.Chapter
@@ -98,6 +99,7 @@ class MangaRestorer(
             version = newer.version,
             metadataSource = newer.metadataSource ?: this.metadataSource,
             metadataUrl = newer.metadataUrl ?: this.metadataUrl,
+            alternativeTitles = newer.alternativeTitles.ifEmpty { this.alternativeTitles },
         )
     }
 
@@ -131,6 +133,7 @@ class MangaRestorer(
                 metadataUrl = manga.metadataUrl,
                 canonicalId = manga.canonicalId,
                 sourceStatus = manga.sourceStatus.toLong(),
+                alternativeTitles = manga.alternativeTitles.joinToString(MangaMapper.ALT_TITLE_SEPARATOR),
             )
         }
         return manga
@@ -266,6 +269,7 @@ class MangaRestorer(
                 metadataUrl = manga.metadataUrl,
                 canonicalId = manga.canonicalId,
                 sourceStatus = manga.sourceStatus.toLong(),
+                alternativeTitles = manga.alternativeTitles.joinToString(MangaMapper.ALT_TITLE_SEPARATOR),
             )
             mangasQueries.selectLastInsertedRowId()
         }

@@ -193,6 +193,7 @@ class MangaRepositoryImpl(
                     metadataUrl = value.metadataUrl,
                     canonicalId = value.canonicalId,
                     sourceStatus = value.sourceStatus?.toLong(),
+                    alternativeTitles = value.alternativeTitles?.joinToString(MangaMapper.ALT_TITLE_SEPARATOR),
                 )
             }
         }

@@ -16,9 +16,17 @@ abstract class BaseSmartSearchEngine<T>(
 
     protected abstract fun getTitle(result: T): String
 
+    /**
+     * Returns alternative/cross titles for a search result, if available.
+     * Override to provide alt titles from sources that support them.
+     * Used for enhanced matching: if the primary title doesn't match well,
+     * we try each alternative title and use the best match.
+     */
+    protected open fun getAlternativeTitles(result: T): List<String> = emptyList()
+
     protected suspend fun regularSearch(searchAction: SearchAction<T>, title: String): T? {
         return baseSearch(searchAction, listOf(title)) {
-            normalizedLevenshtein.similarity(title, getTitle(it))
+            bestTitleSimilarity(title, it)
         }
     }
 
@@ -28,9 +36,73 @@ abstract class BaseSmartSearchEngine<T>(
         val queries = getDeepSearchQueries(cleanedTitle)
 
         return baseSearch(searchAction, queries) {
-            val cleanedMangaTitle = cleanDeepSearchTitle(getTitle(it))
-            normalizedLevenshtein.similarity(cleanedTitle, cleanedMangaTitle)
+            bestCleanedTitleSimilarity(cleanedTitle, it)
         }
+    }
+
+    /**
+     * Searches across all provided titles (primary + alternatives) and returns the best match.
+     * This is the "rising tide" method: instead of searching one title against one source,
+     * we search multiple known titles to find the exact match even when sources use different
+     * naming conventions (romaji vs english vs native).
+     */
+    protected suspend fun multiTitleSearch(
+        searchAction: SearchAction<T>,
+        primaryTitle: String,
+        alternativeTitles: List<String> = emptyList(),
+    ): T? {
+        // Try exact match on primary title first (cheapest)
+        val exactMatch = regularSearch(searchAction, primaryTitle)
+        if (exactMatch != null) {
+            val similarity = bestTitleSimilarity(primaryTitle, exactMatch)
+            if (similarity >= EXACT_MATCH_THRESHOLD) return exactMatch
+        }
+
+        // Try each alternative title with regular search
+        for (altTitle in alternativeTitles) {
+            val match = regularSearch(searchAction, altTitle)
+            if (match != null) {
+                val similarity = bestTitleSimilarity(altTitle, match)
+                if (similarity >= EXACT_MATCH_THRESHOLD) return match
+            }
+        }
+
+        // Fall back to deep search with primary title
+        return deepSearch(searchAction, primaryTitle)
+    }
+
+    /**
+     * Computes the best similarity between the search title and a candidate's primary + alt titles.
+     * This means if a source result has alt titles that match our search term better than
+     * its primary title, we still find it.
+     */
+    private fun bestTitleSimilarity(searchTitle: String, candidate: T): Double {
+        val primarySimilarity = normalizedLevenshtein.similarity(searchTitle, getTitle(candidate))
+        val altTitles = getAlternativeTitles(candidate)
+        if (altTitles.isEmpty()) return primarySimilarity
+
+        val bestAltSimilarity = altTitles.maxOfOrNull { altTitle ->
+            normalizedLevenshtein.similarity(searchTitle, altTitle)
+        } ?: 0.0
+
+        return maxOf(primarySimilarity, bestAltSimilarity)
+    }
+
+    /**
+     * Computes the best cleaned-title similarity for deep search matching.
+     */
+    private fun bestCleanedTitleSimilarity(cleanedSearchTitle: String, candidate: T): Double {
+        val cleanedPrimary = cleanDeepSearchTitle(getTitle(candidate))
+        val primarySimilarity = normalizedLevenshtein.similarity(cleanedSearchTitle, cleanedPrimary)
+        val altTitles = getAlternativeTitles(candidate)
+        if (altTitles.isEmpty()) return primarySimilarity
+
+        val bestAltSimilarity = altTitles.maxOfOrNull { altTitle ->
+            val cleanedAlt = cleanDeepSearchTitle(altTitle)
+            normalizedLevenshtein.similarity(cleanedSearchTitle, cleanedAlt)
+        } ?: 0.0
+
+        return maxOf(primarySimilarity, bestAltSimilarity)
     }
 
     private suspend fun baseSearch(
@@ -141,6 +213,7 @@ abstract class BaseSmartSearchEngine<T>(
 
     companion object {
         const val MIN_ELIGIBLE_THRESHOLD = 0.4
+        const val EXACT_MATCH_THRESHOLD = 0.9
 
         private val titleRegex = Regex("[^a-zA-Z0-9- ]")
         private val titleCyrillicRegex = Regex("[^\\p{L}0-9- ]")
