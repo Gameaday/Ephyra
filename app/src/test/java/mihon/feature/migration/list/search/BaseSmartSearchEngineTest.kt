@@ -342,4 +342,73 @@ class BaseSmartSearchEngineTest {
         )
         found shouldBe null
     }
+
+    @Test
+    fun `multiTitleSearch cross-title matches alt title of result`() = runTest {
+        // When we search for "Shingeki no Kyojin" and result has "Attack on Titan" as primary
+        // but "Shingeki no Kyojin" as an alt title, cross-title evaluation should match
+        val result = TestResult(
+            title = "Attack on Titan",
+            altTitles = listOf("Shingeki no Kyojin"),
+        )
+        val found = engine.testMultiTitleSearch(
+            { listOf(result) },
+            primaryTitle = "Shingeki no Kyojin",
+            deepSearchFallback = false,
+        )
+        found shouldNotBe null
+        found!!.title shouldBe "Attack on Titan"
+    }
+
+    @Test
+    fun `multiTitleSearch with known alt title matches even without primary match`() = runTest {
+        // Search for "Attack on Titan" with alt "Shingeki no Kyojin" — source has
+        // "Shingeki no Kyojin" as its primary title. Cross-eval against all titles should match.
+        val result = TestResult(title = "Shingeki no Kyojin")
+        val found = engine.testMultiTitleSearch(
+            { listOf(result) },
+            primaryTitle = "Attack on Titan",
+            alternativeTitles = listOf("Shingeki no Kyojin"),
+            deepSearchFallback = false,
+        )
+        found shouldNotBe null
+        found!!.title shouldBe "Shingeki no Kyojin"
+    }
+
+    @Test
+    fun `multiTitleSearch primary title empty still searches alt titles`() = runTest {
+        // Edge case: primary title is blank but alt titles are provided
+        val result = TestResult(title = "Naruto")
+        var searchQueries = mutableListOf<String>()
+        val found = engine.testMultiTitleSearch(
+            { query ->
+                searchQueries.add(query)
+                if (query == "Naruto") listOf(result) else emptyList()
+            },
+            primaryTitle = "",
+            alternativeTitles = listOf("Naruto"),
+            deepSearchFallback = false,
+        )
+        // Should still search alt titles
+        found shouldNotBe null
+        found!!.title shouldBe "Naruto"
+    }
+
+    @Test
+    fun `multiTitleSearch deduplicates case-only alt title variants`() = runTest {
+        // Alt titles very similar to primary should be skipped to avoid redundant API calls
+        var searchCount = 0
+        engine.testMultiTitleSearch(
+            { query ->
+                searchCount++
+                emptyList()
+            },
+            primaryTitle = "Naruto",
+            // "NARUTO" is nearly identical to "Naruto" — should be deduplicated
+            alternativeTitles = listOf("NARUTO"),
+            deepSearchFallback = false,
+        )
+        // Only primary title searched; "NARUTO" deduplicated against "Naruto"
+        searchCount shouldBe 1
+    }
 }
