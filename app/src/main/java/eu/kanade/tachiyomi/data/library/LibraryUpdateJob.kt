@@ -401,12 +401,11 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
         if (autoUpdateMetadata) {
             val metadataSourceId = manga.metadataSource?.takeIf { it > 0 }
             val metadataUrl = manga.metadataUrl?.takeIf { it.isNotEmpty() }
-            val usingMetadataSource = metadataSourceId != null && metadataUrl != null
 
             // When using a dedicated metadata source, throttle automatic refreshes.
             // Metadata (description, cover, author) changes far less frequently than chapters,
             // so we only re-fetch every 7 days to be respectful of remote sources.
-            val shouldFetchMetadata = if (usingMetadataSource) {
+            val shouldFetchMetadata = if (metadataSourceId != null && metadataUrl != null) {
                 val lastUpdate = manga.lastUpdate
                 val daysSinceUpdate = if (lastUpdate > 0) {
                     java.util.concurrent.TimeUnit.MILLISECONDS.toDays(
@@ -423,7 +422,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
             if (shouldFetchMetadata) {
                 try {
                     val (metaSource, metaSManga) = if (
-                        usingMetadataSource && metadataSourceId != null && metadataUrl != null
+                        metadataSourceId != null && metadataUrl != null
                     ) {
                         val metaSrc = sourceManager.getOrStub(metadataSourceId)
                         val sM = manga.toSManga().apply { url = metadataUrl }
@@ -434,14 +433,14 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                     val networkManga = metaSource.getMangaDetails(metaSManga)
                     // When using a metadata source, preserve the chapter source's updateStrategy
                     // since it controls chapter fetching behavior, not metadata
-                    if (usingMetadataSource) {
+                    if (metadataSourceId != null) {
                         networkManga.update_strategy = manga.updateStrategy
                     }
                     updateManga.awaitUpdateFromSource(manga, networkManga, manualFetch = false, coverCache)
                 } catch (e: Exception) {
                     // If the metadata source fails (e.g. source removed, network issue),
                     // fall back to the chapter source for metadata to avoid losing updates
-                    if (usingMetadataSource) {
+                    if (metadataSourceId != null) {
                         logcat(LogPriority.WARN, e) {
                             "Metadata source failed for ${manga.title}, falling back to chapter source"
                         }

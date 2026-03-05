@@ -49,6 +49,7 @@ class AddTracks(
 
             // Collect alternative titles from the tracker search result.
             // These enable cross-source matching even when canonical IDs differ.
+            // Only TrackSearch instances carry alt titles — enhanced trackers pass plain Track.
             if (item is TrackSearch && item.alternative_titles.isNotEmpty()) {
                 mergeAlternativeTitles(mangaId, item.alternative_titles)
             }
