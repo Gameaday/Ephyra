@@ -176,6 +176,7 @@ abstract class BaseSmartSearchEngine<T>(
             .map { cleanDeepSearchTitle(it) }
             .filter { it.isNotBlank() }
             .distinct()
+        if (cleanedTitles.isEmpty()) return null
 
         var bestResult: SearchEntry<T>? = null
 

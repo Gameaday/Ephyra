@@ -108,4 +108,7 @@ private fun Manga.toBackupManga() =
         metadataSource = this.metadataSource,
         metadataUrl = this.metadataUrl,
         alternativeTitles = this.alternativeTitles,
+        canonicalId = this.canonicalId,
+        sourceStatus = this.sourceStatus,
+        deadSince = this.deadSince,
     )
