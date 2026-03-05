@@ -48,6 +48,7 @@ import androidx.compose.ui.util.fastLastOrNull
 import androidx.compose.ui.util.fastMaxBy
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
+import tachiyomi.presentation.core.components.material.Padding
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.sample
@@ -216,7 +217,7 @@ fun VerticalFastScroller(
                         },
                     )
                     .height(ThumbLength)
-                    .padding(horizontal = 8.dp)
+                    .padding(horizontal = Padding.small)
                     .padding(end = endContentPadding)
                     .width(ThumbThickness)
                     .alpha(alpha.value)

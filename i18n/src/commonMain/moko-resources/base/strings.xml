@@ -1063,4 +1063,7 @@
     <string name="migrationListScreen.migrateDialog.cancelLabel">Cancel</string>
     <string name="migrationListScreen.progressDialog.cancelLabel">Cancel</string>
     <string name="migrationListScreen.matchWithoutChapterToast">No chapters found, this entry cannot be used for migration</string>
+    <!-- Source health status -->
+    <string name="source_health_degraded">Source may be degraded — fewer chapters than expected</string>
+    <string name="source_health_dead">Source appears dead — no chapters found on last update</string>
 </resources>

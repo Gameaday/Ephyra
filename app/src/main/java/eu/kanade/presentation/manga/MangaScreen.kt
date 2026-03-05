@@ -56,6 +56,7 @@ import eu.kanade.presentation.manga.components.MangaChapterListItem
 import eu.kanade.presentation.manga.components.MangaInfoBox
 import eu.kanade.presentation.manga.components.MangaToolbar
 import eu.kanade.presentation.manga.components.MissingChapterCountListItem
+import eu.kanade.presentation.manga.components.SourceHealthBanner
 import eu.kanade.presentation.util.formatChapterNumber
 import eu.kanade.tachiyomi.data.download.model.Download
 import eu.kanade.tachiyomi.source.getNameForMangaInfo
@@ -66,6 +67,7 @@ import tachiyomi.domain.chapter.model.Chapter
 import tachiyomi.domain.chapter.service.missingChaptersCount
 import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.domain.manga.model.Manga
+import tachiyomi.domain.manga.model.SourceStatus
 import tachiyomi.domain.source.model.StubSource
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.components.TwoPanelBox
@@ -410,6 +412,15 @@ private fun MangaScreenSmallImpl(
                     }
 
                     item(
+                        key = MangaScreenItem.SOURCE_HEALTH_BANNER,
+                        contentType = MangaScreenItem.SOURCE_HEALTH_BANNER,
+                    ) {
+                        SourceHealthBanner(
+                            sourceStatus = SourceStatus.fromValue(state.manga.sourceStatus),
+                        )
+                    }
+
+                    item(
                         key = MangaScreenItem.DESCRIPTION_WITH_TAG,
                         contentType = MangaScreenItem.DESCRIPTION_WITH_TAG,
                     ) {
@@ -639,6 +650,9 @@ fun MangaScreenLargeImpl(
                             onTrackingClicked = onTrackingClicked,
                             onEditIntervalClicked = onEditIntervalClicked,
                             onEditCategory = onEditCategoryClicked,
+                        )
+                        SourceHealthBanner(
+                            sourceStatus = SourceStatus.fromValue(state.manga.sourceStatus),
                         )
                         ExpandableMangaDescription(
                             defaultExpandState = true,
