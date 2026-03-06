@@ -59,6 +59,7 @@ import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toPersistentMap
+import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.core.common.util.lang.withUIContext
 import tachiyomi.domain.source.service.SourceManager
@@ -123,12 +124,25 @@ object SettingsTrackingScreen : SearchableSettings {
                                 withUIContext {
                                     importingFromMal = false
                                     if (result.isSuccess) {
-                                        context.toast(
-                                            "Imported ${result.imported} manga" +
-                                                if (result.skipped > 0) " (${result.skipped} already in library)" else "",
-                                        )
+                                        val msg = context.stringResource(
+                                            MR.strings.tracker_import_success,
+                                            result.imported,
+                                        ) + if (result.skipped > 0) {
+                                            context.stringResource(
+                                                MR.strings.tracker_import_skipped,
+                                                result.skipped,
+                                            )
+                                        } else {
+                                            ""
+                                        }
+                                        context.toast(msg)
                                     } else {
-                                        context.toast("Import failed: ${result.error}")
+                                        context.toast(
+                                            context.stringResource(
+                                                MR.strings.tracker_import_error,
+                                                result.error.orEmpty(),
+                                            ),
+                                        )
                                     }
                                 }
                             }
@@ -154,18 +168,19 @@ object SettingsTrackingScreen : SearchableSettings {
             enhancedTrackerInfo += "\n\n$missingSourcesInfo"
         }
 
+        val malName = trackerManager.myAnimeList.name
         val importPreferences = buildList {
             if (trackerManager.myAnimeList.isLoggedIn) {
                 add(
                     Preference.PreferenceItem.TextPreference(
                         title = if (importingFromMal) {
-                            "Importing from MyAnimeList…"
+                            stringResource(MR.strings.tracker_import_loading, malName)
                         } else {
-                            "Import library from MyAnimeList"
+                            stringResource(MR.strings.tracker_import_label, malName)
                         },
-                        subtitle = "Add your MAL reading list to library with chapter progress",
+                        subtitle = stringResource(MR.strings.tracker_import_subtitle, malName),
                         enabled = !importingFromMal,
-                        onClick = { dialog = ImportConfirmDialog("MyAnimeList") },
+                        onClick = { dialog = ImportConfirmDialog(malName) },
                     ),
                 )
             }
@@ -250,7 +265,7 @@ object SettingsTrackingScreen : SearchableSettings {
             if (importPreferences.isNotEmpty()) {
                 add(
                     Preference.PreferenceGroup(
-                        title = "Import from tracker",
+                        title = stringResource(MR.strings.tracker_import_group_title),
                         preferenceItems = importPreferences.toImmutableList(),
                     ),
                 )
@@ -446,15 +461,14 @@ object SettingsTrackingScreen : SearchableSettings {
             onDismissRequest = onDismissRequest,
             title = {
                 Text(
-                    text = "Import from $trackerName",
+                    text = stringResource(MR.strings.tracker_import_title, trackerName),
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth(),
                 )
             },
             text = {
                 Text(
-                    text = "This will add all manga from your $trackerName reading list to your library " +
-                        "with chapter progress. Manga already in your library will be skipped.",
+                    text = stringResource(MR.strings.tracker_import_confirm_body, trackerName),
                 )
             },
             confirmButton = {
@@ -469,7 +483,7 @@ object SettingsTrackingScreen : SearchableSettings {
                         modifier = Modifier.weight(1f),
                         onClick = onConfirm,
                     ) {
-                        Text(text = "Import")
+                        Text(text = stringResource(MR.strings.action_import))
                     }
                 }
             },
