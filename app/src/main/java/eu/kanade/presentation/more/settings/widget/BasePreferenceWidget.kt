@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import eu.kanade.presentation.more.settings.LocalPreferenceHighlighted
 import eu.kanade.presentation.more.settings.LocalPreferenceMinHeight
 import kotlinx.coroutines.delay
+import tachiyomi.presentation.core.theme.MotionTokens
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
@@ -104,15 +105,15 @@ internal fun Modifier.highlightBackground(highlighted: Boolean): Modifier {
         animationSpec = if (highlightFlag) {
             repeatable(
                 iterations = 5,
-                animation = tween(durationMillis = 200),
+                animation = tween(durationMillis = MotionTokens.DURATION_SHORT),
                 repeatMode = RepeatMode.Reverse,
                 initialStartOffset = StartOffset(
-                    offsetMillis = 600,
+                    offsetMillis = MotionTokens.DURATION_LONG,
                     offsetType = StartOffsetType.Delay,
                 ),
             )
         } else {
-            tween(200)
+            tween(MotionTokens.DURATION_SHORT)
         },
         label = "highlight",
     )

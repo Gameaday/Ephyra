@@ -1,5 +1,10 @@
 package eu.kanade.presentation.more.settings.widget
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -14,13 +19,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import eu.kanade.presentation.more.settings.LocalPreferenceHighlighted
 import eu.kanade.presentation.track.components.TrackLogoIcon
 import eu.kanade.tachiyomi.data.track.Tracker
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
+import tachiyomi.presentation.core.theme.MotionTokens
 
 @Composable
 fun TrackingPreferenceWidget(
@@ -48,13 +53,17 @@ fun TrackingPreferenceWidget(
                 style = MaterialTheme.typography.titleLarge,
                 fontSize = TitleFontSize,
             )
-            if (checked) {
+            AnimatedVisibility(
+                visible = checked,
+                enter = fadeIn(MotionTokens.tweenEnter()) + scaleIn(MotionTokens.tweenEnter()),
+                exit = fadeOut(MotionTokens.tweenExit()) + scaleOut(MotionTokens.tweenExit()),
+            ) {
                 Icon(
                     imageVector = Icons.Outlined.Done,
                     modifier = Modifier
                         .padding(4.dp)
                         .size(32.dp),
-                    tint = Color(0xFF4CAF50),
+                    tint = MaterialTheme.colorScheme.primary,
                     contentDescription = stringResource(MR.strings.login_success),
                 )
             }
