@@ -310,10 +310,21 @@ class LibraryUpdateNotifier(
             if (!securityPreferences.hideNotificationContent().get()) {
                 deadManga.take(NOTIF_MAX_HEALTH_ENTRIES).forEach { manga ->
                     val sourceName = sourceManager.getOrStub(manga.source).name
-                    lines.add("  • ${manga.title.chop(NOTIF_TITLE_MAX_LEN)} ($sourceName)")
+                    lines.add(
+                        context.stringResource(
+                            MR.strings.notification_list_item,
+                            manga.title.chop(NOTIF_TITLE_MAX_LEN),
+                            sourceName,
+                        ),
+                    )
                 }
                 if (deadManga.size > NOTIF_MAX_HEALTH_ENTRIES) {
-                    lines.add("  … and ${deadManga.size - NOTIF_MAX_HEALTH_ENTRIES} more")
+                    lines.add(
+                        context.stringResource(
+                            MR.strings.notification_and_more,
+                            deadManga.size - NOTIF_MAX_HEALTH_ENTRIES,
+                        ),
+                    )
                 }
             }
         }
@@ -325,10 +336,21 @@ class LibraryUpdateNotifier(
             if (!securityPreferences.hideNotificationContent().get()) {
                 degradedManga.take(NOTIF_MAX_HEALTH_ENTRIES).forEach { manga ->
                     val sourceName = sourceManager.getOrStub(manga.source).name
-                    lines.add("  • ${manga.title.chop(NOTIF_TITLE_MAX_LEN)} ($sourceName)")
+                    lines.add(
+                        context.stringResource(
+                            MR.strings.notification_list_item,
+                            manga.title.chop(NOTIF_TITLE_MAX_LEN),
+                            sourceName,
+                        ),
+                    )
                 }
                 if (degradedManga.size > NOTIF_MAX_HEALTH_ENTRIES) {
-                    lines.add("  … and ${degradedManga.size - NOTIF_MAX_HEALTH_ENTRIES} more")
+                    lines.add(
+                        context.stringResource(
+                            MR.strings.notification_and_more,
+                            degradedManga.size - NOTIF_MAX_HEALTH_ENTRIES,
+                        ),
+                    )
                 }
             }
         }
@@ -365,10 +387,21 @@ class LibraryUpdateNotifier(
         if (!securityPreferences.hideNotificationContent().get()) {
             persistentlyDeadManga.take(NOTIF_MAX_HEALTH_ENTRIES).forEach { manga ->
                 val sourceName = sourceManager.getOrStub(manga.source).name
-                lines.add("  • ${manga.title.chop(NOTIF_TITLE_MAX_LEN)} ($sourceName)")
+                lines.add(
+                    context.stringResource(
+                        MR.strings.notification_list_item,
+                        manga.title.chop(NOTIF_TITLE_MAX_LEN),
+                        sourceName,
+                    ),
+                )
             }
             if (persistentlyDeadManga.size > NOTIF_MAX_HEALTH_ENTRIES) {
-                lines.add("  … and ${persistentlyDeadManga.size - NOTIF_MAX_HEALTH_ENTRIES} more")
+                lines.add(
+                    context.stringResource(
+                        MR.strings.notification_and_more,
+                        persistentlyDeadManga.size - NOTIF_MAX_HEALTH_ENTRIES,
+                    ),
+                )
             }
         }
 
