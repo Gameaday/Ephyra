@@ -21,7 +21,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.components.material.padding
+import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.theme.MotionTokens
 import tachiyomi.presentation.core.theme.header
 
@@ -51,7 +53,9 @@ fun CollapsibleBox(
 
             Icon(
                 imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                contentDescription = null,
+                contentDescription = stringResource(
+                    if (expanded) MR.strings.manga_info_collapse else MR.strings.manga_info_expand,
+                ),
             )
         }
 
