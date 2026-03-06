@@ -11,13 +11,31 @@ This fork adds an **authority-first identity system** on top of Mihon's source-b
 **What works today:**
 - Add any series via tracker search (MAL, AniList, MangaUpdates, Kitsu, Bangumi, Shikimori)
 - Track reading progress, scores, start/finish dates, and reading status per tracker
+- **Authority chapters** generated from tracker metadata — see chapter list, mark chapters as read/bookmarked even without a content source. If the tracker knows there are 108 chapters, you get Chapter 1–108 to track your progress through
 - Write personal **notes** on any manga entry (dedicated notes screen per manga)
 - Organize into **categories** with custom names and ordering
 - No source needed — the app stores a canonical ID (`al:21`) and won't show health warnings for manga that never had chapters
 - Sync progress back to tracker sites to keep your online profile current
 - **Backup/restore** preserves all tracking data, notes, canonical IDs, and categories
+- If you later add a content source, your read progress carries forward — authority chapters merge cleanly with source chapters
 
-### 2. The Local Reader (existing library)
+### 2. The Existing Reader (tracker import)
+
+*"I already have a reading list on MAL/AniList. I want to bring my whole library in without starting from scratch."*
+
+**What works today:**
+- **Import from MyAnimeList** — one tap in Settings → Tracking imports your entire MAL reading list
+- Each manga creates a library entry with canonical ID, cover art, and metadata
+- Reading status (reading, completed, on hold, dropped, plan to read) transfers with chapter progress
+- **Authority chapters** auto-generated from tracker's total chapter count, with chapters marked as read matching your MAL progress
+- Duplicate detection — manga already in your library are skipped
+- After import, you can link content sources for any manga you want to read online, or keep tracking-only
+
+**What could be built later** (not currently planned):
+- Import from AniList reading list
+- Two-way sync (push new library additions back to tracker)
+
+### 3. The Local Reader (existing library)
 
 *"I have manga files (CBZ, EPUB, folders) on my device. I want to organize and read them with progress tracking."*
 
@@ -29,7 +47,7 @@ This fork adds an **authority-first identity system** on top of Mihon's source-b
 - Health banner hidden for local manga in detail view
 - Download chapters for offline reading; downloaded content survives source changes
 
-### 3. The Local Content Creator
+### 4. The Local Content Creator
 
 *"I add my own scans or downloads to the local library over time."*
 
@@ -38,7 +56,7 @@ This fork adds an **authority-first identity system** on top of Mihon's source-b
 - Same organization tools as any other manga: categories, notes, tracker links
 - Mix local and online manga in the same library with unified filtering and sorting
 
-### 4. The Online Reader
+### 5. The Online Reader
 
 *"I read from online sources and want a smooth reading experience with progress tracking."*
 
@@ -51,7 +69,7 @@ This fork adds an **authority-first identity system** on top of Mihon's source-b
 - Sort by title, chapters, latest update, date added, or unread count
 - Display modes: compact grid, comfortable grid, or list — configurable per category
 
-### 5. The Migrator (source changes)
+### 6. The Migrator (source changes)
 
 *"My source died or I want to switch. I need to move my manga without losing progress."*
 
@@ -63,7 +81,7 @@ This fork adds an **authority-first identity system** on top of Mihon's source-b
 - **Library filter** to show only dead/degraded manga for batch triage
 - Health status and dead_since timestamps survive backup/restore
 
-### 6. The Progress Tracker (offline sync)
+### 7. The Progress Tracker (offline sync)
 
 *"I read offline or across devices. I want my reading position to stay synced."*
 
@@ -74,7 +92,7 @@ This fork adds an **authority-first identity system** on top of Mihon's source-b
 - **Backup/restore** captures full state: library, chapters, tracking, history, categories, notes
 - Restore on a new device picks up exactly where you left off
 
-### 7. The Organizer
+### 8. The Organizer
 
 *"I have a large library and need to keep it tidy."*
 
@@ -86,7 +104,7 @@ This fork adds an **authority-first identity system** on top of Mihon's source-b
 - **Notes** per manga for personal annotations
 - Library health banner shows at-a-glance count of manga needing attention
 
-### 8. The Sharer
+### 9. The Sharer
 
 *"I want to share my favorites or export parts of my library."*
 
@@ -101,7 +119,7 @@ This fork adds an **authority-first identity system** on top of Mihon's source-b
 - Share notes or recommendations as formatted text
 - Group/list sharing with friends
 
-### 9. The Explorer
+### 10. The Explorer
 
 *"I want to find new series similar to what I already enjoy."*
 
@@ -111,8 +129,8 @@ This fork adds an **authority-first identity system** on top of Mihon's source-b
 - Source-specific popular/latest listings
 
 **What could be built later** (not currently planned):
-- "More like this" recommendations based on linked tracker data
-- Import reading lists or favorites from tracker sites to populate library
+- "More like this" recommendations based on linked tracker data (genre, author, similar users)
+- Tracker-based discovery: "users who read X also read Y"
 
 ## Fork Features Summary
 
@@ -128,11 +146,13 @@ This fork adds an **authority-first identity system** on top of Mihon's source-b
 | Local/stub source safety | ✅ Excluded from health detection |
 | Backup completeness | ✅ Canonical ID, status, dead_since |
 | Design tokens | ✅ Consistent spacing system |
+| Tracker list import (MAL) | ✅ One-tap import of reading list |
+| Authority chapters | ✅ Chapters from tracker metadata for sourceless manga |
 | Manga notes | ✅ Upstream feature, fully supported |
 | Categories + organization | ✅ Upstream feature, fully supported |
 | Tracker sync | ✅ Upstream feature, fully supported |
 
-135 unit tests. Zero compiler warnings.
+145 unit tests. Zero compiler warnings.
 
 ## Architecture
 
@@ -142,3 +162,5 @@ This fork adds an **authority-first identity system** on top of Mihon's source-b
 | Alt titles | JSON array in DB, backward-compatible with legacy pipe-separated |
 | Health detection | Chapter count comparison (70% threshold), zero extra API calls |
 | Search | 4-tier: canonical ID (free) → title (1 call) → alt titles → deep search |
+| Authority chapters | Generated from tracker `total_chapters`, `authority://` URL scheme |
+| Tracker import | MAL reading list → manga entries + tracker binding + authority chapters |

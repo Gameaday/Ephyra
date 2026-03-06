@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import dev.icerock.moko.resources.StringResource
 import eu.kanade.domain.track.model.AutoTrackState
 import eu.kanade.domain.track.service.TrackPreferences
+import eu.kanade.domain.track.interactor.TrackerListImporter
 import eu.kanade.presentation.more.settings.Preference
 import eu.kanade.tachiyomi.data.track.EnhancedTracker
 import eu.kanade.tachiyomi.data.track.Tracker
@@ -91,8 +92,10 @@ object SettingsTrackingScreen : SearchableSettings {
         val trackerManager = remember { Injekt.get<TrackerManager>() }
         val sourceManager = remember { Injekt.get<SourceManager>() }
         val autoTrackStatePref = trackPreferences.autoUpdateTrackOnMarkRead()
+        val scope = rememberCoroutineScope()
 
         var dialog by remember { mutableStateOf<Any?>(null) }
+        var importingFromMal by remember { mutableStateOf(false) }
         dialog?.run {
             when (this) {
                 is LoginDialog -> {
@@ -105,6 +108,31 @@ object SettingsTrackingScreen : SearchableSettings {
                 is LogoutDialog -> {
                     TrackingLogoutDialog(
                         tracker = tracker,
+                        onDismissRequest = { dialog = null },
+                    )
+                }
+                is ImportConfirmDialog -> {
+                    TrackingImportConfirmDialog(
+                        trackerName = trackerName,
+                        onConfirm = {
+                            dialog = null
+                            importingFromMal = true
+                            scope.launchIO {
+                                val importer = Injekt.get<TrackerListImporter>()
+                                val result = importer.importFromMal()
+                                withUIContext {
+                                    importingFromMal = false
+                                    if (result.isSuccess) {
+                                        context.toast(
+                                            "Imported ${result.imported} manga" +
+                                                if (result.skipped > 0) " (${result.skipped} already in library)" else "",
+                                        )
+                                    } else {
+                                        context.toast("Import failed: ${result.error}")
+                                    }
+                                }
+                            }
+                        },
                         onDismissRequest = { dialog = null },
                     )
                 }
@@ -126,68 +154,123 @@ object SettingsTrackingScreen : SearchableSettings {
             enhancedTrackerInfo += "\n\n$missingSourcesInfo"
         }
 
-        return listOf(
-            Preference.PreferenceItem.SwitchPreference(
-                preference = trackPreferences.autoUpdateTrack(),
-                title = stringResource(MR.strings.pref_auto_update_manga_sync),
-            ),
-            Preference.PreferenceItem.ListPreference(
-                preference = trackPreferences.autoUpdateTrackOnMarkRead(),
-                entries = AutoTrackState.entries
-                    .associateWith { stringResource(it.titleRes) }
-                    .toPersistentMap(),
-                title = stringResource(MR.strings.pref_auto_update_manga_on_mark_read),
-            ),
-            Preference.PreferenceGroup(
-                title = stringResource(MR.strings.services),
-                preferenceItems = persistentListOf(
-                    Preference.PreferenceItem.TrackerPreference(
-                        tracker = trackerManager.myAnimeList,
-                        login = { context.openInBrowser(MyAnimeListApi.authUrl(), forceDefaultBrowser = true) },
-                        logout = { dialog = LogoutDialog(trackerManager.myAnimeList) },
+        val importPreferences = buildList {
+            if (trackerManager.myAnimeList.isLoggedIn) {
+                add(
+                    Preference.PreferenceItem.TextPreference(
+                        title = if (importingFromMal) {
+                            "Importing from MyAnimeList…"
+                        } else {
+                            "Import library from MyAnimeList"
+                        },
+                        subtitle = "Add your MAL reading list to library with chapter progress",
+                        enabled = !importingFromMal,
+                        onClick = { dialog = ImportConfirmDialog("MyAnimeList") },
                     ),
-                    Preference.PreferenceItem.TrackerPreference(
-                        tracker = trackerManager.aniList,
-                        login = { context.openInBrowser(AnilistApi.authUrl(), forceDefaultBrowser = true) },
-                        logout = { dialog = LogoutDialog(trackerManager.aniList) },
-                    ),
-                    Preference.PreferenceItem.TrackerPreference(
-                        tracker = trackerManager.kitsu,
-                        login = { dialog = LoginDialog(trackerManager.kitsu, MR.strings.email) },
-                        logout = { dialog = LogoutDialog(trackerManager.kitsu) },
-                    ),
-                    Preference.PreferenceItem.TrackerPreference(
-                        tracker = trackerManager.mangaUpdates,
-                        login = { dialog = LoginDialog(trackerManager.mangaUpdates, MR.strings.username) },
-                        logout = { dialog = LogoutDialog(trackerManager.mangaUpdates) },
-                    ),
-                    Preference.PreferenceItem.TrackerPreference(
-                        tracker = trackerManager.shikimori,
-                        login = { context.openInBrowser(ShikimoriApi.authUrl(), forceDefaultBrowser = true) },
-                        logout = { dialog = LogoutDialog(trackerManager.shikimori) },
-                    ),
-                    Preference.PreferenceItem.TrackerPreference(
-                        tracker = trackerManager.bangumi,
-                        login = { context.openInBrowser(BangumiApi.authUrl(), forceDefaultBrowser = true) },
-                        logout = { dialog = LogoutDialog(trackerManager.bangumi) },
-                    ),
-                    Preference.PreferenceItem.InfoPreference(stringResource(MR.strings.tracking_info)),
+                )
+            }
+        }
+
+        return buildList {
+            add(
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = trackPreferences.autoUpdateTrack(),
+                    title = stringResource(MR.strings.pref_auto_update_manga_sync),
                 ),
-            ),
-            Preference.PreferenceGroup(
-                title = stringResource(MR.strings.enhanced_services),
-                preferenceItems = (
-                    enhancedTrackers.first
-                        .map { service ->
-                            Preference.PreferenceItem.TrackerPreference(
-                                tracker = service,
-                                login = { (service as EnhancedTracker).loginNoop() },
-                                logout = service::logout,
-                            )
-                        } + listOf(Preference.PreferenceItem.InfoPreference(enhancedTrackerInfo))
-                    ).toImmutableList(),
-            ),
-        )
+            )
+            add(
+                Preference.PreferenceItem.ListPreference(
+                    preference = trackPreferences.autoUpdateTrackOnMarkRead(),
+                    entries = AutoTrackState.entries
+                        .associateWith { stringResource(it.titleRes) }
+                        .toPersistentMap(),
+                    title = stringResource(MR.strings.pref_auto_update_manga_on_mark_read),
+                ),
+            )
+            add(
+                Preference.PreferenceGroup(
+                    title = stringResource(MR.strings.services),
+                    preferenceItems = persistentListOf(
+                        Preference.PreferenceItem.TrackerPreference(
+                            tracker = trackerManager.myAnimeList,
+                            login = {
+                                context.openInBrowser(
+                                    MyAnimeListApi.authUrl(),
+                                    forceDefaultBrowser = true,
+                                )
+                            },
+                            logout = { dialog = LogoutDialog(trackerManager.myAnimeList) },
+                        ),
+                        Preference.PreferenceItem.TrackerPreference(
+                            tracker = trackerManager.aniList,
+                            login = {
+                                context.openInBrowser(
+                                    AnilistApi.authUrl(),
+                                    forceDefaultBrowser = true,
+                                )
+                            },
+                            logout = { dialog = LogoutDialog(trackerManager.aniList) },
+                        ),
+                        Preference.PreferenceItem.TrackerPreference(
+                            tracker = trackerManager.kitsu,
+                            login = { dialog = LoginDialog(trackerManager.kitsu, MR.strings.email) },
+                            logout = { dialog = LogoutDialog(trackerManager.kitsu) },
+                        ),
+                        Preference.PreferenceItem.TrackerPreference(
+                            tracker = trackerManager.mangaUpdates,
+                            login = {
+                                dialog = LoginDialog(trackerManager.mangaUpdates, MR.strings.username)
+                            },
+                            logout = { dialog = LogoutDialog(trackerManager.mangaUpdates) },
+                        ),
+                        Preference.PreferenceItem.TrackerPreference(
+                            tracker = trackerManager.shikimori,
+                            login = {
+                                context.openInBrowser(
+                                    ShikimoriApi.authUrl(),
+                                    forceDefaultBrowser = true,
+                                )
+                            },
+                            logout = { dialog = LogoutDialog(trackerManager.shikimori) },
+                        ),
+                        Preference.PreferenceItem.TrackerPreference(
+                            tracker = trackerManager.bangumi,
+                            login = {
+                                context.openInBrowser(
+                                    BangumiApi.authUrl(),
+                                    forceDefaultBrowser = true,
+                                )
+                            },
+                            logout = { dialog = LogoutDialog(trackerManager.bangumi) },
+                        ),
+                        Preference.PreferenceItem.InfoPreference(stringResource(MR.strings.tracking_info)),
+                    ),
+                ),
+            )
+            if (importPreferences.isNotEmpty()) {
+                add(
+                    Preference.PreferenceGroup(
+                        title = "Import from tracker",
+                        preferenceItems = importPreferences.toImmutableList(),
+                    ),
+                )
+            }
+            add(
+                Preference.PreferenceGroup(
+                    title = stringResource(MR.strings.enhanced_services),
+                    preferenceItems = (
+                        enhancedTrackers.first
+                            .map { service ->
+                                Preference.PreferenceItem.TrackerPreference(
+                                    tracker = service,
+                                    login = { (service as EnhancedTracker).loginNoop() },
+                                    logout = service::logout,
+                                )
+                            } + listOf(Preference.PreferenceItem.InfoPreference(enhancedTrackerInfo))
+                        ).toImmutableList(),
+                ),
+            )
+        }
     }
 
     @Composable
@@ -352,6 +435,46 @@ object SettingsTrackingScreen : SearchableSettings {
             },
         )
     }
+
+    @Composable
+    private fun TrackingImportConfirmDialog(
+        trackerName: String,
+        onConfirm: () -> Unit,
+        onDismissRequest: () -> Unit,
+    ) {
+        AlertDialog(
+            onDismissRequest = onDismissRequest,
+            title = {
+                Text(
+                    text = "Import from $trackerName",
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+            text = {
+                Text(
+                    text = "This will add all manga from your $trackerName reading list to your library " +
+                        "with chapter progress. Manga already in your library will be skipped.",
+                )
+            },
+            confirmButton = {
+                Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.extraSmall)) {
+                    OutlinedButton(
+                        modifier = Modifier.weight(1f),
+                        onClick = onDismissRequest,
+                    ) {
+                        Text(text = stringResource(MR.strings.action_cancel))
+                    }
+                    Button(
+                        modifier = Modifier.weight(1f),
+                        onClick = onConfirm,
+                    ) {
+                        Text(text = "Import")
+                    }
+                }
+            },
+        )
+    }
 }
 
 private data class LoginDialog(
@@ -361,4 +484,8 @@ private data class LoginDialog(
 
 private data class LogoutDialog(
     val tracker: Tracker,
+)
+
+private data class ImportConfirmDialog(
+    val trackerName: String,
 )
