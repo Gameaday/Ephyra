@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi.ui.browse.source
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ManageSearch
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.outlined.TravelExplore
 import androidx.compose.runtime.Composable
@@ -15,6 +16,7 @@ import eu.kanade.presentation.browse.SourceOptionsDialog
 import eu.kanade.presentation.browse.SourcesScreen
 import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.TabContent
+import eu.kanade.tachiyomi.ui.browse.source.authority.AuthoritySearchScreen
 import eu.kanade.tachiyomi.ui.browse.source.browse.BrowseSourceScreen
 import eu.kanade.tachiyomi.ui.browse.source.globalsearch.GlobalSearchScreen
 import kotlinx.collections.immutable.persistentListOf
@@ -36,6 +38,11 @@ fun Screen.sourcesTab(): TabContent {
                 title = stringResource(MR.strings.action_global_search),
                 icon = Icons.Outlined.TravelExplore,
                 onClick = { navigator.push(GlobalSearchScreen()) },
+            ),
+            AppBar.Action(
+                title = stringResource(MR.strings.action_authority_search),
+                icon = Icons.AutoMirrored.Outlined.ManageSearch,
+                onClick = { navigator.push(AuthoritySearchScreen()) },
             ),
             AppBar.Action(
                 title = stringResource(MR.strings.action_filter),

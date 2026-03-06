@@ -1100,6 +1100,29 @@
     <string name="tracker_import_group_title">Import from tracker</string>
     <string name="action_import">Import</string>
 
+    <!-- AutoTrackState entry labels for the tracking-on-mark-read preference -->
+    <string name="auto_track_always">Always</string>
+    <string name="auto_track_ask">Ask</string>
+    <string name="auto_track_never">Never</string>
+
+    <!-- Authority link (retroactive canonical ID assignment) -->
+    <string name="tracker_link_group_title">Manage authority links</string>
+    <string name="tracker_link_action">Link tracked manga to authority</string>
+    <string name="tracker_link_subtitle">Retroactively set authority IDs for manga that already have trackers</string>
+    <string name="tracker_link_success">Linked %d manga to authority</string>
+    <string name="tracker_link_none">All tracked manga are already authority-linked</string>
+    <string name="tracker_link_running">Linking manga to authority…</string>
+
+    <!-- Authority search in browse -->
+    <string name="action_authority_search">Search authorities</string>
+    <string name="authority_search_empty">Search a tracker (e.g. MyAnimeList) to find manga and add them to your library as authority-only entries</string>
+    <string name="authority_search_hint">Search tracker databases…</string>
+    <string name="authority_search_title">Authority Search</string>
+    <string name="authority_search_add">Add to library</string>
+    <string name="authority_search_added">Added to library</string>
+    <string name="authority_search_select_tracker">Select tracker</string>
+    <string name="authority_search_no_trackers">No logged-in trackers. Log in to a tracker first.</string>
+
     <!-- Accessibility content descriptions for source health -->
     <string name="source_health_warning_dead">Warning: source is dead</string>
     <string name="source_health_warning_degraded">Warning: source is degraded</string>

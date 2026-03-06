@@ -28,8 +28,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -261,13 +261,15 @@ private fun SearchResult(
 }
 
 @Composable
-@NonRestartableComposable
 private fun getIndex() = settingScreens
     .map { screen ->
         SettingsData(
             title = stringResource(screen.getTitleRes()),
             route = screen,
-            contents = screen.getPreferences(),
+            // key() isolates each screen's composable slot table so that conditional
+            // composable calls inside getPreferences() (e.g. dialogs) don't shift
+            // slots for subsequent screens and cause ClassCastExceptions.
+            contents = key(screen) { screen.getPreferences() },
         )
     }
 
