@@ -1,27 +1,33 @@
 package eu.kanade.tachiyomi.ui.browse.source.authority
 
-import androidx.compose.foundation.clickable
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -33,68 +39,55 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.model.rememberScreenModel
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
+import cafe.adriel.voyager.core.screen.Screen
 import coil3.compose.AsyncImage
-import eu.kanade.presentation.components.AppBar
-import eu.kanade.presentation.util.Screen
+import eu.kanade.domain.track.interactor.AddTracks
+import eu.kanade.presentation.components.TabContent
 import eu.kanade.tachiyomi.data.track.model.TrackSearch
+import kotlinx.collections.immutable.persistentListOf
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.components.ScrollbarLazyColumn
-import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.components.material.padding
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.screens.EmptyScreen
 import tachiyomi.presentation.core.screens.LoadingScreen
+import tachiyomi.presentation.core.theme.MotionTokens
 
 /**
- * Screen for searching tracker databases (MAL, AniList, etc.) and adding results
- * to the library as authority-only manga entries.
- *
- * Addresses the user report that "the search on the browse page still searches all the
- * extensions directly" — this provides a dedicated authority-first search path.
+ * Creates the Discover tab content for the Browse screen.
+ * This is the primary, authority-first search experience — users search
+ * tracker databases (MAL, AniList, MangaUpdates) and add results
+ * directly to their library as authority-linked entries.
  */
-class AuthoritySearchScreen : Screen() {
+@Composable
+fun Screen.discoverTab(): TabContent {
+    val screenModel = rememberScreenModel { AuthoritySearchScreenModel() }
+    val state by screenModel.state.collectAsState()
 
-    @Composable
-    override fun Content() {
-        val navigator = LocalNavigator.currentOrThrow
-        val screenModel = rememberScreenModel { AuthoritySearchScreenModel() }
-        val state by screenModel.state.collectAsState()
-
-        Scaffold(
-            topBar = { scrollBehavior ->
-                AppBar(
-                    title = stringResource(MR.strings.authority_search_title),
-                    navigateUp = navigator::pop,
-                    scrollBehavior = scrollBehavior,
-                )
-            },
-        ) { paddingValues ->
-            when {
-                screenModel.availableTrackers.isEmpty() -> {
-                    EmptyScreen(stringResource(MR.strings.authority_search_no_trackers))
-                }
-                else -> {
-                    AuthoritySearchContent(
-                        state = state,
-                        availableTrackers = screenModel.availableTrackers,
-                        onSelectTracker = screenModel::selectTracker,
-                        onSearch = screenModel::search,
-                        onAddToLibrary = screenModel::addToLibrary,
-                        contentPadding = paddingValues,
-                    )
-                }
-            }
-        }
-    }
+    return TabContent(
+        titleRes = MR.strings.label_discover,
+        actions = persistentListOf(),
+        content = { contentPadding, _ ->
+            DiscoverContent(
+                state = state,
+                availableTrackers = screenModel.availableTrackers,
+                onSelectTracker = screenModel::selectTracker,
+                onSearch = screenModel::search,
+                onAddToLibrary = screenModel::addToLibrary,
+                contentPadding = contentPadding,
+            )
+        },
+    )
 }
 
 @Composable
-private fun AuthoritySearchContent(
+private fun DiscoverContent(
     state: AuthoritySearchState,
     availableTrackers: List<eu.kanade.tachiyomi.data.track.Tracker>,
     onSelectTracker: (eu.kanade.tachiyomi.data.track.Tracker) -> Unit,
@@ -102,6 +95,14 @@ private fun AuthoritySearchContent(
     onAddToLibrary: (TrackSearch) -> Unit,
     contentPadding: PaddingValues,
 ) {
+    if (availableTrackers.isEmpty()) {
+        EmptyScreen(
+            stringRes = MR.strings.discover_no_trackers,
+            modifier = Modifier.padding(contentPadding),
+        )
+        return
+    }
+
     var query by remember { mutableStateOf("") }
 
     Column(
@@ -109,7 +110,24 @@ private fun AuthoritySearchContent(
             .fillMaxSize()
             .padding(contentPadding),
     ) {
-        // Tracker selector chips
+        // Search input with rounded shape matching Material 3 Expressive style
+        OutlinedTextField(
+            value = query,
+            onValueChange = { query = it },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = MaterialTheme.padding.medium,
+                    vertical = MaterialTheme.padding.small,
+                ),
+            placeholder = { Text(stringResource(MR.strings.discover_search_hint)) },
+            singleLine = true,
+            shape = RoundedCornerShape(28.dp),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(onSearch = { onSearch(query) }),
+        )
+
+        // Tracker filter chips — only shown when multiple trackers are available
         if (availableTrackers.size > 1) {
             Row(
                 modifier = Modifier
@@ -127,40 +145,47 @@ private fun AuthoritySearchContent(
             }
         }
 
-        // Search box
-        OutlinedTextField(
-            value = query,
-            onValueChange = { query = it },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = MaterialTheme.padding.medium, vertical = MaterialTheme.padding.small),
-            placeholder = { Text(stringResource(MR.strings.authority_search_hint)) },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(onSearch = { onSearch(query) }),
-        )
+        Spacer(Modifier.height(MaterialTheme.padding.small))
 
-        HorizontalDivider()
-
-        when {
-            state.isSearching -> LoadingScreen()
-            state.results.isEmpty() && state.query.isBlank() -> {
-                EmptyScreen(stringResource(MR.strings.authority_search_empty))
-            }
-            state.results.isEmpty() -> {
-                EmptyScreen(stringResource(MR.strings.no_results_found))
-            }
-            else -> {
-                ScrollbarLazyColumn(contentPadding = PaddingValues(vertical = MaterialTheme.padding.small)) {
-                    items(state.results, key = { "${it.tracker_id}:${it.remote_id}" }) { result ->
-                        val prefix = eu.kanade.domain.track.interactor.AddTracks.TRACKER_CANONICAL_PREFIXES[result.tracker_id]
-                        val canonicalId = if (prefix != null) "$prefix:${result.remote_id}" else null
-                        val isAdded = canonicalId != null && canonicalId in state.addedCanonicalIds
-                        AuthoritySearchResultItem(
-                            result = result,
-                            isAdded = isAdded,
-                            onAdd = { onAddToLibrary(result) },
-                        )
+        // Results area with animated content transitions
+        AnimatedContent(
+            targetState = Triple(state.isSearching, state.results.isEmpty(), state.query),
+            transitionSpec = {
+                fadeIn(tween(MotionTokens.DURATION_MEDIUM)) togetherWith
+                    fadeOut(tween(MotionTokens.DURATION_SHORT))
+            },
+            label = "discover_content",
+            modifier = Modifier.weight(1f),
+        ) { (searching, empty, currentQuery) ->
+            when {
+                searching -> LoadingScreen()
+                empty && currentQuery.isBlank() -> {
+                    EmptyScreen(stringResource(MR.strings.discover_empty_state))
+                }
+                empty -> EmptyScreen(stringResource(MR.strings.no_results_found))
+                else -> {
+                    ScrollbarLazyColumn(
+                        contentPadding = PaddingValues(
+                            horizontal = MaterialTheme.padding.medium,
+                            vertical = MaterialTheme.padding.small,
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
+                    ) {
+                        items(
+                            state.results,
+                            key = { "${it.tracker_id}:${it.remote_id}" },
+                        ) { result ->
+                            val prefix = AddTracks.TRACKER_CANONICAL_PREFIXES[result.tracker_id]
+                            val canonicalId =
+                                if (prefix != null) "$prefix:${result.remote_id}" else null
+                            val isAdded =
+                                canonicalId != null && canonicalId in state.addedCanonicalIds
+                            DiscoverResultCard(
+                                result = result,
+                                isAdded = isAdded,
+                                onAdd = { onAddToLibrary(result) },
+                            )
+                        }
                     }
                 }
             }
@@ -169,59 +194,74 @@ private fun AuthoritySearchContent(
 }
 
 @Composable
-private fun AuthoritySearchResultItem(
+private fun DiscoverResultCard(
     result: TrackSearch,
     isAdded: Boolean,
     onAdd: () -> Unit,
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(80.dp)
-            .padding(horizontal = MaterialTheme.padding.medium, vertical = MaterialTheme.padding.small),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.medium),
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
     ) {
-        AsyncImage(
-            model = result.cover_url,
-            contentDescription = result.title,
+        Row(
             modifier = Modifier
-                .size(48.dp, 64.dp),
-        )
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = result.title,
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 2,
-            )
-            if (result.publishing_type.isNotBlank()) {
-                Text(
-                    text = result.publishing_type,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                )
-            }
-        }
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clickable(enabled = !isAdded, onClick = onAdd),
-            contentAlignment = Alignment.Center,
+                .fillMaxWidth()
+                .padding(MaterialTheme.padding.medium),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.medium),
         ) {
-            if (isAdded) {
-                Icon(
-                    imageVector = Icons.Outlined.Check,
-                    contentDescription = stringResource(MR.strings.authority_search_added),
-                    tint = MaterialTheme.colorScheme.primary,
+            AsyncImage(
+                model = result.cover_url,
+                contentDescription = result.title,
+                modifier = Modifier
+                    .size(56.dp, 80.dp)
+                    .clip(RoundedCornerShape(8.dp)),
+                contentScale = ContentScale.Crop,
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = result.title,
+                    style = MaterialTheme.typography.titleSmall,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
-            } else {
+                if (result.publishing_type.isNotBlank()) {
+                    Text(
+                        text = result.publishing_type,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                    )
+                }
+                if (result.summary.isNotBlank()) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = result.summary,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            Spacer(Modifier.width(MaterialTheme.padding.small))
+            IconButton(
+                onClick = onAdd,
+                enabled = !isAdded,
+                colors = if (isAdded) {
+                    IconButtonDefaults.iconButtonColors(
+                        disabledContentColor = MaterialTheme.colorScheme.primary,
+                    )
+                } else {
+                    IconButtonDefaults.filledTonalIconButtonColors()
+                },
+            ) {
                 Icon(
-                    imageVector = Icons.Outlined.Add,
-                    contentDescription = stringResource(MR.strings.authority_search_add),
+                    imageVector = if (isAdded) Icons.Outlined.Check else Icons.Outlined.Add,
+                    contentDescription = stringResource(
+                        if (isAdded) MR.strings.discover_added else MR.strings.discover_add,
+                    ),
                 )
             }
         }
     }
-    HorizontalDivider(modifier = Modifier.padding(horizontal = MaterialTheme.padding.medium))
 }

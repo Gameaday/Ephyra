@@ -263,53 +263,49 @@ object SettingsTrackingScreen : SearchableSettings {
                     ),
                 ),
             )
-            if (importPreferences.isNotEmpty()) {
-                add(
-                    Preference.PreferenceGroup(
-                        title = stringResource(MR.strings.tracker_import_group_title),
-                        preferenceItems = importPreferences.toImmutableList(),
-                    ),
-                )
-            }
-            // Authority link group: visible when at least one authoritative tracker is logged in
+            // Authority management: consolidated import + link in one group
             val hasAuthoritativeTracker = trackerManager.myAnimeList.isLoggedIn ||
                 trackerManager.aniList.isLoggedIn ||
                 trackerManager.mangaUpdates.isLoggedIn
             if (hasAuthoritativeTracker) {
-                add(
-                    Preference.PreferenceGroup(
-                        title = stringResource(MR.strings.tracker_link_group_title),
-                        preferenceItems = persistentListOf(
-                            Preference.PreferenceItem.TextPreference(
-                                title = if (linkingToAuthority) {
-                                    stringResource(MR.strings.tracker_link_running)
-                                } else {
-                                    stringResource(MR.strings.tracker_link_action)
-                                },
-                                subtitle = stringResource(MR.strings.tracker_link_subtitle),
-                                enabled = !linkingToAuthority,
-                                onClick = {
-                                    linkingToAuthority = true
-                                    scope.launchIO {
-                                        val linker = Injekt.get<LinkTrackedMangaToAuthority>()
-                                        val count = linker.await()
-                                        withUIContext {
-                                            linkingToAuthority = false
-                                            if (count > 0) {
-                                                context.toast(
-                                                    context.stringResource(
-                                                        MR.strings.tracker_link_success,
-                                                        count,
-                                                    ),
-                                                )
-                                            } else {
-                                                context.toast(MR.strings.tracker_link_none)
-                                            }
+                val authorityItems = buildList {
+                    addAll(importPreferences)
+                    add(
+                        Preference.PreferenceItem.TextPreference(
+                            title = if (linkingToAuthority) {
+                                stringResource(MR.strings.tracker_link_running)
+                            } else {
+                                stringResource(MR.strings.tracker_link_action)
+                            },
+                            subtitle = stringResource(MR.strings.tracker_link_subtitle),
+                            enabled = !linkingToAuthority,
+                            onClick = {
+                                linkingToAuthority = true
+                                scope.launchIO {
+                                    val linker = Injekt.get<LinkTrackedMangaToAuthority>()
+                                    val count = linker.await()
+                                    withUIContext {
+                                        linkingToAuthority = false
+                                        if (count > 0) {
+                                            context.toast(
+                                                context.stringResource(
+                                                    MR.strings.tracker_link_success,
+                                                    count,
+                                                ),
+                                            )
+                                        } else {
+                                            context.toast(MR.strings.tracker_link_none)
                                         }
                                     }
-                                },
-                            ),
+                                }
+                            },
                         ),
+                    )
+                }
+                add(
+                    Preference.PreferenceGroup(
+                        title = stringResource(MR.strings.tracker_authority_group_title),
+                        preferenceItems = authorityItems.toImmutableList(),
                     ),
                 )
             }

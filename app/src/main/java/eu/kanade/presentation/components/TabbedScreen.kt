@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.zIndex
 import dev.icerock.moko.resources.StringResource
@@ -28,6 +29,7 @@ import kotlinx.coroutines.launch
 import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.components.material.TabText
 import tachiyomi.presentation.core.i18n.stringResource
+import kotlin.math.absoluteValue
 
 @Composable
 fun TabbedScreen(
@@ -70,7 +72,12 @@ fun TabbedScreen(
                     Tab(
                         selected = state.currentPage == index,
                         onClick = { scope.launch { state.animateScrollToPage(index) } },
-                        text = { TabText(text = stringResource(tab.titleRes), badgeCount = tab.badgeNumber) },
+                        text = {
+                            TabText(
+                                text = stringResource(tab.titleRes),
+                                badgeCount = tab.badgeNumber,
+                            )
+                        },
                         unselectedContentColor = MaterialTheme.colorScheme.onSurface,
                     )
                 }
@@ -80,7 +87,14 @@ fun TabbedScreen(
                 modifier = Modifier.fillMaxSize(),
                 state = state,
                 verticalAlignment = Alignment.Top,
+                beyondViewportPageCount = 1,
             ) { page ->
+                // Material Expression: subtle fade during page transition
+                val pageOffset = (
+                    (state.currentPage - page) + state.currentPageOffsetFraction
+                    ).absoluteValue
+                val alpha = 1f - (pageOffset * 0.15f).coerceIn(0f, 0.15f)
+
                 tabs[page].content(
                     PaddingValues(bottom = contentPadding.calculateBottomPadding()),
                     snackbarHostState,
