@@ -19,6 +19,7 @@ import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.ui.browse.extension.ExtensionsScreenModel
 import eu.kanade.tachiyomi.ui.browse.extension.extensionsTab
 import eu.kanade.tachiyomi.ui.browse.migration.sources.migrateSourceTab
+import eu.kanade.tachiyomi.ui.browse.source.authority.discoverTab
 import eu.kanade.tachiyomi.ui.browse.source.globalsearch.GlobalSearchScreen
 import eu.kanade.tachiyomi.ui.browse.source.sourcesTab
 import eu.kanade.tachiyomi.ui.main.MainActivity
@@ -39,7 +40,7 @@ data object BrowseTab : Tab {
             val image = AnimatedImageVector.animatedVectorResource(R.drawable.anim_browse_enter)
             return TabOptions(
                 index = 3u,
-                title = stringResource(MR.strings.browse),
+                title = stringResource(MR.strings.label_discover),
                 icon = rememberAnimatedVectorPainter(image, isSelected),
             )
         }
@@ -63,6 +64,7 @@ data object BrowseTab : Tab {
         val extensionsState by extensionsScreenModel.state.collectAsState()
 
         val tabs = persistentListOf(
+            discoverTab(),
             sourcesTab(),
             extensionsTab(extensionsScreenModel),
             migrateSourceTab(),
@@ -71,7 +73,7 @@ data object BrowseTab : Tab {
         val state = rememberPagerState { tabs.size }
 
         TabbedScreen(
-            titleRes = MR.strings.browse,
+            titleRes = MR.strings.label_discover,
             tabs = tabs,
             state = state,
             searchQuery = extensionsState.searchQuery,
@@ -79,7 +81,7 @@ data object BrowseTab : Tab {
         )
         LaunchedEffect(Unit) {
             switchToExtensionTabChannel.receiveAsFlow()
-                .collectLatest { state.scrollToPage(1) }
+                .collectLatest { state.scrollToPage(2) }
         }
 
         LaunchedEffect(Unit) {

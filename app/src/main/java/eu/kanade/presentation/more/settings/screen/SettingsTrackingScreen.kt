@@ -43,6 +43,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dev.icerock.moko.resources.StringResource
+import eu.kanade.domain.track.interactor.LinkTrackedMangaToAuthority
 import eu.kanade.domain.track.interactor.TrackerListImporter
 import eu.kanade.domain.track.model.AutoTrackState
 import eu.kanade.domain.track.service.TrackPreferences
@@ -96,6 +97,7 @@ object SettingsTrackingScreen : SearchableSettings {
 
         var dialog by remember { mutableStateOf<Any?>(null) }
         var importingFromMal by remember { mutableStateOf(false) }
+        var linkingToAuthority by remember { mutableStateOf(false) }
         dialog?.run {
             when (this) {
                 is LoginDialog -> {
@@ -261,11 +263,49 @@ object SettingsTrackingScreen : SearchableSettings {
                     ),
                 ),
             )
-            if (importPreferences.isNotEmpty()) {
+            // Authority management: consolidated import + link in one group
+            val hasAuthoritativeTracker = trackerManager.myAnimeList.isLoggedIn ||
+                trackerManager.aniList.isLoggedIn ||
+                trackerManager.mangaUpdates.isLoggedIn
+            if (hasAuthoritativeTracker) {
+                val authorityItems = buildList {
+                    addAll(importPreferences)
+                    add(
+                        Preference.PreferenceItem.TextPreference(
+                            title = if (linkingToAuthority) {
+                                stringResource(MR.strings.tracker_link_running)
+                            } else {
+                                stringResource(MR.strings.tracker_link_action)
+                            },
+                            subtitle = stringResource(MR.strings.tracker_link_subtitle),
+                            enabled = !linkingToAuthority,
+                            onClick = {
+                                linkingToAuthority = true
+                                scope.launchIO {
+                                    val linker = Injekt.get<LinkTrackedMangaToAuthority>()
+                                    val count = linker.await()
+                                    withUIContext {
+                                        linkingToAuthority = false
+                                        if (count > 0) {
+                                            context.toast(
+                                                context.stringResource(
+                                                    MR.strings.tracker_link_success,
+                                                    count,
+                                                ),
+                                            )
+                                        } else {
+                                            context.toast(MR.strings.tracker_link_none)
+                                        }
+                                    }
+                                }
+                            },
+                        ),
+                    )
+                }
                 add(
                     Preference.PreferenceGroup(
-                        title = stringResource(MR.strings.tracker_import_group_title),
-                        preferenceItems = importPreferences.toImmutableList(),
+                        title = stringResource(MR.strings.tracker_authority_group_title),
+                        preferenceItems = authorityItems.toImmutableList(),
                     ),
                 )
             }

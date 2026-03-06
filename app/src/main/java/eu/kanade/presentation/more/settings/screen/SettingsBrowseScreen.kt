@@ -26,7 +26,7 @@ object SettingsBrowseScreen : SearchableSettings {
 
     @ReadOnlyComposable
     @Composable
-    override fun getTitleRes() = MR.strings.browse
+    override fun getTitleRes() = MR.strings.label_discover
 
     @Composable
     override fun getPreferences(): List<Preference> {

@@ -70,7 +70,12 @@ fun TabbedScreen(
                     Tab(
                         selected = state.currentPage == index,
                         onClick = { scope.launch { state.animateScrollToPage(index) } },
-                        text = { TabText(text = stringResource(tab.titleRes), badgeCount = tab.badgeNumber) },
+                        text = {
+                            TabText(
+                                text = stringResource(tab.titleRes),
+                                badgeCount = tab.badgeNumber,
+                            )
+                        },
                         unselectedContentColor = MaterialTheme.colorScheme.onSurface,
                     )
                 }
@@ -80,6 +85,7 @@ fun TabbedScreen(
                 modifier = Modifier.fillMaxSize(),
                 state = state,
                 verticalAlignment = Alignment.Top,
+                beyondViewportPageCount = 1,
             ) { page ->
                 tabs[page].content(
                     PaddingValues(bottom = contentPadding.calculateBottomPadding()),

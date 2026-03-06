@@ -203,7 +203,7 @@ object SettingsMainScreen : Screen() {
             screen = SettingsTrackingScreen,
         ),
         Item(
-            titleRes = MR.strings.browse,
+            titleRes = MR.strings.label_discover,
             subtitleRes = MR.strings.pref_browse_summary,
             icon = Icons.Outlined.Explore,
             screen = SettingsBrowseScreen,

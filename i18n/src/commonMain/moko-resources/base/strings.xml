@@ -1100,6 +1100,29 @@
     <string name="tracker_import_group_title">Import from tracker</string>
     <string name="action_import">Import</string>
 
+    <!-- AutoTrackState entry labels for the tracking-on-mark-read preference -->
+    <string name="auto_track_always">Always</string>
+    <string name="auto_track_ask">Ask</string>
+    <string name="auto_track_never">Never</string>
+
+    <!-- Authority management (import + retroactive link in one section) -->
+    <string name="tracker_authority_group_title">Authority management</string>
+    <string name="tracker_link_action">Link tracked manga</string>
+    <string name="tracker_link_subtitle">Set authority IDs for manga that already have trackers</string>
+    <string name="tracker_link_success">Linked %d manga to authority</string>
+    <string name="tracker_link_none">All tracked manga are already linked</string>
+    <string name="tracker_link_running">Linking…</string>
+
+    <!-- Discover tab (top-level, authority-first) -->
+    <string name="label_discover">Discover</string>
+    <string name="label_search">Search</string>
+    <string name="discover_search_hint">Search by title…</string>
+    <string name="discover_empty_state">Search a tracker to find manga and add to your library</string>
+    <string name="discover_no_trackers">Log in to a tracker in Settings → Tracking to search here</string>
+    <string name="discover_add">Add to library</string>
+    <string name="discover_added">Already in library</string>
+    <string name="label_content_sources">Sources</string>
+
     <!-- Accessibility content descriptions for source health -->
     <string name="source_health_warning_dead">Warning: source is dead</string>
     <string name="source_health_warning_degraded">Warning: source is degraded</string>
