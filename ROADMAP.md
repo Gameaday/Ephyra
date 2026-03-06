@@ -27,18 +27,20 @@
 | **Library health summary banner** — Animated banner at top of library showing dead/degraded source counts. Click to enable health filter. | `LibraryHealthBanner.kt`, `LibraryContent.kt`, `LibraryTab.kt` | N/A |
 | **Migration match quality** — Confidence percentage displayed on migration search results. Color-coded: green (≥90%), tertiary (≥70%), red (<70%). Hidden for exact matches. | `MigrationListScreenContent.kt`, `SmartSourceSearchEngine.kt`, `BaseSmartSearchEngine.kt` | 25 unit tests |
 | **Source health color in info header** — Source name tinted red (DEAD) or tertiary/yellow (DEGRADED) in manga detail header | `MangaInfoHeader.kt`, `MangaScreen.kt` | N/A |
+| **Source health badge on library covers** — ⚠ warning icon on manga covers in library grid/list. Error for DEAD, tertiary for DEGRADED. Visible in all display modes. | `LibraryBadges.kt`, `LibraryCompactGrid.kt`, `LibraryComfortableGrid.kt`, `LibraryList.kt` | N/A |
 
 ### ⚠️ Partially Implemented
 
 *None — all tracked features are either complete or not yet started.*
 
-### ❌ Not Yet Implemented (Documented in BRAINSTORM.md)
+### ❌ Deferred (Not Worth Tech Debt for Fork)
 
-| Feature | Brainstorm Section | Complexity |
-|---------|-------------------|------------|
-| **source_mappings table** — Full multi-source discovery (Approach A) | Parts 1-12 | High |
-| **Source discovery protocol** — Automated cross-source search with confidence scoring | Part 2 | High |
-| **Chapter resolution strategies** — HIERARCHY, ROUND_ROBIN, QUALITY strategies | Part 3 | High |
+| Feature | Brainstorm Section | Why Deferred |
+|---------|-------------------|--------------|
+| **source_mappings table** — Full multi-source discovery (Approach A) | Parts 1-12 | ~30-40 hours. Fundamental architecture change with huge maintenance surface. Current approach covers core use case. |
+| **Source discovery protocol** — Automated cross-source search with confidence scoring | Part 2 | ~20-30 hours. Rate limiting + API cost management complexity. Manual migration via "Migrate" button already works. |
+| **Chapter resolution strategies** — HIERARCHY, ROUND_ROBIN, QUALITY strategies | Part 3 | ~30-40 hours. Fundamentally changes reading pipeline. User value doesn't justify the maintenance burden. |
+| **Source health history** — Full status transition tracking table | N/A | `dead_since` + recovery logging already handles the core need. New table adds schema debt with no visible user benefit. |
 
 ---
 
@@ -127,32 +129,27 @@
 - **Migration Match Quality Indicator** — `multiTitleSearch()` now returns `SearchEntry<T>` with similarity score. `SearchResult.Success.matchConfidence` field (0.0-1.0). Color-coded display: primary (≥90%), tertiary (≥70%), error (<70%). Hidden for exact matches (100%) to reduce clutter. Canonical ID matches get 1.0 confidence.
 - **Source Health Color in Info Header** — Source name in `MangaContentInfo` tinted by health status: error (DEAD), tertiary (DEGRADED), default (HEALTHY). Threaded through `MangaInfoBox` → `MangaAndSourceTitles*` → `MangaContentInfo` in both phone and tablet layouts.
 
-#### 3.6 Source Health History
-**What:** Track status transitions over time to distinguish temporary outages from permanent source death.
-**Why:** A single failed update shouldn't mark a source DEAD permanently.
-**Where:** New column or table for health history timestamps.
-**Effort:** ~6-8 hours
+#### 3.6 Source Health Badge on Library Covers ✅
+**Done:** Added `SourceHealthBadge` composable — a ⚠ warning icon overlay on manga covers in the library grid/list. Error/red for DEAD sources, tertiary/yellow for DEGRADED. Hidden for HEALTHY sources. Wired into all three display modes (compact grid, comfortable grid, list view). Users can now spot dead sources at a glance without opening each manga.
 
-#### 3.7 Cross-Source Discovery
-**What:** Implement the automated source discovery protocol from BRAINSTORM.md Part 2.
-**Why:** Enables proactive source failover instead of manual migration.
-**Where:** New discovery service, rate limiting, confidence scoring.
-**Effort:** ~20-30 hours (major feature)
+#### 3.7+ Deferred (Not Worth Tech Debt)
 
-#### 3.8 Multi-Source Chapter Resolution
-**What:** Implement HIERARCHY/ROUND_ROBIN/QUALITY strategies from BRAINSTORM.md Part 3.
-**Why:** Enables automatic chapter fetching from multiple sources per manga.
-**Where:** New `source_mappings` table, resolution engine.
-**Effort:** ~30-40 hours (major feature)
+The following features from BRAINSTORM.md are **deferred indefinitely** — the maintenance cost outweighs user value for a fork:
+
+| Feature | Why Deferred |
+|---------|--------------|
+| **Source Health History** (new table tracking status transitions over time) | The existing `dead_since` column + recovery logging already handles temporary outages. A full history table adds schema complexity with no visible user benefit. |
+| **Cross-Source Discovery** (automated search across all sources when one dies) | ~20-30 hours. Requires rate limiting, API cost management, new UX flow. The manual migration via "Migrate" button already works well. |
+| **Multi-Source Chapter Resolution** (fetch chapters from multiple sources simultaneously) | ~30-40 hours. Requires new `source_mappings` table, resolution engine, conflict handling. Fundamentally changes the reading pipeline. |
+
+**The current feature set is complete for practical use.** Users get: automatic dead source detection → visual warnings (banner + badge + colored text) → notification prompts → one-tap migration → library filtering. This covers the full lifecycle from "source goes down" to "user migrates."
 
 ---
 
 ## Decision Points
 
-1. **Should we add `source_mappings` table now or later?**
-   - Current approach (Approach C) is lean: 3 columns, no new tables.
-   - BRAINSTORM.md Approach A adds `source_mappings` table for full multi-source.
-   - **Recommendation:** Stay with Approach C until Phase 3 features are started. Approach C → A is additive (no breaking changes).
+1. ~~**Should we add `source_mappings` table now or later?**~~
+   ✅ **Resolved:** Deferred indefinitely. Current Approach C (3 columns, no new tables) covers all practical use cases. The multi-source features (discovery, chapter resolution) have high maintenance cost with diminishing returns for a fork.
 
 2. ~~**Should alt titles use JSON instead of pipe-delimited?**~~
    ✅ **Resolved:** Migrated to JSON array storage with backward-compatible pipe-separated parsing. Titles with `|` characters are now safe.

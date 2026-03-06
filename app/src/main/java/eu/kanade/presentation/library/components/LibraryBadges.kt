@@ -3,10 +3,12 @@ package eu.kanade.presentation.library.components
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import eu.kanade.presentation.theme.TachiyomiPreviewTheme
+import tachiyomi.domain.manga.model.SourceStatus
 import tachiyomi.presentation.core.components.Badge
 
 @Composable
@@ -47,6 +49,24 @@ internal fun LanguageBadge(
     }
 }
 
+@Composable
+internal fun SourceHealthBadge(sourceStatus: Int) {
+    val status = SourceStatus.fromValue(sourceStatus)
+    when (status) {
+        SourceStatus.DEAD -> Badge(
+            imageVector = Icons.Outlined.Warning,
+            color = MaterialTheme.colorScheme.error,
+            iconColor = MaterialTheme.colorScheme.onError,
+        )
+        SourceStatus.DEGRADED -> Badge(
+            imageVector = Icons.Outlined.Warning,
+            color = MaterialTheme.colorScheme.tertiary,
+            iconColor = MaterialTheme.colorScheme.onTertiary,
+        )
+        else -> {}
+    }
+}
+
 @PreviewLightDark
 @Composable
 private fun BadgePreview() {
@@ -56,6 +76,8 @@ private fun BadgePreview() {
             UnreadBadge(count = 10)
             LanguageBadge(isLocal = true, sourceLanguage = "EN")
             LanguageBadge(isLocal = false, sourceLanguage = "EN")
+            SourceHealthBadge(sourceStatus = SourceStatus.DEAD.value)
+            SourceHealthBadge(sourceStatus = SourceStatus.DEGRADED.value)
         }
     }
 }
