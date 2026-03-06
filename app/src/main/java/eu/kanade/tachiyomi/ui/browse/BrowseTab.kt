@@ -40,7 +40,7 @@ data object BrowseTab : Tab {
             val image = AnimatedImageVector.animatedVectorResource(R.drawable.anim_browse_enter)
             return TabOptions(
                 index = 3u,
-                title = stringResource(MR.strings.browse),
+                title = stringResource(MR.strings.label_discover),
                 icon = rememberAnimatedVectorPainter(image, isSelected),
             )
         }
@@ -73,7 +73,7 @@ data object BrowseTab : Tab {
         val state = rememberPagerState { tabs.size }
 
         TabbedScreen(
-            titleRes = MR.strings.browse,
+            titleRes = MR.strings.label_discover,
             tabs = tabs,
             state = state,
             searchQuery = extensionsState.searchQuery,

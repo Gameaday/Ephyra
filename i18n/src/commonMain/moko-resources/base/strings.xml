@@ -1113,14 +1113,15 @@
     <string name="tracker_link_none">All tracked manga are already linked</string>
     <string name="tracker_link_running">Linking…</string>
 
-    <!-- Discover tab (authority-first search in browse) -->
+    <!-- Discover tab (top-level, authority-first) -->
     <string name="label_discover">Discover</string>
+    <string name="label_search">Search</string>
     <string name="discover_search_hint">Search by title…</string>
     <string name="discover_empty_state">Search a tracker to find manga and add to your library</string>
     <string name="discover_no_trackers">Log in to a tracker in Settings → Tracking to search here</string>
     <string name="discover_add">Add to library</string>
     <string name="discover_added">Already in library</string>
-    <string name="label_content_sources">Content Sources</string>
+    <string name="label_content_sources">Sources</string>
 
     <!-- Accessibility content descriptions for source health -->
     <string name="source_health_warning_dead">Warning: source is dead</string>

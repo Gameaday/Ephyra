@@ -23,6 +23,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -30,6 +31,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -60,10 +62,13 @@ import tachiyomi.presentation.core.screens.LoadingScreen
 import tachiyomi.presentation.core.theme.MotionTokens
 
 /**
- * Creates the Discover tab content for the Browse screen.
- * This is the primary, authority-first search experience — users search
- * tracker databases (MAL, AniList, MangaUpdates) and add results
- * directly to their library as authority-linked entries.
+ * Creates the Search sub-tab inside the top-level Discover tab.
+ *
+ * This is the authority-first search experience: users search tracker databases
+ * (MAL, AniList, MangaUpdates) and add results directly to their library.
+ * The search is one part of the broader Discover flow — the tab is designed
+ * to accommodate future discovery features (suggestions, recommendations)
+ * alongside the search.
  */
 @Composable
 fun Screen.discoverTab(): TabContent {
@@ -71,7 +76,7 @@ fun Screen.discoverTab(): TabContent {
     val state by screenModel.state.collectAsState()
 
     return TabContent(
-        titleRes = MR.strings.label_discover,
+        titleRes = MR.strings.label_search,
         actions = persistentListOf(),
         content = { contentPadding, _ ->
             DiscoverContent(
@@ -110,7 +115,7 @@ private fun DiscoverContent(
             .fillMaxSize()
             .padding(contentPadding),
     ) {
-        // Search input with rounded shape matching Material 3 Expressive style
+        // Search bar — rounded pill shape, Material 3 Expressive
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },
@@ -121,18 +126,30 @@ private fun DiscoverContent(
                     vertical = MaterialTheme.padding.small,
                 ),
             placeholder = { Text(stringResource(MR.strings.discover_search_hint)) },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Outlined.Search,
+                    contentDescription = null,
+                )
+            },
             singleLine = true,
             shape = RoundedCornerShape(28.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            ),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { onSearch(query) }),
         )
 
-        // Tracker filter chips — only shown when multiple trackers are available
+        // Tracker filter chips
         if (availableTrackers.size > 1) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = MaterialTheme.padding.medium),
+                    .padding(
+                        horizontal = MaterialTheme.padding.medium,
+                        vertical = MaterialTheme.padding.extraSmall,
+                    ),
                 horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
             ) {
                 availableTrackers.forEach { tracker ->
@@ -145,41 +162,54 @@ private fun DiscoverContent(
             }
         }
 
-        Spacer(Modifier.height(MaterialTheme.padding.small))
-
-        // Results area with animated content transitions
+        // Animated content area — search results or landing state
+        // Derive a stable display state to avoid unnecessary transitions
+        val displayState = when {
+            state.isSearching -> DiscoverDisplayState.LOADING
+            state.results.isEmpty() && state.query.isBlank() -> DiscoverDisplayState.LANDING
+            state.results.isEmpty() -> DiscoverDisplayState.NO_RESULTS
+            else -> DiscoverDisplayState.RESULTS
+        }
         AnimatedContent(
-            targetState = Triple(state.isSearching, state.results.isEmpty(), state.query),
+            targetState = displayState,
             transitionSpec = {
                 fadeIn(tween(MotionTokens.DURATION_MEDIUM)) togetherWith
                     fadeOut(tween(MotionTokens.DURATION_SHORT))
             },
-            label = "discover_content",
+            label = "discover_results",
             modifier = Modifier.weight(1f),
-        ) { (searching, empty, currentQuery) ->
-            when {
-                searching -> LoadingScreen()
-                empty && currentQuery.isBlank() -> {
+        ) { currentDisplayState ->
+            when (currentDisplayState) {
+                DiscoverDisplayState.LOADING -> LoadingScreen()
+                DiscoverDisplayState.LANDING -> {
                     EmptyScreen(stringResource(MR.strings.discover_empty_state))
                 }
-                empty -> EmptyScreen(stringResource(MR.strings.no_results_found))
-                else -> {
+                DiscoverDisplayState.NO_RESULTS -> {
+                    EmptyScreen(stringResource(MR.strings.no_results_found))
+                }
+                DiscoverDisplayState.RESULTS -> {
                     ScrollbarLazyColumn(
                         contentPadding = PaddingValues(
                             horizontal = MaterialTheme.padding.medium,
                             vertical = MaterialTheme.padding.small,
                         ),
-                        verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
+                        verticalArrangement = Arrangement.spacedBy(
+                            MaterialTheme.padding.small,
+                        ),
                     ) {
                         items(
                             state.results,
                             key = { "${it.tracker_id}:${it.remote_id}" },
                         ) { result ->
-                            val prefix = AddTracks.TRACKER_CANONICAL_PREFIXES[result.tracker_id]
-                            val canonicalId =
-                                if (prefix != null) "$prefix:${result.remote_id}" else null
-                            val isAdded =
-                                canonicalId != null && canonicalId in state.addedCanonicalIds
+                            val prefix =
+                                AddTracks.TRACKER_CANONICAL_PREFIXES[result.tracker_id]
+                            val canonicalId = if (prefix != null) {
+                                "$prefix:${result.remote_id}"
+                            } else {
+                                null
+                            }
+                            val isAdded = canonicalId != null &&
+                                canonicalId in state.addedCanonicalIds
                             DiscoverResultCard(
                                 result = result,
                                 isAdded = isAdded,
@@ -256,12 +286,23 @@ private fun DiscoverResultCard(
                 },
             ) {
                 Icon(
-                    imageVector = if (isAdded) Icons.Outlined.Check else Icons.Outlined.Add,
+                    imageVector = if (isAdded) {
+                        Icons.Outlined.Check
+                    } else {
+                        Icons.Outlined.Add
+                    },
                     contentDescription = stringResource(
-                        if (isAdded) MR.strings.discover_added else MR.strings.discover_add,
+                        if (isAdded) {
+                            MR.strings.discover_added
+                        } else {
+                            MR.strings.discover_add
+                        },
                     ),
                 )
             }
         }
     }
 }
+
+/** Display states for the animated content area — avoids Triple allocations. */
+private enum class DiscoverDisplayState { LOADING, LANDING, NO_RESULTS, RESULTS }
