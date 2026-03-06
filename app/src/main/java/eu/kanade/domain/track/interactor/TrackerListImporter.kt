@@ -1,10 +1,10 @@
 package eu.kanade.domain.track.interactor
 
-import eu.kanade.domain.track.model.toDomainTrack
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.data.track.model.TrackSearch
 import eu.kanade.tachiyomi.data.track.myanimelist.MyAnimeList
 import eu.kanade.tachiyomi.data.track.myanimelist.dto.MALListItemStatus
+import kotlinx.coroutines.yield
 import logcat.LogPriority
 import tachiyomi.core.common.util.lang.withIOContext
 import tachiyomi.core.common.util.system.logcat
@@ -60,6 +60,8 @@ class TrackerListImporter(
                     failed++
                     logcat(LogPriority.WARN, e) { "MAL import: failed to import '${trackSearch.title}'" }
                 }
+                // Yield to allow cancellation and keep the app responsive during large imports
+                yield()
             }
 
             logcat(LogPriority.INFO) {
