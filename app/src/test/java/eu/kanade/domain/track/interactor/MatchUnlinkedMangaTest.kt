@@ -636,4 +636,67 @@ class MatchUnlinkedMangaTest {
         // Should pick the novel (500), not the manga (400)
         updates[0].canonicalId shouldBe "mu:500"
     }
+
+    // ========== Edge cases ==========
+
+    @Test
+    fun `skips search when manga title is blank`() = runTest {
+        val manga = testManga(
+            id = 1L,
+            title = "",
+            alternativeTitles = listOf("Real Title"),
+        )
+        coEvery { mangaRepository.getFavorites() } returns listOf(manga)
+        coEvery { getTracks.await(1L) } returns emptyList()
+        // Only the alt title should be searched, not the blank primary title
+        coEvery { muTracker.search("Real Title") } returns listOf(
+            testTrackSearch(title = "Real Title", remoteId = 100L),
+        )
+        val updates = mutableListOf<MangaUpdate>()
+        coEvery { mangaRepository.update(capture(updates)) } returns true
+
+        matchUnlinkedManga.await()
+
+        // Should match via alt title
+        updates[0].canonicalId shouldBe "mu:100"
+        // Should NOT have searched with blank title
+        coVerify(exactly = 0) { muTracker.search("") }
+    }
+
+    @Test
+    fun `does not match punctuation-only titles via normalization`() = runTest {
+        val manga = testManga(
+            id = 1L,
+            title = "!!!",
+        )
+        coEvery { mangaRepository.getFavorites() } returns listOf(manga)
+        coEvery { getTracks.await(1L) } returns emptyList()
+        // Return a result whose normalized title is also empty — should not match
+        coEvery { muTracker.search("!!!") } returns listOf(
+            testTrackSearch(title = "???", remoteId = 100L),
+        )
+        coEvery { mangaRepository.update(any<MangaUpdate>()) } returns true
+
+        val result = matchUnlinkedManga.await()
+
+        // No match should be found since both normalize to empty strings
+        result.matched shouldBe 0
+    }
+
+    @Test
+    fun `handles zero remote_id results gracefully`() = runTest {
+        val manga = testManga(id = 1L, title = "Test Manga")
+        coEvery { mangaRepository.getFavorites() } returns listOf(manga)
+        coEvery { getTracks.await(1L) } returns emptyList()
+        // Return a result with remote_id = 0 (invalid)
+        coEvery { muTracker.search("Test Manga") } returns listOf(
+            testTrackSearch(title = "Test Manga", remoteId = 0L),
+        )
+        coEvery { mangaRepository.update(any<MangaUpdate>()) } returns true
+
+        val result = matchUnlinkedManga.await()
+
+        // Should not match since remote_id <= 0
+        result.matched shouldBe 0
+    }
 }

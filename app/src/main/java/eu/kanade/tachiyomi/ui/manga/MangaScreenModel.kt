@@ -1238,7 +1238,9 @@ class MangaScreenModel(
                     // Refresh manga from DB so UI reflects the new canonical ID
                     // (e.g. hides the "Link to authority" toolbar button, shows updated metadata)
                     val updatedManga = mangaRepository.getMangaById(mangaId)
-                    updateSuccessState { it.copy(manga = updatedManga) }
+                    if (updatedManga != null) {
+                        updateSuccessState { it.copy(manga = updatedManga) }
+                    }
                     withUIContext {
                         snackbarHostState.showSnackbar(
                             context.stringResource(MR.strings.manga_linked_success, result),

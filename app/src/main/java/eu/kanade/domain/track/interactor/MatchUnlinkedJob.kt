@@ -12,6 +12,7 @@ import eu.kanade.tachiyomi.util.system.cancelNotification
 import eu.kanade.tachiyomi.util.system.isRunning
 import eu.kanade.tachiyomi.util.system.setForegroundSafely
 import eu.kanade.tachiyomi.util.system.workManager
+import kotlinx.coroutines.CancellationException
 import logcat.LogPriority
 import tachiyomi.core.common.util.system.logcat
 import uy.kohesive.injekt.Injekt
@@ -42,6 +43,8 @@ class MatchUnlinkedJob(private val context: Context, workerParams: WorkerParamet
                 "MatchUnlinkedJob completed: ${result.linked} linked, ${result.matched} matched, ${result.total} total"
             }
             Result.success()
+        } catch (e: CancellationException) {
+            throw e // Re-throw so WorkManager handles cancellation properly
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e) { "MatchUnlinkedJob failed" }
             Result.failure()

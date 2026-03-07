@@ -157,7 +157,7 @@ class MatchUnlinkedManga(
         }
 
         if (canonicalId != null) {
-            mangaRepository.update(tachiyomi.domain.manga.model.MangaUpdate(id = manga.id, canonicalId = canonicalId))
+            mangaRepository.update(MangaUpdate(id = manga.id, canonicalId = canonicalId))
             if (matchedResult != null) {
                 enrichFromSearchResult(manga, matchedResult)
             }
@@ -224,9 +224,11 @@ class MatchUnlinkedManga(
             addAll(manga.alternativeTitles)
         }
 
-        // Phase 1: Search by primary title
-        val primaryMatch = searchAndMatch(manga.title, allTitles, manga.contentType, tracker, prefix)
-        if (primaryMatch != null) return primaryMatch
+        // Phase 1: Search by primary title (skip if blank)
+        if (manga.title.isNotBlank()) {
+            val primaryMatch = searchAndMatch(manga.title, allTitles, manga.contentType, tracker, prefix)
+            if (primaryMatch != null) return primaryMatch
+        }
 
         // Phase 2: Try each alternative title as a separate search query
         for (altTitle in manga.alternativeTitles) {
@@ -265,16 +267,22 @@ class MatchUnlinkedManga(
             }
 
             // Tier 2: Normalized match (strip punctuation, collapse whitespace)
-            val normalizedTitles = allTitles.map { normalizeTitle(it) }.toSet()
-            val normalizedMatches = results.filter { result ->
-                result.remote_id > 0 && normalizeTitle(result.title) in normalizedTitles
+            // Filter out blank normalized titles to prevent false positives on e.g. "!!!" → ""
+            val normalizedTitles = allTitles.map { normalizeTitle(it) }
+                .filter { it.isNotBlank() }
+                .toSet()
+            if (normalizedTitles.isNotEmpty()) {
+                val normalizedMatches = results.filter { result ->
+                    result.remote_id > 0 && normalizeTitle(result.title).let {
+                        it.isNotBlank() && it in normalizedTitles
+                    }
+                }
+                val normalizedMatch = pickBestByContentType(normalizedMatches, contentType)
+                if (normalizedMatch != null) {
+                    return "$prefix:${normalizedMatch.remote_id}" to normalizedMatch
+                }
             }
-            val normalizedMatch = pickBestByContentType(normalizedMatches, contentType)
-            if (normalizedMatch != null) {
-                "$prefix:${normalizedMatch.remote_id}" to normalizedMatch
-            } else {
-                null
-            }
+            null
         } catch (e: Exception) {
             logcat(LogPriority.DEBUG, e) { "Search failed for '$query'" }
             null

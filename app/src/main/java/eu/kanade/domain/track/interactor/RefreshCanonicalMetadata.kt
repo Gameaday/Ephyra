@@ -179,7 +179,7 @@ class RefreshCanonicalMetadata(
             val parts = canonicalId.split(":", limit = 2)
             if (parts.size != 2) return null
             val prefix = parts[0].takeIf { it.isNotEmpty() } ?: return null
-            val remoteId = parts[1].toLongOrNull() ?: return null
+            val remoteId = parts[1].toLongOrNull()?.takeIf { it > 0 } ?: return null
             return prefix to remoteId
         }
     }

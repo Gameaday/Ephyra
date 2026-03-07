@@ -251,6 +251,8 @@ class RefreshCanonicalMetadataTest {
         RefreshCanonicalMetadata.parseCanonicalId("mu:abc") shouldBe null
         RefreshCanonicalMetadata.parseCanonicalId("") shouldBe null
         RefreshCanonicalMetadata.parseCanonicalId(":123") shouldBe null
+        RefreshCanonicalMetadata.parseCanonicalId("mu:0") shouldBe null
+        RefreshCanonicalMetadata.parseCanonicalId("mu:-1") shouldBe null
     }
 
     @Test
