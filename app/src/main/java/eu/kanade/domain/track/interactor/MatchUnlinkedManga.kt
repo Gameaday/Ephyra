@@ -155,6 +155,9 @@ class MatchUnlinkedManga(
     }
 
     companion object {
+        private val PUNCT_REGEX = Regex("[^\\p{L}\\p{N}\\s]")
+        private val MULTI_SPACE_REGEX = Regex("\\s+")
+
         /**
          * Normalize a title for fuzzy comparison:
          * - lowercase
@@ -163,8 +166,8 @@ class MatchUnlinkedManga(
          */
         fun normalizeTitle(title: String): String {
             return title.lowercase()
-                .replace(Regex("[^\\p{L}\\p{N}\\s]"), " ")
-                .replace(Regex("\\s+"), " ")
+                .replace(PUNCT_REGEX, " ")
+                .replace(MULTI_SPACE_REGEX, " ")
                 .trim()
         }
     }
