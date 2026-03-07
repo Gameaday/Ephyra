@@ -53,6 +53,25 @@ class MatchUnlinkedManga(
      */
     suspend fun await(
         onProgress: (suspend (current: Int, total: Int) -> Unit)? = null,
+    ): MatchResult = awaitInternal { current, total, _ ->
+        onProgress?.invoke(current, total)
+    }
+
+    /**
+     * Resolves canonical IDs for all unlinked library manga.
+     * Extended version that reports the manga title along with progress,
+     * allowing callers (e.g. notifications) to show which manga is being processed.
+     *
+     * @param onProgress Callback invoked after each manga is processed.
+     *                   Parameters are (current, total, mangaTitle).
+     * @return [MatchResult] with counts of linked, matched, and total processed.
+     */
+    suspend fun await(
+        onProgress: suspend (current: Int, total: Int, title: String) -> Unit,
+    ): MatchResult = awaitInternal(onProgress)
+
+    private suspend fun awaitInternal(
+        onProgress: (suspend (current: Int, total: Int, title: String) -> Unit)? = null,
     ): MatchResult = withIOContext {
         val favorites = mangaRepository.getFavorites()
         val unlinked = favorites.filter { it.canonicalId == null }
@@ -108,7 +127,7 @@ class MatchUnlinkedManga(
                 }
             }
 
-            onProgress?.invoke(index + 1, total)
+            onProgress?.invoke(index + 1, total, manga.title)
         }
         MatchResult(linked, matched, total)
     }

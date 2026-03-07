@@ -34,6 +34,13 @@ object Notifications {
     const val ID_LIBRARY_MIGRATION_SUGGESTION = -105
 
     /**
+     * Notification channel and ids used by the authority matching job.
+     */
+    const val CHANNEL_MATCH_PROGRESS = "match_progress_channel"
+    const val ID_MATCH_PROGRESS = -601
+    const val ID_MATCH_COMPLETE = -602
+
+    /**
      * Notification channel and ids used by the downloader.
      */
     private const val GROUP_DOWNLOADER = "group_downloader"
@@ -168,6 +175,11 @@ object Notifications {
                 buildNotificationChannel(CHANNEL_EXTENSIONS_UPDATE, IMPORTANCE_DEFAULT) {
                     setGroup(GROUP_APK_UPDATES)
                     setName(context.stringResource(MR.strings.channel_ext_updates))
+                },
+                buildNotificationChannel(CHANNEL_MATCH_PROGRESS, IMPORTANCE_LOW) {
+                    setName(context.stringResource(MR.strings.channel_match_progress))
+                    setGroup(GROUP_LIBRARY)
+                    setShowBadge(false)
                 },
             ),
         )
