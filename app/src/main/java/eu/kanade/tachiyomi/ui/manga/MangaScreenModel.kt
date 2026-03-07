@@ -91,6 +91,7 @@ import tachiyomi.i18n.MR
 import tachiyomi.source.local.isLocal
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
+import java.io.IOException
 import kotlin.math.floor
 
 class MangaScreenModel(
@@ -1234,28 +1235,43 @@ class MangaScreenModel(
             try {
                 val matchUnlinkedManga: MatchUnlinkedManga = Injekt.get()
                 val result = matchUnlinkedManga.awaitSingle(manga)
-                withUIContext {
-                    if (result != null) {
+                if (result != null) {
+                    // Refresh manga from DB so UI reflects the new canonical ID
+                    // (e.g. hides the "Link to authority" toolbar button, shows updated metadata)
+                    try {
+                        val updatedManga = mangaRepository.getMangaById(mangaId)
+                        updateSuccessState { it.copy(manga = updatedManga) }
+                    } catch (e: Exception) {
+                        logcat(LogPriority.DEBUG, e) { "Failed to refresh manga state after linking" }
+                    }
+                    withUIContext {
                         snackbarHostState.showSnackbar(
                             context.stringResource(MR.strings.manga_linked_success, result),
                         )
-                    } else if (!matchUnlinkedManga.hasQueryableTracker()) {
-                        // No trackers available for search — guide user to settings
-                        snackbarHostState.showSnackbar(
-                            context.stringResource(MR.strings.no_tracker_for_linking),
-                        )
-                    } else {
-                        snackbarHostState.showSnackbar(
-                            context.stringResource(MR.strings.manga_linked_no_match),
-                        )
+                    }
+                } else {
+                    withUIContext {
+                        if (!matchUnlinkedManga.hasQueryableTracker()) {
+                            // No trackers available for search — guide user to settings
+                            snackbarHostState.showSnackbar(
+                                context.stringResource(MR.strings.no_tracker_for_linking),
+                            )
+                        } else {
+                            snackbarHostState.showSnackbar(
+                                context.stringResource(MR.strings.manga_linked_no_match),
+                            )
+                        }
                     }
                 }
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e) { "Failed to resolve canonical ID" }
                 withUIContext {
-                    snackbarHostState.showSnackbar(
-                        context.stringResource(MR.strings.manga_linked_no_match),
-                    )
+                    val message = if (e is IOException) {
+                        context.stringResource(MR.strings.manga_linked_error)
+                    } else {
+                        context.stringResource(MR.strings.manga_linked_no_match)
+                    }
+                    snackbarHostState.showSnackbar(message)
                 }
             }
         }

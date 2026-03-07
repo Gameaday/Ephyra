@@ -3,6 +3,8 @@ package eu.kanade.domain.track.interactor
 import eu.kanade.tachiyomi.data.track.Tracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.data.track.model.TrackSearch
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.yield
 import logcat.LogPriority
 import tachiyomi.core.common.util.lang.withIOContext
@@ -53,6 +55,25 @@ class MatchUnlinkedManga(
      */
     suspend fun await(
         onProgress: (suspend (current: Int, total: Int) -> Unit)? = null,
+    ): MatchResult = awaitInternal { current, total, _ ->
+        onProgress?.invoke(current, total)
+    }
+
+    /**
+     * Resolves canonical IDs for all unlinked library manga.
+     * Extended version that reports the manga title along with progress,
+     * allowing callers (e.g. notifications) to show which manga is being processed.
+     *
+     * @param onProgress Callback invoked after each manga is processed.
+     *                   Parameters are (current, total, mangaTitle).
+     * @return [MatchResult] with counts of linked, matched, and total processed.
+     */
+    suspend fun await(
+        onProgress: suspend (current: Int, total: Int, title: String) -> Unit,
+    ): MatchResult = awaitInternal(onProgress)
+
+    private suspend fun awaitInternal(
+        onProgress: (suspend (current: Int, total: Int, title: String) -> Unit)? = null,
     ): MatchResult = withIOContext {
         val favorites = mangaRepository.getFavorites()
         val unlinked = favorites.filter { it.canonicalId == null }
@@ -62,10 +83,10 @@ class MatchUnlinkedManga(
         var linked = 0
         var matched = 0
 
-        // Resolve a queryable tracker: any tracker with a canonical prefix that is either
-        // logged in or supports unauthenticated public search.
-        val tracker = findQueryableTracker()
-        val prefix = tracker?.let { AddTracks.TRACKER_CANONICAL_PREFIXES[it.id] }
+        // Default tracker for manga with unknown content type.
+        // Content-type-specific trackers are resolved per-manga below.
+        val defaultTracker = findQueryableTracker()
+        val defaultPrefix = defaultTracker?.let { AddTracks.TRACKER_CANONICAL_PREFIXES[it.id] }
 
         for ((index, manga) in unlinked.withIndex()) {
             yield() // cooperative cancellation
@@ -74,13 +95,26 @@ class MatchUnlinkedManga(
             var canonicalId = resolveFromTrackerBindings(manga)
             var fromBinding = canonicalId != null
 
-            // Phase 2: Fall back to tracker API search with improved matching
+            // Phase 2: Fall back to tracker API search with improved matching.
+            // Select tracker based on manga's content type — only queries authorities
+            // for that type, saving API calls when content type is known.
             var matchedResult: TrackSearch? = null
-            if (canonicalId == null && tracker != null && prefix != null) {
-                val searchResult = searchForMatch(manga, tracker, prefix)
-                canonicalId = searchResult?.first
-                matchedResult = searchResult?.second
-                fromBinding = false
+            if (canonicalId == null) {
+                val tracker = if (manga.contentType != ContentType.UNKNOWN) {
+                    findQueryableTracker(manga.contentType)
+                } else {
+                    defaultTracker
+                }
+                val prefix = tracker?.let { AddTracks.TRACKER_CANONICAL_PREFIXES[it.id] }
+                if (tracker != null && prefix != null) {
+                    val searchResult = searchForMatch(manga, tracker, prefix)
+                    canonicalId = searchResult?.first
+                    matchedResult = searchResult?.second
+                    fromBinding = false
+                    // Rate limit between API searches to avoid tracker throttling.
+                    // Only delay after search calls, not after tracker-binding lookups.
+                    delay(API_RATE_LIMIT_MS)
+                }
             }
 
             if (canonicalId != null) {
@@ -108,7 +142,7 @@ class MatchUnlinkedManga(
                 }
             }
 
-            onProgress?.invoke(index + 1, total)
+            onProgress?.invoke(index + 1, total, manga.title)
         }
         MatchResult(linked, matched, total)
     }
@@ -128,7 +162,7 @@ class MatchUnlinkedManga(
 
         // Phase 2: Fall back to API search
         if (canonicalId == null) {
-            val tracker = findQueryableTracker()
+            val tracker = findQueryableTracker(manga.contentType)
             val prefix = tracker?.let { AddTracks.TRACKER_CANONICAL_PREFIXES[it.id] }
             if (tracker != null && prefix != null) {
                 val searchResult = searchForMatch(manga, tracker, prefix)
@@ -138,7 +172,7 @@ class MatchUnlinkedManga(
         }
 
         if (canonicalId != null) {
-            mangaRepository.update(tachiyomi.domain.manga.model.MangaUpdate(id = manga.id, canonicalId = canonicalId))
+            mangaRepository.update(MangaUpdate(id = manga.id, canonicalId = canonicalId))
             if (matchedResult != null) {
                 enrichFromSearchResult(manga, matchedResult)
             }
@@ -158,15 +192,23 @@ class MatchUnlinkedManga(
      * Finds the best queryable tracker for search operations.
      * Prefers public-search trackers (no login needed), then falls back to
      * logged-in trackers that have canonical prefixes.
+     *
+     * When a [contentType] is specified, only considers trackers that are
+     * authorities for that type — saving API calls by not querying services
+     * that don't cover the requested content type.
      */
-    private fun findQueryableTracker(): Tracker? {
-        // First try public-search trackers (work without login)
+    private fun findQueryableTracker(contentType: ContentType = ContentType.UNKNOWN): Tracker? {
+        val validTrackerIds = AddTracks.trackersForContentType(contentType)
+
+        // First try public-search trackers that support this content type
         val publicTracker = AddTracks.TRACKERS_WITH_PUBLIC_SEARCH
+            .filter { it in validTrackerIds }
             .firstNotNullOfOrNull { id -> trackerManager.get(id) }
         if (publicTracker != null) return publicTracker
 
-        // Then try any logged-in tracker that has a canonical prefix
-        return AddTracks.TRACKER_CANONICAL_PREFIXES.keys
+        // Then try any logged-in tracker with a canonical prefix that supports this type
+        return validTrackerIds
+            .filter { it in AddTracks.TRACKER_CANONICAL_PREFIXES }
             .firstNotNullOfOrNull { id ->
                 trackerManager.get(id)?.takeIf { it.isLoggedIn }
             }
@@ -189,9 +231,9 @@ class MatchUnlinkedManga(
     /**
      * Searches for a title match using a tracker's search API.
      * Uses a tiered matching strategy:
-     * 1. Exact (case-insensitive) match against primary title
-     * 2. Exact (case-insensitive) match against alternative titles
-     * 3. Normalized match (stripped punctuation/whitespace) against all titles
+     * 1. Search by primary title, then check for exact/normalized match against all known titles
+     * 2. If no match, search by each alternative title as a separate query
+     * 3. Prefer results matching the manga's content type when known
      *
      * Returns a pair of (canonical ID, matched TrackSearch result) or null.
      */
@@ -204,31 +246,89 @@ class MatchUnlinkedManga(
             add(manga.title)
             addAll(manga.alternativeTitles)
         }
+
+        // Phase 1: Search by primary title (skip if blank)
+        if (manga.title.isNotBlank()) {
+            val primaryMatch = searchAndMatch(manga.title, allTitles, manga.contentType, tracker, prefix)
+            if (primaryMatch != null) return primaryMatch
+        }
+
+        // Phase 2: Try each alternative title as a separate search query
+        for (altTitle in manga.alternativeTitles) {
+            if (altTitle.isBlank()) continue
+            yield() // cooperative cancellation between alt-title searches
+            val altMatch = searchAndMatch(altTitle, allTitles, manga.contentType, tracker, prefix)
+            if (altMatch != null) return altMatch
+        }
+
+        return null
+    }
+
+    /**
+     * Performs a single tracker search and attempts to match results against known titles.
+     * Returns a pair of (canonical ID, matched TrackSearch result) or null.
+     */
+    private suspend fun searchAndMatch(
+        query: String,
+        allTitles: List<String>,
+        contentType: ContentType,
+        tracker: Tracker,
+        prefix: String,
+    ): Pair<String, TrackSearch>? {
         return try {
-            val results = tracker.search(manga.title)
+            val results = tracker.search(query)
 
             // Tier 1: Exact case-insensitive match against any known title
-            val exactMatch = results.firstOrNull { result ->
-                allTitles.any { title -> result.title.equals(title, ignoreCase = true) }
+            // Prefer results matching the manga's content type when known
+            val exactMatches = results.filter { result ->
+                result.remote_id > 0 &&
+                    allTitles.any { title -> result.title.equals(title, ignoreCase = true) }
             }
-            if (exactMatch != null && exactMatch.remote_id > 0) {
+            val exactMatch = pickBestByContentType(exactMatches, contentType)
+            if (exactMatch != null) {
                 return "$prefix:${exactMatch.remote_id}" to exactMatch
             }
 
             // Tier 2: Normalized match (strip punctuation, collapse whitespace)
-            val normalizedTitles = allTitles.map { normalizeTitle(it) }.toSet()
-            val normalizedMatch = results.firstOrNull { result ->
-                normalizeTitle(result.title) in normalizedTitles
+            // Filter out blank normalized titles to prevent false positives on e.g. "!!!" → ""
+            val normalizedTitles = allTitles.map { normalizeTitle(it) }
+                .filter { it.isNotBlank() }
+                .toSet()
+            if (normalizedTitles.isNotEmpty()) {
+                val normalizedMatches = results.filter { result ->
+                    result.remote_id > 0 && normalizeTitle(result.title).let {
+                        it.isNotBlank() && it in normalizedTitles
+                    }
+                }
+                val normalizedMatch = pickBestByContentType(normalizedMatches, contentType)
+                if (normalizedMatch != null) {
+                    return "$prefix:${normalizedMatch.remote_id}" to normalizedMatch
+                }
             }
-            if (normalizedMatch != null && normalizedMatch.remote_id > 0) {
-                "$prefix:${normalizedMatch.remote_id}" to normalizedMatch
-            } else {
-                null
-            }
+            null
+        } catch (e: CancellationException) {
+            throw e // Don't swallow cancellation — let WorkManager handle it promptly
         } catch (e: Exception) {
-            logcat(LogPriority.DEBUG, e) { "Search failed for '${manga.title}'" }
+            logcat(LogPriority.DEBUG, e) { "Search failed for '$query'" }
             null
         }
+    }
+
+    /**
+     * Picks the best result from a list of matches, preferring one whose publishing_type
+     * matches the manga's content type when known and multiple matches exist.
+     */
+    private fun pickBestByContentType(
+        matches: List<TrackSearch>,
+        contentType: ContentType,
+    ): TrackSearch? {
+        if (matches.isEmpty()) return null
+        if (contentType != ContentType.UNKNOWN && matches.size > 1) {
+            return matches.firstOrNull { result ->
+                ContentType.fromPublishingType(result.publishing_type) == contentType
+            } ?: matches.firstOrNull()
+        }
+        return matches.firstOrNull()
     }
 
     /**
@@ -279,6 +379,8 @@ class MatchUnlinkedManga(
             if (result.alternative_titles.isNotEmpty()) {
                 mergeAlternativeTitles(manga, result)
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logcat(LogPriority.DEBUG, e) { "Failed to enrich metadata for '${manga.title}'" }
         }
@@ -305,6 +407,14 @@ class MatchUnlinkedManga(
     companion object {
         private val PUNCT_REGEX = Regex("[^\\p{L}\\p{N}\\s]")
         private val MULTI_SPACE_REGEX = Regex("\\s+")
+
+        /**
+         * Delay between API search calls during bulk matching to avoid tracker throttling.
+         * Most tracker APIs have rate limits (e.g. AniList: 90/min, MU: unspecified).
+         * A 500ms delay keeps us well within limits while still being fast enough
+         * for large libraries (~120 manga/min).
+         */
+        private const val API_RATE_LIMIT_MS = 500L
 
         /**
          * Normalize a title for fuzzy comparison:

@@ -85,6 +85,13 @@ internal fun Project.configureCompose(commonExtension: CommonExtension<*, *, *, 
         if (enableReports) {
             rootBuildDir.resolve("compose-reports").resolve(relativePath).let(reportsDestination::set)
         }
+
+        // Mark common immutable types as stable to reduce compilation work
+        // and avoid unnecessary recompositions at runtime
+        val stabilityConfig = project.rootDir.resolve("app/compose_stability.conf")
+        if (stabilityConfig.exists()) {
+            stabilityConfigurationFile.set(stabilityConfig)
+        }
     }
 
 }

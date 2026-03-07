@@ -3,6 +3,7 @@ package eu.kanade.domain.track.interactor
 import eu.kanade.tachiyomi.data.track.Tracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.data.track.model.TrackSearch
+import kotlinx.coroutines.CancellationException
 import logcat.LogPriority
 import tachiyomi.core.common.util.lang.withIOContext
 import tachiyomi.core.common.util.system.logcat
@@ -53,6 +54,8 @@ class RefreshCanonicalMetadata(
         try {
             val result = findByRemoteId(tracker, manga.title, remoteId) ?: return@withIOContext false
             applyMetadataUpdate(manga, result)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logcat(LogPriority.WARN, e) { "Failed to refresh canonical metadata for '${manga.title}'" }
             false
@@ -60,14 +63,25 @@ class RefreshCanonicalMetadata(
     }
 
     /**
-     * Searches the tracker by title and returns the result matching the given remote ID.
-     * This is more efficient than fetching all results — we only need the one matching our ID.
+     * Looks up the tracker result for a given remote ID.
+     * First tries direct ID lookup via the tracker's search("id:...") protocol (0 API search calls).
+     * Falls back to searching by title and filtering by remote ID if direct lookup fails.
      */
     private suspend fun findByRemoteId(
         tracker: Tracker,
         title: String,
         remoteId: Long,
     ): TrackSearch? {
+        // Try direct ID lookup first (supported by MAL, AniList, MangaUpdates)
+        try {
+            val directResults = tracker.search("id:$remoteId")
+            val directMatch = directResults.firstOrNull { it.remote_id == remoteId }
+            if (directMatch != null) return directMatch
+        } catch (e: Exception) {
+            logcat(LogPriority.DEBUG, e) { "Direct ID lookup failed for $remoteId, falling back to title search" }
+        }
+
+        // Fall back to title-based search + filter by remote ID
         val results = tracker.search(title)
         return results.firstOrNull { it.remote_id == remoteId }
     }
@@ -168,7 +182,7 @@ class RefreshCanonicalMetadata(
             val parts = canonicalId.split(":", limit = 2)
             if (parts.size != 2) return null
             val prefix = parts[0].takeIf { it.isNotEmpty() } ?: return null
-            val remoteId = parts[1].toLongOrNull() ?: return null
+            val remoteId = parts[1].toLongOrNull()?.takeIf { it > 0 } ?: return null
             return prefix to remoteId
         }
     }

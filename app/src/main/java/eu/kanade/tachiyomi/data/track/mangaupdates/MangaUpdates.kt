@@ -24,6 +24,8 @@ class MangaUpdates(id: Long) : BaseTracker(id, "MangaUpdates"), DeletableTracker
         const val UNFINISHED_LIST = 3L
         const val ON_HOLD_LIST = 4L
 
+        private const val SEARCH_ID_PREFIX = "id:"
+
         private val SCORE_LIST = (0..10)
             .flatMap { decimal ->
                 when (decimal) {
@@ -92,6 +94,13 @@ class MangaUpdates(id: Long) : BaseTracker(id, "MangaUpdates"), DeletableTracker
     }
 
     override suspend fun search(query: String): List<TrackSearch> {
+        if (query.startsWith(SEARCH_ID_PREFIX)) {
+            query.substringAfter(SEARCH_ID_PREFIX).toLongOrNull()?.let { seriesId ->
+                val record = api.getSeriesById(seriesId)
+                return listOfNotNull(record?.toTrackSearch(id))
+            }
+        }
+
         return api.search(query)
             .map {
                 it.toTrackSearch(id)

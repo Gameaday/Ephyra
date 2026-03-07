@@ -43,7 +43,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dev.icerock.moko.resources.StringResource
-import eu.kanade.domain.track.interactor.MatchUnlinkedManga
+import eu.kanade.domain.track.interactor.MatchUnlinkedJob
 import eu.kanade.domain.track.interactor.TrackerListImporter
 import eu.kanade.domain.track.model.AutoTrackState
 import eu.kanade.domain.track.service.TrackPreferences
@@ -97,9 +97,7 @@ object SettingsTrackingScreen : SearchableSettings {
 
         var dialog by remember { mutableStateOf<Any?>(null) }
         var importingFromMal by remember { mutableStateOf(false) }
-        var resolvingUnlinked by remember { mutableStateOf(false) }
-        var resolveProgress by remember { mutableStateOf(0) }
-        var resolveTotal by remember { mutableStateOf(0) }
+        var resolveResultText by remember { mutableStateOf<String?>(null) }
         dialog?.run {
             when (this) {
                 is LoginDialog -> {
@@ -270,52 +268,28 @@ object SettingsTrackingScreen : SearchableSettings {
                 trackerManager.aniList.isLoggedIn ||
                 trackerManager.mangaUpdates.isLoggedIn
             if (hasAuthoritativeTracker) {
+                val isJobRunning = MatchUnlinkedJob.isRunning(context)
                 val authorityItems = buildList {
                     addAll(importPreferences)
                     add(
                         Preference.PreferenceItem.TextPreference(
-                            title = if (resolvingUnlinked && resolveTotal > 0) {
-                                stringResource(
-                                    MR.strings.tracker_match_all_running_progress,
-                                    resolveProgress,
-                                    resolveTotal,
-                                )
-                            } else if (resolvingUnlinked) {
+                            title = if (isJobRunning) {
                                 stringResource(MR.strings.tracker_match_all_running)
                             } else {
                                 stringResource(MR.strings.tracker_match_all_action)
                             },
-                            subtitle = stringResource(MR.strings.tracker_match_all_subtitle),
-                            enabled = !resolvingUnlinked,
+                            subtitle = if (isJobRunning) {
+                                stringResource(MR.strings.tracker_match_all_running_subtitle)
+                            } else if (resolveResultText != null) {
+                                resolveResultText
+                            } else {
+                                stringResource(MR.strings.tracker_match_all_subtitle)
+                            },
+                            enabled = !isJobRunning,
                             onClick = {
-                                resolvingUnlinked = true
-                                resolveProgress = 0
-                                resolveTotal = 0
-                                scope.launchIO {
-                                    val matcher = Injekt.get<MatchUnlinkedManga>()
-                                    val result = matcher.await { current, total ->
-                                        withUIContext {
-                                            resolveProgress = current
-                                            resolveTotal = total
-                                        }
-                                    }
-                                    withUIContext {
-                                        resolvingUnlinked = false
-                                        val totalResolved = result.linked + result.matched
-                                        if (totalResolved > 0) {
-                                            context.toast(
-                                                context.stringResource(
-                                                    MR.strings.tracker_match_all_success,
-                                                    totalResolved,
-                                                ),
-                                            )
-                                        } else if (result.total == 0) {
-                                            context.toast(MR.strings.tracker_match_all_none)
-                                        } else {
-                                            context.toast(MR.strings.tracker_match_all_no_matches)
-                                        }
-                                    }
-                                }
+                                resolveResultText = null
+                                MatchUnlinkedJob.start(context)
+                                context.toast(MR.strings.tracker_match_all_started)
                             },
                         ),
                     )

@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,9 +29,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.SearchOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -52,6 +56,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -67,7 +72,9 @@ import eu.kanade.presentation.components.AdaptiveSheet
 import eu.kanade.presentation.components.TabContent
 import eu.kanade.tachiyomi.data.track.model.TrackSearch
 import eu.kanade.tachiyomi.ui.browse.source.globalsearch.GlobalSearchScreen
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import tachiyomi.domain.manga.model.ContentType
 import tachiyomi.domain.manga.model.MangaWithChapterCount
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.components.ScrollbarLazyColumn
@@ -98,11 +105,13 @@ fun Screen.discoverTab(): TabContent {
         content = { contentPadding, _ ->
             DiscoverContent(
                 state = state,
-                availableTrackers = screenModel.availableTrackers,
+                trackersForFilter = screenModel::trackersForFilter,
                 onSelectTracker = screenModel::selectTracker,
                 onSearch = screenModel::search,
+                onRetrySearch = screenModel::retrySearch,
                 onAddToLibrary = screenModel::addToLibrary,
                 onSelectResult = screenModel::selectResult,
+                onSetContentTypeFilter = screenModel::setContentTypeFilter,
                 contentPadding = contentPadding,
             )
 
@@ -165,14 +174,18 @@ fun Screen.discoverTab(): TabContent {
 @Composable
 private fun DiscoverContent(
     state: AuthoritySearchState,
-    availableTrackers: List<eu.kanade.tachiyomi.data.track.Tracker>,
+    trackersForFilter: (ContentType) -> ImmutableList<eu.kanade.tachiyomi.data.track.Tracker>,
     onSelectTracker: (eu.kanade.tachiyomi.data.track.Tracker) -> Unit,
     onSearch: (String) -> Unit,
+    onRetrySearch: () -> Unit,
     onAddToLibrary: (TrackSearch) -> Unit,
     onSelectResult: (TrackSearch) -> Unit,
+    onSetContentTypeFilter: (ContentType) -> Unit,
     contentPadding: PaddingValues,
 ) {
-    if (availableTrackers.isEmpty()) {
+    // All trackers = unfiltered list — use to check if any are available at all
+    val allTrackers = trackersForFilter(ContentType.UNKNOWN)
+    if (allTrackers.isEmpty()) {
         EmptyScreen(
             stringRes = MR.strings.discover_no_trackers,
             modifier = Modifier.padding(contentPadding),
@@ -180,6 +193,10 @@ private fun DiscoverContent(
         return
     }
 
+    // Trackers filtered by the selected content type
+    val filteredTrackers = trackersForFilter(state.contentTypeFilter)
+
+    val focusManager = LocalFocusManager.current
     var query by remember { mutableStateOf("") }
 
     Column(
@@ -204,42 +221,139 @@ private fun DiscoverContent(
                     contentDescription = null,
                 )
             },
+            trailingIcon = {
+                if (query.isNotEmpty()) {
+                    IconButton(onClick = { query = "" }) {
+                        Icon(
+                            imageVector = Icons.Outlined.Close,
+                            contentDescription = null,
+                        )
+                    }
+                }
+            },
             singleLine = true,
             shape = RoundedCornerShape(28.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
             ),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(onSearch = { onSearch(query) }),
+            keyboardActions = KeyboardActions(
+                onSearch = {
+                    onSearch(query)
+                    focusManager.clearFocus()
+                },
+            ),
         )
 
-        // Tracker filter chips
-        if (availableTrackers.size > 1) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        horizontal = MaterialTheme.padding.medium,
-                        vertical = MaterialTheme.padding.extraSmall,
-                    ),
+        // Content type filter chips — always visible, controls which trackers are shown.
+        // This organizes authorities by what they are an authority of, so only
+        // relevant trackers are queried — saving API calls as more authorities are added.
+        val typeFilters = remember {
+            listOf(ContentType.UNKNOWN, ContentType.MANGA, ContentType.NOVEL)
+        }
+        val typeFilterLabels = mapOf(
+            ContentType.UNKNOWN to stringResource(MR.strings.discover_filter_all),
+            ContentType.MANGA to stringResource(MR.strings.discover_filter_manga),
+            ContentType.NOVEL to stringResource(MR.strings.discover_filter_novel),
+        )
+        LazyRow(
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(
+                horizontal = MaterialTheme.padding.medium,
+                vertical = MaterialTheme.padding.extraSmall,
+            ),
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
+        ) {
+            items(typeFilters.size) { index ->
+                val type = typeFilters[index]
+                val isSelected = state.contentTypeFilter == type
+                FilterChip(
+                    selected = isSelected,
+                    onClick = { onSetContentTypeFilter(type) },
+                    label = { Text(typeFilterLabels[type] ?: "") },
+                    leadingIcon = if (isSelected) {
+                        {
+                            Icon(
+                                imageVector = Icons.Outlined.Check,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
+                    } else {
+                        null
+                    },
+                )
+            }
+        }
+
+        // Tracker filter chips — filtered by the selected content type.
+        // Only shown when multiple trackers match the current type.
+        // Uses LazyRow for horizontal scrolling if many trackers are available.
+        if (filteredTrackers.size > 1) {
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(
+                    horizontal = MaterialTheme.padding.medium,
+                    vertical = MaterialTheme.padding.extraSmall,
+                ),
                 horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
             ) {
-                availableTrackers.forEach { tracker ->
+                items(filteredTrackers.size) { index ->
+                    val tracker = filteredTrackers[index]
+                    val isSelected = tracker == state.selectedTracker
                     FilterChip(
-                        selected = tracker == state.selectedTracker,
+                        selected = isSelected,
                         onClick = { onSelectTracker(tracker) },
                         label = { Text(tracker.name) },
+                        leadingIcon = if (isSelected) {
+                            {
+                                Icon(
+                                    imageVector = Icons.Outlined.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            }
+                        } else {
+                            null
+                        },
                     )
                 }
             }
+        }
+
+        // Result count indicator — shows how many results are displayed
+        val displayResults = state.filteredResults
+        if (displayResults.isNotEmpty()) {
+            val countText = if (
+                state.contentTypeFilter != ContentType.UNKNOWN &&
+                displayResults.size != state.results.size
+            ) {
+                stringResource(
+                    MR.strings.discover_result_count_filtered,
+                    displayResults.size,
+                    state.results.size,
+                )
+            } else {
+                stringResource(MR.strings.discover_result_count, displayResults.size)
+            }
+            Text(
+                text = countText,
+                modifier = Modifier.padding(
+                    horizontal = MaterialTheme.padding.medium,
+                    vertical = MaterialTheme.padding.extraSmall,
+                ),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
 
         // Animated content area — search results or landing state
         // Derive a stable display state to avoid unnecessary transitions
         val displayState = when {
             state.isSearching -> DiscoverDisplayState.LOADING
+            state.searchError != null -> DiscoverDisplayState.ERROR
             state.results.isEmpty() && state.query.isBlank() -> DiscoverDisplayState.LANDING
-            state.results.isEmpty() -> DiscoverDisplayState.NO_RESULTS
+            displayResults.isEmpty() -> DiscoverDisplayState.NO_RESULTS
             else -> DiscoverDisplayState.RESULTS
         }
         AnimatedContent(
@@ -256,6 +370,30 @@ private fun DiscoverContent(
                 DiscoverDisplayState.LANDING -> {
                     EmptyScreen(stringResource(MR.strings.discover_empty_state))
                 }
+                DiscoverDisplayState.ERROR -> {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.SearchOff,
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(Modifier.height(MaterialTheme.padding.medium))
+                        Text(
+                            text = stringResource(MR.strings.discover_search_error),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(Modifier.height(MaterialTheme.padding.medium))
+                        Button(onClick = onRetrySearch) {
+                            Text(stringResource(MR.strings.discover_retry))
+                        }
+                    }
+                }
                 DiscoverDisplayState.NO_RESULTS -> {
                     EmptyScreen(stringResource(MR.strings.no_results_found))
                 }
@@ -270,7 +408,7 @@ private fun DiscoverContent(
                         ),
                     ) {
                         items(
-                            state.results,
+                            displayResults,
                             key = { "${it.tracker_id}:${it.remote_id}" },
                         ) { result ->
                             val prefix =
@@ -282,9 +420,12 @@ private fun DiscoverContent(
                             }
                             val isAdded = canonicalId != null &&
                                 canonicalId in state.addedCanonicalIds
+                            val isAdding = canonicalId != null &&
+                                canonicalId in state.addingCanonicalIds
                             DiscoverResultCard(
                                 result = result,
                                 isAdded = isAdded,
+                                isAdding = isAdding,
                                 onAdd = { onAddToLibrary(result) },
                                 onClick = { onSelectResult(result) },
                             )
@@ -300,6 +441,7 @@ private fun DiscoverContent(
 private fun DiscoverResultCard(
     result: TrackSearch,
     isAdded: Boolean,
+    isAdding: Boolean,
     onAdd: () -> Unit,
     onClick: () -> Unit,
 ) {
@@ -330,12 +472,19 @@ private fun DiscoverResultCard(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
-                if (result.publishing_type.isNotBlank()) {
+                // Type + status metadata row for disambiguation
+                val metaItems = buildList {
+                    if (result.publishing_type.isNotBlank()) add(result.publishing_type)
+                    if (result.publishing_status.isNotBlank()) add(result.publishing_status)
+                    if (result.start_date.isNotBlank()) add(result.start_date)
+                }
+                if (metaItems.isNotEmpty()) {
                     Text(
-                        text = result.publishing_type,
+                        text = metaItems.joinToString(" · "),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
                 if (result.summary.isNotBlank()) {
@@ -352,7 +501,7 @@ private fun DiscoverResultCard(
             Spacer(Modifier.width(MaterialTheme.padding.small))
             IconButton(
                 onClick = onAdd,
-                enabled = !isAdded,
+                enabled = !isAdded && !isAdding,
                 colors = if (isAdded) {
                     IconButtonDefaults.iconButtonColors(
                         disabledContentColor = MaterialTheme.colorScheme.primary,
@@ -361,20 +510,27 @@ private fun DiscoverResultCard(
                     IconButtonDefaults.filledTonalIconButtonColors()
                 },
             ) {
-                Icon(
-                    imageVector = if (isAdded) {
-                        Icons.Outlined.Check
-                    } else {
-                        Icons.Outlined.Add
-                    },
-                    contentDescription = stringResource(
-                        if (isAdded) {
-                            MR.strings.discover_added
+                if (isAdding) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Icon(
+                        imageVector = if (isAdded) {
+                            Icons.Outlined.Check
                         } else {
-                            MR.strings.discover_add
+                            Icons.Outlined.Add
                         },
-                    ),
-                )
+                        contentDescription = stringResource(
+                            if (isAdded) {
+                                MR.strings.discover_added
+                            } else {
+                                MR.strings.discover_add
+                            },
+                        ),
+                    )
+                }
             }
         }
     }
@@ -724,4 +880,4 @@ private fun FindSourceDialog(
 }
 
 /** Display states for the animated content area — avoids Triple allocations. */
-private enum class DiscoverDisplayState { LOADING, LANDING, NO_RESULTS, RESULTS }
+private enum class DiscoverDisplayState { LOADING, LANDING, NO_RESULTS, RESULTS, ERROR }

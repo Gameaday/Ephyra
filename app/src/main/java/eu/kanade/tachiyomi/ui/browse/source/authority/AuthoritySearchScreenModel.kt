@@ -11,6 +11,7 @@ import eu.kanade.tachiyomi.data.track.model.TrackSearch
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import tachiyomi.core.common.util.lang.withIOContext
@@ -35,21 +36,35 @@ class AuthoritySearchScreenModel(
     private val findContentSource: FindContentSource = Injekt.get(),
 ) : StateScreenModel<AuthoritySearchState>(AuthoritySearchState()) {
 
+    private var searchJob: Job? = null
+
     /**
-     * Trackers available for authority search.
+     * All trackers available for authority search (regardless of content type).
      * Includes logged-in authoritative trackers AND trackers with public search APIs.
      * This allows discovery to work without login for trackers like MangaUpdates.
      */
-    val availableTrackers: ImmutableList<Tracker> = trackerManager.trackers
+    private val allTrackers: ImmutableList<Tracker> = trackerManager.trackers
         .filter {
             AddTracks.TRACKER_CANONICAL_PREFIXES.containsKey(it.id) &&
                 (it.isLoggedIn || it.id in AddTracks.TRACKERS_WITH_PUBLIC_SEARCH)
         }
         .toImmutableList()
 
+    /**
+     * Trackers filtered by the current content type selection.
+     * When "All" is selected, returns all available trackers.
+     * When a specific type is selected, returns only trackers that are authorities
+     * for that type — saving API calls by not querying irrelevant services.
+     */
+    fun trackersForFilter(contentType: ContentType): ImmutableList<Tracker> {
+        if (contentType == ContentType.UNKNOWN) return allTrackers
+        val validIds = AddTracks.trackersForContentType(contentType)
+        return allTrackers.filter { it.id in validIds }.toImmutableList()
+    }
+
     init {
-        if (availableTrackers.isNotEmpty()) {
-            mutableState.value = mutableState.value.copy(selectedTracker = availableTrackers.first())
+        if (allTrackers.isNotEmpty()) {
+            mutableState.value = mutableState.value.copy(selectedTracker = allTrackers.first())
         }
     }
 
@@ -61,14 +76,44 @@ class AuthoritySearchScreenModel(
         )
     }
 
+    /**
+     * Sets the content type filter, which controls:
+     * 1. Which trackers are shown as available (only authorities for that type)
+     * 2. Which search results are displayed (client-side filtering)
+     *
+     * When the filter changes, if the currently selected tracker doesn't support
+     * the new type, auto-selects the first tracker that does.
+     * [ContentType.UNKNOWN] means "All types" (no filtering).
+     */
+    fun setContentTypeFilter(contentType: ContentType) {
+        val filteredTrackers = trackersForFilter(contentType)
+        val currentTracker = mutableState.value.selectedTracker
+
+        // If current tracker doesn't support the new type, switch to first valid one
+        val newTracker = if (currentTracker != null && currentTracker in filteredTrackers) {
+            currentTracker
+        } else {
+            filteredTrackers.firstOrNull()
+        }
+
+        mutableState.value = mutableState.value.copy(
+            contentTypeFilter = contentType,
+            selectedTracker = newTracker,
+            // Clear results when switching type — old results may not be relevant
+            results = persistentListOf(),
+        )
+    }
+
     fun search(query: String) {
         val tracker = mutableState.value.selectedTracker ?: return
+        searchJob?.cancel()
         mutableState.value = mutableState.value.copy(
             query = query,
             isSearching = true,
             results = persistentListOf(),
+            searchError = null,
         )
-        screenModelScope.launch {
+        searchJob = screenModelScope.launch {
             try {
                 val results = withIOContext { tracker.search(query) }
                 mutableState.value = mutableState.value.copy(
@@ -80,6 +125,7 @@ class AuthoritySearchScreenModel(
                 mutableState.value = mutableState.value.copy(
                     isSearching = false,
                     results = persistentListOf(),
+                    searchError = e.message ?: e.javaClass.simpleName,
                 )
             }
         }
@@ -96,6 +142,11 @@ class AuthoritySearchScreenModel(
         val prefix = AddTracks.TRACKER_CANONICAL_PREFIXES[tracker.id] ?: return
         val canonicalId = "$prefix:${result.remote_id}"
 
+        // Track loading state for this specific result
+        mutableState.value = mutableState.value.copy(
+            addingCanonicalIds = mutableState.value.addingCanonicalIds + canonicalId,
+        )
+
         screenModelScope.launch {
             try {
                 withIOContext {
@@ -105,6 +156,7 @@ class AuthoritySearchScreenModel(
                         // Already in library — just mark as added in UI
                         mutableState.value = mutableState.value.copy(
                             addedCanonicalIds = mutableState.value.addedCanonicalIds + canonicalId,
+                            addingCanonicalIds = mutableState.value.addingCanonicalIds - canonicalId,
                         )
                         return@withIOContext
                     }
@@ -121,6 +173,7 @@ class AuthoritySearchScreenModel(
                                 tracker = tracker,
                                 candidates = unpairedMatches.toImmutableList(),
                             ),
+                            addingCanonicalIds = mutableState.value.addingCanonicalIds - canonicalId,
                         )
                         return@withIOContext
                     }
@@ -130,6 +183,11 @@ class AuthoritySearchScreenModel(
                 }
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e) { "Failed to add authority manga: canonical_id=$canonicalId" }
+            } finally {
+                // Ensure loading state is cleared even on error
+                mutableState.value = mutableState.value.copy(
+                    addingCanonicalIds = mutableState.value.addingCanonicalIds - canonicalId,
+                )
             }
         }
     }
@@ -364,6 +422,12 @@ class AuthoritySearchScreenModel(
         mutableState.value = mutableState.value.copy(selectedResult = null)
     }
 
+    /** Retry the last failed search. */
+    fun retrySearch() {
+        val query = mutableState.value.query
+        if (query.isNotBlank()) search(query)
+    }
+
     /**
      * Merges alternative titles from a tracker result into the manga's existing list.
      * Also adds the tracker's title as an alternative if it differs from the primary title.
@@ -385,15 +449,36 @@ data class AuthoritySearchState(
     val query: String = "",
     val isSearching: Boolean = false,
     val results: ImmutableList<TrackSearch> = persistentListOf(),
+    /** Content type filter — [ContentType.UNKNOWN] means "All types" (no filtering). */
+    val contentTypeFilter: ContentType = ContentType.UNKNOWN,
     /** Canonical IDs of manga already added to the library in this session. */
     val addedCanonicalIds: Set<String> = emptySet(),
+    /** Canonical IDs currently being added (for loading indicator on add button). */
+    val addingCanonicalIds: Set<String> = emptySet(),
+    /** Non-null when the last search resulted in an error (for retry UI). */
+    val searchError: String? = null,
     /** Non-null when the user just added a manga and should be prompted to find a source. */
     val sourcePromptManga: SourcePromptInfo? = null,
     /** Non-null when unpaired library manga match the title — user should merge or skip. */
     val mergePrompt: MergePromptInfo? = null,
     /** Non-null when user tapped a result to view full details. */
     val selectedResult: TrackSearch? = null,
-)
+) {
+    /**
+     * Search results filtered by the active content type filter.
+     * When filter is [ContentType.UNKNOWN] (All), returns all results unfiltered.
+     * Otherwise, only returns results whose publishing_type maps to the selected content type.
+     */
+    val filteredResults: ImmutableList<TrackSearch>
+        get() = if (contentTypeFilter == ContentType.UNKNOWN) {
+            results
+        } else {
+            results.filter {
+                val resultType = ContentType.fromPublishingType(it.publishing_type)
+                resultType == contentTypeFilter || resultType == ContentType.UNKNOWN
+            }.toImmutableList()
+        }
+}
 
 /** Info for the "find content source?" prompt shown after adding authority manga. */
 data class SourcePromptInfo(

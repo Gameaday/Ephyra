@@ -15,6 +15,7 @@ data class MURecord(
     val image: MUImage? = null,
     val type: String? = null,
     val year: String? = null,
+    val status: String? = null,
     @SerialName("bayesian_rating")
     val bayesianRating: Double? = null,
     @SerialName("rating_votes")
@@ -31,8 +32,8 @@ fun MURecord.toTrackSearch(id: Long): TrackSearch {
         cover_url = this@toTrackSearch.image?.url?.original ?: ""
         summary = this@toTrackSearch.description?.htmlDecode() ?: ""
         tracking_url = this@toTrackSearch.url ?: ""
-        publishing_status = ""
-        publishing_type = this@toTrackSearch.type.toString()
-        start_date = this@toTrackSearch.year.toString()
+        publishing_status = this@toTrackSearch.status ?: ""
+        publishing_type = this@toTrackSearch.type ?: ""
+        start_date = this@toTrackSearch.year ?: ""
     }
 }
