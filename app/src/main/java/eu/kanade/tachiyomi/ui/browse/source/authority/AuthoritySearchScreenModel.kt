@@ -58,7 +58,16 @@ class AuthoritySearchScreenModel(
             selectedTracker = tracker,
             results = persistentListOf(),
             query = "",
+            contentTypeFilter = ContentType.UNKNOWN,
         )
+    }
+
+    /**
+     * Sets the content type filter for Discover search results.
+     * [ContentType.UNKNOWN] means "All types" (no filtering).
+     */
+    fun setContentTypeFilter(contentType: ContentType) {
+        mutableState.value = mutableState.value.copy(contentTypeFilter = contentType)
     }
 
     fun search(query: String) {
@@ -385,6 +394,8 @@ data class AuthoritySearchState(
     val query: String = "",
     val isSearching: Boolean = false,
     val results: ImmutableList<TrackSearch> = persistentListOf(),
+    /** Content type filter — [ContentType.UNKNOWN] means "All types" (no filtering). */
+    val contentTypeFilter: ContentType = ContentType.UNKNOWN,
     /** Canonical IDs of manga already added to the library in this session. */
     val addedCanonicalIds: Set<String> = emptySet(),
     /** Non-null when the user just added a manga and should be prompted to find a source. */
@@ -393,7 +404,22 @@ data class AuthoritySearchState(
     val mergePrompt: MergePromptInfo? = null,
     /** Non-null when user tapped a result to view full details. */
     val selectedResult: TrackSearch? = null,
-)
+) {
+    /**
+     * Search results filtered by the active content type filter.
+     * When filter is [ContentType.UNKNOWN] (All), returns all results unfiltered.
+     * Otherwise, only returns results whose publishing_type maps to the selected content type.
+     */
+    val filteredResults: ImmutableList<TrackSearch>
+        get() = if (contentTypeFilter == ContentType.UNKNOWN) {
+            results
+        } else {
+            results.filter {
+                val resultType = ContentType.fromPublishingType(it.publishing_type)
+                resultType == contentTypeFilter || resultType == ContentType.UNKNOWN
+            }.toImmutableList()
+        }
+}
 
 /** Info for the "find content source?" prompt shown after adding authority manga. */
 data class SourcePromptInfo(

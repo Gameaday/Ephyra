@@ -68,6 +68,7 @@ import eu.kanade.presentation.components.TabContent
 import eu.kanade.tachiyomi.data.track.model.TrackSearch
 import eu.kanade.tachiyomi.ui.browse.source.globalsearch.GlobalSearchScreen
 import kotlinx.collections.immutable.persistentListOf
+import tachiyomi.domain.manga.model.ContentType
 import tachiyomi.domain.manga.model.MangaWithChapterCount
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.components.ScrollbarLazyColumn
@@ -103,6 +104,7 @@ fun Screen.discoverTab(): TabContent {
                 onSearch = screenModel::search,
                 onAddToLibrary = screenModel::addToLibrary,
                 onSelectResult = screenModel::selectResult,
+                onSetContentTypeFilter = screenModel::setContentTypeFilter,
                 contentPadding = contentPadding,
             )
 
@@ -170,6 +172,7 @@ private fun DiscoverContent(
     onSearch: (String) -> Unit,
     onAddToLibrary: (TrackSearch) -> Unit,
     onSelectResult: (TrackSearch) -> Unit,
+    onSetContentTypeFilter: (ContentType) -> Unit,
     contentPadding: PaddingValues,
 ) {
     if (availableTrackers.isEmpty()) {
@@ -234,12 +237,40 @@ private fun DiscoverContent(
             }
         }
 
+        // Content type filter chips — shown when results exist
+        if (state.results.isNotEmpty()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        horizontal = MaterialTheme.padding.medium,
+                        vertical = MaterialTheme.padding.extraSmall,
+                    ),
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
+            ) {
+                val typeFilters = listOf(
+                    ContentType.UNKNOWN to stringResource(MR.strings.discover_filter_all),
+                    ContentType.MANGA to stringResource(MR.strings.discover_filter_manga),
+                    ContentType.NOVEL to stringResource(MR.strings.discover_filter_novel),
+                )
+                typeFilters.forEach { (type, label) ->
+                    FilterChip(
+                        selected = state.contentTypeFilter == type,
+                        onClick = { onSetContentTypeFilter(type) },
+                        label = { Text(label) },
+                    )
+                }
+            }
+        }
+
         // Animated content area — search results or landing state
         // Derive a stable display state to avoid unnecessary transitions
+        // Use filteredResults for display when content type filter is active
+        val displayResults = state.filteredResults
         val displayState = when {
             state.isSearching -> DiscoverDisplayState.LOADING
             state.results.isEmpty() && state.query.isBlank() -> DiscoverDisplayState.LANDING
-            state.results.isEmpty() -> DiscoverDisplayState.NO_RESULTS
+            displayResults.isEmpty() -> DiscoverDisplayState.NO_RESULTS
             else -> DiscoverDisplayState.RESULTS
         }
         AnimatedContent(
@@ -270,7 +301,7 @@ private fun DiscoverContent(
                         ),
                     ) {
                         items(
-                            state.results,
+                            displayResults,
                             key = { "${it.tracker_id}:${it.remote_id}" },
                         ) { result ->
                             val prefix =

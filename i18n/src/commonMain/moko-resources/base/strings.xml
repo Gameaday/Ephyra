@@ -1139,6 +1139,9 @@
     <string name="discover_detail_start_date">Start date</string>
     <string name="discover_detail_chapters">Chapters</string>
     <string name="discover_detail_alt_titles">Alternative titles</string>
+    <string name="discover_filter_all">All</string>
+    <string name="discover_filter_manga">Manga</string>
+    <string name="discover_filter_novel">Novel</string>
     <string name="tracker_match_all_action">Resolve all unlinked manga</string>
     <string name="tracker_match_all_subtitle">Link from trackers and search canonical IDs for remaining</string>
     <string name="tracker_match_all_running">Resolving…</string>
