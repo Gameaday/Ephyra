@@ -311,6 +311,16 @@ class AuthoritySearchScreenModel(
         mutableState.value = mutableState.value.copy(sourcePromptManga = null)
     }
 
+    /** User tapped a result card to view full details. */
+    fun selectResult(result: TrackSearch) {
+        mutableState.value = mutableState.value.copy(selectedResult = result)
+    }
+
+    /** Dismiss the detail view. */
+    fun dismissDetail() {
+        mutableState.value = mutableState.value.copy(selectedResult = null)
+    }
+
     /**
      * Merges alternative titles from a tracker result into the manga's existing list.
      * Also adds the tracker's title as an alternative if it differs from the primary title.
@@ -338,6 +348,8 @@ data class AuthoritySearchState(
     val sourcePromptManga: SourcePromptInfo? = null,
     /** Non-null when unpaired library manga match the title — user should merge or skip. */
     val mergePrompt: MergePromptInfo? = null,
+    /** Non-null when user tapped a result to view full details. */
+    val selectedResult: TrackSearch? = null,
 )
 
 /** Info for the "find content source?" prompt shown after adding authority manga. */

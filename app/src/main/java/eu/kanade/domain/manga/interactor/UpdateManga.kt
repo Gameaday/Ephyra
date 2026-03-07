@@ -50,6 +50,12 @@ class UpdateManga(
                 null
             }
 
+        // When a manga has a canonical ID (linked to an authoritative tracker), its metadata
+        // was enriched from the tracker's verified data. Preserve that authoritative metadata
+        // during automatic updates from chapter sources, which often have lower-quality data.
+        // Manual fetches (pull-to-refresh) still override everything to let users force-update.
+        val hasAuthorityMetadata = localManga.canonicalId != null && !manualFetch
+
         val coverLastModified =
             when {
                 // Never refresh covers if the url is empty to avoid "losing" existing covers
@@ -60,22 +66,43 @@ class UpdateManga(
                     coverCache.deleteFromCache(localManga, false)
                     null
                 }
+                // Preserve authority cover: don't replace if we already have one from canonical source
+                hasAuthorityMetadata && !localManga.thumbnailUrl.isNullOrBlank() -> null
                 else -> {
                     coverCache.deleteFromCache(localManga, false)
                     Instant.now().toEpochMilli()
                 }
             }
 
-        val thumbnailUrl = remoteManga.thumbnail_url?.takeIf { it.isNotEmpty() }
+        val thumbnailUrl = if (hasAuthorityMetadata && !localManga.thumbnailUrl.isNullOrBlank()) {
+            // Keep the existing authority cover
+            null
+        } else {
+            remoteManga.thumbnail_url?.takeIf { it.isNotEmpty() }
+        }
 
         val success = mangaRepository.update(
             MangaUpdate(
                 id = localManga.id,
                 title = title,
                 coverLastModified = coverLastModified,
-                author = remoteManga.author,
-                artist = remoteManga.artist,
-                description = remoteManga.description,
+                // Preserve authority metadata fields when canonical ID is set.
+                // Only fill empty fields from the source — never overwrite authoritative data.
+                author = if (hasAuthorityMetadata && !localManga.author.isNullOrBlank()) {
+                    null
+                } else {
+                    remoteManga.author
+                },
+                artist = if (hasAuthorityMetadata && !localManga.artist.isNullOrBlank()) {
+                    null
+                } else {
+                    remoteManga.artist
+                },
+                description = if (hasAuthorityMetadata && !localManga.description.isNullOrBlank()) {
+                    null
+                } else {
+                    remoteManga.description
+                },
                 genre = remoteManga.getGenres(),
                 thumbnailUrl = thumbnailUrl,
                 status = remoteManga.status.toLong(),

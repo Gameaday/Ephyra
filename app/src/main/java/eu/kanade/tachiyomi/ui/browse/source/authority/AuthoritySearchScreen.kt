@@ -19,9 +19,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Check
@@ -29,6 +32,7 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -47,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -56,6 +61,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import coil3.compose.AsyncImage
 import eu.kanade.domain.track.interactor.AddTracks
+import eu.kanade.presentation.components.AdaptiveSheet
 import eu.kanade.presentation.components.TabContent
 import eu.kanade.tachiyomi.data.track.model.TrackSearch
 import eu.kanade.tachiyomi.ui.browse.source.globalsearch.GlobalSearchScreen
@@ -94,8 +100,26 @@ fun Screen.discoverTab(): TabContent {
                 onSelectTracker = screenModel::selectTracker,
                 onSearch = screenModel::search,
                 onAddToLibrary = screenModel::addToLibrary,
+                onSelectResult = screenModel::selectResult,
                 contentPadding = contentPadding,
             )
+
+            // Detail sheet for viewing full result metadata
+            val selectedResult = state.selectedResult
+            if (selectedResult != null) {
+                val prefix = AddTracks.TRACKER_CANONICAL_PREFIXES[selectedResult.tracker_id]
+                val canonicalId = if (prefix != null) "$prefix:${selectedResult.remote_id}" else null
+                val isAdded = canonicalId != null && canonicalId in state.addedCanonicalIds
+                DiscoverDetailSheet(
+                    result = selectedResult,
+                    isAdded = isAdded,
+                    onAdd = {
+                        screenModel.addToLibrary(selectedResult)
+                        screenModel.dismissDetail()
+                    },
+                    onDismiss = screenModel::dismissDetail,
+                )
+            }
 
             // "Find content source?" prompt shown after adding an authority manga
             val sourcePrompt = state.sourcePromptManga
@@ -132,6 +156,7 @@ private fun DiscoverContent(
     onSelectTracker: (eu.kanade.tachiyomi.data.track.Tracker) -> Unit,
     onSearch: (String) -> Unit,
     onAddToLibrary: (TrackSearch) -> Unit,
+    onSelectResult: (TrackSearch) -> Unit,
     contentPadding: PaddingValues,
 ) {
     if (availableTrackers.isEmpty()) {
@@ -248,6 +273,7 @@ private fun DiscoverContent(
                                 result = result,
                                 isAdded = isAdded,
                                 onAdd = { onAddToLibrary(result) },
+                                onClick = { onSelectResult(result) },
                             )
                         }
                     }
@@ -262,9 +288,12 @@ private fun DiscoverResultCard(
     result: TrackSearch,
     isAdded: Boolean,
     onAdd: () -> Unit,
+    onClick: () -> Unit,
 ) {
     ElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
     ) {
         Row(
             modifier = Modifier
@@ -335,6 +364,166 @@ private fun DiscoverResultCard(
                 )
             }
         }
+    }
+}
+
+/**
+ * Full-detail sheet shown when tapping a Discover search result.
+ * Displays all authoritative metadata from the tracker: cover, title, description,
+ * author/artist, status, chapters, publishing type, start date, and alternative titles.
+ */
+@Composable
+private fun DiscoverDetailSheet(
+    result: TrackSearch,
+    isAdded: Boolean,
+    onAdd: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AdaptiveSheet(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .verticalScroll(rememberScrollState())
+                .padding(
+                    horizontal = MaterialTheme.padding.medium,
+                    vertical = MaterialTheme.padding.medium,
+                ),
+        ) {
+            // Cover + title row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.medium),
+            ) {
+                AsyncImage(
+                    model = result.cover_url,
+                    contentDescription = result.title,
+                    modifier = Modifier
+                        .size(120.dp, 170.dp)
+                        .clip(RoundedCornerShape(12.dp)),
+                    contentScale = ContentScale.Crop,
+                )
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = result.title,
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                    val authors = result.authors.joinToString(", ")
+                    if (authors.isNotBlank()) {
+                        DetailLabel(
+                            label = stringResource(MR.strings.discover_detail_author),
+                            value = authors,
+                        )
+                    }
+                    val artists = result.artists.joinToString(", ")
+                    if (artists.isNotBlank() && artists != authors) {
+                        DetailLabel(
+                            label = stringResource(MR.strings.discover_detail_artist),
+                            value = artists,
+                        )
+                    }
+                    if (result.publishing_status.isNotBlank()) {
+                        DetailLabel(
+                            label = stringResource(MR.strings.discover_detail_status),
+                            value = result.publishing_status,
+                        )
+                    }
+                    if (result.publishing_type.isNotBlank()) {
+                        DetailLabel(
+                            label = stringResource(MR.strings.discover_detail_type),
+                            value = result.publishing_type,
+                        )
+                    }
+                    if (result.start_date.isNotBlank()) {
+                        DetailLabel(
+                            label = stringResource(MR.strings.discover_detail_start_date),
+                            value = result.start_date,
+                        )
+                    }
+                    if (result.total_chapters > 0) {
+                        DetailLabel(
+                            label = stringResource(MR.strings.discover_detail_chapters),
+                            value = result.total_chapters.toString(),
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(MaterialTheme.padding.medium))
+
+            // Add to library button
+            androidx.compose.material3.Button(
+                onClick = onAdd,
+                enabled = !isAdded,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Icon(
+                    imageVector = if (isAdded) Icons.Outlined.Check else Icons.Outlined.Add,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    stringResource(
+                        if (isAdded) MR.strings.discover_added else MR.strings.discover_add,
+                    ),
+                )
+            }
+
+            // Description
+            if (result.summary.isNotBlank()) {
+                Spacer(Modifier.height(MaterialTheme.padding.medium))
+                HorizontalDivider()
+                Spacer(Modifier.height(MaterialTheme.padding.medium))
+                SelectionContainer {
+                    Text(
+                        text = result.summary,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            // Alternative titles
+            if (result.alternative_titles.isNotEmpty()) {
+                Spacer(Modifier.height(MaterialTheme.padding.medium))
+                HorizontalDivider()
+                Spacer(Modifier.height(MaterialTheme.padding.small))
+                Text(
+                    text = stringResource(MR.strings.discover_detail_alt_titles),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Spacer(Modifier.height(4.dp))
+                result.alternative_titles.forEach { altTitle ->
+                    Text(
+                        text = "• $altTitle",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(MaterialTheme.padding.medium))
+        }
+    }
+}
+
+/** Small label + value row for the detail view metadata section. */
+@Composable
+private fun DetailLabel(label: String, value: String) {
+    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = "$label:",
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
