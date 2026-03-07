@@ -266,7 +266,7 @@ private fun SummaryCard(
             if (unlinkedCount > 0) {
                 Spacer(modifier = Modifier.height(MaterialTheme.padding.extraSmall))
                 Text(
-                    text = "$unlinkedCount unlinked",
+                    text = stringResource(MR.strings.match_results_unlinked_count, unlinkedCount),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
