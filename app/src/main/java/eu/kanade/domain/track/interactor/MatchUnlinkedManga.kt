@@ -1,6 +1,7 @@
 package eu.kanade.domain.track.interactor
 
 import eu.kanade.tachiyomi.data.track.TrackerManager
+import eu.kanade.tachiyomi.data.track.model.TrackSearch
 import kotlinx.coroutines.yield
 import logcat.LogPriority
 import tachiyomi.core.common.util.lang.withIOContext
@@ -18,6 +19,9 @@ import tachiyomi.domain.track.interactor.GetTracks
  *    (MAL, AniList, MangaUpdates) but no canonical ID, derive the ID from the binding.
  * 2. **Public search** (slower, 1 API call per manga): Search a public tracker API by title.
  *    Uses alternative titles and normalized comparison for better matching.
+ *
+ * When a match is found via search, also enriches the manga with authoritative metadata:
+ * alternative titles, description, author/artist, and cover URL (only fills missing fields).
  *
  * Reports progress via an optional callback so the UI can show "Resolving… 5/20".
  */
@@ -66,8 +70,11 @@ class MatchUnlinkedManga(
             var fromBinding = canonicalId != null
 
             // Phase 2: Fall back to public API search with improved matching
+            var matchedResult: TrackSearch? = null
             if (canonicalId == null && tracker != null && prefix != null) {
-                canonicalId = searchForCanonicalId(manga, tracker, prefix)
+                val searchResult = searchForMatch(manga, tracker, prefix)
+                canonicalId = searchResult?.first
+                matchedResult = searchResult?.second
                 fromBinding = false
             }
 
@@ -84,6 +91,12 @@ class MatchUnlinkedManga(
                             "Matched '${manga.title}' → canonical_id=$canonicalId (from search)"
                         }
                         matched++
+                    }
+
+                    // Enrich manga with authoritative metadata from the search result.
+                    // Only fills fields that are currently missing — never overwrites user data.
+                    if (matchedResult != null) {
+                        enrichFromSearchResult(manga, matchedResult)
                     }
                 } catch (e: Exception) {
                     logcat(LogPriority.WARN, e) { "Failed to update manga ${manga.id}" }
@@ -116,13 +129,13 @@ class MatchUnlinkedManga(
      * 2. Exact (case-insensitive) match against alternative titles
      * 3. Normalized match (stripped punctuation/whitespace) against all titles
      *
-     * Returns the canonical ID (e.g. "mu:12345") if a confident match is found.
+     * Returns a pair of (canonical ID, matched TrackSearch result) or null.
      */
-    private suspend fun searchForCanonicalId(
+    private suspend fun searchForMatch(
         manga: Manga,
         tracker: eu.kanade.tachiyomi.data.track.Tracker,
         prefix: String,
-    ): String? {
+    ): Pair<String, TrackSearch>? {
         val allTitles = buildList {
             add(manga.title)
             addAll(manga.alternativeTitles)
@@ -135,7 +148,7 @@ class MatchUnlinkedManga(
                 allTitles.any { title -> result.title.equals(title, ignoreCase = true) }
             }
             if (exactMatch != null && exactMatch.remote_id > 0) {
-                return "$prefix:${exactMatch.remote_id}"
+                return "$prefix:${exactMatch.remote_id}" to exactMatch
             }
 
             // Tier 2: Normalized match (strip punctuation, collapse whitespace)
@@ -144,13 +157,96 @@ class MatchUnlinkedManga(
                 normalizeTitle(result.title) in normalizedTitles
             }
             if (normalizedMatch != null && normalizedMatch.remote_id > 0) {
-                "$prefix:${normalizedMatch.remote_id}"
+                "$prefix:${normalizedMatch.remote_id}" to normalizedMatch
             } else {
                 null
             }
         } catch (e: Exception) {
             logcat(LogPriority.DEBUG, e) { "Search failed for '${manga.title}'" }
             null
+        }
+    }
+
+    /**
+     * Enriches a manga with authoritative metadata from a matched search result.
+     * Only fills fields that are currently missing — never overwrites existing data.
+     * This ensures authoritative info (description, author, artist, cover, alt titles)
+     * from the canonical source is available throughout the app.
+     */
+    private suspend fun enrichFromSearchResult(manga: Manga, result: TrackSearch) {
+        try {
+            val description = result.summary.takeIf {
+                it.isNotBlank() && manga.description.isNullOrBlank()
+            }
+            val author = result.authors.joinToString(", ").takeIf {
+                it.isNotBlank() && manga.author.isNullOrBlank()
+            }
+            val artist = result.artists.joinToString(", ").takeIf {
+                it.isNotBlank() && manga.artist.isNullOrBlank()
+            }
+            val thumbnailUrl = result.cover_url.takeIf {
+                it.isNotBlank() && manga.thumbnailUrl.isNullOrBlank()
+            }
+
+            // Only update if there's something new to add
+            if (description != null || author != null || artist != null || thumbnailUrl != null) {
+                mangaRepository.update(
+                    MangaUpdate(
+                        id = manga.id,
+                        description = description,
+                        author = author,
+                        artist = artist,
+                        thumbnailUrl = thumbnailUrl,
+                    ),
+                )
+                logcat(LogPriority.INFO) {
+                    "Enriched '${manga.title}' with authoritative metadata"
+                }
+            }
+
+            // Merge alternative titles from the search result
+            if (result.alternative_titles.isNotEmpty()) {
+                mergeAlternativeTitles(manga, result)
+            }
+        } catch (e: Exception) {
+            logcat(LogPriority.DEBUG, e) { "Failed to enrich metadata for '${manga.title}'" }
+        }
+    }
+
+    /**
+     * Merges alternative titles from a search result into the manga's existing list.
+     * Also adds the tracker's title as an alternative if it differs from the primary title.
+     */
+    private suspend fun mergeAlternativeTitles(manga: Manga, result: TrackSearch) {
+        val primary = manga.title
+        val existing = manga.alternativeTitles.toMutableList()
+        val previousSize = existing.size
+        val existingLower = existing.map { it.lowercase() }.toMutableSet()
+        val primaryLower = primary.lowercase()
+
+        // Add the tracker result title if different from primary
+        val resultTitle = result.title
+        if (resultTitle.isNotBlank() && resultTitle.lowercase() != primaryLower &&
+            existingLower.add(resultTitle.lowercase())
+        ) {
+            existing.add(resultTitle)
+        }
+
+        // Add all alternative titles from the result
+        for (title in result.alternative_titles) {
+            if (title.isBlank()) continue
+            val titleLower = title.lowercase()
+            if (titleLower == primaryLower) continue
+            if (!existingLower.add(titleLower)) continue
+            existing.add(title)
+        }
+
+        if (existing.size == previousSize) return
+        mangaRepository.update(
+            MangaUpdate(id = manga.id, alternativeTitles = existing),
+        )
+        logcat(LogPriority.INFO) {
+            "Added ${existing.size - previousSize} alt titles to '${manga.title}'"
         }
     }
 

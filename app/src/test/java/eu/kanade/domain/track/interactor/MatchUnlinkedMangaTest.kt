@@ -4,6 +4,7 @@ import eu.kanade.tachiyomi.data.track.Tracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.data.track.model.TrackSearch
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -70,10 +71,20 @@ class MatchUnlinkedMangaTest {
     private fun testTrackSearch(
         title: String,
         remoteId: Long,
+        summary: String = "",
+        authors: List<String> = emptyList(),
+        artists: List<String> = emptyList(),
+        coverUrl: String = "",
+        alternativeTitles: List<String> = emptyList(),
     ): TrackSearch {
         val ts = TrackSearch()
         ts.title = title
         ts.remote_id = remoteId
+        ts.summary = summary
+        ts.authors = authors
+        ts.artists = artists
+        ts.cover_url = coverUrl
+        ts.alternative_titles = alternativeTitles
         return ts
     }
 
@@ -364,5 +375,91 @@ class MatchUnlinkedMangaTest {
     @Test
     fun `normalizeTitle preserves unicode letters`() {
         MatchUnlinkedManga.normalizeTitle("進撃の巨人") shouldBe "進撃の巨人"
+    }
+
+    // ========== Metadata enrichment ==========
+
+    @Test
+    fun `enriches missing description from search result`() = runTest {
+        val manga = testManga(id = 1L, title = "One Piece", canonicalId = null)
+        coEvery { mangaRepository.getFavorites() } returns listOf(manga)
+        coEvery { getTracks.await(1L) } returns emptyList()
+        coEvery { muTracker.search("One Piece") } returns listOf(
+            testTrackSearch(
+                title = "One Piece",
+                remoteId = 100L,
+                summary = "A pirate adventure",
+                authors = listOf("Eiichiro Oda"),
+                artists = listOf("Eiichiro Oda"),
+                coverUrl = "https://example.com/cover.jpg",
+            ),
+        )
+        val updates = mutableListOf<MangaUpdate>()
+        coEvery { mangaRepository.update(capture(updates)) } returns true
+
+        matchUnlinkedManga.await()
+
+        // Should have canonical ID update and metadata enrichment update
+        updates.size shouldBe 2
+        updates[0].canonicalId shouldBe "mu:100"
+        updates[1].description shouldBe "A pirate adventure"
+        updates[1].author shouldBe "Eiichiro Oda"
+        updates[1].artist shouldBe "Eiichiro Oda"
+        updates[1].thumbnailUrl shouldBe "https://example.com/cover.jpg"
+    }
+
+    @Test
+    fun `does not overwrite existing metadata with authoritative data`() = runTest {
+        val manga = Manga.create().copy(
+            id = 1L,
+            title = "One Piece",
+            description = "My custom description",
+            author = "Custom Author",
+            artist = "Custom Artist",
+            thumbnailUrl = "https://existing.com/cover.jpg",
+            favorite = true,
+        )
+        coEvery { mangaRepository.getFavorites() } returns listOf(manga)
+        coEvery { getTracks.await(1L) } returns emptyList()
+        coEvery { muTracker.search("One Piece") } returns listOf(
+            testTrackSearch(
+                title = "One Piece",
+                remoteId = 100L,
+                summary = "Different description",
+                authors = listOf("Different Author"),
+                coverUrl = "https://different.com/cover.jpg",
+            ),
+        )
+        val updates = mutableListOf<MangaUpdate>()
+        coEvery { mangaRepository.update(capture(updates)) } returns true
+
+        matchUnlinkedManga.await()
+
+        // Should only have canonical ID update, no metadata overwrite
+        updates.size shouldBe 1
+        updates[0].canonicalId shouldBe "mu:100"
+    }
+
+    @Test
+    fun `merges alternative titles from search result`() = runTest {
+        val manga = testManga(id = 1L, title = "Attack on Titan")
+        coEvery { mangaRepository.getFavorites() } returns listOf(manga)
+        coEvery { getTracks.await(1L) } returns emptyList()
+        coEvery { muTracker.search("Attack on Titan") } returns listOf(
+            testTrackSearch(
+                title = "Attack on Titan",
+                remoteId = 200L,
+                alternativeTitles = listOf("Shingeki no Kyojin", "進撃の巨人"),
+            ),
+        )
+        val updates = mutableListOf<MangaUpdate>()
+        coEvery { mangaRepository.update(capture(updates)) } returns true
+
+        matchUnlinkedManga.await()
+
+        // Should have canonical ID update and alt titles update
+        val altTitlesUpdate = updates.find { it.alternativeTitles != null }
+        altTitlesUpdate shouldNotBe null
+        altTitlesUpdate!!.alternativeTitles shouldBe listOf("Shingeki no Kyojin", "進撃の巨人")
     }
 }

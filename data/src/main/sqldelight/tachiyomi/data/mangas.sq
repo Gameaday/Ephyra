@@ -155,14 +155,26 @@ track_dupes AS (
     AND S1.manga_id != S2.manga_id
     WHERE S1.manga_id = :id
 ),
+canonical_dupes AS (
+    SELECT M2._id AS manga_id
+    FROM mangas M1
+    INNER JOIN mangas M2
+    ON M1.canonical_id = M2.canonical_id
+    AND M1._id != M2._id
+    WHERE M1._id = :id
+    AND M1.canonical_id IS NOT NULL
+    AND M2.favorite = 1
+),
 duplicates AS (
     SELECT M.*
     FROM mangas M
     LEFT JOIN track_dupes D
     ON D.manga_id = _id
+    LEFT JOIN canonical_dupes CD
+    ON CD.manga_id = _id
     WHERE favorite = 1
     AND _id != :id
-    AND (lower(title) LIKE '%' || lower(:title) || '%' OR D.manga_id IS NOT NULL)
+    AND (lower(title) LIKE '%' || lower(:title) || '%' OR D.manga_id IS NOT NULL OR CD.manga_id IS NOT NULL)
 ),
 chapter_counts AS (
     SELECT

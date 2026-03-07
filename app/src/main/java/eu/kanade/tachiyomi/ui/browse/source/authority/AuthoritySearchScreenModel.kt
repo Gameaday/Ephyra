@@ -132,40 +132,62 @@ class AuthoritySearchScreenModel(
 
     /**
      * Merges a discover result with an existing unpaired library manga by assigning
-     * the canonical ID to the existing entry. Skips creating a separate authority manga.
+     * the canonical ID to the existing entry. Also enriches the manga with authoritative
+     * metadata (description, author, cover, alt titles) from the tracker result,
+     * only filling fields that are currently missing.
      */
     fun mergeWithExisting(candidate: MangaWithChapterCount) {
         val prompt = mutableState.value.mergePrompt ?: return
         screenModelScope.launch {
             try {
                 withIOContext {
+                    // Assign canonical ID and enrich missing metadata from the authoritative result
+                    val result = prompt.result
+                    val manga = candidate.manga
                     mangaRepository.update(
                         MangaUpdate(
-                            id = candidate.manga.id,
+                            id = manga.id,
                             canonicalId = prompt.canonicalId,
+                            description = result.summary.takeIf {
+                                it.isNotBlank() && manga.description.isNullOrBlank()
+                            },
+                            author = result.authors.joinToString(", ").takeIf {
+                                it.isNotBlank() && manga.author.isNullOrBlank()
+                            },
+                            artist = result.artists.joinToString(", ").takeIf {
+                                it.isNotBlank() && manga.artist.isNullOrBlank()
+                            },
+                            thumbnailUrl = result.cover_url.takeIf {
+                                it.isNotBlank() && manga.thumbnailUrl.isNullOrBlank()
+                            },
                         ),
                     )
                     logcat(LogPriority.INFO) {
-                        "Merged '${candidate.manga.title}' with canonical_id=${prompt.canonicalId}"
+                        "Merged '${manga.title}' with canonical_id=${prompt.canonicalId}"
+                    }
+
+                    // Merge alternative titles from the authoritative result
+                    if (result.alternative_titles.isNotEmpty() || result.title != manga.title) {
+                        mergeAlternativeTitles(manga, result)
                     }
 
                     // Bind the tracker if logged in
                     if (prompt.tracker.isLoggedIn) {
                         val track = Track(
                             id = 0L,
-                            mangaId = candidate.manga.id,
+                            mangaId = manga.id,
                             trackerId = prompt.tracker.id,
-                            remoteId = prompt.result.remote_id,
+                            remoteId = result.remote_id,
                             libraryId = null,
-                            title = prompt.result.title,
-                            lastChapterRead = prompt.result.last_chapter_read,
-                            totalChapters = prompt.result.total_chapters,
-                            status = prompt.result.status,
-                            score = prompt.result.score,
-                            remoteUrl = prompt.result.tracking_url,
-                            startDate = prompt.result.started_reading_date,
-                            finishDate = prompt.result.finished_reading_date,
-                            private = prompt.result.private,
+                            title = result.title,
+                            lastChapterRead = result.last_chapter_read,
+                            totalChapters = result.total_chapters,
+                            status = result.status,
+                            score = result.score,
+                            remoteUrl = result.tracking_url,
+                            startDate = result.started_reading_date,
+                            finishDate = result.finished_reading_date,
+                            private = result.private,
                         )
                         insertTrack.await(track)
                     }
@@ -288,6 +310,40 @@ class AuthoritySearchScreenModel(
     /** Dismiss the source prompt dialog. */
     fun dismissSourcePrompt() {
         mutableState.value = mutableState.value.copy(sourcePromptManga = null)
+    }
+
+    /**
+     * Merges alternative titles from a tracker result into the manga's existing list.
+     * Also adds the tracker's title as an alternative if it differs from the primary title.
+     */
+    private suspend fun mergeAlternativeTitles(manga: Manga, result: TrackSearch) {
+        val primary = manga.title
+        val existing = manga.alternativeTitles.toMutableList()
+        val previousSize = existing.size
+        val existingLower = existing.map { it.lowercase() }.toMutableSet()
+        val primaryLower = primary.lowercase()
+
+        // Add the tracker result title if different from primary
+        val resultTitle = result.title
+        if (resultTitle.isNotBlank() && resultTitle.lowercase() != primaryLower &&
+            existingLower.add(resultTitle.lowercase())
+        ) {
+            existing.add(resultTitle)
+        }
+
+        // Add all alternative titles from the result
+        for (title in result.alternative_titles) {
+            if (title.isBlank()) continue
+            val titleLower = title.lowercase()
+            if (titleLower == primaryLower) continue
+            if (!existingLower.add(titleLower)) continue
+            existing.add(title)
+        }
+
+        if (existing.size == previousSize) return
+        mangaRepository.update(
+            MangaUpdate(id = manga.id, alternativeTitles = existing),
+        )
     }
 }
 
