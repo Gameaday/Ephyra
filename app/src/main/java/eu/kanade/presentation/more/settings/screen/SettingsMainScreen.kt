@@ -124,7 +124,7 @@ object SettingsMainScreen : Screen() {
                 ) {
                     itemsIndexed(
                         items = items,
-                        key = { _, item -> item.titleRes },
+                        key = { _, item -> item.titleRes.resourceId },
                     ) { index, item ->
                         val selected = indexSelected == index
                         var modifier: Modifier = Modifier
