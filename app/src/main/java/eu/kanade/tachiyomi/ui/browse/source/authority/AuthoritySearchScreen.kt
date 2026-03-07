@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -58,6 +60,7 @@ import eu.kanade.presentation.components.TabContent
 import eu.kanade.tachiyomi.data.track.model.TrackSearch
 import eu.kanade.tachiyomi.ui.browse.source.globalsearch.GlobalSearchScreen
 import kotlinx.collections.immutable.persistentListOf
+import tachiyomi.domain.manga.model.MangaWithChapterCount
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.components.ScrollbarLazyColumn
 import tachiyomi.presentation.core.components.material.padding
@@ -104,6 +107,18 @@ fun Screen.discoverTab(): TabContent {
                         navigator.push(GlobalSearchScreen(sourcePrompt.title))
                     },
                     onDismiss = screenModel::dismissSourcePrompt,
+                )
+            }
+
+            // "Merge with existing?" prompt when library has unpaired matches
+            val mergePrompt = state.mergePrompt
+            if (mergePrompt != null) {
+                MergeWithExistingDialog(
+                    resultTitle = mergePrompt.result.title,
+                    candidates = mergePrompt.candidates,
+                    onMerge = screenModel::mergeWithExisting,
+                    onSkip = screenModel::skipMerge,
+                    onDismiss = screenModel::dismissMergePrompt,
                 )
             }
         },
@@ -321,6 +336,84 @@ private fun DiscoverResultCard(
             }
         }
     }
+}
+
+/**
+ * Dialog shown when the user adds a manga from Discover and existing unpaired library
+ * entries (without canonical IDs) match the title. The user can select one to merge
+ * the canonical ID into, or skip to create a separate authority entry.
+ */
+@Composable
+private fun MergeWithExistingDialog(
+    resultTitle: String,
+    candidates: List<MangaWithChapterCount>,
+    onMerge: (MangaWithChapterCount) -> Unit,
+    onSkip: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(MR.strings.discover_merge_title)) },
+        text = {
+            Column {
+                Text(
+                    text = stringResource(MR.strings.discover_merge_message, resultTitle),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(Modifier.height(MaterialTheme.padding.medium))
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
+                ) {
+                    items(candidates, key = { it.manga.id }) { candidate ->
+                        ElevatedCard(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onMerge(candidate) },
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(MaterialTheme.padding.medium),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.medium),
+                            ) {
+                                AsyncImage(
+                                    model = candidate.manga.thumbnailUrl,
+                                    contentDescription = candidate.manga.title,
+                                    modifier = Modifier
+                                        .size(40.dp, 56.dp)
+                                        .clip(RoundedCornerShape(4.dp)),
+                                    contentScale = ContentScale.Crop,
+                                )
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = candidate.manga.title,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                    Text(
+                                        text = stringResource(
+                                            MR.strings.discover_merge_chapters,
+                                            candidate.chapterCount,
+                                        ),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onSkip) {
+                Text(stringResource(MR.strings.discover_merge_skip))
+            }
+        },
+        dismissButton = {},
+    )
 }
 
 /**

@@ -23,6 +23,7 @@ import eu.kanade.domain.source.interactor.ToggleSource
 import eu.kanade.domain.source.interactor.ToggleSourcePin
 import eu.kanade.domain.track.interactor.AddTracks
 import eu.kanade.domain.track.interactor.LinkTrackedMangaToAuthority
+import eu.kanade.domain.track.interactor.MatchUnlinkedManga
 import eu.kanade.domain.track.interactor.RefreshTracks
 import eu.kanade.domain.track.interactor.SyncChapterProgressWithTrack
 import eu.kanade.domain.track.interactor.TrackChapter
@@ -163,6 +164,7 @@ class DomainModule : InjektModule {
         addFactory { SyncChapterProgressWithTrack(get(), get(), get()) }
         addFactory { TrackerListImporter(get(), get(), get(), get()) }
         addFactory { LinkTrackedMangaToAuthority(get(), get()) }
+        addFactory { MatchUnlinkedManga(get(), get()) }
 
         addSingletonFactory<ChapterRepository> { ChapterRepositoryImpl(get()) }
         addFactory { GetChapter(get()) }

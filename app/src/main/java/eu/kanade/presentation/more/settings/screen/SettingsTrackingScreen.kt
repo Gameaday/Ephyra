@@ -44,6 +44,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dev.icerock.moko.resources.StringResource
 import eu.kanade.domain.track.interactor.LinkTrackedMangaToAuthority
+import eu.kanade.domain.track.interactor.MatchUnlinkedManga
 import eu.kanade.domain.track.interactor.TrackerListImporter
 import eu.kanade.domain.track.model.AutoTrackState
 import eu.kanade.domain.track.service.TrackPreferences
@@ -98,6 +99,7 @@ object SettingsTrackingScreen : SearchableSettings {
         var dialog by remember { mutableStateOf<Any?>(null) }
         var importingFromMal by remember { mutableStateOf(false) }
         var linkingToAuthority by remember { mutableStateOf(false) }
+        var matchingUnlinked by remember { mutableStateOf(false) }
         dialog?.run {
             when (this) {
                 is LoginDialog -> {
@@ -295,6 +297,37 @@ object SettingsTrackingScreen : SearchableSettings {
                                             )
                                         } else {
                                             context.toast(MR.strings.tracker_link_none)
+                                        }
+                                    }
+                                }
+                            },
+                        ),
+                    )
+                    add(
+                        Preference.PreferenceItem.TextPreference(
+                            title = if (matchingUnlinked) {
+                                stringResource(MR.strings.tracker_match_all_running)
+                            } else {
+                                stringResource(MR.strings.tracker_match_all_action)
+                            },
+                            subtitle = stringResource(MR.strings.tracker_match_all_subtitle),
+                            enabled = !matchingUnlinked,
+                            onClick = {
+                                matchingUnlinked = true
+                                scope.launchIO {
+                                    val matcher = Injekt.get<MatchUnlinkedManga>()
+                                    val count = matcher.await()
+                                    withUIContext {
+                                        matchingUnlinked = false
+                                        if (count > 0) {
+                                            context.toast(
+                                                context.stringResource(
+                                                    MR.strings.tracker_match_all_success,
+                                                    count,
+                                                ),
+                                            )
+                                        } else {
+                                            context.toast(MR.strings.tracker_match_all_none)
                                         }
                                     }
                                 }
