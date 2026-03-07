@@ -111,6 +111,28 @@ class MatchUnlinkedNotifier(private val context: Context) {
     }
 
     /**
+     * Shows a failure notification when the job encounters an unexpected error.
+     */
+    fun showFailureNotification() {
+        cancelProgressNotification()
+
+        context.notify(
+            Notifications.ID_MATCH_COMPLETE,
+            context.notificationBuilder(Notifications.CHANNEL_MATCH_PROGRESS) {
+                setContentTitle(context.stringResource(MR.strings.tracker_match_all_complete_title))
+                setContentText(context.stringResource(MR.strings.tracker_match_all_failed))
+                setStyle(
+                    NotificationCompat.BigTextStyle()
+                        .bigText(context.stringResource(MR.strings.tracker_match_all_failed)),
+                )
+                setSmallIcon(R.drawable.ic_mihon)
+                setLargeIcon(notificationBitmap)
+                setAutoCancel(true)
+            }.build(),
+        )
+    }
+
+    /**
      * Dismisses the progress notification.
      */
     fun cancelProgressNotification() {

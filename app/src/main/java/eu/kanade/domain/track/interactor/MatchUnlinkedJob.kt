@@ -47,6 +47,7 @@ class MatchUnlinkedJob(private val context: Context, workerParams: WorkerParamet
             throw e // Re-throw so WorkManager handles cancellation properly
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e) { "MatchUnlinkedJob failed" }
+            notifier.showFailureNotification()
             Result.failure()
         } finally {
             context.cancelNotification(Notifications.ID_MATCH_PROGRESS)

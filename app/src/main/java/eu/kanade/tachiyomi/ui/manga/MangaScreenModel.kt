@@ -1237,9 +1237,11 @@ class MangaScreenModel(
                 if (result != null) {
                     // Refresh manga from DB so UI reflects the new canonical ID
                     // (e.g. hides the "Link to authority" toolbar button, shows updated metadata)
-                    val updatedManga = mangaRepository.getMangaById(mangaId)
-                    if (updatedManga != null) {
+                    try {
+                        val updatedManga = mangaRepository.getMangaById(mangaId)
                         updateSuccessState { it.copy(manga = updatedManga) }
+                    } catch (e: Exception) {
+                        logcat(LogPriority.DEBUG, e) { "Failed to refresh manga state after linking" }
                     }
                     withUIContext {
                         snackbarHostState.showSnackbar(
@@ -1263,9 +1265,12 @@ class MangaScreenModel(
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e) { "Failed to resolve canonical ID" }
                 withUIContext {
-                    snackbarHostState.showSnackbar(
-                        context.stringResource(MR.strings.manga_linked_no_match),
-                    )
+                    val message = if (e is java.io.IOException) {
+                        context.stringResource(MR.strings.manga_linked_error)
+                    } else {
+                        context.stringResource(MR.strings.manga_linked_no_match)
+                    }
+                    snackbarHostState.showSnackbar(message)
                 }
             }
         }

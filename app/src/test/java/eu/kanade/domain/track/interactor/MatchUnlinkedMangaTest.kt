@@ -699,4 +699,79 @@ class MatchUnlinkedMangaTest {
         // Should not match since remote_id <= 0
         result.matched shouldBe 0
     }
+
+    // ========== awaitSingle ==========
+
+    @Test
+    fun `awaitSingle returns canonical ID from tracker binding`() = runTest {
+        val manga = testManga(id = 1L, title = "One Piece")
+        coEvery { getTracks.await(1L) } returns listOf(
+            testTrack(mangaId = 1L, trackerId = 7L, remoteId = 42L),
+        )
+        coEvery { mangaRepository.update(any<MangaUpdate>()) } returns true
+
+        val result = matchUnlinkedManga.awaitSingle(manga)
+
+        result shouldBe "mu:42"
+    }
+
+    @Test
+    fun `awaitSingle returns canonical ID from search`() = runTest {
+        val manga = testManga(id = 1L, title = "Naruto")
+        coEvery { getTracks.await(1L) } returns emptyList()
+        coEvery { muTracker.search("Naruto") } returns listOf(
+            testTrackSearch(title = "Naruto", remoteId = 100L),
+        )
+        coEvery { mangaRepository.update(any<MangaUpdate>()) } returns true
+
+        val result = matchUnlinkedManga.awaitSingle(manga)
+
+        result shouldBe "mu:100"
+    }
+
+    @Test
+    fun `awaitSingle returns null when already has canonical ID`() = runTest {
+        val manga = testManga(id = 1L, title = "One Piece", canonicalId = "mu:42")
+
+        val result = matchUnlinkedManga.awaitSingle(manga)
+
+        result shouldBe "mu:42"
+        // Should not attempt any updates
+        coVerify(exactly = 0) { mangaRepository.update(any<MangaUpdate>()) }
+    }
+
+    @Test
+    fun `awaitSingle returns null when no match found`() = runTest {
+        val manga = testManga(id = 1L, title = "Unknown Series")
+        coEvery { getTracks.await(1L) } returns emptyList()
+        coEvery { muTracker.search("Unknown Series") } returns emptyList()
+
+        val result = matchUnlinkedManga.awaitSingle(manga)
+
+        result shouldBe null
+    }
+
+    @Test
+    fun `awaitSingle enriches metadata from search result`() = runTest {
+        val manga = testManga(id = 1L, title = "Bleach")
+        coEvery { getTracks.await(1L) } returns emptyList()
+        coEvery { muTracker.search("Bleach") } returns listOf(
+            testTrackSearch(
+                title = "Bleach",
+                remoteId = 200L,
+                summary = "Soul reaper manga",
+                authors = listOf("Tite Kubo"),
+            ),
+        )
+        val updates = mutableListOf<MangaUpdate>()
+        coEvery { mangaRepository.update(capture(updates)) } returns true
+
+        matchUnlinkedManga.awaitSingle(manga)
+
+        // Should have canonical ID update + enrichment update
+        updates.size shouldBe 2
+        updates[0].canonicalId shouldBe "mu:200"
+        updates[1].description shouldBe "Soul reaper manga"
+        updates[1].author shouldBe "Tite Kubo"
+    }
 }

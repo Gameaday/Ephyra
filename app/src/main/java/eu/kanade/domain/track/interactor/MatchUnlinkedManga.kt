@@ -3,6 +3,7 @@ package eu.kanade.domain.track.interactor
 import eu.kanade.tachiyomi.data.track.Tracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.data.track.model.TrackSearch
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.yield
 import logcat.LogPriority
 import tachiyomi.core.common.util.lang.withIOContext
@@ -100,6 +101,9 @@ class MatchUnlinkedManga(
                 canonicalId = searchResult?.first
                 matchedResult = searchResult?.second
                 fromBinding = false
+                // Rate limit between API searches to avoid tracker throttling.
+                // Only delay after search calls, not after tracker-binding lookups.
+                delay(API_RATE_LIMIT_MS)
             }
 
             if (canonicalId != null) {
@@ -380,6 +384,14 @@ class MatchUnlinkedManga(
     companion object {
         private val PUNCT_REGEX = Regex("[^\\p{L}\\p{N}\\s]")
         private val MULTI_SPACE_REGEX = Regex("\\s+")
+
+        /**
+         * Delay between API search calls during bulk matching to avoid tracker throttling.
+         * Most tracker APIs have rate limits (e.g. AniList: 90/min, MU: unspecified).
+         * A 500ms delay keeps us well within limits while still being fast enough
+         * for large libraries (~120 manga/min).
+         */
+        private const val API_RATE_LIMIT_MS = 500L
 
         /**
          * Normalize a title for fuzzy comparison:

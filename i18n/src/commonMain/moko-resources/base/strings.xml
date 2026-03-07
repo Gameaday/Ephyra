@@ -1151,11 +1151,13 @@
     <string name="tracker_match_all_none">All library manga already have canonical IDs</string>
     <string name="tracker_match_all_no_matches">No new matches found — resolve remaining manually</string>
     <string name="tracker_match_all_no_matches_detail">No matches found for %d unlinked manga — try adding tracker bindings or resolve manually</string>
+    <string name="tracker_match_all_failed">Matching failed — check your connection and try again</string>
     <string name="channel_match_progress">Authority matching</string>
     <string name="action_resolve_canonical">Link to authority</string>
     <string name="manga_already_linked">This manga already has a canonical ID</string>
     <string name="manga_linked_success">Linked to %s — metadata enriched from authority</string>
     <string name="manga_linked_no_match">No canonical match found — try adding a tracker binding first</string>
+    <string name="manga_linked_error">Failed to search — check your connection and try again</string>
     <string name="no_tracker_for_linking">No tracker available for search — log in to MAL, AniList, or MangaUpdates in Settings › Tracking</string>
     <string name="label_content_sources">Sources</string>
 

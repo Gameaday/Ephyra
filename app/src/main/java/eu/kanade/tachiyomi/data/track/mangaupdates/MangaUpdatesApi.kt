@@ -165,7 +165,6 @@ class MangaUpdatesApi(
                 "filter_types",
                 buildJsonArray {
                     add("drama cd")
-                    add("novel")
                 },
             )
         }
