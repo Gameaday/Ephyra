@@ -91,6 +91,7 @@ import tachiyomi.i18n.MR
 import tachiyomi.source.local.isLocal
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
+import java.io.IOException
 import kotlin.math.floor
 
 class MangaScreenModel(
@@ -1265,7 +1266,7 @@ class MangaScreenModel(
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e) { "Failed to resolve canonical ID" }
                 withUIContext {
-                    val message = if (e is java.io.IOException) {
+                    val message = if (e is IOException) {
                         context.stringResource(MR.strings.manga_linked_error)
                     } else {
                         context.stringResource(MR.strings.manga_linked_no_match)

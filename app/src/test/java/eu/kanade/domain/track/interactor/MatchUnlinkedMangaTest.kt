@@ -730,7 +730,7 @@ class MatchUnlinkedMangaTest {
     }
 
     @Test
-    fun `awaitSingle returns null when already has canonical ID`() = runTest {
+    fun `awaitSingle returns existing canonical ID without update when already linked`() = runTest {
         val manga = testManga(id = 1L, title = "One Piece", canonicalId = "mu:42")
 
         val result = matchUnlinkedManga.awaitSingle(manga)
