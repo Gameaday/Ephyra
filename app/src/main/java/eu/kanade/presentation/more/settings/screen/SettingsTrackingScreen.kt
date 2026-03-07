@@ -310,13 +310,14 @@ object SettingsTrackingScreen : SearchableSettings {
                                     withUIContext {
                                         resolvingUnlinked = false
                                         val totalResolved = result.linked + result.matched
+                                        val unmatched = result.total - totalResolved
                                         resolveResultText = if (totalResolved > 0) {
                                             context.stringResource(
                                                 MR.strings.tracker_match_all_result_detail,
                                                 totalResolved,
                                                 result.linked,
                                                 result.matched,
-                                                result.total - totalResolved,
+                                                unmatched,
                                             )
                                         } else if (result.total == 0) {
                                             context.stringResource(MR.strings.tracker_match_all_none)
