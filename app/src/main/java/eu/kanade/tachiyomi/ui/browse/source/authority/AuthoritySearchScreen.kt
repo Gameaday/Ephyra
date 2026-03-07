@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -24,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -33,6 +36,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -48,11 +52,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import coil3.compose.AsyncImage
 import eu.kanade.domain.track.interactor.AddTracks
 import eu.kanade.presentation.components.TabContent
 import eu.kanade.tachiyomi.data.track.model.TrackSearch
+import eu.kanade.tachiyomi.ui.browse.source.globalsearch.GlobalSearchScreen
 import kotlinx.collections.immutable.persistentListOf
+import tachiyomi.domain.manga.model.MangaWithChapterCount
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.components.ScrollbarLazyColumn
 import tachiyomi.presentation.core.components.material.padding
@@ -72,6 +80,7 @@ import tachiyomi.presentation.core.theme.MotionTokens
  */
 @Composable
 fun Screen.discoverTab(): TabContent {
+    val navigator = LocalNavigator.currentOrThrow
     val screenModel = rememberScreenModel { AuthoritySearchScreenModel() }
     val state by screenModel.state.collectAsState()
 
@@ -87,6 +96,31 @@ fun Screen.discoverTab(): TabContent {
                 onAddToLibrary = screenModel::addToLibrary,
                 contentPadding = contentPadding,
             )
+
+            // "Find content source?" prompt shown after adding an authority manga
+            val sourcePrompt = state.sourcePromptManga
+            if (sourcePrompt != null) {
+                FindSourceDialog(
+                    mangaTitle = sourcePrompt.title,
+                    onFindSource = {
+                        screenModel.dismissSourcePrompt()
+                        navigator.push(GlobalSearchScreen(sourcePrompt.title))
+                    },
+                    onDismiss = screenModel::dismissSourcePrompt,
+                )
+            }
+
+            // "Merge with existing?" prompt when library has unpaired matches
+            val mergePrompt = state.mergePrompt
+            if (mergePrompt != null) {
+                MergeWithExistingDialog(
+                    resultTitle = mergePrompt.result.title,
+                    candidates = mergePrompt.candidates,
+                    onMerge = screenModel::mergeWithExisting,
+                    onSkip = screenModel::skipMerge,
+                    onDismiss = screenModel::dismissMergePrompt,
+                )
+            }
         },
     )
 }
@@ -302,6 +336,113 @@ private fun DiscoverResultCard(
             }
         }
     }
+}
+
+/**
+ * Dialog shown when the user adds a manga from Discover and existing unpaired library
+ * entries (without canonical IDs) match the title. The user can select one to merge
+ * the canonical ID into, or skip to create a separate authority entry.
+ */
+@Composable
+private fun MergeWithExistingDialog(
+    resultTitle: String,
+    candidates: List<MangaWithChapterCount>,
+    onMerge: (MangaWithChapterCount) -> Unit,
+    onSkip: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(MR.strings.discover_merge_title)) },
+        text = {
+            Column {
+                Text(
+                    text = stringResource(MR.strings.discover_merge_message, resultTitle),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(Modifier.height(MaterialTheme.padding.medium))
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
+                ) {
+                    items(candidates, key = { it.manga.id }) { candidate ->
+                        ElevatedCard(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onMerge(candidate) },
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(MaterialTheme.padding.medium),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.medium),
+                            ) {
+                                AsyncImage(
+                                    model = candidate.manga.thumbnailUrl,
+                                    contentDescription = candidate.manga.title,
+                                    modifier = Modifier
+                                        .size(40.dp, 56.dp)
+                                        .clip(RoundedCornerShape(4.dp)),
+                                    contentScale = ContentScale.Crop,
+                                )
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = candidate.manga.title,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                    Text(
+                                        text = stringResource(
+                                            MR.strings.discover_merge_chapters,
+                                            candidate.chapterCount,
+                                        ),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onSkip) {
+                Text(stringResource(MR.strings.discover_merge_skip))
+            }
+        },
+    )
+}
+
+/**
+ * Dialog prompting the user to find a content source after adding an authority manga.
+ * This bridges the authority-first model with source pairing: manga exist by their
+ * canonical identity first, and a content source is an optional addition on top.
+ */
+@Composable
+private fun FindSourceDialog(
+    mangaTitle: String,
+    onFindSource: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(MR.strings.discover_find_source_title)) },
+        text = {
+            Text(stringResource(MR.strings.discover_find_source_message, mangaTitle))
+        },
+        confirmButton = {
+            TextButton(onClick = onFindSource) {
+                Text(stringResource(MR.strings.discover_find_source_action))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(MR.strings.discover_find_source_skip))
+            }
+        },
+    )
 }
 
 /** Display states for the animated content area — avoids Triple allocations. */

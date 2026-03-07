@@ -17,6 +17,7 @@ import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.chapter.interactor.GenerateAuthorityChapters
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaUpdate
+import tachiyomi.domain.manga.model.MangaWithChapterCount
 import tachiyomi.domain.manga.repository.MangaRepository
 import tachiyomi.domain.track.interactor.InsertTrack
 import tachiyomi.domain.track.model.Track
@@ -30,9 +31,16 @@ class AuthoritySearchScreenModel(
     private val generateAuthorityChapters: GenerateAuthorityChapters = Injekt.get(),
 ) : StateScreenModel<AuthoritySearchState>(AuthoritySearchState()) {
 
-    /** Logged-in trackers that support authority search (canonical ID assignment). */
+    /**
+     * Trackers available for authority search.
+     * Includes logged-in authoritative trackers AND trackers with public search APIs.
+     * This allows discovery to work without login for trackers like MangaUpdates.
+     */
     val availableTrackers: ImmutableList<Tracker> = trackerManager.trackers
-        .filter { it.isLoggedIn && AddTracks.TRACKER_CANONICAL_PREFIXES.containsKey(it.id) }
+        .filter {
+            AddTracks.TRACKER_CANONICAL_PREFIXES.containsKey(it.id) &&
+                (it.isLoggedIn || it.id in AddTracks.TRACKERS_WITH_PUBLIC_SEARCH)
+        }
         .toImmutableList()
 
     init {
@@ -74,7 +82,10 @@ class AuthoritySearchScreenModel(
     }
 
     /**
-     * Adds a search result to the library as an authority-only manga entry with tracker binding.
+     * Adds a search result to the library as an authority-only manga entry.
+     * Before creating a new entry, checks for existing library manga without a canonical ID
+     * that match by title. If found, prompts the user to merge instead.
+     * If the tracker is logged in, also creates a tracker binding.
      */
     fun addToLibrary(result: TrackSearch) {
         val tracker = mutableState.value.selectedTracker ?: return
@@ -94,74 +105,189 @@ class AuthoritySearchScreenModel(
                         return@withIOContext
                     }
 
-                    val existingByUrl = mangaRepository.getMangaByUrlAndSourceId(
-                        canonicalId,
-                        TrackerListImporter.AUTHORITY_SOURCE_ID,
-                    )
-
-                    val manga = if (existingByUrl != null) {
-                        existingByUrl
-                    } else {
-                        val newManga = Manga.create().copy(
-                            url = canonicalId,
-                            title = result.title,
-                            source = TrackerListImporter.AUTHORITY_SOURCE_ID,
-                            thumbnailUrl = result.cover_url.ifBlank { null },
-                            artist = result.artists.joinToString(", ").ifBlank { null },
-                            author = result.authors.joinToString(", ").ifBlank { null },
-                            description = result.summary.ifBlank { null },
-                            initialized = true,
+                    // Check for unpaired library manga (no canonical ID) that match by title.
+                    // If found, prompt the user to merge with existing content first.
+                    val unpairedMatches = mangaRepository.getDuplicateLibraryManga(-1L, result.title.lowercase())
+                        .filter { it.manga.canonicalId == null }
+                    if (unpairedMatches.isNotEmpty()) {
+                        mutableState.value = mutableState.value.copy(
+                            mergePrompt = MergePromptInfo(
+                                result = result,
+                                canonicalId = canonicalId,
+                                tracker = tracker,
+                                candidates = unpairedMatches.toImmutableList(),
+                            ),
                         )
-                        val inserted = mangaRepository.insertNetworkManga(listOf(newManga))
-                        inserted.firstOrNull() ?: return@withIOContext
+                        return@withIOContext
                     }
 
-                    // Mark as favourite
-                    mangaRepository.update(
-                        MangaUpdate(
-                            id = manga.id,
-                            favorite = true,
-                            dateAdded = System.currentTimeMillis(),
-                            canonicalId = canonicalId,
-                        ),
-                    )
-
-                    // Bind the tracker
-                    val track = Track(
-                        id = 0L,
-                        mangaId = manga.id,
-                        trackerId = tracker.id,
-                        remoteId = result.remote_id,
-                        libraryId = null,
-                        title = result.title,
-                        lastChapterRead = result.last_chapter_read,
-                        totalChapters = result.total_chapters,
-                        status = result.status,
-                        score = result.score,
-                        remoteUrl = result.tracking_url,
-                        startDate = result.started_reading_date,
-                        finishDate = result.finished_reading_date,
-                        private = result.private,
-                    )
-                    insertTrack.await(track)
-
-                    // Generate authority chapters so the user can mark progress
-                    if (result.total_chapters > 0) {
-                        generateAuthorityChapters.await(
-                            mangaId = manga.id,
-                            totalChapters = result.total_chapters.toInt(),
-                            lastChapterRead = result.last_chapter_read.toInt(),
-                        )
-                    }
-
-                    mutableState.value = mutableState.value.copy(
-                        addedCanonicalIds = mutableState.value.addedCanonicalIds + canonicalId,
-                    )
+                    // No existing matches — create new authority entry
+                    createAuthorityEntry(result, tracker, canonicalId)
                 }
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e) { "Failed to add authority manga: canonical_id=$canonicalId" }
             }
         }
+    }
+
+    /**
+     * Merges a discover result with an existing unpaired library manga by assigning
+     * the canonical ID to the existing entry. Skips creating a separate authority manga.
+     */
+    fun mergeWithExisting(candidate: MangaWithChapterCount) {
+        val prompt = mutableState.value.mergePrompt ?: return
+        screenModelScope.launch {
+            try {
+                withIOContext {
+                    mangaRepository.update(
+                        MangaUpdate(
+                            id = candidate.manga.id,
+                            canonicalId = prompt.canonicalId,
+                        ),
+                    )
+                    logcat(LogPriority.INFO) {
+                        "Merged '${candidate.manga.title}' with canonical_id=${prompt.canonicalId}"
+                    }
+
+                    // Bind the tracker if logged in
+                    if (prompt.tracker.isLoggedIn) {
+                        val track = Track(
+                            id = 0L,
+                            mangaId = candidate.manga.id,
+                            trackerId = prompt.tracker.id,
+                            remoteId = prompt.result.remote_id,
+                            libraryId = null,
+                            title = prompt.result.title,
+                            lastChapterRead = prompt.result.last_chapter_read,
+                            totalChapters = prompt.result.total_chapters,
+                            status = prompt.result.status,
+                            score = prompt.result.score,
+                            remoteUrl = prompt.result.tracking_url,
+                            startDate = prompt.result.started_reading_date,
+                            finishDate = prompt.result.finished_reading_date,
+                            private = prompt.result.private,
+                        )
+                        insertTrack.await(track)
+                    }
+
+                    mutableState.value = mutableState.value.copy(
+                        addedCanonicalIds = mutableState.value.addedCanonicalIds + prompt.canonicalId,
+                        mergePrompt = null,
+                    )
+                }
+            } catch (e: Exception) {
+                logcat(LogPriority.ERROR, e) { "Failed to merge with existing manga" }
+                mutableState.value = mutableState.value.copy(mergePrompt = null)
+            }
+        }
+    }
+
+    /**
+     * User declined to merge — create a new authority entry instead and proceed
+     * to the find-source prompt.
+     */
+    fun skipMerge() {
+        val prompt = mutableState.value.mergePrompt ?: return
+        mutableState.value = mutableState.value.copy(mergePrompt = null)
+        screenModelScope.launch {
+            try {
+                withIOContext {
+                    createAuthorityEntry(prompt.result, prompt.tracker, prompt.canonicalId)
+                }
+            } catch (e: Exception) {
+                logcat(LogPriority.ERROR, e) { "Failed to create authority entry after skip merge" }
+            }
+        }
+    }
+
+    /** Dismiss the merge prompt without doing anything. */
+    fun dismissMergePrompt() {
+        mutableState.value = mutableState.value.copy(mergePrompt = null)
+    }
+
+    /**
+     * Creates the authority-only manga entry, optionally binds tracker, generates chapters,
+     * then triggers the source-pairing prompt.
+     */
+    private suspend fun createAuthorityEntry(
+        result: TrackSearch,
+        tracker: Tracker,
+        canonicalId: String,
+    ) {
+        val existingByUrl = mangaRepository.getMangaByUrlAndSourceId(
+            canonicalId,
+            TrackerListImporter.AUTHORITY_SOURCE_ID,
+        )
+
+        val manga = if (existingByUrl != null) {
+            existingByUrl
+        } else {
+            val newManga = Manga.create().copy(
+                url = canonicalId,
+                title = result.title,
+                source = TrackerListImporter.AUTHORITY_SOURCE_ID,
+                thumbnailUrl = result.cover_url.ifBlank { null },
+                artist = result.artists.joinToString(", ").ifBlank { null },
+                author = result.authors.joinToString(", ").ifBlank { null },
+                description = result.summary.ifBlank { null },
+                initialized = true,
+            )
+            val inserted = mangaRepository.insertNetworkManga(listOf(newManga))
+            inserted.firstOrNull() ?: return
+        }
+
+        // Mark as favourite
+        mangaRepository.update(
+            MangaUpdate(
+                id = manga.id,
+                favorite = true,
+                dateAdded = System.currentTimeMillis(),
+                canonicalId = canonicalId,
+            ),
+        )
+
+        // Bind the tracker only if user is logged in
+        if (tracker.isLoggedIn) {
+            val track = Track(
+                id = 0L,
+                mangaId = manga.id,
+                trackerId = tracker.id,
+                remoteId = result.remote_id,
+                libraryId = null,
+                title = result.title,
+                lastChapterRead = result.last_chapter_read,
+                totalChapters = result.total_chapters,
+                status = result.status,
+                score = result.score,
+                remoteUrl = result.tracking_url,
+                startDate = result.started_reading_date,
+                finishDate = result.finished_reading_date,
+                private = result.private,
+            )
+            insertTrack.await(track)
+        }
+
+        // Generate authority chapters so the user can mark progress
+        if (result.total_chapters > 0) {
+            generateAuthorityChapters.await(
+                mangaId = manga.id,
+                totalChapters = result.total_chapters.toInt(),
+                lastChapterRead = result.last_chapter_read.toInt(),
+            )
+        }
+
+        mutableState.value = mutableState.value.copy(
+            addedCanonicalIds = mutableState.value.addedCanonicalIds + canonicalId,
+            sourcePromptManga = SourcePromptInfo(
+                title = result.title,
+                mangaId = manga.id,
+            ),
+        )
+    }
+
+    /** Dismiss the source prompt dialog. */
+    fun dismissSourcePrompt() {
+        mutableState.value = mutableState.value.copy(sourcePromptManga = null)
     }
 }
 
@@ -172,4 +298,22 @@ data class AuthoritySearchState(
     val results: ImmutableList<TrackSearch> = persistentListOf(),
     /** Canonical IDs of manga already added to the library in this session. */
     val addedCanonicalIds: Set<String> = emptySet(),
+    /** Non-null when the user just added a manga and should be prompted to find a source. */
+    val sourcePromptManga: SourcePromptInfo? = null,
+    /** Non-null when unpaired library manga match the title — user should merge or skip. */
+    val mergePrompt: MergePromptInfo? = null,
+)
+
+/** Info for the "find content source?" prompt shown after adding authority manga. */
+data class SourcePromptInfo(
+    val title: String,
+    val mangaId: Long,
+)
+
+/** Info for the "merge with existing?" prompt shown when library has unpaired matches. */
+data class MergePromptInfo(
+    val result: TrackSearch,
+    val canonicalId: String,
+    val tracker: Tracker,
+    val candidates: ImmutableList<MangaWithChapterCount>,
 )
