@@ -11,6 +11,7 @@ import eu.kanade.tachiyomi.data.track.model.TrackSearch
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import tachiyomi.core.common.util.lang.withIOContext
@@ -34,6 +35,8 @@ class AuthoritySearchScreenModel(
     private val generateAuthorityChapters: GenerateAuthorityChapters = Injekt.get(),
     private val findContentSource: FindContentSource = Injekt.get(),
 ) : StateScreenModel<AuthoritySearchState>(AuthoritySearchState()) {
+
+    private var searchJob: Job? = null
 
     /**
      * All trackers available for authority search (regardless of content type).
@@ -103,13 +106,14 @@ class AuthoritySearchScreenModel(
 
     fun search(query: String) {
         val tracker = mutableState.value.selectedTracker ?: return
+        searchJob?.cancel()
         mutableState.value = mutableState.value.copy(
             query = query,
             isSearching = true,
             results = persistentListOf(),
             searchError = null,
         )
-        screenModelScope.launch {
+        searchJob = screenModelScope.launch {
             try {
                 val results = withIOContext { tracker.search(query) }
                 mutableState.value = mutableState.value.copy(

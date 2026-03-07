@@ -3,6 +3,7 @@ package eu.kanade.domain.track.interactor
 import eu.kanade.tachiyomi.data.track.Tracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.data.track.model.TrackSearch
+import kotlinx.coroutines.CancellationException
 import logcat.LogPriority
 import tachiyomi.core.common.util.lang.withIOContext
 import tachiyomi.core.common.util.system.logcat
@@ -53,6 +54,8 @@ class RefreshCanonicalMetadata(
         try {
             val result = findByRemoteId(tracker, manga.title, remoteId) ?: return@withIOContext false
             applyMetadataUpdate(manga, result)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logcat(LogPriority.WARN, e) { "Failed to refresh canonical metadata for '${manga.title}'" }
             false
