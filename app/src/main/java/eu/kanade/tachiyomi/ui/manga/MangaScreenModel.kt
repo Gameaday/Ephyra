@@ -314,6 +314,21 @@ class MangaScreenModel(
                 }
 
                 updateManga.awaitUpdateFromSource(manga, networkManga, manualFetch)
+
+                // On manual refresh, also refresh metadata from the canonical tracker source
+                // to capture updates (status changes, new cover art, description updates).
+                // This uses a separate API call from the content source refresh above.
+                if (manualFetch && manga.canonicalId != null) {
+                    try {
+                        val refreshCanonical: eu.kanade.domain.track.interactor.RefreshCanonicalMetadata =
+                            Injekt.get()
+                        refreshCanonical.await(manga)
+                    } catch (e: Exception) {
+                        logcat(LogPriority.DEBUG, e) {
+                            "Canonical metadata refresh failed for ${manga.title}"
+                        }
+                    }
+                }
             }
         } catch (e: Throwable) {
             // Ignore early hints "errors" that aren't handled by OkHttp
