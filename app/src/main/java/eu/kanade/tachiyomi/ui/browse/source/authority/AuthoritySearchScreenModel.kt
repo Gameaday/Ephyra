@@ -107,6 +107,7 @@ class AuthoritySearchScreenModel(
             query = query,
             isSearching = true,
             results = persistentListOf(),
+            searchError = null,
         )
         screenModelScope.launch {
             try {
@@ -120,6 +121,7 @@ class AuthoritySearchScreenModel(
                 mutableState.value = mutableState.value.copy(
                     isSearching = false,
                     results = persistentListOf(),
+                    searchError = e.message ?: "Search failed",
                 )
             }
         }
@@ -136,6 +138,11 @@ class AuthoritySearchScreenModel(
         val prefix = AddTracks.TRACKER_CANONICAL_PREFIXES[tracker.id] ?: return
         val canonicalId = "$prefix:${result.remote_id}"
 
+        // Track loading state for this specific result
+        mutableState.value = mutableState.value.copy(
+            addingCanonicalIds = mutableState.value.addingCanonicalIds + canonicalId,
+        )
+
         screenModelScope.launch {
             try {
                 withIOContext {
@@ -145,6 +152,7 @@ class AuthoritySearchScreenModel(
                         // Already in library — just mark as added in UI
                         mutableState.value = mutableState.value.copy(
                             addedCanonicalIds = mutableState.value.addedCanonicalIds + canonicalId,
+                            addingCanonicalIds = mutableState.value.addingCanonicalIds - canonicalId,
                         )
                         return@withIOContext
                     }
@@ -161,6 +169,7 @@ class AuthoritySearchScreenModel(
                                 tracker = tracker,
                                 candidates = unpairedMatches.toImmutableList(),
                             ),
+                            addingCanonicalIds = mutableState.value.addingCanonicalIds - canonicalId,
                         )
                         return@withIOContext
                     }
@@ -170,6 +179,11 @@ class AuthoritySearchScreenModel(
                 }
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e) { "Failed to add authority manga: canonical_id=$canonicalId" }
+            } finally {
+                // Ensure loading state is cleared even on error
+                mutableState.value = mutableState.value.copy(
+                    addingCanonicalIds = mutableState.value.addingCanonicalIds - canonicalId,
+                )
             }
         }
     }
@@ -404,6 +418,12 @@ class AuthoritySearchScreenModel(
         mutableState.value = mutableState.value.copy(selectedResult = null)
     }
 
+    /** Retry the last failed search. */
+    fun retrySearch() {
+        val query = mutableState.value.query
+        if (query.isNotBlank()) search(query)
+    }
+
     /**
      * Merges alternative titles from a tracker result into the manga's existing list.
      * Also adds the tracker's title as an alternative if it differs from the primary title.
@@ -429,6 +449,10 @@ data class AuthoritySearchState(
     val contentTypeFilter: ContentType = ContentType.UNKNOWN,
     /** Canonical IDs of manga already added to the library in this session. */
     val addedCanonicalIds: Set<String> = emptySet(),
+    /** Canonical IDs currently being added (for loading indicator on add button). */
+    val addingCanonicalIds: Set<String> = emptySet(),
+    /** Non-null when the last search resulted in an error (for retry UI). */
+    val searchError: String? = null,
     /** Non-null when the user just added a manga and should be prompted to find a source. */
     val sourcePromptManga: SourcePromptInfo? = null,
     /** Non-null when unpaired library manga match the title — user should merge or skip. */

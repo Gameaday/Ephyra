@@ -31,8 +31,10 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.SearchOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -106,6 +108,7 @@ fun Screen.discoverTab(): TabContent {
                 trackersForFilter = screenModel::trackersForFilter,
                 onSelectTracker = screenModel::selectTracker,
                 onSearch = screenModel::search,
+                onRetrySearch = screenModel::retrySearch,
                 onAddToLibrary = screenModel::addToLibrary,
                 onSelectResult = screenModel::selectResult,
                 onSetContentTypeFilter = screenModel::setContentTypeFilter,
@@ -174,6 +177,7 @@ private fun DiscoverContent(
     trackersForFilter: (ContentType) -> ImmutableList<eu.kanade.tachiyomi.data.track.Tracker>,
     onSelectTracker: (eu.kanade.tachiyomi.data.track.Tracker) -> Unit,
     onSearch: (String) -> Unit,
+    onRetrySearch: () -> Unit,
     onAddToLibrary: (TrackSearch) -> Unit,
     onSelectResult: (TrackSearch) -> Unit,
     onSetContentTypeFilter: (ContentType) -> Unit,
@@ -262,10 +266,22 @@ private fun DiscoverContent(
         ) {
             items(typeFilters.size) { index ->
                 val type = typeFilters[index]
+                val isSelected = state.contentTypeFilter == type
                 FilterChip(
-                    selected = state.contentTypeFilter == type,
+                    selected = isSelected,
                     onClick = { onSetContentTypeFilter(type) },
                     label = { Text(typeFilterLabels[type] ?: "") },
+                    leadingIcon = if (isSelected) {
+                        {
+                            Icon(
+                                imageVector = Icons.Outlined.Check,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
+                    } else {
+                        null
+                    },
                 )
             }
         }
@@ -284,10 +300,22 @@ private fun DiscoverContent(
             ) {
                 items(filteredTrackers.size) { index ->
                     val tracker = filteredTrackers[index]
+                    val isSelected = tracker == state.selectedTracker
                     FilterChip(
-                        selected = tracker == state.selectedTracker,
+                        selected = isSelected,
                         onClick = { onSelectTracker(tracker) },
                         label = { Text(tracker.name) },
+                        leadingIcon = if (isSelected) {
+                            {
+                                Icon(
+                                    imageVector = Icons.Outlined.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            }
+                        } else {
+                            null
+                        },
                     )
                 }
             }
@@ -323,6 +351,7 @@ private fun DiscoverContent(
         // Derive a stable display state to avoid unnecessary transitions
         val displayState = when {
             state.isSearching -> DiscoverDisplayState.LOADING
+            state.searchError != null -> DiscoverDisplayState.ERROR
             state.results.isEmpty() && state.query.isBlank() -> DiscoverDisplayState.LANDING
             displayResults.isEmpty() -> DiscoverDisplayState.NO_RESULTS
             else -> DiscoverDisplayState.RESULTS
@@ -340,6 +369,30 @@ private fun DiscoverContent(
                 DiscoverDisplayState.LOADING -> LoadingScreen()
                 DiscoverDisplayState.LANDING -> {
                     EmptyScreen(stringResource(MR.strings.discover_empty_state))
+                }
+                DiscoverDisplayState.ERROR -> {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.SearchOff,
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(Modifier.height(MaterialTheme.padding.medium))
+                        Text(
+                            text = stringResource(MR.strings.discover_search_error),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(Modifier.height(MaterialTheme.padding.medium))
+                        Button(onClick = onRetrySearch) {
+                            Text(stringResource(MR.strings.discover_retry))
+                        }
+                    }
                 }
                 DiscoverDisplayState.NO_RESULTS -> {
                     EmptyScreen(stringResource(MR.strings.no_results_found))
@@ -367,9 +420,12 @@ private fun DiscoverContent(
                             }
                             val isAdded = canonicalId != null &&
                                 canonicalId in state.addedCanonicalIds
+                            val isAdding = canonicalId != null &&
+                                canonicalId in state.addingCanonicalIds
                             DiscoverResultCard(
                                 result = result,
                                 isAdded = isAdded,
+                                isAdding = isAdding,
                                 onAdd = { onAddToLibrary(result) },
                                 onClick = { onSelectResult(result) },
                             )
@@ -385,6 +441,7 @@ private fun DiscoverContent(
 private fun DiscoverResultCard(
     result: TrackSearch,
     isAdded: Boolean,
+    isAdding: Boolean,
     onAdd: () -> Unit,
     onClick: () -> Unit,
 ) {
@@ -444,7 +501,7 @@ private fun DiscoverResultCard(
             Spacer(Modifier.width(MaterialTheme.padding.small))
             IconButton(
                 onClick = onAdd,
-                enabled = !isAdded,
+                enabled = !isAdded && !isAdding,
                 colors = if (isAdded) {
                     IconButtonDefaults.iconButtonColors(
                         disabledContentColor = MaterialTheme.colorScheme.primary,
@@ -453,20 +510,27 @@ private fun DiscoverResultCard(
                     IconButtonDefaults.filledTonalIconButtonColors()
                 },
             ) {
-                Icon(
-                    imageVector = if (isAdded) {
-                        Icons.Outlined.Check
-                    } else {
-                        Icons.Outlined.Add
-                    },
-                    contentDescription = stringResource(
-                        if (isAdded) {
-                            MR.strings.discover_added
+                if (isAdding) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Icon(
+                        imageVector = if (isAdded) {
+                            Icons.Outlined.Check
                         } else {
-                            MR.strings.discover_add
+                            Icons.Outlined.Add
                         },
-                    ),
-                )
+                        contentDescription = stringResource(
+                            if (isAdded) {
+                                MR.strings.discover_added
+                            } else {
+                                MR.strings.discover_add
+                            },
+                        ),
+                    )
+                }
             }
         }
     }
@@ -816,4 +880,4 @@ private fun FindSourceDialog(
 }
 
 /** Display states for the animated content area — avoids Triple allocations. */
-private enum class DiscoverDisplayState { LOADING, LANDING, NO_RESULTS, RESULTS }
+private enum class DiscoverDisplayState { LOADING, LANDING, NO_RESULTS, RESULTS, ERROR }
