@@ -1216,7 +1216,8 @@ class MangaScreenModel(
 
     /**
      * Resolves the canonical ID for this manga by checking tracker bindings and searching
-     * public tracker APIs. Shows a snackbar with the result.
+     * tracker APIs. Shows a snackbar with the result.
+     * If no trackers are available for search (Phase 2), guides the user to enable one.
      * This is the per-manga version of the bulk "Resolve all unlinked" operation.
      */
     fun resolveCanonicalId() {
@@ -1237,6 +1238,11 @@ class MangaScreenModel(
                     if (result != null) {
                         snackbarHostState.showSnackbar(
                             context.stringResource(MR.strings.manga_linked_success, result),
+                        )
+                    } else if (!matchUnlinkedManga.hasQueryableTracker()) {
+                        // No trackers available for search — guide user to settings
+                        snackbarHostState.showSnackbar(
+                            context.stringResource(MR.strings.no_tracker_for_linking),
                         )
                     } else {
                         snackbarHostState.showSnackbar(

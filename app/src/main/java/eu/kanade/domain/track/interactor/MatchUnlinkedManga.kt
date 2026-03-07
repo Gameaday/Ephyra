@@ -1,5 +1,6 @@
 package eu.kanade.domain.track.interactor
 
+import eu.kanade.tachiyomi.data.track.Tracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.data.track.model.TrackSearch
 import kotlinx.coroutines.yield
@@ -18,8 +19,10 @@ import tachiyomi.domain.track.interactor.GetTracks
  * Combines two resolution strategies, applied in priority order:
  * 1. **Tracker bindings** (fast, zero API calls): If the manga already has a tracker binding
  *    (MAL, AniList, MangaUpdates) but no canonical ID, derive the ID from the binding.
- * 2. **Public search** (slower, 1 API call per manga): Search a public tracker API by title.
+ * 2. **Search** (slower, 1 API call per manga): Search a queryable tracker API by title.
  *    Uses alternative titles and normalized comparison for better matching.
+ *    A tracker is queryable if it has a canonical prefix AND is either logged in or
+ *    supports public (unauthenticated) search.
  *
  * When a match is found via search, also enriches the manga with authoritative metadata:
  * alternative titles, description, author/artist, and cover URL (only fills missing fields).
@@ -58,9 +61,9 @@ class MatchUnlinkedManga(
         var linked = 0
         var matched = 0
 
-        // Resolve the public-search tracker once (may be null if none available)
-        val tracker = AddTracks.TRACKERS_WITH_PUBLIC_SEARCH
-            .firstNotNullOfOrNull { id -> trackerManager.get(id) }
+        // Resolve a queryable tracker: any tracker with a canonical prefix that is either
+        // logged in or supports unauthenticated public search.
+        val tracker = findQueryableTracker()
         val prefix = tracker?.let { AddTracks.TRACKER_CANONICAL_PREFIXES[it.id] }
 
         for ((index, manga) in unlinked.withIndex()) {
@@ -70,7 +73,7 @@ class MatchUnlinkedManga(
             var canonicalId = resolveFromTrackerBindings(manga)
             var fromBinding = canonicalId != null
 
-            // Phase 2: Fall back to public API search with improved matching
+            // Phase 2: Fall back to tracker API search with improved matching
             var matchedResult: TrackSearch? = null
             if (canonicalId == null && tracker != null && prefix != null) {
                 val searchResult = searchForMatch(manga, tracker, prefix)
@@ -122,10 +125,9 @@ class MatchUnlinkedManga(
         var canonicalId = resolveFromTrackerBindings(manga)
         var matchedResult: TrackSearch? = null
 
-        // Phase 2: Fall back to public API search
+        // Phase 2: Fall back to API search
         if (canonicalId == null) {
-            val tracker = AddTracks.TRACKERS_WITH_PUBLIC_SEARCH
-                .firstNotNullOfOrNull { id -> trackerManager.get(id) }
+            val tracker = findQueryableTracker()
             val prefix = tracker?.let { AddTracks.TRACKER_CANONICAL_PREFIXES[it.id] }
             if (tracker != null && prefix != null) {
                 val searchResult = searchForMatch(manga, tracker, prefix)
@@ -144,6 +146,32 @@ class MatchUnlinkedManga(
     }
 
     /**
+     * Checks whether at least one tracker is available for canonical ID resolution.
+     * A tracker is queryable if it has a canonical prefix AND is either logged in
+     * or supports unauthenticated public search.
+     * Use this to determine whether to show the "Link to authority" action.
+     */
+    fun hasQueryableTracker(): Boolean = findQueryableTracker() != null
+
+    /**
+     * Finds the best queryable tracker for search operations.
+     * Prefers public-search trackers (no login needed), then falls back to
+     * logged-in trackers that have canonical prefixes.
+     */
+    private fun findQueryableTracker(): Tracker? {
+        // First try public-search trackers (work without login)
+        val publicTracker = AddTracks.TRACKERS_WITH_PUBLIC_SEARCH
+            .firstNotNullOfOrNull { id -> trackerManager.get(id) }
+        if (publicTracker != null) return publicTracker
+
+        // Then try any logged-in tracker that has a canonical prefix
+        return AddTracks.TRACKER_CANONICAL_PREFIXES.keys
+            .firstNotNullOfOrNull { id ->
+                trackerManager.get(id)?.takeIf { it.isLoggedIn }
+            }
+    }
+
+    /**
      * Resolves the canonical ID from existing tracker bindings (zero API calls).
      * Returns the first authoritative canonical ID found, or null.
      */
@@ -158,7 +186,7 @@ class MatchUnlinkedManga(
     }
 
     /**
-     * Searches for a title match using the tracker's public search API.
+     * Searches for a title match using a tracker's search API.
      * Uses a tiered matching strategy:
      * 1. Exact (case-insensitive) match against primary title
      * 2. Exact (case-insensitive) match against alternative titles
@@ -168,7 +196,7 @@ class MatchUnlinkedManga(
      */
     private suspend fun searchForMatch(
         manga: Manga,
-        tracker: eu.kanade.tachiyomi.data.track.Tracker,
+        tracker: Tracker,
         prefix: String,
     ): Pair<String, TrackSearch>? {
         val allTitles = buildList {

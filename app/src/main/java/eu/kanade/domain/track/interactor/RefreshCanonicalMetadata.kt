@@ -1,5 +1,6 @@
 package eu.kanade.domain.track.interactor
 
+import eu.kanade.tachiyomi.data.track.Tracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.data.track.model.TrackSearch
 import logcat.LogPriority
@@ -62,7 +63,7 @@ class RefreshCanonicalMetadata(
      * This is more efficient than fetching all results — we only need the one matching our ID.
      */
     private suspend fun findByRemoteId(
-        tracker: eu.kanade.tachiyomi.data.track.Tracker,
+        tracker: Tracker,
         title: String,
         remoteId: Long,
     ): TrackSearch? {
