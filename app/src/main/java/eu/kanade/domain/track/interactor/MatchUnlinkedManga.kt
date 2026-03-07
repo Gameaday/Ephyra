@@ -82,10 +82,10 @@ class MatchUnlinkedManga(
         var linked = 0
         var matched = 0
 
-        // Resolve a queryable tracker: any tracker with a canonical prefix that is either
-        // logged in or supports unauthenticated public search.
-        val tracker = findQueryableTracker()
-        val prefix = tracker?.let { AddTracks.TRACKER_CANONICAL_PREFIXES[it.id] }
+        // Default tracker for manga with unknown content type.
+        // Content-type-specific trackers are resolved per-manga below.
+        val defaultTracker = findQueryableTracker()
+        val defaultPrefix = defaultTracker?.let { AddTracks.TRACKER_CANONICAL_PREFIXES[it.id] }
 
         for ((index, manga) in unlinked.withIndex()) {
             yield() // cooperative cancellation
@@ -94,16 +94,26 @@ class MatchUnlinkedManga(
             var canonicalId = resolveFromTrackerBindings(manga)
             var fromBinding = canonicalId != null
 
-            // Phase 2: Fall back to tracker API search with improved matching
+            // Phase 2: Fall back to tracker API search with improved matching.
+            // Select tracker based on manga's content type — only queries authorities
+            // for that type, saving API calls when content type is known.
             var matchedResult: TrackSearch? = null
-            if (canonicalId == null && tracker != null && prefix != null) {
-                val searchResult = searchForMatch(manga, tracker, prefix)
-                canonicalId = searchResult?.first
-                matchedResult = searchResult?.second
-                fromBinding = false
-                // Rate limit between API searches to avoid tracker throttling.
-                // Only delay after search calls, not after tracker-binding lookups.
-                delay(API_RATE_LIMIT_MS)
+            if (canonicalId == null) {
+                val tracker = if (manga.contentType != ContentType.UNKNOWN) {
+                    findQueryableTracker(manga.contentType)
+                } else {
+                    defaultTracker
+                }
+                val prefix = tracker?.let { AddTracks.TRACKER_CANONICAL_PREFIXES[it.id] }
+                if (tracker != null && prefix != null) {
+                    val searchResult = searchForMatch(manga, tracker, prefix)
+                    canonicalId = searchResult?.first
+                    matchedResult = searchResult?.second
+                    fromBinding = false
+                    // Rate limit between API searches to avoid tracker throttling.
+                    // Only delay after search calls, not after tracker-binding lookups.
+                    delay(API_RATE_LIMIT_MS)
+                }
             }
 
             if (canonicalId != null) {
@@ -151,7 +161,7 @@ class MatchUnlinkedManga(
 
         // Phase 2: Fall back to API search
         if (canonicalId == null) {
-            val tracker = findQueryableTracker()
+            val tracker = findQueryableTracker(manga.contentType)
             val prefix = tracker?.let { AddTracks.TRACKER_CANONICAL_PREFIXES[it.id] }
             if (tracker != null && prefix != null) {
                 val searchResult = searchForMatch(manga, tracker, prefix)
@@ -181,15 +191,23 @@ class MatchUnlinkedManga(
      * Finds the best queryable tracker for search operations.
      * Prefers public-search trackers (no login needed), then falls back to
      * logged-in trackers that have canonical prefixes.
+     *
+     * When a [contentType] is specified, only considers trackers that are
+     * authorities for that type — saving API calls by not querying services
+     * that don't cover the requested content type.
      */
-    private fun findQueryableTracker(): Tracker? {
-        // First try public-search trackers (work without login)
+    private fun findQueryableTracker(contentType: ContentType = ContentType.UNKNOWN): Tracker? {
+        val validTrackerIds = AddTracks.trackersForContentType(contentType)
+
+        // First try public-search trackers that support this content type
         val publicTracker = AddTracks.TRACKERS_WITH_PUBLIC_SEARCH
+            .filter { it in validTrackerIds }
             .firstNotNullOfOrNull { id -> trackerManager.get(id) }
         if (publicTracker != null) return publicTracker
 
-        // Then try any logged-in tracker that has a canonical prefix
-        return AddTracks.TRACKER_CANONICAL_PREFIXES.keys
+        // Then try any logged-in tracker with a canonical prefix that supports this type
+        return validTrackerIds
+            .filter { it in AddTracks.TRACKER_CANONICAL_PREFIXES }
             .firstNotNullOfOrNull { id ->
                 trackerManager.get(id)?.takeIf { it.isLoggedIn }
             }

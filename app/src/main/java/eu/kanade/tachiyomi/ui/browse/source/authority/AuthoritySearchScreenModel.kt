@@ -36,20 +36,32 @@ class AuthoritySearchScreenModel(
 ) : StateScreenModel<AuthoritySearchState>(AuthoritySearchState()) {
 
     /**
-     * Trackers available for authority search.
+     * All trackers available for authority search (regardless of content type).
      * Includes logged-in authoritative trackers AND trackers with public search APIs.
      * This allows discovery to work without login for trackers like MangaUpdates.
      */
-    val availableTrackers: ImmutableList<Tracker> = trackerManager.trackers
+    private val allTrackers: ImmutableList<Tracker> = trackerManager.trackers
         .filter {
             AddTracks.TRACKER_CANONICAL_PREFIXES.containsKey(it.id) &&
                 (it.isLoggedIn || it.id in AddTracks.TRACKERS_WITH_PUBLIC_SEARCH)
         }
         .toImmutableList()
 
+    /**
+     * Trackers filtered by the current content type selection.
+     * When "All" is selected, returns all available trackers.
+     * When a specific type is selected, returns only trackers that are authorities
+     * for that type — saving API calls by not querying irrelevant services.
+     */
+    fun trackersForFilter(contentType: ContentType): ImmutableList<Tracker> {
+        if (contentType == ContentType.UNKNOWN) return allTrackers
+        val validIds = AddTracks.trackersForContentType(contentType)
+        return allTrackers.filter { it.id in validIds }.toImmutableList()
+    }
+
     init {
-        if (availableTrackers.isNotEmpty()) {
-            mutableState.value = mutableState.value.copy(selectedTracker = availableTrackers.first())
+        if (allTrackers.isNotEmpty()) {
+            mutableState.value = mutableState.value.copy(selectedTracker = allTrackers.first())
         }
     }
 
@@ -58,16 +70,35 @@ class AuthoritySearchScreenModel(
             selectedTracker = tracker,
             results = persistentListOf(),
             query = "",
-            contentTypeFilter = ContentType.UNKNOWN,
         )
     }
 
     /**
-     * Sets the content type filter for Discover search results.
+     * Sets the content type filter, which controls:
+     * 1. Which trackers are shown as available (only authorities for that type)
+     * 2. Which search results are displayed (client-side filtering)
+     *
+     * When the filter changes, if the currently selected tracker doesn't support
+     * the new type, auto-selects the first tracker that does.
      * [ContentType.UNKNOWN] means "All types" (no filtering).
      */
     fun setContentTypeFilter(contentType: ContentType) {
-        mutableState.value = mutableState.value.copy(contentTypeFilter = contentType)
+        val filteredTrackers = trackersForFilter(contentType)
+        val currentTracker = mutableState.value.selectedTracker
+
+        // If current tracker doesn't support the new type, switch to first valid one
+        val newTracker = if (currentTracker != null && currentTracker in filteredTrackers) {
+            currentTracker
+        } else {
+            filteredTrackers.firstOrNull()
+        }
+
+        mutableState.value = mutableState.value.copy(
+            contentTypeFilter = contentType,
+            selectedTracker = newTracker,
+            // Clear results when switching type — old results may not be relevant
+            results = persistentListOf(),
+        )
     }
 
     fun search(query: String) {

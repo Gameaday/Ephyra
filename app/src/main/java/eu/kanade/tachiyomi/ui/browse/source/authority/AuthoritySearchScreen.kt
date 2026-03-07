@@ -67,6 +67,7 @@ import eu.kanade.presentation.components.AdaptiveSheet
 import eu.kanade.presentation.components.TabContent
 import eu.kanade.tachiyomi.data.track.model.TrackSearch
 import eu.kanade.tachiyomi.ui.browse.source.globalsearch.GlobalSearchScreen
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import tachiyomi.domain.manga.model.ContentType
 import tachiyomi.domain.manga.model.MangaWithChapterCount
@@ -99,7 +100,7 @@ fun Screen.discoverTab(): TabContent {
         content = { contentPadding, _ ->
             DiscoverContent(
                 state = state,
-                availableTrackers = screenModel.availableTrackers,
+                trackersForFilter = screenModel::trackersForFilter,
                 onSelectTracker = screenModel::selectTracker,
                 onSearch = screenModel::search,
                 onAddToLibrary = screenModel::addToLibrary,
@@ -167,7 +168,7 @@ fun Screen.discoverTab(): TabContent {
 @Composable
 private fun DiscoverContent(
     state: AuthoritySearchState,
-    availableTrackers: List<eu.kanade.tachiyomi.data.track.Tracker>,
+    trackersForFilter: (ContentType) -> ImmutableList<eu.kanade.tachiyomi.data.track.Tracker>,
     onSelectTracker: (eu.kanade.tachiyomi.data.track.Tracker) -> Unit,
     onSearch: (String) -> Unit,
     onAddToLibrary: (TrackSearch) -> Unit,
@@ -175,13 +176,18 @@ private fun DiscoverContent(
     onSetContentTypeFilter: (ContentType) -> Unit,
     contentPadding: PaddingValues,
 ) {
-    if (availableTrackers.isEmpty()) {
+    // All trackers = unfiltered list — use to check if any are available at all
+    val allTrackers = trackersForFilter(ContentType.UNKNOWN)
+    if (allTrackers.isEmpty()) {
         EmptyScreen(
             stringRes = MR.strings.discover_no_trackers,
             modifier = Modifier.padding(contentPadding),
         )
         return
     }
+
+    // Trackers filtered by the selected content type
+    val filteredTrackers = trackersForFilter(state.contentTypeFilter)
 
     var query by remember { mutableStateOf("") }
 
@@ -216,8 +222,35 @@ private fun DiscoverContent(
             keyboardActions = KeyboardActions(onSearch = { onSearch(query) }),
         )
 
-        // Tracker filter chips
-        if (availableTrackers.size > 1) {
+        // Content type filter chips — always visible, controls which trackers are shown.
+        // This organizes authorities by what they are an authority of, so only
+        // relevant trackers are queried — saving API calls as more authorities are added.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = MaterialTheme.padding.medium,
+                    vertical = MaterialTheme.padding.extraSmall,
+                ),
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
+        ) {
+            val typeFilters = listOf(
+                ContentType.UNKNOWN to stringResource(MR.strings.discover_filter_all),
+                ContentType.MANGA to stringResource(MR.strings.discover_filter_manga),
+                ContentType.NOVEL to stringResource(MR.strings.discover_filter_novel),
+            )
+            typeFilters.forEach { (type, label) ->
+                FilterChip(
+                    selected = state.contentTypeFilter == type,
+                    onClick = { onSetContentTypeFilter(type) },
+                    label = { Text(label) },
+                )
+            }
+        }
+
+        // Tracker filter chips — filtered by the selected content type.
+        // Only shown when multiple trackers match the current type.
+        if (filteredTrackers.size > 1) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -227,37 +260,11 @@ private fun DiscoverContent(
                     ),
                 horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
             ) {
-                availableTrackers.forEach { tracker ->
+                filteredTrackers.forEach { tracker ->
                     FilterChip(
                         selected = tracker == state.selectedTracker,
                         onClick = { onSelectTracker(tracker) },
                         label = { Text(tracker.name) },
-                    )
-                }
-            }
-        }
-
-        // Content type filter chips — shown when results exist
-        if (state.results.isNotEmpty()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        horizontal = MaterialTheme.padding.medium,
-                        vertical = MaterialTheme.padding.extraSmall,
-                    ),
-                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
-            ) {
-                val typeFilters = listOf(
-                    ContentType.UNKNOWN to stringResource(MR.strings.discover_filter_all),
-                    ContentType.MANGA to stringResource(MR.strings.discover_filter_manga),
-                    ContentType.NOVEL to stringResource(MR.strings.discover_filter_novel),
-                )
-                typeFilters.forEach { (type, label) ->
-                    FilterChip(
-                        selected = state.contentTypeFilter == type,
-                        onClick = { onSetContentTypeFilter(type) },
-                        label = { Text(label) },
                     )
                 }
             }
