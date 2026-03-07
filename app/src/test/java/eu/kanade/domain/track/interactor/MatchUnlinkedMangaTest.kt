@@ -818,7 +818,8 @@ class MatchUnlinkedMangaTest {
 
         // Tier 3 checks alt_titles with normalization, so "Re:Zero" normalized = "re zero"
         // But "Re Zero - Starting Life" normalized = "re zero starting life" ≠ "re zero"
-        // No match here because normalized comparison is exact, not substring
+        // No match here because normalized comparison is exact, not substring.
+        // Tier 4 substring also doesn't match because "re zero" (7 chars) < MIN_SUBSTRING_LENGTH (8).
         result.matched shouldBe 0
     }
 
