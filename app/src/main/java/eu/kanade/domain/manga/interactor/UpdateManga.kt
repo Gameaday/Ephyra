@@ -74,6 +74,11 @@ class UpdateManga(
                 }
             }
 
+        // Helper: when authority metadata exists, preserve non-blank fields from the
+        // canonical source instead of overwriting with potentially lower-quality source data.
+        fun preserveIfAuthority(existing: String?, remote: String?): String? =
+            if (hasAuthorityMetadata && !existing.isNullOrBlank()) null else remote
+
         val thumbnailUrl = if (hasAuthorityMetadata && !localManga.thumbnailUrl.isNullOrBlank()) {
             // Keep the existing authority cover
             null
@@ -86,23 +91,9 @@ class UpdateManga(
                 id = localManga.id,
                 title = title,
                 coverLastModified = coverLastModified,
-                // Preserve authority metadata fields when canonical ID is set.
-                // Only fill empty fields from the source — never overwrite authoritative data.
-                author = if (hasAuthorityMetadata && !localManga.author.isNullOrBlank()) {
-                    null
-                } else {
-                    remoteManga.author
-                },
-                artist = if (hasAuthorityMetadata && !localManga.artist.isNullOrBlank()) {
-                    null
-                } else {
-                    remoteManga.artist
-                },
-                description = if (hasAuthorityMetadata && !localManga.description.isNullOrBlank()) {
-                    null
-                } else {
-                    remoteManga.description
-                },
+                author = preserveIfAuthority(localManga.author, remoteManga.author),
+                artist = preserveIfAuthority(localManga.artist, remoteManga.artist),
+                description = preserveIfAuthority(localManga.description, remoteManga.description),
                 genre = remoteManga.getGenres(),
                 thumbnailUrl = thumbnailUrl,
                 status = remoteManga.status.toLong(),

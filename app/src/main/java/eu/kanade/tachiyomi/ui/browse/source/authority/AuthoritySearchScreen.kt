@@ -30,6 +30,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -453,7 +454,7 @@ private fun DiscoverDetailSheet(
             Spacer(Modifier.height(MaterialTheme.padding.medium))
 
             // Add to library button
-            androidx.compose.material3.Button(
+            Button(
                 onClick = onAdd,
                 enabled = !isAdded,
                 modifier = Modifier.fillMaxWidth(),
