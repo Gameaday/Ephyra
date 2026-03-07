@@ -1234,6 +1234,12 @@ class MangaScreenModel(
             try {
                 val matchUnlinkedManga: MatchUnlinkedManga = Injekt.get()
                 val result = matchUnlinkedManga.awaitSingle(manga)
+                if (result != null) {
+                    // Refresh manga from DB so UI reflects the new canonical ID
+                    // (e.g. hides the "Link to authority" toolbar button, shows updated metadata)
+                    val updatedManga = mangaRepository.getMangaById(mangaId)
+                    updateSuccessState { it.copy(manga = updatedManga) }
+                }
                 withUIContext {
                     if (result != null) {
                         snackbarHostState.showSnackbar(

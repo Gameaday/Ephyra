@@ -290,6 +290,82 @@ class MatchUnlinkedMangaTest {
     }
 
     @Test
+    fun `falls back to alt title search when primary title has no match`() = runTest {
+        val manga = testManga(
+            id = 1L,
+            title = "My Custom Title",
+            alternativeTitles = listOf("Official Japanese Title"),
+        )
+        coEvery { mangaRepository.getFavorites() } returns listOf(manga)
+        coEvery { getTracks.await(1L) } returns emptyList()
+        // Primary title search returns no matching results
+        coEvery { muTracker.search("My Custom Title") } returns emptyList()
+        // Alt title search finds the match
+        coEvery { muTracker.search("Official Japanese Title") } returns listOf(
+            testTrackSearch("Official Japanese Title", 700L),
+        )
+        val updateSlot = slot<MangaUpdate>()
+        coEvery { mangaRepository.update(capture(updateSlot)) } returns true
+
+        val result = matchUnlinkedManga.await()
+
+        result.matched shouldBe 1
+        updateSlot.captured.canonicalId shouldBe "mu:700"
+        // Should have searched both the primary title and the alt title
+        coVerify(exactly = 1) { muTracker.search("My Custom Title") }
+        coVerify(exactly = 1) { muTracker.search("Official Japanese Title") }
+    }
+
+    @Test
+    fun `does not search alt titles when primary title already matched`() = runTest {
+        val manga = testManga(
+            id = 1L,
+            title = "One Piece",
+            alternativeTitles = listOf("OP", "ワンピース"),
+        )
+        coEvery { mangaRepository.getFavorites() } returns listOf(manga)
+        coEvery { getTracks.await(1L) } returns emptyList()
+        coEvery { muTracker.search("One Piece") } returns listOf(
+            testTrackSearch("One Piece", 100L),
+        )
+        val updateSlot = slot<MangaUpdate>()
+        coEvery { mangaRepository.update(capture(updateSlot)) } returns true
+
+        val result = matchUnlinkedManga.await()
+
+        result.matched shouldBe 1
+        updateSlot.captured.canonicalId shouldBe "mu:100"
+        // Should NOT have searched alt titles since primary matched
+        coVerify(exactly = 1) { muTracker.search("One Piece") }
+        coVerify(exactly = 0) { muTracker.search("OP") }
+        coVerify(exactly = 0) { muTracker.search("ワンピース") }
+    }
+
+    @Test
+    fun `tries multiple alt titles until match found`() = runTest {
+        val manga = testManga(
+            id = 1L,
+            title = "My Title",
+            alternativeTitles = listOf("Alt 1", "Alt 2", "Real Title"),
+        )
+        coEvery { mangaRepository.getFavorites() } returns listOf(manga)
+        coEvery { getTracks.await(1L) } returns emptyList()
+        coEvery { muTracker.search("My Title") } returns emptyList()
+        coEvery { muTracker.search("Alt 1") } returns emptyList()
+        coEvery { muTracker.search("Alt 2") } returns emptyList()
+        coEvery { muTracker.search("Real Title") } returns listOf(
+            testTrackSearch("Real Title", 800L),
+        )
+        val updateSlot = slot<MangaUpdate>()
+        coEvery { mangaRepository.update(capture(updateSlot)) } returns true
+
+        val result = matchUnlinkedManga.await()
+
+        result.matched shouldBe 1
+        updateSlot.captured.canonicalId shouldBe "mu:800"
+    }
+
+    @Test
     fun `skips result with zero remoteId`() = runTest {
         val manga = testManga(id = 1L, title = "Test")
         coEvery { mangaRepository.getFavorites() } returns listOf(manga)

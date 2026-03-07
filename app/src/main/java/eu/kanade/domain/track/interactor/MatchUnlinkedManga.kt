@@ -189,9 +189,9 @@ class MatchUnlinkedManga(
     /**
      * Searches for a title match using a tracker's search API.
      * Uses a tiered matching strategy:
-     * 1. Exact (case-insensitive) match against primary title, preferring correct content type
-     * 2. Exact (case-insensitive) match against alternative titles
-     * 3. Normalized match (stripped punctuation/whitespace) against all titles
+     * 1. Search by primary title, then check for exact/normalized match against all known titles
+     * 2. If no match, search by each alternative title as a separate query
+     * 3. Prefer results matching the manga's content type when known
      *
      * Returns a pair of (canonical ID, matched TrackSearch result) or null.
      */
@@ -204,8 +204,35 @@ class MatchUnlinkedManga(
             add(manga.title)
             addAll(manga.alternativeTitles)
         }
+
+        // Phase 1: Search by primary title
+        val primaryMatch = searchAndMatch(manga.title, allTitles, manga.contentType, tracker, prefix)
+        if (primaryMatch != null) return primaryMatch
+
+        // Phase 2: Try each alternative title as a separate search query
+        for (altTitle in manga.alternativeTitles) {
+            if (altTitle.isBlank()) continue
+            yield() // cooperative cancellation between alt-title searches
+            val altMatch = searchAndMatch(altTitle, allTitles, manga.contentType, tracker, prefix)
+            if (altMatch != null) return altMatch
+        }
+
+        return null
+    }
+
+    /**
+     * Performs a single tracker search and attempts to match results against known titles.
+     * Returns a pair of (canonical ID, matched TrackSearch result) or null.
+     */
+    private suspend fun searchAndMatch(
+        query: String,
+        allTitles: List<String>,
+        contentType: ContentType,
+        tracker: Tracker,
+        prefix: String,
+    ): Pair<String, TrackSearch>? {
         return try {
-            val results = tracker.search(manga.title)
+            val results = tracker.search(query)
 
             // Tier 1: Exact case-insensitive match against any known title
             // Prefer results matching the manga's content type when known
@@ -213,14 +240,7 @@ class MatchUnlinkedManga(
                 result.remote_id > 0 &&
                     allTitles.any { title -> result.title.equals(title, ignoreCase = true) }
             }
-            val exactMatch = if (manga.contentType != ContentType.UNKNOWN && exactMatches.size > 1) {
-                // Prefer result whose publishing_type matches the manga's content type
-                exactMatches.firstOrNull { result ->
-                    ContentType.fromPublishingType(result.publishing_type) == manga.contentType
-                } ?: exactMatches.firstOrNull()
-            } else {
-                exactMatches.firstOrNull()
-            }
+            val exactMatch = pickBestByContentType(exactMatches, contentType)
             if (exactMatch != null) {
                 return "$prefix:${exactMatch.remote_id}" to exactMatch
             }
@@ -230,22 +250,33 @@ class MatchUnlinkedManga(
             val normalizedMatches = results.filter { result ->
                 result.remote_id > 0 && normalizeTitle(result.title) in normalizedTitles
             }
-            val normalizedMatch = if (manga.contentType != ContentType.UNKNOWN && normalizedMatches.size > 1) {
-                normalizedMatches.firstOrNull { result ->
-                    ContentType.fromPublishingType(result.publishing_type) == manga.contentType
-                } ?: normalizedMatches.firstOrNull()
-            } else {
-                normalizedMatches.firstOrNull()
-            }
+            val normalizedMatch = pickBestByContentType(normalizedMatches, contentType)
             if (normalizedMatch != null) {
                 "$prefix:${normalizedMatch.remote_id}" to normalizedMatch
             } else {
                 null
             }
         } catch (e: Exception) {
-            logcat(LogPriority.DEBUG, e) { "Search failed for '${manga.title}'" }
+            logcat(LogPriority.DEBUG, e) { "Search failed for '$query'" }
             null
         }
+    }
+
+    /**
+     * Picks the best result from a list of matches, preferring one whose publishing_type
+     * matches the manga's content type when known and multiple matches exist.
+     */
+    private fun pickBestByContentType(
+        matches: List<TrackSearch>,
+        contentType: ContentType,
+    ): TrackSearch? {
+        if (matches.isEmpty()) return null
+        if (contentType != ContentType.UNKNOWN && matches.size > 1) {
+            return matches.firstOrNull { result ->
+                ContentType.fromPublishingType(result.publishing_type) == contentType
+            } ?: matches.firstOrNull()
+        }
+        return matches.firstOrNull()
     }
 
     /**
