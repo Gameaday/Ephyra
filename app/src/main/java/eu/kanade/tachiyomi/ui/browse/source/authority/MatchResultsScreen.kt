@@ -130,7 +130,7 @@ private fun MatchResultsContent(
                 Column(modifier = Modifier.fillMaxWidth()) {
                     if (state.isRetryingAll) {
                         val progress = state.retryAllProgress
-                        if (progress != null) {
+                        if (progress != null && progress.second > 0) {
                             LinearProgressIndicator(
                                 progress = { progress.first.toFloat() / progress.second },
                                 modifier = Modifier
@@ -184,6 +184,7 @@ private fun MatchResultsContent(
                     manga = manga,
                     isMatching = manga.id in state.matchingIds,
                     hasFailed = manga.id in state.failedIds,
+                    isRetryEnabled = !state.isRetryingAll,
                     onRetry = { onRetrySingle(manga) },
                     onClick = { onOpenManga(manga) },
                 )
@@ -290,6 +291,7 @@ private fun UnlinkedMangaItem(
     manga: Manga,
     isMatching: Boolean,
     hasFailed: Boolean,
+    isRetryEnabled: Boolean,
     onRetry: () -> Unit,
     onClick: () -> Unit,
 ) {
@@ -351,11 +353,18 @@ private fun UnlinkedMangaItem(
                     strokeWidth = 2.dp,
                 )
             } else {
-                IconButton(onClick = onRetry) {
+                IconButton(
+                    onClick = onRetry,
+                    enabled = isRetryEnabled,
+                ) {
                     Icon(
                         imageVector = Icons.Outlined.Refresh,
                         contentDescription = stringResource(MR.strings.match_results_retry_single),
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = if (isRetryEnabled) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
                     )
                 }
             }

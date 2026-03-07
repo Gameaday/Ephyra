@@ -129,6 +129,7 @@ class MatchUnlinkedNotifier(private val context: Context) {
 
     /**
      * Shows a failure notification when the job encounters an unexpected error.
+     * Clicking opens the results screen so the user can retry individual items.
      */
     fun showFailureNotification() {
         cancelProgressNotification()
@@ -145,6 +146,7 @@ class MatchUnlinkedNotifier(private val context: Context) {
                 setSmallIcon(R.drawable.ic_mihon)
                 setLargeIcon(notificationBitmap)
                 setAutoCancel(true)
+                setContentIntent(resultsPendingIntent)
             }.build(),
         )
     }

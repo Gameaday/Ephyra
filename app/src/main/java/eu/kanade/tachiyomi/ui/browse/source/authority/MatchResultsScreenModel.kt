@@ -59,9 +59,11 @@ class MatchResultsScreenModel(
 
     /**
      * Retry matching a single unlinked manga.
+     * Disabled while bulk retry is in progress to avoid conflicting operations.
      */
     fun retrySingle(manga: Manga) {
         if (manga.id in mutableState.value.matchingIds) return
+        if (mutableState.value.isRetryingAll) return
         screenModelScope.launch {
             mutableState.value = mutableState.value.copy(
                 matchingIds = mutableState.value.matchingIds + manga.id,
@@ -110,6 +112,8 @@ class MatchResultsScreenModel(
                 mutableState.value = mutableState.value.copy(
                     isRetryingAll = false,
                     retryAllProgress = null,
+                    matchingIds = emptySet(),
+                    failedIds = emptySet(),
                 )
             }
         }
