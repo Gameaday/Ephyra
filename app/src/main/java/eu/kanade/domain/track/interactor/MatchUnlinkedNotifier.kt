@@ -11,8 +11,6 @@ import eu.kanade.tachiyomi.util.system.notificationBuilder
 import eu.kanade.tachiyomi.util.system.notify
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.i18n.MR
-import java.math.RoundingMode
-import java.text.NumberFormat
 
 /**
  * Manages notifications for the authority matching job.
@@ -21,11 +19,6 @@ import java.text.NumberFormat
  * and a completion notification with the result summary.
  */
 class MatchUnlinkedNotifier(private val context: Context) {
-
-    private val percentFormatter = NumberFormat.getPercentInstance().apply {
-        roundingMode = RoundingMode.DOWN
-        maximumFractionDigits = 0
-    }
 
     private val cancelIntent by lazy {
         NotificationReceiver.cancelMatchUnlinkedPendingBroadcast(context)
@@ -62,19 +55,17 @@ class MatchUnlinkedNotifier(private val context: Context) {
      * @param total total manga to process.
      */
     fun showProgressNotification(mangaTitle: String, current: Int, total: Int) {
-        val pct = if (total > 0) percentFormatter.format(current.toFloat() / total) else "0%"
         progressNotificationBuilder
             .setContentTitle(
                 context.stringResource(MR.strings.tracker_match_all_running_progress, current, total),
             )
             .setContentText(mangaTitle)
             .setStyle(NotificationCompat.BigTextStyle().bigText(mangaTitle))
+            .setProgress(total, current, false)
 
         context.notify(
             Notifications.ID_MATCH_PROGRESS,
-            progressNotificationBuilder
-                .setProgress(total, current, false)
-                .build(),
+            progressNotificationBuilder.build(),
         )
     }
 
