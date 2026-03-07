@@ -8,6 +8,7 @@ import tachiyomi.core.common.util.lang.withIOContext
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaUpdate
+import tachiyomi.domain.manga.model.mergedAlternativeTitles
 import tachiyomi.domain.manga.repository.MangaRepository
 import tachiyomi.domain.track.interactor.GetTracks
 
@@ -218,35 +219,16 @@ class MatchUnlinkedManga(
      * Also adds the tracker's title as an alternative if it differs from the primary title.
      */
     private suspend fun mergeAlternativeTitles(manga: Manga, result: TrackSearch) {
-        val primary = manga.title
-        val existing = manga.alternativeTitles.toMutableList()
-        val previousSize = existing.size
-        val existingLower = existing.map { it.lowercase() }.toMutableSet()
-        val primaryLower = primary.lowercase()
-
-        // Add the tracker result title if different from primary
-        val resultTitle = result.title
-        if (resultTitle.isNotBlank() && resultTitle.lowercase() != primaryLower &&
-            existingLower.add(resultTitle.lowercase())
-        ) {
-            existing.add(resultTitle)
+        val newTitles = buildList {
+            if (result.title.isNotBlank()) add(result.title)
+            addAll(result.alternative_titles)
         }
-
-        // Add all alternative titles from the result
-        for (title in result.alternative_titles) {
-            if (title.isBlank()) continue
-            val titleLower = title.lowercase()
-            if (titleLower == primaryLower) continue
-            if (!existingLower.add(titleLower)) continue
-            existing.add(title)
-        }
-
-        if (existing.size == previousSize) return
+        val merged = manga.mergedAlternativeTitles(newTitles) ?: return
         mangaRepository.update(
-            MangaUpdate(id = manga.id, alternativeTitles = existing),
+            MangaUpdate(id = manga.id, alternativeTitles = merged),
         )
         logcat(LogPriority.INFO) {
-            "Added ${existing.size - previousSize} alt titles to '${manga.title}'"
+            "Added ${merged.size - manga.alternativeTitles.size} alt titles to '${manga.title}'"
         }
     }
 

@@ -17,6 +17,7 @@ import tachiyomi.domain.chapter.interactor.GetChaptersByMangaId
 import tachiyomi.domain.history.interactor.GetHistory
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaUpdate
+import tachiyomi.domain.manga.model.mergedAlternativeTitles
 import tachiyomi.domain.manga.repository.MangaRepository
 import tachiyomi.domain.track.interactor.InsertTrack
 import uy.kohesive.injekt.Injekt
@@ -157,27 +158,13 @@ class AddTracks(
     internal suspend fun mergeAlternativeTitles(mangaId: Long, newTitles: List<String>) {
         try {
             val manga = mangaRepository.getMangaById(mangaId)
-            val primary = manga.title
-            val existing = manga.alternativeTitles.toMutableList()
-            val previousSize = existing.size
-
-            // Add new titles, excluding the primary title, blanks, and case-insensitive duplicates
-            val existingLower = existing.map { it.lowercase() }.toMutableSet()
-            val primaryLower = primary.lowercase()
-            for (title in newTitles) {
-                if (title.isBlank()) continue
-                val titleLower = title.lowercase()
-                if (titleLower == primaryLower) continue
-                if (!existingLower.add(titleLower)) continue
-                existing.add(title)
-            }
-            if (existing.size == previousSize) return // No new titles to add
+            val merged = manga.mergedAlternativeTitles(newTitles) ?: return
 
             mangaRepository.update(
-                MangaUpdate(id = mangaId, alternativeTitles = existing),
+                MangaUpdate(id = mangaId, alternativeTitles = merged),
             )
             logcat(LogPriority.INFO) {
-                "Updated alternative_titles for ${manga.title}: +${existing.size - previousSize} titles"
+                "Updated alternative_titles for ${manga.title}: +${merged.size - manga.alternativeTitles.size} titles"
             }
         } catch (e: Exception) {
             logcat(LogPriority.WARN, e) { "Failed to update alternative_titles for manga $mangaId" }
