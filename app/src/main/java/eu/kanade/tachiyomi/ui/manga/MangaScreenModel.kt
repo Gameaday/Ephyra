@@ -1231,6 +1231,11 @@ class MangaScreenModel(
                 }
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e) { "Failed to resolve canonical ID" }
+                withUIContext {
+                    snackbarHostState.showSnackbar(
+                        context.stringResource(MR.strings.manga_linked_no_match),
+                    )
+                }
             }
         }
     }

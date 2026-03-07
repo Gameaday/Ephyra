@@ -66,12 +66,12 @@ class FindContentSource(
         onProgress: (suspend (searched: Int, total: Int) -> Unit)? = null,
     ): List<SourceMatch> = withIOContext {
         val catalogueSources = sourceManager.getCatalogueSources()
-            .filter { it.id != manga.source } // Don't search the source we already have
+            .filter { it.id > 0 && it.id != manga.source } // Skip invalid IDs and current source
         if (catalogueSources.isEmpty()) return@withIOContext emptyList()
 
         val total = catalogueSources.size
         val semaphore = Semaphore(MAX_CONCURRENT_SEARCHES)
-        var searched = 0
+        val searchedCount = java.util.concurrent.atomic.AtomicInteger(0)
 
         val results = supervisorScope {
             catalogueSources.map { source ->
@@ -85,8 +85,8 @@ class FindContentSource(
                             }
                             null
                         } finally {
-                            searched++
-                            onProgress?.invoke(searched, total)
+                            val current = searchedCount.incrementAndGet()
+                            onProgress?.invoke(current, total)
                         }
                     }
                 }
