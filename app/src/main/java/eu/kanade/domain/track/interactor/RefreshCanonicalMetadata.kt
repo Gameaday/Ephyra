@@ -60,14 +60,25 @@ class RefreshCanonicalMetadata(
     }
 
     /**
-     * Searches the tracker by title and returns the result matching the given remote ID.
-     * This is more efficient than fetching all results — we only need the one matching our ID.
+     * Looks up the tracker result for a given remote ID.
+     * First tries direct ID lookup via the tracker's search("id:...") protocol (0 API search calls).
+     * Falls back to searching by title and filtering by remote ID if direct lookup fails.
      */
     private suspend fun findByRemoteId(
         tracker: Tracker,
         title: String,
         remoteId: Long,
     ): TrackSearch? {
+        // Try direct ID lookup first (supported by MAL, AniList, MangaUpdates)
+        try {
+            val directResults = tracker.search("id:$remoteId")
+            val directMatch = directResults.firstOrNull { it.remote_id == remoteId }
+            if (directMatch != null) return directMatch
+        } catch (e: Exception) {
+            logcat(LogPriority.DEBUG, e) { "Direct ID lookup failed for $remoteId, falling back to title search" }
+        }
+
+        // Fall back to title-based search + filter by remote ID
         val results = tracker.search(title)
         return results.firstOrNull { it.remote_id == remoteId }
     }

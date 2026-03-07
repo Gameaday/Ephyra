@@ -100,6 +100,7 @@ object SettingsTrackingScreen : SearchableSettings {
         var resolvingUnlinked by remember { mutableStateOf(false) }
         var resolveProgress by remember { mutableStateOf(0) }
         var resolveTotal by remember { mutableStateOf(0) }
+        var resolveResultText by remember { mutableStateOf<String?>(null) }
         dialog?.run {
             when (this) {
                 is LoginDialog -> {
@@ -285,12 +286,19 @@ object SettingsTrackingScreen : SearchableSettings {
                             } else {
                                 stringResource(MR.strings.tracker_match_all_action)
                             },
-                            subtitle = stringResource(MR.strings.tracker_match_all_subtitle),
+                            subtitle = if (resolvingUnlinked) {
+                                stringResource(MR.strings.tracker_match_all_running_subtitle)
+                            } else if (resolveResultText != null) {
+                                resolveResultText
+                            } else {
+                                stringResource(MR.strings.tracker_match_all_subtitle)
+                            },
                             enabled = !resolvingUnlinked,
                             onClick = {
                                 resolvingUnlinked = true
                                 resolveProgress = 0
                                 resolveTotal = 0
+                                resolveResultText = null
                                 scope.launchIO {
                                     val matcher = Injekt.get<MatchUnlinkedManga>()
                                     val result = matcher.await { current, total ->
@@ -302,17 +310,21 @@ object SettingsTrackingScreen : SearchableSettings {
                                     withUIContext {
                                         resolvingUnlinked = false
                                         val totalResolved = result.linked + result.matched
-                                        if (totalResolved > 0) {
-                                            context.toast(
-                                                context.stringResource(
-                                                    MR.strings.tracker_match_all_success,
-                                                    totalResolved,
-                                                ),
+                                        resolveResultText = if (totalResolved > 0) {
+                                            context.stringResource(
+                                                MR.strings.tracker_match_all_result_detail,
+                                                totalResolved,
+                                                result.linked,
+                                                result.matched,
+                                                result.total - totalResolved,
                                             )
                                         } else if (result.total == 0) {
-                                            context.toast(MR.strings.tracker_match_all_none)
+                                            context.stringResource(MR.strings.tracker_match_all_none)
                                         } else {
-                                            context.toast(MR.strings.tracker_match_all_no_matches)
+                                            context.stringResource(
+                                                MR.strings.tracker_match_all_no_matches_detail,
+                                                result.total,
+                                            )
                                         }
                                     }
                                 }

@@ -146,6 +146,18 @@ class MangaUpdatesApi(
         }
     }
 
+    suspend fun getSeriesById(seriesId: Long): MURecord? {
+        return try {
+            with(json) {
+                client.newCall(GET("$BASE_URL/v1/series/$seriesId"))
+                    .awaitSuccess()
+                    .parseAs<MURecord>()
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     suspend fun search(query: String): List<MURecord> {
         val body = buildJsonObject {
             put("search", query)

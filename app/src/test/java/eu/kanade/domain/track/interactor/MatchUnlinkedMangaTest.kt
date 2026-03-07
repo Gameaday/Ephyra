@@ -15,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
+import tachiyomi.domain.manga.model.ContentType
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaUpdate
 import tachiyomi.domain.manga.repository.MangaRepository
@@ -39,11 +40,13 @@ class MatchUnlinkedMangaTest {
         title: String = "Test Manga",
         canonicalId: String? = null,
         alternativeTitles: List<String> = emptyList(),
+        contentType: ContentType = ContentType.UNKNOWN,
     ) = Manga.create().copy(
         id = id,
         title = title,
         canonicalId = canonicalId,
         alternativeTitles = alternativeTitles,
+        contentType = contentType,
         favorite = true,
     )
 
@@ -76,6 +79,7 @@ class MatchUnlinkedMangaTest {
         artists: List<String> = emptyList(),
         coverUrl: String = "",
         alternativeTitles: List<String> = emptyList(),
+        publishingType: String = "",
     ): TrackSearch {
         val ts = TrackSearch()
         ts.title = title
@@ -85,6 +89,7 @@ class MatchUnlinkedMangaTest {
         ts.artists = artists
         ts.cover_url = coverUrl
         ts.alternative_titles = alternativeTitles
+        ts.publishing_type = publishingType
         return ts
     }
 
@@ -461,5 +466,98 @@ class MatchUnlinkedMangaTest {
         val altTitlesUpdate = updates.find { it.alternativeTitles != null }
         altTitlesUpdate shouldNotBe null
         altTitlesUpdate!!.alternativeTitles shouldBe listOf("Shingeki no Kyojin", "進撃の巨人")
+    }
+
+    // ========== Content type filtering ==========
+
+    @Test
+    fun `prefers exact match with correct content type`() = runTest {
+        val manga = testManga(
+            id = 1L,
+            title = "Solo Leveling",
+            contentType = ContentType.MANGA,
+        )
+        coEvery { mangaRepository.getFavorites() } returns listOf(manga)
+        coEvery { getTracks.await(1L) } returns emptyList()
+        // Return two results with same title but different types
+        coEvery { muTracker.search("Solo Leveling") } returns listOf(
+            testTrackSearch(
+                title = "Solo Leveling",
+                remoteId = 200L,
+                publishingType = "Novel",
+            ),
+            testTrackSearch(
+                title = "Solo Leveling",
+                remoteId = 300L,
+                publishingType = "Manhwa",
+            ),
+        )
+        val updates = mutableListOf<MangaUpdate>()
+        coEvery { mangaRepository.update(capture(updates)) } returns true
+
+        matchUnlinkedManga.await()
+
+        // Should pick the manga-typed result (300), not the novel (200)
+        updates[0].canonicalId shouldBe "mu:300"
+    }
+
+    @Test
+    fun `falls back to first match when no content type set`() = runTest {
+        val manga = testManga(
+            id = 1L,
+            title = "Solo Leveling",
+            contentType = ContentType.UNKNOWN,
+        )
+        coEvery { mangaRepository.getFavorites() } returns listOf(manga)
+        coEvery { getTracks.await(1L) } returns emptyList()
+        coEvery { muTracker.search("Solo Leveling") } returns listOf(
+            testTrackSearch(
+                title = "Solo Leveling",
+                remoteId = 200L,
+                publishingType = "Novel",
+            ),
+            testTrackSearch(
+                title = "Solo Leveling",
+                remoteId = 300L,
+                publishingType = "Manhwa",
+            ),
+        )
+        val updates = mutableListOf<MangaUpdate>()
+        coEvery { mangaRepository.update(capture(updates)) } returns true
+
+        matchUnlinkedManga.await()
+
+        // Without content type, should pick first match (200)
+        updates[0].canonicalId shouldBe "mu:200"
+    }
+
+    @Test
+    fun `prefers novel type when manga has novel content type`() = runTest {
+        val manga = testManga(
+            id = 1L,
+            title = "Overlord",
+            contentType = ContentType.NOVEL,
+        )
+        coEvery { mangaRepository.getFavorites() } returns listOf(manga)
+        coEvery { getTracks.await(1L) } returns emptyList()
+        coEvery { muTracker.search("Overlord") } returns listOf(
+            testTrackSearch(
+                title = "Overlord",
+                remoteId = 400L,
+                publishingType = "Manga",
+            ),
+            testTrackSearch(
+                title = "Overlord",
+                remoteId = 500L,
+                publishingType = "Light Novel",
+            ),
+        )
+        val updates = mutableListOf<MangaUpdate>()
+        coEvery { mangaRepository.update(capture(updates)) } returns true
+
+        matchUnlinkedManga.await()
+
+        // Should pick the novel (500), not the manga (400)
+        updates[0].canonicalId shouldBe "mu:500"
     }
 }

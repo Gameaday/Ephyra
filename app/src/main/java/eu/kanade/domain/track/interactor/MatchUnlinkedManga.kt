@@ -189,7 +189,7 @@ class MatchUnlinkedManga(
     /**
      * Searches for a title match using a tracker's search API.
      * Uses a tiered matching strategy:
-     * 1. Exact (case-insensitive) match against primary title
+     * 1. Exact (case-insensitive) match against primary title, preferring correct content type
      * 2. Exact (case-insensitive) match against alternative titles
      * 3. Normalized match (stripped punctuation/whitespace) against all titles
      *
@@ -208,19 +208,36 @@ class MatchUnlinkedManga(
             val results = tracker.search(manga.title)
 
             // Tier 1: Exact case-insensitive match against any known title
-            val exactMatch = results.firstOrNull { result ->
-                allTitles.any { title -> result.title.equals(title, ignoreCase = true) }
+            // Prefer results matching the manga's content type when known
+            val exactMatches = results.filter { result ->
+                result.remote_id > 0 &&
+                    allTitles.any { title -> result.title.equals(title, ignoreCase = true) }
             }
-            if (exactMatch != null && exactMatch.remote_id > 0) {
+            val exactMatch = if (manga.contentType != ContentType.UNKNOWN && exactMatches.size > 1) {
+                // Prefer result whose publishing_type matches the manga's content type
+                exactMatches.firstOrNull { result ->
+                    ContentType.fromPublishingType(result.publishing_type) == manga.contentType
+                } ?: exactMatches.firstOrNull()
+            } else {
+                exactMatches.firstOrNull()
+            }
+            if (exactMatch != null) {
                 return "$prefix:${exactMatch.remote_id}" to exactMatch
             }
 
             // Tier 2: Normalized match (strip punctuation, collapse whitespace)
             val normalizedTitles = allTitles.map { normalizeTitle(it) }.toSet()
-            val normalizedMatch = results.firstOrNull { result ->
-                normalizeTitle(result.title) in normalizedTitles
+            val normalizedMatches = results.filter { result ->
+                result.remote_id > 0 && normalizeTitle(result.title) in normalizedTitles
             }
-            if (normalizedMatch != null && normalizedMatch.remote_id > 0) {
+            val normalizedMatch = if (manga.contentType != ContentType.UNKNOWN && normalizedMatches.size > 1) {
+                normalizedMatches.firstOrNull { result ->
+                    ContentType.fromPublishingType(result.publishing_type) == manga.contentType
+                } ?: normalizedMatches.firstOrNull()
+            } else {
+                normalizedMatches.firstOrNull()
+            }
+            if (normalizedMatch != null) {
                 "$prefix:${normalizedMatch.remote_id}" to normalizedMatch
             } else {
                 null

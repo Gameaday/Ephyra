@@ -254,6 +254,83 @@ class RefreshCanonicalMetadataTest {
     }
 
     @Test
+    fun `uses direct ID lookup when tracker supports it`() = runTest {
+        val manga = testManga(
+            title = "Test Manga",
+            canonicalId = "mu:12345",
+            description = "Old description",
+        )
+        // Direct ID lookup returns the matching result
+        coEvery { muTracker.search("id:12345") } returns listOf(
+            testTrackSearch(
+                title = "Test Manga",
+                remoteId = 12345L,
+                summary = "New description",
+                publishingStatus = "Completed",
+            ),
+        )
+
+        val result = refreshCanonicalMetadata.await(manga)
+        result shouldBe true
+
+        // Should have used direct lookup, not title search
+        coVerify(exactly = 1) { muTracker.search("id:12345") }
+        coVerify(exactly = 0) { muTracker.search("Test Manga") }
+    }
+
+    @Test
+    fun `falls back to title search when direct ID lookup returns empty`() = runTest {
+        val manga = testManga(
+            title = "Test Manga",
+            canonicalId = "mu:12345",
+            description = "Old description",
+        )
+        // Direct ID lookup returns empty
+        coEvery { muTracker.search("id:12345") } returns emptyList()
+        // Title search returns the match
+        coEvery { muTracker.search("Test Manga") } returns listOf(
+            testTrackSearch(
+                title = "Test Manga",
+                remoteId = 12345L,
+                summary = "New description",
+                publishingStatus = "Ongoing",
+            ),
+        )
+
+        val result = refreshCanonicalMetadata.await(manga)
+        result shouldBe true
+
+        // Should have tried direct lookup first, then title search
+        coVerify(exactly = 1) { muTracker.search("id:12345") }
+        coVerify(exactly = 1) { muTracker.search("Test Manga") }
+    }
+
+    @Test
+    fun `falls back to title search when direct ID lookup throws`() = runTest {
+        val manga = testManga(
+            title = "Test Manga",
+            canonicalId = "mu:12345",
+            description = "Old description",
+        )
+        // Direct ID lookup throws
+        coEvery { muTracker.search("id:12345") } throws RuntimeException("Not supported")
+        // Title search returns the match
+        coEvery { muTracker.search("Test Manga") } returns listOf(
+            testTrackSearch(
+                title = "Test Manga",
+                remoteId = 12345L,
+                summary = "New description",
+                publishingStatus = "Ongoing",
+            ),
+        )
+
+        val result = refreshCanonicalMetadata.await(manga)
+        result shouldBe true
+
+        coVerify(exactly = 1) { muTracker.search("Test Manga") }
+    }
+
+    @Test
     fun `maps various publishing status strings`() = runTest {
         // Test that status changes are detected for different status strings
         val statuses = listOf(

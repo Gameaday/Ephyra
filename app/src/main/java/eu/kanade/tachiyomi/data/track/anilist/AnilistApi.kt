@@ -5,6 +5,7 @@ import androidx.core.net.toUri
 import eu.kanade.tachiyomi.data.database.models.Track
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALAddMangaResult
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALCurrentUserResult
+import eu.kanade.tachiyomi.data.track.anilist.dto.ALMediaResult
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALOAuth
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALSearchResult
 import eu.kanade.tachiyomi.data.track.anilist.dto.ALUserListMangaQueryResult
@@ -195,6 +196,75 @@ class AnilistApi(val client: OkHttpClient, interceptor: AnilistInterceptor) {
                     .parseAs<ALSearchResult>()
                     .data.page.media
                     .map { it.toALManga().toTrack() }
+            }
+        }
+    }
+
+    suspend fun getMediaById(mediaId: Long): TrackSearch? {
+        return withIOContext {
+            try {
+                val query = $$"""
+                |query ($id: Int!) {
+                    |Media(id: $id, type: MANGA) {
+                        |id
+                        |staff {
+                            |edges {
+                                |role
+                                |id
+                                |node {
+                                    |name {
+                                        |full
+                                        |userPreferred
+                                        |native
+                                    |}
+                                |}
+                            |}
+                        |}
+                        |title {
+                            |userPreferred
+                            |romaji
+                            |english
+                            |native
+                        |}
+                        |synonyms
+                        |coverImage {
+                            |large
+                        |}
+                        |format
+                        |status
+                        |chapters
+                        |description
+                        |startDate {
+                            |year
+                            |month
+                            |day
+                        |}
+                        |averageScore
+                    |}
+                |}
+                |
+                """.trimMargin()
+                val payload = buildJsonObject {
+                    put("query", query)
+                    putJsonObject("variables") {
+                        put("id", mediaId)
+                    }
+                }
+                with(json) {
+                    authClient.newCall(
+                        POST(
+                            API_URL,
+                            body = payload.toString().toRequestBody(jsonMime),
+                        ),
+                    )
+                        .awaitSuccess()
+                        .parseAs<ALMediaResult>()
+                        .data.media
+                        .toALManga()
+                        .toTrack()
+                }
+            } catch (e: Exception) {
+                null
             }
         }
     }
