@@ -238,7 +238,6 @@ fun MangaActionRow(
         )
         MangaActionButton(
             title = when {
-                hasAuthority && trackingCount > 0 -> stringResource(MR.strings.tracking_linked)
                 hasAuthority -> stringResource(MR.strings.tracking_linked)
                 trackingCount > 0 -> pluralStringResource(MR.plurals.num_trackers, count = trackingCount, trackingCount)
                 else -> stringResource(MR.strings.manga_tracking_tab)

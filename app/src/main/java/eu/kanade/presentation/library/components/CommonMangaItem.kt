@@ -333,7 +333,7 @@ private fun Modifier.selectedOutline(
 /**
  * Layout of list item.
  * Uses tonal [secondaryContainer] selection to match the grid selection pattern
- * following Material Expression guidelines.
+ * following Material 3 tonal overlay guidelines.
  */
 @Composable
 fun MangaListItem(
