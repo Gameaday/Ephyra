@@ -274,13 +274,13 @@ object SettingsTrackingScreen : SearchableSettings {
                 val preferredEntries = buildMap {
                     put(TrackPreferences.AUTHORITY_TRACKER_AUTO, stringResource(MR.strings.pref_authority_tracker_auto))
                     // MangaUpdates: always available (public search)
-                    put(7L, trackerManager.mangaUpdates.name)
+                    put(trackerManager.mangaUpdates.id, trackerManager.mangaUpdates.name)
                     // AniList / MAL: only if logged in
                     if (trackerManager.aniList.isLoggedIn) {
-                        put(TrackerManager.ANILIST, trackerManager.aniList.name)
+                        put(trackerManager.aniList.id, trackerManager.aniList.name)
                     }
                     if (trackerManager.myAnimeList.isLoggedIn) {
-                        put(1L, trackerManager.myAnimeList.name)
+                        put(trackerManager.myAnimeList.id, trackerManager.myAnimeList.name)
                     }
                 }.toPersistentMap()
 
