@@ -166,7 +166,7 @@ class RefreshCanonicalMetadataTest {
     }
 
     @Test
-    fun `returns true even when values are same since authority always writes`() = runTest {
+    fun `skips write when authority values match existing (change detection)`() = runTest {
         val manga = testManga(
             title = "Test Manga",
             canonicalId = "mu:12345",
@@ -188,9 +188,9 @@ class RefreshCanonicalMetadataTest {
             ),
         )
 
-        // Authority always overwrites, so even identical data counts as an update
+        // Change detection: identical values → no DB write → returns false
         val result = refreshCanonicalMetadata.await(manga)
-        result shouldBe true
+        result shouldBe false
     }
 
     @Test
@@ -702,10 +702,10 @@ class RefreshCanonicalMetadataTest {
         val result = refreshCanonicalMetadata.await(manga)
         result shouldBe true
 
-        val updateSlot = slot<MangaUpdate>()
-        coVerify { mangaRepository.update(capture(updateSlot)) }
-        val update = updateSlot.captured
-        update.title shouldBe "New Authority Title"
+        val updates = mutableListOf<MangaUpdate>()
+        coVerify { mangaRepository.update(capture(updates)) }
+        val metadataUpdate = updates.first()
+        metadataUpdate.title shouldBe "New Authority Title"
     }
 
     @Test
@@ -726,11 +726,11 @@ class RefreshCanonicalMetadataTest {
         val result = refreshCanonicalMetadata.await(manga)
         result shouldBe true
 
-        val updateSlot = slot<MangaUpdate>()
-        coVerify { mangaRepository.update(capture(updateSlot)) }
-        val update = updateSlot.captured
-        update.title shouldBe null // title not updated because locked
-        update.description shouldBe "New description" // other fields still updated
+        val updates = mutableListOf<MangaUpdate>()
+        coVerify { mangaRepository.update(capture(updates)) }
+        val metadataUpdate = updates.first()
+        metadataUpdate.title shouldBe null // title not updated because locked
+        metadataUpdate.description shouldBe "New description" // other fields still updated
     }
 
     @Test
@@ -752,11 +752,11 @@ class RefreshCanonicalMetadataTest {
         val result = refreshCanonicalMetadata.await(manga, fillOnly = true)
         result shouldBe true
 
-        val updateSlot = slot<MangaUpdate>()
-        coVerify { mangaRepository.update(capture(updateSlot)) }
-        val update = updateSlot.captured
-        update.title shouldBe null // title not updated because already exists
-        update.description shouldBe "A description"
+        val updates = mutableListOf<MangaUpdate>()
+        coVerify { mangaRepository.update(capture(updates)) }
+        val metadataUpdate = updates.first()
+        metadataUpdate.title shouldBe null // title not updated because already exists
+        metadataUpdate.description shouldBe "A description"
     }
 
     @Test
