@@ -94,6 +94,11 @@ class LibraryPreferences(
         TriState.DISABLED,
     )
 
+    fun filterContentTypeManga() = preferenceStore.getEnum(
+        "pref_filter_library_content_type_manga",
+        TriState.DISABLED,
+    )
+
     fun filterTracking(id: Int) = preferenceStore.getEnum(
         "pref_filter_library_tracked_${id}_v2",
         TriState.DISABLED,

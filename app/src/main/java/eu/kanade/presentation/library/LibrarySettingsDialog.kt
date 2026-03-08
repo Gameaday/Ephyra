@@ -122,6 +122,12 @@ private fun ColumnScope.FilterPage(
         state = filterSourceHealthDead,
         onClick = { screenModel.toggleFilter(LibraryPreferences::filterSourceHealthDead) },
     )
+    val filterContentTypeManga by screenModel.libraryPreferences.filterContentTypeManga().collectAsState()
+    TriStateItem(
+        label = stringResource(MR.strings.action_filter_content_type_manga),
+        state = filterContentTypeManga,
+        onClick = { screenModel.toggleFilter(LibraryPreferences::filterContentTypeManga) },
+    )
     // TODO: re-enable when custom intervals are ready for stable
     if ((!isReleaseBuildType) && LibraryPreferences.MANGA_OUTSIDE_RELEASE_PERIOD in autoUpdateMangaRestrictions) {
         val filterIntervalCustom by screenModel.libraryPreferences.filterIntervalCustom().collectAsState()

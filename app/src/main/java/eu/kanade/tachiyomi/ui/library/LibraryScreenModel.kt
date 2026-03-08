@@ -57,6 +57,7 @@ import tachiyomi.domain.library.model.LibrarySort
 import tachiyomi.domain.library.model.sort
 import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.domain.manga.interactor.GetLibraryManga
+import tachiyomi.domain.manga.model.ContentType
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaUpdate
 import tachiyomi.domain.manga.model.SourceStatus
@@ -169,6 +170,7 @@ class LibraryScreenModel(
                 prefs.filterCompleted != TriState.DISABLED ||
                 prefs.filterIntervalCustom != TriState.DISABLED ||
                 prefs.filterSourceHealthDead != TriState.DISABLED ||
+                prefs.filterContentTypeManga != TriState.DISABLED ||
                 trackFilters.values.any { it != TriState.DISABLED }
         }
             .distinctUntilChanged()
@@ -194,6 +196,7 @@ class LibraryScreenModel(
         val filterCompleted = preferences.filterCompleted
         val filterIntervalCustom = preferences.filterIntervalCustom
         val filterSourceHealthDead = preferences.filterSourceHealthDead
+        val filterContentTypeManga = preferences.filterContentTypeManga
 
         val isNotLoggedInAnyTrack = trackingFilter.isEmpty()
 
@@ -253,6 +256,12 @@ class LibraryScreenModel(
             }
         }
 
+        val filterFnContentTypeManga: (LibraryItem) -> Boolean = {
+            applyFilter(filterContentTypeManga) {
+                it.libraryManga.manga.contentType == ContentType.MANGA
+            }
+        }
+
         return fastFilter {
             filterFnDownloaded(it) &&
                 filterFnUnread(it) &&
@@ -261,7 +270,8 @@ class LibraryScreenModel(
                 filterFnCompleted(it) &&
                 filterFnIntervalCustom(it) &&
                 filterFnTracking(it) &&
-                filterFnSourceHealthUnhealthy(it)
+                filterFnSourceHealthUnhealthy(it) &&
+                filterFnContentTypeManga(it)
         }
     }
 
@@ -376,6 +386,7 @@ class LibraryScreenModel(
             libraryPreferences.filterCompleted().changes(),
             libraryPreferences.filterIntervalCustom().changes(),
             libraryPreferences.filterSourceHealthDead().changes(),
+            libraryPreferences.filterContentTypeManga().changes(),
         ) {
             ItemPreferences(
                 downloadBadge = it[0] as Boolean,
@@ -391,6 +402,7 @@ class LibraryScreenModel(
                 filterCompleted = it[10] as TriState,
                 filterIntervalCustom = it[11] as TriState,
                 filterSourceHealthDead = it[12] as TriState,
+                filterContentTypeManga = it[13] as TriState,
             )
         }
     }
@@ -805,6 +817,7 @@ class LibraryScreenModel(
         val filterCompleted: TriState,
         val filterIntervalCustom: TriState,
         val filterSourceHealthDead: TriState,
+        val filterContentTypeManga: TriState,
     )
 
     @Immutable

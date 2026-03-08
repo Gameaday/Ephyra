@@ -85,6 +85,7 @@ fun MetadataLocksDialog(
 
 @Composable
 private fun fieldLabel(field: Long): String = when (field) {
+    LockedField.TITLE -> stringResource(MR.strings.locked_field_title)
     LockedField.DESCRIPTION -> stringResource(MR.strings.locked_field_description)
     LockedField.AUTHOR -> stringResource(MR.strings.locked_field_author)
     LockedField.ARTIST -> stringResource(MR.strings.locked_field_artist)
