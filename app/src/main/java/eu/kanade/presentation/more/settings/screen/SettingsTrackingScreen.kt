@@ -264,12 +264,38 @@ object SettingsTrackingScreen : SearchableSettings {
                 ),
             )
             // Authority management: consolidated import + link in one group
-            val hasAuthoritativeTracker = trackerManager.myAnimeList.isLoggedIn ||
-                trackerManager.aniList.isLoggedIn ||
-                trackerManager.mangaUpdates.isLoggedIn
+            // MangaUpdates is always available (public search — no login required).
+            val hasAuthoritativeTracker = true
             if (hasAuthoritativeTracker) {
                 val isJobRunning = MatchUnlinkedJob.isRunning(context)
+
+                // Build the dynamic "Preferred tracker" entries.
+                // Only available (logged-in or public-search) trackers are selectable.
+                val preferredEntries = buildMap {
+                    put(TrackPreferences.AUTHORITY_TRACKER_AUTO, stringResource(MR.strings.pref_authority_tracker_auto))
+                    // MangaUpdates: always available (public search)
+                    put(7L, trackerManager.mangaUpdates.name)
+                    // AniList / MAL: only if logged in
+                    if (trackerManager.aniList.isLoggedIn) {
+                        put(TrackerManager.ANILIST, trackerManager.aniList.name)
+                    }
+                    if (trackerManager.myAnimeList.isLoggedIn) {
+                        put(1L, trackerManager.myAnimeList.name)
+                    }
+                }.toPersistentMap()
+
                 val authorityItems = buildList {
+                    add(
+                        Preference.PreferenceItem.ListPreference(
+                            preference = trackPreferences.preferredAuthorityTracker(),
+                            entries = preferredEntries,
+                            title = stringResource(MR.strings.pref_authority_tracker_title),
+                            subtitle = stringResource(MR.strings.pref_authority_tracker_subtitle),
+                            subtitleProvider = { value, entries ->
+                                entries[value] ?: stringResource(MR.strings.pref_authority_tracker_auto)
+                            },
+                        ),
+                    )
                     addAll(importPreferences)
                     add(
                         Preference.PreferenceItem.TextPreference(

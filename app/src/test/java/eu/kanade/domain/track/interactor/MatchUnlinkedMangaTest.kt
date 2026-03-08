@@ -1,5 +1,6 @@
 package eu.kanade.domain.track.interactor
 
+import eu.kanade.domain.track.service.TrackPreferences
 import eu.kanade.tachiyomi.data.track.Tracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.data.track.model.TrackSearch
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
+import tachiyomi.core.common.preference.Preference
 import tachiyomi.domain.manga.model.ContentType
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaUpdate
@@ -31,6 +33,7 @@ class MatchUnlinkedMangaTest {
     private lateinit var mangaRepository: MangaRepository
     private lateinit var trackerManager: TrackerManager
     private lateinit var getTracks: GetTracks
+    private lateinit var trackPreferences: TrackPreferences
     private lateinit var matchUnlinkedManga: MatchUnlinkedManga
 
     private lateinit var muTracker: Tracker
@@ -98,13 +101,19 @@ class MatchUnlinkedMangaTest {
         mangaRepository = mockk(relaxed = true)
         trackerManager = mockk(relaxed = true)
         getTracks = mockk(relaxed = true)
+        trackPreferences = mockk(relaxed = true)
         muTracker = mockk(relaxed = true)
 
         // MangaUpdates tracker (ID 7) is the public-search tracker
         every { muTracker.id } returns 7L
         every { trackerManager.get(7L) } returns muTracker
 
-        matchUnlinkedManga = MatchUnlinkedManga(mangaRepository, trackerManager, getTracks)
+        // Default: "Auto" — no preferred tracker
+        val prefPref = mockk<Preference<Long>>()
+        every { prefPref.get() } returns TrackPreferences.AUTHORITY_TRACKER_AUTO
+        every { trackPreferences.preferredAuthorityTracker() } returns prefPref
+
+        matchUnlinkedManga = MatchUnlinkedManga(mangaRepository, trackerManager, getTracks, trackPreferences)
     }
 
     // ========== Empty / all-linked scenarios ==========
@@ -891,5 +900,95 @@ class MatchUnlinkedMangaTest {
             "naruto shippuden",
             "one piece adventure",
         ) shouldBe false
+    }
+
+    // ========== Preferred authority tracker ==========
+
+    @Test
+    fun `uses preferred tracker when set and logged in`() = runTest {
+        val alTracker = mockk<Tracker>(relaxed = true)
+        every { alTracker.id } returns 2L
+        every { alTracker.isLoggedIn } returns true
+        every { trackerManager.get(2L) } returns alTracker
+        coEvery { alTracker.search("One Piece") } returns listOf(
+            testTrackSearch("One Piece", 21L),
+        )
+
+        // Set AniList as preferred
+        val prefPref = mockk<Preference<Long>>()
+        every { prefPref.get() } returns 2L
+        every { trackPreferences.preferredAuthorityTracker() } returns prefPref
+
+        val manga = testManga(id = 1L, title = "One Piece")
+        coEvery { mangaRepository.getFavorites() } returns listOf(manga)
+        coEvery { getTracks.await(1L) } returns emptyList()
+
+        val updateSlot = slot<MangaUpdate>()
+        coEvery { mangaRepository.update(capture(updateSlot)) } returns true
+
+        val result = matchUnlinkedManga.await()
+
+        result.matched shouldBe 1
+        // Should use AniList prefix (al), not MangaUpdates (mu)
+        updateSlot.captured.canonicalId shouldBe "al:21"
+    }
+
+    @Test
+    fun `falls back to auto when preferred tracker is not logged in`() = runTest {
+        val alTracker = mockk<Tracker>(relaxed = true)
+        every { alTracker.id } returns 2L
+        every { alTracker.isLoggedIn } returns false // Not logged in
+        every { trackerManager.get(2L) } returns alTracker
+
+        // Set AniList as preferred, but it's not logged in
+        val prefPref = mockk<Preference<Long>>()
+        every { prefPref.get() } returns 2L
+        every { trackPreferences.preferredAuthorityTracker() } returns prefPref
+
+        val manga = testManga(id = 1L, title = "One Piece")
+        coEvery { mangaRepository.getFavorites() } returns listOf(manga)
+        coEvery { getTracks.await(1L) } returns emptyList()
+        coEvery { muTracker.search("One Piece") } returns listOf(
+            testTrackSearch("One Piece", 100L),
+        )
+
+        val updateSlot = slot<MangaUpdate>()
+        coEvery { mangaRepository.update(capture(updateSlot)) } returns true
+
+        val result = matchUnlinkedManga.await()
+
+        result.matched shouldBe 1
+        // Should fall back to MangaUpdates (mu) since AniList isn't logged in
+        updateSlot.captured.canonicalId shouldBe "mu:100"
+    }
+
+    @Test
+    fun `falls back to auto when preferred tracker id is auto`() = runTest {
+        // Preference set to AUTO (default)
+        val prefPref = mockk<Preference<Long>>()
+        every { prefPref.get() } returns TrackPreferences.AUTHORITY_TRACKER_AUTO
+        every { trackPreferences.preferredAuthorityTracker() } returns prefPref
+
+        val manga = testManga(id = 1L, title = "One Piece")
+        coEvery { mangaRepository.getFavorites() } returns listOf(manga)
+        coEvery { getTracks.await(1L) } returns emptyList()
+        coEvery { muTracker.search("One Piece") } returns listOf(
+            testTrackSearch("One Piece", 100L),
+        )
+
+        val updateSlot = slot<MangaUpdate>()
+        coEvery { mangaRepository.update(capture(updateSlot)) } returns true
+
+        val result = matchUnlinkedManga.await()
+
+        result.matched shouldBe 1
+        // Auto → picks MangaUpdates (public search)
+        updateSlot.captured.canonicalId shouldBe "mu:100"
+    }
+
+    @Test
+    fun `preferred tracker still checked for hasQueryableTracker`() {
+        // With MangaUpdates always available, hasQueryableTracker should be true
+        matchUnlinkedManga.hasQueryableTracker() shouldBe true
     }
 }

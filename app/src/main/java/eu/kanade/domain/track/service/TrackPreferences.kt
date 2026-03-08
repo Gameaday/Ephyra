@@ -34,6 +34,21 @@ class TrackPreferences(
 
     fun trackToken(tracker: Tracker) = preferenceStore.getString(Preference.privateKey("track_token_${tracker.id}"), "")
 
+    /**
+     * User-preferred tracker for authority matching.
+     *
+     * Value is a tracker ID (1=MAL, 2=AniList, 7=MangaUpdates) or 0 for "Auto"
+     * (the system picks the best available tracker automatically).
+     *
+     * The matching engine validates at query time that the chosen tracker is still
+     * available (logged in or supports public search). If not, it falls back to
+     * the automatic selection.
+     */
+    fun preferredAuthorityTracker() = preferenceStore.getLong(
+        "pref_preferred_authority_tracker",
+        AUTHORITY_TRACKER_AUTO,
+    )
+
     fun anilistScoreType() = preferenceStore.getString("anilist_score_type", Anilist.POINT_10)
 
     fun autoUpdateTrack() = preferenceStore.getBoolean("pref_auto_update_manga_sync_key", true)
@@ -42,4 +57,9 @@ class TrackPreferences(
         "pref_auto_update_manga_on_mark_read",
         AutoTrackState.ALWAYS,
     )
+
+    companion object {
+        /** Sentinel value: let the system pick the best available tracker automatically. */
+        const val AUTHORITY_TRACKER_AUTO = 0L
+    }
 }
