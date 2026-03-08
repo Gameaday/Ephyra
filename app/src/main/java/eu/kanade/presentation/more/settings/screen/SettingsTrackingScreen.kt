@@ -337,9 +337,7 @@ object SettingsTrackingScreen : SearchableSettings {
                                             onClick = {
                                                 if (index > 0) {
                                                     val newOrder = currentOrder.toMutableList()
-                                                    newOrder[index] = newOrder[index - 1].also {
-                                                        newOrder[index - 1] = newOrder[index]
-                                                    }
+                                                    java.util.Collections.swap(newOrder, index, index - 1)
                                                     currentOrder = newOrder
                                                     orderPref.set(newOrder)
                                                 }
@@ -360,9 +358,7 @@ object SettingsTrackingScreen : SearchableSettings {
                                             onClick = {
                                                 if (index < currentOrder.lastIndex) {
                                                     val newOrder = currentOrder.toMutableList()
-                                                    newOrder[index] = newOrder[index + 1].also {
-                                                        newOrder[index + 1] = newOrder[index]
-                                                    }
+                                                    java.util.Collections.swap(newOrder, index, index + 1)
                                                     currentOrder = newOrder
                                                     orderPref.set(newOrder)
                                                 }
