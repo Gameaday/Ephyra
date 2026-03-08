@@ -133,7 +133,8 @@ class JellyfinApi(
 
     /**
      * Searches for series in a user's library matching the given query.
-     * Filters to "books" collection type items (manga/comics).
+     * When [parentId] is provided, scopes the search to that library — improving
+     * matching accuracy when the server has multiple libraries.
      * Results without any available cover image are sorted to the end,
      * matching Jellyfin's search behavior where items with images appear first.
      */
@@ -141,6 +142,7 @@ class JellyfinApi(
         serverUrl: String,
         userId: String,
         query: String,
+        parentId: String? = null,
     ): List<TrackSearch> = withIOContext {
         val url = "$serverUrl/Users/$userId/Items".toHttpUrl().newBuilder()
             .addQueryParameter("searchTerm", query)
@@ -148,13 +150,15 @@ class JellyfinApi(
             .addQueryParameter("Recursive", "true")
             .addQueryParameter(
                 "Fields",
-                "Overview,Genres,CommunityRating,ProductionYear,RecursiveItemCount",
+                "Overview,Genres,CommunityRating,ProductionYear,RecursiveItemCount,Studios,Tags,DateCreated,SortName",
             )
             .addQueryParameter("EnableImageTypes", "Primary,Thumb,Backdrop")
             .addQueryParameter("Limit", "20")
-            .build()
+        if (!parentId.isNullOrBlank()) {
+            url.addQueryParameter("ParentId", parentId)
+        }
 
-        val response = client.newCall(GET(url.toString()))
+        val response = client.newCall(GET(url.build().toString()))
             .awaitSuccess()
 
         with(json) {
@@ -166,7 +170,7 @@ class JellyfinApi(
 
     /**
      * Gets a specific series by its Jellyfin item ID.
-     * Includes image types for cover fallback.
+     * Includes image types for cover fallback and Studios for author/artist.
      */
     suspend fun getSeries(
         serverUrl: String,
@@ -176,7 +180,7 @@ class JellyfinApi(
         val url = "$serverUrl/Users/$userId/Items/$itemId".toHttpUrl().newBuilder()
             .addQueryParameter(
                 "Fields",
-                "Overview,Genres,CommunityRating,ProductionYear,RecursiveItemCount",
+                "Overview,Genres,CommunityRating,ProductionYear,RecursiveItemCount,Studios,Tags,DateCreated,SortName",
             )
             .addQueryParameter("EnableImageTypes", "Primary,Thumb,Backdrop")
             .build()
@@ -280,8 +284,8 @@ class JellyfinApi(
      * Mirrors Jellyfin's "Edit Metadata" → Save workflow.
      *
      * Only non-null fields are included in the update payload.
-     * Supports Jellyfin's Studios field for author/artist metadata (mapped as
-     * studio entries — Jellyfin's convention for book/comic series creators).
+     * Studios and Tags use Jellyfin's `NamedItem` format (`[{"Name": "value"}]`)
+     * matching the Jellyfin API's expected object structure.
      * Reference: POST /Items/{itemId}
      */
     suspend fun updateItemMetadata(
@@ -295,33 +299,44 @@ class JellyfinApi(
         studios: List<String>? = null,
         tags: List<String>? = null,
     ) = withIOContext {
-        val fields = mutableMapOf<String, Any>()
-        fields["Id"] = itemId
-        if (name != null) fields["Name"] = name
-        if (overview != null) fields["Overview"] = overview
-        if (genres != null) fields["Genres"] = genres
-        if (communityRating != null) fields["CommunityRating"] = communityRating
-        if (productionYear != null) fields["ProductionYear"] = productionYear
-        if (studios != null) fields["Studios"] = studios
-        if (tags != null) fields["Tags"] = tags
+        val jsonFields = mutableMapOf<String, kotlinx.serialization.json.JsonElement>()
+        jsonFields["Id"] = kotlinx.serialization.json.JsonPrimitive(itemId)
+        if (name != null) jsonFields["Name"] = kotlinx.serialization.json.JsonPrimitive(name)
+        if (overview != null) jsonFields["Overview"] = kotlinx.serialization.json.JsonPrimitive(overview)
+        if (genres != null) {
+            jsonFields["Genres"] = kotlinx.serialization.json.JsonArray(
+                genres.map { kotlinx.serialization.json.JsonPrimitive(it) },
+            )
+        }
+        if (communityRating != null) {
+            jsonFields["CommunityRating"] = kotlinx.serialization.json.JsonPrimitive(communityRating)
+        }
+        if (productionYear != null) {
+            jsonFields["ProductionYear"] = kotlinx.serialization.json.JsonPrimitive(productionYear)
+        }
+        // Studios and Tags use Jellyfin's NamedItem format: [{"Name": "value"}]
+        if (studios != null) {
+            jsonFields["Studios"] = kotlinx.serialization.json.JsonArray(
+                studios.map { studio ->
+                    kotlinx.serialization.json.JsonObject(
+                        mapOf("Name" to kotlinx.serialization.json.JsonPrimitive(studio)),
+                    )
+                },
+            )
+        }
+        if (tags != null) {
+            jsonFields["Tags"] = kotlinx.serialization.json.JsonArray(
+                tags.map { tag ->
+                    kotlinx.serialization.json.JsonObject(
+                        mapOf("Name" to kotlinx.serialization.json.JsonPrimitive(tag)),
+                    )
+                },
+            )
+        }
 
         val jsonBody = json.encodeToString(
             kotlinx.serialization.json.JsonObject.serializer(),
-            kotlinx.serialization.json.JsonObject(
-                fields.mapValues { (_, value) ->
-                    when (value) {
-                        is String -> kotlinx.serialization.json.JsonPrimitive(value)
-                        is Int -> kotlinx.serialization.json.JsonPrimitive(value)
-                        is Double -> kotlinx.serialization.json.JsonPrimitive(value)
-                        is List<*> -> kotlinx.serialization.json.JsonArray(
-                            value.filterIsInstance<String>().map {
-                                kotlinx.serialization.json.JsonPrimitive(it)
-                            },
-                        )
-                        else -> kotlinx.serialization.json.JsonPrimitive(value.toString())
-                    }
-                },
-            ),
+            kotlinx.serialization.json.JsonObject(jsonFields),
         )
         val body = jsonBody.toByteArray().toRequestBody("application/json".toMediaType())
         val request = okhttp3.Request.Builder()

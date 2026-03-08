@@ -71,12 +71,24 @@ object CanonicalId {
 
     /**
      * Builds a web URL for the given canonical ID.
+     *
+     * For Jellyfin canonical IDs ("jf:uuid"), the [jellyfinServerUrl] parameter is required
+     * to construct the full URL (Jellyfin URLs are server-relative). The URL points to the
+     * Jellyfin web client's item details page at `{serverUrl}/web/index.html#!/details?id={uuid}`.
+     *
+     * @param jellyfinServerUrl Optional Jellyfin server URL (e.g., "http://192.168.1.100:8096").
+     *   Required for Jellyfin canonical IDs; ignored for other prefixes.
      * @return URL string or null if the prefix is unrecognized or has no base URL.
      */
-    fun toUrl(canonicalId: String): String? {
+    fun toUrl(canonicalId: String, jellyfinServerUrl: String? = null): String? {
         val (prefix, remoteId) = parse(canonicalId)
             ?: parseString(canonicalId)?.let { it.first to it.second }
             ?: return null
+        // Jellyfin: build full web client URL from server URL + item ID
+        if (prefix == "jf" && jellyfinServerUrl != null) {
+            val baseUrl = jellyfinServerUrl.trimEnd('/')
+            return "$baseUrl/web/index.html#!/details?id=$remoteId"
+        }
         val baseUrl = TRACKER_URLS[prefix]?.takeIf { it.isNotEmpty() } ?: return null
         return "$baseUrl$remoteId"
     }

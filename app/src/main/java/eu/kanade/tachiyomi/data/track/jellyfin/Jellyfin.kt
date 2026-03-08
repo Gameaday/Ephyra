@@ -134,6 +134,7 @@ class Jellyfin(id: Long) : BaseTracker(id, "Jellyfin"), EnhancedTracker, Deletab
         val serverUrl = getUsername().trimEnd('/')
         val userId = trackPreferences.jellyfinUserId().get()
         if (userId.isBlank()) return emptyList()
+        val libraryId = libraryPreferences.jellyfinLibraryId().get().takeIf { it.isNotBlank() }
         return try {
             // Support direct ID lookup: "id:itemId"
             if (query.startsWith("id:")) {
@@ -141,7 +142,7 @@ class Jellyfin(id: Long) : BaseTracker(id, "Jellyfin"), EnhancedTracker, Deletab
                 val result = api.getSeries(serverUrl, userId, itemId)
                 listOf(result)
             } else {
-                api.searchSeries(serverUrl, userId, query)
+                api.searchSeries(serverUrl, userId, query, parentId = libraryId)
             }
         } catch (e: Exception) {
             logcat(LogPriority.WARN, e) { "Jellyfin search failed" }
@@ -243,9 +244,10 @@ class Jellyfin(id: Long) : BaseTracker(id, "Jellyfin"), EnhancedTracker, Deletab
         val serverUrl = getUsername().trimEnd('/')
         val userId = trackPreferences.jellyfinUserId().get()
         if (userId.isBlank()) return null
+        val libraryId = libraryPreferences.jellyfinLibraryId().get().takeIf { it.isNotBlank() }
 
         return try {
-            val results = api.searchSeries(serverUrl, userId, manga.title)
+            val results = api.searchSeries(serverUrl, userId, manga.title, parentId = libraryId)
             val normalizedMangaTitle = normalizeTitle(manga.title)
             // Exact title match preferred, then normalized match, then first result
             results.firstOrNull {

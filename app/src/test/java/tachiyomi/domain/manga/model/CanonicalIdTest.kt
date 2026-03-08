@@ -178,9 +178,22 @@ class CanonicalIdTest {
     }
 
     @Test
-    fun `toUrl returns null for Jellyfin (server-relative URLs)`() {
-        // Jellyfin URLs are server-relative and can't be built from prefix alone
+    fun `toUrl returns null for Jellyfin without server URL`() {
+        // Jellyfin URLs are server-relative — returns null without a server URL
         CanonicalId.toUrl("jf:abc123") shouldBe null
+    }
+
+    @Test
+    fun `toUrl builds Jellyfin web client URL when server URL provided`() {
+        // With a server URL, builds the Jellyfin web client details page URL
+        CanonicalId.toUrl("jf:abc123-def456", jellyfinServerUrl = "http://192.168.1.100:8096") shouldBe
+            "http://192.168.1.100:8096/web/index.html#!/details?id=abc123-def456"
+    }
+
+    @Test
+    fun `toUrl trims trailing slash from Jellyfin server URL`() {
+        CanonicalId.toUrl("jf:item-id", jellyfinServerUrl = "http://server:8096/") shouldBe
+            "http://server:8096/web/index.html#!/details?id=item-id"
     }
 
     @Test

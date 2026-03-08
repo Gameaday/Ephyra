@@ -1245,5 +1245,8 @@
     <string name="jellyfin_test_success">Connected to %1$s (v%2$s)</string>
     <string name="jellyfin_test_failed">Connection failed — check server URL and API key</string>
     <string name="jellyfin_metadata_pushed">Metadata synced to Jellyfin</string>
+    <string name="jellyfin_library">Jellyfin library</string>
+    <string name="jellyfin_library_all">All libraries</string>
+    <string name="jellyfin_library_selected">Library: %s</string>
     <string name="tracking_linked">Linked</string>
 </resources>

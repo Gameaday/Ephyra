@@ -224,6 +224,13 @@ class LibraryPreferences(
      */
     fun jellyfinSyncEnabled() = preferenceStore.getBoolean("pref_jellyfin_sync_enabled", false)
 
+    /**
+     * Preferred Jellyfin library ID for filtering search results.
+     * When set, series search is scoped to this library. When empty, all libraries are searched.
+     * This improves matching accuracy when the server has multiple libraries.
+     */
+    fun jellyfinLibraryId() = preferenceStore.getString("pref_jellyfin_library_id", "")
+
     // endregion
 
     // region Image Format

@@ -495,6 +495,8 @@ class MangaScreenModel(
                     if (manga.removeCovers() != manga) {
                         updateManga.awaitUpdateCoverLastModified(manga.id)
                     }
+                    // Jellyfin: unmark favorite on server when removing from library
+                    markJellyfinFavoriteIfLinked(manga, favorite = false)
                     withUIContext { onRemoved() }
                 }
             } else {
@@ -547,6 +549,10 @@ class MangaScreenModel(
                         logcat(LogPriority.DEBUG, e) { "Auto-link on add-to-library skipped" }
                     }
                 }
+
+                // Jellyfin: mark as favorite on server when adding to library
+                // (Jellyfin "favorite" ≈ "in library" concept)
+                markJellyfinFavoriteIfLinked(manga, favorite = true)
             }
         }
     }
@@ -1358,6 +1364,39 @@ class MangaScreenModel(
             author = updated.author,
             artist = updated.artist,
         )
+    }
+
+    /**
+     * Marks or unmarks the manga as a favorite on the Jellyfin server when it's
+     * linked to Jellyfin as its authority source. Jellyfin "favorite" maps to
+     * the "in library" concept — adding to library marks favorite on server,
+     * removing from library unmarks it.
+     */
+    private suspend fun markJellyfinFavoriteIfLinked(manga: Manga, favorite: Boolean) {
+        val canonicalId = manga.canonicalId ?: return
+        if (!canonicalId.startsWith("jf:")) return
+        val jellyfin = trackerManager.jellyfin
+        if (!jellyfin.isLoggedIn) return
+        if (!libraryPreferences.jellyfinSyncEnabled().get()) return
+
+        val tracks = getTracks.await(manga.id)
+        val jellyfinTrack = tracks.firstOrNull {
+            it.trackerId == trackerManager.jellyfin.id
+        } ?: return
+
+        try {
+            val serverUrl = jellyfin.api.getServerUrlFromTrackUrl(jellyfinTrack.remoteUrl)
+            val itemId = jellyfin.api.getItemIdFromUrl(jellyfinTrack.remoteUrl)
+            val userId = trackPreferences.jellyfinUserId().get()
+            if (userId.isNotBlank()) {
+                jellyfin.api.markFavorite(serverUrl, userId, itemId, favorite)
+                logcat(LogPriority.INFO) { "Jellyfin favorite=$favorite for item $itemId" }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logcat(LogPriority.WARN, e) { "Failed to mark Jellyfin favorite for ${manga.title}" }
+        }
     }
 
     fun editTitle(value: String) {

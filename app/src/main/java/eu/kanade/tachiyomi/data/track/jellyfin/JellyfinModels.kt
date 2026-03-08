@@ -54,6 +54,12 @@ data class JellyfinItem(
     @SerialName("Path") val path: String? = null,
     @SerialName("MediaSources") val mediaSources: List<JellyfinMediaSource>? = null,
     @SerialName("SeriesId") val seriesId: String? = null,
+    @SerialName("Studios") val studios: List<JellyfinNamedItem>? = null,
+    @SerialName("Tags") val tags: List<String>? = null,
+    @SerialName("DateCreated") val dateCreated: String? = null,
+    @SerialName("PremiereDate") val premiereDate: String? = null,
+    @SerialName("OfficialRating") val officialRating: String? = null,
+    @SerialName("SortName") val sortName: String? = null,
 ) {
     /**
      * Returns true if this item has at least one displayable image.
@@ -64,7 +70,25 @@ data class JellyfinItem(
             imageTags?.containsKey("Thumb") == true ||
             !backdropImageTags.isNullOrEmpty()
     }
+
+    /**
+     * Returns the author/artist names extracted from Jellyfin's Studios field.
+     * In Jellyfin, book/comic creators are stored as studio entries.
+     */
+    fun getCreators(): List<String> {
+        return studios?.map { it.name } ?: emptyList()
+    }
 }
+
+/**
+ * Jellyfin named item DTO — used for Studios and similar fields
+ * that Jellyfin stores as objects with a Name property.
+ */
+@Serializable
+data class JellyfinNamedItem(
+    @SerialName("Name") val name: String,
+    @SerialName("Id") val id: String? = null,
+)
 
 /**
  * Jellyfin media source DTO — provides access to the physical file path

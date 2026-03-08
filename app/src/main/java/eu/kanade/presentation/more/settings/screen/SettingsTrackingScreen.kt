@@ -436,6 +436,80 @@ object SettingsTrackingScreen : SearchableSettings {
                     )
                     // Show connection test when Jellyfin is logged in
                     if (trackerManager.jellyfin.isLoggedIn) {
+                        // Jellyfin library selection
+                        var jellyfinLibraryName by remember { mutableStateOf<String?>(null) }
+                        val currentLibraryId = libraryPreferences.jellyfinLibraryId().get()
+
+                        // Resolve library name on composition
+                        if (currentLibraryId.isNotBlank()) {
+                            androidx.compose.runtime.LaunchedEffect(currentLibraryId) {
+                                try {
+                                    val serverUrl = trackerManager.jellyfin.getUsername().trimEnd('/')
+                                    val userId = trackPreferences.jellyfinUserId().get()
+                                    if (userId.isNotBlank()) {
+                                        val libs = trackerManager.jellyfin.api.getLibraries(serverUrl, userId)
+                                        jellyfinLibraryName = libs.firstOrNull {
+                                            it.id == currentLibraryId
+                                        }?.name
+                                    }
+                                } catch (_: Exception) {}
+                            }
+                        }
+                        add(
+                            Preference.PreferenceItem.TextPreference(
+                                title = stringResource(MR.strings.jellyfin_library),
+                                subtitle = if (currentLibraryId.isBlank()) {
+                                    stringResource(MR.strings.jellyfin_library_all)
+                                } else {
+                                    jellyfinLibraryName ?: currentLibraryId
+                                },
+                                onClick = {
+                                    scope.launchIO {
+                                        try {
+                                            val serverUrl =
+                                                trackerManager.jellyfin.getUsername().trimEnd('/')
+                                            val userId = trackPreferences.jellyfinUserId().get()
+                                            if (userId.isNotBlank()) {
+                                                val libs = trackerManager.jellyfin.api.getLibraries(
+                                                    serverUrl,
+                                                    userId,
+                                                )
+                                                // Show selection — for now cycle through or clear
+                                                val currentIdx = libs.indexOfFirst {
+                                                    it.id == currentLibraryId
+                                                }
+                                                val nextLib = if (currentIdx < libs.lastIndex) {
+                                                    libs[currentIdx + 1]
+                                                } else {
+                                                    null // cycle back to "All"
+                                                }
+                                                libraryPreferences.jellyfinLibraryId().set(
+                                                    nextLib?.id ?: "",
+                                                )
+                                                withUIContext {
+                                                    context.toast(
+                                                        if (nextLib != null) {
+                                                            context.stringResource(
+                                                                MR.strings.jellyfin_library_selected,
+                                                                nextLib.name,
+                                                            )
+                                                        } else {
+                                                            context.stringResource(
+                                                                MR.strings.jellyfin_library_all,
+                                                            )
+                                                        },
+                                                    )
+                                                }
+                                            }
+                                        } catch (e: Exception) {
+                                            withUIContext {
+                                                context.toast(MR.strings.jellyfin_test_failed)
+                                            }
+                                        }
+                                    }
+                                },
+                            ),
+                        )
                         add(
                             Preference.PreferenceItem.TextPreference(
                                 title = stringResource(MR.strings.jellyfin_test_connection),

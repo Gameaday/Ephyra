@@ -91,6 +91,7 @@ import com.mikepenz.markdown.utils.getUnescapedTextInNode
 import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.presentation.components.DropdownMenu
 import eu.kanade.tachiyomi.R
+import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.util.system.copyToClipboard
 import eu.kanade.tachiyomi.util.system.openInBrowser
@@ -654,7 +655,17 @@ private fun ColumnScope.MangaContentInfo(
 
     if (canonicalId != null) {
         val authorityLabel = remember(canonicalId) { CanonicalId.toLabel(canonicalId) }
-        val authorityUrl = remember(canonicalId) { CanonicalId.toUrl(canonicalId) }
+        // Build the authority URL — for Jellyfin, resolve the server URL from the tracker
+        val authorityUrl = remember(canonicalId) {
+            if (canonicalId.startsWith("jf:")) {
+                val trackerManager: TrackerManager = Injekt.get()
+                val serverUrl = trackerManager.jellyfin.getUsername().trimEnd('/')
+                    .takeIf { it.isNotBlank() && it != "jellyfin" }
+                CanonicalId.toUrl(canonicalId, jellyfinServerUrl = serverUrl)
+            } else {
+                CanonicalId.toUrl(canonicalId)
+            }
+        }
         val lockCount = remember(lockedFields) {
             LockedField.ALL_FIELDS.count { LockedField.isLocked(lockedFields, it) }
         }
