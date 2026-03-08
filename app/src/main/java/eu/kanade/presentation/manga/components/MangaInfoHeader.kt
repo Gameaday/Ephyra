@@ -677,15 +677,15 @@ private fun ColumnScope.MangaContentInfo(
                     ),
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Verified,
                         contentDescription = null,
                         modifier = Modifier
-                            .padding(end = 8.dp)
-                            .size(18.dp),
+                            .padding(end = 10.dp)
+                            .size(20.dp),
                         tint = MaterialTheme.colorScheme.primary,
                     )
                     ProvideTextStyle(MaterialTheme.typography.labelLarge) {
@@ -711,8 +711,8 @@ private fun ColumnScope.MangaContentInfo(
                                 imageVector = Icons.Outlined.Lock,
                                 contentDescription = null,
                                 modifier = Modifier
-                                    .padding(end = 2.dp)
-                                    .size(12.dp),
+                                    .padding(end = 4.dp)
+                                    .size(14.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Text(

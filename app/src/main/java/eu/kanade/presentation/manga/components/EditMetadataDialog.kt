@@ -533,8 +533,9 @@ private fun GenreEditor(
         Spacer(modifier = Modifier.height(4.dp))
 
         FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.animateContentSize(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             genres.forEach { genre ->
                 FilterChip(
@@ -588,20 +589,20 @@ private fun GenreEditor(
 /**
  * Jellyfin-style section header with a divider and label.
  * Groups related metadata fields visually, using Material Expression
- * with primary color accent and proper spacing hierarchy.
+ * with primary color accent, tonal surface, and proper spacing hierarchy.
  */
 @Composable
 private fun SectionHeader(text: String) {
-    Column(modifier = Modifier.padding(top = 4.dp)) {
+    Column(modifier = Modifier.padding(top = 8.dp)) {
         HorizontalDivider(
             modifier = Modifier.padding(vertical = 4.dp),
             color = MaterialTheme.colorScheme.outlineVariant,
         )
         Text(
             text = text,
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(bottom = 4.dp, top = 2.dp),
+            modifier = Modifier.padding(bottom = 4.dp, top = 4.dp),
         )
     }
 }

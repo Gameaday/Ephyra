@@ -322,7 +322,7 @@ object SettingsTrackingScreen : SearchableSettings {
                                         shape = MaterialTheme.shapes.small,
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(vertical = 2.dp),
+                                            .padding(vertical = 3.dp),
                                     ) {
                                         Row(
                                             modifier = Modifier
