@@ -14,8 +14,11 @@ import logcat.LogPriority
 import okhttp3.Dns
 import okhttp3.OkHttpClient
 import tachiyomi.core.common.util.system.logcat
+import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.i18n.MR
+import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.get
 import tachiyomi.domain.track.model.Track as DomainTrack
 
 /**
@@ -49,6 +52,8 @@ class Jellyfin(id: Long) : BaseTracker(id, "Jellyfin"), EnhancedTracker, Deletab
             .build()
 
     val api by lazy { JellyfinApi(id, client) }
+
+    private val libraryPreferences: LibraryPreferences by lazy { Injekt.get() }
 
     // -- Branding --
 
@@ -89,11 +94,13 @@ class Jellyfin(id: Long) : BaseTracker(id, "Jellyfin"), EnhancedTracker, Deletab
                 }
             }
         }
-        // Sync read state back to Jellyfin for individual chapters
-        try {
-            syncReadProgressToServer(track)
-        } catch (e: Exception) {
-            logcat(LogPriority.WARN, e) { "Failed to sync progress to Jellyfin" }
+        // Sync read state back to Jellyfin only when sync is enabled
+        if (libraryPreferences.jellyfinSyncEnabled().get()) {
+            try {
+                syncReadProgressToServer(track)
+            } catch (e: Exception) {
+                logcat(LogPriority.WARN, e) { "Failed to sync progress to Jellyfin" }
+            }
         }
         return track
     }
@@ -132,6 +139,14 @@ class Jellyfin(id: Long) : BaseTracker(id, "Jellyfin"), EnhancedTracker, Deletab
             val remoteTrack = api.getSeries(serverUrl, userId, itemId)
             track.copyPersonalFrom(remoteTrack)
             track.total_chapters = remoteTrack.total_chapters
+
+            // Pull read progress from Jellyfin: if the server has more chapters
+            // read than the local track, adopt the server's count so that
+            // Jellyfin can be the canonical source for read-state.
+            if (remoteTrack.last_chapter_read > track.last_chapter_read) {
+                track.last_chapter_read = remoteTrack.last_chapter_read
+                track.status = remoteTrack.status
+            }
             track
         } catch (e: Exception) {
             logcat(LogPriority.WARN, e) { "Jellyfin refresh failed for ${track.tracking_url}" }
@@ -162,8 +177,19 @@ class Jellyfin(id: Long) : BaseTracker(id, "Jellyfin"), EnhancedTracker, Deletab
             val info = tempApi.getSystemInfo(serverUrl)
             logcat(LogPriority.INFO) { "Connected to Jellyfin: ${info.serverName} v${info.version}" }
 
-            // Try to get the user ID from the API key
-            // With an API key, we use the first admin user; with a user token we get the user info
+            // Auto-populate user ID from the API key's user list
+            if (trackPreferences.jellyfinUserId().get().isBlank()) {
+                try {
+                    val users = tempApi.getUsers(serverUrl)
+                    if (users.isNotEmpty()) {
+                        trackPreferences.jellyfinUserId().set(users.first().id)
+                        logcat(LogPriority.INFO) { "Auto-selected Jellyfin user: ${users.first().name}" }
+                    }
+                } catch (e: Exception) {
+                    logcat(LogPriority.WARN, e) { "Could not auto-populate Jellyfin user ID" }
+                }
+            }
+
             saveCredentials(serverUrl, password)
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e) { "Jellyfin login failed" }
