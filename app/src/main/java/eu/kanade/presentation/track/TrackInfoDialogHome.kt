@@ -240,13 +240,22 @@ private fun TrackInfoItem(
                     .padding(start = 16.dp),
                 contentAlignment = Alignment.CenterStart,
             ) {
-                Text(
-                    text = title,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
+                Column {
+                    Text(
+                        text = title,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    if (isAuthority) {
+                        Text(
+                            text = stringResource(MR.strings.authority_linked_label),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
             }
             VerticalDivider()
             TrackInfoItemMenu(
