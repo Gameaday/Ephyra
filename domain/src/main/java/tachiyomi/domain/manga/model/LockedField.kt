@@ -14,8 +14,8 @@ package tachiyomi.domain.manga.model
  * // Lock a field
  * val newMask = manga.lockedFields or LockedField.DESCRIPTION
  *
- * // Unlock a field
- * val newMask = manga.lockedFields and LockedField.DESCRIPTION.inv()
+ * // Toggle a field (lock if unlocked, unlock if locked)
+ * val newMask = manga.lockedFields xor LockedField.DESCRIPTION
  *
  * // Check if a field is locked
  * val isLocked = manga.lockedFields and LockedField.DESCRIPTION != 0L
