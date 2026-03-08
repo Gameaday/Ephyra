@@ -115,14 +115,14 @@ fun EditMetadataDialog(
                             contentDescription = null,
                             modifier = Modifier.size(18.dp),
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = if (hasAuthority) {
                                 stringResource(MR.strings.edit_metadata_refresh)
                             } else {
                                 stringResource(MR.strings.edit_metadata_identify)
                             },
-                            style = MaterialTheme.typography.labelMedium,
+                            style = MaterialTheme.typography.labelLarge,
                         )
                     }
                 }
