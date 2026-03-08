@@ -20,6 +20,8 @@ data class MALManga(
     val startDate: String?,
     val authors: List<MALAuthorNode> = emptyList(),
     val genres: List<MALGenre> = emptyList(),
+    @SerialName("alternative_titles")
+    val alternativeTitles: MALAlternativeTitles? = null,
 )
 
 @Serializable
@@ -49,3 +51,20 @@ data class MALGenre(
     val id: Long,
     val name: String,
 )
+
+@Serializable
+data class MALAlternativeTitles(
+    val synonyms: List<String> = emptyList(),
+    val en: String? = null,
+    val ja: String? = null,
+) {
+    fun toAlternativeTitles(primaryTitle: String): List<String> {
+        return buildList {
+            en?.let { add(it) }
+            ja?.let { add(it) }
+            addAll(synonyms)
+        }
+            .filterNot { it.isBlank() || it == primaryTitle }
+            .distinct()
+    }
+}

@@ -82,6 +82,7 @@ fun getComicInfo(
     urls: List<String>,
     categories: List<String>?,
     sourceName: String,
+    sourceLang: String? = null,
 ) = ComicInfo(
     title = ComicInfo.Title(chapter.name),
     series = ComicInfo.Series(manga.title),
@@ -105,7 +106,8 @@ fun getComicInfo(
     ),
     categories = categories?.let { ComicInfo.CategoriesTachiyomi(it.joinToString()) },
     source = ComicInfo.SourceMihon(sourceName),
-    languageISO = null,
+    languageISO = sourceLang?.takeIf { it.isNotBlank() && it != "all" }
+        ?.let { ComicInfo.LanguageISO(it) },
     manga = ComicInfo.Manga("YesAndRightToLeft"),
     inker = null,
     colorist = null,

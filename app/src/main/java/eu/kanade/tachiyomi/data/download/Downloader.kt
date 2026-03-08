@@ -767,6 +767,7 @@ class Downloader(
             urls,
             categories,
             source.name,
+            source.lang,
         )
 
         // Remove the old file
