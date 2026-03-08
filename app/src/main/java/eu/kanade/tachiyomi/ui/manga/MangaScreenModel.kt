@@ -391,6 +391,23 @@ class MangaScreenModel(
         }
     }
 
+    /**
+     * Toggles a per-field metadata lock (Jellyfin-style).
+     * When locked, the authority refresh will skip this field, preserving user edits.
+     */
+    fun toggleLockedField(field: Long) {
+        val manga = successState?.manga ?: return
+        val newLocked = manga.lockedFields xor field
+        screenModelScope.launchIO {
+            updateManga.await(
+                tachiyomi.domain.manga.model.MangaUpdate(
+                    id = manga.id,
+                    lockedFields = newLocked,
+                ),
+            )
+        }
+    }
+
     fun toggleFavorite() {
         toggleFavorite(
             onRemoved = {
@@ -1197,6 +1214,7 @@ class MangaScreenModel(
         data object SettingsSheet : Dialog
         data object TrackSheet : Dialog
         data object FullCover : Dialog
+        data object MetadataLocks : Dialog
     }
 
     fun dismissDialog() {
@@ -1217,6 +1235,10 @@ class MangaScreenModel(
 
     fun showCoverDialog() {
         updateSuccessState { it.copy(dialog = Dialog.FullCover) }
+    }
+
+    fun showMetadataLocksDialog() {
+        updateSuccessState { it.copy(dialog = Dialog.MetadataLocks) }
     }
 
     fun showMigrateDialog(duplicate: Manga) {

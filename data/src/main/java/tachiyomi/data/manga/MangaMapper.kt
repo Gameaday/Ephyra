@@ -44,6 +44,7 @@ object MangaMapper {
         alternativeTitles: String?,
         deadSince: Long?,
         contentType: Long,
+        lockedFields: Long,
     ): Manga = Manga(
         id = id,
         source = source,
@@ -76,6 +77,7 @@ object MangaMapper {
         alternativeTitles = parseAlternativeTitles(alternativeTitles),
         deadSince = deadSince,
         contentType = ContentType.fromValue(contentType.toInt()),
+        lockedFields = lockedFields,
     )
 
     fun mapLibraryManga(
@@ -111,6 +113,7 @@ object MangaMapper {
         alternativeTitles: String?,
         deadSince: Long?,
         contentType: Long,
+        lockedFields: Long,
         totalCount: Long,
         readCount: Double,
         latestUpload: Long,
@@ -152,6 +155,7 @@ object MangaMapper {
             alternativeTitles,
             deadSince,
             contentType,
+            lockedFields,
         ),
         categories = categories.split(",").map { it.toLong() },
         totalChapters = totalCount,
@@ -195,6 +199,7 @@ object MangaMapper {
         alternativeTitles: String?,
         deadSince: Long?,
         contentType: Long,
+        lockedFields: Long,
         totalCount: Long,
     ): MangaWithChapterCount = MangaWithChapterCount(
         manga = mapManga(
@@ -230,6 +235,7 @@ object MangaMapper {
             alternativeTitles,
             deadSince,
             contentType,
+            lockedFields,
         ),
         chapterCount = totalCount,
     )

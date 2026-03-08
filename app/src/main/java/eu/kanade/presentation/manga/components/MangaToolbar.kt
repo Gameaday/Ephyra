@@ -40,6 +40,7 @@ fun MangaToolbar(
     onClickEditNotes: () -> Unit,
     onClickClearMetadataSource: (() -> Unit)?,
     onClickResolveCanonical: (() -> Unit)?,
+    onClickMetadataLocks: (() -> Unit)?,
 
     // For action mode
     actionModeCounter: Int,
@@ -162,6 +163,14 @@ fun MangaToolbar(
                             AppBar.OverflowAction(
                                 title = stringResource(MR.strings.action_resolve_canonical),
                                 onClick = onClickResolveCanonical,
+                            ),
+                        )
+                    }
+                    if (onClickMetadataLocks != null) {
+                        add(
+                            AppBar.OverflowAction(
+                                title = stringResource(MR.strings.metadata_locks_title),
+                                onClick = onClickMetadataLocks,
                             ),
                         )
                     }

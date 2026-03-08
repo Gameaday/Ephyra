@@ -1,0 +1,4 @@
+-- Per-field metadata locking (Jellyfin-style).
+-- Bitmask indicating which metadata fields the user has locked from authority refresh.
+-- 0 = no fields locked (default).  See LockedField.kt for flag definitions.
+ALTER TABLE mangas ADD COLUMN locked_fields INTEGER NOT NULL DEFAULT 0;

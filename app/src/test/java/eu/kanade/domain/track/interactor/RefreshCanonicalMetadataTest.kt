@@ -443,4 +443,135 @@ class RefreshCanonicalMetadataTest {
             updateSlot.captured.status shouldBe expectedCode
         }
     }
+
+    // --- Per-field locking (Jellyfin-style) ---
+
+    @Test
+    fun `locked description is not overwritten even in default overwrite mode`() = runTest {
+        val manga = testManga(
+            title = "Test Manga",
+            canonicalId = "mu:12345",
+            description = "User-customized description",
+        ).copy(lockedFields = tachiyomi.domain.manga.model.LockedField.DESCRIPTION)
+
+        coEvery { muTracker.search("Test Manga") } returns listOf(
+            testTrackSearch(
+                title = "Test Manga",
+                remoteId = 12345L,
+                summary = "Authority description (should be ignored)",
+                authors = listOf("New Author"),
+                publishingStatus = "Ongoing",
+            ),
+        )
+
+        val result = refreshCanonicalMetadata.await(manga)
+        result shouldBe true
+
+        val updateSlot = slot<MangaUpdate>()
+        coVerify { mangaRepository.update(capture(updateSlot)) }
+        val update = updateSlot.captured
+        // Description locked — must NOT be overwritten
+        update.description shouldBe null
+        // Unlocked fields still get updated
+        update.author shouldBe "New Author"
+        update.status shouldBe 1L
+    }
+
+    @Test
+    fun `locked cover is not overwritten`() = runTest {
+        val manga = testManga(
+            title = "Test Manga",
+            canonicalId = "mu:12345",
+            thumbnailUrl = "https://example.com/my-custom-cover.jpg",
+        ).copy(lockedFields = tachiyomi.domain.manga.model.LockedField.COVER)
+
+        coEvery { muTracker.search("Test Manga") } returns listOf(
+            testTrackSearch(
+                title = "Test Manga",
+                remoteId = 12345L,
+                summary = "New description",
+                coverUrl = "https://example.com/authority-cover.jpg",
+            ),
+        )
+
+        val result = refreshCanonicalMetadata.await(manga)
+        result shouldBe true
+
+        val updateSlot = slot<MangaUpdate>()
+        coVerify { mangaRepository.update(capture(updateSlot)) }
+        val update = updateSlot.captured
+        // Cover locked — must NOT be overwritten
+        update.thumbnailUrl shouldBe null
+        // Unlocked fields still get updated
+        update.description shouldBe "New description"
+    }
+
+    @Test
+    fun `multiple locked fields are all respected`() = runTest {
+        val locked = tachiyomi.domain.manga.model.LockedField.DESCRIPTION or
+            tachiyomi.domain.manga.model.LockedField.AUTHOR or
+            tachiyomi.domain.manga.model.LockedField.STATUS
+        val manga = testManga(
+            title = "Test Manga",
+            canonicalId = "mu:12345",
+            description = "Custom desc",
+            author = "Custom Author",
+            status = 1L,
+        ).copy(lockedFields = locked)
+
+        coEvery { muTracker.search("Test Manga") } returns listOf(
+            testTrackSearch(
+                title = "Test Manga",
+                remoteId = 12345L,
+                summary = "Authority desc",
+                authors = listOf("Authority Author"),
+                artists = listOf("Authority Artist"),
+                coverUrl = "https://example.com/cover.jpg",
+                publishingStatus = "Completed",
+            ),
+        )
+
+        val result = refreshCanonicalMetadata.await(manga)
+        result shouldBe true
+
+        val updateSlot = slot<MangaUpdate>()
+        coVerify { mangaRepository.update(capture(updateSlot)) }
+        val update = updateSlot.captured
+        // Locked fields — NOT overwritten
+        update.description shouldBe null
+        update.author shouldBe null
+        update.status shouldBe null
+        // Unlocked fields — overwritten
+        update.artist shouldBe "Authority Artist"
+        update.thumbnailUrl shouldBe "https://example.com/cover.jpg"
+    }
+
+    @Test
+    fun `returns false when all fields locked and all populated`() = runTest {
+        val manga = testManga(
+            title = "Test Manga",
+            canonicalId = "mu:12345",
+            description = "Locked desc",
+            author = "Locked author",
+            artist = "Locked artist",
+            thumbnailUrl = "https://example.com/locked.jpg",
+            status = 1L,
+        ).copy(lockedFields = tachiyomi.domain.manga.model.LockedField.ALL)
+
+        coEvery { muTracker.search("Test Manga") } returns listOf(
+            testTrackSearch(
+                title = "Test Manga",
+                remoteId = 12345L,
+                summary = "New desc",
+                authors = listOf("New author"),
+                artists = listOf("New artist"),
+                coverUrl = "https://example.com/new.jpg",
+                publishingStatus = "Completed",
+            ),
+        )
+
+        val result = refreshCanonicalMetadata.await(manga)
+        // All fields locked — no changes to make
+        result shouldBe false
+    }
 }

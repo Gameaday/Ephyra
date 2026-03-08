@@ -8,6 +8,7 @@ import logcat.LogPriority
 import tachiyomi.core.common.util.lang.withIOContext
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.manga.model.ContentType
+import tachiyomi.domain.manga.model.LockedField
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaUpdate
 import tachiyomi.domain.manga.model.mergedAlternativeTitles
@@ -23,6 +24,10 @@ import tachiyomi.domain.manga.repository.MangaRepository
  * The canonical source is the designated authority for this manga, so it **overwrites**
  * existing metadata with fresh values by default.  This keeps data (status, description,
  * cover art) up to date as the authoritative source changes over time.
+ *
+ * **Per-field locking** (Jellyfin-style): Fields whose bit is set in [Manga.lockedFields]
+ * are never overwritten, even in overwrite mode.  This lets users protect manual edits
+ * (e.g. a custom description) while keeping all other fields current from the authority.
  *
  * Fill-only mode is available via [fillOnly] for the initial matching phase, where
  * multiple authority sources are tried in sequence and earlier sources' data should
@@ -93,30 +98,48 @@ class RefreshCanonicalMetadata(
 
     /**
      * Applies metadata from the tracker result to the manga.
-     * When [fillOnly] is false (default), overwrites all fields with non-blank authority
-     * values — the canonical source is the designated truth for this manga.
-     * When [fillOnly] is true, only fills empty/blank fields (used during initial matching
-     * to avoid overwrite chains between multiple authority sources).
+     *
+     * Respects per-field locking (Jellyfin-style): fields whose bit is set in
+     * [Manga.lockedFields] are never overwritten, regardless of mode.
+     *
+     * When [fillOnly] is false (default), overwrites all *unlocked* fields with
+     * non-blank authority values — the canonical source is the designated truth.
+     * When [fillOnly] is true, only fills empty/blank *unlocked* fields (used
+     * during initial matching to avoid overwrite chains).
      */
     private suspend fun applyMetadataUpdate(manga: Manga, result: TrackSearch, fillOnly: Boolean): Boolean {
+        val locked = manga.lockedFields
+
         val description = result.summary.takeIf {
-            it.isNotBlank() && (!fillOnly || manga.description.isNullOrBlank())
+            it.isNotBlank() &&
+                !LockedField.isLocked(locked, LockedField.DESCRIPTION) &&
+                (!fillOnly || manga.description.isNullOrBlank())
         }
         val author = result.authors.joinToString(", ").takeIf {
-            it.isNotBlank() && (!fillOnly || manga.author.isNullOrBlank())
+            it.isNotBlank() &&
+                !LockedField.isLocked(locked, LockedField.AUTHOR) &&
+                (!fillOnly || manga.author.isNullOrBlank())
         }
         val artist = result.artists.joinToString(", ").takeIf {
-            it.isNotBlank() && (!fillOnly || manga.artist.isNullOrBlank())
+            it.isNotBlank() &&
+                !LockedField.isLocked(locked, LockedField.ARTIST) &&
+                (!fillOnly || manga.artist.isNullOrBlank())
         }
         val thumbnailUrl = result.cover_url.takeIf {
-            it.isNotBlank() && (!fillOnly || manga.thumbnailUrl.isNullOrBlank())
+            it.isNotBlank() &&
+                !LockedField.isLocked(locked, LockedField.COVER) &&
+                (!fillOnly || manga.thumbnailUrl.isNullOrBlank())
         }
         val status = mapTrackerStatus(result.publishing_status).takeIf {
-            it != null && (!fillOnly || manga.status == 0L)
+            it != null &&
+                !LockedField.isLocked(locked, LockedField.STATUS) &&
+                (!fillOnly || manga.status == 0L)
         }
         // Infer content type from tracker's publishing_type
         val contentType = ContentType.fromPublishingType(result.publishing_type).takeIf {
-            it != ContentType.UNKNOWN && (!fillOnly || manga.contentType == ContentType.UNKNOWN)
+            it != ContentType.UNKNOWN &&
+                !LockedField.isLocked(locked, LockedField.CONTENT_TYPE) &&
+                (!fillOnly || manga.contentType == ContentType.UNKNOWN)
         }
 
         val hasChanges = description != null || author != null || artist != null ||

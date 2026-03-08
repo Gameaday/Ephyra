@@ -35,6 +35,7 @@ import eu.kanade.presentation.manga.MangaScreen
 import eu.kanade.presentation.manga.components.CoverSearchDialog
 import eu.kanade.presentation.manga.components.DeleteChaptersDialog
 import eu.kanade.presentation.manga.components.MangaCoverDialog
+import eu.kanade.presentation.manga.components.MetadataLocksDialog
 import eu.kanade.presentation.manga.components.ScanlatorFilterDialog
 import eu.kanade.presentation.manga.components.SetIntervalDialog
 import eu.kanade.presentation.util.AssistContentScreen
@@ -168,6 +169,9 @@ class MangaScreen(
             },
             onResolveCanonicalClicked = screenModel::resolveCanonicalId.takeIf {
                 successState.manga.favorite && successState.manga.canonicalId == null
+            },
+            onMetadataLocksClicked = screenModel::showMetadataLocksDialog.takeIf {
+                successState.manga.favorite && successState.manga.canonicalId != null
             },
             onMultiBookmarkClicked = screenModel::bookmarkChapters,
             onMultiMarkAsReadClicked = screenModel::markChaptersRead,
@@ -308,6 +312,13 @@ class MangaScreen(
                     onDismissRequest = onDismissRequest,
                     onValueChanged = { interval: Int -> screenModel.setFetchInterval(dialog.manga, interval) }
                         .takeIf { screenModel.isUpdateIntervalEnabled },
+                )
+            }
+            MangaScreenModel.Dialog.MetadataLocks -> {
+                MetadataLocksDialog(
+                    lockedFields = successState.manga.lockedFields,
+                    onToggleField = screenModel::toggleLockedField,
+                    onDismissRequest = onDismissRequest,
                 )
             }
         }
