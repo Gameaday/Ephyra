@@ -277,10 +277,12 @@ private fun GridItemTitle(
     Text(
         modifier = modifier,
         text = title,
+        fontSize = MaterialTheme.typography.labelSmall.fontSize,
+        lineHeight = MaterialTheme.typography.labelSmall.lineHeight,
         minLines = minLines,
         maxLines = maxLines,
         overflow = TextOverflow.Ellipsis,
-        style = style.merge(MaterialTheme.typography.labelSmall),
+        style = style,
     )
 }
 
