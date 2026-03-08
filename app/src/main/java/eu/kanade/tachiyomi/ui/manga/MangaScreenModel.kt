@@ -272,6 +272,22 @@ class MangaScreenModel(
                 async { fetchChaptersFromSource(manualFetch) },
             )
             fetchFromSourceTasks.awaitAll()
+
+            // Also refresh from authority when linked — integrated Jellyfin-style
+            // metadata provider refresh: one button refreshes all sources.
+            val manga = successState?.manga
+            if (manga?.canonicalId != null) {
+                try {
+                    val refreshCanonical =
+                        Injekt.get<eu.kanade.domain.track.interactor.RefreshCanonicalMetadata>()
+                    refreshCanonical.await(manga)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    logcat(LogPriority.WARN, e) { "Authority refresh during pull failed" }
+                }
+            }
+
             updateSuccessState { it.copy(isRefreshingData = false) }
         }
     }
@@ -518,6 +534,19 @@ class MangaScreenModel(
 
                 // Finally match with enhanced tracking when available
                 addTracks.bindEnhancedTrackers(manga, state.source)
+
+                // Auto-link to authority source in background (Jellyfin-style:
+                // adding to library automatically resolves metadata provider)
+                if (manga.canonicalId == null) {
+                    try {
+                        val matchUnlinkedManga: MatchUnlinkedManga = Injekt.get()
+                        matchUnlinkedManga.awaitSingle(manga)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        logcat(LogPriority.DEBUG, e) { "Auto-link on add-to-library skipped" }
+                    }
+                }
             }
         }
     }

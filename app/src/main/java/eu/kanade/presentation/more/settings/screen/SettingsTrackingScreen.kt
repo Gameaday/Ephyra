@@ -97,6 +97,7 @@ object SettingsTrackingScreen : SearchableSettings {
         val trackPreferences = remember { Injekt.get<TrackPreferences>() }
         val trackerManager = remember { Injekt.get<TrackerManager>() }
         val sourceManager = remember { Injekt.get<SourceManager>() }
+        val libraryPreferences = remember { Injekt.get<tachiyomi.domain.library.service.LibraryPreferences>() }
         val scope = rememberCoroutineScope()
 
         var dialog by remember { mutableStateOf<Any?>(null) }
@@ -406,6 +407,13 @@ object SettingsTrackingScreen : SearchableSettings {
                                 MatchUnlinkedJob.start(context)
                                 context.toast(MR.strings.tracker_match_all_started)
                             },
+                        ),
+                    )
+                    add(
+                        Preference.PreferenceItem.SwitchPreference(
+                            preference = libraryPreferences.jellyfinSyncEnabled(),
+                            title = stringResource(MR.strings.pref_jellyfin_sync_enabled),
+                            subtitle = stringResource(MR.strings.pref_jellyfin_sync_enabled_summary),
                         ),
                     )
                 }

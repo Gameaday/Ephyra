@@ -164,15 +164,6 @@ class MangaScreen(
                 navigator.push(MigrationConfigScreen(successState.manga.id))
             }.takeIf { successState.manga.favorite },
             onEditNotesClicked = { navigator.push(MangaNotesScreen(manga = successState.manga)) },
-            onClearMetadataSourceClicked = screenModel::clearMetadataSource.takeIf {
-                successState.manga.metadataSource?.let { it > 0 } == true
-            },
-            onResolveCanonicalClicked = screenModel::resolveCanonicalId.takeIf {
-                successState.manga.favorite && successState.manga.canonicalId == null
-            },
-            onRefreshAuthorityClicked = screenModel::refreshFromAuthority.takeIf {
-                successState.manga.favorite && successState.manga.canonicalId != null
-            },
             onMetadataLocksClicked = screenModel::showMetadataLocksDialog.takeIf {
                 successState.manga.favorite && successState.manga.canonicalId != null
             },
