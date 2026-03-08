@@ -168,6 +168,7 @@ class AnilistApi(val client: OkHttpClient, interceptor: AnilistInterceptor) {
                         |status
                         |chapters
                         |description
+                        |genres
                         |startDate {
                             |year
                             |month

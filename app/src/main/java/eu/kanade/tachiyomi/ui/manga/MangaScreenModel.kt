@@ -46,6 +46,7 @@ import eu.kanade.tachiyomi.util.removeCovers
 import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.catch
@@ -432,6 +433,8 @@ class MangaScreenModel(
             try {
                 val refreshCanonical = Injekt.get<eu.kanade.domain.track.interactor.RefreshCanonicalMetadata>()
                 refreshCanonical.await(manga)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 logcat(LogPriority.WARN, e) {
                     "Authority-only refresh failed for ${manga.title}"

@@ -141,9 +141,20 @@ class RefreshCanonicalMetadata(
                 !LockedField.isLocked(locked, LockedField.CONTENT_TYPE) &&
                 (!fillOnly || manga.contentType == ContentType.UNKNOWN)
         }
+        // Merge genres from authority (if available and not locked)
+        val genre = result.genres.takeIf {
+            it.isNotEmpty() &&
+                !LockedField.isLocked(locked, LockedField.GENRE) &&
+                (!fillOnly || manga.genre.isNullOrEmpty())
+        }?.let { authorityGenres ->
+            // Merge: keep existing genres, add new ones from authority
+            val existing = manga.genre.orEmpty().toSet()
+            val merged = (existing + authorityGenres).distinct()
+            merged.takeIf { it.toSet() != existing }
+        }
 
         val hasChanges = description != null || author != null || artist != null ||
-            thumbnailUrl != null || status != null || contentType != null
+            thumbnailUrl != null || status != null || contentType != null || genre != null
 
         if (!hasChanges) {
             // Still merge alt titles even if main metadata didn't change
@@ -160,6 +171,7 @@ class RefreshCanonicalMetadata(
                 thumbnailUrl = thumbnailUrl,
                 status = status,
                 contentType = contentType,
+                genre = genre,
             ),
         )
 

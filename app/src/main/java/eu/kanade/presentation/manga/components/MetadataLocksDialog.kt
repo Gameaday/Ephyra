@@ -91,5 +91,6 @@ private fun fieldLabel(field: Long): String = when (field) {
     LockedField.COVER -> stringResource(MR.strings.locked_field_cover)
     LockedField.STATUS -> stringResource(MR.strings.locked_field_status)
     LockedField.CONTENT_TYPE -> stringResource(MR.strings.locked_field_content_type)
+    LockedField.GENRE -> stringResource(MR.strings.locked_field_genre)
     else -> error("Unknown locked field: $field")
 }

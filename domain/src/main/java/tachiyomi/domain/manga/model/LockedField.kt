@@ -44,8 +44,11 @@ object LockedField {
     /** Content type (manga, novel, book). */
     const val CONTENT_TYPE: Long = 1L shl 5 // 0x20
 
+    /** Genre / tag list. */
+    const val GENRE: Long = 1L shl 6 // 0x40
+
     /** All lockable fields ORed together. */
-    const val ALL: Long = DESCRIPTION or AUTHOR or ARTIST or COVER or STATUS or CONTENT_TYPE
+    const val ALL: Long = DESCRIPTION or AUTHOR or ARTIST or COVER or STATUS or CONTENT_TYPE or GENRE
 
     /** No fields locked. */
     const val NONE: Long = 0L
@@ -58,6 +61,7 @@ object LockedField {
         COVER -> "Cover"
         STATUS -> "Status"
         CONTENT_TYPE -> "Content type"
+        GENRE -> "Genre"
         else -> "Unknown"
     }
 
@@ -69,6 +73,7 @@ object LockedField {
         COVER,
         STATUS,
         CONTENT_TYPE,
+        GENRE,
     )
 
     /** Returns true if [field] is set in [mask]. */

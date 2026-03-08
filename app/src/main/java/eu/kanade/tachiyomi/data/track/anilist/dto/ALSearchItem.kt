@@ -15,6 +15,7 @@ data class ALSearchItem(
     val averageScore: Int?,
     val staff: ALStaff,
     val synonyms: List<String>? = null,
+    val genres: List<String>? = null,
 ) {
     fun toALManga(): ALManga = ALManga(
         remoteId = id,
@@ -28,6 +29,7 @@ data class ALSearchItem(
         averageScore = averageScore ?: -1,
         staff = staff,
         alternativeTitles = buildAlternativeTitles(),
+        genres = genres ?: emptyList(),
     )
 
     /**

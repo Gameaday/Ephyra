@@ -11,6 +11,7 @@ import eu.kanade.tachiyomi.data.track.model.TrackSearch
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import logcat.LogPriority
@@ -120,6 +121,8 @@ class AuthoritySearchScreenModel(
                     results = results.toImmutableList(),
                     isSearching = false,
                 )
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e) { "Authority search failed: query=$query" }
                 mutableState.value = mutableState.value.copy(

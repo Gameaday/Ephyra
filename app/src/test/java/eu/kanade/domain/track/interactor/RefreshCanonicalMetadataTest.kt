@@ -39,6 +39,7 @@ class RefreshCanonicalMetadataTest {
         thumbnailUrl: String? = null,
         status: Long = 0L,
         alternativeTitles: List<String> = emptyList(),
+        genre: List<String>? = null,
     ) = Manga.create().copy(
         id = id,
         title = title,
@@ -49,6 +50,7 @@ class RefreshCanonicalMetadataTest {
         thumbnailUrl = thumbnailUrl,
         status = status,
         alternativeTitles = alternativeTitles,
+        genre = genre,
         favorite = true,
     )
 
@@ -61,6 +63,7 @@ class RefreshCanonicalMetadataTest {
         coverUrl: String = "",
         alternativeTitles: List<String> = emptyList(),
         publishingStatus: String = "",
+        genres: List<String> = emptyList(),
     ): TrackSearch {
         val ts = TrackSearch()
         ts.title = title
@@ -71,6 +74,7 @@ class RefreshCanonicalMetadataTest {
         ts.cover_url = coverUrl
         ts.alternative_titles = alternativeTitles
         ts.publishing_status = publishingStatus
+        ts.genres = genres
         return ts
     }
 
@@ -573,5 +577,111 @@ class RefreshCanonicalMetadataTest {
         val result = refreshCanonicalMetadata.await(manga)
         // All fields locked — no changes to make
         result shouldBe false
+    }
+
+    @Test
+    fun `genres from authority are merged into manga`() = runTest {
+        val manga = testManga(
+            title = "Test Manga",
+            canonicalId = "mu:12345",
+            genre = listOf("Action"),
+        )
+
+        coEvery { muTracker.search("Test Manga") } returns listOf(
+            testTrackSearch(
+                title = "Test Manga",
+                remoteId = 12345L,
+                genres = listOf("Action", "Adventure", "Fantasy"),
+            ),
+        )
+
+        val result = refreshCanonicalMetadata.await(manga)
+        result shouldBe true
+
+        val updateSlot = slot<MangaUpdate>()
+        coVerify { mangaRepository.update(capture(updateSlot)) }
+        val update = updateSlot.captured
+        update.genre shouldBe listOf("Action", "Adventure", "Fantasy")
+    }
+
+    @Test
+    fun `locked genres are not overwritten`() = runTest {
+        val manga = testManga(
+            title = "Test Manga",
+            canonicalId = "mu:12345",
+            genre = listOf("Custom Genre"),
+        ).copy(lockedFields = tachiyomi.domain.manga.model.LockedField.GENRE)
+
+        coEvery { muTracker.search("Test Manga") } returns listOf(
+            testTrackSearch(
+                title = "Test Manga",
+                remoteId = 12345L,
+                summary = "Some summary",
+                genres = listOf("Action", "Adventure"),
+            ),
+        )
+
+        val result = refreshCanonicalMetadata.await(manga)
+        result shouldBe true
+
+        val updateSlot = slot<MangaUpdate>()
+        coVerify { mangaRepository.update(capture(updateSlot)) }
+        val update = updateSlot.captured
+        // Genre is locked — should not appear in update
+        update.genre shouldBe null
+        // Description is not locked — should be updated
+        update.description shouldBe "Some summary"
+    }
+
+    @Test
+    fun `fillOnly mode does not overwrite existing genres`() = runTest {
+        val manga = testManga(
+            title = "Test Manga",
+            canonicalId = "mu:12345",
+            genre = listOf("Existing Genre"),
+        )
+
+        coEvery { muTracker.search("Test Manga") } returns listOf(
+            testTrackSearch(
+                title = "Test Manga",
+                remoteId = 12345L,
+                summary = "Summary",
+                genres = listOf("Action", "Adventure"),
+            ),
+        )
+
+        val result = refreshCanonicalMetadata.await(manga, fillOnly = true)
+        result shouldBe true
+
+        val updateSlot = slot<MangaUpdate>()
+        coVerify { mangaRepository.update(capture(updateSlot)) }
+        val update = updateSlot.captured
+        // Genre already has values — fillOnly skips it
+        update.genre shouldBe null
+    }
+
+    @Test
+    fun `fillOnly mode fills empty genres from authority`() = runTest {
+        val manga = testManga(
+            title = "Test Manga",
+            canonicalId = "mu:12345",
+            genre = null,
+        )
+
+        coEvery { muTracker.search("Test Manga") } returns listOf(
+            testTrackSearch(
+                title = "Test Manga",
+                remoteId = 12345L,
+                genres = listOf("Action", "Adventure"),
+            ),
+        )
+
+        val result = refreshCanonicalMetadata.await(manga, fillOnly = true)
+        result shouldBe true
+
+        val updateSlot = slot<MangaUpdate>()
+        coVerify { mangaRepository.update(capture(updateSlot)) }
+        val update = updateSlot.captured
+        update.genre shouldBe listOf("Action", "Adventure")
     }
 }

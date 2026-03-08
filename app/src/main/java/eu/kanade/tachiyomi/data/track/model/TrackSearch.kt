@@ -50,6 +50,8 @@ class TrackSearch : Track {
 
     var alternative_titles: List<String> = emptyList()
 
+    var genres: List<String> = emptyList()
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
