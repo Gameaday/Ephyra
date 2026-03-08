@@ -237,29 +237,16 @@ fun MangaActionRow(
             onClick = { onEditIntervalClicked?.invoke() },
         )
         MangaActionButton(
-            title = when {
-                hasAuthority && trackingCount > 0 -> pluralStringResource(
-                    MR.plurals.num_trackers,
-                    count = trackingCount,
-                    trackingCount,
-                )
-                hasAuthority -> stringResource(MR.strings.manga_tracking_tab)
-                trackingCount == 0 -> stringResource(MR.strings.manga_tracking_tab)
-                else -> pluralStringResource(
-                    MR.plurals.num_trackers,
-                    count = trackingCount,
-                    trackingCount,
-                )
+            title = if (trackingCount == 0) {
+                stringResource(MR.strings.manga_tracking_tab)
+            } else {
+                pluralStringResource(MR.plurals.num_trackers, count = trackingCount, trackingCount)
             },
-            icon = when {
-                hasAuthority -> Icons.Outlined.Done
-                trackingCount == 0 -> Icons.Outlined.Sync
-                else -> Icons.Outlined.Done
-            },
-            color = when {
-                hasAuthority -> MaterialTheme.colorScheme.primary
-                trackingCount == 0 -> defaultActionButtonColor
-                else -> MaterialTheme.colorScheme.primary
+            icon = if (hasAuthority || trackingCount > 0) Icons.Outlined.Done else Icons.Outlined.Sync,
+            color = if (hasAuthority || trackingCount > 0) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                defaultActionButtonColor
             },
             onClick = onTrackingClicked,
         )
