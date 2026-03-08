@@ -131,7 +131,7 @@ fun EditMetadataDialog(
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
             ) {
-                // Authority provider badge (Jellyfin-style: shows linked provider at top)
+                // Authority provider badge shown when linked to a metadata provider
                 if (hasAuthority && authorityLabel != null) {
                     Surface(
                         color = MaterialTheme.colorScheme.primaryContainer,

@@ -661,7 +661,7 @@ private fun ColumnScope.MangaContentInfo(
         }
         if (authorityLabel != null) {
             androidx.compose.material3.Surface(
-                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = AUTHORITY_BADGE_ALPHA),
                 shape = MaterialTheme.shapes.small,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -872,6 +872,8 @@ private fun MangaSummary(
 }
 
 private val DefaultTagChipModifier = Modifier.padding(vertical = 4.dp)
+
+private const val AUTHORITY_BADGE_ALPHA = 0.4f
 
 @Composable
 private fun TagsChip(

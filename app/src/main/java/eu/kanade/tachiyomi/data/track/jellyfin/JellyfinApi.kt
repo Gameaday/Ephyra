@@ -239,7 +239,9 @@ class JellyfinApi(
                         is Int -> kotlinx.serialization.json.JsonPrimitive(value)
                         is Double -> kotlinx.serialization.json.JsonPrimitive(value)
                         is List<*> -> kotlinx.serialization.json.JsonArray(
-                            value.map { kotlinx.serialization.json.JsonPrimitive(it as String) },
+                            value.filterIsInstance<String>().map {
+                                kotlinx.serialization.json.JsonPrimitive(it)
+                            },
                         )
                         else -> kotlinx.serialization.json.JsonPrimitive(value.toString())
                     }
