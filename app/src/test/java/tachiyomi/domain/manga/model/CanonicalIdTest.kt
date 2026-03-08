@@ -190,4 +190,16 @@ class CanonicalIdTest {
         prefix shouldBe "jf"
         remoteId shouldBe "abc123def456"
     }
+
+    @Test
+    fun `fromUrl parses Jellyfin tracking URLs`() {
+        CanonicalId.fromUrl("http://192.168.1.100:8096/Items/abc123-def456") shouldBe "jf:abc123-def456"
+        CanonicalId.fromUrl("https://jellyfin.example.com/Items/uuid-value") shouldBe "jf:uuid-value"
+        CanonicalId.fromUrl("http://server/Items/id123?fields=Overview") shouldBe "jf:id123"
+    }
+
+    @Test
+    fun `fromUrl parses Jellyfin URLs with trailing slashes`() {
+        CanonicalId.fromUrl("http://server/Items/abc123/") shouldBe "jf:abc123"
+    }
 }

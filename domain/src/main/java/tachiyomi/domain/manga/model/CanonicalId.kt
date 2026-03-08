@@ -94,7 +94,7 @@ object CanonicalId {
 
     /**
      * Attempts to extract a canonical ID from a tracker URL.
-     * Supports AniList, MyAnimeList, and MangaUpdates URL formats.
+     * Supports AniList, MyAnimeList, MangaUpdates, and Jellyfin URL formats.
      *
      * @return canonical ID (e.g. "al:21") or null if the URL is unrecognized.
      */
@@ -121,6 +121,13 @@ object CanonicalId {
                     .substringBefore("&")
                     .toLongOrNull()
                 id?.let { create("mu", it) }
+            }
+            // Jellyfin: http(s)://server/Items/{uuid} or .../Items/{uuid}?...
+            trimmed.contains("/Items/") -> {
+                val itemId = trimmed.substringAfterLast("/Items/")
+                    .substringBefore("?")
+                    .substringBefore("/")
+                if (itemId.isNotBlank()) create("jf", itemId) else null
             }
             else -> null
         }
