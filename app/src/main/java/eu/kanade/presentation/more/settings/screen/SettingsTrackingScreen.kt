@@ -451,6 +451,7 @@ object SettingsTrackingScreen : SearchableSettings {
                                                     context.stringResource(
                                                         MR.strings.jellyfin_test_success,
                                                         info.serverName,
+                                                        info.version,
                                                     ),
                                                 )
                                             }
