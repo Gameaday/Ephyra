@@ -758,4 +758,28 @@ class RefreshCanonicalMetadataTest {
         update.title shouldBe null // title not updated because already exists
         update.description shouldBe "A description"
     }
+
+    @Test
+    fun `skips DB write when authority values match existing values`() = runTest {
+        val manga = testManga(
+            title = "Same Title",
+            canonicalId = "mu:12345",
+            description = "Same description",
+            author = "Author A",
+            artist = "Artist B",
+        )
+
+        coEvery { muTracker.search("Same Title") } returns listOf(
+            testTrackSearch(
+                title = "Same Title",
+                remoteId = 12345L,
+                summary = "Same description",
+                authors = listOf("Author A"),
+                artists = listOf("Artist B"),
+            ),
+        )
+
+        val result = refreshCanonicalMetadata.await(manga)
+        result shouldBe false // No changes detected — values are identical
+    }
 }

@@ -253,6 +253,12 @@ actual class LocalSource(
         comicInfo.title?.let { chapter.name = it.value }
         comicInfo.number?.value?.toFloatOrNull()?.let { chapter.chapter_number = it }
         comicInfo.translator?.let { chapter.scanlator = it.value }
+
+        // Include volume info in name if present and not already included
+        val volume = comicInfo.volume?.value?.takeIf { it > 0 }
+        if (volume != null && !chapter.name.contains("Vol.", ignoreCase = true)) {
+            chapter.name = "Vol. $volume - ${chapter.name}"
+        }
     }
 
     // Chapters
@@ -282,8 +288,12 @@ actual class LocalSource(
                     if (jellyfinChapterNum != null) {
                         // Jellyfin-formatted file — use parsed chapter number directly
                         chapter_number = jellyfinChapterNum.toFloat()
-                        // Use chapter title from Jellyfin naming if available
-                        jellyfinParsed.chapterTitle?.let { name = it }
+                        // Build display name from Jellyfin components
+                        val displayParts = mutableListOf<String>()
+                        jellyfinParsed.volumeNumber?.let { displayParts.add("Vol. $it") }
+                        displayParts.add("Ch. ${jellyfinParsed.chapterNumber}")
+                        jellyfinParsed.chapterTitle?.let { displayParts.add("- $it") }
+                        name = displayParts.joinToString(" ")
                     } else {
                         // Standard recognition fallback
                         chapter_number = ChapterRecognition

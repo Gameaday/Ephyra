@@ -110,41 +110,49 @@ class RefreshCanonicalMetadata(
     private suspend fun applyMetadataUpdate(manga: Manga, result: TrackSearch, fillOnly: Boolean): Boolean {
         val locked = manga.lockedFields
 
+        // Only set title if it would actually change the value
         val title = result.title.takeIf {
             it.isNotBlank() &&
                 !LockedField.isLocked(locked, LockedField.TITLE) &&
-                (!fillOnly || manga.title.isBlank())
+                (!fillOnly || manga.title.isBlank()) &&
+                it != manga.title
         }
         val description = result.summary.takeIf {
             it.isNotBlank() &&
                 !LockedField.isLocked(locked, LockedField.DESCRIPTION) &&
-                (!fillOnly || manga.description.isNullOrBlank())
+                (!fillOnly || manga.description.isNullOrBlank()) &&
+                it != manga.description
         }
         val author = result.authors.joinToString(", ").takeIf {
             it.isNotBlank() &&
                 !LockedField.isLocked(locked, LockedField.AUTHOR) &&
-                (!fillOnly || manga.author.isNullOrBlank())
+                (!fillOnly || manga.author.isNullOrBlank()) &&
+                it != manga.author
         }
         val artist = result.artists.joinToString(", ").takeIf {
             it.isNotBlank() &&
                 !LockedField.isLocked(locked, LockedField.ARTIST) &&
-                (!fillOnly || manga.artist.isNullOrBlank())
+                (!fillOnly || manga.artist.isNullOrBlank()) &&
+                it != manga.artist
         }
         val thumbnailUrl = result.cover_url.takeIf {
             it.isNotBlank() &&
                 !LockedField.isLocked(locked, LockedField.COVER) &&
-                (!fillOnly || manga.thumbnailUrl.isNullOrBlank())
+                (!fillOnly || manga.thumbnailUrl.isNullOrBlank()) &&
+                it != manga.thumbnailUrl
         }
         val status = mapTrackerStatus(result.publishing_status).takeIf {
             it != null &&
                 !LockedField.isLocked(locked, LockedField.STATUS) &&
-                (!fillOnly || manga.status == 0L)
+                (!fillOnly || manga.status == 0L) &&
+                it != manga.status
         }
         // Infer content type from tracker's publishing_type
         val contentType = ContentType.fromPublishingType(result.publishing_type).takeIf {
             it != ContentType.UNKNOWN &&
                 !LockedField.isLocked(locked, LockedField.CONTENT_TYPE) &&
-                (!fillOnly || manga.contentType == ContentType.UNKNOWN)
+                (!fillOnly || manga.contentType == ContentType.UNKNOWN) &&
+                it != manga.contentType
         }
         // Merge genres from authority (if available and not locked)
         val genre = result.genres.takeIf {

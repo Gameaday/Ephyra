@@ -40,15 +40,22 @@ fun SManga.copyFromComicInfo(comicInfo: ComicInfo) {
     comicInfo.writer?.let { author = it.value }
     comicInfo.summary?.let { description = it.value }
 
-    listOfNotNull(
+    // Merge ComicInfo genre/tags/categories with existing genres (additive, not replacing)
+    val comicInfoGenres = listOfNotNull(
         comicInfo.genre?.value,
         comicInfo.tags?.value,
         comicInfo.categories?.value,
     )
-        .distinct()
-        .joinToString(", ") { it.trim() }
-        .takeIf { it.isNotEmpty() }
-        ?.let { genre = it }
+        .flatMap { it.split(",") }
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+
+    if (comicInfoGenres.isNotEmpty()) {
+        val existing = genre?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList()
+        val merged = (existing + comicInfoGenres)
+            .distinctBy { it.lowercase() }
+        genre = merged.joinToString(", ")
+    }
 
     listOfNotNull(
         comicInfo.penciller?.value,
