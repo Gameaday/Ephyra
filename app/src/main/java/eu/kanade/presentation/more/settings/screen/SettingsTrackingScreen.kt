@@ -308,78 +308,96 @@ object SettingsTrackingScreen : SearchableSettings {
                                     text = stringResource(MR.strings.pref_authority_order_subtitle),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(bottom = 8.dp),
                                 )
                                 currentOrder.forEachIndexed { index, trackerId ->
                                     val label = trackerLabels[trackerId] ?: "Unknown"
                                     val available = isAvailable(trackerId)
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    androidx.compose.material3.Surface(
+                                        color = if (available) {
+                                            MaterialTheme.colorScheme.surfaceContainerLow
+                                        } else {
+                                            MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.5f)
+                                        },
+                                        shape = MaterialTheme.shapes.small,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 2.dp),
                                     ) {
-                                        Text(
-                                            text = "${index + 1}.",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            modifier = Modifier.padding(end = 4.dp),
-                                        )
-                                        Text(
-                                            text = label,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = if (available) {
-                                                MaterialTheme.colorScheme.onSurface
-                                            } else {
-                                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                                            },
-                                            modifier = Modifier.weight(1f),
-                                        )
-                                        if (!available) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(start = 12.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                        ) {
                                             Text(
-                                                text = stringResource(MR.strings.pref_authority_not_available),
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                                text = "${index + 1}.",
+                                                style = MaterialTheme.typography.labelLarge,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.padding(end = 4.dp),
                                             )
-                                        }
-                                        IconButton(
-                                            onClick = {
-                                                if (index > 0) {
-                                                    val newOrder = currentOrder.toMutableList()
-                                                    java.util.Collections.swap(newOrder, index, index - 1)
-                                                    currentOrder = newOrder
-                                                    orderPref.set(newOrder)
-                                                }
-                                            },
-                                            enabled = index > 0,
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Outlined.ArrowUpward,
-                                                contentDescription = null,
-                                                tint = if (index > 0) {
+                                            Text(
+                                                text = label,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = if (available) {
                                                     MaterialTheme.colorScheme.onSurface
                                                 } else {
-                                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                                                 },
+                                                modifier = Modifier.weight(1f),
                                             )
-                                        }
-                                        IconButton(
-                                            onClick = {
-                                                if (index < currentOrder.lastIndex) {
-                                                    val newOrder = currentOrder.toMutableList()
-                                                    java.util.Collections.swap(newOrder, index, index + 1)
-                                                    currentOrder = newOrder
-                                                    orderPref.set(newOrder)
-                                                }
-                                            },
-                                            enabled = index < currentOrder.lastIndex,
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Outlined.ArrowDownward,
-                                                contentDescription = null,
-                                                tint = if (index < currentOrder.lastIndex) {
-                                                    MaterialTheme.colorScheme.onSurface
-                                                } else {
-                                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                                            if (!available) {
+                                                Text(
+                                                    text = stringResource(MR.strings.pref_authority_not_available),
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                                        alpha = 0.5f,
+                                                    ),
+                                                )
+                                            }
+                                            IconButton(
+                                                onClick = {
+                                                    if (index > 0) {
+                                                        val newOrder = currentOrder.toMutableList()
+                                                        java.util.Collections.swap(newOrder, index, index - 1)
+                                                        currentOrder = newOrder
+                                                        orderPref.set(newOrder)
+                                                    }
                                                 },
-                                            )
+                                                enabled = index > 0,
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.ArrowUpward,
+                                                    contentDescription = null,
+                                                    tint = if (index > 0) {
+                                                        MaterialTheme.colorScheme.onSurface
+                                                    } else {
+                                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                                                    },
+                                                )
+                                            }
+                                            IconButton(
+                                                onClick = {
+                                                    if (index < currentOrder.lastIndex) {
+                                                        val newOrder = currentOrder.toMutableList()
+                                                        java.util.Collections.swap(newOrder, index, index + 1)
+                                                        currentOrder = newOrder
+                                                        orderPref.set(newOrder)
+                                                    }
+                                                },
+                                                enabled = index < currentOrder.lastIndex,
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.ArrowDownward,
+                                                    contentDescription = null,
+                                                    tint = if (index < currentOrder.lastIndex) {
+                                                        MaterialTheme.colorScheme.onSurface
+                                                    } else {
+                                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                                                    },
+                                                )
+                                            }
                                         }
                                     }
                                 }
