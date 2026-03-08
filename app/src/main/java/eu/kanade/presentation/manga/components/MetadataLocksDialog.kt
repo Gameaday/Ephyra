@@ -1,5 +1,6 @@
 package eu.kanade.presentation.manga.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,9 +16,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import dev.icerock.moko.resources.compose.stringResource
 import tachiyomi.domain.manga.model.LockedField
 import tachiyomi.i18n.MR
+import tachiyomi.presentation.core.i18n.stringResource
 
 /**
  * Dialog for toggling per-field metadata locks (Jellyfin-style).
@@ -28,6 +29,7 @@ import tachiyomi.i18n.MR
 fun MetadataLocksDialog(
     lockedFields: Long,
     onToggleField: (Long) -> Unit,
+    onSetAllFields: (Long) -> Unit,
     onDismissRequest: () -> Unit,
 ) {
     AlertDialog(
@@ -40,11 +42,22 @@ fun MetadataLocksDialog(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    TextButton(onClick = { onSetAllFields(LockedField.ALL) }) {
+                        Text(text = stringResource(MR.strings.metadata_locks_lock_all))
+                    }
+                    TextButton(onClick = { onSetAllFields(LockedField.NONE) }) {
+                        Text(text = stringResource(MR.strings.metadata_locks_unlock_all))
+                    }
+                }
                 LockedField.ALL_FIELDS.forEach { field ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .clickable { onToggleField(field) }
                             .padding(vertical = 2.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {

@@ -408,6 +408,18 @@ class MangaScreenModel(
         }
     }
 
+    fun setLockedFields(mask: Long) {
+        val manga = successState?.manga ?: return
+        screenModelScope.launchIO {
+            updateManga.await(
+                tachiyomi.domain.manga.model.MangaUpdate(
+                    id = manga.id,
+                    lockedFields = mask,
+                ),
+            )
+        }
+    }
+
     fun toggleFavorite() {
         toggleFavorite(
             onRemoved = {

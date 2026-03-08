@@ -318,6 +318,7 @@ class MangaScreen(
                 MetadataLocksDialog(
                     lockedFields = successState.manga.lockedFields,
                     onToggleField = screenModel::toggleLockedField,
+                    onSetAllFields = screenModel::setLockedFields,
                     onDismissRequest = onDismissRequest,
                 )
             }
