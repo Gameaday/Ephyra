@@ -106,6 +106,24 @@ class Jellyfin(id: Long) : BaseTracker(id, "Jellyfin"), EnhancedTracker, Deletab
     }
 
     override suspend fun bind(track: Track, hasReadChapters: Boolean): Track {
+        // On bind, adopt Jellyfin's read progress if the user already has
+        // chapters marked as played on the server
+        if (hasReadChapters && track.last_chapter_read == 0.0) {
+            val serverUrl = api.getServerUrlFromTrackUrl(track.tracking_url)
+            val itemId = api.getItemIdFromUrl(track.tracking_url)
+            val userId = trackPreferences.jellyfinUserId().get()
+            if (userId.isNotBlank()) {
+                try {
+                    val remoteTrack = api.getSeries(serverUrl, userId, itemId)
+                    if (remoteTrack.last_chapter_read > 0) {
+                        track.last_chapter_read = remoteTrack.last_chapter_read
+                        track.status = remoteTrack.status
+                    }
+                } catch (e: Exception) {
+                    logcat(LogPriority.WARN, e) { "Failed to pull Jellyfin progress on bind" }
+                }
+            }
+        }
         return track
     }
 
@@ -240,6 +258,23 @@ class Jellyfin(id: Long) : BaseTracker(id, "Jellyfin"), EnhancedTracker, Deletab
 
     override suspend fun delete(track: DomainTrack) {
         // No server-side deletion needed — just remove local tracking
+    }
+
+    // -- Public utilities --
+
+    /**
+     * Checks the Jellyfin server connection and returns server info.
+     * Returns null if the connection fails.
+     */
+    suspend fun getServerInfo(): JellyfinSystemInfo? {
+        if (!isLoggedIn) return null
+        val serverUrl = getUsername().trimEnd('/')
+        return try {
+            api.getSystemInfo(serverUrl)
+        } catch (e: Exception) {
+            logcat(LogPriority.WARN, e) { "Jellyfin server connection check failed" }
+            null
+        }
     }
 
     // -- Private helpers --

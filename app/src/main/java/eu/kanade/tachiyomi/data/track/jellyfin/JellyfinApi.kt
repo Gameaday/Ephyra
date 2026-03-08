@@ -187,6 +187,25 @@ class JellyfinApi(
         with(json) { response.parseAs<List<JellyfinUser>>() }
     }
 
+    /**
+     * Marks or unmarks an item as a favorite on the Jellyfin server.
+     * Favorites in Jellyfin map to the "in library" concept in the app.
+     */
+    suspend fun markFavorite(
+        serverUrl: String,
+        userId: String,
+        itemId: String,
+        favorite: Boolean,
+    ) = withIOContext {
+        val method = if (favorite) "POST" else "DELETE"
+        val url = "$serverUrl/Users/$userId/FavoriteItems/$itemId"
+        val request = okhttp3.Request.Builder()
+            .url(url)
+            .method(method, if (method == "POST") okhttp3.RequestBody.create(null, ByteArray(0)) else null)
+            .build()
+        client.newCall(request).awaitSuccess()
+    }
+
     companion object {
         /**
          * Converts a [JellyfinItem] to a [TrackSearch] for the tracker system.
