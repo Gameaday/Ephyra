@@ -86,9 +86,9 @@ class ContentTypeTest {
     }
 
     @Test
-    fun `isLikelyWebtoon returns true for full color genre`() {
-        assertTrue(ContentType.isLikelyWebtoon(listOf("Full Color", "Fantasy")))
-        assertTrue(ContentType.isLikelyWebtoon(listOf("Full Colour")))
+    fun `isLikelyWebtoon returns false for full color genre alone`() {
+        assertFalse(ContentType.isLikelyWebtoon(listOf("Full Color", "Fantasy")))
+        assertFalse(ContentType.isLikelyWebtoon(listOf("Full Colour")))
     }
 
     @Test
@@ -105,7 +105,7 @@ class ContentTypeTest {
     fun `isLikelyWebtoon is case-insensitive`() {
         assertTrue(ContentType.isLikelyWebtoon(listOf("WEBTOON")))
         assertTrue(ContentType.isLikelyWebtoon(listOf("long strip")))
-        assertTrue(ContentType.isLikelyWebtoon(listOf("FULL COLOR")))
+        assertTrue(ContentType.isLikelyWebtoon(listOf("MANHWA")))
     }
 
     @Test

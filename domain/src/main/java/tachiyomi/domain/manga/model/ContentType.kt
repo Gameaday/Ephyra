@@ -70,8 +70,6 @@ enum class ContentType(val value: Int) {
             "long strip",
             "long-strip",
             "longstrip",
-            "full color",
-            "full colour",
             "manhwa",
             "manhua",
         )
