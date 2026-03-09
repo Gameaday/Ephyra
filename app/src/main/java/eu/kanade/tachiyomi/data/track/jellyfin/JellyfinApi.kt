@@ -27,14 +27,6 @@ class JellyfinApi(
 
     private val json: Json by injectLazy()
 
-    /**
-     * Returns the base URL stored in the tracker's username credential field.
-     * The URL is normalized to remove trailing slashes.
-     */
-    fun getServerUrl(jellyfin: Jellyfin): String {
-        return jellyfin.getUsername().trimEnd('/')
-    }
-
     // -- Image URL helpers (Jellyfin-style: quality params for caching) --
 
     /**
@@ -98,24 +90,6 @@ class JellyfinApi(
         client.newCall(GET("$serverUrl/System/Info/Public"))
             .awaitSuccess()
             .let { with(json) { it.parseAs<JellyfinSystemInfo>() } }
-    }
-
-    /**
-     * Authenticates and returns the user info + access token.
-     */
-    suspend fun authenticate(
-        serverUrl: String,
-        username: String,
-        password: String,
-    ): JellyfinAuthResponse = withIOContext {
-        val url = "$serverUrl/Users/AuthenticateByName"
-        val body = okhttp3.FormBody.Builder()
-            .add("Username", username)
-            .add("Pw", password)
-            .build()
-        client.newCall(POST(url, body = body))
-            .awaitSuccess()
-            .let { with(json) { it.parseAs<JellyfinAuthResponse>() } }
     }
 
     /**
@@ -393,7 +367,6 @@ class JellyfinApi(
             .addQueryParameter("Fields", SERIES_FIELDS)
             .addQueryParameter("EnableImageTypes", "Primary,Thumb,Backdrop")
             .addQueryParameter("IncludeItemTypes", "Series")
-            .addQueryParameter("MediaTypes", "")
         if (!parentId.isNullOrBlank()) {
             url.addQueryParameter("ParentId", parentId)
         }

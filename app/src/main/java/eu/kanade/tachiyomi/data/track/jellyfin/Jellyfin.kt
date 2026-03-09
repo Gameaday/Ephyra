@@ -34,7 +34,6 @@ import tachiyomi.domain.track.model.Track as DomainTrack
  * - User ID is stored in `jellyfinUserId` preference
  *
  * Jellyfin Bookshelf plugin compatibility:
- * - Uses the existing [JellyfinNaming] utility for path matching
  * - Recognizes series organized in Jellyfin hierarchy
  */
 class Jellyfin(id: Long) : BaseTracker(id, "Jellyfin"), EnhancedTracker, DeletableTracker {

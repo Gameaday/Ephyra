@@ -10,12 +10,6 @@ import kotlinx.serialization.Serializable
  */
 
 @Serializable
-data class JellyfinAuthResponse(
-    @SerialName("AccessToken") val accessToken: String,
-    @SerialName("User") val user: JellyfinUser,
-)
-
-@Serializable
 data class JellyfinUser(
     @SerialName("Id") val id: String,
     @SerialName("Name") val name: String,
