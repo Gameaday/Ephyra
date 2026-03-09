@@ -142,5 +142,60 @@ data class JellyfinExternalUrl(
 data class JellyfinAuthByNameResponse(
     @SerialName("AccessToken") val accessToken: String,
     @SerialName("ServerId") val serverId: String,
-    @SerialName("User") val user: JellyfinUser,
+    @SerialName("User") val user: JellyfinAuthUser,
 )
+
+/**
+ * User object returned inside the AuthenticateByName response.
+ * Includes the user's policy (permissions) which we need to determine
+ * whether features like library scan are available.
+ *
+ * Reference: POST /Users/AuthenticateByName → User field
+ */
+@Serializable
+data class JellyfinAuthUser(
+    @SerialName("Id") val id: String,
+    @SerialName("Name") val name: String,
+    @SerialName("Policy") val policy: JellyfinUserPolicy? = null,
+)
+
+/**
+ * Jellyfin user policy DTO — defines what the authenticated user is allowed to do.
+ * We use this at login time to determine:
+ * - Whether the user can trigger library scans (`IsAdministrator`)
+ * - Whether content upload/management features should be available
+ *
+ * Reference: Jellyfin API `UserPolicy` object
+ */
+@Serializable
+data class JellyfinUserPolicy(
+    @SerialName("IsAdministrator") val isAdministrator: Boolean = false,
+    @SerialName("IsDisabled") val isDisabled: Boolean = false,
+    @SerialName("EnableContentDeletion") val enableContentDeletion: Boolean = false,
+    @SerialName("EnableAllFolders") val enableAllFolders: Boolean = true,
+    @SerialName("EnableMediaPlayback") val enableMediaPlayback: Boolean = true,
+)
+
+/**
+ * Result of a Jellyfin sync operation.
+ * Provides typed outcomes so callers can show appropriate UI messages.
+ */
+sealed class JellyfinSyncResult {
+    /** Sync completed successfully, all chapters synced and scan triggered. */
+    data class Success(val chapterCount: Int) : JellyfinSyncResult()
+
+    /** Sync completed but library scan failed (e.g., non-admin user). */
+    data class SyncedButScanFailed(val chapterCount: Int, val scanError: String) : JellyfinSyncResult()
+
+    /** All chapters already present — nothing to sync. */
+    data object UpToDate : JellyfinSyncResult()
+
+    /** User is not logged in to Jellyfin. */
+    data object NotLoggedIn : JellyfinSyncResult()
+
+    /** Manga is not linked to a Jellyfin library item. */
+    data object NotLinked : JellyfinSyncResult()
+
+    /** A server or network error occurred during sync. */
+    data class Error(val message: String) : JellyfinSyncResult()
+}

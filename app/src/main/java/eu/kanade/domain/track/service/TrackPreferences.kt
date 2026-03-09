@@ -115,6 +115,19 @@ class TrackPreferences(
         "",
     )
 
+    /**
+     * Whether the authenticated Jellyfin user has administrator privileges.
+     * Cached at login time from the user's Policy.IsAdministrator field.
+     *
+     * Admin users can trigger library scans (POST /Library/Refresh) — non-admin
+     * users cannot. This flag gates the library scan step in chapter sync and
+     * allows the UI to show appropriate messages.
+     */
+    fun jellyfinIsAdmin() = preferenceStore.getBoolean(
+        Preference.privateKey("jellyfin_is_admin"),
+        false,
+    )
+
     companion object {
         /** Sentinel value: let the system pick the best available tracker automatically. */
         const val AUTHORITY_TRACKER_AUTO = 0L

@@ -495,17 +495,44 @@ class JellyfinApi(
      * Triggers a Jellyfin library scan so newly downloaded files are discovered.
      *
      * Uses the `/Library/Refresh` endpoint which initiates a scan of all libraries.
-     * Requires an admin-level API key to succeed; non-admin keys will receive a 403
-     * but we catch and log rather than blocking the sync workflow.
+     * Requires administrator privileges to succeed.
+     *
+     * Returns a [LibraryScanResult] indicating success, permission failure (403),
+     * or other errors — so callers can show appropriate user-facing messages.
      *
      * Reference: POST /Library/Refresh
      */
-    suspend fun triggerLibraryScan(serverUrl: String) = withIOContext {
-        val request = okhttp3.Request.Builder()
-            .url("$serverUrl/Library/Refresh")
-            .post(ByteArray(0).toRequestBody())
-            .build()
-        client.newCall(request).awaitSuccess()
+    suspend fun triggerLibraryScan(serverUrl: String): LibraryScanResult = withIOContext {
+        try {
+            val request = okhttp3.Request.Builder()
+                .url("$serverUrl/Library/Refresh")
+                .post(ByteArray(0).toRequestBody())
+                .build()
+            val response = client.newCall(request).execute()
+            when {
+                response.isSuccessful -> LibraryScanResult.Success
+                response.code == 401 || response.code == 403 -> {
+                    response.close()
+                    LibraryScanResult.Forbidden
+                }
+                else -> {
+                    val msg = "HTTP ${response.code}"
+                    response.close()
+                    LibraryScanResult.Error(msg)
+                }
+            }
+        } catch (e: java.io.IOException) {
+            LibraryScanResult.Error(e.message ?: "Network error")
+        }
+    }
+
+    /**
+     * Result of a Jellyfin library scan trigger.
+     */
+    sealed class LibraryScanResult {
+        data object Success : LibraryScanResult()
+        data object Forbidden : LibraryScanResult()
+        data class Error(val message: String) : LibraryScanResult()
     }
 
     companion object {

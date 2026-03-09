@@ -37,6 +37,7 @@ import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.download.model.Download
 import eu.kanade.tachiyomi.data.track.EnhancedTracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
+import eu.kanade.tachiyomi.data.track.jellyfin.JellyfinApi
 import eu.kanade.tachiyomi.network.HttpException
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.model.SManga
@@ -935,6 +936,12 @@ class MangaScreenModel(
      * philosophy: content is downloaded from any source, named for Jellyfin compatibility,
      * and a library scan makes it available on all devices.
      *
+     * Error handling:
+     * - Not logged in → toast with login prompt
+     * - Manga not linked to Jellyfin → toast with explanation
+     * - Server unreachable → toast with connectivity message
+     * - Library scan fails (non-admin) → toast explaining scan requires admin, sync still succeeds
+     *
      * @param action determines which chapters to sync:
      *   - [DownloadAction.SYNC_TO_JELLYFIN]: unread chapters missing from JF
      *   - [DownloadAction.SYNC_READ_TO_JELLYFIN]: read chapters missing from JF (fill gaps)
@@ -943,6 +950,28 @@ class MangaScreenModel(
     private fun syncToJellyfin(action: DownloadAction) {
         val successState = successState ?: return
         val manga = successState.manga
+
+        // Pre-check: user must be logged in to Jellyfin
+        if (!trackerManager.jellyfin.isLoggedIn) {
+            screenModelScope.launchIO {
+                withUIContext {
+                    context.toast(context.stringResource(MR.strings.jellyfin_sync_not_logged_in))
+                }
+            }
+            return
+        }
+
+        // Pre-check: manga must be linked to Jellyfin
+        val canonicalId = manga.canonicalId
+        if (canonicalId == null || !canonicalId.startsWith("jf:")) {
+            screenModelScope.launchIO {
+                withUIContext {
+                    context.toast(context.stringResource(MR.strings.jellyfin_sync_not_linked))
+                }
+            }
+            return
+        }
+
         screenModelScope.launchIO {
             // Temporarily enable Jellyfin-compatible naming for the sync download,
             // then restore the original setting afterward.
@@ -990,7 +1019,19 @@ class MangaScreenModel(
                 }
 
                 // Trigger a Jellyfin library scan so the server discovers the new files
-                triggerJellyfinLibraryScan()
+                val scanResult = triggerJellyfinLibraryScan()
+                if (scanResult != null && chaptersToSync.isNotEmpty()) {
+                    withUIContext {
+                        context.toast(scanResult)
+                    }
+                }
+            } catch (e: Exception) {
+                logcat(LogPriority.ERROR, e) { "Jellyfin sync failed" }
+                withUIContext {
+                    context.toast(
+                        context.stringResource(MR.strings.jellyfin_sync_error, e.message ?: "Unknown error"),
+                    )
+                }
             } finally {
                 // Restore the original Jellyfin naming preference
                 libraryPreferences.jellyfinCompatibleNaming().set(wasJellyfinNamingEnabled)
@@ -1041,16 +1082,29 @@ class MangaScreenModel(
     /**
      * Triggers a Jellyfin library scan after syncing content. This makes newly
      * downloaded files appear in the Jellyfin library without manual intervention.
+     *
+     * Returns a user-facing warning message if the scan failed, or null on success.
+     * Non-admin users (403) get a specific message; other errors get a generic one.
      */
-    private suspend fun triggerJellyfinLibraryScan() {
+    private suspend fun triggerJellyfinLibraryScan(): String? {
         val jellyfin = trackerManager.jellyfin
-        if (!jellyfin.isLoggedIn) return
-        try {
-            val serverUrl = jellyfin.getServerUrl()
-            jellyfin.api.triggerLibraryScan(serverUrl)
-            logcat(LogPriority.INFO) { "Triggered Jellyfin library scan after sync" }
-        } catch (e: Exception) {
-            logcat(LogPriority.WARN, e) { "Failed to trigger Jellyfin library scan" }
+        if (!jellyfin.isLoggedIn) return null
+        val serverUrl = jellyfin.getServerUrl()
+        if (serverUrl.isBlank()) return null
+
+        return when (val result = jellyfin.api.triggerLibraryScan(serverUrl)) {
+            is JellyfinApi.LibraryScanResult.Success -> {
+                logcat(LogPriority.INFO) { "Triggered Jellyfin library scan after sync" }
+                null
+            }
+            is JellyfinApi.LibraryScanResult.Forbidden -> {
+                logcat(LogPriority.WARN) { "Library scan denied — user is not admin" }
+                context.stringResource(MR.strings.jellyfin_scan_requires_admin)
+            }
+            is JellyfinApi.LibraryScanResult.Error -> {
+                logcat(LogPriority.WARN) { "Library scan failed: ${result.message}" }
+                context.stringResource(MR.strings.jellyfin_scan_failed, result.message)
+            }
         }
     }
 

@@ -308,6 +308,11 @@ class Jellyfin(id: Long) : BaseTracker(id, "Jellyfin"), EnhancedTracker, Deletab
             trackPreferences.jellyfinUserId().set(authResponse.user.id)
             trackPreferences.jellyfinUsername().set(authResponse.user.name)
 
+            // Cache admin status from user policy (gates library scan feature)
+            val isAdmin = authResponse.user.policy?.isAdministrator == true
+            trackPreferences.jellyfinIsAdmin().set(isAdmin)
+            logcat(LogPriority.INFO) { "Jellyfin user admin status: $isAdmin" }
+
             // BaseTracker credentials: server URL in username, access token in password
             saveCredentials(cleanUrl, authResponse.accessToken)
             logcat(LogPriority.INFO) { "Authenticated as Jellyfin user: ${authResponse.user.name}" }
@@ -356,6 +361,7 @@ class Jellyfin(id: Long) : BaseTracker(id, "Jellyfin"), EnhancedTracker, Deletab
         trackPreferences.jellyfinServerName().set("")
         trackPreferences.jellyfinUserId().set("")
         trackPreferences.jellyfinUsername().set("")
+        trackPreferences.jellyfinIsAdmin().set(false)
     }
 
     // -- EnhancedTracker: auto-binding --
