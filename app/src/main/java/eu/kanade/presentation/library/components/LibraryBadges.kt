@@ -76,7 +76,7 @@ internal fun SourceHealthBadge(sourceStatus: Int) {
 @Composable
 internal fun AuthorityBadge(hasCanonicalId: Boolean, canonicalId: String? = null) {
     if (hasCanonicalId) {
-        val isJellyfin = canonicalId?.startsWith("jf:") == true
+        val isJellyfin = canonicalId?.startsWith(JELLYFIN_CANONICAL_PREFIX) == true
         Badge(
             imageVector = Icons.Outlined.Verified,
             color = if (isJellyfin) JellyfinBadgeColor else MaterialTheme.colorScheme.primary,
@@ -85,6 +85,9 @@ internal fun AuthorityBadge(hasCanonicalId: Boolean, canonicalId: String? = null
         )
     }
 }
+
+/** Canonical ID prefix for Jellyfin authority tracker. */
+private const val JELLYFIN_CANONICAL_PREFIX = "jf:"
 
 /** Jellyfin brand color (#00A4DC). */
 private val JellyfinBadgeColor = Color(0xFF00A4DC)

@@ -83,7 +83,7 @@ object SettingsTrackingScreen : SearchableSettings {
     @Composable
     override fun RowScope.AppBarAction() {
         val uriHandler = LocalUriHandler.current
-        IconButton(onClick = { uriHandler.openUri("https://github.com/Gameaday/mihon/blob/main/CONTRIBUTING.md") }) {
+        IconButton(onClick = { uriHandler.openUri("https://github.com/Gameaday/mihon#about-this-fork") }) {
             Icon(
                 imageVector = Icons.AutoMirrored.Outlined.HelpOutline,
                 contentDescription = stringResource(MR.strings.tracking_guide),
