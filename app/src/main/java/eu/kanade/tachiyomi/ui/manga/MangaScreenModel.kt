@@ -1245,15 +1245,21 @@ class MangaScreenModel(
         refreshTracks.await(mangaId)
             .filter { it.first != null }
             .forEach { (track, e) ->
+                val errorDetail = when (e) {
+                    is HttpException -> "HTTP ${e.code}"
+                    is java.net.SocketTimeoutException -> "timeout"
+                    is java.net.UnknownHostException -> "no connection"
+                    else -> e.message ?: "unknown error"
+                }
                 logcat(LogPriority.ERROR, e) {
-                    "Failed to refresh track data mangaId=$mangaId for service ${track!!.id}"
+                    "Failed to refresh track data mangaId=$mangaId for ${track!!.name}: $errorDetail"
                 }
                 withUIContext {
                     context.toast(
                         context.stringResource(
                             MR.strings.track_error,
                             track!!.name,
-                            e.message ?: "",
+                            errorDetail,
                         ),
                     )
                 }
