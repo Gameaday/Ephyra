@@ -446,6 +446,23 @@ class JellyfinApi(
             .map { item -> item.toTrackSearch(trackId, serverUrl, this@JellyfinApi) }
     }
 
+    /**
+     * Triggers a Jellyfin library scan so newly downloaded files are discovered.
+     *
+     * Uses the `/Library/Refresh` endpoint which initiates a scan of all libraries.
+     * Requires an admin-level API key to succeed; non-admin keys will receive a 403
+     * but we catch and log rather than blocking the sync workflow.
+     *
+     * Reference: POST /Library/Refresh
+     */
+    suspend fun triggerLibraryScan(serverUrl: String) = withIOContext {
+        val request = okhttp3.Request.Builder()
+            .url("$serverUrl/Library/Refresh")
+            .post(ByteArray(0).toRequestBody())
+            .build()
+        client.newCall(request).awaitSuccess()
+    }
+
     companion object {
         /** Maximum cover image width for list/grid display. */
         const val COVER_MAX_WIDTH = 400

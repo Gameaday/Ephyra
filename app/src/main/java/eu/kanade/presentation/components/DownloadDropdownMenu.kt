@@ -57,12 +57,26 @@ private fun DownloadDropdownMenuItems(
     onDownloadClicked: (DownloadAction) -> Unit,
     isJellyfinLinked: Boolean = false,
 ) {
-    // Show "Sync to Jellyfin" at the top when the series is linked to Jellyfin
+    // Show Jellyfin sync options at the top when the series is linked to Jellyfin
     if (isJellyfinLinked) {
         DropdownMenuItem(
             text = { Text(text = stringResource(MR.strings.download_sync_to_jellyfin)) },
             onClick = {
                 onDownloadClicked(DownloadAction.SYNC_TO_JELLYFIN)
+                onDismissRequest()
+            },
+        )
+        DropdownMenuItem(
+            text = { Text(text = stringResource(MR.strings.download_sync_read_to_jellyfin)) },
+            onClick = {
+                onDownloadClicked(DownloadAction.SYNC_READ_TO_JELLYFIN)
+                onDismissRequest()
+            },
+        )
+        DropdownMenuItem(
+            text = { Text(text = stringResource(MR.strings.download_sync_all_to_jellyfin)) },
+            onClick = {
+                onDownloadClicked(DownloadAction.SYNC_ALL_TO_JELLYFIN)
                 onDismissRequest()
             },
         )

@@ -893,6 +893,22 @@ class MangaScreenModel(
     }
 
     fun runDownloadAction(action: DownloadAction) {
+        when (action) {
+            DownloadAction.SYNC_TO_JELLYFIN,
+            DownloadAction.SYNC_READ_TO_JELLYFIN,
+            DownloadAction.SYNC_ALL_TO_JELLYFIN,
+            -> {
+                syncToJellyfin(action)
+                return
+            }
+            DownloadAction.NEXT_1_CHAPTER,
+            DownloadAction.NEXT_5_CHAPTERS,
+            DownloadAction.NEXT_10_CHAPTERS,
+            DownloadAction.NEXT_25_CHAPTERS,
+            DownloadAction.UNREAD_CHAPTERS,
+            DownloadAction.BOOKMARKED_CHAPTERS,
+            -> { /* handled below */ }
+        }
         val chaptersToDownload = when (action) {
             DownloadAction.NEXT_1_CHAPTER -> getUnreadChaptersSorted().take(1)
             DownloadAction.NEXT_5_CHAPTERS -> getUnreadChaptersSorted().take(5)
@@ -900,9 +916,127 @@ class MangaScreenModel(
             DownloadAction.NEXT_25_CHAPTERS -> getUnreadChaptersSorted().take(25)
             DownloadAction.UNREAD_CHAPTERS -> getUnreadChapters()
             DownloadAction.BOOKMARKED_CHAPTERS -> getBookmarkedChapters()
+            DownloadAction.SYNC_TO_JELLYFIN,
+            DownloadAction.SYNC_READ_TO_JELLYFIN,
+            DownloadAction.SYNC_ALL_TO_JELLYFIN,
+            -> emptyList() // already handled above
         }
         if (chaptersToDownload.isNotEmpty()) {
             startDownload(chaptersToDownload, false)
+        }
+    }
+
+    /**
+     * Syncs chapters to the Jellyfin server by downloading them locally with
+     * Jellyfin-compatible naming and then triggering a server library scan.
+     *
+     * Compares local chapter list against what Jellyfin already has, then downloads
+     * only the missing chapters. This implements the "download once, read everywhere"
+     * philosophy: content is downloaded from any source, named for Jellyfin compatibility,
+     * and a library scan makes it available on all devices.
+     *
+     * @param action determines which chapters to sync:
+     *   - [DownloadAction.SYNC_TO_JELLYFIN]: unread chapters missing from JF
+     *   - [DownloadAction.SYNC_READ_TO_JELLYFIN]: read chapters missing from JF (fill gaps)
+     *   - [DownloadAction.SYNC_ALL_TO_JELLYFIN]: ALL chapters missing from JF (complete library)
+     */
+    private fun syncToJellyfin(action: DownloadAction) {
+        val successState = successState ?: return
+        val manga = successState.manga
+        screenModelScope.launchIO {
+            // Enable Jellyfin-compatible naming for this sync
+            libraryPreferences.jellyfinCompatibleNaming().set(true)
+
+            // Get the set of chapter numbers already in Jellyfin
+            val jellyfinChapterNumbers = getJellyfinChapterNumbers(manga)
+
+            // Select chapters to sync based on the action
+            val allChapterItems = allChapters.orEmpty()
+            val chaptersToSync = when (action) {
+                DownloadAction.SYNC_READ_TO_JELLYFIN -> allChapterItems.filter { item ->
+                    val ch = item.chapter
+                    ch.read && !isChapterInJellyfin(ch, jellyfinChapterNumbers) &&
+                        item.downloadState == Download.State.NOT_DOWNLOADED
+                }
+                DownloadAction.SYNC_ALL_TO_JELLYFIN -> allChapterItems.filter { item ->
+                    val ch = item.chapter
+                    !isChapterInJellyfin(ch, jellyfinChapterNumbers) &&
+                        item.downloadState == Download.State.NOT_DOWNLOADED
+                }
+                else -> allChapterItems.filter { item ->
+                    val ch = item.chapter
+                    !ch.read && !isChapterInJellyfin(ch, jellyfinChapterNumbers) &&
+                        item.downloadState == Download.State.NOT_DOWNLOADED
+                }
+            }.map { it.chapter }
+
+            if (chaptersToSync.isNotEmpty()) {
+                downloadChapters(chaptersToSync)
+                withUIContext {
+                    context.toast(
+                        context.stringResource(
+                            MR.strings.jellyfin_sync_started,
+                            chaptersToSync.size,
+                        ),
+                    )
+                }
+            } else {
+                withUIContext {
+                    context.toast(context.stringResource(MR.strings.jellyfin_sync_up_to_date))
+                }
+            }
+
+            // Trigger a Jellyfin library scan so the server discovers the new files
+            triggerJellyfinLibraryScan()
+        }
+    }
+
+    /**
+     * Returns the set of chapter numbers that already exist in the Jellyfin library
+     * for the manga linked to this screen. Returns an empty set if the manga is not
+     * linked to Jellyfin or if the query fails.
+     */
+    private suspend fun getJellyfinChapterNumbers(manga: Manga): Set<Int> {
+        val canonicalId = manga.canonicalId ?: return emptySet()
+        if (!canonicalId.startsWith("jf:")) return emptySet()
+
+        val tracks = getTracks.await(manga.id)
+        val jellyfinTrack = tracks.firstOrNull {
+            it.trackerId == trackerManager.jellyfin.id
+        } ?: return emptySet()
+
+        return try {
+            val children = trackerManager.jellyfin.getChaptersFromServer(jellyfinTrack.remoteUrl)
+            // Build a set of chapter indices (1-based) that Jellyfin already has
+            children.mapIndexedTo(mutableSetOf()) { index, _ -> index + 1 }
+        } catch (e: Exception) {
+            logcat(LogPriority.WARN, e) { "Failed to get Jellyfin chapter list" }
+            emptySet()
+        }
+    }
+
+    /**
+     * Checks if a chapter (by its number) already exists in the Jellyfin library.
+     * Uses the chapter number to match against Jellyfin's sequential child items.
+     */
+    private fun isChapterInJellyfin(chapter: Chapter, jellyfinChapterNumbers: Set<Int>): Boolean {
+        if (jellyfinChapterNumbers.isEmpty()) return false
+        val chapterNum = chapter.chapterNumber.toInt()
+        return chapterNum > 0 && chapterNum in jellyfinChapterNumbers
+    }
+
+    /**
+     * Triggers a Jellyfin library scan after syncing content. This makes newly
+     * downloaded files appear in the Jellyfin library without manual intervention.
+     */
+    private suspend fun triggerJellyfinLibraryScan() {
+        val jellyfin = trackerManager.jellyfin
+        if (!jellyfin.isLoggedIn) return
+        try {
+            jellyfin.api.triggerLibraryScan(jellyfin.getUsername().trimEnd('/'))
+            logcat(LogPriority.INFO) { "Triggered Jellyfin library scan after sync" }
+        } catch (e: Exception) {
+            logcat(LogPriority.WARN, e) { "Failed to trigger Jellyfin library scan" }
         }
     }
 
@@ -1570,6 +1704,13 @@ class MangaScreenModel(
 
             val filterActive: Boolean
                 get() = scanlatorFilterActive || manga.chaptersFiltered()
+
+            /**
+             * Whether this manga is linked to a Jellyfin server.
+             * Computed from the canonical ID prefix set during Jellyfin tracker binding.
+             */
+            val isJellyfinLinked: Boolean
+                get() = manga.canonicalId?.startsWith("jf:") == true
 
             /**
              * Applies the view filters to the list of chapters obtained from the database.
