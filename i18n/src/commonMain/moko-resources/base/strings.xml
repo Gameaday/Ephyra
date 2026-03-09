@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">Mihon</string>
+    <string name="app_name" translatable="false">Ephyra</string>
 
     <!-- Generic strings -->
     <string name="on">On</string>
@@ -1239,5 +1239,7 @@
     <string name="jellyfin_library_all">All libraries</string>
     <string name="jellyfin_library_selected">Library: %s</string>
     <string name="jellyfin_user_selected">User: %s</string>
+    <string name="jellyfin_server_url">Server URL</string>
+    <string name="jellyfin_api_key">API key</string>
     <string name="tracking_linked">Linked</string>
 </resources>

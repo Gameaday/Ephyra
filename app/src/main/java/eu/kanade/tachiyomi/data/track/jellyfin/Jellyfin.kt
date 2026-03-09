@@ -7,6 +7,7 @@ import eu.kanade.tachiyomi.data.track.BaseTracker
 import eu.kanade.tachiyomi.data.track.DeletableTracker
 import eu.kanade.tachiyomi.data.track.EnhancedTracker
 import eu.kanade.tachiyomi.data.track.model.TrackSearch
+import eu.kanade.tachiyomi.network.interceptor.rateLimit
 import eu.kanade.tachiyomi.source.Source
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -19,6 +20,7 @@ import tachiyomi.domain.manga.model.Manga
 import tachiyomi.i18n.MR
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
+import kotlin.time.Duration.Companion.seconds
 import tachiyomi.domain.track.model.Track as DomainTrack
 
 /**
@@ -54,6 +56,7 @@ class Jellyfin(id: Long) : BaseTracker(id, "Jellyfin"), EnhancedTracker, Deletab
         networkService.client.newBuilder()
             .dns(Dns.SYSTEM) // don't use DNS over HTTPS — Jellyfin is typically on LAN
             .addInterceptor(JellyfinInterceptor(this))
+            .rateLimit(permits = 10, period = 1.seconds)
             .build()
 
     val api by lazy { JellyfinApi(id, client) }

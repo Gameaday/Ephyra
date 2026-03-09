@@ -83,7 +83,7 @@ object SettingsTrackingScreen : SearchableSettings {
     @Composable
     override fun RowScope.AppBarAction() {
         val uriHandler = LocalUriHandler.current
-        IconButton(onClick = { uriHandler.openUri("https://mihon.app/docs/guides/tracking") }) {
+        IconButton(onClick = { uriHandler.openUri("https://github.com/Gameaday/mihon/blob/main/CONTRIBUTING.md") }) {
             Icon(
                 imageVector = Icons.AutoMirrored.Outlined.HelpOutline,
                 contentDescription = stringResource(MR.strings.tracking_guide),
@@ -153,6 +153,12 @@ object SettingsTrackingScreen : SearchableSettings {
                                 }
                             }
                         },
+                        onDismissRequest = { dialog = null },
+                    )
+                }
+                is JellyfinLogin -> {
+                    JellyfinLoginDialog(
+                        tracker = tracker,
                         onDismissRequest = { dialog = null },
                     )
                 }
@@ -605,7 +611,13 @@ object SettingsTrackingScreen : SearchableSettings {
                             .map { service ->
                                 Preference.PreferenceItem.TrackerPreference(
                                     tracker = service,
-                                    login = { (service as EnhancedTracker).loginNoop() },
+                                    login = {
+                                        if (service is eu.kanade.tachiyomi.data.track.jellyfin.Jellyfin) {
+                                            dialog = JellyfinLogin(service)
+                                        } else {
+                                            (service as EnhancedTracker).loginNoop()
+                                        }
+                                    },
                                     logout = service::logout,
                                 )
                             } + listOf(Preference.PreferenceItem.InfoPreference(enhancedTrackerInfo))
@@ -737,6 +749,109 @@ object SettingsTrackingScreen : SearchableSettings {
     }
 
     @Composable
+    private fun JellyfinLoginDialog(
+        tracker: Tracker,
+        onDismissRequest: () -> Unit,
+    ) {
+        val context = LocalContext.current
+        val scope = rememberCoroutineScope()
+
+        var serverUrl by remember { mutableStateOf(TextFieldValue(tracker.getUsername())) }
+        var apiKey by remember { mutableStateOf(TextFieldValue(tracker.getPassword())) }
+        var processing by remember { mutableStateOf(false) }
+        var inputError by remember { mutableStateOf(false) }
+
+        AlertDialog(
+            onDismissRequest = onDismissRequest,
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = stringResource(MR.strings.login_title, tracker.name),
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(onClick = onDismissRequest) {
+                        Icon(
+                            imageVector = Icons.Outlined.Close,
+                            contentDescription = stringResource(MR.strings.action_close),
+                        )
+                    }
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        value = serverUrl,
+                        onValueChange = { serverUrl = it },
+                        label = { Text(text = stringResource(MR.strings.jellyfin_server_url)) },
+                        placeholder = { Text(text = "http://192.168.1.100:8096") },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Uri,
+                            imeAction = ImeAction.Next,
+                        ),
+                        singleLine = true,
+                        isError = inputError && !processing,
+                    )
+
+                    var hideApiKey by remember { mutableStateOf(true) }
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        value = apiKey,
+                        onValueChange = { apiKey = it },
+                        label = { Text(text = stringResource(MR.strings.jellyfin_api_key)) },
+                        trailingIcon = {
+                            IconButton(onClick = { hideApiKey = !hideApiKey }) {
+                                Icon(
+                                    imageVector = if (hideApiKey) {
+                                        Icons.Filled.Visibility
+                                    } else {
+                                        Icons.Filled.VisibilityOff
+                                    },
+                                    contentDescription = null,
+                                )
+                            }
+                        },
+                        visualTransformation = if (hideApiKey) {
+                            PasswordVisualTransformation()
+                        } else {
+                            VisualTransformation.None
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done,
+                        ),
+                        singleLine = true,
+                        isError = inputError && !processing,
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !processing && serverUrl.text.isNotBlank() && apiKey.text.isNotBlank(),
+                    onClick = {
+                        scope.launchIO {
+                            processing = true
+                            val result = checkLogin(
+                                context = context,
+                                tracker = tracker,
+                                username = serverUrl.text,
+                                password = apiKey.text,
+                            )
+                            inputError = !result
+                            if (result) onDismissRequest()
+                            processing = false
+                        }
+                    },
+                ) {
+                    val id = if (processing) MR.strings.logging_in else MR.strings.login
+                    Text(text = stringResource(id))
+                }
+            },
+        )
+    }
+
+    @Composable
     private fun TrackingLogoutDialog(
         tracker: Tracker,
         onDismissRequest: () -> Unit,
@@ -829,4 +944,8 @@ private data class LogoutDialog(
 
 private data class ImportConfirmDialog(
     val trackerName: String,
+)
+
+private data class JellyfinLogin(
+    val tracker: Tracker,
 )

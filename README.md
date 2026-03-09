@@ -1,11 +1,11 @@
 <div align="center">
 
-<img src="./.github/assets/logo.png" alt="Mihon Nightly logo" title="Mihon Nightly logo" width="80"/>
+<img src="./.github/assets/logo.png" alt="Ephyra logo" title="Ephyra logo" width="80"/>
 
-# Mihon Nightly
+# Ephyra
 
-### Full-featured reader — hardened nightly builds
-Discover and read manga, webtoons, comics, and more – easier than ever on your Android device.
+### Jellyfin-integrated manga reader, tracker & sync
+Discover and read manga, webtoons, comics, and more – with Jellyfin server sync for download-once, read-everywhere on your Android device.
 
 > **⚠️ This is an unofficial fork. It is not affiliated with, endorsed by, or connected to the [mihonapp/mihon](https://github.com/mihonapp/mihon) project or its team.**
 
@@ -16,18 +16,20 @@ Discover and read manga, webtoons, comics, and more – easier than ever on your
 
 ## Download
 
-[![Mihon Nightly](https://img.shields.io/github/release/Gameaday/mihon.svg?maxAge=3600&label=Nightly&labelColor=2c2c47&color=1c1c39&include_prereleases)](https://github.com/Gameaday/mihon/releases/tag/nightly)
+[![Ephyra](https://img.shields.io/github/release/Gameaday/mihon.svg?maxAge=3600&label=Ephyra&labelColor=2c2c47&color=1c1c39&include_prereleases)](https://github.com/Gameaday/mihon/releases/tag/nightly)
 
 *Requires Android 8.0 or higher.*
 
 ## About this fork
 
-Mihon Nightly is a hardened, up-to-date build of [Mihon](https://github.com/mihonapp/mihon) that tracks the upstream project closely. It prioritises keeping the latest improvements available, at a trade-off of possible reduced stability compared to official releases.
+Ephyra (formerly Mihon Nightly) is a Jellyfin-integrated build of [Mihon](https://github.com/mihonapp/mihon) that adds full Jellyfin server tracking, content sync, and download management. The philosophy is "download once from any source, read many from Jellyfin server" — perfect for the self-hosting community.
 
 **This fork:**
 - Is not affiliated with the upstream Mihon team or project.
 - Does not include upstream donation links.
 - Routes its in-app updater to [Gameaday/mihon](https://github.com/Gameaday/mihon) releases.
+- Adds Jellyfin tracker integration with server URL + API key login.
+- Supports bidirectional read-progress sync with Jellyfin servers.
 
 ## Improvements over upstream
 
@@ -48,7 +50,8 @@ The following changes have been made on top of the base Mihon project:
 
 * Local reading of content.
 * A configurable reader with multiple viewers, reading directions and other settings.
-* Tracker support: [MyAnimeList](https://myanimelist.net/), [AniList](https://anilist.co/), [Kitsu](https://kitsu.app/), [MangaUpdates](https://mangaupdates.com), [Shikimori](https://shikimori.one), and [Bangumi](https://bgm.tv/) support.
+* Jellyfin server integration: track, sync, and download content to/from your Jellyfin media server.
+* Tracker support: [MyAnimeList](https://myanimelist.net/), [AniList](https://anilist.co/), [Kitsu](https://kitsu.app/), [MangaUpdates](https://mangaupdates.com), [Shikimori](https://shikimori.one), [Bangumi](https://bgm.tv/), and [Jellyfin](https://jellyfin.org/) support.
 * Categories to organize your library.
 * Light and dark themes.
 * Schedule updating your library for new chapters.
@@ -75,7 +78,7 @@ Thank you to all the people who have contributed to the upstream Mihon project a
 
 ### Disclaimer
 
-This is an unofficial fork of Mihon and is **not affiliated with the Mihon Open Source Project**. The developer(s) of this application do not have any affiliation with the content providers available, and this application hosts zero content.
+This is an unofficial fork of Mihon and is **not affiliated with the Mihon Open Source Project**. Ephyra is the identity of this fork. The developer(s) of this application do not have any affiliation with the content providers available, and this application hosts zero content.
 
 ### License
 
