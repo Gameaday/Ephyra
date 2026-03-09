@@ -311,7 +311,7 @@ object SettingsTrackingScreen : SearchableSettings {
                                     modifier = Modifier.padding(bottom = 8.dp),
                                 )
                                 currentOrder.forEachIndexed { index, trackerId ->
-                                    val label = trackerLabels[trackerId] ?: "Unknown"
+                                    val label = trackerLabels[trackerId] ?: stringResource(MR.strings.unknown)
                                     val available = isAvailable(trackerId)
                                     androidx.compose.material3.Surface(
                                         color = if (available) {
