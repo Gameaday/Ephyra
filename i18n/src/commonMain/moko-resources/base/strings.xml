@@ -779,8 +779,8 @@
     <string name="download_unread">Unread</string>
     <string name="download_bookmarked">Bookmarked</string>
     <string name="download_sync_to_jellyfin">Sync to Jellyfin</string>
-    <string name="download_sync_read_to_jellyfin">Sync read chapters missing from JF</string>
-    <string name="download_sync_all_to_jellyfin">Sync ALL chapters missing from JF</string>
+    <string name="download_sync_read_to_jellyfin">Sync read chapters missing from Jellyfin</string>
+    <string name="download_sync_all_to_jellyfin">Sync ALL chapters missing from Jellyfin</string>
     <string name="jellyfin_sync_started">Syncing %d chapter(s) to Jellyfin…</string>
     <string name="jellyfin_sync_up_to_date">Jellyfin library is up to date</string>
     <string name="custom_cover">Custom cover</string>
