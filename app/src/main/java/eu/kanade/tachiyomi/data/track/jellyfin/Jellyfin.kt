@@ -249,12 +249,35 @@ class Jellyfin(id: Long) : BaseTracker(id, "Jellyfin"), EnhancedTracker, Deletab
         return try {
             val results = api.searchSeries(serverUrl, userId, manga.title, parentId = libraryId)
             val normalizedMangaTitle = normalizeTitle(manga.title)
-            // Exact title match preferred, then normalized match, then first result
-            results.firstOrNull {
+
+            // Tier 1: Exact title match
+            val exactMatch = results.firstOrNull {
                 it.title.equals(manga.title, ignoreCase = true)
-            } ?: results.firstOrNull {
+            }
+            if (exactMatch != null) return exactMatch
+
+            // Tier 2: Normalized title match (punctuation-insensitive)
+            val normalizedMatch = results.firstOrNull {
                 normalizeTitle(it.title) == normalizedMangaTitle
-            } ?: results.firstOrNull()
+            }
+            if (normalizedMatch != null) return normalizedMatch
+
+            // Tier 3: Try alternative titles as search queries
+            for (altTitle in manga.alternativeTitles) {
+                if (altTitle.isBlank()) continue
+                val altResults = api.searchSeries(serverUrl, userId, altTitle, parentId = libraryId)
+                val altExact = altResults.firstOrNull {
+                    it.title.equals(altTitle, ignoreCase = true)
+                }
+                if (altExact != null) return altExact
+                val altNormalized = altResults.firstOrNull {
+                    normalizeTitle(it.title) == normalizeTitle(altTitle)
+                }
+                if (altNormalized != null) return altNormalized
+            }
+
+            // Tier 4: First result from primary search as fallback
+            results.firstOrNull()
         } catch (e: Exception) {
             logcat(LogPriority.WARN, e) { "Jellyfin match failed for: ${manga.title}" }
             null
