@@ -37,17 +37,16 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import eu.kanade.presentation.manga.components.MangaCover
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.components.BadgeGroup
 import tachiyomi.presentation.core.i18n.stringResource
-import tachiyomi.presentation.core.util.selectedBackground
+import tachiyomi.presentation.core.theme.ShapeTokens
 import tachiyomi.domain.manga.model.MangaCover as MangaCoverModel
 
 object CommonMangaItemDefaults {
-    val GridHorizontalSpacer = 4.dp
-    val GridVerticalSpacer = 4.dp
+    val GridHorizontalSpacer = 8.dp
+    val GridVerticalSpacer = 8.dp
 
     @Suppress("ConstPropertyName")
     const val BrowseFavoriteCoverAlpha = 0.34f
@@ -217,7 +216,9 @@ fun MangaComfortableGridItem(
                 },
             )
             GridItemTitle(
-                modifier = Modifier.padding(4.dp),
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
                 title = title,
                 style = MaterialTheme.typography.titleSmall,
                 minLines = 2,
@@ -276,8 +277,8 @@ private fun GridItemTitle(
     Text(
         modifier = modifier,
         text = title,
-        fontSize = 12.sp,
-        lineHeight = 18.sp,
+        fontSize = MaterialTheme.typography.labelSmall.fontSize,
+        lineHeight = MaterialTheme.typography.labelSmall.lineHeight,
         minLines = minLines,
         maxLines = maxLines,
         overflow = TextOverflow.Ellipsis,
@@ -287,6 +288,8 @@ private fun GridItemTitle(
 
 /**
  * Wrapper for grid items to handle selection state, click and long click.
+ * Uses [ShapeTokens.card] for expressive corner radii and tonal surface
+ * overlay ([secondaryContainer]) for the selected state.
  */
 @Composable
 private fun GridItemSelectable(
@@ -296,18 +299,19 @@ private fun GridItemSelectable(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
+    val selectionColor = MaterialTheme.colorScheme.secondaryContainer
     Box(
         modifier = modifier
-            .clip(MaterialTheme.shapes.small)
+            .clip(ShapeTokens.card)
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick,
             )
-            .selectedOutline(isSelected = isSelected, color = MaterialTheme.colorScheme.secondary)
+            .selectedOutline(isSelected = isSelected, color = selectionColor)
             .padding(4.dp),
     ) {
         val contentColor = if (isSelected) {
-            MaterialTheme.colorScheme.onSecondary
+            MaterialTheme.colorScheme.onSecondaryContainer
         } else {
             LocalContentColor.current
         }
@@ -327,6 +331,8 @@ private fun Modifier.selectedOutline(
 
 /**
  * Layout of list item.
+ * Uses tonal [secondaryContainer] selection to match the grid selection pattern
+ * following Material 3 tonal overlay guidelines.
  */
 @Composable
 fun MangaListItem(
@@ -339,9 +345,16 @@ fun MangaListItem(
     coverAlpha: Float = 1f,
     onClickContinueReading: (() -> Unit)? = null,
 ) {
+    val selectionColor = MaterialTheme.colorScheme.secondaryContainer
     Row(
         modifier = Modifier
-            .selectedBackground(isSelected)
+            .then(
+                if (isSelected) {
+                    Modifier.drawBehind { drawRect(color = selectionColor) }
+                } else {
+                    Modifier
+                },
+            )
             .height(56.dp)
             .combinedClickable(
                 onClick = onClick,
@@ -350,29 +363,36 @@ fun MangaListItem(
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        MangaCover.Square(
-            modifier = Modifier
-                .fillMaxHeight()
-                .alpha(coverAlpha),
-            data = coverData,
-        )
-        Text(
-            text = title,
-            modifier = Modifier
-                .padding(horizontal = 16.dp)
-                .weight(1f),
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        BadgeGroup(content = badge)
-        if (onClickContinueReading != null) {
-            ContinueReadingButton(
-                size = ContinueReadingButtonSizeSmall,
-                iconSize = ContinueReadingButtonIconSizeSmall,
-                onClick = onClickContinueReading,
-                modifier = Modifier.padding(start = ContinueReadingButtonListSpacing),
+        val contentColor = if (isSelected) {
+            MaterialTheme.colorScheme.onSecondaryContainer
+        } else {
+            LocalContentColor.current
+        }
+        CompositionLocalProvider(LocalContentColor provides contentColor) {
+            MangaCover.Square(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .alpha(coverAlpha),
+                data = coverData,
             )
+            Text(
+                text = title,
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .weight(1f),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            BadgeGroup(content = badge)
+            if (onClickContinueReading != null) {
+                ContinueReadingButton(
+                    size = ContinueReadingButtonSizeSmall,
+                    iconSize = ContinueReadingButtonIconSizeSmall,
+                    onClick = onClickContinueReading,
+                    modifier = Modifier.padding(start = ContinueReadingButtonListSpacing),
+                )
+            }
         }
     }
 }

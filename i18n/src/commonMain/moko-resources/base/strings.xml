@@ -105,8 +105,6 @@
     <string name="cover_search_source_count">%1$s (+%2$d)</string>
     <string name="action_set_metadata_source">Use source for metadata</string>
     <string name="metadata_source_set">Metadata source set</string>
-    <string name="metadata_source_cleared">Metadata source cleared</string>
-    <string name="action_clear_metadata_source">Clear metadata source</string>
     <string name="metadata_source_label">Sync source</string>
     <string name="action_view_chapters">View chapters</string>
     <string name="action_pause">Pause</string>
@@ -333,6 +331,8 @@
     <string name="pref_hide_missing_chapter_indicators">Hide missing chapter indicators</string>
     <string name="pref_disallow_non_ascii_filenames">Disallow non-ASCII filenames</string>
     <string name="pref_disallow_non_ascii_filenames_details">Ensures compatibility with certain storage media that don't support Unicode. When this is enabled, you'll need to manually rename source and manga folders by replacing non-ASCII characters with their lowercase UTF-8 hexadecimal representations. Chapter files don't need to be renamed.</string>
+    <string name="pref_jellyfin_compatible_naming">Jellyfin-compatible download naming</string>
+    <string name="pref_jellyfin_compatible_naming_summary">Name downloaded CBZ files using Jellyfin Bookshelf plugin conventions (Series Name Ch. 001.cbz). Content can be directly served by a Jellyfin media server without renaming.</string>
 
       <!-- Extension section -->
     <string name="multi_lang">Multi</string>
@@ -1107,6 +1107,9 @@
 
     <!-- Authority management (import + retroactive link in one section) -->
     <string name="tracker_authority_group_title">Authority management</string>
+    <string name="pref_authority_order_title">Authority source order</string>
+    <string name="pref_authority_order_subtitle">Sources are checked in this order. Unavailable sources are skipped.</string>
+    <string name="pref_authority_not_available">Not logged in</string>
     <string name="tracker_link_action">Link tracked manga</string>
     <string name="tracker_link_subtitle">Set authority IDs for manga that already have trackers</string>
     <string name="tracker_link_success">Linked %d manga to authority</string>
@@ -1174,4 +1177,67 @@
     <!-- Dead duration formatting -->
     <string name="source_dead_duration_days">%d days</string>
     <string name="source_dead_duration_less_than_day">less than a day</string>
+
+    <!-- Authority linking -->
+    <string name="authority_badge_description">Linked to authority</string>
+    <string name="authority_linked_label">Authority</string>
+    <string name="authority_source_name">Authority</string>
+
+    <!-- Authority match results screen -->
+    <string name="match_results_title">Authority Matching Results</string>
+    <string name="match_results_summary">Resolved %1$d of %2$d manga</string>
+    <string name="match_results_all_linked">All library manga are linked to an authority</string>
+    <string name="match_results_unlinked_header">Unlinked manga</string>
+    <string name="match_results_linked_header">Recently linked</string>
+    <string name="match_results_unlinked_count">%d unlinked</string>
+    <string name="match_results_retry_single">Retry</string>
+    <string name="match_results_matching">Matching…</string>
+    <string name="match_results_no_match">No match found</string>
+    <string name="match_results_retry_all">Retry all unlinked</string>
+    <string name="match_results_count_manga">%d manga</string>
+    <string name="match_results_count_novels">%d novels</string>
+    <string name="match_results_count_other">%d other</string>
+    <string name="content_type_manga">Manga</string>
+    <string name="content_type_novel">Novel</string>
+    <string name="content_type_book">Book</string>
+
+    <!-- Metadata editing & field locking (Jellyfin-style) -->
+    <string name="edit_metadata_title">Edit metadata</string>
+    <string name="edit_metadata_subtitle">Edit fields and toggle locks. Locked fields are preserved during authority refresh.</string>
+    <string name="edit_metadata_identify">Identify</string>
+    <string name="edit_metadata_refresh">Refresh</string>
+    <string name="edit_metadata_section_basic">Basic info</string>
+    <string name="edit_metadata_section_details">Details</string>
+    <string name="edit_metadata_section_tags">Tags &amp; genres</string>
+    <string name="edit_metadata_linked_to">Linked to %s</string>
+    <string name="locked_field_description">Description</string>
+    <string name="locked_field_author">Author</string>
+    <string name="locked_field_artist">Artist</string>
+    <string name="locked_field_status">Status</string>
+    <string name="locked_field_genre">Genre</string>
+    <string name="locked_field_title">Title</string>
+    <string name="edit_metadata_add_genre">Add genre</string>
+    <string name="metadata_locks_lock_all">Lock all</string>
+    <string name="metadata_locks_unlock_all">Unlock all</string>
+    <string name="metadata_lock_field">Lock field</string>
+    <string name="metadata_unlock_field">Unlock field</string>
+    <string name="action_remove_genre">Remove %s</string>
+    <string name="action_add_genre">Add genre</string>
+    <string name="authority_locked_count">%d locked</string>
+    <string name="action_filter_content_type_manga">Manga only</string>
+
+    <!-- Jellyfin tracker -->
+    <string name="jellyfin_user_id">User ID</string>
+    <string name="jellyfin_user_id_hint">Jellyfin user ID for read progress sync</string>
+    <string name="pref_jellyfin_sync_enabled">Jellyfin bidirectional sync</string>
+    <string name="pref_jellyfin_sync_enabled_summary">Sync read progress and metadata edits with Jellyfin server. Chapters read in the app are marked as played on the server, and metadata edits are pushed back.</string>
+    <string name="jellyfin_test_connection">Test connection</string>
+    <string name="jellyfin_test_connection_summary">Verify connectivity with the configured Jellyfin server</string>
+    <string name="jellyfin_test_success">Connected to %1$s (v%2$s)</string>
+    <string name="jellyfin_test_failed">Connection failed — check server URL and API key</string>
+    <string name="jellyfin_library">Jellyfin library</string>
+    <string name="jellyfin_library_all">All libraries</string>
+    <string name="jellyfin_library_selected">Library: %s</string>
+    <string name="jellyfin_user_selected">User: %s</string>
+    <string name="tracking_linked">Linked</string>
 </resources>

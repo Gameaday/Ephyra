@@ -1,5 +1,6 @@
 package eu.kanade.domain.track.interactor
 
+import eu.kanade.domain.track.service.TrackPreferences
 import eu.kanade.tachiyomi.data.track.Tracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.data.track.model.TrackSearch
@@ -36,6 +37,7 @@ class MatchUnlinkedManga(
     private val mangaRepository: MangaRepository,
     private val trackerManager: TrackerManager,
     private val getTracks: GetTracks,
+    private val trackPreferences: TrackPreferences,
 ) {
 
     /**
@@ -190,28 +192,43 @@ class MatchUnlinkedManga(
 
     /**
      * Finds the best queryable tracker for search operations.
-     * Prefers public-search trackers (no login needed), then falls back to
-     * logged-in trackers that have canonical prefixes.
      *
-     * When a [contentType] is specified, only considers trackers that are
-     * authorities for that type — saving API calls by not querying services
-     * that don't cover the requested content type.
+     * Walks the user's ordered authority list (Settings → Tracking → Authority order).
+     * Each tracker is checked in sequence:
+     *  - Must support the requested [contentType] (or UNKNOWN matches all).
+     *  - Must be queryable (logged in or supports public search).
+     * The first tracker passing both checks is returned.
+     *
+     * If the ordered list produces no match (all unavailable), falls back to the
+     * original automatic selection: public-search trackers first, then logged-in.
      */
     private fun findQueryableTracker(contentType: ContentType = ContentType.UNKNOWN): Tracker? {
         val validTrackerIds = AddTracks.trackersForContentType(contentType)
 
-        // First try public-search trackers that support this content type
-        val publicTracker = AddTracks.TRACKERS_WITH_PUBLIC_SEARCH
-            .filter { it in validTrackerIds }
-            .firstNotNullOfOrNull { id -> trackerManager.get(id) }
-        if (publicTracker != null) return publicTracker
+        // Walk the user's ordered preference list
+        val orderedIds = trackPreferences.authorityTrackerOrder().get()
+        for (trackerId in orderedIds) {
+            if (trackerId !in validTrackerIds) continue
+            val tracker = trackerManager.get(trackerId) ?: continue
+            if (isTrackerQueryable(tracker)) return tracker
+        }
 
-        // Then try any logged-in tracker with a canonical prefix that supports this type
+        // Fallback: any canonical tracker the user hasn't listed (future-proofing)
         return validTrackerIds
-            .filter { it in AddTracks.TRACKER_CANONICAL_PREFIXES }
+            .filter { it !in orderedIds && it in AddTracks.TRACKER_CANONICAL_PREFIXES }
             .firstNotNullOfOrNull { id ->
-                trackerManager.get(id)?.takeIf { it.isLoggedIn }
+                trackerManager.get(id)?.takeIf { isTrackerQueryable(it) }
             }
+    }
+
+    /**
+     * Checks whether a tracker can be used for authority search.
+     * A tracker is queryable if it supports public (unauthenticated) search
+     * OR the user is logged in.
+     */
+    private fun isTrackerQueryable(tracker: Tracker): Boolean {
+        if (tracker.id in AddTracks.TRACKERS_WITH_PUBLIC_SEARCH) return true
+        return tracker.isLoggedIn
     }
 
     /**
@@ -278,15 +295,38 @@ class MatchUnlinkedManga(
         return try {
             val results = tracker.search(query)
 
+            /**
+             * Checks if a result has a valid remote identifier.
+             * Supports both numeric IDs (MAL/AniList/MU) and URL-based IDs (Jellyfin).
+             */
+            fun hasValidId(result: TrackSearch): Boolean =
+                result.remote_id > 0 || result.tracking_url.isNotBlank()
+
+            /**
+             * Builds a canonical ID string from the result.
+             * Uses numeric remote_id when available, otherwise extracts an
+             * identifier from tracking_url for trackers with string-based IDs.
+             */
+            fun buildCanonicalId(result: TrackSearch): String = if (result.remote_id > 0) {
+                "$prefix:${result.remote_id}"
+            } else {
+                // Extract ID from tracking URL (e.g., .../Items/{id} for Jellyfin)
+                val urlId = result.tracking_url
+                    .trimEnd('/')
+                    .substringAfterLast("/")
+                    .substringBefore("?")
+                "$prefix:$urlId"
+            }
+
             // Tier 1: Exact case-insensitive match against any known title
             // Prefer results matching the manga's content type when known
             val exactMatches = results.filter { result ->
-                result.remote_id > 0 &&
+                hasValidId(result) &&
                     allTitles.any { title -> result.title.equals(title, ignoreCase = true) }
             }
             val exactMatch = pickBestByContentType(exactMatches, contentType)
             if (exactMatch != null) {
-                return "$prefix:${exactMatch.remote_id}" to exactMatch
+                return buildCanonicalId(exactMatch) to exactMatch
             }
 
             // Tier 2: Normalized match (strip punctuation, collapse whitespace)
@@ -296,15 +336,49 @@ class MatchUnlinkedManga(
                 .toSet()
             if (normalizedTitles.isNotEmpty()) {
                 val normalizedMatches = results.filter { result ->
-                    result.remote_id > 0 && normalizeTitle(result.title).let {
+                    hasValidId(result) && normalizeTitle(result.title).let {
                         it.isNotBlank() && it in normalizedTitles
                     }
                 }
                 val normalizedMatch = pickBestByContentType(normalizedMatches, contentType)
                 if (normalizedMatch != null) {
-                    return "$prefix:${normalizedMatch.remote_id}" to normalizedMatch
+                    return buildCanonicalId(normalizedMatch) to normalizedMatch
                 }
             }
+
+            // Tier 3: Match against the result's alternative titles
+            // Authority results often list the same manga under different names
+            if (normalizedTitles.isNotEmpty()) {
+                val altTitleMatches = results.filter { result ->
+                    hasValidId(result) &&
+                        result.alternative_titles.any { altTitle ->
+                            val norm = normalizeTitle(altTitle)
+                            norm.isNotBlank() && norm in normalizedTitles
+                        }
+                }
+                val altTitleMatch = pickBestByContentType(altTitleMatches, contentType)
+                if (altTitleMatch != null) {
+                    return buildCanonicalId(altTitleMatch) to altTitleMatch
+                }
+            }
+
+            // Tier 4: Substring containment — catches "Title: Subtitle" vs "Title"
+            // Only matches if one normalized title fully contains the other and
+            // the shorter title has at least MIN_SUBSTRING_LENGTH characters
+            if (normalizedTitles.isNotEmpty()) {
+                val substringMatches = results.filter { result ->
+                    hasValidId(result) && normalizeTitle(result.title).let { resultNorm ->
+                        resultNorm.isNotBlank() && normalizedTitles.any { localNorm ->
+                            containsSubstringMatch(localNorm, resultNorm)
+                        }
+                    }
+                }
+                val substringMatch = pickBestByContentType(substringMatches, contentType)
+                if (substringMatch != null) {
+                    return buildCanonicalId(substringMatch) to substringMatch
+                }
+            }
+
             null
         } catch (e: CancellationException) {
             throw e // Don't swallow cancellation — let WorkManager handle it promptly
@@ -409,6 +483,12 @@ class MatchUnlinkedManga(
         private val MULTI_SPACE_REGEX = Regex("\\s+")
 
         /**
+         * Minimum length for substring matching in Tier 4.
+         * Prevents false positives from very short titles (e.g. "One" matching "One Piece").
+         */
+        private const val MIN_SUBSTRING_LENGTH = 8
+
+        /**
          * Delay between API search calls during bulk matching to avoid tracker throttling.
          * Most tracker APIs have rate limits (e.g. AniList: 90/min, MU: unspecified).
          * A 500ms delay keeps us well within limits while still being fast enough
@@ -427,6 +507,17 @@ class MatchUnlinkedManga(
                 .replace(PUNCT_REGEX, " ")
                 .replace(MULTI_SPACE_REGEX, " ")
                 .trim()
+        }
+
+        /**
+         * Checks if one normalized title is a substring of the other.
+         * Both must be non-blank and the shorter one must have at least
+         * [MIN_SUBSTRING_LENGTH] characters to avoid false positives.
+         */
+        fun containsSubstringMatch(a: String, b: String): Boolean {
+            val shorter = if (a.length <= b.length) a else b
+            val longer = if (a.length <= b.length) b else a
+            return shorter.length >= MIN_SUBSTRING_LENGTH && longer.contains(shorter)
         }
     }
 }

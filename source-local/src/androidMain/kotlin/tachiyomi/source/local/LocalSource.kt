@@ -32,6 +32,7 @@ import tachiyomi.core.metadata.comicinfo.copyFromComicInfo
 import tachiyomi.core.metadata.comicinfo.getComicInfo
 import tachiyomi.core.metadata.tachiyomi.MangaDetails
 import tachiyomi.domain.chapter.service.ChapterRecognition
+import tachiyomi.domain.manga.model.JellyfinNaming
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.i18n.MR
 import tachiyomi.source.local.filter.OrderBy
@@ -252,6 +253,12 @@ actual class LocalSource(
         comicInfo.title?.let { chapter.name = it.value }
         comicInfo.number?.value?.toFloatOrNull()?.let { chapter.chapter_number = it }
         comicInfo.translator?.let { chapter.scanlator = it.value }
+
+        // Include volume info in name if present and not already included
+        val volume = comicInfo.volume?.value?.takeIf { it > 0 }
+        if (volume != null && !chapter.name.contains("Vol.", ignoreCase = true)) {
+            chapter.name = "Vol. $volume - ${chapter.name}"
+        }
     }
 
     // Chapters
@@ -269,9 +276,30 @@ actual class LocalSource(
                         chapterFile.nameWithoutExtension
                     }.orEmpty()
                     date_upload = chapterFile.lastModified()
-                    chapter_number = ChapterRecognition
-                        .parseChapterNumber(manga.title, this.name, this.chapter_number.toDouble())
-                        .toFloat()
+
+                    // Try Jellyfin naming first for files that follow the convention
+                    val jellyfinParsed = if (!chapterFile.isDirectory) {
+                        JellyfinNaming.parseChapterFilename(chapterFile.name.orEmpty())
+                    } else {
+                        null
+                    }
+                    val jellyfinChapterNum = jellyfinParsed?.chapterNumber
+
+                    if (jellyfinChapterNum != null) {
+                        // Jellyfin-formatted file — use parsed chapter number directly
+                        chapter_number = jellyfinChapterNum.toFloat()
+                        // Build display name from Jellyfin components
+                        val displayParts = mutableListOf<String>()
+                        jellyfinParsed.volumeNumber?.let { displayParts.add("Vol. $it") }
+                        displayParts.add("Ch. ${jellyfinParsed.chapterNumber}")
+                        jellyfinParsed.chapterTitle?.let { displayParts.add("- $it") }
+                        name = displayParts.joinToString(" ")
+                    } else {
+                        // Standard recognition fallback
+                        chapter_number = ChapterRecognition
+                            .parseChapterNumber(manga.title, this.name, this.chapter_number.toDouble())
+                            .toFloat()
+                    }
 
                     val format = Format.valueOf(chapterFile)
                     if (format is Format.Epub) {

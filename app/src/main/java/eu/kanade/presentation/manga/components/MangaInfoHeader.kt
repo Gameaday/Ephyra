@@ -37,10 +37,12 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Done
 import androidx.compose.material.icons.outlined.DoneAll
 import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Sync
+import androidx.compose.material.icons.outlined.Verified
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
@@ -79,7 +81,6 @@ import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
@@ -90,11 +91,15 @@ import com.mikepenz.markdown.utils.getUnescapedTextInNode
 import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.presentation.components.DropdownMenu
 import eu.kanade.tachiyomi.R
+import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.util.system.copyToClipboard
+import eu.kanade.tachiyomi.util.system.openInBrowser
 import org.intellij.markdown.MarkdownElementTypes
 import org.intellij.markdown.MarkdownTokenTypes
 import org.intellij.markdown.ast.findChildOfType
+import tachiyomi.domain.manga.model.CanonicalId
+import tachiyomi.domain.manga.model.LockedField
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.SourceStatus
 import tachiyomi.i18n.MR
@@ -182,6 +187,7 @@ fun MangaInfoBox(
 fun MangaActionRow(
     favorite: Boolean,
     trackingCount: Int,
+    hasAuthority: Boolean,
     nextUpdate: Instant?,
     isUserIntervalMode: Boolean,
     onAddToLibraryClicked: () -> Unit,
@@ -231,13 +237,21 @@ fun MangaActionRow(
             onClick = { onEditIntervalClicked?.invoke() },
         )
         MangaActionButton(
-            title = if (trackingCount == 0) {
-                stringResource(MR.strings.manga_tracking_tab)
-            } else {
-                pluralStringResource(MR.plurals.num_trackers, count = trackingCount, trackingCount)
+            title = when {
+                hasAuthority -> stringResource(MR.strings.tracking_linked)
+                trackingCount > 0 -> pluralStringResource(MR.plurals.num_trackers, count = trackingCount, trackingCount)
+                else -> stringResource(MR.strings.manga_tracking_tab)
             },
-            icon = if (trackingCount == 0) Icons.Outlined.Sync else Icons.Outlined.Done,
-            color = if (trackingCount == 0) defaultActionButtonColor else MaterialTheme.colorScheme.primary,
+            icon = when {
+                hasAuthority && trackingCount > 0 -> Icons.Outlined.DoneAll
+                hasAuthority || trackingCount > 0 -> Icons.Outlined.Done
+                else -> Icons.Outlined.Sync
+            },
+            color = if (hasAuthority || trackingCount > 0) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                defaultActionButtonColor
+            },
             onClick = onTrackingClicked,
         )
         if (onWebViewClicked != null) {
@@ -263,7 +277,7 @@ fun ExpandableMangaDescription(
     onEditNotes: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier) {
+    Column(modifier = modifier.animateContentSize()) {
         val (expanded, onExpanded) = rememberSaveable {
             mutableStateOf(defaultExpandState)
         }
@@ -385,6 +399,8 @@ private fun MangaAndSourceTitlesLarge(
             isStubSource = isStubSource,
             sourceStatus = sourceStatus,
             metadataSourceName = metadataSourceName,
+            canonicalId = manga.canonicalId,
+            lockedFields = manga.lockedFields,
             doSearch = doSearch,
             textAlign = TextAlign.Center,
         )
@@ -433,6 +449,8 @@ private fun MangaAndSourceTitlesSmall(
                 isStubSource = isStubSource,
                 sourceStatus = sourceStatus,
                 metadataSourceName = metadataSourceName,
+                canonicalId = manga.canonicalId,
+                lockedFields = manga.lockedFields,
                 doSearch = doSearch,
             )
         }
@@ -449,6 +467,8 @@ private fun ColumnScope.MangaContentInfo(
     isStubSource: Boolean,
     sourceStatus: Int,
     metadataSourceName: String?,
+    canonicalId: String?,
+    lockedFields: Long = 0L,
     doSearch: (query: String, global: Boolean) -> Unit,
     textAlign: TextAlign? = LocalTextStyle.current.textAlign,
 ) {
@@ -500,6 +520,9 @@ private fun ColumnScope.MangaContentInfo(
                 ),
             textAlign = textAlign,
         )
+        if (LockedField.isLocked(lockedFields, LockedField.AUTHOR)) {
+            FieldLockIcon(lockedFields = lockedFields, field = LockedField.AUTHOR)
+        }
     }
 
     if (!artist.isNullOrBlank() && author != artist) {
@@ -523,10 +546,13 @@ private fun ColumnScope.MangaContentInfo(
                     ),
                 textAlign = textAlign,
             )
+            if (LockedField.isLocked(lockedFields, LockedField.ARTIST)) {
+                FieldLockIcon(lockedFields = lockedFields, field = LockedField.ARTIST)
+            }
         }
     }
 
-    Spacer(modifier = Modifier.height(2.dp))
+    Spacer(modifier = Modifier.height(4.dp))
 
     Row(
         modifier = Modifier.secondaryItemAlpha(),
@@ -545,7 +571,7 @@ private fun ColumnScope.MangaContentInfo(
             contentDescription = null,
             modifier = Modifier
                 .padding(end = 4.dp)
-                .size(16.dp),
+                .size(18.dp),
         )
         ProvideTextStyle(MaterialTheme.typography.bodyMedium) {
             Text(
@@ -561,6 +587,13 @@ private fun ColumnScope.MangaContentInfo(
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 1,
             )
+            if (LockedField.isLocked(lockedFields, LockedField.STATUS)) {
+                FieldLockIcon(
+                    lockedFields = lockedFields,
+                    field = LockedField.STATUS,
+                    modifier = Modifier.padding(start = 2.dp),
+                )
+            }
             DotSeparatorText()
             if (isStubSource) {
                 Icon(
@@ -568,7 +601,7 @@ private fun ColumnScope.MangaContentInfo(
                     contentDescription = null,
                     modifier = Modifier
                         .padding(end = 4.dp)
-                        .size(16.dp),
+                        .size(18.dp),
                     tint = MaterialTheme.colorScheme.error,
                 )
             }
@@ -618,6 +651,103 @@ private fun ColumnScope.MangaContentInfo(
                 )
             }
         }
+    }
+
+    if (canonicalId != null) {
+        val authorityLabel = remember(canonicalId) { CanonicalId.toLabel(canonicalId) }
+        // Build the authority URL — for Jellyfin, resolve the server URL from the tracker
+        val authorityUrl = remember(canonicalId) {
+            if (canonicalId.startsWith("jf:")) {
+                val trackerManager: TrackerManager = Injekt.get()
+                // Exclude "jellyfin" which is the noop login placeholder credential
+                val serverUrl = trackerManager.jellyfin.getUsername().trimEnd('/')
+                    .takeIf { it.isNotBlank() && it != JELLYFIN_NOOP_CREDENTIAL }
+                CanonicalId.toUrl(canonicalId, jellyfinServerUrl = serverUrl)
+            } else {
+                CanonicalId.toUrl(canonicalId)
+            }
+        }
+        val lockCount = remember(lockedFields) {
+            LockedField.ALL_FIELDS.count { LockedField.isLocked(lockedFields, it) }
+        }
+        if (authorityLabel != null) {
+            androidx.compose.material3.Surface(
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = AUTHORITY_BADGE_ALPHA),
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .animateContentSize()
+                    .then(
+                        if (authorityUrl != null) {
+                            Modifier.clickableNoIndication {
+                                context.openInBrowser(authorityUrl)
+                            }
+                        } else {
+                            Modifier
+                        },
+                    ),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Verified,
+                        contentDescription = stringResource(MR.strings.authority_badge_description),
+                        modifier = Modifier
+                            .padding(end = 10.dp)
+                            .size(20.dp),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                    ProvideTextStyle(MaterialTheme.typography.labelLarge) {
+                        Text(
+                            text = stringResource(MR.strings.authority_linked_label),
+                            overflow = TextOverflow.Ellipsis,
+                            maxLines = 1,
+                        )
+                        DotSeparatorText()
+                        Text(
+                            text = authorityLabel,
+                            overflow = TextOverflow.Ellipsis,
+                            maxLines = 1,
+                            color = if (authorityUrl != null) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                LocalContentColor.current
+                            },
+                        )
+                        if (lockCount > 0) {
+                            DotSeparatorText()
+                            Icon(
+                                imageVector = Icons.Outlined.Lock,
+                                contentDescription = stringResource(MR.strings.authority_locked_count, lockCount),
+                                modifier = Modifier
+                                    .padding(end = 4.dp)
+                                    .size(14.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                text = stringResource(MR.strings.authority_locked_count, lockCount),
+                                overflow = TextOverflow.Ellipsis,
+                                maxLines = 1,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FieldLockIcon(lockedFields: Long, field: Long, modifier: Modifier = Modifier) {
+    if (LockedField.isLocked(lockedFields, field)) {
+        Icon(
+            imageVector = Icons.Outlined.Lock,
+            contentDescription = null,
+            modifier = modifier.size(14.dp),
+            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+        )
     }
 }
 
@@ -755,6 +885,11 @@ private fun MangaSummary(
 
 private val DefaultTagChipModifier = Modifier.padding(vertical = 4.dp)
 
+private const val AUTHORITY_BADGE_ALPHA = 0.4f
+
+/** Noop login credential used by Jellyfin tracker's [loginNoop] — not a valid server URL. */
+private const val JELLYFIN_NOOP_CREDENTIAL = "jellyfin"
+
 @Composable
 private fun TagsChip(
     text: String,
@@ -794,7 +929,7 @@ private fun RowScope.MangaActionButton(
             Text(
                 text = title,
                 color = color,
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.labelSmall,
                 textAlign = TextAlign.Center,
             )
         }

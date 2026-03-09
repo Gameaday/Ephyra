@@ -208,6 +208,7 @@ class MangaRepositoryImpl(
                     alternativeTitles = MangaMapper.serializeAlternativeTitles(value.alternativeTitles),
                     deadSince = value.deadSince,
                     contentType = value.contentType?.value?.toLong(),
+                    lockedFields = value.lockedFields,
                 )
             }
         }

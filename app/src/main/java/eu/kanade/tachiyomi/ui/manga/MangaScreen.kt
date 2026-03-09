@@ -34,6 +34,7 @@ import eu.kanade.presentation.manga.EditCoverAction
 import eu.kanade.presentation.manga.MangaScreen
 import eu.kanade.presentation.manga.components.CoverSearchDialog
 import eu.kanade.presentation.manga.components.DeleteChaptersDialog
+import eu.kanade.presentation.manga.components.EditMetadataDialog
 import eu.kanade.presentation.manga.components.MangaCoverDialog
 import eu.kanade.presentation.manga.components.ScanlatorFilterDialog
 import eu.kanade.presentation.manga.components.SetIntervalDialog
@@ -163,11 +164,8 @@ class MangaScreen(
                 navigator.push(MigrationConfigScreen(successState.manga.id))
             }.takeIf { successState.manga.favorite },
             onEditNotesClicked = { navigator.push(MangaNotesScreen(manga = successState.manga)) },
-            onClearMetadataSourceClicked = screenModel::clearMetadataSource.takeIf {
-                successState.manga.metadataSource?.let { it > 0 } == true
-            },
-            onResolveCanonicalClicked = screenModel::resolveCanonicalId.takeIf {
-                successState.manga.favorite && successState.manga.canonicalId == null
+            onEditMetadataClicked = screenModel::showEditMetadataDialog.takeIf {
+                successState.manga.favorite
             },
             onMultiBookmarkClicked = screenModel::bookmarkChapters,
             onMultiMarkAsReadClicked = screenModel::markChaptersRead,
@@ -242,6 +240,7 @@ class MangaScreen(
                         mangaId = successState.manga.id,
                         mangaTitle = successState.manga.title,
                         sourceId = successState.source.id,
+                        canonicalId = successState.manga.canonicalId,
                     ),
                     enableSwipeDismiss = { it.lastItem is TrackInfoDialogHomeScreen },
                     onDismissRequest = onDismissRequest,
@@ -308,6 +307,43 @@ class MangaScreen(
                     onDismissRequest = onDismissRequest,
                     onValueChanged = { interval: Int -> screenModel.setFetchInterval(dialog.manga, interval) }
                         .takeIf { screenModel.isUpdateIntervalEnabled },
+                )
+            }
+            MangaScreenModel.Dialog.EditMetadata -> {
+                val manga = successState.manga
+                val authorityLabel = remember(manga.canonicalId) {
+                    manga.canonicalId?.let { tachiyomi.domain.manga.model.CanonicalId.toLabel(it) }
+                }
+                EditMetadataDialog(
+                    title = manga.title,
+                    author = manga.author,
+                    artist = manga.artist,
+                    description = manga.description,
+                    status = manga.status,
+                    genres = manga.genre ?: emptyList(),
+                    lockedFields = manga.lockedFields,
+                    hasAuthority = manga.canonicalId != null,
+                    authorityLabel = authorityLabel,
+                    onSaveTitle = screenModel::editTitle,
+                    onSaveAuthor = screenModel::editAuthor,
+                    onSaveArtist = screenModel::editArtist,
+                    onSaveDescription = screenModel::editDescription,
+                    onSaveStatus = screenModel::editStatus,
+                    onSaveGenres = screenModel::editGenres,
+                    onToggleLock = screenModel::toggleLockedField,
+                    onSetAllLocks = screenModel::setLockedFields,
+                    onIdentify = if (manga.canonicalId == null) {
+                        {
+                            screenModel.dismissDialog()
+                            screenModel.resolveCanonicalId()
+                        }
+                    } else {
+                        {
+                            screenModel.dismissDialog()
+                            screenModel.refreshFromAuthority()
+                        }
+                    },
+                    onDismissRequest = onDismissRequest,
                 )
             }
         }

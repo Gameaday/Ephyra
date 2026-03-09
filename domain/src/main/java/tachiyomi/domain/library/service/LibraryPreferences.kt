@@ -94,6 +94,11 @@ class LibraryPreferences(
         TriState.DISABLED,
     )
 
+    fun filterContentTypeManga() = preferenceStore.getEnum(
+        "pref_filter_library_content_type_manga",
+        TriState.DISABLED,
+    )
+
     fun filterTracking(id: Int) = preferenceStore.getEnum(
         "pref_filter_library_tracked_${id}_v2",
         TriState.DISABLED,
@@ -198,6 +203,33 @@ class LibraryPreferences(
     fun updateMangaTitles() = preferenceStore.getBoolean("pref_update_library_manga_titles", false)
 
     fun disallowNonAsciiFilenames() = preferenceStore.getBoolean("disallow_non_ascii_filenames", false)
+
+    /**
+     * When enabled, downloads use Jellyfin-compatible naming conventions:
+     * `Series Name/Series Name Ch. 001.cbz` instead of the default
+     * `Source/Series Name/chapter_hash/` structure.
+     *
+     * This allows downloaded content to be directly served by a Jellyfin
+     * media server with the Bookshelf plugin without manual renaming.
+     */
+    fun jellyfinCompatibleNaming() = preferenceStore.getBoolean("pref_jellyfin_compatible_naming", false)
+
+    /**
+     * When enabled, downloaded chapters are also exported/saved to a Jellyfin
+     * library path, and read progress is synced back to the Jellyfin server.
+     *
+     * Requires the Jellyfin tracker to be configured with a valid server URL
+     * and API key. When a series is matched to a Jellyfin library item, marking
+     * chapters as read in the app will mark them as played on the server.
+     */
+    fun jellyfinSyncEnabled() = preferenceStore.getBoolean("pref_jellyfin_sync_enabled", false)
+
+    /**
+     * Preferred Jellyfin library ID for filtering search results.
+     * When set, series search is scoped to this library. When empty, all libraries are searched.
+     * This improves matching accuracy when the server has multiple libraries.
+     */
+    fun jellyfinLibraryId() = preferenceStore.getString("pref_jellyfin_library_id", "")
 
     // endregion
 

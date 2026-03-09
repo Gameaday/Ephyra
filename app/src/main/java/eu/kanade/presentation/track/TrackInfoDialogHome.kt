@@ -1,7 +1,6 @@
 package eu.kanade.presentation.track
 
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,11 +19,11 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.outlined.Verified
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.DropdownMenuItem
@@ -43,7 +42,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -66,6 +64,7 @@ import java.time.format.DateTimeFormatter
 fun TrackInfoDialogHome(
     trackItems: List<TrackItem>,
     dateFormat: DateTimeFormatter,
+    canonicalId: String? = null,
     onStatusClick: (TrackItem) -> Unit,
     onChapterClick: (TrackItem) -> Unit,
     onScoreClick: (TrackItem) -> Unit,
@@ -77,6 +76,21 @@ fun TrackInfoDialogHome(
     onCopyLink: (TrackItem) -> Unit,
     onTogglePrivate: (TrackItem) -> Unit,
 ) {
+    // Determine authority tracker ID from canonical prefix
+    val authorityTrackerId = remember(canonicalId) {
+        if (canonicalId == null) return@remember null
+        val prefix = canonicalId.substringBefore(":", "")
+        AUTHORITY_PREFIX_TO_TRACKER[prefix]
+    }
+
+    // Sort: authority tracker first, then bound trackers, then unbound
+    val sortedItems = remember(trackItems, authorityTrackerId) {
+        trackItems.sortedWith(
+            compareByDescending<TrackItem> { it.tracker.id == authorityTrackerId && it.track != null }
+                .thenByDescending { it.track != null },
+        )
+    }
+
     Column(
         modifier = Modifier
             .animateContentSize()
@@ -86,7 +100,8 @@ fun TrackInfoDialogHome(
             .windowInsetsPadding(WindowInsets.systemBars),
         verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
-        trackItems.forEach { item ->
+        sortedItems.forEach { item ->
+            val isAuthority = item.tracker.id == authorityTrackerId && item.track != null
             if (item.track != null) {
                 val supportsScoring = item.tracker.getScoreList().isNotEmpty()
                 val supportsReadingDates = item.tracker.supportsReadingDates
@@ -94,6 +109,7 @@ fun TrackInfoDialogHome(
                 TrackInfoItem(
                     title = item.track.title,
                     tracker = item.tracker,
+                    isAuthority = isAuthority,
                     status = item.tracker.getStatus(item.track.status),
                     onStatusClick = { onStatusClick(item) },
                     chapters = "${item.track.lastChapterRead.toInt()}".let {
@@ -136,10 +152,21 @@ fun TrackInfoDialogHome(
     }
 }
 
+/**
+ * Maps canonical ID prefixes to tracker IDs for authority identification.
+ */
+private val AUTHORITY_PREFIX_TO_TRACKER = mapOf(
+    "al" to 2L, // AniList
+    "mal" to 1L, // MyAnimeList
+    "mu" to 7L, // MangaUpdates
+    "jf" to 10L, // Jellyfin
+)
+
 @Composable
 private fun TrackInfoItem(
     title: String,
     tracker: Tracker,
+    isAuthority: Boolean,
     status: StringResource?,
     onStatusClick: () -> Unit,
     chapters: String,
@@ -164,7 +191,19 @@ private fun TrackInfoItem(
         ) {
             BadgedBox(
                 badge = {
-                    if (private) {
+                    if (isAuthority) {
+                        Badge(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.absoluteOffset(x = (-5).dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Verified,
+                                contentDescription = stringResource(MR.strings.authority_badge_description),
+                                modifier = Modifier.size(14.dp),
+                            )
+                        }
+                    } else if (private) {
                         Badge(
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -198,13 +237,22 @@ private fun TrackInfoItem(
                     .padding(start = 16.dp),
                 contentAlignment = Alignment.CenterStart,
             ) {
-                Text(
-                    text = title,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
+                Column {
+                    Text(
+                        text = title,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    if (isAuthority) {
+                        Text(
+                            text = stringResource(MR.strings.authority_linked_label),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
             }
             VerticalDivider()
             TrackInfoItemMenu(
@@ -216,13 +264,14 @@ private fun TrackInfoItem(
             )
         }
 
-        Box(
-            modifier = Modifier
-                .padding(top = 12.dp)
-                .clip(MaterialTheme.shapes.medium)
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
-                .padding(8.dp)
-                .clip(RoundedCornerShape(6.dp)),
+        Surface(
+            modifier = Modifier.padding(top = 12.dp),
+            shape = MaterialTheme.shapes.medium,
+            color = if (isAuthority) {
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = AUTHORITY_SURFACE_ALPHA)
+            } else {
+                MaterialTheme.colorScheme.surfaceContainerHighest
+            },
         ) {
             Column {
                 Row(modifier = Modifier.height(IntrinsicSize.Min)) {
@@ -272,6 +321,9 @@ private fun TrackInfoItem(
 }
 
 private const val UNSET_TEXT_ALPHA = 0.5F
+
+/** Alpha applied to tonal authority badge surfaces — shared across all authority UI. */
+private const val AUTHORITY_SURFACE_ALPHA = 0.4f
 
 @Composable
 private fun TrackDetailsItem(

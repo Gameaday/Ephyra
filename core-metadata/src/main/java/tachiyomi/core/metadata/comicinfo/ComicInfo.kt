@@ -19,6 +19,9 @@ fun SManga.getComicInfo() = ComicInfo(
     ),
     title = null,
     number = null,
+    count = null,
+    volume = null,
+    year = null,
     web = null,
     translator = null,
     inker = null,
@@ -28,6 +31,8 @@ fun SManga.getComicInfo() = ComicInfo(
     tags = null,
     categories = null,
     source = null,
+    languageISO = null,
+    manga = null,
 )
 
 fun SManga.copyFromComicInfo(comicInfo: ComicInfo) {
@@ -35,15 +40,22 @@ fun SManga.copyFromComicInfo(comicInfo: ComicInfo) {
     comicInfo.writer?.let { author = it.value }
     comicInfo.summary?.let { description = it.value }
 
-    listOfNotNull(
+    // Merge ComicInfo genre/tags/categories with existing genres (additive, not replacing)
+    val comicInfoGenres = listOfNotNull(
         comicInfo.genre?.value,
         comicInfo.tags?.value,
         comicInfo.categories?.value,
     )
-        .distinct()
-        .joinToString(", ") { it.trim() }
-        .takeIf { it.isNotEmpty() }
-        ?.let { genre = it }
+        .flatMap { it.split(",") }
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+
+    if (comicInfoGenres.isNotEmpty()) {
+        val existing = genre?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList()
+        val merged = (existing + comicInfoGenres)
+            .distinctBy { it.lowercase() }
+        genre = merged.joinToString(", ")
+    }
 
     listOfNotNull(
         comicInfo.penciller?.value,
@@ -69,7 +81,10 @@ data class ComicInfo(
     val title: Title?,
     val series: Series?,
     val number: Number?,
+    val count: Count?,
+    val volume: Volume?,
     val summary: Summary?,
+    val year: Year?,
     val writer: Writer?,
     val penciller: Penciller?,
     val inker: Inker?,
@@ -80,6 +95,8 @@ data class ComicInfo(
     val genre: Genre?,
     val tags: Tags?,
     val web: Web?,
+    val languageISO: LanguageISO?,
+    val manga: Manga?,
     val publishingStatus: PublishingStatusTachiyomi?,
     val categories: CategoriesTachiyomi?,
     val source: SourceMihon?,
@@ -105,8 +122,20 @@ data class ComicInfo(
     data class Number(@XmlValue(true) val value: String = "")
 
     @Serializable
+    @XmlSerialName("Count", "", "")
+    data class Count(@XmlValue(true) val value: Int = -1)
+
+    @Serializable
+    @XmlSerialName("Volume", "", "")
+    data class Volume(@XmlValue(true) val value: Int = -1)
+
+    @Serializable
     @XmlSerialName("Summary", "", "")
     data class Summary(@XmlValue(true) val value: String = "")
+
+    @Serializable
+    @XmlSerialName("Year", "", "")
+    data class Year(@XmlValue(true) val value: Int = -1)
 
     @Serializable
     @XmlSerialName("Writer", "", "")
@@ -147,6 +176,18 @@ data class ComicInfo(
     @Serializable
     @XmlSerialName("Web", "", "")
     data class Web(@XmlValue(true) val value: String = "")
+
+    @Serializable
+    @XmlSerialName("LanguageISO", "", "")
+    data class LanguageISO(@XmlValue(true) val value: String = "")
+
+    /**
+     * ComicInfo v2.0 Manga field: "Yes", "No", "YesAndRightToLeft".
+     * Jellyfin uses this to identify manga content and set reading direction.
+     */
+    @Serializable
+    @XmlSerialName("Manga", "", "")
+    data class Manga(@XmlValue(true) val value: String = "")
 
     // The spec doesn't have a good field for this
     @Serializable

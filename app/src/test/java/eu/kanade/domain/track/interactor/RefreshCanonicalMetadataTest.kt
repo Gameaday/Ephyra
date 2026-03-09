@@ -39,6 +39,7 @@ class RefreshCanonicalMetadataTest {
         thumbnailUrl: String? = null,
         status: Long = 0L,
         alternativeTitles: List<String> = emptyList(),
+        genre: List<String>? = null,
     ) = Manga.create().copy(
         id = id,
         title = title,
@@ -49,6 +50,7 @@ class RefreshCanonicalMetadataTest {
         thumbnailUrl = thumbnailUrl,
         status = status,
         alternativeTitles = alternativeTitles,
+        genre = genre,
         favorite = true,
     )
 
@@ -61,6 +63,7 @@ class RefreshCanonicalMetadataTest {
         coverUrl: String = "",
         alternativeTitles: List<String> = emptyList(),
         publishingStatus: String = "",
+        genres: List<String> = emptyList(),
     ): TrackSearch {
         val ts = TrackSearch()
         ts.title = title
@@ -71,6 +74,7 @@ class RefreshCanonicalMetadataTest {
         ts.cover_url = coverUrl
         ts.alternative_titles = alternativeTitles
         ts.publishing_status = publishingStatus
+        ts.genres = genres
         return ts
     }
 
@@ -128,7 +132,7 @@ class RefreshCanonicalMetadataTest {
     }
 
     @Test
-    fun `updates metadata when tracker returns matching result with changes`() = runTest {
+    fun `overwrites metadata with fresh authority values by default`() = runTest {
         val manga = testManga(
             title = "Test Manga",
             canonicalId = "mu:12345",
@@ -153,6 +157,7 @@ class RefreshCanonicalMetadataTest {
         val updateSlot = slot<MangaUpdate>()
         coVerify { mangaRepository.update(capture(updateSlot)) }
         val update = updateSlot.captured
+        // Authority source overwrites existing fields (it's the source of truth)
         update.description shouldBe "New and improved description"
         update.author shouldBe "New Author"
         update.artist shouldBe "New Artist"
@@ -161,7 +166,7 @@ class RefreshCanonicalMetadataTest {
     }
 
     @Test
-    fun `returns false when no metadata changes detected`() = runTest {
+    fun `skips write when authority values match existing (change detection)`() = runTest {
         val manga = testManga(
             title = "Test Manga",
             canonicalId = "mu:12345",
@@ -183,18 +188,19 @@ class RefreshCanonicalMetadataTest {
             ),
         )
 
+        // Change detection: identical values → no DB write → returns false
         val result = refreshCanonicalMetadata.await(manga)
         result shouldBe false
     }
 
     @Test
-    fun `status change is detected and updated`() = runTest {
+    fun `updates status from authority even when already set`() = runTest {
         val manga = testManga(
             title = "Test Manga",
             canonicalId = "mu:12345",
             description = "Same description",
             author = "Same Author",
-            status = 1L, // ONGOING
+            status = 1L, // ONGOING — authority says Completed, should overwrite
         )
         coEvery { muTracker.search("Test Manga") } returns listOf(
             testTrackSearch(
@@ -211,7 +217,71 @@ class RefreshCanonicalMetadataTest {
 
         val updateSlot = slot<MangaUpdate>()
         coVerify { mangaRepository.update(capture(updateSlot)) }
-        updateSlot.captured.status shouldBe 2L // COMPLETED
+        updateSlot.captured.status shouldBe 2L // COMPLETED — authority overwrite
+    }
+
+    @Test
+    fun `fillOnly mode does not overwrite existing fields`() = runTest {
+        val manga = testManga(
+            title = "Test Manga",
+            canonicalId = "mu:12345",
+            description = "Old description",
+            author = "Old Author",
+            status = 1L, // ONGOING
+        )
+        coEvery { muTracker.search("Test Manga") } returns listOf(
+            testTrackSearch(
+                title = "Test Manga",
+                remoteId = 12345L,
+                summary = "New description",
+                authors = listOf("New Author"),
+                artists = listOf("New Artist"),
+                coverUrl = "https://example.com/new-cover.jpg",
+                publishingStatus = "Completed",
+            ),
+        )
+
+        val result = refreshCanonicalMetadata.await(manga, fillOnly = true)
+        result shouldBe true
+
+        val updateSlot = slot<MangaUpdate>()
+        coVerify { mangaRepository.update(capture(updateSlot)) }
+        val update = updateSlot.captured
+        // Existing fields NOT overwritten in fill-only mode
+        update.description shouldBe null
+        update.author shouldBe null
+        update.status shouldBe null
+        // Missing fields ARE filled
+        update.artist shouldBe "New Artist"
+        update.thumbnailUrl shouldBe "https://example.com/new-cover.jpg"
+    }
+
+    @Test
+    fun `fillOnly mode returns false when all fields populated`() = runTest {
+        val manga = testManga(
+            title = "Test Manga",
+            canonicalId = "mu:12345",
+            description = "Same description",
+            author = "Same Author",
+            artist = "Same Artist",
+            thumbnailUrl = "https://example.com/cover.jpg",
+            status = 1L,
+        )
+        coEvery { muTracker.search("Test Manga") } returns listOf(
+            testTrackSearch(
+                title = "Test Manga",
+                remoteId = 12345L,
+                summary = "New description",
+                authors = listOf("New Author"),
+                artists = listOf("New Artist"),
+                coverUrl = "https://example.com/new-cover.jpg",
+                publishingStatus = "Completed",
+            ),
+        )
+
+        val result = refreshCanonicalMetadata.await(manga, fillOnly = true)
+        // All fields populated, nothing to fill
+        result shouldBe false
     }
 
     @Test
@@ -376,5 +446,340 @@ class RefreshCanonicalMetadataTest {
             coVerify { repo.update(capture(updateSlot)) }
             updateSlot.captured.status shouldBe expectedCode
         }
+    }
+
+    // --- Per-field locking (Jellyfin-style) ---
+
+    @Test
+    fun `locked description is not overwritten even in default overwrite mode`() = runTest {
+        val manga = testManga(
+            title = "Test Manga",
+            canonicalId = "mu:12345",
+            description = "User-customized description",
+        ).copy(lockedFields = tachiyomi.domain.manga.model.LockedField.DESCRIPTION)
+
+        coEvery { muTracker.search("Test Manga") } returns listOf(
+            testTrackSearch(
+                title = "Test Manga",
+                remoteId = 12345L,
+                summary = "Authority description (should be ignored)",
+                authors = listOf("New Author"),
+                publishingStatus = "Ongoing",
+            ),
+        )
+
+        val result = refreshCanonicalMetadata.await(manga)
+        result shouldBe true
+
+        val updateSlot = slot<MangaUpdate>()
+        coVerify { mangaRepository.update(capture(updateSlot)) }
+        val update = updateSlot.captured
+        // Description locked — must NOT be overwritten
+        update.description shouldBe null
+        // Unlocked fields still get updated
+        update.author shouldBe "New Author"
+        update.status shouldBe 1L
+    }
+
+    @Test
+    fun `locked cover is not overwritten`() = runTest {
+        val manga = testManga(
+            title = "Test Manga",
+            canonicalId = "mu:12345",
+            thumbnailUrl = "https://example.com/my-custom-cover.jpg",
+        ).copy(lockedFields = tachiyomi.domain.manga.model.LockedField.COVER)
+
+        coEvery { muTracker.search("Test Manga") } returns listOf(
+            testTrackSearch(
+                title = "Test Manga",
+                remoteId = 12345L,
+                summary = "New description",
+                coverUrl = "https://example.com/authority-cover.jpg",
+            ),
+        )
+
+        val result = refreshCanonicalMetadata.await(manga)
+        result shouldBe true
+
+        val updateSlot = slot<MangaUpdate>()
+        coVerify { mangaRepository.update(capture(updateSlot)) }
+        val update = updateSlot.captured
+        // Cover locked — must NOT be overwritten
+        update.thumbnailUrl shouldBe null
+        // Unlocked fields still get updated
+        update.description shouldBe "New description"
+    }
+
+    @Test
+    fun `multiple locked fields are all respected`() = runTest {
+        val locked = tachiyomi.domain.manga.model.LockedField.DESCRIPTION or
+            tachiyomi.domain.manga.model.LockedField.AUTHOR or
+            tachiyomi.domain.manga.model.LockedField.STATUS
+        val manga = testManga(
+            title = "Test Manga",
+            canonicalId = "mu:12345",
+            description = "Custom desc",
+            author = "Custom Author",
+            status = 1L,
+        ).copy(lockedFields = locked)
+
+        coEvery { muTracker.search("Test Manga") } returns listOf(
+            testTrackSearch(
+                title = "Test Manga",
+                remoteId = 12345L,
+                summary = "Authority desc",
+                authors = listOf("Authority Author"),
+                artists = listOf("Authority Artist"),
+                coverUrl = "https://example.com/cover.jpg",
+                publishingStatus = "Completed",
+            ),
+        )
+
+        val result = refreshCanonicalMetadata.await(manga)
+        result shouldBe true
+
+        val updateSlot = slot<MangaUpdate>()
+        coVerify { mangaRepository.update(capture(updateSlot)) }
+        val update = updateSlot.captured
+        // Locked fields — NOT overwritten
+        update.description shouldBe null
+        update.author shouldBe null
+        update.status shouldBe null
+        // Unlocked fields — overwritten
+        update.artist shouldBe "Authority Artist"
+        update.thumbnailUrl shouldBe "https://example.com/cover.jpg"
+    }
+
+    @Test
+    fun `returns false when all fields locked and all populated`() = runTest {
+        val manga = testManga(
+            title = "Test Manga",
+            canonicalId = "mu:12345",
+            description = "Locked desc",
+            author = "Locked author",
+            artist = "Locked artist",
+            thumbnailUrl = "https://example.com/locked.jpg",
+            status = 1L,
+        ).copy(lockedFields = tachiyomi.domain.manga.model.LockedField.ALL)
+
+        coEvery { muTracker.search("Test Manga") } returns listOf(
+            testTrackSearch(
+                title = "Test Manga",
+                remoteId = 12345L,
+                summary = "New desc",
+                authors = listOf("New author"),
+                artists = listOf("New artist"),
+                coverUrl = "https://example.com/new.jpg",
+                publishingStatus = "Completed",
+            ),
+        )
+
+        val result = refreshCanonicalMetadata.await(manga)
+        // All fields locked — no changes to make
+        result shouldBe false
+    }
+
+    @Test
+    fun `genres from authority are merged into manga`() = runTest {
+        val manga = testManga(
+            title = "Test Manga",
+            canonicalId = "mu:12345",
+            genre = listOf("Action"),
+        )
+
+        coEvery { muTracker.search("Test Manga") } returns listOf(
+            testTrackSearch(
+                title = "Test Manga",
+                remoteId = 12345L,
+                genres = listOf("Action", "Adventure", "Fantasy"),
+            ),
+        )
+
+        val result = refreshCanonicalMetadata.await(manga)
+        result shouldBe true
+
+        val updateSlot = slot<MangaUpdate>()
+        coVerify { mangaRepository.update(capture(updateSlot)) }
+        val update = updateSlot.captured
+        update.genre shouldBe listOf("Action", "Adventure", "Fantasy")
+    }
+
+    @Test
+    fun `locked genres are not overwritten`() = runTest {
+        val manga = testManga(
+            title = "Test Manga",
+            canonicalId = "mu:12345",
+            genre = listOf("Custom Genre"),
+        ).copy(lockedFields = tachiyomi.domain.manga.model.LockedField.GENRE)
+
+        coEvery { muTracker.search("Test Manga") } returns listOf(
+            testTrackSearch(
+                title = "Test Manga",
+                remoteId = 12345L,
+                summary = "Some summary",
+                genres = listOf("Action", "Adventure"),
+            ),
+        )
+
+        val result = refreshCanonicalMetadata.await(manga)
+        result shouldBe true
+
+        val updateSlot = slot<MangaUpdate>()
+        coVerify { mangaRepository.update(capture(updateSlot)) }
+        val update = updateSlot.captured
+        // Genre is locked — should not appear in update
+        update.genre shouldBe null
+        // Description is not locked — should be updated
+        update.description shouldBe "Some summary"
+    }
+
+    @Test
+    fun `fillOnly mode does not overwrite existing genres`() = runTest {
+        val manga = testManga(
+            title = "Test Manga",
+            canonicalId = "mu:12345",
+            genre = listOf("Existing Genre"),
+        )
+
+        coEvery { muTracker.search("Test Manga") } returns listOf(
+            testTrackSearch(
+                title = "Test Manga",
+                remoteId = 12345L,
+                summary = "Summary",
+                genres = listOf("Action", "Adventure"),
+            ),
+        )
+
+        val result = refreshCanonicalMetadata.await(manga, fillOnly = true)
+        result shouldBe true
+
+        val updateSlot = slot<MangaUpdate>()
+        coVerify { mangaRepository.update(capture(updateSlot)) }
+        val update = updateSlot.captured
+        // Genre already has values — fillOnly skips it
+        update.genre shouldBe null
+    }
+
+    @Test
+    fun `fillOnly mode fills empty genres from authority`() = runTest {
+        val manga = testManga(
+            title = "Test Manga",
+            canonicalId = "mu:12345",
+            genre = null,
+        )
+
+        coEvery { muTracker.search("Test Manga") } returns listOf(
+            testTrackSearch(
+                title = "Test Manga",
+                remoteId = 12345L,
+                genres = listOf("Action", "Adventure"),
+            ),
+        )
+
+        val result = refreshCanonicalMetadata.await(manga, fillOnly = true)
+        result shouldBe true
+
+        val updateSlot = slot<MangaUpdate>()
+        coVerify { mangaRepository.update(capture(updateSlot)) }
+        val update = updateSlot.captured
+        update.genre shouldBe listOf("Action", "Adventure")
+    }
+
+    @Test
+    fun `overwrite mode updates title from authority when not locked`() = runTest {
+        val manga = testManga(
+            title = "Old Title",
+            canonicalId = "mu:12345",
+        )
+
+        coEvery { muTracker.search("Old Title") } returns listOf(
+            testTrackSearch(
+                title = "New Authority Title",
+                remoteId = 12345L,
+            ),
+        )
+
+        val result = refreshCanonicalMetadata.await(manga)
+        result shouldBe true
+
+        val updates = mutableListOf<MangaUpdate>()
+        coVerify { mangaRepository.update(capture(updates)) }
+        val metadataUpdate = updates.first()
+        metadataUpdate.title shouldBe "New Authority Title"
+    }
+
+    @Test
+    fun `locked TITLE field prevents title overwrite`() = runTest {
+        val manga = testManga(
+            title = "My Custom Title",
+            canonicalId = "mu:12345",
+        ).copy(lockedFields = tachiyomi.domain.manga.model.LockedField.TITLE)
+
+        coEvery { muTracker.search("My Custom Title") } returns listOf(
+            testTrackSearch(
+                title = "Authority Title",
+                remoteId = 12345L,
+                summary = "New description",
+            ),
+        )
+
+        val result = refreshCanonicalMetadata.await(manga)
+        result shouldBe true
+
+        val updates = mutableListOf<MangaUpdate>()
+        coVerify { mangaRepository.update(capture(updates)) }
+        val metadataUpdate = updates.first()
+        metadataUpdate.title shouldBe null // title not updated because locked
+        metadataUpdate.description shouldBe "New description" // other fields still updated
+    }
+
+    @Test
+    fun `fillOnly mode does not overwrite existing title`() = runTest {
+        val manga = testManga(
+            title = "Existing Title",
+            canonicalId = "mu:12345",
+            description = null,
+        )
+
+        coEvery { muTracker.search("Existing Title") } returns listOf(
+            testTrackSearch(
+                title = "Authority Title",
+                remoteId = 12345L,
+                summary = "A description",
+            ),
+        )
+
+        val result = refreshCanonicalMetadata.await(manga, fillOnly = true)
+        result shouldBe true
+
+        val updates = mutableListOf<MangaUpdate>()
+        coVerify { mangaRepository.update(capture(updates)) }
+        val metadataUpdate = updates.first()
+        metadataUpdate.title shouldBe null // title not updated because already exists
+        metadataUpdate.description shouldBe "A description"
+    }
+
+    @Test
+    fun `skips DB write when authority values match existing values`() = runTest {
+        val manga = testManga(
+            title = "Same Title",
+            canonicalId = "mu:12345",
+            description = "Same description",
+            author = "Author A",
+            artist = "Artist B",
+        )
+
+        coEvery { muTracker.search("Same Title") } returns listOf(
+            testTrackSearch(
+                title = "Same Title",
+                remoteId = 12345L,
+                summary = "Same description",
+                authors = listOf("Author A"),
+                artists = listOf("Artist B"),
+            ),
+        )
+
+        val result = refreshCanonicalMetadata.await(manga)
+        result shouldBe false // No changes detected — values are identical
     }
 }

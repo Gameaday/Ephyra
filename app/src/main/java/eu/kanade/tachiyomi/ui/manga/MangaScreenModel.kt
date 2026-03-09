@@ -46,6 +46,7 @@ import eu.kanade.tachiyomi.util.removeCovers
 import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.catch
@@ -271,6 +272,22 @@ class MangaScreenModel(
                 async { fetchChaptersFromSource(manualFetch) },
             )
             fetchFromSourceTasks.awaitAll()
+
+            // Also refresh from authority when linked — integrated Jellyfin-style
+            // metadata provider refresh: one button refreshes all sources.
+            val manga = successState?.manga
+            if (manga?.canonicalId != null) {
+                try {
+                    val refreshCanonical =
+                        Injekt.get<eu.kanade.domain.track.interactor.RefreshCanonicalMetadata>()
+                    refreshCanonical.await(manga)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    logcat(LogPriority.WARN, e) { "Authority refresh during pull failed" }
+                }
+            }
+
             updateSuccessState { it.copy(isRefreshingData = false) }
         }
     }
@@ -288,6 +305,19 @@ class MangaScreenModel(
         try {
             withIOContext {
                 val manga = state.manga
+                val isAuthorityOnly =
+                    manga.source == eu.kanade.domain.track.interactor.TrackerListImporter.AUTHORITY_SOURCE_ID
+
+                // Authority-only manga have no content source — refresh from canonical tracker only.
+                if (isAuthorityOnly) {
+                    if (manga.canonicalId != null) {
+                        val refreshCanonical: eu.kanade.domain.track.interactor.RefreshCanonicalMetadata =
+                            Injekt.get()
+                        refreshCanonical.await(manga)
+                    }
+                    return@withIOContext
+                }
+
                 val metadataSourceId = manga.metadataSource?.takeIf { it > 0 }
                 val metadataUrl = manga.metadataUrl?.takeIf { it.isNotEmpty() }
 
@@ -365,16 +395,53 @@ class MangaScreenModel(
     }
 
     /**
-     * Clear the preferred metadata source, reverting to using the chapter source for metadata.
+     * Toggles a per-field metadata lock (Jellyfin-style).
+     * When locked, the authority refresh will skip this field, preserving user edits.
      */
-    fun clearMetadataSource() {
+    fun toggleLockedField(field: Long) {
+        val manga = successState?.manga ?: return
+        val newLocked = manga.lockedFields xor field
+        screenModelScope.launchIO {
+            updateManga.await(
+                tachiyomi.domain.manga.model.MangaUpdate(
+                    id = manga.id,
+                    lockedFields = newLocked,
+                ),
+            )
+        }
+    }
+
+    fun setLockedFields(mask: Long) {
         val manga = successState?.manga ?: return
         screenModelScope.launchIO {
-            mangaRepository.clearMetadataSource(manga.id)
-            snackbarHostState.showSnackbar(
-                context.stringResource(MR.strings.metadata_source_cleared),
-                withDismissAction = true,
+            updateManga.await(
+                tachiyomi.domain.manga.model.MangaUpdate(
+                    id = manga.id,
+                    lockedFields = mask,
+                ),
             )
+        }
+    }
+
+    /**
+     * Refreshes metadata from the canonical authority source only, without
+     * touching the content source.  This is the Jellyfin-style "re-scan from
+     * metadata provider" action — it respects per-field locks.
+     */
+    fun refreshFromAuthority() {
+        val manga = successState?.manga ?: return
+        if (manga.canonicalId == null) return
+        screenModelScope.launchIO {
+            try {
+                val refreshCanonical = Injekt.get<eu.kanade.domain.track.interactor.RefreshCanonicalMetadata>()
+                refreshCanonical.await(manga)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logcat(LogPriority.WARN, e) {
+                    "Authority-only refresh failed for ${manga.title}"
+                }
+            }
         }
     }
 
@@ -414,6 +481,8 @@ class MangaScreenModel(
                     if (manga.removeCovers() != manga) {
                         updateManga.awaitUpdateCoverLastModified(manga.id)
                     }
+                    // Jellyfin: unmark favorite on server when removing from library
+                    markJellyfinFavoriteIfLinked(manga, favorite = false)
                     withUIContext { onRemoved() }
                 }
             } else {
@@ -453,6 +522,23 @@ class MangaScreenModel(
 
                 // Finally match with enhanced tracking when available
                 addTracks.bindEnhancedTrackers(manga, state.source)
+
+                // Auto-link to authority source in background (Jellyfin-style:
+                // adding to library automatically resolves metadata provider)
+                if (manga.canonicalId == null) {
+                    try {
+                        val matchUnlinkedManga: MatchUnlinkedManga = Injekt.get()
+                        matchUnlinkedManga.awaitSingle(manga)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        logcat(LogPriority.DEBUG, e) { "Auto-link on add-to-library skipped" }
+                    }
+                }
+
+                // Jellyfin: mark as favorite on server when adding to library
+                // (Jellyfin "favorite" ≈ "in library" concept)
+                markJellyfinFavoriteIfLinked(manga, favorite = true)
             }
         }
     }
@@ -647,6 +733,8 @@ class MangaScreenModel(
      */
     private suspend fun fetchChaptersFromSource(manualFetch: Boolean = false) {
         val state = successState ?: return
+        // Authority-only manga have no content source — no chapters to fetch.
+        if (state.manga.source == eu.kanade.domain.track.interactor.TrackerListImporter.AUTHORITY_SOURCE_ID) return
         try {
             withIOContext {
                 val chapters = state.source.getChapterList(state.manga.toSManga())
@@ -1182,6 +1270,7 @@ class MangaScreenModel(
         data object SettingsSheet : Dialog
         data object TrackSheet : Dialog
         data object FullCover : Dialog
+        data object EditMetadata : Dialog
     }
 
     fun dismissDialog() {
@@ -1202,6 +1291,146 @@ class MangaScreenModel(
 
     fun showCoverDialog() {
         updateSuccessState { it.copy(dialog = Dialog.FullCover) }
+    }
+
+    fun showEditMetadataDialog() {
+        updateSuccessState { it.copy(dialog = Dialog.EditMetadata) }
+    }
+
+    /**
+     * Applies a metadata field update and auto-locks the field (Jellyfin behavior:
+     * manual edits are automatically protected from authority overwrite).
+     * When the manga is linked to a Jellyfin authority, also pushes the metadata
+     * change back to the Jellyfin server (bidirectional sync).
+     */
+    private fun editFieldAndLock(
+        lockField: Long,
+        buildUpdate: (mangaId: Long, newLockedFields: Long) -> tachiyomi.domain.manga.model.MangaUpdate,
+    ) {
+        val manga = successState?.manga ?: return
+        screenModelScope.launchIO {
+            updateManga.await(
+                buildUpdate(manga.id, manga.lockedFields or lockField),
+            )
+            // Push metadata to Jellyfin if linked via "jf" canonical prefix
+            pushMetadataToJellyfinIfLinked(manga)
+        }
+    }
+
+    /**
+     * Pushes updated metadata to the Jellyfin server when the manga is linked
+     * to Jellyfin as its authority source. This enables bidirectional metadata sync —
+     * edits in the app are reflected on the server.
+     */
+    private suspend fun pushMetadataToJellyfinIfLinked(manga: Manga) {
+        val canonicalId = manga.canonicalId ?: return
+        if (!canonicalId.startsWith("jf:")) return
+        val jellyfin = trackerManager.jellyfin
+        if (!jellyfin.isLoggedIn) return
+
+        // Find the Jellyfin track for this manga to get the tracking URL
+        val tracks = getTracks.await(manga.id)
+        val jellyfinTrack = tracks.firstOrNull {
+            it.trackerId == trackerManager.jellyfin.id
+        } ?: return
+
+        // Re-read the manga to get the latest values after the update
+        val updated = getMangaAndChapters.awaitManga(manga.id)
+
+        jellyfin.pushMetadataToServer(
+            trackingUrl = jellyfinTrack.remoteUrl,
+            title = updated.title,
+            description = updated.description,
+            genres = updated.genre,
+            author = updated.author,
+            artist = updated.artist,
+        )
+    }
+
+    /**
+     * Marks or unmarks the manga as a favorite on the Jellyfin server when it's
+     * linked to Jellyfin as its authority source. Jellyfin "favorite" maps to
+     * the "in library" concept — adding to library marks favorite on server,
+     * removing from library unmarks it.
+     *
+     * Checks both canonicalId ("jf:" prefix) and track existence because
+     * canonicalId may be set without a track (e.g., during initial matching)
+     * or a track may exist without canonicalId (manual Jellyfin bind).
+     * The tracking URL from the track record is needed to resolve the server URL and item ID.
+     */
+    private suspend fun markJellyfinFavoriteIfLinked(manga: Manga, favorite: Boolean) {
+        val canonicalId = manga.canonicalId ?: return
+        if (!canonicalId.startsWith("jf:")) return
+        val jellyfin = trackerManager.jellyfin
+        if (!jellyfin.isLoggedIn) return
+        if (!libraryPreferences.jellyfinSyncEnabled().get()) return
+
+        val tracks = getTracks.await(manga.id)
+        val jellyfinTrack = tracks.firstOrNull {
+            it.trackerId == trackerManager.jellyfin.id
+        } ?: return
+
+        try {
+            val serverUrl = jellyfin.api.getServerUrlFromTrackUrl(jellyfinTrack.remoteUrl)
+            val itemId = jellyfin.api.getItemIdFromUrl(jellyfinTrack.remoteUrl)
+            val userId = trackPreferences.jellyfinUserId().get()
+            if (userId.isNotBlank()) {
+                jellyfin.api.markFavorite(serverUrl, userId, itemId, favorite)
+                logcat(LogPriority.INFO) { "Jellyfin favorite=$favorite for item $itemId" }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logcat(LogPriority.WARN, e) { "Failed to mark Jellyfin favorite for ${manga.title}" }
+        }
+    }
+
+    fun editTitle(value: String) {
+        val manga = successState?.manga ?: return
+        if (value == manga.title) return
+        editFieldAndLock(tachiyomi.domain.manga.model.LockedField.TITLE) { id, locked ->
+            tachiyomi.domain.manga.model.MangaUpdate(id = id, title = value, lockedFields = locked)
+        }
+    }
+
+    fun editAuthor(value: String) {
+        val manga = successState?.manga ?: return
+        if (value == (manga.author ?: "")) return
+        editFieldAndLock(tachiyomi.domain.manga.model.LockedField.AUTHOR) { id, locked ->
+            tachiyomi.domain.manga.model.MangaUpdate(id = id, author = value, lockedFields = locked)
+        }
+    }
+
+    fun editArtist(value: String) {
+        val manga = successState?.manga ?: return
+        if (value == (manga.artist ?: "")) return
+        editFieldAndLock(tachiyomi.domain.manga.model.LockedField.ARTIST) { id, locked ->
+            tachiyomi.domain.manga.model.MangaUpdate(id = id, artist = value, lockedFields = locked)
+        }
+    }
+
+    fun editDescription(value: String) {
+        val manga = successState?.manga ?: return
+        if (value == (manga.description ?: "")) return
+        editFieldAndLock(tachiyomi.domain.manga.model.LockedField.DESCRIPTION) { id, locked ->
+            tachiyomi.domain.manga.model.MangaUpdate(id = id, description = value, lockedFields = locked)
+        }
+    }
+
+    fun editStatus(value: Long) {
+        val manga = successState?.manga ?: return
+        if (value == manga.status) return
+        editFieldAndLock(tachiyomi.domain.manga.model.LockedField.STATUS) { id, locked ->
+            tachiyomi.domain.manga.model.MangaUpdate(id = id, status = value, lockedFields = locked)
+        }
+    }
+
+    fun editGenres(value: List<String>) {
+        val manga = successState?.manga ?: return
+        if (value == manga.genre) return
+        editFieldAndLock(tachiyomi.domain.manga.model.LockedField.GENRE) { id, locked ->
+            tachiyomi.domain.manga.model.MangaUpdate(id = id, genre = value, lockedFields = locked)
+        }
     }
 
     fun showMigrateDialog(duplicate: Manga) {
