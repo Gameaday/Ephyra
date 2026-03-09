@@ -693,7 +693,7 @@ private fun ColumnScope.MangaContentInfo(
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Verified,
-                        contentDescription = null,
+                        contentDescription = stringResource(MR.strings.authority_badge_description),
                         modifier = Modifier
                             .padding(end = 10.dp)
                             .size(20.dp),
@@ -720,7 +720,7 @@ private fun ColumnScope.MangaContentInfo(
                             DotSeparatorText()
                             Icon(
                                 imageVector = Icons.Outlined.Lock,
-                                contentDescription = null,
+                                contentDescription = stringResource(MR.strings.authority_locked_count, lockCount),
                                 modifier = Modifier
                                     .padding(end = 4.dp)
                                     .size(14.dp),

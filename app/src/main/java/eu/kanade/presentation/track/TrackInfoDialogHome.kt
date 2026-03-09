@@ -268,7 +268,7 @@ private fun TrackInfoItem(
             modifier = Modifier.padding(top = 12.dp),
             shape = MaterialTheme.shapes.medium,
             color = if (isAuthority) {
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = AUTHORITY_SURFACE_ALPHA)
             } else {
                 MaterialTheme.colorScheme.surfaceContainerHighest
             },
@@ -321,6 +321,9 @@ private fun TrackInfoItem(
 }
 
 private const val UNSET_TEXT_ALPHA = 0.5F
+
+/** Alpha applied to tonal authority badge surfaces — shared across all authority UI. */
+private const val AUTHORITY_SURFACE_ALPHA = 0.4f
 
 @Composable
 private fun TrackDetailsItem(

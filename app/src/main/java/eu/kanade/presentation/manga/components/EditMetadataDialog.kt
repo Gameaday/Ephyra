@@ -112,7 +112,11 @@ fun EditMetadataDialog(
                             } else {
                                 Icons.Outlined.Search
                             },
-                            contentDescription = null,
+                            contentDescription = if (hasAuthority) {
+                                stringResource(MR.strings.edit_metadata_refresh)
+                            } else {
+                                stringResource(MR.strings.edit_metadata_identify)
+                            },
                             modifier = Modifier.size(18.dp),
                         )
                         Spacer(modifier = Modifier.width(6.dp))
@@ -147,7 +151,7 @@ fun EditMetadataDialog(
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Verified,
-                                contentDescription = null,
+                                contentDescription = stringResource(MR.strings.authority_badge_description),
                                 modifier = Modifier.size(18.dp),
                                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
                             )
@@ -179,7 +183,7 @@ fun EditMetadataDialog(
                         TextButton(onClick = { onSetAllLocks(LockedField.ALL) }) {
                             Icon(
                                 imageVector = Icons.Outlined.Lock,
-                                contentDescription = null,
+                                contentDescription = stringResource(MR.strings.metadata_locks_lock_all),
                                 modifier = Modifier.size(16.dp),
                             )
                             Spacer(modifier = Modifier.width(4.dp))
@@ -188,7 +192,7 @@ fun EditMetadataDialog(
                         TextButton(onClick = { onSetAllLocks(LockedField.NONE) }) {
                             Icon(
                                 imageVector = Icons.Outlined.LockOpen,
-                                contentDescription = null,
+                                contentDescription = stringResource(MR.strings.metadata_locks_unlock_all),
                                 modifier = Modifier.size(16.dp),
                             )
                             Spacer(modifier = Modifier.width(4.dp))
@@ -363,9 +367,9 @@ private fun MetadataTextField(
                     Icon(
                         imageVector = if (isLocked) Icons.Outlined.Lock else Icons.Outlined.LockOpen,
                         contentDescription = if (isLocked) {
-                            stringResource(MR.strings.metadata_locks_unlock_all)
+                            stringResource(MR.strings.metadata_unlock_field)
                         } else {
-                            stringResource(MR.strings.metadata_locks_lock_all)
+                            stringResource(MR.strings.metadata_lock_field)
                         },
                         modifier = Modifier.size(20.dp),
                         tint = if (isLocked) {
@@ -430,7 +434,7 @@ private fun StatusDropdown(
                             Spacer(modifier = Modifier.width(4.dp))
                             Icon(
                                 imageVector = Icons.Outlined.Lock,
-                                contentDescription = null,
+                                contentDescription = stringResource(MR.strings.metadata_lock_field),
                                 modifier = Modifier.size(14.dp),
                                 tint = MaterialTheme.colorScheme.primary,
                             )
@@ -443,7 +447,11 @@ private fun StatusDropdown(
                             IconButton(onClick = onToggleLock) {
                                 Icon(
                                     imageVector = if (isLocked) Icons.Outlined.Lock else Icons.Outlined.LockOpen,
-                                    contentDescription = null,
+                                    contentDescription = if (isLocked) {
+                                        stringResource(MR.strings.metadata_unlock_field)
+                                    } else {
+                                        stringResource(MR.strings.metadata_lock_field)
+                                    },
                                     modifier = Modifier.size(20.dp),
                                     tint = if (isLocked) {
                                         MaterialTheme.colorScheme.primary
@@ -505,7 +513,7 @@ private fun GenreEditor(
                 Spacer(modifier = Modifier.width(4.dp))
                 Icon(
                     imageVector = Icons.Outlined.Lock,
-                    contentDescription = null,
+                    contentDescription = stringResource(MR.strings.metadata_lock_field),
                     modifier = Modifier.size(14.dp),
                     tint = MaterialTheme.colorScheme.primary,
                 )
@@ -518,7 +526,11 @@ private fun GenreEditor(
                 ) {
                     Icon(
                         imageVector = if (isLocked) Icons.Outlined.Lock else Icons.Outlined.LockOpen,
-                        contentDescription = null,
+                        contentDescription = if (isLocked) {
+                            stringResource(MR.strings.metadata_unlock_field)
+                        } else {
+                            stringResource(MR.strings.metadata_lock_field)
+                        },
                         modifier = Modifier.size(16.dp),
                         tint = if (isLocked) {
                             MaterialTheme.colorScheme.primary
@@ -545,7 +557,7 @@ private fun GenreEditor(
                     trailingIcon = {
                         Icon(
                             imageVector = Icons.Outlined.Close,
-                            contentDescription = null,
+                            contentDescription = stringResource(MR.strings.action_remove_genre, genre),
                             modifier = Modifier
                                 .size(16.dp)
                                 .clickable { onRemoveGenre(genre) },
@@ -571,7 +583,7 @@ private fun GenreEditor(
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Add,
-                        contentDescription = null,
+                        contentDescription = stringResource(MR.strings.action_add_genre),
                     )
                 }
             },
