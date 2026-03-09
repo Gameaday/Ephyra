@@ -277,7 +277,7 @@ fun ExpandableMangaDescription(
     onEditNotes: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier) {
+    Column(modifier = modifier.animateContentSize()) {
         val (expanded, onExpanded) = rememberSaveable {
             mutableStateOf(defaultExpandState)
         }
