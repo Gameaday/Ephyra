@@ -375,7 +375,7 @@ private fun UnlinkedMangaItem(
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.ErrorOutline,
-                            contentDescription = null,
+                            contentDescription = stringResource(MR.strings.match_results_no_match),
                             modifier = Modifier.size(14.dp),
                             tint = MaterialTheme.colorScheme.error,
                         )

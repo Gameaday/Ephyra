@@ -479,7 +479,7 @@ private fun DiscoverResultCard(
                 }
                 if (metaItems.isNotEmpty()) {
                     Text(
-                        text = metaItems.joinToString(" · "),
+                        text = metaItems.joinToString(" • "),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,

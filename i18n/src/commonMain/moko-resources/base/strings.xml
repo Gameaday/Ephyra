@@ -105,8 +105,6 @@
     <string name="cover_search_source_count">%1$s (+%2$d)</string>
     <string name="action_set_metadata_source">Use source for metadata</string>
     <string name="metadata_source_set">Metadata source set</string>
-    <string name="metadata_source_cleared">Metadata source cleared</string>
-    <string name="action_clear_metadata_source">Clear metadata source</string>
     <string name="metadata_source_label">Sync source</string>
     <string name="action_view_chapters">View chapters</string>
     <string name="action_pause">Pause</string>

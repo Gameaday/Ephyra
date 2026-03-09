@@ -395,20 +395,6 @@ class MangaScreenModel(
     }
 
     /**
-     * Clear the preferred metadata source, reverting to using the chapter source for metadata.
-     */
-    fun clearMetadataSource() {
-        val manga = successState?.manga ?: return
-        screenModelScope.launchIO {
-            mangaRepository.clearMetadataSource(manga.id)
-            snackbarHostState.showSnackbar(
-                context.stringResource(MR.strings.metadata_source_cleared),
-                withDismissAction = true,
-            )
-        }
-    }
-
-    /**
      * Toggles a per-field metadata lock (Jellyfin-style).
      * When locked, the authority refresh will skip this field, preserving user edits.
      */
