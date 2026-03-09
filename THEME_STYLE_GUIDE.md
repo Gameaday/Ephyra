@@ -1,7 +1,7 @@
 # Theme Style Guide
 
 This document describes the visual identity of the three branded themes in
-Ephyra: **Ephyra**, **Nagare**, and **Atolla**. Each theme goes beyond a
+the app: **Ephyra**, **Nagare**, and **Atolla**. Each theme goes beyond a
 simple color swap — it defines its own shape language, spacing density, and
 design philosophy through the `BrandedThemeConfig` system.
 
