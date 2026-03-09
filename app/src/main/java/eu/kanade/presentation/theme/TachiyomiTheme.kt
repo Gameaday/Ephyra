@@ -9,13 +9,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.domain.ui.model.AppTheme
+import eu.kanade.presentation.theme.colorscheme.AtollaColorScheme
 import eu.kanade.presentation.theme.colorscheme.BaseColorScheme
 import eu.kanade.presentation.theme.colorscheme.CatppuccinColorScheme
+import eu.kanade.presentation.theme.colorscheme.EphyraColorScheme
 import eu.kanade.presentation.theme.colorscheme.GreenAppleColorScheme
 import eu.kanade.presentation.theme.colorscheme.LavenderColorScheme
 import eu.kanade.presentation.theme.colorscheme.MidnightDuskColorScheme
 import eu.kanade.presentation.theme.colorscheme.MonetColorScheme
 import eu.kanade.presentation.theme.colorscheme.MonochromeColorScheme
+import eu.kanade.presentation.theme.colorscheme.NagareColorScheme
 import eu.kanade.presentation.theme.colorscheme.NordColorScheme
 import eu.kanade.presentation.theme.colorscheme.StrawberryColorScheme
 import eu.kanade.presentation.theme.colorscheme.TachiyomiColorScheme
@@ -103,4 +106,7 @@ private val colorSchemes: Map<AppTheme, BaseColorScheme> = mapOf(
     AppTheme.TIDAL_WAVE to TidalWaveColorScheme,
     AppTheme.YINYANG to YinYangColorScheme,
     AppTheme.YOTSUBA to YotsubaColorScheme,
+    AppTheme.EPHYRA to EphyraColorScheme,
+    AppTheme.NAGARE to NagareColorScheme,
+    AppTheme.ATOLLA to AtollaColorScheme,
 )
