@@ -4,10 +4,12 @@ import android.content.Context
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialExpressiveTheme
+import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.domain.ui.model.AppTheme
 import eu.kanade.presentation.theme.colorscheme.AtollaColorScheme
@@ -32,7 +34,6 @@ import tachiyomi.presentation.core.theme.AtollaThemeConfig
 import tachiyomi.presentation.core.theme.BrandedThemeConfig
 import tachiyomi.presentation.core.theme.EphyraThemeConfig
 import tachiyomi.presentation.core.theme.LocalBrandedTheme
-import tachiyomi.presentation.core.theme.MihonShapes
 import tachiyomi.presentation.core.theme.NagareThemeConfig
 import tachiyomi.presentation.core.theme.toShapes
 import uy.kohesive.injekt.Injekt
@@ -78,8 +79,9 @@ private fun BaseTachiyomiTheme(
                     appTheme = appTheme,
                     isDark = isDark,
                     isAmoled = isAmoled,
-                )
+                ).applyBrandedAlpha(brandedConfig)
             },
+            typography = remember(brandedConfig) { buildBrandedTypography(brandedConfig) },
             shapes = shapes,
             content = content,
         )
@@ -101,6 +103,64 @@ private fun getThemeColorScheme(
         isDark = isDark,
         isAmoled = isAmoled,
         overrideDarkSurfaceContainers = appTheme != AppTheme.MONET,
+    )
+}
+
+/**
+ * Applies the branded theme's surface alpha tokens to the color scheme.
+ *
+ * Glassmorphic themes (Ephyra) use reduced alpha on surface and container
+ * colors to create a frosted-glass layering effect. Themes with alpha = 1.0
+ * (Nagare, Atolla, defaults) pass through unchanged.
+ */
+private fun ColorScheme.applyBrandedAlpha(config: BrandedThemeConfig): ColorScheme {
+    if (config.surfaceAlpha >= 1.0f && config.containerAlpha >= 1.0f) return this
+    return copy(
+        surface = surface.copy(alpha = config.surfaceAlpha),
+        surfaceVariant = surfaceVariant.copy(alpha = config.surfaceAlpha),
+        surfaceContainerLowest = surfaceContainerLowest.copy(alpha = config.containerAlpha),
+        surfaceContainerLow = surfaceContainerLow.copy(alpha = config.containerAlpha),
+        surfaceContainer = surfaceContainer.copy(alpha = config.containerAlpha),
+        surfaceContainerHigh = surfaceContainerHigh.copy(alpha = config.containerAlpha),
+        surfaceContainerHighest = surfaceContainerHighest.copy(alpha = config.containerAlpha),
+    )
+}
+
+/**
+ * Builds a [Typography] that respects the branded theme's font weight tokens.
+ *
+ * Each branded theme can customize:
+ * - **headingWeight**: Applied to display, headline, and title styles.
+ *   Ephyra uses SemiBold for modern clarity through glass, Nagare uses
+ *   Medium for understated zen elegance, Atolla uses Bold for authority.
+ * - **bodyWeight**: Applied to body and label styles. Most themes use Normal;
+ *   Atolla uses Medium for increased readability in dense layouts.
+ *
+ * Non-branded themes (headingWeight=SemiBold, bodyWeight=Normal) match the
+ * default Material 3 typography, so there is no visual change.
+ */
+private fun buildBrandedTypography(config: BrandedThemeConfig): Typography {
+    val defaults = Typography()
+    val hw = config.headingWeight
+    val bw = config.bodyWeight
+    // Skip customization when weights match M3 defaults
+    if (hw == FontWeight.SemiBold && bw == FontWeight.Normal) return defaults
+    return Typography(
+        displayLarge = defaults.displayLarge.copy(fontWeight = hw),
+        displayMedium = defaults.displayMedium.copy(fontWeight = hw),
+        displaySmall = defaults.displaySmall.copy(fontWeight = hw),
+        headlineLarge = defaults.headlineLarge.copy(fontWeight = hw),
+        headlineMedium = defaults.headlineMedium.copy(fontWeight = hw),
+        headlineSmall = defaults.headlineSmall.copy(fontWeight = hw),
+        titleLarge = defaults.titleLarge.copy(fontWeight = hw),
+        titleMedium = defaults.titleMedium.copy(fontWeight = hw),
+        titleSmall = defaults.titleSmall.copy(fontWeight = hw),
+        bodyLarge = defaults.bodyLarge.copy(fontWeight = bw),
+        bodyMedium = defaults.bodyMedium.copy(fontWeight = bw),
+        bodySmall = defaults.bodySmall.copy(fontWeight = bw),
+        labelLarge = defaults.labelLarge.copy(fontWeight = bw),
+        labelMedium = defaults.labelMedium.copy(fontWeight = bw),
+        labelSmall = defaults.labelSmall.copy(fontWeight = bw),
     )
 }
 
