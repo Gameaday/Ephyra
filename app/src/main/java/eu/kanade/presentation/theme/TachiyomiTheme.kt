@@ -5,6 +5,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import eu.kanade.domain.ui.UiPreferences
@@ -27,7 +28,13 @@ import eu.kanade.presentation.theme.colorscheme.TealTurqoiseColorScheme
 import eu.kanade.presentation.theme.colorscheme.TidalWaveColorScheme
 import eu.kanade.presentation.theme.colorscheme.YinYangColorScheme
 import eu.kanade.presentation.theme.colorscheme.YotsubaColorScheme
+import tachiyomi.presentation.core.theme.AtollaThemeConfig
+import tachiyomi.presentation.core.theme.BrandedThemeConfig
+import tachiyomi.presentation.core.theme.EphyraThemeConfig
+import tachiyomi.presentation.core.theme.LocalBrandedTheme
 import tachiyomi.presentation.core.theme.MihonShapes
+import tachiyomi.presentation.core.theme.NagareThemeConfig
+import tachiyomi.presentation.core.theme.toShapes
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
@@ -60,18 +67,23 @@ private fun BaseTachiyomiTheme(
 ) {
     val context = LocalContext.current
     val isDark = isSystemInDarkTheme()
-    MaterialExpressiveTheme(
-        colorScheme = remember(appTheme, isDark, isAmoled) {
-            getThemeColorScheme(
-                context = context,
-                appTheme = appTheme,
-                isDark = isDark,
-                isAmoled = isAmoled,
-            )
-        },
-        shapes = MihonShapes,
-        content = content,
-    )
+    val brandedConfig = remember(appTheme) { getBrandedThemeConfig(appTheme) }
+    val shapes = remember(brandedConfig) { brandedConfig.toShapes() }
+
+    CompositionLocalProvider(LocalBrandedTheme provides brandedConfig) {
+        MaterialExpressiveTheme(
+            colorScheme = remember(appTheme, isDark, isAmoled) {
+                getThemeColorScheme(
+                    context = context,
+                    appTheme = appTheme,
+                    isDark = isDark,
+                    isAmoled = isAmoled,
+                )
+            },
+            shapes = shapes,
+            content = content,
+        )
+    }
 }
 
 private fun getThemeColorScheme(
@@ -90,6 +102,20 @@ private fun getThemeColorScheme(
         isAmoled = isAmoled,
         overrideDarkSurfaceContainers = appTheme != AppTheme.MONET,
     )
+}
+
+/**
+ * Returns the [BrandedThemeConfig] for the given [AppTheme].
+ *
+ * Only branded themes (Ephyra, Nagare, Atolla) have custom configs.
+ * All other themes use the default config which preserves the existing
+ * Mihon shape system.
+ */
+private fun getBrandedThemeConfig(appTheme: AppTheme): BrandedThemeConfig = when (appTheme) {
+    AppTheme.EPHYRA -> EphyraThemeConfig
+    AppTheme.NAGARE -> NagareThemeConfig
+    AppTheme.ATOLLA -> AtollaThemeConfig
+    else -> BrandedThemeConfig() // Default — uses MihonShapes radii
 }
 
 private val colorSchemes: Map<AppTheme, BaseColorScheme> = mapOf(
