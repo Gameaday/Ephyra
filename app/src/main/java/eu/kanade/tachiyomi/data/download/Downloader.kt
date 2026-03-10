@@ -439,7 +439,8 @@ class Downloader(
 
             // Copy CBZ to Jellyfin library folder if configured and using Jellyfin naming
             if (downloadPreferences.saveChaptersAsCBZ().get() &&
-                libraryPreferences.jellyfinCompatibleNaming().get()
+                libraryPreferences.jellyfinCompatibleNaming().get() &&
+                downloadPreferences.jellyfinLibraryFolder().get().isNotBlank()
             ) {
                 copyToJellyfinLibrary(mangaDir, chapterDirname, download.manga.title)
             }

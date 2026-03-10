@@ -1011,7 +1011,7 @@ class MangaScreenModel(
                     .map { it.chapter }
                 val alreadyDownloadedItems = missingFromServer
                     .filter { it.downloadState == Download.State.DOWNLOADED }
-                val alreadyDownloaded = alreadyDownloadedItems.size
+                val alreadyDownloadedCount = alreadyDownloadedItems.size
 
                 if (needsDownload.isNotEmpty()) {
                     downloadChapters(needsDownload)
@@ -1027,7 +1027,7 @@ class MangaScreenModel(
                     )
                 }
 
-                val totalSynced = needsDownload.size + alreadyDownloaded
+                val totalSynced = needsDownload.size + alreadyDownloadedCount
                 if (totalSynced > 0) {
                     withUIContext {
                         context.toast(
