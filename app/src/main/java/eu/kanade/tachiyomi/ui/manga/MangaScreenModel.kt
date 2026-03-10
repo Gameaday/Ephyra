@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi.ui.manga
 
 import android.content.Context
+import android.net.Uri
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -11,6 +12,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import com.hippo.unifile.UniFile
 import eu.kanade.core.preference.asState
 import eu.kanade.core.util.addOrRemove
 import eu.kanade.core.util.insertSeparators
@@ -45,6 +47,7 @@ import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
 import eu.kanade.tachiyomi.util.chapter.getNextUnread
 import eu.kanade.tachiyomi.util.removeCovers
+import eu.kanade.tachiyomi.util.storage.DiskUtil
 import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
@@ -1080,16 +1083,16 @@ class MangaScreenModel(
         jellyfinFolderUri: String,
     ) {
         try {
-            val jellyfinRoot = com.hippo.unifile.UniFile.fromUri(
+            val jellyfinRoot = UniFile.fromUri(
                 context,
-                android.net.Uri.parse(jellyfinFolderUri),
+                Uri.parse(jellyfinFolderUri),
             ) ?: run {
                 logcat(LogPriority.WARN) { "Jellyfin library folder not accessible" }
                 return
             }
 
             val seriesDir = jellyfinRoot.createDirectory(
-                eu.kanade.tachiyomi.util.storage.DiskUtil.buildValidFilename(manga.title),
+                DiskUtil.buildValidFilename(manga.title),
             ) ?: run {
                 logcat(LogPriority.WARN) { "Failed to create series dir in Jellyfin folder" }
                 return

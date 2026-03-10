@@ -264,10 +264,9 @@ object SettingsDownloadScreen : SearchableSettings {
         val jellyfinFolderSubtitle = if (jellyfinFolder.isBlank()) {
             stringResource(MR.strings.pref_jellyfin_library_folder_not_set)
         } else {
-            val path = remember(jellyfinFolder) {
+            remember(jellyfinFolder) {
                 UniFile.fromUri(context, jellyfinFolder.toUri())?.displayablePath
             } ?: jellyfinFolder
-            stringResource(MR.strings.pref_jellyfin_library_folder_set, path)
         }
 
         val items = buildList<Preference.PreferenceItem<out Any, out Any>> {
@@ -303,19 +302,25 @@ object SettingsDownloadScreen : SearchableSettings {
                     subtitle = jellyfinFolderSubtitle,
                     enabled = isLoggedIn && autoSync,
                     onClick = {
-                        if (jellyfinFolder.isNotBlank()) {
-                            // Clear the folder if already set (tap to remove)
-                            jellyfinFolderPref.set("")
-                        } else {
-                            try {
-                                pickJellyfinFolder.launch(null)
-                            } catch (e: ActivityNotFoundException) {
-                                context.toast(MR.strings.file_picker_error)
-                            }
+                        try {
+                            pickJellyfinFolder.launch(null)
+                        } catch (e: ActivityNotFoundException) {
+                            context.toast(MR.strings.file_picker_error)
                         }
                     },
                 ),
             )
+
+            if (jellyfinFolder.isNotBlank() && isLoggedIn && autoSync) {
+                add(
+                    Preference.PreferenceItem.TextPreference(
+                        title = stringResource(MR.strings.pref_jellyfin_library_folder_clear),
+                        subtitle = null,
+                        enabled = true,
+                        onClick = { jellyfinFolderPref.set("") },
+                    ),
+                )
+            }
 
             if (jellyfinFolder.isBlank() && isLoggedIn && autoSync) {
                 add(

@@ -14,6 +14,7 @@ import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.manga.interactor.GetFavoritesByCanonicalId
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.source.service.SourceManager
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Reusable interactor for finding the best content source(s) for a given manga.
@@ -76,7 +77,7 @@ class FindContentSource(
 
         val total = catalogueSources.size
         val semaphore = Semaphore(MAX_CONCURRENT_SEARCHES)
-        val searchedCount = java.util.concurrent.atomic.AtomicInteger(0)
+        val searchedCount = AtomicInteger(0)
 
         val results = supervisorScope {
             catalogueSources.map { source ->

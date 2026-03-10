@@ -437,8 +437,9 @@ class Downloader(
                 tmpDir.renameTo(chapterDirname)
             }
 
-            // Copy CBZ to Jellyfin library folder if configured and using Jellyfin naming
-            if (downloadPreferences.saveChaptersAsCBZ().get() &&
+            // Copy CBZ to Jellyfin library folder if sync is enabled and folder is configured
+            if (downloadPreferences.autoSyncToJellyfin().get() &&
+                downloadPreferences.saveChaptersAsCBZ().get() &&
                 libraryPreferences.jellyfinCompatibleNaming().get() &&
                 downloadPreferences.jellyfinLibraryFolder().get().isNotBlank()
             ) {
