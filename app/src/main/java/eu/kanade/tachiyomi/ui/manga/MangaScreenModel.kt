@@ -987,33 +987,39 @@ class MangaScreenModel(
                 // Get the actual chapter items from Jellyfin for accurate comparison
                 val jellyfinChapters = getJellyfinChapterNames(manga)
 
-                // Select chapters to sync based on the action
+                // Select chapters missing from Jellyfin based on the action
                 val allChapterItems = allChapters.orEmpty()
-                val chaptersToSync = when (action) {
+                val missingFromServer = when (action) {
                     DownloadAction.SYNC_READ_TO_JELLYFIN -> allChapterItems.filter { item ->
-                        val ch = item.chapter
-                        ch.read && !isChapterOnServer(ch, jellyfinChapters) &&
-                            item.downloadState == Download.State.NOT_DOWNLOADED
+                        item.chapter.read && !isChapterOnServer(item.chapter, jellyfinChapters)
                     }
                     DownloadAction.SYNC_ALL_TO_JELLYFIN -> allChapterItems.filter { item ->
-                        val ch = item.chapter
-                        !isChapterOnServer(ch, jellyfinChapters) &&
-                            item.downloadState == Download.State.NOT_DOWNLOADED
+                        !isChapterOnServer(item.chapter, jellyfinChapters)
                     }
                     else -> allChapterItems.filter { item ->
-                        val ch = item.chapter
-                        !ch.read && !isChapterOnServer(ch, jellyfinChapters) &&
-                            item.downloadState == Download.State.NOT_DOWNLOADED
+                        !item.chapter.read && !isChapterOnServer(item.chapter, jellyfinChapters)
                     }
-                }.map { it.chapter }
+                }
 
-                if (chaptersToSync.isNotEmpty()) {
-                    downloadChapters(chaptersToSync)
+                // Split into chapters that need downloading vs already downloaded locally
+                val needsDownload = missingFromServer
+                    .filter { it.downloadState == Download.State.NOT_DOWNLOADED }
+                    .map { it.chapter }
+                val alreadyDownloaded = missingFromServer
+                    .filter { it.downloadState == Download.State.DOWNLOADED }
+                    .size
+
+                if (needsDownload.isNotEmpty()) {
+                    downloadChapters(needsDownload)
+                }
+
+                val totalSynced = needsDownload.size + alreadyDownloaded
+                if (totalSynced > 0) {
                     withUIContext {
                         context.toast(
                             context.stringResource(
                                 MR.strings.jellyfin_sync_started,
-                                chaptersToSync.size,
+                                totalSynced,
                             ),
                         )
                     }
@@ -1023,13 +1029,15 @@ class MangaScreenModel(
                     }
                 }
 
-                // Trigger a Jellyfin library scan so the server discovers the new files.
-                // Proactively skip for non-admin users (cached at login) to avoid a
-                // round-trip that will just 403 — give instant feedback instead.
-                val scanResult = triggerJellyfinLibraryScan()
-                if (scanResult != null && chaptersToSync.isNotEmpty()) {
-                    withUIContext {
-                        context.toast(scanResult)
+                // Trigger a Jellyfin library scan so the server discovers files.
+                // Scans are useful even when only already-downloaded chapters are
+                // missing from the server (they're on disk but not yet indexed).
+                if (totalSynced > 0) {
+                    val scanResult = triggerJellyfinLibraryScan()
+                    if (scanResult != null) {
+                        withUIContext {
+                            context.toast(scanResult)
+                        }
                     }
                 }
             } catch (e: Exception) {

@@ -271,19 +271,6 @@ object SettingsDownloadScreen : SearchableSettings {
 
             add(
                 Preference.PreferenceItem.SwitchPreference(
-                    preference = downloadPreferences.jellyfinAutoUploadAfterDownload(),
-                    title = stringResource(MR.strings.pref_jellyfin_auto_upload),
-                    subtitle = if (!isAdmin && isLoggedIn) {
-                        stringResource(MR.strings.pref_jellyfin_auto_upload_not_admin)
-                    } else {
-                        stringResource(MR.strings.pref_jellyfin_auto_upload_summary)
-                    },
-                    enabled = isLoggedIn && autoSync && isAdmin,
-                ),
-            )
-
-            add(
-                Preference.PreferenceItem.SwitchPreference(
                     preference = downloadPreferences.jellyfinScanAfterSync(),
                     title = stringResource(MR.strings.pref_jellyfin_scan_after_sync),
                     subtitle = if (!isAdmin && isLoggedIn) {

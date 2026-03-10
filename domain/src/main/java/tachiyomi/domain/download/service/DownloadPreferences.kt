@@ -51,12 +51,6 @@ class DownloadPreferences(
      */
     fun jellyfinUploadScope() = preferenceStore.getInt("jellyfin_upload_scope", 0)
 
-    /**
-     * Automatically trigger a Jellyfin library scan after each download completes
-     * for manga linked to Jellyfin.
-     */
-    fun jellyfinAutoUploadAfterDownload() = preferenceStore.getBoolean("jellyfin_auto_upload_after_download", false)
-
     companion object {
         private const val REMOVE_EXCLUDE_CATEGORIES_PREF_KEY = "remove_exclude_categories"
         private const val DOWNLOAD_NEW_CATEGORIES_PREF_KEY = "download_new_categories"

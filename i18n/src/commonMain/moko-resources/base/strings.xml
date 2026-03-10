@@ -339,20 +339,17 @@
 
     <!-- Jellyfin sync download settings -->
     <string name="pref_category_jellyfin_sync">Jellyfin sync</string>
-    <string name="pref_auto_sync_to_jellyfin">Auto-sync downloads to Jellyfin</string>
-    <string name="pref_auto_sync_to_jellyfin_summary">Automatically use Jellyfin-compatible naming for linked series so new downloads appear in your Jellyfin library</string>
-    <string name="pref_jellyfin_scan_after_sync">Trigger library scan after sync</string>
-    <string name="pref_jellyfin_scan_after_sync_summary">Request Jellyfin to rescan the library after syncing chapters. Requires admin privileges on the server.</string>
-    <string name="pref_jellyfin_not_logged_in">Log in to Jellyfin in Settings → Tracking to enable sync features</string>
-    <string name="pref_jellyfin_not_admin_hint">Library scan requires admin privileges. Downloads will still use Jellyfin naming, but a server admin must trigger the scan manually.</string>
-    <string name="pref_jellyfin_upload_scope">Upload scope</string>
-    <string name="pref_jellyfin_upload_scope_summary">Which chapters to include when syncing content to Jellyfin</string>
-    <string name="jellyfin_scope_all">All chapters (skip existing)</string>
-    <string name="jellyfin_scope_read">Read chapters only</string>
-    <string name="jellyfin_scope_downloaded">Downloaded chapters only</string>
-    <string name="pref_jellyfin_auto_upload">Auto-upload after download</string>
-    <string name="pref_jellyfin_auto_upload_summary">Automatically trigger a Jellyfin library scan when downloads complete for linked manga. Ensures new content is immediately discoverable on the server.</string>
-    <string name="pref_jellyfin_auto_upload_not_admin">Auto-upload requires admin privileges to trigger the library scan</string>
+    <string name="pref_auto_sync_to_jellyfin">Sync downloads to Jellyfin</string>
+    <string name="pref_auto_sync_to_jellyfin_summary">Use Jellyfin-compatible naming for linked series so downloads appear in your Jellyfin library</string>
+    <string name="pref_jellyfin_scan_after_sync">Auto-scan Jellyfin library</string>
+    <string name="pref_jellyfin_scan_after_sync_summary">Trigger a library scan after syncing or downloading chapters, so new content appears on the server immediately</string>
+    <string name="pref_jellyfin_not_logged_in">Log in to Jellyfin in Settings → Tracking to enable sync</string>
+    <string name="pref_jellyfin_not_admin_hint">Requires admin privileges — a server admin can trigger scans manually</string>
+    <string name="pref_jellyfin_upload_scope">Sync scope</string>
+    <string name="pref_jellyfin_upload_scope_summary">Which chapters to send to Jellyfin when syncing</string>
+    <string name="jellyfin_scope_all">All chapters (skip existing on server)</string>
+    <string name="jellyfin_scope_read">Previously read chapters</string>
+    <string name="jellyfin_scope_downloaded">Already downloaded chapters</string>
 
       <!-- Extension section -->
     <string name="multi_lang">Multi</string>
@@ -795,9 +792,9 @@
     <string name="manga_download">Download</string>
     <string name="download_unread">Unread</string>
     <string name="download_bookmarked">Bookmarked</string>
-    <string name="download_sync_to_jellyfin">Sync to Jellyfin</string>
-    <string name="download_sync_read_to_jellyfin">Sync read chapters missing from Jellyfin</string>
-    <string name="download_sync_all_to_jellyfin">Sync ALL chapters missing from Jellyfin</string>
+    <string name="download_sync_to_jellyfin">Sync unread to Jellyfin</string>
+    <string name="download_sync_read_to_jellyfin">Sync read chapters to Jellyfin</string>
+    <string name="download_sync_all_to_jellyfin">Sync all to Jellyfin</string>
     <string name="jellyfin_sync_started">Syncing %d chapter(s) to Jellyfin…</string>
     <string name="jellyfin_sync_up_to_date">Jellyfin library is up to date</string>
     <string name="jellyfin_sync_not_logged_in">Not logged in to Jellyfin — configure in Settings → Tracking</string>
