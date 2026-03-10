@@ -100,7 +100,7 @@ class FindContentSource(
 
         // Post-processing pipeline: dedup → diversity → enrich → rank
         val deduped = deduplicateByUrl(results)
-        val diverse = diversifyByProvider(deduped, maxResults * 2)
+        val diverse = diversifyByProvider(deduped, maxResults * ENRICHMENT_MULTIPLIER)
         val enriched = enrichWithChapterCounts(diverse)
         rankResults(enriched, maxResults)
     }
@@ -197,7 +197,7 @@ class FindContentSource(
     internal fun deduplicateByUrl(results: List<SourceMatch>): List<SourceMatch> {
         return results
             .groupBy { it.manga.url }
-            .map { (_, matches) -> matches.maxByOrNull { it.confidence }!! }
+            .mapNotNull { (_, matches) -> matches.maxByOrNull { it.confidence } }
     }
 
     /**
@@ -282,6 +282,12 @@ class FindContentSource(
 
         /** Default maximum results to return. */
         private const val MAX_RESULTS = 5
+
+        /**
+         * Multiplier for diversity limit: we fetch more candidates than maxResults
+         * to ensure enough survive the diversity and ranking filters.
+         */
+        private const val ENRICHMENT_MULTIPLIER = 2
 
         /** Sentinel value indicating chapter count has not been fetched. */
         const val CHAPTER_COUNT_UNKNOWN = -1
