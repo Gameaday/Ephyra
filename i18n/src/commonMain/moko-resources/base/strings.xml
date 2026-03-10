@@ -334,8 +334,26 @@
     <string name="pref_hide_missing_chapter_indicators">Hide missing chapter indicators</string>
     <string name="pref_disallow_non_ascii_filenames">Disallow non-ASCII filenames</string>
     <string name="pref_disallow_non_ascii_filenames_details">Ensures compatibility with certain storage media that don't support Unicode. When this is enabled, you'll need to manually rename source and manga folders by replacing non-ASCII characters with their lowercase UTF-8 hexadecimal representations. Chapter files don't need to be renamed.</string>
-    <string name="pref_jellyfin_compatible_naming">Jellyfin-compatible download naming</string>
-    <string name="pref_jellyfin_compatible_naming_summary">Name downloaded CBZ files using Jellyfin Bookshelf plugin conventions (Series Name Ch. 001.cbz). Content can be directly served by a Jellyfin media server without renaming.</string>
+    <string name="pref_jellyfin_compatible_naming">Jellyfin-compatible naming</string>
+    <string name="pref_jellyfin_compatible_naming_summary">Format files as \"Series Name Ch. 001.cbz\" for the Jellyfin Bookshelf plugin</string>
+
+    <!-- Jellyfin sync download settings -->
+    <string name="pref_category_jellyfin_sync">Jellyfin sync</string>
+    <string name="pref_auto_sync_to_jellyfin">Sync downloads to Jellyfin</string>
+    <string name="pref_auto_sync_to_jellyfin_summary">Use Jellyfin-compatible naming for linked series so downloads appear in your Jellyfin library</string>
+    <string name="pref_jellyfin_scan_after_sync">Auto-scan Jellyfin library</string>
+    <string name="pref_jellyfin_scan_after_sync_summary">Trigger a server library scan after sync so new content appears immediately</string>
+    <string name="pref_jellyfin_not_logged_in">Log in to Jellyfin in Settings → Tracking to enable sync</string>
+    <string name="pref_jellyfin_not_admin_hint">Requires admin privileges — a server admin can trigger scans manually</string>
+    <string name="pref_jellyfin_upload_scope">Sync scope</string>
+    <string name="pref_jellyfin_upload_scope_summary">Which chapters to send to Jellyfin when syncing</string>
+    <string name="jellyfin_scope_all">All chapters (skip existing on server)</string>
+    <string name="jellyfin_scope_read">Previously read chapters</string>
+    <string name="jellyfin_scope_downloaded">Already downloaded chapters</string>
+    <string name="pref_jellyfin_library_folder">Jellyfin library folder</string>
+    <string name="pref_jellyfin_library_folder_not_set">Not set — tap to choose a folder</string>
+    <string name="pref_jellyfin_library_folder_clear">Clear Jellyfin library folder</string>
+    <string name="pref_jellyfin_library_folder_hint">Tip: Use a file manager with SMB/NFS support (Solid Explorer, CX File Explorer) to pick network shares</string>
 
       <!-- Extension section -->
     <string name="multi_lang">Multi</string>
@@ -778,9 +796,9 @@
     <string name="manga_download">Download</string>
     <string name="download_unread">Unread</string>
     <string name="download_bookmarked">Bookmarked</string>
-    <string name="download_sync_to_jellyfin">Sync to Jellyfin</string>
-    <string name="download_sync_read_to_jellyfin">Sync read chapters missing from Jellyfin</string>
-    <string name="download_sync_all_to_jellyfin">Sync ALL chapters missing from Jellyfin</string>
+    <string name="download_sync_to_jellyfin">Sync unread to Jellyfin</string>
+    <string name="download_sync_read_to_jellyfin">Sync read chapters to Jellyfin</string>
+    <string name="download_sync_all_to_jellyfin">Sync all to Jellyfin</string>
     <string name="jellyfin_sync_started">Syncing %d chapter(s) to Jellyfin…</string>
     <string name="jellyfin_sync_up_to_date">Jellyfin library is up to date</string>
     <string name="jellyfin_sync_not_logged_in">Not logged in to Jellyfin — configure in Settings → Tracking</string>
@@ -1143,6 +1161,8 @@
     <string name="discover_find_source_searching">Searching installed sources…</string>
     <string name="discover_find_source_found">Found sources matching \"%s\". Tap one to browse, or search manually for more options.</string>
     <string name="discover_find_source_action">Search manually</string>
+    <string name="discover_find_source_chapters">%d chapters</string>
+    <string name="discover_find_source_no_chapters">No chapters</string>
     <string name="discover_find_source_skip">Skip</string>
     <string name="discover_login_for_more">Log in to more trackers for additional results</string>
     <string name="discover_merge_title">Merge with existing?</string>
@@ -1195,7 +1215,7 @@
     <!-- Authority linking -->
     <string name="authority_badge_description">Linked to authority</string>
     <string name="authority_linked_label">Authority</string>
-    <string name="authority_source_name">Authority</string>
+    <string name="authority_source_name">No content provider</string>
 
     <!-- Authority match results screen -->
     <string name="match_results_title">Authority Matching Results</string>
@@ -1224,6 +1244,7 @@
     <string name="edit_metadata_section_details">Details</string>
     <string name="edit_metadata_section_tags">Tags &amp; genres</string>
     <string name="edit_metadata_linked_to">Linked to %s</string>
+    <string name="edit_metadata_unlink">Unlink</string>
     <string name="locked_field_description">Description</string>
     <string name="locked_field_author">Author</string>
     <string name="locked_field_artist">Artist</string>

@@ -41,6 +41,24 @@ class DownloadPreferences(
 
     fun parallelPageLimit() = preferenceStore.getInt("download_parallel_page_limit", 5)
 
+    fun autoSyncToJellyfin() = preferenceStore.getBoolean("auto_sync_to_jellyfin", false)
+
+    fun jellyfinScanAfterSync() = preferenceStore.getBoolean("jellyfin_scan_after_sync", false)
+
+    /**
+     * Which chapters to include when syncing to Jellyfin.
+     * 0 = All chapters (skip existing), 1 = Read chapters only, 2 = Downloaded chapters only.
+     */
+    fun jellyfinUploadScope() = preferenceStore.getInt("jellyfin_upload_scope", 0)
+
+    /**
+     * URI of the Jellyfin library folder (e.g. a network share or NAS mount).
+     * When set, completed Jellyfin-named downloads are copied to this folder
+     * so the Jellyfin server can discover them via library scan.
+     * Empty string = not set (downloads stay in the default location only).
+     */
+    fun jellyfinLibraryFolder() = preferenceStore.getString("jellyfin_library_folder", "")
+
     companion object {
         private const val REMOVE_EXCLUDE_CATEGORIES_PREF_KEY = "remove_exclude_categories"
         private const val DOWNLOAD_NEW_CATEGORIES_PREF_KEY = "download_new_categories"

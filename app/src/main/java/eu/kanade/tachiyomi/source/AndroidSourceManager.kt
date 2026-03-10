@@ -113,7 +113,7 @@ class AndroidSourceManager(
 
     private suspend fun createStubSource(id: Long): StubSource {
         // Authority-only manga (no content source) — return a named stub
-        // so the UI shows "Authority" instead of "-1".
+        // so the UI shows "No content provider" instead of "-1".
         if (id == eu.kanade.domain.track.interactor.TrackerListImporter.AUTHORITY_SOURCE_ID) {
             return StubSource(
                 id = id,

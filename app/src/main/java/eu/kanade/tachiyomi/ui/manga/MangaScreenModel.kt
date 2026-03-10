@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi.ui.manga
 
 import android.content.Context
+import android.net.Uri
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -11,6 +12,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import com.hippo.unifile.UniFile
 import eu.kanade.core.preference.asState
 import eu.kanade.core.util.addOrRemove
 import eu.kanade.core.util.insertSeparators
@@ -34,6 +36,7 @@ import eu.kanade.presentation.manga.components.ChapterDownloadAction
 import eu.kanade.presentation.util.formattedMessage
 import eu.kanade.tachiyomi.data.download.DownloadCache
 import eu.kanade.tachiyomi.data.download.DownloadManager
+import eu.kanade.tachiyomi.data.download.DownloadProvider
 import eu.kanade.tachiyomi.data.download.model.Download
 import eu.kanade.tachiyomi.data.track.EnhancedTracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
@@ -44,6 +47,7 @@ import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
 import eu.kanade.tachiyomi.util.chapter.getNextUnread
 import eu.kanade.tachiyomi.util.removeCovers
+import eu.kanade.tachiyomi.util.storage.DiskUtil
 import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
@@ -79,6 +83,7 @@ import tachiyomi.domain.chapter.model.ChapterUpdate
 import tachiyomi.domain.chapter.model.NoChaptersException
 import tachiyomi.domain.chapter.service.calculateChapterGap
 import tachiyomi.domain.chapter.service.getChapterSort
+import tachiyomi.domain.download.service.DownloadPreferences
 import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.domain.manga.interactor.GetDuplicateLibraryManga
 import tachiyomi.domain.manga.interactor.GetMangaWithChapters
@@ -108,6 +113,8 @@ class MangaScreenModel(
     private val trackChapter: TrackChapter = Injekt.get(),
     private val downloadManager: DownloadManager = Injekt.get(),
     private val downloadCache: DownloadCache = Injekt.get(),
+    private val downloadPreferences: DownloadPreferences = Injekt.get(),
+    private val downloadProvider: DownloadProvider = Injekt.get(),
     private val getMangaAndChapters: GetMangaWithChapters = Injekt.get(),
     private val getDuplicateLibraryManga: GetDuplicateLibraryManga = Injekt.get(),
     private val getAvailableScanlators: GetAvailableScanlators = Injekt.get(),
@@ -274,20 +281,10 @@ class MangaScreenModel(
             )
             fetchFromSourceTasks.awaitAll()
 
-            // Also refresh from authority when linked — integrated Jellyfin-style
-            // metadata provider refresh: one button refreshes all sources.
-            val manga = successState?.manga
-            if (manga?.canonicalId != null) {
-                try {
-                    val refreshCanonical =
-                        Injekt.get<eu.kanade.domain.track.interactor.RefreshCanonicalMetadata>()
-                    refreshCanonical.await(manga)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    logcat(LogPriority.WARN, e) { "Authority refresh during pull failed" }
-                }
-            }
+            // Authority refresh is handled inside fetchMangaFromSource() when
+            // manualFetch=true, so no separate call is needed here.  Doing it
+            // twice caused the description to visibly flicker (authority vs
+            // content-source descriptions swapping).
 
             updateSuccessState { it.copy(isRefreshingData = false) }
         }
@@ -997,33 +994,49 @@ class MangaScreenModel(
                 // Get the actual chapter items from Jellyfin for accurate comparison
                 val jellyfinChapters = getJellyfinChapterNames(manga)
 
-                // Select chapters to sync based on the action
+                // Select chapters missing from Jellyfin based on the action
                 val allChapterItems = allChapters.orEmpty()
-                val chaptersToSync = when (action) {
+                val missingFromServer = when (action) {
                     DownloadAction.SYNC_READ_TO_JELLYFIN -> allChapterItems.filter { item ->
-                        val ch = item.chapter
-                        ch.read && !isChapterOnServer(ch, jellyfinChapters) &&
-                            item.downloadState == Download.State.NOT_DOWNLOADED
+                        item.chapter.read && !isChapterOnServer(item.chapter, jellyfinChapters)
                     }
                     DownloadAction.SYNC_ALL_TO_JELLYFIN -> allChapterItems.filter { item ->
-                        val ch = item.chapter
-                        !isChapterOnServer(ch, jellyfinChapters) &&
-                            item.downloadState == Download.State.NOT_DOWNLOADED
+                        !isChapterOnServer(item.chapter, jellyfinChapters)
                     }
                     else -> allChapterItems.filter { item ->
-                        val ch = item.chapter
-                        !ch.read && !isChapterOnServer(ch, jellyfinChapters) &&
-                            item.downloadState == Download.State.NOT_DOWNLOADED
+                        !item.chapter.read && !isChapterOnServer(item.chapter, jellyfinChapters)
                     }
-                }.map { it.chapter }
+                }
 
-                if (chaptersToSync.isNotEmpty()) {
-                    downloadChapters(chaptersToSync)
+                // Split into chapters that need downloading vs already downloaded locally
+                val needsDownload = missingFromServer
+                    .filter { it.downloadState == Download.State.NOT_DOWNLOADED }
+                    .map { it.chapter }
+                val alreadyDownloadedItems = missingFromServer
+                    .filter { it.downloadState == Download.State.DOWNLOADED }
+                val alreadyDownloadedCount = alreadyDownloadedItems.size
+
+                if (needsDownload.isNotEmpty()) {
+                    downloadChapters(needsDownload)
+                }
+
+                // Copy already-downloaded chapters to Jellyfin library folder if configured
+                val jellyfinFolder = downloadPreferences.jellyfinLibraryFolder().get()
+                if (jellyfinFolder.isNotBlank() && alreadyDownloadedItems.isNotEmpty()) {
+                    copyChaptersToJellyfinFolder(
+                        manga,
+                        alreadyDownloadedItems.map { it.chapter },
+                        jellyfinFolder,
+                    )
+                }
+
+                val totalSynced = needsDownload.size + alreadyDownloadedCount
+                if (totalSynced > 0) {
                     withUIContext {
                         context.toast(
                             context.stringResource(
                                 MR.strings.jellyfin_sync_started,
-                                chaptersToSync.size,
+                                totalSynced,
                             ),
                         )
                     }
@@ -1033,13 +1046,15 @@ class MangaScreenModel(
                     }
                 }
 
-                // Trigger a Jellyfin library scan so the server discovers the new files.
-                // Proactively skip for non-admin users (cached at login) to avoid a
-                // round-trip that will just 403 — give instant feedback instead.
-                val scanResult = triggerJellyfinLibraryScan()
-                if (scanResult != null && chaptersToSync.isNotEmpty()) {
-                    withUIContext {
-                        context.toast(scanResult)
+                // Trigger a Jellyfin library scan so the server discovers files.
+                // Scans are useful even when only already-downloaded chapters are
+                // missing from the server (they're on disk but not yet indexed).
+                if (totalSynced > 0) {
+                    val scanResult = triggerJellyfinLibraryScan()
+                    if (scanResult != null) {
+                        withUIContext {
+                            context.toast(scanResult)
+                        }
                     }
                 }
             } catch (e: Exception) {
@@ -1053,6 +1068,87 @@ class MangaScreenModel(
                 // Restore the original Jellyfin naming preference
                 libraryPreferences.jellyfinCompatibleNaming().set(wasJellyfinNamingEnabled)
             }
+        }
+    }
+
+    /**
+     * Copies already-downloaded chapter CBZ files to the configured Jellyfin library folder.
+     * This makes locally-downloaded content discoverable by the Jellyfin server via library scan,
+     * even when the app's download directory is not directly accessible to the server (e.g., the
+     * Jellyfin folder is an SMB/NFS network share on a NAS).
+     */
+    private fun copyChaptersToJellyfinFolder(
+        manga: Manga,
+        chapters: List<Chapter>,
+        jellyfinFolderUri: String,
+    ) {
+        try {
+            val jellyfinRoot = UniFile.fromUri(
+                context,
+                Uri.parse(jellyfinFolderUri),
+            ) ?: run {
+                logcat(LogPriority.WARN) { "Jellyfin library folder not accessible" }
+                return
+            }
+
+            val seriesDir = jellyfinRoot.createDirectory(
+                DiskUtil.buildValidFilename(manga.title),
+            ) ?: run {
+                logcat(LogPriority.WARN) { "Failed to create series dir in Jellyfin folder" }
+                return
+            }
+
+            val source = Injekt.get<SourceManager>().getOrStub(manga.source)
+            val mangaDirResult = downloadProvider.getMangaDir(manga.title, source)
+            val mangaDir = mangaDirResult.getOrNull() ?: run {
+                logcat(LogPriority.WARN) { "Could not resolve manga download directory" }
+                return
+            }
+
+            var copied = 0
+            for (chapter in chapters) {
+                val jellyfinName = downloadProvider.getJellyfinChapterDirName(
+                    manga.title,
+                    chapter.chapterNumber,
+                    chapter.name,
+                )
+                val cbzName = "$jellyfinName.cbz"
+
+                // Skip if already in the Jellyfin folder
+                val existing = seriesDir.findFile(cbzName)
+                if (existing != null && existing.length() > 0) continue
+
+                // Try Jellyfin-named CBZ first, then fall back to standard naming
+                val sourceCbz = mangaDir.findFile(cbzName)
+                    ?: mangaDir.findFile(
+                        downloadProvider.getChapterDirName(
+                            chapter.name,
+                            chapter.scanlator,
+                            chapter.url,
+                        ) + ".cbz",
+                    )
+
+                if (sourceCbz == null || !sourceCbz.exists()) continue
+
+                val destFile = seriesDir.createFile(cbzName) ?: continue
+                try {
+                    sourceCbz.openInputStream().use { input ->
+                        destFile.openOutputStream().use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+                    copied++
+                } catch (e: Exception) {
+                    logcat(LogPriority.WARN, e) { "Failed to copy $cbzName to Jellyfin folder" }
+                    destFile.delete()
+                }
+            }
+
+            if (copied > 0) {
+                logcat(LogPriority.INFO) { "Copied $copied chapter(s) to Jellyfin library folder" }
+            }
+        } catch (e: Exception) {
+            logcat(LogPriority.ERROR, e) { "Failed to copy chapters to Jellyfin folder" }
         }
     }
 
@@ -1781,6 +1877,26 @@ class MangaScreenModel(
                     }
                     snackbarHostState.showSnackbar(message)
                 }
+            }
+        }
+    }
+
+    /**
+     * Removes the authority link (canonicalId) from this manga, clears all per-field
+     * locks, and refreshes the UI state. After unlinking, the user can re-identify
+     * via the "Identify" button in the metadata editor.
+     */
+    fun unlinkAuthority() {
+        val manga = successState?.manga ?: return
+        if (manga.canonicalId == null) return
+        screenModelScope.launchIO {
+            mangaRepository.clearCanonicalId(manga.id)
+            // Refresh in-memory state so the UI reflects the change
+            try {
+                val updatedManga = mangaRepository.getMangaById(mangaId)
+                updateSuccessState { it.copy(manga = updatedManga) }
+            } catch (e: Exception) {
+                logcat(LogPriority.DEBUG, e) { "Failed to reload manga after unlinking authority" }
             }
         }
     }

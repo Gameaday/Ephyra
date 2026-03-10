@@ -7,6 +7,7 @@ import androidx.compose.material.icons.outlined.Verified
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import eu.kanade.presentation.theme.TachiyomiPreviewTheme
@@ -76,21 +77,50 @@ internal fun SourceHealthBadge(sourceStatus: Int) {
 @Composable
 internal fun AuthorityBadge(hasCanonicalId: Boolean, canonicalId: String? = null) {
     if (hasCanonicalId) {
-        val isJellyfin = canonicalId?.startsWith(JELLYFIN_CANONICAL_PREFIX) == true
+        val brandColor = authorityBrandColor(canonicalId)
         Badge(
             imageVector = Icons.Outlined.Verified,
-            color = if (isJellyfin) JellyfinBadgeColor else MaterialTheme.colorScheme.primary,
-            iconColor = if (isJellyfin) Color.White else MaterialTheme.colorScheme.onPrimary,
+            color = brandColor ?: MaterialTheme.colorScheme.primary,
+            iconColor = if (brandColor != null) Color.White else MaterialTheme.colorScheme.onPrimary,
             contentDescription = stringResource(MR.strings.authority_badge_description),
         )
     }
 }
 
-/** Canonical ID prefix for Jellyfin authority tracker. */
-private const val JELLYFIN_CANONICAL_PREFIX = "jf:"
+/**
+ * Returns the brand color for a known authority, or null for unknown prefixes.
+ * Used by both library badges and the series detail page authority badge.
+ */
+internal fun authorityBrandColor(canonicalId: String?): Color? {
+    if (canonicalId == null) return null
+    val prefix = canonicalId.substringBefore(":", "")
+    return AUTHORITY_BRAND_COLORS[prefix]
+}
 
-/** Jellyfin brand color (#00A4DC). */
-private val JellyfinBadgeColor = Color(0xFF00A4DC)
+/**
+ * Returns a gradient [Brush] for authorities that use a multi-color brand identity,
+ * or null when the authority uses a single solid color. Currently only Jellyfin
+ * has a gradient (purple → blue, matching the Jellyfin logo).
+ */
+internal fun authorityBrandGradient(canonicalId: String?): Brush? {
+    if (canonicalId == null) return null
+    val prefix = canonicalId.substringBefore(":", "")
+    val colors = AUTHORITY_GRADIENT_COLORS[prefix] ?: return null
+    return Brush.horizontalGradient(colors)
+}
+
+/** Brand colors for known authority trackers. */
+private val AUTHORITY_BRAND_COLORS = mapOf(
+    "al" to Color(0xFF02A9FF), // AniList blue
+    "mal" to Color(0xFF2E51A2), // MyAnimeList blue
+    "mu" to Color(0xFFFF6740), // MangaUpdates orange
+    "jf" to Color(0xFF00A4DC), // Jellyfin blue (primary)
+)
+
+/** Gradient stops for authorities with multi-color brand identities. */
+private val AUTHORITY_GRADIENT_COLORS = mapOf(
+    "jf" to listOf(Color(0xFFAA5CC3), Color(0xFF00A4DC)), // Jellyfin purple → blue
+)
 
 @PreviewLightDark
 @Composable

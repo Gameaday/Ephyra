@@ -1,5 +1,9 @@
 package eu.kanade.presentation.more.settings.screen
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.collectAsState
@@ -8,16 +12,27 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.util.fastMap
+import androidx.core.net.toUri
+import com.hippo.unifile.UniFile
+import eu.kanade.domain.track.service.TrackPreferences
 import eu.kanade.presentation.category.visualName
 import eu.kanade.presentation.more.settings.Preference
 import eu.kanade.presentation.more.settings.widget.TriStateListDialog
+import eu.kanade.tachiyomi.data.track.TrackerManager
+import eu.kanade.tachiyomi.util.system.toast
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toImmutableMap
+import logcat.LogPriority
+import tachiyomi.core.common.storage.displayablePath
+import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.category.interactor.GetCategories
 import tachiyomi.domain.category.model.Category
 import tachiyomi.domain.download.service.DownloadPreferences
+import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.pluralStringResource
 import tachiyomi.presentation.core.i18n.stringResource
@@ -75,6 +90,7 @@ object SettingsDownloadScreen : SearchableSettings {
                 allCategories = allCategories,
             ),
             getDownloadAheadGroup(downloadPreferences = downloadPreferences),
+            getJellyfinSyncGroup(downloadPreferences = downloadPreferences),
         )
     }
 
@@ -209,6 +225,142 @@ object SettingsDownloadScreen : SearchableSettings {
                 ),
                 Preference.PreferenceItem.InfoPreference(stringResource(MR.strings.download_ahead_info)),
             ),
+        )
+    }
+
+    @Composable
+    private fun getJellyfinSyncGroup(
+        downloadPreferences: DownloadPreferences,
+    ): Preference.PreferenceGroup {
+        val context = LocalContext.current
+        val trackerManager = remember { Injekt.get<TrackerManager>() }
+        val trackPreferences = remember { Injekt.get<TrackPreferences>() }
+        val libraryPreferences = remember { Injekt.get<LibraryPreferences>() }
+        val isLoggedIn = trackerManager.jellyfin.isLoggedIn
+        val isAdmin by trackPreferences.jellyfinIsAdmin().collectAsState()
+        val autoSync by downloadPreferences.autoSyncToJellyfin().collectAsState()
+
+        // Jellyfin library folder picker (SAF — supports network shares via third-party providers)
+        val jellyfinFolderPref = downloadPreferences.jellyfinLibraryFolder()
+        val jellyfinFolder by jellyfinFolderPref.collectAsState()
+        val pickJellyfinFolder = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocumentTree(),
+        ) { uri ->
+            if (uri != null) {
+                val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                try {
+                    context.contentResolver.takePersistableUriPermission(uri, flags)
+                } catch (e: SecurityException) {
+                    logcat(LogPriority.ERROR, e)
+                    context.toast(MR.strings.file_picker_uri_permission_unsupported)
+                }
+                UniFile.fromUri(context, uri)?.let {
+                    jellyfinFolderPref.set(it.uri.toString())
+                }
+            }
+        }
+
+        val jellyfinFolderSubtitle = if (jellyfinFolder.isBlank()) {
+            stringResource(MR.strings.pref_jellyfin_library_folder_not_set)
+        } else {
+            remember(jellyfinFolder) {
+                UniFile.fromUri(context, jellyfinFolder.toUri())?.displayablePath
+            } ?: jellyfinFolder
+        }
+
+        val items = buildList<Preference.PreferenceItem<out Any, out Any>> {
+            if (!isLoggedIn) {
+                add(
+                    Preference.PreferenceItem.InfoPreference(
+                        stringResource(MR.strings.pref_jellyfin_not_logged_in),
+                    ),
+                )
+            }
+
+            add(
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = downloadPreferences.autoSyncToJellyfin(),
+                    title = stringResource(MR.strings.pref_auto_sync_to_jellyfin),
+                    subtitle = stringResource(MR.strings.pref_auto_sync_to_jellyfin_summary),
+                    enabled = isLoggedIn,
+                ),
+            )
+
+            add(
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = libraryPreferences.jellyfinCompatibleNaming(),
+                    title = stringResource(MR.strings.pref_jellyfin_compatible_naming),
+                    subtitle = stringResource(MR.strings.pref_jellyfin_compatible_naming_summary),
+                    enabled = isLoggedIn && autoSync,
+                ),
+            )
+
+            add(
+                Preference.PreferenceItem.TextPreference(
+                    title = stringResource(MR.strings.pref_jellyfin_library_folder),
+                    subtitle = jellyfinFolderSubtitle,
+                    enabled = isLoggedIn && autoSync,
+                    onClick = {
+                        try {
+                            pickJellyfinFolder.launch(null)
+                        } catch (e: ActivityNotFoundException) {
+                            context.toast(MR.strings.file_picker_error)
+                        }
+                    },
+                ),
+            )
+
+            if (jellyfinFolder.isNotBlank() && isLoggedIn && autoSync) {
+                add(
+                    Preference.PreferenceItem.TextPreference(
+                        title = stringResource(MR.strings.pref_jellyfin_library_folder_clear),
+                        subtitle = null,
+                        enabled = true,
+                        onClick = { jellyfinFolderPref.set("") },
+                    ),
+                )
+            }
+
+            if (jellyfinFolder.isBlank() && isLoggedIn && autoSync) {
+                add(
+                    Preference.PreferenceItem.InfoPreference(
+                        stringResource(MR.strings.pref_jellyfin_library_folder_hint),
+                    ),
+                )
+            }
+
+            add(
+                Preference.PreferenceItem.ListPreference(
+                    preference = downloadPreferences.jellyfinUploadScope(),
+                    entries = persistentMapOf(
+                        0 to stringResource(MR.strings.jellyfin_scope_all),
+                        1 to stringResource(MR.strings.jellyfin_scope_read),
+                        2 to stringResource(MR.strings.jellyfin_scope_downloaded),
+                    ),
+                    title = stringResource(MR.strings.pref_jellyfin_upload_scope),
+                    subtitle = stringResource(MR.strings.pref_jellyfin_upload_scope_summary),
+                    enabled = isLoggedIn && autoSync,
+                ),
+            )
+
+            add(
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = downloadPreferences.jellyfinScanAfterSync(),
+                    title = stringResource(MR.strings.pref_jellyfin_scan_after_sync),
+                    subtitle = if (!isAdmin && isLoggedIn) {
+                        stringResource(MR.strings.pref_jellyfin_not_admin_hint)
+                    } else {
+                        stringResource(MR.strings.pref_jellyfin_scan_after_sync_summary)
+                    },
+                    enabled = isLoggedIn && autoSync && isAdmin,
+                ),
+            )
+        }
+
+        return Preference.PreferenceGroup(
+            title = stringResource(MR.strings.pref_category_jellyfin_sync),
+            preferenceItems = items.toImmutableList(),
         )
     }
 }
