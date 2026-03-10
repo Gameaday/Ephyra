@@ -274,20 +274,10 @@ class MangaScreenModel(
             )
             fetchFromSourceTasks.awaitAll()
 
-            // Also refresh from authority when linked — integrated Jellyfin-style
-            // metadata provider refresh: one button refreshes all sources.
-            val manga = successState?.manga
-            if (manga?.canonicalId != null) {
-                try {
-                    val refreshCanonical =
-                        Injekt.get<eu.kanade.domain.track.interactor.RefreshCanonicalMetadata>()
-                    refreshCanonical.await(manga)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    logcat(LogPriority.WARN, e) { "Authority refresh during pull failed" }
-                }
-            }
+            // Authority refresh is handled inside fetchMangaFromSource() when
+            // manualFetch=true, so no separate call is needed here.  Doing it
+            // twice caused the description to visibly flicker (authority vs
+            // content-source descriptions swapping).
 
             updateSuccessState { it.copy(isRefreshingData = false) }
         }

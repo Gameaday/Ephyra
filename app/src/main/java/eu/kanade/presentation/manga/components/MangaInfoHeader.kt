@@ -64,6 +64,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Brush
@@ -91,6 +92,7 @@ import com.mikepenz.markdown.utils.getUnescapedTextInNode
 import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.presentation.components.DropdownMenu
 import eu.kanade.presentation.library.components.authorityBrandColor
+import eu.kanade.presentation.library.components.authorityBrandGradient
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.source.model.SManga
@@ -488,6 +490,8 @@ private fun ColumnScope.MangaContentInfo(
             },
             onClick = { if (title.isNotBlank()) doSearch(title, true) },
         ),
+        overflow = TextOverflow.Ellipsis,
+        maxLines = 3,
         textAlign = textAlign,
     )
 
@@ -595,34 +599,40 @@ private fun ColumnScope.MangaContentInfo(
                     modifier = Modifier.padding(start = 2.dp),
                 )
             }
-            DotSeparatorText()
-            if (isStubSource) {
-                Icon(
-                    imageVector = Icons.Filled.Warning,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .padding(end = 4.dp)
-                        .size(18.dp),
-                    tint = MaterialTheme.colorScheme.error,
+            // Authority-only manga have no content source — the authority badge
+            // shown below already identifies the provider, so hide the source name
+            // to avoid the confusing "Authority (ALL)" stub label.
+            val isAuthorityOnly = isStubSource && canonicalId != null
+            if (!isAuthorityOnly) {
+                DotSeparatorText()
+                if (isStubSource) {
+                    Icon(
+                        imageVector = Icons.Filled.Warning,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .padding(end = 4.dp)
+                            .size(18.dp),
+                        tint = MaterialTheme.colorScheme.error,
+                    )
+                }
+                val sourceNameColor = when (SourceStatus.fromValue(sourceStatus)) {
+                    SourceStatus.DEAD -> MaterialTheme.colorScheme.error
+                    SourceStatus.DEGRADED -> MaterialTheme.colorScheme.tertiary
+                    else -> LocalContentColor.current
+                }
+                Text(
+                    text = sourceName,
+                    modifier = Modifier.clickableNoIndication {
+                        doSearch(
+                            sourceName,
+                            false,
+                        )
+                    },
+                    color = sourceNameColor,
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 1,
                 )
             }
-            val sourceNameColor = when (SourceStatus.fromValue(sourceStatus)) {
-                SourceStatus.DEAD -> MaterialTheme.colorScheme.error
-                SourceStatus.DEGRADED -> MaterialTheme.colorScheme.tertiary
-                else -> LocalContentColor.current
-            }
-            Text(
-                text = sourceName,
-                modifier = Modifier.clickableNoIndication {
-                    doSearch(
-                        sourceName,
-                        false,
-                    )
-                },
-                color = sourceNameColor,
-                overflow = TextOverflow.Ellipsis,
-                maxLines = 1,
-            )
         }
     }
 
@@ -672,24 +682,39 @@ private fun ColumnScope.MangaContentInfo(
             LockedField.ALL_FIELDS.count { LockedField.isLocked(lockedFields, it) }
         }
         val brandColor = authorityBrandColor(canonicalId)
+        val brandGradient = authorityBrandGradient(canonicalId)
         if (authorityLabel != null) {
-            androidx.compose.material3.Surface(
-                color = (brandColor ?: MaterialTheme.colorScheme.primaryContainer)
-                    .copy(alpha = AUTHORITY_BADGE_ALPHA),
-                shape = MaterialTheme.shapes.medium,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .animateContentSize()
-                    .then(
-                        if (authorityUrl != null) {
-                            Modifier.clickableNoIndication {
-                                context.openInBrowser(authorityUrl)
-                            }
-                        } else {
-                            Modifier
-                        },
-                    ),
-            ) {
+            val badgeShape = MaterialTheme.shapes.medium
+            val badgeModifier = Modifier
+                .fillMaxWidth()
+                .animateContentSize()
+                .then(
+                    if (authorityUrl != null) {
+                        Modifier.clickableNoIndication {
+                            context.openInBrowser(authorityUrl)
+                        }
+                    } else {
+                        Modifier
+                    },
+                )
+                .then(
+                    if (brandGradient != null) {
+                        Modifier
+                            .clip(badgeShape)
+                            .background(
+                                brush = brandGradient,
+                                alpha = AUTHORITY_BADGE_ALPHA,
+                            )
+                    } else {
+                        Modifier
+                            .clip(badgeShape)
+                            .background(
+                                color = (brandColor ?: MaterialTheme.colorScheme.primaryContainer)
+                                    .copy(alpha = AUTHORITY_BADGE_ALPHA),
+                            )
+                    },
+                )
+            Box(modifier = badgeModifier) {
                 Row(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -700,14 +725,20 @@ private fun ColumnScope.MangaContentInfo(
                         modifier = Modifier
                             .padding(end = 10.dp)
                             .size(20.dp),
-                        tint = brandColor ?: MaterialTheme.colorScheme.primary,
+                        tint = if (brandGradient != null) {
+                            Color.White
+                        } else {
+                            brandColor ?: MaterialTheme.colorScheme.primary
+                        },
                     )
                     ProvideTextStyle(MaterialTheme.typography.labelLarge) {
                         Text(
                             text = authorityLabel,
                             overflow = TextOverflow.Ellipsis,
                             maxLines = 1,
-                            color = if (authorityUrl != null) {
+                            color = if (brandGradient != null) {
+                                Color.White
+                            } else if (authorityUrl != null) {
                                 brandColor ?: MaterialTheme.colorScheme.primary
                             } else {
                                 LocalContentColor.current
@@ -721,12 +752,21 @@ private fun ColumnScope.MangaContentInfo(
                                 modifier = Modifier
                                     .padding(end = 4.dp)
                                     .size(14.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                tint = if (brandGradient != null) {
+                                    Color.White.copy(alpha = 0.8f)
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
                             )
                             Text(
                                 text = stringResource(MR.strings.authority_locked_count, lockCount),
                                 overflow = TextOverflow.Ellipsis,
                                 maxLines = 1,
+                                color = if (brandGradient != null) {
+                                    Color.White.copy(alpha = 0.8f)
+                                } else {
+                                    LocalContentColor.current
+                                },
                             )
                         }
                     }
