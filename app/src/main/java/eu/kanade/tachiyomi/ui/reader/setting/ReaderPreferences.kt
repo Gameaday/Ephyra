@@ -14,6 +14,8 @@ class ReaderPreferences(
 
     fun pageTransitions() = preferenceStore.getBoolean("pref_enable_transitions_key", true)
 
+    fun sliderNavMode() = preferenceStore.getInt("pref_slider_nav_mode", SLIDER_NAV_SMOOTH)
+
     fun flashOnPageChange() = preferenceStore.getBoolean("pref_reader_flash", false)
 
     fun flashDurationMillis() = preferenceStore.getInt("pref_reader_flash_duration", MILLI_CONVERSION)
@@ -169,6 +171,12 @@ class ReaderPreferences(
         const val WEBTOON_PADDING_MAX = 25
 
         const val MILLI_CONVERSION = 100
+
+        /** Slider navigation mode: instant jump (no animation). */
+        const val SLIDER_NAV_INSTANT = 0
+
+        /** Slider navigation mode: smooth scroll (ViewPager default animation). */
+        const val SLIDER_NAV_SMOOTH = 1
 
         val TapZones = listOf(
             MR.strings.label_default,

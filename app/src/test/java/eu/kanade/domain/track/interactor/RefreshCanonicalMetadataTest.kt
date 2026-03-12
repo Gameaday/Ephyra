@@ -1,5 +1,6 @@
 package eu.kanade.domain.track.interactor
 
+import eu.kanade.domain.track.service.TrackPreferences
 import eu.kanade.tachiyomi.data.track.Tracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.data.track.model.TrackSearch
@@ -26,6 +27,7 @@ class RefreshCanonicalMetadataTest {
 
     private lateinit var mangaRepository: MangaRepository
     private lateinit var trackerManager: TrackerManager
+    private lateinit var trackPreferences: TrackPreferences
     private lateinit var refreshCanonicalMetadata: RefreshCanonicalMetadata
     private lateinit var muTracker: Tracker
 
@@ -82,14 +84,20 @@ class RefreshCanonicalMetadataTest {
     fun setup() {
         mangaRepository = mockk(relaxed = true)
         trackerManager = mockk(relaxed = true)
+        trackPreferences = mockk(relaxed = true)
         muTracker = mockk(relaxed = true)
+
+        // Default: no content source priority fields (all fields prefer authority)
+        val contentSourcePriorityPref = mockk<tachiyomi.core.common.preference.Preference<Long>>(relaxed = true)
+        every { contentSourcePriorityPref.get() } returns 0L
+        every { trackPreferences.contentSourcePriorityFields() } returns contentSourcePriorityPref
 
         // MangaUpdates tracker (ID 7)
         every { muTracker.id } returns 7L
         every { muTracker.isLoggedIn } returns false
         every { trackerManager.get(7L) } returns muTracker
 
-        refreshCanonicalMetadata = RefreshCanonicalMetadata(mangaRepository, trackerManager)
+        refreshCanonicalMetadata = RefreshCanonicalMetadata(mangaRepository, trackerManager, trackPreferences)
     }
 
     @Test
@@ -424,7 +432,12 @@ class RefreshCanonicalMetadataTest {
             every { tracker.isLoggedIn } returns false
             every { tm.get(7L) } returns tracker
 
-            val refresh = RefreshCanonicalMetadata(repo, tm)
+            val tp = mockk<TrackPreferences>(relaxed = true)
+            val csPref = mockk<tachiyomi.core.common.preference.Preference<Long>>(relaxed = true)
+            every { csPref.get() } returns 0L
+            every { tp.contentSourcePriorityFields() } returns csPref
+
+            val refresh = RefreshCanonicalMetadata(repo, tm, tp)
 
             val manga = testManga(
                 title = "Test Manga",

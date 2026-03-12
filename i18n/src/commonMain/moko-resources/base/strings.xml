@@ -423,6 +423,10 @@
     <string name="pref_double_tap_zoom">Double tap to zoom</string>
     <string name="pref_cutout_short">Show content in cutout area</string>
     <string name="pref_page_transitions">Animate page transitions</string>
+    <string name="pref_slider_nav_mode">Slider navigation</string>
+    <string name="pref_slider_nav_mode_subtitle">How the reader navigates when using the page slider</string>
+    <string name="slider_nav_instant">Instant</string>
+    <string name="slider_nav_smooth">Smooth scroll</string>
     <string name="pref_flash_page">Flash on page change</string>
     <string name="pref_flash_page_summ">Reduces ghosting on e-ink displays</string>
     <string name="pref_flash_duration">Flash duration</string>
@@ -1143,6 +1147,10 @@
     <string name="pref_authority_order_title">Authority source order</string>
     <string name="pref_authority_order_subtitle">Sources are checked in this order. Unavailable sources are skipped.</string>
     <string name="pref_authority_not_available">Not logged in</string>
+    <string name="pref_content_source_priority_title">Content source priority</string>
+    <string name="pref_content_source_priority_subtitle">Choose which fields prefer your content source over the authority source during metadata refresh. Locked fields are always preserved.</string>
+    <string name="source_priority_authority">Authority</string>
+    <string name="source_priority_content">Content source</string>
     <string name="tracker_link_action">Link tracked manga</string>
     <string name="tracker_link_subtitle">Set authority IDs for manga that already have trackers</string>
     <string name="tracker_link_success">Linked %d manga to authority</string>

@@ -264,7 +264,11 @@ class WebtoonViewer(val activity: ReaderActivity, val isContinuous: Boolean = tr
     override fun moveToPage(page: ReaderPage) {
         val position = adapter.items.indexOf(page)
         if (position != -1) {
-            layoutManager.scrollToPositionWithOffset(position, 0)
+            if (config.sliderNavMode == ReaderPreferences.SLIDER_NAV_SMOOTH) {
+                recycler.smoothScrollToPosition(position)
+            } else {
+                layoutManager.scrollToPositionWithOffset(position, 0)
+            }
             if (layoutManager.findLastEndVisibleItemPosition() == -1) {
                 onScrolled(pos = position)
             }

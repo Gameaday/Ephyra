@@ -27,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -411,6 +412,76 @@ object SettingsTrackingScreen : SearchableSettings {
                         },
                     )
                     addAll(importPreferences)
+                    // --- Content source priority per field ---
+                    val csPriorityPref = trackPreferences.contentSourcePriorityFields()
+                    var csPriorityMask by remember { mutableLongStateOf(csPriorityPref.get()) }
+
+                    add(
+                        Preference.PreferenceItem.CustomPreference(
+                            title = stringResource(MR.strings.pref_content_source_priority_title),
+                        ) {
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                            ) {
+                                Text(
+                                    text = stringResource(MR.strings.pref_content_source_priority_subtitle),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(bottom = 8.dp),
+                                )
+                                tachiyomi.domain.manga.model.LockedField.ALL_FIELDS.forEach { field ->
+                                    val fieldLabel = tachiyomi.domain.manga.model.LockedField.label(field)
+                                    val prefersContent = tachiyomi.domain.manga.model.LockedField.isLocked(
+                                        csPriorityMask,
+                                        field,
+                                    )
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Text(
+                                            text = fieldLabel,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            modifier = Modifier.weight(1f),
+                                        )
+                                        androidx.compose.material3.FilterChip(
+                                            selected = !prefersContent,
+                                            onClick = {
+                                                if (prefersContent) {
+                                                    csPriorityMask = csPriorityMask and field.inv()
+                                                    csPriorityPref.set(csPriorityMask)
+                                                }
+                                            },
+                                            label = {
+                                                Text(
+                                                    text = stringResource(MR.strings.source_priority_authority),
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                )
+                                            },
+                                            modifier = Modifier.padding(end = 4.dp),
+                                        )
+                                        androidx.compose.material3.FilterChip(
+                                            selected = prefersContent,
+                                            onClick = {
+                                                if (!prefersContent) {
+                                                    csPriorityMask = csPriorityMask or field
+                                                    csPriorityPref.set(csPriorityMask)
+                                                }
+                                            },
+                                            label = {
+                                                Text(
+                                                    text = stringResource(MR.strings.source_priority_content),
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                )
+                                            },
+                                        )
+                                    }
+                                }
+                            }
+                        },
+                    )
                     add(
                         Preference.PreferenceItem.TextPreference(
                             title = if (isJobRunning) {

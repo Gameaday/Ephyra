@@ -22,6 +22,7 @@ abstract class ViewerConfig(
     var tappingInverted = ReaderPreferences.TappingInvertMode.NONE
     var longTapEnabled = true
     var usePageTransitions = false
+    var sliderNavMode = ReaderPreferences.SLIDER_NAV_SMOOTH
     var doubleTapAnimDuration = 500
     var volumeKeysEnabled = false
     var volumeKeysInverted = false
@@ -57,6 +58,9 @@ abstract class ViewerConfig(
 
         readerPreferences.pageTransitions()
             .register({ usePageTransitions = it })
+
+        readerPreferences.sliderNavMode()
+            .register({ sliderNavMode = it })
 
         readerPreferences.doubleTapAnimSpeed()
             .register({ doubleTapAnimDuration = it })

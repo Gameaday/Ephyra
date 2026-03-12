@@ -1,5 +1,6 @@
 package eu.kanade.domain.track.interactor
 
+import eu.kanade.domain.track.service.TrackPreferences
 import eu.kanade.tachiyomi.data.track.Tracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.data.track.model.TrackSearch
@@ -36,6 +37,7 @@ import tachiyomi.domain.manga.repository.MangaRepository
 class RefreshCanonicalMetadata(
     private val mangaRepository: MangaRepository,
     private val trackerManager: TrackerManager,
+    private val trackPreferences: TrackPreferences,
 ) {
 
     /**
@@ -143,41 +145,48 @@ class RefreshCanonicalMetadata(
      */
     private suspend fun applyMetadataUpdate(manga: Manga, result: TrackSearch, fillOnly: Boolean): Boolean {
         val locked = manga.lockedFields
+        val contentSourceFields = trackPreferences.contentSourcePriorityFields().get()
 
         // Only set title if it would actually change the value
         val title = result.title.takeIf {
             it.isNotBlank() &&
                 !LockedField.isLocked(locked, LockedField.TITLE) &&
+                !LockedField.isLocked(contentSourceFields, LockedField.TITLE) &&
                 (!fillOnly || manga.title.isBlank()) &&
                 it != manga.title
         }
         val description = result.summary.takeIf {
             it.isNotBlank() &&
                 !LockedField.isLocked(locked, LockedField.DESCRIPTION) &&
+                !LockedField.isLocked(contentSourceFields, LockedField.DESCRIPTION) &&
                 (!fillOnly || manga.description.isNullOrBlank()) &&
                 it != manga.description
         }
         val author = result.authors.joinToString(", ").takeIf {
             it.isNotBlank() &&
                 !LockedField.isLocked(locked, LockedField.AUTHOR) &&
+                !LockedField.isLocked(contentSourceFields, LockedField.AUTHOR) &&
                 (!fillOnly || manga.author.isNullOrBlank()) &&
                 it != manga.author
         }
         val artist = result.artists.joinToString(", ").takeIf {
             it.isNotBlank() &&
                 !LockedField.isLocked(locked, LockedField.ARTIST) &&
+                !LockedField.isLocked(contentSourceFields, LockedField.ARTIST) &&
                 (!fillOnly || manga.artist.isNullOrBlank()) &&
                 it != manga.artist
         }
         val thumbnailUrl = result.cover_url.takeIf {
             it.isNotBlank() &&
                 !LockedField.isLocked(locked, LockedField.COVER) &&
+                !LockedField.isLocked(contentSourceFields, LockedField.COVER) &&
                 (!fillOnly || manga.thumbnailUrl.isNullOrBlank()) &&
                 it != manga.thumbnailUrl
         }
         val status = mapTrackerStatus(result.publishing_status).takeIf {
             it != null &&
                 !LockedField.isLocked(locked, LockedField.STATUS) &&
+                !LockedField.isLocked(contentSourceFields, LockedField.STATUS) &&
                 (!fillOnly || manga.status == 0L) &&
                 it != manga.status
         }
@@ -185,6 +194,7 @@ class RefreshCanonicalMetadata(
         val contentType = ContentType.fromPublishingType(result.publishing_type).takeIf {
             it != ContentType.UNKNOWN &&
                 !LockedField.isLocked(locked, LockedField.CONTENT_TYPE) &&
+                !LockedField.isLocked(contentSourceFields, LockedField.CONTENT_TYPE) &&
                 (!fillOnly || manga.contentType == ContentType.UNKNOWN) &&
                 it != manga.contentType
         }
@@ -192,6 +202,7 @@ class RefreshCanonicalMetadata(
         val genre = result.genres.takeIf {
             it.isNotEmpty() &&
                 !LockedField.isLocked(locked, LockedField.GENRE) &&
+                !LockedField.isLocked(contentSourceFields, LockedField.GENRE) &&
                 (!fillOnly || manga.genre.isNullOrEmpty())
         }?.let { authorityGenres ->
             // Merge: keep existing genres, add new ones from authority
