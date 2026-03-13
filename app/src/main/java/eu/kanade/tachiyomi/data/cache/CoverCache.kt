@@ -20,6 +20,9 @@ class CoverCache(private val context: Context) {
     companion object {
         private const val COVERS_DIR = "covers"
         private const val CUSTOM_COVERS_DIR = "covers/custom"
+
+        /** Default max age for cover pruning: 30 days in milliseconds. */
+        private const val COVER_PRUNE_MAX_AGE_MS = 30L * 24 * 60 * 60 * 1000
     }
 
     /**
@@ -114,15 +117,13 @@ class CoverCache(private val context: Context) {
      * @param maxAgeMs maximum age in milliseconds since last access. Default: 30 days.
      * @return number of files deleted.
      */
-    fun pruneOldCovers(maxAgeMs: Long = 30L * 24 * 60 * 60 * 1000): Int {
+    fun pruneOldCovers(maxAgeMs: Long = COVER_PRUNE_MAX_AGE_MS): Int {
         val cutoff = System.currentTimeMillis() - maxAgeMs
         val files = cacheDir.listFiles() ?: return 0
         var deleted = 0
         for (file in files) {
-            // Skip directories (e.g. the "custom" subfolder) and non-stale files
             if (file.isDirectory) continue
-            if (file.lastModified() > cutoff) continue
-            if (file.delete()) deleted++
+            if (file.lastModified() <= cutoff && file.delete()) deleted++
         }
         return deleted
     }
