@@ -104,6 +104,29 @@ class CoverCache(private val context: Context) {
         }
     }
 
+    /**
+     * Removes cached cover files that haven't been accessed within [maxAgeMs].
+     * Custom covers are never pruned — only auto-downloaded covers from browsing.
+     *
+     * Call from a background thread (e.g. the library update job) to reclaim storage
+     * consumed by covers of manga the user is no longer interacting with.
+     *
+     * @param maxAgeMs maximum age in milliseconds since last access. Default: 30 days.
+     * @return number of files deleted.
+     */
+    fun pruneOldCovers(maxAgeMs: Long = 30L * 24 * 60 * 60 * 1000): Int {
+        val cutoff = System.currentTimeMillis() - maxAgeMs
+        val files = cacheDir.listFiles() ?: return 0
+        var deleted = 0
+        for (file in files) {
+            // Skip directories (e.g. the "custom" subfolder) and non-stale files
+            if (file.isDirectory) continue
+            if (file.lastModified() > cutoff) continue
+            if (file.delete()) deleted++
+        }
+        return deleted
+    }
+
     private fun getCacheDir(dir: String): File {
         return context.getExternalFilesDir(dir)
             ?.also { it.mkdirs() }

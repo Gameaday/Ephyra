@@ -227,15 +227,22 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
     }
 
     /**
-     * Called by the system when it determines that memory is running low. Releases the Coil
-     * image memory cache so the system can reclaim RAM without killing the process.
-     * The cache is only cleared for [ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN] and above, so
-     * the cache remains warm while the user is actively using the app.
+     * Called by the system when it determines that memory is running low. Applies progressive
+     * trimming of the Coil image memory cache so the system can reclaim RAM:
+     * - `TRIM_MEMORY_RUNNING_LOW` (foreground, system low): trim to 50% capacity
+     * - `TRIM_MEMORY_UI_HIDDEN` and above (app backgrounded or critical): clear entirely
+     *
+     * The gradual approach keeps the cache warm during normal reading while still shedding
+     * weight in long sessions where memory pressure builds up.
      */
+    @Suppress("DEPRECATION")
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
+        val cache = SingletonImageLoader.get(this).memoryCache ?: return
         if (level >= ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN) {
-            SingletonImageLoader.get(this).memoryCache?.clear()
+            cache.clear()
+        } else if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
+            cache.trimToSize(cache.maxSize / 2)
         }
     }
 

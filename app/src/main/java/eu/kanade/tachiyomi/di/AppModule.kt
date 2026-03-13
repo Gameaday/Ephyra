@@ -61,6 +61,15 @@ class AppModule(val app: Application) : InjektModule {
                     RequerySQLiteOpenHelperFactory()
                 },
                 callback = object : AndroidSqliteDriver.Callback(Database.Schema) {
+                    override fun onConfigure(db: SupportSQLiteDatabase) {
+                        super.onConfigure(db)
+                        // Enable incremental auto-vacuum so the database file shrinks
+                        // as pages are freed by deletions. Must be set before the first
+                        // write; on an existing database this is a no-op until the next
+                        // full VACUUM, but incremental_vacuum in onOpen will still
+                        // reclaim pages freed under WAL.
+                        setPragma(db, "auto_vacuum = INCREMENTAL")
+                    }
                     override fun onOpen(db: SupportSQLiteDatabase) {
                         super.onOpen(db)
                         setPragma(db, "foreign_keys = ON")
@@ -72,6 +81,12 @@ class AppModule(val app: Application) : InjektModule {
                         setPragma(db, "cache_size = -8192")
                         // Memory-mapped I/O for faster reads (64 MB)
                         setPragma(db, "mmap_size = 67108864")
+                        // Reclaim up to 256 free pages (~1 MB) left by previous sessions'
+                        // deletions, so the database file doesn't grow unboundedly over time.
+                        setPragma(db, "incremental_vacuum(256)")
+                        // Let SQLite re-analyze tables whose stats are stale, keeping
+                        // query plans optimal as the library grows.
+                        setPragma(db, "optimize")
                     }
                     private fun setPragma(db: SupportSQLiteDatabase, pragma: String) {
                         val cursor = db.query("PRAGMA $pragma")

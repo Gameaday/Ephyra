@@ -134,6 +134,16 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                     Result.failure()
                 }
             } finally {
+                // Prune covers that haven't been accessed in 30 days to prevent
+                // unbounded disk growth from browsing activity.
+                try {
+                    val pruned = coverCache.pruneOldCovers()
+                    if (pruned > 0) {
+                        logcat(LogPriority.DEBUG) { "Cover cache: pruned $pruned stale covers" }
+                    }
+                } catch (e: Exception) {
+                    logcat(LogPriority.WARN, e) { "Cover cache pruning failed" }
+                }
                 notifier.cancelProgressNotification()
             }
         }
