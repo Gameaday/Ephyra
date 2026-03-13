@@ -279,7 +279,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                                 ensureActive()
 
                                 // Don't continue to update if manga is not in library
-                                if (getManga.await(manga.id)?.favorite != true) {
+                                if (!getManga.isFavorite(manga.id)) {
                                     return@forEach
                                 }
 

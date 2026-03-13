@@ -292,6 +292,7 @@ private class FakeMangaRepository : MangaRepository {
     override suspend fun getFavoritesByCanonicalId(canonicalId: String, excludeMangaId: Long) =
         emptyList<Manga>()
     override suspend fun getMangaById(id: Long): Manga = throw NotImplementedError()
+    override suspend fun isMangaFavorite(id: Long): Boolean = throw NotImplementedError()
     override suspend fun getMangaByIdAsFlow(id: Long): Flow<Manga> = throw NotImplementedError()
     override suspend fun getMangaByUrlAndSourceId(url: String, sourceId: Long) = null
     override fun getMangaByUrlAndSourceIdAsFlow(url: String, sourceId: Long): Flow<Manga?> =

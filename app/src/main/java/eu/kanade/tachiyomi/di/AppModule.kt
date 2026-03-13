@@ -66,6 +66,12 @@ class AppModule(val app: Application) : InjektModule {
                         setPragma(db, "foreign_keys = ON")
                         setPragma(db, "journal_mode = WAL")
                         setPragma(db, "synchronous = NORMAL")
+                        // Use memory for temporary tables instead of disk
+                        setPragma(db, "temp_store = MEMORY")
+                        // 8 MB page cache (negative = KB) — helps with large library views
+                        setPragma(db, "cache_size = -8192")
+                        // Memory-mapped I/O for faster reads (64 MB)
+                        setPragma(db, "mmap_size = 67108864")
                     }
                     private fun setPragma(db: SupportSQLiteDatabase, pragma: String) {
                         val cursor = db.query("PRAGMA $pragma")

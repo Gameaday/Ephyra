@@ -21,6 +21,7 @@ import eu.kanade.tachiyomi.ui.webview.WebViewActivity
 import eu.kanade.tachiyomi.util.system.dpToPx
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
@@ -74,7 +75,7 @@ class WebtoonPageHolder(
      */
     private var page: ReaderPage? = null
 
-    private val scope = MainScope()
+    private var scope = MainScope()
 
     /**
      * Job for loading the page.
@@ -94,7 +95,8 @@ class WebtoonPageHolder(
      */
     fun bind(page: ReaderPage) {
         this.page = page
-        loadJob?.cancel()
+        scope.cancel()
+        scope = MainScope()
         loadJob = scope.launch { loadPageAndProcessStatus() }
         refreshLayoutParams()
     }
@@ -115,7 +117,7 @@ class WebtoonPageHolder(
      * Called when the view is recycled and added to the view pool.
      */
     override fun recycle() {
-        loadJob?.cancel()
+        scope.cancel()
         loadJob = null
 
         removeErrorLayout()

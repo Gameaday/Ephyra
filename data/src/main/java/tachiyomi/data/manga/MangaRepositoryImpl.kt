@@ -22,6 +22,10 @@ class MangaRepositoryImpl(
         return handler.awaitOne { mangasQueries.getMangaById(id, MangaMapper::mapManga) }
     }
 
+    override suspend fun isMangaFavorite(id: Long): Boolean {
+        return handler.awaitOneOrNull { mangasQueries.isMangaFavorite(id) } ?: false
+    }
+
     override suspend fun getMangaByIdAsFlow(id: Long): Flow<Manga> {
         return handler.subscribeToOne { mangasQueries.getMangaById(id, MangaMapper::mapManga) }
     }
