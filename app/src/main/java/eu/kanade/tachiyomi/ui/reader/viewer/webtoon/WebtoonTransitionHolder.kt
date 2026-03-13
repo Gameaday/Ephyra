@@ -15,7 +15,6 @@ import eu.kanade.tachiyomi.ui.reader.viewer.ReaderTransitionView
 import eu.kanade.tachiyomi.util.system.dpToPx
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import tachiyomi.core.common.i18n.stringResource
@@ -29,7 +28,7 @@ class WebtoonTransitionHolder(
     viewer: WebtoonViewer,
 ) : WebtoonBaseHolder(layout, viewer) {
 
-    private var scope = MainScope()
+    private val scope = MainScope()
     private var stateJob: Job? = null
 
     private val transitionView = ReaderTransitionView(context)
@@ -65,8 +64,6 @@ class WebtoonTransitionHolder(
      * Binds the given [transition] with this view holder, subscribing to its state.
      */
     fun bind(transition: ChapterTransition) {
-        scope.cancel()
-        scope = MainScope()
         transitionView.bind(transition, viewer.downloadManager, viewer.activity.viewModel.manga)
 
         transition.to?.let { observeStatus(it, transition) }
@@ -76,8 +73,7 @@ class WebtoonTransitionHolder(
      * Called when the view is recycled and being added to the view pool.
      */
     override fun recycle() {
-        scope.cancel()
-        stateJob = null
+        stateJob?.cancel()
     }
 
     /**
