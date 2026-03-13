@@ -20,6 +20,9 @@ class CoverCache(private val context: Context) {
     companion object {
         private const val COVERS_DIR = "covers"
         private const val CUSTOM_COVERS_DIR = "covers/custom"
+
+        /** Default max age for cover pruning: 30 days in milliseconds. */
+        private const val COVER_PRUNE_MAX_AGE_MS = 30L * 24 * 60 * 60 * 1000
     }
 
     /**
@@ -102,6 +105,48 @@ class CoverCache(private val context: Context) {
         return getCustomCoverFile(mangaId).let {
             it.exists() && it.delete()
         }
+    }
+
+    /**
+     * Removes cached cover files whose [java.io.File.lastModified] timestamp is older
+     * than [maxAgeMs]. This effectively prunes covers that haven't been downloaded or
+     * updated recently, based on their last write time rather than last read/access.
+     *
+     * Custom covers are never pruned — only auto-downloaded covers from browsing.
+     * Files whose names appear in [protectedNames] are always kept (e.g. covers
+     * of favorited manga so offline viewing still looks good after a long break).
+     *
+     * Call from a background thread (e.g. the library update job) to reclaim storage
+     * consumed by covers of manga the user is no longer interacting with.
+     *
+     * @param protectedNames set of filenames (MD5 hashes) to keep regardless of age.
+     * @param maxAgeMs maximum age in milliseconds since last modification. Default: 30 days.
+     * @return number of files deleted.
+     */
+    fun pruneOldCovers(
+        protectedNames: Set<String> = emptySet(),
+        maxAgeMs: Long = COVER_PRUNE_MAX_AGE_MS,
+    ): Int {
+        val cutoff = System.currentTimeMillis() - maxAgeMs
+        val files = cacheDir.listFiles() ?: return 0
+        var deleted = 0
+        for (file in files) {
+            if (file.isDirectory) continue
+            if (file.name in protectedNames) continue
+            if (file.lastModified() <= cutoff && file.delete()) deleted++
+        }
+        return deleted
+    }
+
+    /**
+     * Returns the set of cover cache filenames (MD5 hashes) for the given
+     * thumbnail URLs. Useful for building a protected-set so that covers of
+     * favorited manga are never pruned.
+     */
+    fun coverFileNames(thumbnailUrls: List<String?>): Set<String> {
+        return thumbnailUrls
+            .filterNotNull()
+            .mapTo(HashSet()) { DiskUtil.hashKeyForDisk(it) }
     }
 
     private fun getCacheDir(dir: String): File {

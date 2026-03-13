@@ -128,6 +128,25 @@ class TrackPreferences(
         false,
     )
 
+    // region Metadata source priority
+
+    /**
+     * Per-field bitmask controlling which metadata fields prefer the content source
+     * over the authority source during metadata refresh.
+     *
+     * When a bit is set (matching [tachiyomi.domain.manga.model.LockedField] constants),
+     * that field will prefer the content source's value. When unset, the authority
+     * source takes priority (default behavior).
+     *
+     * Default: 0 (all fields prefer authority).
+     */
+    fun contentSourcePriorityFields() = preferenceStore.getLong(
+        "pref_content_source_priority_fields",
+        0L,
+    )
+
+    // endregion
+
     companion object {
         /** Sentinel value: let the system pick the best available tracker automatically. */
         const val AUTHORITY_TRACKER_AUTO = 0L

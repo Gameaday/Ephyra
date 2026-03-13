@@ -62,6 +62,15 @@ object SettingsReaderScreen : SearchableSettings {
                 preference = readerPref.pageTransitions(),
                 title = stringResource(MR.strings.pref_page_transitions),
             ),
+            Preference.PreferenceItem.ListPreference(
+                preference = readerPref.sliderNavMode(),
+                entries = persistentMapOf(
+                    ReaderPreferences.SLIDER_NAV_INSTANT to stringResource(MR.strings.slider_nav_instant),
+                    ReaderPreferences.SLIDER_NAV_SMOOTH to stringResource(MR.strings.slider_nav_smooth),
+                ),
+                title = stringResource(MR.strings.pref_slider_nav_mode),
+                subtitle = stringResource(MR.strings.pref_slider_nav_mode_subtitle),
+            ),
             getDisplayGroup(readerPreferences = readerPref),
             getEInkGroup(readerPreferences = readerPref),
             getReadingGroup(readerPreferences = readerPref),

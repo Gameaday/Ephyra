@@ -94,6 +94,21 @@ internal fun ColumnScope.GeneralPage(screenModel: ReaderSettingsScreenModel) {
         pref = screenModel.preferences.pageTransitions(),
     )
 
+    val sliderNavModePref = screenModel.preferences.sliderNavMode()
+    val sliderNavMode by sliderNavModePref.collectAsState()
+    SettingsChipRow(MR.strings.pref_slider_nav_mode) {
+        FilterChip(
+            selected = sliderNavMode == ReaderPreferences.SLIDER_NAV_INSTANT,
+            onClick = { sliderNavModePref.set(ReaderPreferences.SLIDER_NAV_INSTANT) },
+            label = { Text(stringResource(MR.strings.slider_nav_instant)) },
+        )
+        FilterChip(
+            selected = sliderNavMode == ReaderPreferences.SLIDER_NAV_SMOOTH,
+            onClick = { sliderNavModePref.set(ReaderPreferences.SLIDER_NAV_SMOOTH) },
+            label = { Text(stringResource(MR.strings.slider_nav_smooth)) },
+        )
+    }
+
     CheckboxItem(
         label = stringResource(MR.strings.pref_flash_page),
         pref = screenModel.preferences.flashOnPageChange(),

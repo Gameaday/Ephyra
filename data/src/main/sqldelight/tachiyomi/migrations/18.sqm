@@ -1,0 +1,2 @@
+-- Index for getUpcomingManga and next_update filtering on library entries.
+CREATE INDEX IF NOT EXISTS idx_mangas_next_update ON mangas(next_update) WHERE favorite = 1 AND next_update > 0;

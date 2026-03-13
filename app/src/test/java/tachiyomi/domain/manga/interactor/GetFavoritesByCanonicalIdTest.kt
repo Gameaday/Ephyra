@@ -28,6 +28,7 @@ class GetFavoritesByCanonicalIdTest {
 
         // Unused stubs
         override suspend fun getMangaById(id: Long): Manga = throw NotImplementedError()
+        override suspend fun isMangaFavorite(id: Long): Boolean = throw NotImplementedError()
         override suspend fun getMangaByIdAsFlow(id: Long) = throw NotImplementedError()
         override suspend fun getMangaByUrlAndSourceId(url: String, sourceId: Long) = throw NotImplementedError()
         override fun getMangaByUrlAndSourceIdAsFlow(url: String, sourceId: Long) = throw NotImplementedError()

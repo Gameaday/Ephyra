@@ -61,11 +61,49 @@ class AppModule(val app: Application) : InjektModule {
                     RequerySQLiteOpenHelperFactory()
                 },
                 callback = object : AndroidSqliteDriver.Callback(Database.Schema) {
+                    override fun onConfigure(db: SupportSQLiteDatabase) {
+                        super.onConfigure(db)
+                        // Enable incremental auto-vacuum so the database file shrinks
+                        // as pages are freed by deletions. For new databases this takes
+                        // effect immediately. For existing databases already in a
+                        // different auto-vacuum mode, this PRAGMA alone does NOT change
+                        // the mode — a full VACUUM would be required. However, we still
+                        // set it so that any future fresh install or database recreation
+                        // picks up the setting automatically. The incremental_vacuum in
+                        // onOpen is only effective once the database is actually in
+                        // incremental mode.
+                        setPragma(db, "auto_vacuum = INCREMENTAL")
+                    }
                     override fun onOpen(db: SupportSQLiteDatabase) {
                         super.onOpen(db)
                         setPragma(db, "foreign_keys = ON")
                         setPragma(db, "journal_mode = WAL")
                         setPragma(db, "synchronous = NORMAL")
+                        // Use memory for temporary tables instead of disk
+                        setPragma(db, "temp_store = MEMORY")
+                        // 8 MB page cache (negative = KB) — helps with large library views
+                        setPragma(db, "cache_size = -8192")
+                        // Memory-mapped I/O for faster reads (64 MB)
+                        setPragma(db, "mmap_size = 67108864")
+                        // Reclaim up to 256 free pages (~1 MB) left by previous sessions'
+                        // deletions, so the database file doesn't grow unboundedly over time.
+                        setPragma(db, "incremental_vacuum(256)")
+                        // Run expensive maintenance PRAGMAs on a background thread
+                        // to avoid adding cold-start latency. wal_checkpoint(TRUNCATE)
+                        // and optimize can be slow on large databases but are safe to
+                        // run concurrently under WAL mode.
+                        Thread {
+                            try {
+                                // Flush any leftover WAL frames from a previous unclean
+                                // shutdown into the main database file.
+                                setPragma(db, "wal_checkpoint(TRUNCATE)")
+                                // Let SQLite re-analyze tables whose stats are stale,
+                                // keeping query plans optimal as the library grows.
+                                setPragma(db, "optimize")
+                            } catch (_: Exception) {
+                                // Non-critical maintenance — swallow failures silently.
+                            }
+                        }.apply { name = "db-maintenance" }.start()
                     }
                     private fun setPragma(db: SupportSQLiteDatabase, pragma: String) {
                         val cursor = db.query("PRAGMA $pragma")

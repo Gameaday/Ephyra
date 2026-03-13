@@ -19,6 +19,15 @@ class GetManga(
         }
     }
 
+    suspend fun isFavorite(id: Long): Boolean {
+        return try {
+            mangaRepository.isMangaFavorite(id)
+        } catch (e: Exception) {
+            logcat(LogPriority.ERROR, e)
+            false
+        }
+    }
+
     suspend fun subscribe(id: Long): Flow<Manga> {
         return mangaRepository.getMangaByIdAsFlow(id)
     }

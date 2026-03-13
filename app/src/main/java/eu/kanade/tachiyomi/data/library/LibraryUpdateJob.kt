@@ -101,6 +101,9 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
 
     private var mangaToUpdate: List<LibraryManga> = mutableListOf()
 
+    /** Cover cache filenames belonging to favorited manga — never pruned. */
+    private var favoriteCoverNames: Set<String> = emptySet()
+
     override suspend fun doWork(): Result {
         if (tags.contains(WORK_NAME_AUTO)) {
             // Defer automatic updates while battery saver is active to conserve energy.
@@ -134,6 +137,17 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                     Result.failure()
                 }
             } finally {
+                // Prune covers that haven't been accessed in 30 days to prevent
+                // unbounded disk growth from browsing activity. Favorite covers
+                // are always kept so offline viewing still looks good after a break.
+                try {
+                    val pruned = coverCache.pruneOldCovers(protectedNames = favoriteCoverNames)
+                    if (pruned > 0) {
+                        logcat(LogPriority.DEBUG) { "Cover cache: pruned $pruned stale covers" }
+                    }
+                } catch (e: Exception) {
+                    logcat(LogPriority.WARN, e) { "Cover cache pruning failed" }
+                }
                 notifier.cancelProgressNotification()
             }
         }
@@ -155,6 +169,11 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
      */
     private suspend fun addMangaToQueue(categoryId: Long) {
         val libraryManga = getLibraryManga.await()
+
+        // Build set of cover filenames for ALL favorites so they're never pruned.
+        favoriteCoverNames = coverCache.coverFileNames(
+            libraryManga.map { it.manga.thumbnailUrl },
+        )
 
         val listToUpdate = if (categoryId != -1L) {
             libraryManga.filter { categoryId in it.categories }
@@ -279,7 +298,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                                 ensureActive()
 
                                 // Don't continue to update if manga is not in library
-                                if (getManga.await(manga.id)?.favorite != true) {
+                                if (!getManga.isFavorite(manga.id)) {
                                     return@forEach
                                 }
 

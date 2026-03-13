@@ -27,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -411,6 +412,76 @@ object SettingsTrackingScreen : SearchableSettings {
                         },
                     )
                     addAll(importPreferences)
+                    // --- Content source priority per field ---
+                    val csPriorityPref = trackPreferences.contentSourcePriorityFields()
+                    var csPriorityMask by remember { mutableLongStateOf(csPriorityPref.get()) }
+
+                    add(
+                        Preference.PreferenceItem.CustomPreference(
+                            title = stringResource(MR.strings.pref_content_source_priority_title),
+                        ) {
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                            ) {
+                                Text(
+                                    text = stringResource(MR.strings.pref_content_source_priority_subtitle),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(bottom = 8.dp),
+                                )
+                                tachiyomi.domain.manga.model.LockedField.ALL_FIELDS.forEach { field ->
+                                    val fieldLabel = lockedFieldLabel(field)
+                                    val prefersContent = tachiyomi.domain.manga.model.LockedField.isLocked(
+                                        csPriorityMask,
+                                        field,
+                                    )
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Text(
+                                            text = fieldLabel,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            modifier = Modifier.weight(1f),
+                                        )
+                                        androidx.compose.material3.FilterChip(
+                                            selected = !prefersContent,
+                                            onClick = {
+                                                if (prefersContent) {
+                                                    csPriorityMask = csPriorityMask and field.inv()
+                                                    csPriorityPref.set(csPriorityMask)
+                                                }
+                                            },
+                                            label = {
+                                                Text(
+                                                    text = stringResource(MR.strings.source_priority_authority),
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                )
+                                            },
+                                            modifier = Modifier.padding(end = 4.dp),
+                                        )
+                                        androidx.compose.material3.FilterChip(
+                                            selected = prefersContent,
+                                            onClick = {
+                                                if (!prefersContent) {
+                                                    csPriorityMask = csPriorityMask or field
+                                                    csPriorityPref.set(csPriorityMask)
+                                                }
+                                            },
+                                            label = {
+                                                Text(
+                                                    text = stringResource(MR.strings.source_priority_content),
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                )
+                                            },
+                                        )
+                                    }
+                                }
+                            }
+                        },
+                    )
                     add(
                         Preference.PreferenceItem.TextPreference(
                             title = if (isJobRunning) {
@@ -1043,3 +1114,18 @@ private data class ImportConfirmDialog(
 private data class JellyfinLogin(
     val tracker: Tracker,
 )
+
+/** Returns a localized label for a [LockedField] constant. */
+@Composable
+@ReadOnlyComposable
+private fun lockedFieldLabel(field: Long): String = when (field) {
+    tachiyomi.domain.manga.model.LockedField.TITLE -> stringResource(MR.strings.locked_field_title)
+    tachiyomi.domain.manga.model.LockedField.DESCRIPTION -> stringResource(MR.strings.locked_field_description)
+    tachiyomi.domain.manga.model.LockedField.AUTHOR -> stringResource(MR.strings.locked_field_author)
+    tachiyomi.domain.manga.model.LockedField.ARTIST -> stringResource(MR.strings.locked_field_artist)
+    tachiyomi.domain.manga.model.LockedField.COVER -> stringResource(MR.strings.locked_field_cover)
+    tachiyomi.domain.manga.model.LockedField.STATUS -> stringResource(MR.strings.locked_field_status)
+    tachiyomi.domain.manga.model.LockedField.CONTENT_TYPE -> stringResource(MR.strings.locked_field_content_type)
+    tachiyomi.domain.manga.model.LockedField.GENRE -> stringResource(MR.strings.locked_field_genre)
+    else -> ""
+}
