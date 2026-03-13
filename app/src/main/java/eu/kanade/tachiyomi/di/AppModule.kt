@@ -84,6 +84,10 @@ class AppModule(val app: Application) : InjektModule {
                         // Reclaim up to 256 free pages (~1 MB) left by previous sessions'
                         // deletions, so the database file doesn't grow unboundedly over time.
                         setPragma(db, "incremental_vacuum(256)")
+                        // Flush any leftover WAL frames from a previous unclean shutdown
+                        // into the main database file so the -wal file doesn't carry stale
+                        // data across sessions.
+                        setPragma(db, "wal_checkpoint(TRUNCATE)")
                         // Let SQLite re-analyze tables whose stats are stale, keeping
                         // query plans optimal as the library grows.
                         setPragma(db, "optimize")

@@ -101,6 +101,9 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
 
     private var mangaToUpdate: List<LibraryManga> = mutableListOf()
 
+    /** Cover cache filenames belonging to favorited manga — never pruned. */
+    private var favoriteCoverNames: Set<String> = emptySet()
+
     override suspend fun doWork(): Result {
         if (tags.contains(WORK_NAME_AUTO)) {
             // Defer automatic updates while battery saver is active to conserve energy.
@@ -135,9 +138,10 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                 }
             } finally {
                 // Prune covers that haven't been accessed in 30 days to prevent
-                // unbounded disk growth from browsing activity.
+                // unbounded disk growth from browsing activity. Favorite covers
+                // are always kept so offline viewing still looks good after a break.
                 try {
-                    val pruned = coverCache.pruneOldCovers()
+                    val pruned = coverCache.pruneOldCovers(protectedNames = favoriteCoverNames)
                     if (pruned > 0) {
                         logcat(LogPriority.DEBUG) { "Cover cache: pruned $pruned stale covers" }
                     }
@@ -165,6 +169,11 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
      */
     private suspend fun addMangaToQueue(categoryId: Long) {
         val libraryManga = getLibraryManga.await()
+
+        // Build set of cover filenames for ALL favorites so they're never pruned.
+        favoriteCoverNames = coverCache.coverFileNames(
+            libraryManga.map { it.manga.thumbnailUrl },
+        )
 
         val listToUpdate = if (categoryId != -1L) {
             libraryManga.filter { categoryId in it.categories }
