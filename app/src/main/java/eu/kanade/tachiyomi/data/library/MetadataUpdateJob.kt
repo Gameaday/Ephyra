@@ -10,11 +10,9 @@ import androidx.work.WorkInfo
 import androidx.work.WorkQuery
 import androidx.work.WorkerParameters
 import eu.kanade.domain.manga.interactor.UpdateManga
-import eu.kanade.domain.manga.model.copyFrom
 import eu.kanade.domain.manga.model.toSManga
 import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.data.notification.Notifications
-import eu.kanade.tachiyomi.util.prepUpdateCover
 import eu.kanade.tachiyomi.util.system.isRunning
 import eu.kanade.tachiyomi.util.system.setForegroundSafely
 import eu.kanade.tachiyomi.util.system.workManager
@@ -31,7 +29,6 @@ import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.library.model.LibraryManga
 import tachiyomi.domain.manga.interactor.GetLibraryManga
 import tachiyomi.domain.manga.model.Manga
-import tachiyomi.domain.manga.model.toMangaUpdate
 import tachiyomi.domain.source.service.SourceManager
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
@@ -120,10 +117,13 @@ class MetadataUpdateJob(private val context: Context, workerParams: WorkerParame
                                 ) {
                                     try {
                                         val networkManga = source.getMangaDetails(manga.toSManga())
-                                        val updatedManga = manga.prepUpdateCover(coverCache, networkManga, true)
-                                            .copyFrom(networkManga)
                                         try {
-                                            updateManga.await(updatedManga.toMangaUpdate())
+                                            updateManga.awaitUpdateFromSource(
+                                                manga,
+                                                networkManga,
+                                                manualFetch = true,
+                                                coverCache = coverCache,
+                                            )
                                         } catch (e: Exception) {
                                             logcat(LogPriority.ERROR) { "Manga doesn't exist anymore" }
                                         }
