@@ -34,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastMap
 import androidx.core.net.toUri
 import com.hippo.unifile.UniFile
@@ -379,10 +380,7 @@ object SettingsDownloadScreen : SearchableSettings {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .defaultMinSize(
-                                        minHeight =
-                                        MaterialTheme.padding.extraLarge + MaterialTheme.padding.medium,
-                                    )
+                                    .defaultMinSize(minHeight = 48.dp)
                                     .padding(vertical = MaterialTheme.padding.extraSmall),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically,
