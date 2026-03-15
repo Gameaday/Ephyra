@@ -42,18 +42,18 @@ class WebtoonAdapter(val viewer: WebtoonViewer) : RecyclerView.Adapter<RecyclerV
         val prevHasMissingChapters = calculateChapterGap(chapters.currChapter, chapters.prevChapter) > 0
         val nextHasMissingChapters = calculateChapterGap(chapters.nextChapter, chapters.currChapter) > 0
 
-        // Add previous chapter pages and transition.
-        chapters.prevChapter?.pages?.let(newItems::addAll)
+        // Add previous chapter pages and transition, excluding hidden pages.
+        chapters.prevChapter?.pages?.filter { !it.isHidden }?.let(newItems::addAll)
 
         // Skip transition page if the chapter is loaded & current page is not a transition page
         if (prevHasMissingChapters || forceTransition || chapters.prevChapter?.state !is ReaderChapter.State.Loaded) {
             newItems.add(ChapterTransition.Prev(chapters.currChapter, chapters.prevChapter))
         }
 
-        // Add current chapter.
+        // Add current chapter, excluding hidden pages.
         val currPages = chapters.currChapter.pages
         if (currPages != null) {
-            newItems.addAll(currPages)
+            newItems.addAll(currPages.filter { !it.isHidden })
         }
 
         currentChapter = chapters.currChapter
@@ -63,7 +63,7 @@ class WebtoonAdapter(val viewer: WebtoonViewer) : RecyclerView.Adapter<RecyclerV
             newItems.add(ChapterTransition.Next(chapters.currChapter, chapters.nextChapter))
         }
 
-        chapters.nextChapter?.pages?.let(newItems::addAll)
+        chapters.nextChapter?.pages?.filter { !it.isHidden }?.let(newItems::addAll)
 
         updateItems(newItems)
     }

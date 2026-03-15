@@ -19,6 +19,13 @@ abstract class PageLoader {
     abstract var isLocal: Boolean
 
     /**
+     * Callback invoked (on a background thread) when a page is determined to be blocked
+     * by the pre-processing filter after its image becomes available during online loading.
+     * Viewers should refresh their adapters to exclude the newly-blocked page.
+     */
+    var onPageFiltered: (() -> Unit)? = null
+
+    /**
      * Returns the list of pages of a chapter.
      */
     abstract suspend fun getPages(): List<ReaderPage>

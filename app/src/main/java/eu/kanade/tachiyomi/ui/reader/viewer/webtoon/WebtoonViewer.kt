@@ -250,6 +250,14 @@ class WebtoonViewer(val activity: ReaderActivity, val isContinuous: Boolean = tr
         val forceTransition = config.alwaysShowChapterTransition || currentPage is ChapterTransition
         adapter.setChapters(chapters, forceTransition)
 
+        // Register a callback so that when the page pre-processor marks a page as blocked
+        // (after its image loads), the adapter is refreshed to exclude it.
+        chapters.currChapter.pageLoader?.onPageFiltered = {
+            activity.runOnUiThread {
+                adapter.setChapters(chapters, false)
+            }
+        }
+
         if (recycler.isGone) {
             logcat { "Recycler first layout" }
             val pages = chapters.currChapter.pages ?: return

@@ -55,6 +55,7 @@ internal class HttpPageLoader(
      * active-chapter path in [ChapterLoader]).
      */
     isPreloadOnly: Boolean = false,
+    private val preProcessor: ReaderPagePreProcessor? = null,
 ) : PageLoader() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -431,6 +432,14 @@ internal class HttpPageLoader(
                 }
 
                 page.stream = { chapterCache.getImageFile(imageUrl).inputStream() }
+
+                // Run pre-processor check on boundary pages. If the page matches a
+                // blocked hash, it is marked and the viewer is notified to refresh.
+                val totalPages = chapter.pages?.size ?: 0
+                if (preProcessor?.checkPageOnLoad(page, totalPages) == true) {
+                    onPageFiltered?.invoke()
+                }
+
                 page.status = Page.State.Ready
                 return
             } catch (e: Throwable) {

@@ -632,15 +632,15 @@ class ReaderActivity : BaseActivity() {
 
     /**
      * Moves the viewer to the given page [index]. [index] is a 0-based display position —
-     * absorbed stub pages (invisible smart-combine watermarks) are excluded, so position 0
+     * Hidden pages (absorbed stubs and blocked credit pages) are excluded, so position 0
      * always maps to the first visible page. It does nothing if the viewer is null or the
      * page is not found.
      */
     private fun moveToPageIndex(index: Int) {
         val viewer = viewModel.state.value.viewer ?: return
         val currentChapter = viewModel.state.value.currentChapter ?: return
-        // Filter out absorbed stubs so the display position aligns with what the user sees.
-        val page = currentChapter.pages?.filter { !it.isAbsorbed }?.getOrNull(index) ?: return
+        // Filter out hidden pages so the display position aligns with what the user sees.
+        val page = currentChapter.pages?.filter { !it.isHidden }?.getOrNull(index) ?: return
         viewer.moveToPage(page)
     }
 

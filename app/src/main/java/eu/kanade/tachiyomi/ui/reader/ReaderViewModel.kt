@@ -644,12 +644,12 @@ class ReaderViewModel @JvmOverloads constructor(
         val pageIndex = page.index
         val chapterPages = readerChapter.pages
 
-        // Compute the 1-based display position by counting only non-absorbed pages up to
+        // Compute the 1-based display position by counting only visible pages up to
         // and including the current page. This keeps the bottom indicator and slider in sync
-        // with what is actually visible — absorbed stub pages (smart-combined watermarks) are
-        // invisible to the user and should not inflate the page count or current position.
+        // with what is actually visible — hidden pages (absorbed stubs and blocked pages)
+        // are invisible to the user and should not inflate the page count or current position.
         val displayIndex = if (chapterPages != null) {
-            chapterPages.take(pageIndex + 1).count { !it.isAbsorbed }
+            chapterPages.take(pageIndex + 1).count { !it.isHidden }
         } else {
             pageIndex + 1
         }
@@ -664,13 +664,12 @@ class ReaderViewModel @JvmOverloads constructor(
 
             // A page is the effective last page either when it literally is the last page
             // in the chapter's page list, or when it is a merged page (mergedBitmap != null)
-            // and all subsequent pages in the list were absorbed as stubs. This ensures the
-            // chapter is marked as read even when the final page(s) are watermark stubs that
-            // get merged invisibly into the previous page.
+            // and all subsequent pages in the list are hidden. This ensures the chapter is
+            // marked as read even when the final page(s) are stubs or blocked credit pages.
             val isEffectivelyLastPage = pageIndex == chapterPages?.lastIndex ||
                 (
                     (page as? ReaderPage)?.mergedBitmap != null &&
-                        chapterPages?.drop(pageIndex + 1)?.all { it.isAbsorbed } == true
+                        chapterPages?.drop(pageIndex + 1)?.all { it.isHidden } == true
                     )
             if (isEffectivelyLastPage) {
                 updateChapterProgressOnComplete(readerChapter)
@@ -1204,10 +1203,10 @@ class ReaderViewModel @JvmOverloads constructor(
             get() = viewerChapters?.currChapter
 
         val totalPages: Int
-            // Count only non-absorbed pages so the indicator reflects the number of pages
-            // the user actually navigates through. Absorbed stubs are invisible (merged into
-            // the previous page by smart combine) and should not inflate the total.
-            get() = currentChapter?.pages?.count { !it.isAbsorbed } ?: -1
+            // Count only visible pages so the indicator reflects the number of pages
+            // the user actually navigates through. Hidden pages (absorbed stubs and
+            // blocked credit pages) are invisible and should not inflate the total.
+            get() = currentChapter?.pages?.count { !it.isHidden } ?: -1
     }
 
     sealed interface Dialog {

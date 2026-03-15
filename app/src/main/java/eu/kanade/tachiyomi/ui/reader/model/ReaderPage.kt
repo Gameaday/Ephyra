@@ -44,4 +44,19 @@ open class ReaderPage(
      */
     @Volatile
     var isAbsorbed: Boolean = false
+
+    /**
+     * True when this page matched a blocked perceptual-hash entry during pre-processing.
+     * Set by [eu.kanade.tachiyomi.ui.reader.loader.ReaderPagePreProcessor] for both
+     * downloaded and online pages.
+     */
+    @Volatile
+    var isBlockedByFilter: Boolean = false
+
+    /**
+     * Convenience flag: `true` when the page should be hidden from the viewer, either
+     * because it was absorbed by smart-combine or blocked by the page filter.
+     * Adapters, page counts, and navigation all use this to determine visible pages.
+     */
+    val isHidden: Boolean get() = isAbsorbed || isBlockedByFilter
 }
