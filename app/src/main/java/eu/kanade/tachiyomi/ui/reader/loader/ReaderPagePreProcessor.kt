@@ -65,7 +65,7 @@ class ReaderPagePreProcessor(
         // ── Aspect-ratio pre-filter (mirrors Downloader.filterBlockedPagesImpl) ──
         // Compute per-page aspect ratios via cheap header-only dimension reads and
         // determine the chapter's dominant (median) ratio.
-        val candidateRatios = HashMap<Int, Float>(streamCandidates.size)
+        val pageRatios = HashMap<Int, Float>(streamCandidates.size)
         val allRatios = mutableListOf<Float>()
         for (page in pages) {
             val streamFn = page.stream ?: continue
@@ -73,7 +73,7 @@ class ReaderPagePreProcessor(
                 val dims = streamFn().use { ImageUtil.getImageDimensions(it) } ?: continue
                 if (dims.second > 0) {
                     val ar = dims.first.toFloat() / dims.second
-                    candidateRatios[page.index] = ar
+                    pageRatios[page.index] = ar
                     allRatios.add(ar)
                 }
             } catch (_: Exception) { /* skip */ }
@@ -88,11 +88,10 @@ class ReaderPagePreProcessor(
         var blockedCount = 0
         for (page in streamCandidates) {
             val streamFn = page.stream ?: continue
-
             // Skip pages matching the dominant aspect ratio within tolerance —
             // they are almost certainly real content, not credit pages.
             if (dominantAR != null) {
-                val pageAR = candidateRatios[page.index]
+                val pageAR = pageRatios[page.index]
                 if (pageAR != null && abs(pageAR - dominantAR) / dominantAR <= ASPECT_RATIO_TOLERANCE) {
                     continue
                 }
