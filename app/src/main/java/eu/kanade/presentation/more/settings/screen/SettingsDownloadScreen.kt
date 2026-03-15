@@ -268,14 +268,12 @@ object SettingsDownloadScreen : SearchableSettings {
         return Preference.PreferenceGroup(
             title = stringResource(MR.strings.pref_page_filter_group),
             preferenceItems = persistentListOf(
-                Preference.PreferenceItem.TextPreference(
-                    title = stringResource(MR.strings.pref_blocked_pages),
-                    subtitle = if (count > 0) {
+                Preference.PreferenceItem.InfoPreference(
+                    if (count > 0) {
                         stringResource(MR.strings.pref_blocked_pages_summary, count)
                     } else {
                         stringResource(MR.strings.pref_blocked_pages_empty)
                     },
-                    onClick = null,
                 ),
                 Preference.PreferenceItem.TextPreference(
                     title = stringResource(MR.strings.pref_clear_blocked_pages),
