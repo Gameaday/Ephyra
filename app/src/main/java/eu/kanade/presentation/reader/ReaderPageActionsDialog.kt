@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Block
+import androidx.compose.material.icons.outlined.CheckCircleOutline
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Photo
 import androidx.compose.material.icons.outlined.Save
@@ -14,6 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,9 +35,20 @@ fun ReaderPageActionsDialog(
     onShare: (Boolean) -> Unit,
     onSave: () -> Unit,
     onBlockPage: () -> Unit,
+    onUnblockPage: (String) -> Unit,
+    findMatchingBlockedHash: suspend () -> String?,
 ) {
     var showSetCoverDialog by remember { mutableStateOf(false) }
     var showBlockPageDialog by remember { mutableStateOf(false) }
+    var showUnblockPageDialog by remember { mutableStateOf(false) }
+    var matchingHash by remember { mutableStateOf<String?>(null) }
+    var checkComplete by remember { mutableStateOf(false) }
+
+    // Check if the page is already blocked when the dialog opens
+    LaunchedEffect(Unit) {
+        matchingHash = findMatchingBlockedHash()
+        checkComplete = true
+    }
 
     AdaptiveSheet(onDismissRequest = onDismissRequest) {
         Row(
@@ -75,12 +88,21 @@ fun ReaderPageActionsDialog(
                     onDismissRequest()
                 },
             )
-            ActionButton(
-                modifier = Modifier.weight(1f),
-                title = stringResource(MR.strings.action_block_page),
-                icon = Icons.Outlined.Block,
-                onClick = { showBlockPageDialog = true },
-            )
+            if (checkComplete && matchingHash != null) {
+                ActionButton(
+                    modifier = Modifier.weight(1f),
+                    title = stringResource(MR.strings.action_unblock_page),
+                    icon = Icons.Outlined.CheckCircleOutline,
+                    onClick = { showUnblockPageDialog = true },
+                )
+            } else {
+                ActionButton(
+                    modifier = Modifier.weight(1f),
+                    title = stringResource(MR.strings.action_block_page),
+                    icon = Icons.Outlined.Block,
+                    onClick = { showBlockPageDialog = true },
+                )
+            }
         }
     }
 
@@ -102,6 +124,17 @@ fun ReaderPageActionsDialog(
                 onDismissRequest()
             },
             onDismiss = { showBlockPageDialog = false },
+        )
+    }
+
+    if (showUnblockPageDialog) {
+        UnblockPageDialog(
+            onConfirm = {
+                matchingHash?.let { onUnblockPage(it) }
+                showUnblockPageDialog = false
+                onDismissRequest()
+            },
+            onDismiss = { showUnblockPageDialog = false },
         )
     }
 }
@@ -137,6 +170,29 @@ private fun BlockPageDialog(
     AlertDialog(
         text = {
             Text(stringResource(MR.strings.confirm_block_page))
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(stringResource(MR.strings.action_ok))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(MR.strings.action_cancel))
+            }
+        },
+        onDismissRequest = onDismiss,
+    )
+}
+
+@Composable
+private fun UnblockPageDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        text = {
+            Text(stringResource(MR.strings.confirm_unblock_page))
         },
         confirmButton = {
             TextButton(onClick = onConfirm) {

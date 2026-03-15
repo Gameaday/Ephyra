@@ -324,6 +324,11 @@ class ReaderActivity : BaseActivity() {
                     onShare = viewModel::shareImage,
                     onSave = viewModel::saveImage,
                     onBlockPage = viewModel::blockPage,
+                    onUnblockPage = { hex ->
+                        viewModel.unblockPage(hex)
+                        toast(MR.strings.page_unblocked)
+                    },
+                    findMatchingBlockedHash = viewModel::findMatchingBlockedHash,
                 )
             }
             null -> {}
@@ -762,12 +767,14 @@ class ReaderActivity : BaseActivity() {
     }
 
     private fun onBlockPageResult(result: ReaderViewModel.BlockPageResult) {
-        toast(
-            when (result) {
-                ReaderViewModel.BlockPageResult.Success -> MR.strings.page_blocked
-                ReaderViewModel.BlockPageResult.Error -> MR.strings.page_block_error
-            },
-        )
+        when (result) {
+            is ReaderViewModel.BlockPageResult.Success -> {
+                toast(MR.strings.page_blocked)
+            }
+            is ReaderViewModel.BlockPageResult.Error -> {
+                toast(MR.strings.page_block_error)
+            }
+        }
     }
 
     /**

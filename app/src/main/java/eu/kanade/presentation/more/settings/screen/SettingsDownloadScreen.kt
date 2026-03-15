@@ -4,6 +4,18 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.collectAsState
@@ -12,7 +24,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastMap
 import androidx.core.net.toUri
 import com.hippo.unifile.UniFile
@@ -237,31 +252,68 @@ object SettingsDownloadScreen : SearchableSettings {
         val blockedHashes by downloadPreferences.blockedPageHashes().collectAsState()
         val count = blockedHashes.size
         var showClearDialog by rememberSaveable { mutableStateOf(false) }
+        var showManageDialog by rememberSaveable { mutableStateOf(false) }
+        var hashToRemove by rememberSaveable { mutableStateOf<String?>(null) }
 
         if (showClearDialog && count > 0) {
-            androidx.compose.material3.AlertDialog(
+            AlertDialog(
                 onDismissRequest = { showClearDialog = false },
                 text = {
-                    androidx.compose.material3.Text(
-                        stringResource(MR.strings.pref_clear_blocked_pages_confirm, count),
-                    )
+                    Text(stringResource(MR.strings.pref_clear_blocked_pages_confirm, count))
                 },
                 confirmButton = {
-                    androidx.compose.material3.TextButton(
+                    TextButton(
                         onClick = {
                             downloadPreferences.blockedPageHashes().set(emptySet())
                             showClearDialog = false
                             context.toast(MR.strings.blocked_pages_cleared)
                         },
                     ) {
-                        androidx.compose.material3.Text(stringResource(MR.strings.action_ok))
+                        Text(stringResource(MR.strings.action_ok))
                     }
                 },
                 dismissButton = {
-                    androidx.compose.material3.TextButton(onClick = { showClearDialog = false }) {
-                        androidx.compose.material3.Text(stringResource(MR.strings.action_cancel))
+                    TextButton(onClick = { showClearDialog = false }) {
+                        Text(stringResource(MR.strings.action_cancel))
                     }
                 },
+            )
+        }
+
+        if (hashToRemove != null) {
+            AlertDialog(
+                onDismissRequest = { hashToRemove = null },
+                text = {
+                    Text(stringResource(MR.strings.pref_remove_blocked_page_confirm, hashToRemove!!))
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            val hex = hashToRemove!!
+                            val pref = downloadPreferences.blockedPageHashes()
+                            val current = pref.get().toMutableSet()
+                            current.remove(hex)
+                            pref.set(current)
+                            hashToRemove = null
+                            context.toast(MR.strings.page_unblocked)
+                        },
+                    ) {
+                        Text(stringResource(MR.strings.action_ok))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { hashToRemove = null }) {
+                        Text(stringResource(MR.strings.action_cancel))
+                    }
+                },
+            )
+        }
+
+        if (showManageDialog && count > 0) {
+            BlockedPagesManageDialog(
+                hashes = blockedHashes,
+                onRemoveHash = { hex -> hashToRemove = hex },
+                onDismiss = { showManageDialog = false },
             )
         }
 
@@ -276,11 +328,71 @@ object SettingsDownloadScreen : SearchableSettings {
                     },
                 ),
                 Preference.PreferenceItem.TextPreference(
+                    title = stringResource(MR.strings.pref_manage_blocked_pages),
+                    enabled = count > 0,
+                    subtitle = if (count > 0) {
+                        stringResource(MR.strings.pref_manage_blocked_pages_subtitle)
+                    } else {
+                        null
+                    },
+                    onClick = { showManageDialog = true },
+                ),
+                Preference.PreferenceItem.TextPreference(
                     title = stringResource(MR.strings.pref_clear_blocked_pages),
                     enabled = count > 0,
                     onClick = { showClearDialog = true },
                 ),
             ),
+        )
+    }
+
+    @Composable
+    private fun BlockedPagesManageDialog(
+        hashes: Set<String>,
+        onRemoveHash: (String) -> Unit,
+        onDismiss: () -> Unit,
+    ) {
+        val sortedHashes = remember(hashes) { hashes.sorted() }
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = {
+                Text(stringResource(MR.strings.pref_manage_blocked_pages))
+            },
+            text = {
+                androidx.compose.foundation.lazy.LazyColumn {
+                    items(sortedHashes.size) { index ->
+                        val hex = sortedHashes[index]
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = hex,
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.weight(1f),
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                            )
+                            IconButton(
+                                onClick = { onRemoveHash(hex) },
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Delete,
+                                    contentDescription = stringResource(MR.strings.action_delete),
+                                    tint = MaterialTheme.colorScheme.error,
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(MR.strings.action_ok))
+                }
+            },
         )
     }
 

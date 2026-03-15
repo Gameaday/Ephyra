@@ -1058,6 +1058,8 @@ class ReaderViewModel @JvmOverloads constructor(
      * Computes the perceptual hash (dHash) of the selected page and adds it to the
      * blocked-pages preference set.  Future downloads will silently skip any page
      * whose dHash is within the configured Hamming distance threshold.
+     *
+     * The result includes the hex hash so the caller can offer an "Undo" action.
      */
     fun blockPage() {
         val page = (state.value.dialog as? Dialog.PageActions)?.page
@@ -1074,12 +1076,52 @@ class ReaderViewModel @JvmOverloads constructor(
                 current.add(hex)
                 pref.set(current)
                 logcat(LogPriority.INFO) { "Blocked page dHash=$hex" }
-                BlockPageResult.Success
+                BlockPageResult.Success(hex)
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e) { "Failed to block page" }
                 BlockPageResult.Error
             }
             eventChannel.send(Event.BlockPageResult(result))
+        }
+    }
+
+    /**
+     * Removes a specific dHash hex string from the blocked-pages preference set.
+     * Used to undo an accidental block or to selectively unblock a page.
+     */
+    fun unblockPage(hex: String) {
+        val pref = downloadPreferences.blockedPageHashes()
+        val current = pref.get().toMutableSet()
+        if (current.remove(hex)) {
+            pref.set(current)
+            logcat(LogPriority.INFO) { "Unblocked page dHash=$hex" }
+        }
+    }
+
+    /**
+     * Checks whether the currently selected page's dHash matches any entry in
+     * the blocked-pages set (within the configured Hamming distance threshold).
+     *
+     * @return The matching hex hash if blocked, or `null` if not blocked / not computable.
+     */
+    suspend fun findMatchingBlockedHash(): String? {
+        val page = (state.value.dialog as? Dialog.PageActions)?.page
+        if (page?.status != Page.State.Ready) return null
+
+        return try {
+            val stream = page.stream ?: return null
+            val hash = withIOContext { stream().use { ImageUtil.computeDHash(it) } } ?: return null
+            val threshold = DownloadPreferences.BLOCKED_PAGE_DHASH_THRESHOLD
+            downloadPreferences.blockedPageHashes().get().firstOrNull { hexStr ->
+                try {
+                    val blocked = ImageUtil.hexToDHash(hexStr)
+                    ImageUtil.dHashDistance(hash, blocked) <= threshold
+                } catch (_: Exception) {
+                    false
+                }
+            }
+        } catch (_: Exception) {
+            null
         }
     }
 
@@ -1089,9 +1131,9 @@ class ReaderViewModel @JvmOverloads constructor(
         Error,
     }
 
-    enum class BlockPageResult {
-        Success,
-        Error,
+    sealed interface BlockPageResult {
+        data class Success(val hex: String) : BlockPageResult
+        data object Error : BlockPageResult
     }
 
     sealed interface SaveImageResult {
