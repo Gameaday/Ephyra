@@ -77,6 +77,7 @@ class UpdateManga(
             if (remoteTitle.isEmpty()) return@run null
             if (shouldPreserve(LockedField.TITLE, localManga.title.isNotBlank())) return@run null
             if (localManga.favorite && !libraryPreferences.updateMangaTitles().get()) return@run null
+            if (remoteTitle == localManga.title) return@run null
             remoteTitle
         }
 
@@ -85,7 +86,7 @@ class UpdateManga(
         val coverLastModified = when {
             coverPreserved -> null
             remoteManga.thumbnail_url.isNullOrEmpty() -> null
-            !manualFetch && localManga.thumbnailUrl == remoteManga.thumbnail_url -> null
+            localManga.thumbnailUrl == remoteManga.thumbnail_url -> null
             localManga.isLocal() -> Instant.now().toEpochMilli()
             localManga.hasCustomCover(coverCache) -> {
                 coverCache.deleteFromCache(localManga, false)
@@ -99,29 +100,45 @@ class UpdateManga(
 
         val thumbnailUrl = when {
             coverPreserved -> null
+            remoteManga.thumbnail_url == localManga.thumbnailUrl -> null
             else -> remoteManga.thumbnail_url?.takeIf { it.isNotEmpty() }
         }
 
         val author = when {
             shouldPreserve(LockedField.AUTHOR, !localManga.author.isNullOrBlank()) -> null
+            remoteManga.author == localManga.author -> null
             else -> remoteManga.author
         }
         val artist = when {
             shouldPreserve(LockedField.ARTIST, !localManga.artist.isNullOrBlank()) -> null
+            remoteManga.artist == localManga.artist -> null
             else -> remoteManga.artist
         }
         val description = when {
             shouldPreserve(LockedField.DESCRIPTION, !localManga.description.isNullOrBlank()) -> null
+            remoteManga.description == localManga.description -> null
             else -> remoteManga.description
         }
+        val remoteGenres = remoteManga.getGenres()
         val genre = when {
             shouldPreserve(LockedField.GENRE, !localManga.genre.isNullOrEmpty()) -> null
-            else -> remoteManga.getGenres()
+            remoteGenres == localManga.genre -> null
+            else -> remoteGenres
         }
+        val remoteStatus = remoteManga.status.toLong()
         val status = when {
             shouldPreserve(LockedField.STATUS, localManga.status != 0L) -> null
-            else -> remoteManga.status.toLong()
+            remoteStatus == localManga.status -> null
+            else -> remoteStatus
         }
+        val updateStrategy = remoteManga.update_strategy.takeIf { it != localManga.updateStrategy }
+        val initialized = true.takeIf { !localManga.initialized }
+
+        val hasChanges = title != null || coverLastModified != null || thumbnailUrl != null ||
+            author != null || artist != null || description != null || genre != null ||
+            status != null || updateStrategy != null || initialized != null
+
+        if (!hasChanges) return true
 
         val success = mangaRepository.update(
             MangaUpdate(
@@ -134,8 +151,8 @@ class UpdateManga(
                 genre = genre,
                 thumbnailUrl = thumbnailUrl,
                 status = status,
-                updateStrategy = remoteManga.update_strategy,
-                initialized = true,
+                updateStrategy = updateStrategy,
+                initialized = initialized,
             ),
         )
         if (success && title != null) {
