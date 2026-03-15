@@ -59,6 +59,13 @@ class DownloadPreferences(
      */
     fun jellyfinLibraryFolder() = preferenceStore.getString("jellyfin_library_folder", "")
 
+    /**
+     * A set of SHA-256 hashes of known scanlation group intro/outro/credits pages.
+     * During download, any page whose image hash matches an entry in this set is silently
+     * discarded so it is never saved to disk and never shown to the reader.
+     */
+    fun scanlationPageBlocklist() = preferenceStore.getStringSet("scanlation_page_blocklist", emptySet())
+
     companion object {
         private const val REMOVE_EXCLUDE_CATEGORIES_PREF_KEY = "remove_exclude_categories"
         private const val DOWNLOAD_NEW_CATEGORIES_PREF_KEY = "download_new_categories"

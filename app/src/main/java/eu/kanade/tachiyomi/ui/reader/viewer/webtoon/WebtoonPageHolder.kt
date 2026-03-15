@@ -149,6 +149,7 @@ class WebtoonPageHolder(
                         }
                     }
                     Page.State.Ready -> setImage()
+                    Page.State.Skipped -> Unit
                     is Page.State.Error -> setError(state.error)
                 }
             }

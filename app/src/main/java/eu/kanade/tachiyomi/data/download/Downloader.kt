@@ -12,6 +12,7 @@ import eu.kanade.tachiyomi.source.UnmeteredSource
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
+import eu.kanade.tachiyomi.util.lang.Hash
 import eu.kanade.tachiyomi.util.storage.DiskUtil
 import eu.kanade.tachiyomi.util.storage.DiskUtil.NOMEDIA_FILE
 import eu.kanade.tachiyomi.util.storage.saveTo
@@ -495,6 +496,15 @@ class Downloader(
                 else -> downloadImage(page, download.source, tmpDir, filename)
             }
 
+            // Check the downloaded image hash against the scanlation page blocklist.
+            // If matched, discard the file silently so it is never saved or shown.
+            if (isScanlationPage(file)) {
+                file.delete()
+                page.progress = 100
+                page.status = Page.State.Skipped
+                return
+            }
+
             // When the page is ready, set page path, progress (just in case) and status
             splitTallImageIfNeeded(page, tmpDir)
 
@@ -592,6 +602,24 @@ class Downloader(
     private fun derivedImageEncoder(): Pair<(android.graphics.Bitmap, java.io.OutputStream) -> Unit, String> {
         val fmt = libraryPreferences.imageFormat().get()
         return fmt.encoder() to fmt.extension
+    }
+
+    /**
+     * Returns `true` when [file] is a known scanlation group intro/outro/credits page.
+     *
+     * Detection works by computing the SHA-256 hash of the raw image bytes and comparing it
+     * against the user-maintained blocklist stored in [DownloadPreferences.scanlationPageBlocklist].
+     * Because scanlation credit pages are typically reused byte-for-byte across chapters, a single
+     * hash registration filters the image everywhere it appears.
+     *
+     * The check is skipped entirely when the blocklist is empty so there is zero overhead for
+     * users who have not configured any hashes.
+     */
+    private fun isScanlationPage(file: UniFile): Boolean {
+        val blocklist = downloadPreferences.scanlationPageBlocklist().get()
+        if (blocklist.isEmpty()) return false
+        val hash = file.openInputStream().use { Hash.sha256(it) }
+        return hash in blocklist
     }
 
     private fun splitTallImageIfNeeded(page: Page, tmpDir: UniFile) {
@@ -732,7 +760,10 @@ class Downloader(
                 else -> true
             }
         }
-        return downloadedImagesCount == downloadPageCount
+        // Skipped pages (filtered scanlation pages) have no file on disk; subtract them from the
+        // expected count so the verification passes despite the intentionally missing files.
+        val skippedPageCount = download.pages?.count { it.status == Page.State.Skipped } ?: 0
+        return downloadedImagesCount == downloadPageCount - skippedPageCount
     }
 
     /**
