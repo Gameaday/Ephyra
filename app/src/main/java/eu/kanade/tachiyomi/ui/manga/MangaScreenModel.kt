@@ -346,7 +346,9 @@ class MangaScreenModel(
 
                 // On manual refresh, also refresh metadata from the canonical tracker source
                 // to capture updates (status changes, new cover art, description updates).
-                // This uses a separate API call from the content source refresh above.
+                // No DB re-read needed: awaitUpdateFromSource preserves authority-owned
+                // fields, so the original manga still has correct authority values for
+                // the comparison checks in RefreshCanonicalMetadata.
                 if (manualFetch && manga.canonicalId != null) {
                     try {
                         val refreshCanonical: eu.kanade.domain.track.interactor.RefreshCanonicalMetadata =

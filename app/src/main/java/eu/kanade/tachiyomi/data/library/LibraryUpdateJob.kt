@@ -501,6 +501,8 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
         // Refresh canonical metadata from the authoritative tracker source.
         // This captures updates like series status changes, new descriptions, and cover art
         // from the canonical source (MAL/AniList/MangaUpdates). Throttled to every 7 days.
+        // No DB re-read needed: awaitUpdateFromSource preserves authority-owned fields,
+        // so the original manga still has correct authority values.
         if (autoUpdateMetadata && manga.canonicalId != null) {
             val lastUpdate = manga.lastUpdate
             val daysSinceUpdate = if (lastUpdate > 0) {
