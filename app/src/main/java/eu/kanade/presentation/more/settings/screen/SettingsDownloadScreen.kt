@@ -4,6 +4,24 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.collectAsState
@@ -12,7 +30,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastMap
 import androidx.core.net.toUri
 import com.hippo.unifile.UniFile
@@ -34,6 +56,7 @@ import tachiyomi.domain.category.model.Category
 import tachiyomi.domain.download.service.DownloadPreferences
 import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.i18n.MR
+import tachiyomi.presentation.core.components.material.padding
 import tachiyomi.presentation.core.i18n.pluralStringResource
 import tachiyomi.presentation.core.i18n.stringResource
 import tachiyomi.presentation.core.util.collectAsState
@@ -90,6 +113,7 @@ object SettingsDownloadScreen : SearchableSettings {
                 allCategories = allCategories,
             ),
             getDownloadAheadGroup(downloadPreferences = downloadPreferences),
+            getPageFilterGroup(downloadPreferences = downloadPreferences),
             getJellyfinSyncGroup(downloadPreferences = downloadPreferences),
         )
     }
@@ -225,6 +249,173 @@ object SettingsDownloadScreen : SearchableSettings {
                 ),
                 Preference.PreferenceItem.InfoPreference(stringResource(MR.strings.download_ahead_info)),
             ),
+        )
+    }
+
+    @Composable
+    private fun getPageFilterGroup(
+        downloadPreferences: DownloadPreferences,
+    ): Preference.PreferenceGroup {
+        val context = LocalContext.current
+        val blockedHashes by downloadPreferences.blockedPageHashes().collectAsState()
+        val count = blockedHashes.size
+        var showClearDialog by rememberSaveable { mutableStateOf(false) }
+        var showManageDialog by rememberSaveable { mutableStateOf(false) }
+        var hashToRemove by rememberSaveable { mutableStateOf<String?>(null) }
+
+        if (showClearDialog && count > 0) {
+            AlertDialog(
+                onDismissRequest = { showClearDialog = false },
+                title = {
+                    Text(stringResource(MR.strings.pref_clear_blocked_pages))
+                },
+                text = {
+                    Text(stringResource(MR.strings.pref_clear_blocked_pages_confirm, count))
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            downloadPreferences.blockedPageHashes().set(emptySet())
+                            showClearDialog = false
+                            context.toast(MR.strings.blocked_pages_cleared)
+                        },
+                    ) {
+                        Text(stringResource(MR.strings.action_ok))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showClearDialog = false }) {
+                        Text(stringResource(MR.strings.action_cancel))
+                    }
+                },
+            )
+        }
+
+        val currentHashToRemove = hashToRemove
+        if (currentHashToRemove != null) {
+            AlertDialog(
+                onDismissRequest = { hashToRemove = null },
+                title = {
+                    Text(stringResource(MR.strings.action_remove))
+                },
+                text = {
+                    Text(stringResource(MR.strings.pref_remove_blocked_page_confirm))
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            val pref = downloadPreferences.blockedPageHashes()
+                            val current = pref.get().toMutableSet()
+                            current.remove(currentHashToRemove)
+                            pref.set(current)
+                            hashToRemove = null
+                            context.toast(MR.strings.page_unblocked)
+                        },
+                    ) {
+                        Text(stringResource(MR.strings.action_ok))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { hashToRemove = null }) {
+                        Text(stringResource(MR.strings.action_cancel))
+                    }
+                },
+            )
+        }
+
+        if (showManageDialog && count > 0) {
+            BlockedPagesManageDialog(
+                hashes = blockedHashes,
+                onRemoveHash = { hex -> hashToRemove = hex },
+                onDismiss = { showManageDialog = false },
+            )
+        }
+
+        return Preference.PreferenceGroup(
+            title = stringResource(MR.strings.pref_page_filter_group),
+            preferenceItems = persistentListOf(
+                Preference.PreferenceItem.InfoPreference(
+                    if (count > 0) {
+                        stringResource(MR.strings.pref_blocked_pages_summary, count)
+                    } else {
+                        stringResource(MR.strings.pref_blocked_pages_empty)
+                    },
+                ),
+                Preference.PreferenceItem.TextPreference(
+                    title = stringResource(MR.strings.pref_manage_blocked_pages),
+                    enabled = count > 0,
+                    subtitle = if (count > 0) {
+                        stringResource(MR.strings.pref_manage_blocked_pages_subtitle)
+                    } else {
+                        null
+                    },
+                    onClick = { showManageDialog = true },
+                ),
+                Preference.PreferenceItem.TextPreference(
+                    title = stringResource(MR.strings.pref_clear_blocked_pages),
+                    enabled = count > 0,
+                    onClick = { showClearDialog = true },
+                ),
+            ),
+        )
+    }
+
+    @Composable
+    private fun BlockedPagesManageDialog(
+        hashes: Set<String>,
+        onRemoveHash: (String) -> Unit,
+        onDismiss: () -> Unit,
+    ) {
+        val sortedHashes = remember(hashes) { hashes.sorted() }
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = {
+                Text(stringResource(MR.strings.pref_manage_blocked_pages))
+            },
+            text = {
+                Box {
+                    val listState = rememberLazyListState()
+                    LazyColumn(state = listState) {
+                        items(sortedHashes) { hex ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .defaultMinSize(minHeight = 48.dp)
+                                    .padding(vertical = MaterialTheme.padding.extraSmall),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = hex,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.weight(1f),
+                                    fontFamily = FontFamily.Monospace,
+                                )
+                                IconButton(
+                                    onClick = { onRemoveHash(hex) },
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Delete,
+                                        contentDescription = stringResource(MR.strings.action_delete),
+                                        tint = MaterialTheme.colorScheme.error,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    if (listState.canScrollBackward) {
+                        HorizontalDivider(modifier = Modifier.align(Alignment.TopCenter))
+                    }
+                    if (listState.canScrollForward) {
+                        HorizontalDivider(modifier = Modifier.align(Alignment.BottomCenter))
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(MR.strings.action_ok))
+                }
+            },
         )
     }
 

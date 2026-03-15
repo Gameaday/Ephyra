@@ -59,7 +59,24 @@ class DownloadPreferences(
      */
     fun jellyfinLibraryFolder() = preferenceStore.getString("jellyfin_library_folder", "")
 
+    /**
+     * Perceptual hashes (dHash, 16-char hex) of known scanlation group intro/outro/credits pages.
+     * After all pages in a chapter are downloaded, any page whose dHash is within
+     * [BLOCKED_PAGE_DHASH_THRESHOLD] Hamming distance of an entry in this set is deleted
+     * before archiving, so it never appears in the final chapter on disk or in the reader.
+     *
+     * dHash is robust to JPEG recompression, minor rescaling, and color shifts —
+     * a single entry silences all visual variants of the same credit page.
+     */
+    fun blockedPageHashes() = preferenceStore.getStringSet("blocked_page_hashes", emptySet())
+
     companion object {
+        /**
+         * Maximum Hamming distance (inclusive) between two dHash values for a match.
+         * 0 = exact perceptual match only; 10 = tolerate minor visual differences.
+         */
+        const val BLOCKED_PAGE_DHASH_THRESHOLD = 10
+
         private const val REMOVE_EXCLUDE_CATEGORIES_PREF_KEY = "remove_exclude_categories"
         private const val DOWNLOAD_NEW_CATEGORIES_PREF_KEY = "download_new_categories"
         private const val DOWNLOAD_NEW_CATEGORIES_EXCLUDE_PREF_KEY = "download_new_categories_exclude"

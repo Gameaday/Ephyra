@@ -311,6 +311,14 @@ abstract class PagerViewer(val activity: ReaderActivity) : Viewer {
         // Manually call onPageChange to update the UI
         onPageChange(pager.currentItem)
 
+        // Register a callback so that when the page pre-processor marks a page as blocked
+        // (after its image loads), the adapter is refreshed to exclude it.
+        chapters.currChapter.pageLoader?.onPageFiltered = {
+            activity.runOnUiThread {
+                adapter.setChapters(chapters, false)
+            }
+        }
+
         // Proactively merge any pages that are already loaded so that stubs are absorbed
         // before the user scrolls to them. This makes the merge invisible in the common case
         // (e.g., downloaded chapters where all pages are ready immediately).
@@ -343,7 +351,7 @@ abstract class PagerViewer(val activity: ReaderActivity) : Viewer {
                     if (!isActive) break
 
                     val page = pages[index]
-                    if (page is InsertPage || page.mergedBitmap != null || page.isAbsorbed) continue
+                    if (page is InsertPage || page.mergedBitmap != null || page.isHidden) continue
 
                     // Suspend until this page finishes downloading; skip on error.
                     if (page.status != Page.State.Ready) {
@@ -352,7 +360,7 @@ abstract class PagerViewer(val activity: ReaderActivity) : Viewer {
                     }
 
                     val nextPage = pages.getOrNull(index + 1) ?: continue
-                    if (nextPage.isAbsorbed) continue
+                    if (nextPage.isHidden) continue
 
                     // Suspend until the next page finishes downloading; skip on error.
                     if (nextPage.status != Page.State.Ready) {

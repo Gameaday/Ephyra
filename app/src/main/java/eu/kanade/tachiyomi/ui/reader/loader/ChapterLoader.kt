@@ -12,11 +12,14 @@ import mihon.core.archive.epubReader
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.core.common.util.lang.withIOContext
 import tachiyomi.core.common.util.system.logcat
+import tachiyomi.domain.download.service.DownloadPreferences
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.source.model.StubSource
 import tachiyomi.i18n.MR
 import tachiyomi.source.local.LocalSource
 import tachiyomi.source.local.io.Format
+import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.get
 
 /**
  * Loader used to retrieve the [PageLoader] for a given chapter.
@@ -31,6 +34,12 @@ class ChapterLoader(
 
     // Computed once and reused for every chapter loaded in this session.
     private val performanceTier by lazy { DeviceUtil.performanceTier(context) }
+
+    /**
+     * Unified page pre-processor shared with [HttpPageLoader] so that both immediate
+     * (downloaded / local) and incremental (online) filtering use the same pipeline.
+     */
+    private val preProcessor by lazy { ReaderPagePreProcessor(Injekt.get<DownloadPreferences>()) }
 
     /**
      * Assigns the chapter's page loader and loads the its pages. Returns immediately if the chapter
@@ -67,6 +76,12 @@ class ChapterLoader(
                 if (pages.isEmpty()) {
                     throw Exception(context.stringResource(MR.strings.page_list_empty_error))
                 }
+
+                // Run the unified pre-processing pipeline on pages that already have
+                // image streams (downloaded / local). Online pages are checked
+                // incrementally in HttpPageLoader.internalLoadPage() via the same
+                // preProcessor instance.
+                preProcessor.processLoadedPages(pages)
 
                 // If the chapter is partially read, set the starting page to the last the user read
                 // otherwise use the requested page.
@@ -127,6 +142,7 @@ class ChapterLoader(
                 source,
                 performanceTier = performanceTier,
                 isPreloadOnly = isPreloadOnly,
+                preProcessor = preProcessor,
             )
             source is StubSource -> error(context.stringResource(MR.strings.source_not_installed, source.toString()))
             else -> error(context.stringResource(MR.strings.loader_not_implemented_error))

@@ -60,6 +60,7 @@ import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.core.common.util.lang.launchNonCancellable
 import tachiyomi.core.common.util.lang.withIOContext
 import tachiyomi.core.common.util.lang.withUIContext
+import tachiyomi.core.common.util.system.ImageUtil
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.chapter.interactor.GetChaptersByMangaId
 import tachiyomi.domain.chapter.interactor.UpdateChapter
@@ -343,6 +344,13 @@ class ReaderViewModel @JvmOverloads constructor(
         chapter: ReaderChapter,
     ): ViewerChapters {
         loader.loadChapter(chapter)
+
+        // When the pre-processor blocks a page during online loading (after the image
+        // arrives), the adapter must rebuild its item list to exclude the newly hidden
+        // page. Wire up the callback so the viewer refreshes automatically.
+        chapter.pageLoader?.onPageFiltered = {
+            eventChannel.trySend(Event.ReloadViewerChapters)
+        }
 
         // Queue every page at the lowest background priority so the smart-combine pre-scan
         // can process the entire chapter without waiting for the user to scroll to each page.
@@ -643,12 +651,12 @@ class ReaderViewModel @JvmOverloads constructor(
         val pageIndex = page.index
         val chapterPages = readerChapter.pages
 
-        // Compute the 1-based display position by counting only non-absorbed pages up to
+        // Compute the 1-based display position by counting only visible pages up to
         // and including the current page. This keeps the bottom indicator and slider in sync
-        // with what is actually visible — absorbed stub pages (smart-combined watermarks) are
-        // invisible to the user and should not inflate the page count or current position.
+        // with what is actually visible — hidden pages (absorbed stubs and blocked pages)
+        // are invisible to the user and should not inflate the page count or current position.
         val displayIndex = if (chapterPages != null) {
-            chapterPages.take(pageIndex + 1).count { !it.isAbsorbed }
+            chapterPages.take(pageIndex + 1).count { !it.isHidden }
         } else {
             pageIndex + 1
         }
@@ -663,13 +671,12 @@ class ReaderViewModel @JvmOverloads constructor(
 
             // A page is the effective last page either when it literally is the last page
             // in the chapter's page list, or when it is a merged page (mergedBitmap != null)
-            // and all subsequent pages in the list were absorbed as stubs. This ensures the
-            // chapter is marked as read even when the final page(s) are watermark stubs that
-            // get merged invisibly into the previous page.
+            // and all subsequent pages in the list are hidden. This ensures the chapter is
+            // marked as read even when the final page(s) are stubs or blocked credit pages.
             val isEffectivelyLastPage = pageIndex == chapterPages?.lastIndex ||
                 (
                     (page as? ReaderPage)?.mergedBitmap != null &&
-                        chapterPages?.drop(pageIndex + 1)?.all { it.isAbsorbed } == true
+                        chapterPages?.drop(pageIndex + 1)?.all { it.isHidden } == true
                     )
             if (isEffectivelyLastPage) {
                 updateChapterProgressOnComplete(readerChapter)
@@ -1053,10 +1060,90 @@ class ReaderViewModel @JvmOverloads constructor(
         }
     }
 
+    /**
+     * Computes the perceptual hash (dHash) of the selected page and adds it to the
+     * blocked-pages preference set.  Future downloads will silently skip any page
+     * whose dHash is within the configured Hamming distance threshold.
+     *
+     * The result includes the hex hash so the caller can offer an "Undo" action.
+     */
+    fun blockPage() {
+        val page = (state.value.dialog as? Dialog.PageActions)?.page
+        if (page?.status != Page.State.Ready) return
+
+        viewModelScope.launchNonCancellable {
+            val result = try {
+                val stream = page.stream ?: error("No page stream")
+                val hash = withIOContext { stream().use { ImageUtil.computeDHash(it) } }
+                    ?: error("Could not compute dHash")
+                val hex = ImageUtil.dHashToHex(hash)
+                val pref = downloadPreferences.blockedPageHashes()
+                val current = pref.get().toMutableSet()
+                current.add(hex)
+                pref.set(current)
+                logcat(LogPriority.INFO) { "Blocked page dHash=$hex" }
+                BlockPageResult.Success(hex)
+            } catch (e: Exception) {
+                logcat(LogPriority.ERROR, e) { "Failed to block page" }
+                BlockPageResult.Error
+            }
+            eventChannel.send(Event.BlockPageResult(result))
+        }
+    }
+
+    /**
+     * Removes a specific dHash hex string from the blocked-pages preference set.
+     * Used to undo an accidental block or to selectively unblock a page.
+     */
+    fun unblockPage(hex: String) {
+        viewModelScope.launchNonCancellable {
+            withIOContext {
+                val pref = downloadPreferences.blockedPageHashes()
+                val current = pref.get().toMutableSet()
+                if (current.remove(hex)) {
+                    pref.set(current)
+                    logcat(LogPriority.INFO) { "Unblocked page dHash=$hex" }
+                }
+            }
+        }
+    }
+
+    /**
+     * Checks whether the currently selected page's dHash matches any entry in
+     * the blocked-pages set (within the configured Hamming distance threshold).
+     *
+     * @return The matching hex hash if blocked, or `null` if not blocked / not computable.
+     */
+    suspend fun findMatchingBlockedHash(): String? {
+        val page = (state.value.dialog as? Dialog.PageActions)?.page
+        if (page?.status != Page.State.Ready) return null
+
+        return try {
+            val stream = page.stream ?: return null
+            val hash = withIOContext { stream().use { ImageUtil.computeDHash(it) } } ?: return null
+            val threshold = DownloadPreferences.BLOCKED_PAGE_DHASH_THRESHOLD
+            downloadPreferences.blockedPageHashes().get().firstOrNull { hexStr ->
+                try {
+                    val blocked = ImageUtil.hexToDHash(hexStr)
+                    ImageUtil.dHashDistance(hash, blocked) <= threshold
+                } catch (_: Exception) {
+                    false
+                }
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     enum class SetAsCoverResult {
         Success,
         AddToLibraryFirst,
         Error,
+    }
+
+    sealed interface BlockPageResult {
+        data class Success(val hex: String) : BlockPageResult
+        data object Error : BlockPageResult
     }
 
     sealed interface SaveImageResult {
@@ -1123,10 +1210,10 @@ class ReaderViewModel @JvmOverloads constructor(
             get() = viewerChapters?.currChapter
 
         val totalPages: Int
-            // Count only non-absorbed pages so the indicator reflects the number of pages
-            // the user actually navigates through. Absorbed stubs are invisible (merged into
-            // the previous page by smart combine) and should not inflate the total.
-            get() = currentChapter?.pages?.count { !it.isAbsorbed } ?: -1
+            // Count only visible pages so the indicator reflects the number of pages
+            // the user actually navigates through. Hidden pages (absorbed stubs and
+            // blocked credit pages) are invisible and should not inflate the total.
+            get() = currentChapter?.pages?.count { !it.isHidden } ?: -1
     }
 
     sealed interface Dialog {
@@ -1142,6 +1229,7 @@ class ReaderViewModel @JvmOverloads constructor(
         data object PageChanged : Event
         data class SetOrientation(val orientation: Int) : Event
         data class SetCoverResult(val result: SetAsCoverResult) : Event
+        data class BlockPageResult(val result: ReaderViewModel.BlockPageResult) : Event
 
         data class SavedImage(val result: SaveImageResult) : Event
         data class ShareImage(val uri: Uri, val page: ReaderPage) : Event
