@@ -37,6 +37,7 @@ class UpdateManga(
         coverCache: CoverCache = Injekt.get(),
         libraryPreferences: LibraryPreferences = Injekt.get(),
         downloadManager: DownloadManager = Injekt.get(),
+        trackPreferences: TrackPreferences = Injekt.get(),
     ): Boolean {
         val remoteTitle = try {
             remoteManga.title
@@ -54,73 +55,72 @@ class UpdateManga(
         // Per-field content source priority: when a field's bit is set, the content source
         // value takes precedence over the authority source.
         val contentSourcePriorityFields = if (hasAuthorityMetadata) {
-            Injekt.get<TrackPreferences>().contentSourcePriorityFields().get()
+            trackPreferences.contentSourcePriorityFields().get()
         } else {
             0L
         }
 
-        // Helper: preserve fields that are locked or where the authority has priority
-        // and a non-blank value already exists. When authority metadata is absent or the
-        // field prefers the content source, the remote value is used.
-        fun preserveIfAuthority(field: Long, existing: String?, remote: String?): String? {
-            if (LockedField.isLocked(locked, field)) return null
-            val authorityHasPriority = hasAuthorityMetadata &&
-                !LockedField.isLocked(contentSourcePriorityFields, field)
-            if (authorityHasPriority && !existing.isNullOrBlank()) return null
-            return remote
+        // Helper: should a field be skipped? True when the field is locked, or when the
+        // authority has priority and the local value is already populated.
+        fun shouldPreserve(field: Long, existingIsPopulated: Boolean): Boolean {
+            if (LockedField.isLocked(locked, field)) return true
+            if (hasAuthorityMetadata &&
+                !LockedField.isLocked(contentSourcePriorityFields, field) &&
+                existingIsPopulated
+            ) {
+                return true
+            }
+            return false
         }
 
         val title = run {
             if (remoteTitle.isEmpty()) return@run null
-            if (LockedField.isLocked(locked, LockedField.TITLE)) return@run null
-            val authorityHasPriority = hasAuthorityMetadata &&
-                !LockedField.isLocked(contentSourcePriorityFields, LockedField.TITLE)
-            if (authorityHasPriority && localManga.title.isNotBlank()) return@run null
+            if (shouldPreserve(LockedField.TITLE, localManga.title.isNotBlank())) return@run null
             if (localManga.favorite && !libraryPreferences.updateMangaTitles().get()) return@run null
             remoteTitle
         }
 
-        val coverLocked = LockedField.isLocked(locked, LockedField.COVER)
-        val coverAuthorityPriority = hasAuthorityMetadata &&
-            !LockedField.isLocked(contentSourcePriorityFields, LockedField.COVER) &&
-            !localManga.thumbnailUrl.isNullOrBlank()
+        val coverPreserved = shouldPreserve(LockedField.COVER, !localManga.thumbnailUrl.isNullOrBlank())
 
-        val coverLastModified =
-            when {
-                coverLocked || coverAuthorityPriority -> null
-                // Never refresh covers if the url is empty to avoid "losing" existing covers
-                remoteManga.thumbnail_url.isNullOrEmpty() -> null
-                !manualFetch && localManga.thumbnailUrl == remoteManga.thumbnail_url -> null
-                localManga.isLocal() -> Instant.now().toEpochMilli()
-                localManga.hasCustomCover(coverCache) -> {
-                    coverCache.deleteFromCache(localManga, false)
-                    null
-                }
-                else -> {
-                    coverCache.deleteFromCache(localManga, false)
-                    Instant.now().toEpochMilli()
-                }
+        val coverLastModified = when {
+            coverPreserved -> null
+            remoteManga.thumbnail_url.isNullOrEmpty() -> null
+            !manualFetch && localManga.thumbnailUrl == remoteManga.thumbnail_url -> null
+            localManga.isLocal() -> Instant.now().toEpochMilli()
+            localManga.hasCustomCover(coverCache) -> {
+                coverCache.deleteFromCache(localManga, false)
+                null
             }
+            else -> {
+                coverCache.deleteFromCache(localManga, false)
+                Instant.now().toEpochMilli()
+            }
+        }
 
         val thumbnailUrl = when {
-            coverLocked || coverAuthorityPriority -> null
+            coverPreserved -> null
             else -> remoteManga.thumbnail_url?.takeIf { it.isNotEmpty() }
         }
 
-        val genre = run {
-            if (LockedField.isLocked(locked, LockedField.GENRE)) return@run null
-            val authorityHasPriority = hasAuthorityMetadata &&
-                !LockedField.isLocked(contentSourcePriorityFields, LockedField.GENRE)
-            if (authorityHasPriority && !localManga.genre.isNullOrEmpty()) return@run null
-            remoteManga.getGenres()
+        val author = when {
+            shouldPreserve(LockedField.AUTHOR, !localManga.author.isNullOrBlank()) -> null
+            else -> remoteManga.author
         }
-
-        val status = run {
-            if (LockedField.isLocked(locked, LockedField.STATUS)) return@run null
-            val authorityHasPriority = hasAuthorityMetadata &&
-                !LockedField.isLocked(contentSourcePriorityFields, LockedField.STATUS)
-            if (authorityHasPriority && localManga.status != 0L) return@run null
-            remoteManga.status.toLong()
+        val artist = when {
+            shouldPreserve(LockedField.ARTIST, !localManga.artist.isNullOrBlank()) -> null
+            else -> remoteManga.artist
+        }
+        val description = when {
+            shouldPreserve(LockedField.DESCRIPTION, !localManga.description.isNullOrBlank()) -> null
+            else -> remoteManga.description
+        }
+        val genre = when {
+            shouldPreserve(LockedField.GENRE, !localManga.genre.isNullOrEmpty()) -> null
+            else -> remoteManga.getGenres()
+        }
+        val status = when {
+            shouldPreserve(LockedField.STATUS, localManga.status != 0L) -> null
+            else -> remoteManga.status.toLong()
         }
 
         val success = mangaRepository.update(
@@ -128,13 +128,9 @@ class UpdateManga(
                 id = localManga.id,
                 title = title,
                 coverLastModified = coverLastModified,
-                author = preserveIfAuthority(LockedField.AUTHOR, localManga.author, remoteManga.author),
-                artist = preserveIfAuthority(LockedField.ARTIST, localManga.artist, remoteManga.artist),
-                description = preserveIfAuthority(
-                    LockedField.DESCRIPTION,
-                    localManga.description,
-                    remoteManga.description,
-                ),
+                author = author,
+                artist = artist,
+                description = description,
                 genre = genre,
                 thumbnailUrl = thumbnailUrl,
                 status = status,
