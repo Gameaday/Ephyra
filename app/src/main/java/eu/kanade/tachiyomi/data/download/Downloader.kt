@@ -12,7 +12,6 @@ import eu.kanade.tachiyomi.source.UnmeteredSource
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
-import eu.kanade.tachiyomi.util.lang.Hash
 import eu.kanade.tachiyomi.util.storage.DiskUtil
 import eu.kanade.tachiyomi.util.storage.DiskUtil.NOMEDIA_FILE
 import eu.kanade.tachiyomi.util.storage.saveTo
@@ -419,6 +418,10 @@ class Downloader(
                 return
             }
 
+            // Remove known scanlation credit / intro / outro pages before archiving.
+            // Runs after the success check so it doesn't interfere with page-count verification.
+            filterBlockedPages(tmpDir)
+
             // Merge consecutive stub pages (narrow watermark strips) into the preceding page
             // using the same smart-combine logic as the reader.  Runs after the success check
             // so the file count verification is done on the original (unmerged) page set.
@@ -494,15 +497,6 @@ class Downloader(
                     page.imageUrl!!,
                 ) -> copyImageFromCache(chapterCache.getImageFile(page.imageUrl!!), tmpDir, filename)
                 else -> downloadImage(page, download.source, tmpDir, filename)
-            }
-
-            // Check the downloaded image hash against the scanlation page blocklist.
-            // If matched, discard the file silently so it is never saved or shown.
-            if (isScanlationPage(file)) {
-                file.delete()
-                page.progress = 100
-                page.status = Page.State.Skipped
-                return
             }
 
             // When the page is ready, set page path, progress (just in case) and status
@@ -604,24 +598,6 @@ class Downloader(
         return fmt.encoder() to fmt.extension
     }
 
-    /**
-     * Returns `true` when [file] is a known scanlation group intro/outro/credits page.
-     *
-     * Detection works by computing the SHA-256 hash of the raw image bytes and comparing it
-     * against the user-maintained blocklist stored in [DownloadPreferences.scanlationPageBlocklist].
-     * Because scanlation credit pages are typically reused byte-for-byte across chapters, a single
-     * hash registration filters the image everywhere it appears.
-     *
-     * The check is skipped entirely when the blocklist is empty so there is zero overhead for
-     * users who have not configured any hashes.
-     */
-    private fun isScanlationPage(file: UniFile): Boolean {
-        val blocklist = downloadPreferences.scanlationPageBlocklist().get()
-        if (blocklist.isEmpty()) return false
-        val hash = file.openInputStream().use { Hash.sha256(it) }
-        return hash in blocklist
-    }
-
     private fun splitTallImageIfNeeded(page: Page, tmpDir: UniFile) {
         if (!downloadPreferences.splitTallImages().get()) return
 
@@ -637,6 +613,63 @@ class Downloader(
             ImageUtil.splitTallImage(tmpDir, imageFile, filenamePrefix, encoder, ext)
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e) { "Failed to split downloaded image" }
+        }
+    }
+
+    /**
+     * Removes known scanlation group credit / intro / outro pages from [tmpDir] using
+     * perceptual hash (dHash) matching against [DownloadPreferences.blockedPageHashes].
+     *
+     * This runs **after** the download-success verification and **before** stub-page merging
+     * and CBZ archiving, so:
+     * - The full page set is already on disk and verified.
+     * - Deleted pages simply don't make it into the final chapter directory / archive.
+     * - The reader never sees them.
+     *
+     * dHash is robust to JPEG recompression, rescaling, and minor colour shifts, so a
+     * single blocklist entry covers all visual variants of the same credit page.  When the
+     * blocklist is empty the function returns immediately (zero overhead).
+     *
+     * @param tmpDir the temporary chapter directory containing downloaded page images.
+     */
+    private fun filterBlockedPages(tmpDir: UniFile) {
+        val blockedHexes = downloadPreferences.blockedPageHashes().get()
+        if (blockedHexes.isEmpty()) return
+
+        val blockedDHashes = blockedHexes.mapNotNull { hex ->
+            runCatching { ImageUtil.hexToDHash(hex) }.getOrNull()
+        }
+        if (blockedDHashes.isEmpty()) return
+
+        val threshold = DownloadPreferences.BLOCKED_PAGE_DHASH_THRESHOLD
+
+        val pageFiles = tmpDir.listFiles()
+            ?.filter { file ->
+                val name = file.name.orEmpty()
+                !name.endsWith(".tmp") &&
+                    name !in listOf(COMIC_INFO_FILE, NOMEDIA_FILE) &&
+                    ImageUtil.isImage(name)
+            }
+            ?: return
+
+        for (file in pageFiles) {
+            try {
+                val hash = file.openInputStream().use { ImageUtil.computeDHash(it) } ?: continue
+                val matched = blockedDHashes.any { blocked ->
+                    ImageUtil.dHashDistance(hash, blocked) <= threshold
+                }
+                if (matched) {
+                    logcat(LogPriority.DEBUG) {
+                        "Blocked page removed: ${file.name} " +
+                            "(dHash=${ImageUtil.dHashToHex(hash)})"
+                    }
+                    file.delete()
+                }
+            } catch (e: Exception) {
+                logcat(LogPriority.WARN, e) {
+                    "Failed to compute dHash for ${file.name}, skipping blocklist check"
+                }
+            }
         }
     }
 
@@ -760,10 +793,7 @@ class Downloader(
                 else -> true
             }
         }
-        // Skipped pages (filtered scanlation pages) have no file on disk; subtract them from the
-        // expected count so the verification passes despite the intentionally missing files.
-        val skippedPageCount = download.pages?.count { it.status == Page.State.Skipped } ?: 0
-        return downloadedImagesCount == downloadPageCount - skippedPageCount
+        return downloadedImagesCount == downloadPageCount
     }
 
     /**

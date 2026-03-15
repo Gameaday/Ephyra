@@ -816,6 +816,76 @@ object ImageUtil {
     private val optimalImageHeight = getDisplayMaxHeightInPx * 2
 
     val HARDWARE_BITMAP_UNSUPPORTED = false
+
+    // ------------------------------------------------------------------
+    // Perceptual hashing (dHash) for page-level duplicate / blocklist matching
+    // ------------------------------------------------------------------
+
+    /**
+     * Computes a perceptual *difference hash* (dHash) for the given image.
+     *
+     * The algorithm:
+     * 1. Down-scale the image to a 9×8 grayscale thumbnail.
+     * 2. For each row, compare each pixel to its right neighbour.
+     * 3. Encode brighter-left as 1-bit, darker-or-equal-left as 0-bit.
+     *
+     * The result is a 64-bit fingerprint that is **resistant to JPEG
+     * recompression, rescaling, and minor colour shifts** — ideal for
+     * recognising reused scanlation credit / intro / outro pages.
+     *
+     * @return The dHash as a [Long], or `null` if the image cannot be decoded.
+     */
+    fun computeDHash(imageStream: InputStream): Long? {
+        val bitmap = BitmapFactory.decodeStream(imageStream) ?: return null
+        val scaled = Bitmap.createScaledBitmap(bitmap, DHASH_WIDTH, DHASH_HEIGHT, true)
+        if (scaled !== bitmap) bitmap.recycle()
+
+        var hash = 0L
+        for (y in 0 until DHASH_HEIGHT) {
+            for (x in 0 until DHASH_WIDTH - 1) { // 8 comparisons across 9 pixels per row
+                val left = grayscaleAt(scaled, x, y)
+                val right = grayscaleAt(scaled, x + 1, y)
+                if (left > right) {
+                    hash = hash or (1L shl (y * (DHASH_WIDTH - 1) + x))
+                }
+            }
+        }
+        scaled.recycle()
+        return hash
+    }
+
+    /**
+     * Returns the Hamming distance between two dHash values —
+     * i.e. the number of bits that differ.
+     */
+    fun dHashDistance(a: Long, b: Long): Int = java.lang.Long.bitCount(a xor b)
+
+    /** Encode a dHash [Long] as a zero-padded 16-character lowercase hex string. */
+    fun dHashToHex(hash: Long): String = "%016x".format(hash)
+
+    /**
+     * Decode a 16-character hex string back to a dHash [Long].
+     *
+     * @throws IllegalArgumentException if [hex] is not exactly 16 valid hex characters.
+     */
+    fun hexToDHash(hex: String): Long {
+        require(hex.length == 16 && hex.all { it in '0'..'9' || it in 'a'..'f' || it in 'A'..'F' }) {
+            "Expected 16-char hex dHash, got: $hex"
+        }
+        return java.lang.Long.parseUnsignedLong(hex, 16)
+    }
+
+    /** ITU-R BT.601 luma from a packed ARGB pixel. */
+    private fun grayscaleAt(bmp: Bitmap, x: Int, y: Int): Int {
+        val p = bmp[x, y]
+        return (p.red * 299 + p.green * 587 + p.blue * 114) / 1000
+    }
+
+    /** dHash thumbnail width (9 pixels → 8 horizontal comparisons per row). */
+    private const val DHASH_WIDTH = 9
+
+    /** dHash thumbnail height (8 rows → 64-bit hash). */
+    private const val DHASH_HEIGHT = 8
 }
 
 val getDisplayMaxHeightInPx: Int
