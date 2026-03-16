@@ -27,9 +27,12 @@ import okio.Source
 import okio.buffer
 import okio.sink
 import okio.source
+import tachiyomi.core.common.util.system.ImageUtil
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaCover
+import tachiyomi.domain.manga.model.MangaUpdate
+import tachiyomi.domain.manga.repository.MangaRepository
 import tachiyomi.domain.source.service.SourceManager
 import uy.kohesive.injekt.injectLazy
 import java.io.File
@@ -55,6 +58,8 @@ class MangaCoverFetcher(
     private val sourceLazy: Lazy<HttpSource?>,
     private val callFactoryLazy: Lazy<Call.Factory>,
     private val imageLoader: ImageLoader,
+    private val mangaId: Long? = null,
+    private val mangaRepository: MangaRepository? = null,
 ) : Fetcher {
 
     private val diskCacheKey: String
@@ -141,6 +146,7 @@ class MangaCoverFetcher(
                 // Read from cover cache after library manga cover updated
                 val responseCoverCache = writeResponseToCoverCache(response, libraryCoverCacheFile)
                 if (responseCoverCache != null) {
+                    storeCoverHash(responseCoverCache)
                     return fileLoader(responseCoverCache)
                 }
 
@@ -233,6 +239,25 @@ class MangaCoverFetcher(
         }
     }
 
+    /**
+     * Computes the dHash of [coverFile] and stores it in the DB for the manga identified by
+     * [mangaId].  This persists the hash so that future sync comparisons (in
+     * [eu.kanade.domain.manga.interactor.UpdateManga.awaitUpdateFromSource]) can skip
+     * re-reading the local file and go straight to comparing with the incoming URL's image.
+     *
+     * Failures are swallowed — hash storage is best-effort and must never block the UI path.
+     */
+    private suspend fun storeCoverHash(coverFile: File) {
+        val id = mangaId ?: return
+        val repo = mangaRepository ?: return
+        try {
+            val hash = ImageUtil.computeDHash(coverFile.inputStream()) ?: return
+            repo.update(MangaUpdate(id = id, coverHash = hash))
+        } catch (e: Exception) {
+            logcat(LogPriority.DEBUG, e) { "Failed to store cover hash for manga $id" }
+        }
+    }
+
     private fun writeSourceToCoverCache(input: Source, cacheFile: File) {
         cacheFile.parentFile?.mkdirs()
         cacheFile.delete()
@@ -304,6 +329,7 @@ class MangaCoverFetcher(
 
         private val coverCache: CoverCache by injectLazy()
         private val sourceManager: SourceManager by injectLazy()
+        private val mangaRepository: MangaRepository by injectLazy()
 
         override fun create(data: Manga, options: Options, imageLoader: ImageLoader): Fetcher {
             return MangaCoverFetcher(
@@ -322,6 +348,8 @@ class MangaCoverFetcher(
                 },
                 callFactoryLazy = callFactoryLazy,
                 imageLoader = imageLoader,
+                mangaId = data.id.takeIf { data.favorite },
+                mangaRepository = mangaRepository.takeIf { data.favorite },
             )
         }
     }
@@ -332,6 +360,7 @@ class MangaCoverFetcher(
 
         private val coverCache: CoverCache by injectLazy()
         private val sourceManager: SourceManager by injectLazy()
+        private val mangaRepository: MangaRepository by injectLazy()
 
         override fun create(data: MangaCover, options: Options, imageLoader: ImageLoader): Fetcher {
             return MangaCoverFetcher(
@@ -347,6 +376,8 @@ class MangaCoverFetcher(
                 sourceLazy = lazy { sourceManager.get(data.sourceId) as? HttpSource },
                 callFactoryLazy = callFactoryLazy,
                 imageLoader = imageLoader,
+                mangaId = data.mangaId.takeIf { data.isMangaFavorite },
+                mangaRepository = mangaRepository.takeIf { data.isMangaFavorite },
             )
         }
     }

@@ -1,0 +1,4 @@
+-- Add perceptual hash (dHash) of the cover image.
+-- Used to detect when a CDN serves the same image at a new URL so that we can
+-- skip unnecessary cover cache invalidation and Coil reloads (prevents flickering).
+ALTER TABLE mangas ADD COLUMN cover_hash INTEGER;

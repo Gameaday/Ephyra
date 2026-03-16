@@ -901,6 +901,16 @@ object ImageUtil {
         return (p.red * 299 + p.green * 587 + p.blue * 114) / 1000
     }
 
+    /**
+     * Maximum Hamming distance between two dHash values for them to be considered
+     * the same cover image.  Covers arriving from the same CDN but at different signed
+     * URLs should produce a distance of 0; a threshold of 3 gives a small tolerance
+     * for minor CDN-side re-encoding while still rejecting genuinely different images.
+     * (By contrast, [DownloadPreferences.BLOCKED_PAGE_DHASH_THRESHOLD] uses 10 for
+     * page filtering, where slightly more variation is expected.)
+     */
+    const val COVER_DHASH_THRESHOLD = 3
+
     /** dHash thumbnail width (9 pixels → 8 horizontal comparisons per row). */
     private const val DHASH_WIDTH = 9
 
