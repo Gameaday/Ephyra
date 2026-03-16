@@ -137,7 +137,6 @@ class MangaRestorer(
                 deadSince = manga.deadSince,
                 contentType = manga.contentType.value.toLong(),
                 lockedFields = manga.lockedFields,
-                coverHash = manga.coverHash,
             )
         }
         return manga
@@ -277,7 +276,6 @@ class MangaRestorer(
                 deadSince = manga.deadSince,
                 contentType = manga.contentType.value.toLong(),
                 lockedFields = manga.lockedFields,
-                coverHash = manga.coverHash,
             )
             mangasQueries.selectLastInsertedRowId()
         }

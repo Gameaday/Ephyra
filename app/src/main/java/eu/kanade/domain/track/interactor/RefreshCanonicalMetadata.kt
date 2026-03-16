@@ -5,13 +5,9 @@ import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.data.track.Tracker
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.data.track.model.TrackSearch
-import eu.kanade.tachiyomi.network.NetworkHelper
-import eu.kanade.tachiyomi.network.awaitSuccess
 import kotlinx.coroutines.CancellationException
 import logcat.LogPriority
-import okhttp3.Request
 import tachiyomi.core.common.util.lang.withIOContext
-import tachiyomi.core.common.util.system.ImageUtil
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.manga.model.ContentType
 import tachiyomi.domain.manga.model.LockedField
@@ -19,8 +15,6 @@ import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaUpdate
 import tachiyomi.domain.manga.model.mergedAlternativeTitles
 import tachiyomi.domain.manga.repository.MangaRepository
-import uy.kohesive.injekt.Injekt
-import uy.kohesive.injekt.api.get
 import java.time.Instant
 
 /**
@@ -47,7 +41,6 @@ class RefreshCanonicalMetadata(
     private val trackerManager: TrackerManager,
     private val trackPreferences: TrackPreferences,
     private val coverCache: CoverCache,
-    private val networkHelper: NetworkHelper = Injekt.get(),
 ) {
 
     /**
@@ -230,52 +223,15 @@ class RefreshCanonicalMetadata(
             return false
         }
 
-        // When the canonical source provides a new cover URL, compare image content via
-        // dHash BEFORE deciding whether to invalidate the cover cache.  CDN trackers
-        // (e.g. MangaUpdates) regularly rotate signed URLs for the same image; without
-        // this check every canonical refresh would delete the cached file and bump
-        // coverLastModified, causing Coil to drop its memory cache entry and show a
-        // loading placeholder — the "background flicker" reported in the issue.
-        //
-        // Decision:
-        //   sameImageViaHash == true  → same image, different URL: copy cached file to new
-        //                              path, update URL only, no coverLastModified change,
-        //                              no Coil reload → zero flicker.
-        //   sameImageViaHash == false → genuinely new image: full invalidation (correct).
-        //   coverComparison == null   → fetch/decode failed: conservative full invalidation.
-        val coverComparison: Pair<Boolean, Long>? = if (thumbnailUrl != null) {
-            computeCoversAreSameImage(
-                oldCoverFile = coverCache.getCoverFile(manga.thumbnailUrl),
-                newCoverUrl = thumbnailUrl,
-                localCoverHash = manga.coverHash,
-            )
+        // When the canonical source provides a new cover URL, invalidate the stale cover
+        // cache so Coil fetches the new image rather than serving the old file. This mirrors
+        // the behaviour in UpdateManga.awaitUpdateFromSource and prevents cover flickering
+        // caused by an outdated CoverCache entry surviving alongside a changed thumbnailUrl.
+        val coverLastModified = if (thumbnailUrl != null) {
+            coverCache.deleteFromCache(manga, false)
+            Instant.now().toEpochMilli()
         } else {
             null
-        }
-        val sameImageViaHash = coverComparison?.first == true
-
-        val coverLastModified = when {
-            thumbnailUrl == null -> null
-            // Same image confirmed via hash: quiet URL update, no cache delete, no Coil reload.
-            sameImageViaHash -> null
-            else -> {
-                coverCache.deleteFromCache(manga, false)
-                Instant.now().toEpochMilli()
-            }
-        }
-
-        // When same-image-different-URL, put the cached file at the new URL's path so Coil
-        // resolves the new key from disk instantly without a network round-trip.
-        if (sameImageViaHash && thumbnailUrl != null) {
-            val oldFile = coverCache.getCoverFile(manga.thumbnailUrl)
-            val newFile = coverCache.getCoverFile(thumbnailUrl)
-            if (oldFile != null && newFile != null && oldFile.exists() && oldFile != newFile) {
-                try {
-                    oldFile.copyTo(newFile, overwrite = true)
-                } catch (e: Exception) {
-                    logcat(LogPriority.WARN, e) { "Failed to copy cover cache to new path for '${manga.title}'" }
-                }
-            }
         }
 
         mangaRepository.update(
@@ -287,7 +243,6 @@ class RefreshCanonicalMetadata(
                 artist = artist,
                 thumbnailUrl = thumbnailUrl,
                 coverLastModified = coverLastModified,
-                coverHash = coverComparison?.second,
                 status = status,
                 contentType = contentType,
                 genre = genre,
@@ -301,45 +256,6 @@ class RefreshCanonicalMetadata(
             "Refreshed canonical metadata for '${manga.title}'"
         }
         return true
-    }
-
-    /**
-     * Compares the content of the current cached cover with the image at [newCoverUrl].
-     *
-     * Same logic as [eu.kanade.domain.manga.interactor.UpdateManga.computeCoversAreSameImage]:
-     * fetches [newCoverUrl] with a plain OkHttp GET, decodes both images via dHash, and
-     * returns Pair(isSame, newHash) — or null when the comparison could not be completed.
-     * Callers must treat null as "unknown → full update" to stay safe.
-     */
-    private suspend fun computeCoversAreSameImage(
-        oldCoverFile: java.io.File?,
-        newCoverUrl: String,
-        localCoverHash: Long?,
-    ): Pair<Boolean, Long>? {
-        return try {
-            val oldHash: Long = if (localCoverHash != null) {
-                localCoverHash
-            } else {
-                val file = oldCoverFile?.takeIf { it.exists() } ?: return null
-                ImageUtil.computeDHash(file.inputStream()) ?: return null
-            }
-
-            val request = Request.Builder()
-                .url(newCoverUrl)
-                .cacheControl(okhttp3.CacheControl.FORCE_NETWORK)
-                .build()
-
-            val newHash: Long = networkHelper.client.newCall(request).awaitSuccess().use { response ->
-                val body = response.body ?: return null
-                ImageUtil.computeDHash(body.byteStream()) ?: return null
-            }
-
-            val areSame = ImageUtil.dHashDistance(oldHash, newHash) <= ImageUtil.COVER_DHASH_THRESHOLD
-            Pair(areSame, newHash)
-        } catch (e: Exception) {
-            logcat(LogPriority.DEBUG, e) { "Cover hash comparison failed for $newCoverUrl — falling back to full update" }
-            null
-        }
     }
 
     /**

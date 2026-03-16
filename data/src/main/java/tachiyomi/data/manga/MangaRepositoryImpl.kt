@@ -223,7 +223,6 @@ class MangaRepositoryImpl(
                     deadSince = value.deadSince,
                     contentType = value.contentType?.value?.toLong(),
                     lockedFields = value.lockedFields,
-                    coverHash = value.coverHash,
                 )
             }
         }

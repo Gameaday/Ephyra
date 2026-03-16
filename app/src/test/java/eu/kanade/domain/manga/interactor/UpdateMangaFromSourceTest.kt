@@ -3,7 +3,6 @@ package eu.kanade.domain.manga.interactor
 import eu.kanade.domain.track.service.TrackPreferences
 import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.data.download.DownloadManager
-import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.model.UpdateStrategy
 import io.kotest.matchers.shouldBe
@@ -40,7 +39,6 @@ class UpdateMangaFromSourceTest {
     private lateinit var libraryPreferences: LibraryPreferences
     private lateinit var downloadManager: DownloadManager
     private lateinit var trackPreferences: TrackPreferences
-    private lateinit var networkHelper: NetworkHelper
     private lateinit var updateManga: UpdateManga
 
     private fun testManga(
@@ -101,7 +99,6 @@ class UpdateMangaFromSourceTest {
         downloadManager = mockk(relaxed = true)
         libraryPreferences = mockk(relaxed = true)
         trackPreferences = mockk(relaxed = true)
-        networkHelper = mockk(relaxed = true)
 
         // Default: allow title updates for favorites
         val updateTitlesPref = mockk<Preference<Boolean>>(relaxed = true)

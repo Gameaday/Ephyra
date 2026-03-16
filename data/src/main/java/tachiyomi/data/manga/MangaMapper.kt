@@ -45,7 +45,6 @@ object MangaMapper {
         deadSince: Long?,
         contentType: Long,
         lockedFields: Long,
-        coverHash: Long?,
     ): Manga = Manga(
         id = id,
         source = source,
@@ -79,7 +78,6 @@ object MangaMapper {
         deadSince = deadSince,
         contentType = ContentType.fromValue(contentType.toInt()),
         lockedFields = lockedFields,
-        coverHash = coverHash,
     )
 
     fun mapLibraryManga(
@@ -116,7 +114,6 @@ object MangaMapper {
         deadSince: Long?,
         contentType: Long,
         lockedFields: Long,
-        coverHash: Long?,
         totalCount: Long,
         readCount: Double,
         latestUpload: Long,
@@ -159,7 +156,6 @@ object MangaMapper {
             deadSince,
             contentType,
             lockedFields,
-            coverHash,
         ),
         categories = categories.split(",").map { it.toLong() },
         totalChapters = totalCount,
@@ -204,7 +200,6 @@ object MangaMapper {
         deadSince: Long?,
         contentType: Long,
         lockedFields: Long,
-        coverHash: Long?,
         totalCount: Long,
     ): MangaWithChapterCount = MangaWithChapterCount(
         manga = mapManga(
@@ -241,7 +236,6 @@ object MangaMapper {
             deadSince,
             contentType,
             lockedFields,
-            coverHash,
         ),
         chapterCount = totalCount,
     )

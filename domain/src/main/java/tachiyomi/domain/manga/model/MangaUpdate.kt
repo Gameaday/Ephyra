@@ -33,7 +33,6 @@ data class MangaUpdate(
     val deadSince: Long? = null,
     val contentType: ContentType? = null,
     val lockedFields: Long? = null,
-    val coverHash: Long? = null,
 )
 
 fun Manga.toMangaUpdate(): MangaUpdate {
@@ -68,6 +67,5 @@ fun Manga.toMangaUpdate(): MangaUpdate {
         deadSince = deadSince,
         contentType = contentType,
         lockedFields = lockedFields,
-        coverHash = coverHash,
     )
 }

@@ -41,7 +41,6 @@ data class Manga(
     val deadSince: Long?,
     val contentType: ContentType,
     val lockedFields: Long,
-    val coverHash: Long?,
 ) : Serializable {
 
     val expectedNextUpdate: Instant?
@@ -145,7 +144,6 @@ data class Manga(
             deadSince = null,
             contentType = ContentType.UNKNOWN,
             lockedFields = 0L,
-            coverHash = null,
         )
     }
 }
