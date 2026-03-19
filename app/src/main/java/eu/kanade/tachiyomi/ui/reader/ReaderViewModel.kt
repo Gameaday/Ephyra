@@ -269,6 +269,10 @@ class ReaderViewModel @JvmOverloads constructor(
                 if (chapterPageIndex >= 0) {
                     // Restore from SavedState
                     currentChapter.requestedPage = chapterPageIndex
+                    // The saved state index is only valid for the first restored chapter.
+                    // Reset it so adjacent chapter loads don't inherit the previous chapter's
+                    // page index and accidentally open near the end.
+                    chapterPageIndex = -1
                 } else if (!currentChapter.chapter.read) {
                     currentChapter.requestedPage = currentChapter.chapter.last_page_read
                 }
