@@ -418,6 +418,11 @@ class ReaderViewModel @JvmOverloads constructor(
 
         logcat { "Loading adjacent ${chapter.chapter.url}" }
 
+        // Toolbar next/previous chapter actions should always start from the beginning
+        // of the destination chapter. This avoids carrying stale positions that can
+        // accidentally jump readers near chapter ends.
+        chapter.requestedPage = 0
+
         mutableState.update { it.copy(isLoadingAdjacentChapter = true) }
         try {
             withIOContext {
