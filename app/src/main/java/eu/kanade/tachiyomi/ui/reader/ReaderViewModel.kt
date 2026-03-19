@@ -151,6 +151,7 @@ class ReaderViewModel @JvmOverloads constructor(
             savedState["page_index"] = value
             field = value
         }
+    private var hasAppliedSavedPageIndex = false
 
     /**
      * The chapter loader for the loaded manga. It'll be null until [manga] is set.
@@ -270,15 +271,12 @@ class ReaderViewModel @JvmOverloads constructor(
             .distinctUntilChanged()
             .filterNotNull()
             .onEach { currentChapter ->
-                if (chapterPageIndex >= 0) {
+                if (!hasAppliedSavedPageIndex && chapterPageIndex >= 0) {
                     // Restore from SavedState
                     currentChapter.requestedPage = chapterPageIndex
-                    // The saved state index is only valid for the first restored chapter.
-                    // Reset it so adjacent chapter loads don't inherit the previous chapter's
-                    // page index and start at an arbitrary restored position instead of the
-                    // intended transition target (start for next, end for previous). A new
-                    // process restore will repopulate chapterPageIndex from SavedStateHandle.
-                    chapterPageIndex = -1
+                    // Apply the saved page index only once on restore, then keep the persisted
+                    // value in sync with real progress via onPageSelected().
+                    hasAppliedSavedPageIndex = true
                 } else if (!currentChapter.chapter.read) {
                     currentChapter.requestedPage = currentChapter.chapter.last_page_read
                 }
@@ -796,9 +794,8 @@ class ReaderViewModel @JvmOverloads constructor(
     }
 
     private fun ReaderChapter.lastVisiblePageIndex(): Int? {
-        return pages
-            ?.indexOfLast { !it.isHidden }
-            ?.takeIf { it >= 0 }
+        val visibleCount = pages?.count { !it.isHidden } ?: 0
+        return (visibleCount - 1).takeIf { it >= 0 }
     }
 
     fun getSource() = manga?.source?.let { sourceManager.getOrStub(it) } as? HttpSource
