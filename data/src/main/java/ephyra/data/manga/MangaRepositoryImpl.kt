@@ -227,4 +227,8 @@ class MangaRepositoryImpl(
             }
         }
     }
+
+    override suspend fun deleteNonLibraryManga(sourceIds: List<Long>, keepReadManga: Long) {
+        handler.await { mangasQueries.deleteNonLibraryManga(sourceIds, keepReadManga) }
+    }
 }

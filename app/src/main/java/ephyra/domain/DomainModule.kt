@@ -75,6 +75,7 @@ import ephyra.domain.history.interactor.GetHistory
 import ephyra.domain.history.interactor.GetNextChapters
 import ephyra.domain.history.interactor.GetTotalReadDuration
 import ephyra.domain.history.interactor.RemoveHistory
+import ephyra.domain.history.interactor.RemoveResettedHistory
 import ephyra.domain.history.interactor.UpsertHistory
 import ephyra.domain.history.repository.HistoryRepository
 import ephyra.domain.manga.interactor.FetchInterval
@@ -88,6 +89,7 @@ import ephyra.domain.manga.interactor.GetMangaByUrlAndSourceId
 import ephyra.domain.manga.interactor.GetMangaWithChapters
 import ephyra.domain.manga.interactor.NetworkToLocalManga
 import ephyra.domain.manga.interactor.ResetViewerFlags
+import ephyra.domain.manga.interactor.DeleteNonLibraryManga
 import ephyra.domain.manga.interactor.SetMangaChapterFlags
 import ephyra.domain.manga.interactor.UpdateMangaNotes
 import ephyra.domain.manga.repository.MangaRepository
@@ -147,6 +149,7 @@ class DomainModule : InjektModule {
         addFactory { SetMangaCategories(get()) }
         addFactory { GetExcludedScanlators(get()) }
         addFactory { SetExcludedScanlators(get()) }
+        addFactory { DeleteNonLibraryManga(get()) }
         addFactory {
             MigrateMangaUseCase(
                 get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
@@ -187,6 +190,7 @@ class DomainModule : InjektModule {
         addFactory { GetHistory(get()) }
         addFactory { UpsertHistory(get()) }
         addFactory { RemoveHistory(get()) }
+        addFactory { RemoveResettedHistory(get()) }
         addFactory { GetTotalReadDuration(get()) }
 
         addFactory { DeleteDownload(get(), get()) }

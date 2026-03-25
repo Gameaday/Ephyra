@@ -47,7 +47,8 @@ import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.launchUI
 import ephyra.core.common.util.lang.toLong
 import ephyra.core.common.util.lang.withNonCancellableContext
-import ephyra.data.Database
+import ephyra.domain.history.interactor.RemoveResettedHistory
+import ephyra.domain.manga.interactor.DeleteNonLibraryManga
 import ephyra.domain.source.interactor.GetSourcesWithNonLibraryManga
 import ephyra.domain.source.model.Source
 import ephyra.domain.source.model.SourceWithCount
@@ -223,7 +224,8 @@ class ClearDatabaseScreen : Screen() {
 
 private class ClearDatabaseScreenModel : StateScreenModel<ClearDatabaseScreenModel.State>(State.Loading) {
     private val getSourcesWithNonLibraryManga: GetSourcesWithNonLibraryManga = Injekt.get()
-    private val database: Database = Injekt.get()
+    private val deleteNonLibraryManga: DeleteNonLibraryManga = Injekt.get()
+    private val removeResettedHistory: RemoveResettedHistory = Injekt.get()
 
     init {
         screenModelScope.launchIO {
@@ -242,8 +244,8 @@ private class ClearDatabaseScreenModel : StateScreenModel<ClearDatabaseScreenMod
 
     suspend fun removeMangaBySourceId(keepReadManga: Boolean) = withNonCancellableContext {
         val state = state.value as? State.Ready ?: return@withNonCancellableContext
-        database.mangasQueries.deleteNonLibraryManga(state.selection, keepReadManga.toLong())
-        database.historyQueries.removeResettedHistory()
+        deleteNonLibraryManga.await(state.selection, keepReadManga.toLong())
+        removeResettedHistory.await()
     }
 
     fun toggleSelection(source: Source) = mutableState.update { state ->

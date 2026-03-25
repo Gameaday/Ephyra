@@ -72,4 +72,8 @@ class HistoryRepositoryImpl(
             logcat(LogPriority.ERROR, throwable = e)
         }
     }
+
+    override suspend fun removeResettedHistory() {
+        handler.await { historyQueries.removeResettedHistory() }
+    }
 }
