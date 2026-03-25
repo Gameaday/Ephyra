@@ -1,20 +1,27 @@
-# Build files
-.gradle
-.kotlin
-build
+# Gradle
+.gradle/
+.kotlin/
+build/
+*.pyc
 
-# IDE files
+# IDE - IntelliJ / Android Studio
 *.iml
-.idea/*
+.idea/
 !.idea/icon.svg
-/captures
+/captures/
+/.externalNativeBuild/
+/.cxx/
 
-# Configuration files
+# Configuration
 local.properties
 
-# macOS specific files
-.DS_Store
+# Logs
+*.log
 
-# User addition
-.idx/dev.nix
+# OS
+.DS_Store
+Thumbs.db
+
+# Project IDX
+# .idx/dev.nix (Keep tracked)
 *.py
