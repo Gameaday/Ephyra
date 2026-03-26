@@ -1,5 +1,5 @@
 [versions]
-kotlin_version = "2.1.0"
+kotlin_version = "2.3.20"
 serialization_version = "1.10.0"
 xml_serialization_version = "0.91.3"
 
@@ -25,7 +25,13 @@ serialization-xml = { module = "io.github.pdvrieze.xmlutil:serialization", versi
 
 [bundles]
 coroutines = ["coroutines-core", "coroutines-android", "coroutines-guava"]
-serialization = ["serialization-json", "serialization-json-okio", "serialization-protobuf", "serialization-xml-core", "serialization-xml"]
+serialization = [
+    "serialization-json",
+    "serialization-json-okio",
+    "serialization-protobuf",
+    "serialization-xml-core",
+    "serialization-xml",
+]
 
 [plugins]
 android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin_version" }
