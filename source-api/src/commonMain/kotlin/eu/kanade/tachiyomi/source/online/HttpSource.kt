@@ -14,7 +14,8 @@ import okhttp3.Headers
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
-import uy.kohesive.injekt.injectLazy
+import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.get
 import java.net.URI
 import java.net.URISyntaxException
 import java.security.MessageDigest
@@ -28,7 +29,7 @@ abstract class HttpSource : CatalogueSource {
     /**
      * Network service.
      */
-    protected val network: NetworkHelper by injectLazy()
+    protected val network: NetworkHelper = Injekt.get()
 
     /**
      * Base url of the website without the trailing slash, like: http://mysite.com

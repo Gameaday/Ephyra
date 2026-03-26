@@ -21,6 +21,7 @@ kotlin {
 dependencies {
     implementation(projects.i18n)
 
+    api(libs.koin.core)
     api(libs.logcat)
 
     api(libs.okhttp.core)
