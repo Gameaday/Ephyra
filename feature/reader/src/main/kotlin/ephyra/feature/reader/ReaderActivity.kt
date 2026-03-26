@@ -80,9 +80,9 @@ import ephyra.presentation.core.util.system.isNightMode
 import ephyra.app.util.system.openInBrowser
 import ephyra.app.util.system.toShareIntent
 import ephyra.app.util.system.toast
-import ephyra.app.util.view.applyHighRefreshRate
-import ephyra.app.util.view.overrideTransitionCompat
-import ephyra.app.util.view.setComposeContent
+import ephyra.presentation.core.util.view.applyHighRefreshRate
+import ephyra.presentation.core.util.view.overrideTransitionCompat
+import ephyra.presentation.core.util.view.setComposeContent
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
