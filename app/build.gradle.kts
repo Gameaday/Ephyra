@@ -254,7 +254,6 @@ dependencies {
     implementation(libs.preferencektx)
 
     // Dependency injection
-    implementation(libs.injekt)
     implementation(libs.bundles.koin)
 
     // Image loading

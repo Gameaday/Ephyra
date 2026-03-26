@@ -41,7 +41,8 @@ import ephyra.source.local.io.Archive
 import ephyra.source.local.io.Format
 import ephyra.source.local.io.LocalSourceFileSystem
 import ephyra.source.local.metadata.fillMetadata
-import uy.kohesive.injekt.injectLazy
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import java.io.InputStream
 import java.nio.charset.StandardCharsets
 import kotlin.time.Duration.Companion.days
@@ -51,10 +52,10 @@ actual class LocalSource(
     private val context: Context,
     private val fileSystem: LocalSourceFileSystem,
     private val coverManager: LocalCoverManager,
-) : CatalogueSource, UnmeteredSource {
+) : CatalogueSource, UnmeteredSource, KoinComponent {
 
-    private val json: Json by injectLazy()
-    private val xml: XML by injectLazy()
+    private val json: Json by inject()
+    private val xml: XML by inject()
 
     @Suppress("PrivatePropertyName")
     private val PopularFilters = FilterList(OrderBy.Popular(context))

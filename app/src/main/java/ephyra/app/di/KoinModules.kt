@@ -15,6 +15,11 @@ import ephyra.presentation.more.settings.screen.SettingsDownloadScreenModel
 import ephyra.presentation.more.settings.screen.SettingsDataScreenModel
 import ephyra.presentation.more.settings.screen.SettingsBrowseScreenModel
 import ephyra.presentation.more.settings.screen.SettingsLibraryScreenModel
+import ephyra.presentation.more.settings.screen.SettingsTrackingScreenModel
+import ephyra.presentation.more.settings.screen.SettingsAppearanceScreenModel
+import ephyra.presentation.more.settings.screen.SettingsReaderScreenModel
+import ephyra.presentation.more.settings.screen.SettingsSecurityScreenModel
+import ephyra.presentation.more.settings.screen.SettingsAdvancedScreenModel
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
@@ -68,7 +73,8 @@ val koinAppModule_UI = module {
             app = org.koin.android.ext.koin.androidApplication(),
             coverCache = get(),
             localCoverManager = get(),
-            updateManga = get()
+            updateManga = get(),
+            chapterCache = get()
         )
     }
     factory {
