@@ -28,3 +28,8 @@ object Injekt {
  * Global extension for lazy injection, matching the original Injekt API.
  */
 inline fun <reified T : Any> Any.injectLazy(): Lazy<T> = Injekt.injectLazy()
+
+/**
+ * Extension on the Injekt object to allow get() calls, facilitating binary compatibility.
+ */
+inline fun <reified T : Any> Injekt.get(): T = Injekt.get<T>()
