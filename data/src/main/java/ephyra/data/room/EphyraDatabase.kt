@@ -16,6 +16,7 @@ import ephyra.data.room.views.*
         TrackEntity::class,
         ExtensionRepoEntity::class,
         ExcludedScanlatorEntity::class,
+        SourceEntity::class,
     ],
     views = [
         LibraryView::class,
@@ -34,11 +35,5 @@ abstract class EphyraDatabase : RoomDatabase() {
     abstract fun trackDao(): ephyra.data.room.daos.TrackDao
     abstract fun updateDao(): ephyra.data.room.daos.UpdateDao
     abstract fun extensionRepoDao(): ephyra.data.room.daos.ExtensionRepoDao
+    abstract fun sourceDao(): ephyra.data.room.daos.SourceDao
 }
-
-@androidx.room.Entity(tableName = "sources")
-data class SourceEntity(
-    @androidx.room.PrimaryKey(autoGenerate = true) @androidx.room.ColumnInfo(name = "_id") val id: Long,
-    @androidx.room.ColumnInfo(name = "name") val name: String,
-    @androidx.room.ColumnInfo(name = "lang") val lang: String,
-)

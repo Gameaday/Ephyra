@@ -38,7 +38,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -149,7 +149,7 @@ fun MigrationListScreenContent(
                         modifier = Modifier.weight(0.2f),
                     )
 
-                    val result by item.searchResult.collectAsState()
+                    val result by item.searchResult.collectAsStateWithLifecycle()
                     MigrationListItemResult(
                         modifier = Modifier
                             .weight(1f)

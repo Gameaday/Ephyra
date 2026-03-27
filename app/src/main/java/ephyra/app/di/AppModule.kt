@@ -80,6 +80,7 @@ val koinAppModule = module {
     single { get<EphyraDatabase>().trackDao() }
     single { get<EphyraDatabase>().updateDao() }
     single { get<EphyraDatabase>().extensionRepoDao() }
+    single { get<EphyraDatabase>().sourceDao() }
 
 
     single {

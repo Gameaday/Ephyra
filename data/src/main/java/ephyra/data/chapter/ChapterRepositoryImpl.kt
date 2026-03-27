@@ -85,25 +85,19 @@ class ChapterRepositoryImpl(
     }
 
     override suspend fun getChapterByMangaId(mangaId: Long, applyScanlatorFilter: Boolean): List<Chapter> {
-        // Filters should be moved to the DAO for better performance.
-        return chapterDao.getChaptersByMangaId(mangaId).map(ChapterMapper::mapChapter)
+        return chapterDao.getChaptersByMangaId(mangaId, applyScanlatorFilter).map(ChapterMapper::mapChapter)
     }
 
     override suspend fun getScanlatorsByMangaId(mangaId: Long): List<String> {
-        // This query should be added to ChapterDao.
-        return chapterDao.getChaptersByMangaId(mangaId).mapNotNull { it.scanlator }.distinct()
+        return chapterDao.getScanlatorsByMangaId(mangaId)
     }
 
     override fun getScanlatorsByMangaIdAsFlow(mangaId: Long): Flow<List<String>> {
-        return chapterDao.getChaptersByMangaIdAsFlow(mangaId).map { chapters ->
-            chapters.mapNotNull { it.scanlator }.distinct()
-        }
+        return chapterDao.getScanlatorsByMangaIdAsFlow(mangaId)
     }
 
     override suspend fun getBookmarkedChaptersByMangaId(mangaId: Long): List<Chapter> {
-        return chapterDao.getChaptersByMangaId(mangaId)
-            .filter { it.bookmark }
-            .map(ChapterMapper::mapChapter)
+        return chapterDao.getBookmarkedChaptersByMangaId(mangaId).map(ChapterMapper::mapChapter)
     }
 
     override suspend fun getChapterById(id: Long): Chapter? {
@@ -111,15 +105,12 @@ class ChapterRepositoryImpl(
     }
 
     override suspend fun getChapterByMangaIdAsFlow(mangaId: Long, applyScanlatorFilter: Boolean): Flow<List<Chapter>> {
-        return chapterDao.getChaptersByMangaIdAsFlow(mangaId).map { chapters ->
+        return chapterDao.getChaptersByMangaIdAsFlow(mangaId, applyScanlatorFilter).map { chapters ->
             chapters.map(ChapterMapper::mapChapter)
         }
     }
 
     override suspend fun getChapterByUrlAndMangaId(url: String, mangaId: Long): Chapter? {
-        // This query should be added to ChapterDao.
-        return chapterDao.getChaptersByMangaId(mangaId)
-            .find { it.url == url }
-            ?.let(ChapterMapper::mapChapter)
+        return chapterDao.getChapterByUrlAndMangaId(url, mangaId)?.let(ChapterMapper::mapChapter)
     }
 }

@@ -1,29 +1,33 @@
 package ephyra.data.source
 
 import kotlinx.coroutines.flow.Flow
-import ephyra.data.DatabaseHandler
+import kotlinx.coroutines.flow.map
+import ephyra.data.room.daos.SourceDao
+import ephyra.data.room.entities.SourceEntity
 import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.repository.StubSourceRepository
 
 class StubSourceRepositoryImpl(
-    private val handler: DatabaseHandler,
+    private val sourceDao: SourceDao,
 ) : StubSourceRepository {
 
     override fun subscribeAll(): Flow<List<StubSource>> {
-        return handler.subscribeToList { sourcesQueries.findAll(::mapStubSource) }
+        return sourceDao.subscribeAll().map { list ->
+            list.map(SourceMapper::mapStubSource)
+        }
     }
 
     override suspend fun getStubSource(id: Long): StubSource? {
-        return handler.awaitOneOrNull { sourcesQueries.findOne(id, ::mapStubSource) }
+        return sourceDao.getStubSource(id)?.let(SourceMapper::mapStubSource)
     }
 
     override suspend fun upsertStubSource(id: Long, lang: String, name: String) {
-        handler.await { sourcesQueries.upsert(id, lang, name) }
+        sourceDao.upsert(SourceEntity(id, lang, name))
     }
+}
 
-    private fun mapStubSource(
-        id: Long,
-        lang: String,
-        name: String,
-    ): StubSource = StubSource(id = id, lang = lang, name = name)
+object SourceMapper {
+    fun mapStubSource(entity: SourceEntity): StubSource {
+        return StubSource(id = entity.id, lang = entity.lang, name = entity.name)
+    }
 }
