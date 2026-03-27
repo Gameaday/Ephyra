@@ -2,6 +2,7 @@ package ephyra.buildlogic
 
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.CommonExtension
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.dsl.TestExtension
 import org.gradle.api.Project
@@ -77,6 +78,28 @@ internal fun Project.configureAndroid(commonExtension: CommonExtension) {
 
     dependencies {
         "coreLibraryDesugaring"(libsCatalog.getLib("desugar"))
+    }
+}
+
+internal fun Project.configureAndroidMultiplatform(androidExtension: KotlinMultiplatformAndroidLibraryExtension) {
+    androidExtension.apply {
+        compileSdk = AndroidConfig.COMPILE_SDK
+        minSdk = AndroidConfig.MIN_SDK
+
+        // Additional common configs could go here if needed
+    }
+
+    tasks.withType<KotlinCompile>().configureEach {
+        compilerOptions {
+            jvmTarget.set(AndroidConfig.JvmTarget)
+            freeCompilerArgs.addAll(
+                "-Xcontext-parameters",
+                "-opt-in=kotlin.RequiresOptIn",
+            )
+
+            val warningsAsErrors: String? by project
+            allWarningsAsErrors.set(warningsAsErrors.toBoolean())
+        }
     }
 }
 

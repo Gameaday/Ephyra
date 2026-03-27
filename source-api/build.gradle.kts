@@ -1,13 +1,22 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import ephyra.buildlogic.AndroidConfig
 
 plugins {
     id("mihon.library.multiplatform")
-    kotlin("multiplatform")
     kotlin("plugin.serialization")
 }
 
 kotlin {
-    androidTarget()
+    android {
+        namespace = "eu.kanade.tachiyomi.source"
+        compileSdk = AndroidConfig.COMPILE_SDK
+        minSdk = AndroidConfig.MIN_SDK
+
+        defaultConfig {
+            consumerProguardFile("consumer-proguard.pro")
+        }
+    }
+
     sourceSets {
         val commonMain by getting {
             dependencies {
@@ -37,11 +46,4 @@ kotlin {
     }
 }
 
-android {
-    namespace = "eu.kanade.tachiyomi.source"
-
-    defaultConfig {
-        consumerProguardFile("consumer-proguard.pro")
-    }
-}
 

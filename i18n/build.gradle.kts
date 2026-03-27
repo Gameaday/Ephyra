@@ -4,13 +4,16 @@ import ephyra.buildlogic.tasks.getLocalesConfigTask
 
 plugins {
     id("mihon.library.multiplatform")
-    kotlin("multiplatform")
     kotlin("plugin.serialization")
     alias(libs.plugins.moko)
 }
 
 kotlin {
-    androidTarget()
+    android {
+        namespace = "ephyra.i18n"
+        compileSdk = AndroidConfig.COMPILE_SDK
+        minSdk = AndroidConfig.MIN_SDK
+    }
 
     applyDefaultHierarchyTemplate()
 
@@ -27,18 +30,6 @@ kotlin {
     }
 }
 
-android {
-    namespace = "ephyra.i18n"
-
-    sourceSets {
-        getByName("main") {
-            res.srcDirs(
-                "src/commonMain/resources",
-                generatedBuildDir.resolve("android/res"),
-            )
-        }
-    }
-}
 
 multiplatformResources {
     resourcesPackage.set("ephyra.i18n")

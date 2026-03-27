@@ -1,3 +1,4 @@
+import com.android.build.api.dsl.LibraryExtension
 import ephyra.buildlogic.configureCompose
 
 plugins {
@@ -6,6 +7,6 @@ plugins {
     id("mihon.code.lint")
 }
 
-android {
+extensions.configure<LibraryExtension> {
     configureCompose(this)
 }

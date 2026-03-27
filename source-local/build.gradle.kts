@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import ephyra.buildlogic.AndroidConfig
 
 plugins {
     id("mihon.library.multiplatform")
@@ -7,7 +8,16 @@ plugins {
 }
 
 kotlin {
-    androidTarget()
+    android {
+        namespace = "tachiyomi.source.local"
+        compileSdk = AndroidConfig.COMPILE_SDK
+        minSdk = AndroidConfig.MIN_SDK
+
+        defaultConfig {
+            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+            consumerProguardFiles("consumer-rules.pro")
+        }
+    }
     sourceSets {
         val commonMain by getting {
             dependencies {
@@ -40,12 +50,6 @@ kotlin {
     }
 }
 
-android {
-    namespace = "tachiyomi.source.local"
 
-    defaultConfig {
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles("consumer-rules.pro")
-    }
-}
+
 

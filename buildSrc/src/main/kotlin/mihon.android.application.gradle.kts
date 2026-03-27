@@ -1,3 +1,4 @@
+import com.android.build.api.dsl.ApplicationExtension
 import ephyra.buildlogic.AndroidConfig
 import ephyra.buildlogic.configureAndroid
 import ephyra.buildlogic.configureTest
@@ -8,10 +9,11 @@ plugins {
     id("mihon.code.lint")
 }
 
-android {
+extensions.configure<ApplicationExtension> {
     defaultConfig {
         targetSdk = AndroidConfig.TARGET_SDK
     }
     configureAndroid(this)
-    configureTest()
 }
+
+configureTest()

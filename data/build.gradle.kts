@@ -1,19 +1,22 @@
+import ephyra.buildlogic.AndroidConfig
+
 plugins {
-    id("mihon.library")
+    id("mihon.library.multiplatform")
 
     kotlin("plugin.serialization")
     id("com.google.devtools.ksp")
 }
 
-android {
-    namespace = "tachiyomi.data"
-
-    defaultConfig {
-        consumerProguardFiles("consumer-rules.pro")
-    }
-}
-
 kotlin {
+    android {
+        namespace = "tachiyomi.data"
+        compileSdk = AndroidConfig.COMPILE_SDK
+        minSdk = AndroidConfig.MIN_SDK
+
+        defaultConfig {
+            consumerProguardFiles("consumer-rules.pro")
+        }
+    }
     compilerOptions {
         freeCompilerArgs.add("-opt-in=kotlinx.serialization.ExperimentalSerializationApi")
     }

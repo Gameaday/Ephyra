@@ -1,13 +1,18 @@
-import ephyra.buildlogic.configureAndroid
+import ephyra.buildlogic.configureAndroidMultiplatform
 import ephyra.buildlogic.configureTest
 
 plugins {
-    id("com.android.library")
+    id("com.android.kotlin.multiplatform.library")
+    kotlin("multiplatform")
 
     id("mihon.code.lint")
 }
 
-android {
-    configureAndroid(this)
+kotlin {
+    android {
+        configureAndroidMultiplatform(this)
+    }
+
     configureTest()
 }
+
