@@ -1,15 +1,18 @@
 package ephyra.buildlogic
 
+import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.CommonExtension
-import org.gradle.accessors.dm.LibrariesForAndroidx
-import org.gradle.accessors.dm.LibrariesForCompose
-import org.gradle.accessors.dm.LibrariesForKotlinx
-import org.gradle.accessors.dm.LibrariesForLibs
+import com.android.build.api.dsl.LibraryExtension
+import com.android.build.api.dsl.TestExtension
 import org.gradle.api.Project
+import org.gradle.api.artifacts.VersionCatalog
+import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.tasks.testing.Test
 import org.gradle.api.tasks.testing.logging.TestLogEvent
+import org.gradle.kotlin.dsl.assign
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.dependencies
+import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.provideDelegate
 import org.gradle.kotlin.dsl.the
 import org.gradle.kotlin.dsl.withType
@@ -17,23 +20,45 @@ import org.jetbrains.kotlin.compose.compiler.gradle.ComposeCompilerGradlePluginE
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.io.File
 
-val Project.androidx get() = the<LibrariesForAndroidx>()
-val Project.compose get() = the<LibrariesForCompose>()
-val Project.kotlinx get() = the<LibrariesForKotlinx>()
-val Project.libs get() = the<LibrariesForLibs>()
+val Project.androidx get() = extensions.getByType<VersionCatalogsExtension>().named("androidx")
+val Project.compose get() = extensions.getByType<VersionCatalogsExtension>().named("compose")
+val Project.kotlinx get() = extensions.getByType<VersionCatalogsExtension>().named("kotlinx")
+val Project.libs get() = extensions.getByType<VersionCatalogsExtension>().named("libs")
+
+fun VersionCatalog.getLib(name: String) = findLibrary(name).orElseThrow { NoSuchElementException("Library $name not found in catalog") }.get()
+fun VersionCatalog.getPlugin(name: String) = findPlugin(name).orElseThrow { NoSuchElementException("Plugin $name not found in catalog") }.get()
 
 internal fun Project.configureAndroid(commonExtension: CommonExtension) {
-    commonExtension.apply {
-        compileSdk = AndroidConfig.COMPILE_SDK
+    val compileSdkValue = AndroidConfig.COMPILE_SDK
+    val minSdkVersion = AndroidConfig.MIN_SDK
 
-        defaultConfig {
-            minSdk = AndroidConfig.MIN_SDK
+    when (commonExtension) {
+        is ApplicationExtension -> {
+            commonExtension.compileSdk = compileSdkValue
+            commonExtension.defaultConfig.minSdk = minSdkVersion
+            commonExtension.compileOptions {
+                sourceCompatibility = AndroidConfig.JavaVersion
+                targetCompatibility = AndroidConfig.JavaVersion
+                isCoreLibraryDesugaringEnabled = true
+            }
         }
-
-        compileOptions {
-            sourceCompatibility = AndroidConfig.JavaVersion
-            targetCompatibility = AndroidConfig.JavaVersion
-            isCoreLibraryDesugaringEnabled = true
+        is LibraryExtension -> {
+            commonExtension.compileSdk = compileSdkValue
+            commonExtension.defaultConfig.minSdk = minSdkVersion
+            commonExtension.compileOptions {
+                sourceCompatibility = AndroidConfig.JavaVersion
+                targetCompatibility = AndroidConfig.JavaVersion
+                isCoreLibraryDesugaringEnabled = true
+            }
+        }
+        is TestExtension -> {
+            commonExtension.compileSdk = compileSdkValue
+            commonExtension.defaultConfig.minSdk = minSdkVersion
+            commonExtension.compileOptions {
+                sourceCompatibility = AndroidConfig.JavaVersion
+                targetCompatibility = AndroidConfig.JavaVersion
+                isCoreLibraryDesugaringEnabled = true
+            }
         }
     }
 
@@ -45,29 +70,33 @@ internal fun Project.configureAndroid(commonExtension: CommonExtension) {
                 "-opt-in=kotlin.RequiresOptIn",
             )
 
-            // Treat all Kotlin warnings as errors (disabled by default)
-            // Override by setting warningsAsErrors=true in your ~/.gradle/gradle.properties
             val warningsAsErrors: String? by project
             allWarningsAsErrors.set(warningsAsErrors.toBoolean())
-
         }
     }
 
     dependencies {
-        "coreLibraryDesugaring"(libs.desugar)
+        "coreLibraryDesugaring"(libs.getLib("desugar"))
     }
 }
 
 internal fun Project.configureCompose(commonExtension: CommonExtension) {
-    pluginManager.apply(kotlinx.plugins.compose.compiler.get().pluginId)
+    // kotlinx.versions.toml has "compose-compiler" under [plugins]
+    pluginManager.apply(kotlinx.getPlugin("compose-compiler").pluginId)
+
+    when (commonExtension) {
+        is ApplicationExtension -> {
+            commonExtension.buildFeatures.compose = true
+        }
+        is LibraryExtension -> {
+            commonExtension.buildFeatures.compose = true
+        }
+    }
 
     commonExtension.apply {
-        buildFeatures {
-            compose = true
-        }
-
         dependencies {
-            "implementation"(platform(compose.bom))
+            // compose.versions.toml has "compose-bom" under [libraries]
+            "implementation"(platform(compose.getLib("compose-bom")))
         }
     }
 
@@ -86,14 +115,11 @@ internal fun Project.configureCompose(commonExtension: CommonExtension) {
             reportsDestination.set(rootBuildDir.dir("compose-reports").map { it.dir(relativePath.path) })
         }
 
-        // Mark common immutable types as stable to reduce compilation work
-        // and avoid unnecessary recompositions at runtime
         val stabilityConfig = project.rootDir.resolve("app/compose_stability.conf")
         if (stabilityConfig.exists()) {
             stabilityConfigurationFile.set(stabilityConfig)
         }
     }
-
 }
 
 internal fun Project.configureTest() {

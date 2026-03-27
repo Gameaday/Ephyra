@@ -1,10 +1,11 @@
-import org.gradle.accessors.dm.LibrariesForLibs
+import org.gradle.api.artifacts.VersionCatalogsExtension
 
 plugins {
     id("com.diffplug.spotless")
 }
 
-val libs = the<LibrariesForLibs>()
+val catalogs = project.extensions.getByType<VersionCatalogsExtension>()
+val libs = catalogs.named("libs")
 
 val xmlFormatExclude = buildList(2) {
     add("**/build/**/*.xml")
@@ -22,7 +23,10 @@ spotless {
     kotlin {
         target("**/*.kt", "**/*.kts")
         targetExclude("**/build/**/*.kt")
-        ktlint(libs.ktlint.core.get().version)
+
+        val ktlintLib = libs.findLibrary("ktlint-core").get().get()
+        ktlint(ktlintLib.versionConstraint.requiredVersion)
+        
         trimTrailingWhitespace()
         endWithNewline()
     }
