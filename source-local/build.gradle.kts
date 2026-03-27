@@ -1,8 +1,9 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 
 plugins {
-    id("mihon.library")
+    id("mihon.library.multiplatform")
     kotlin("multiplatform")
+    kotlin("plugin.serialization")
 }
 
 kotlin {
@@ -47,3 +48,4 @@ android {
         consumerProguardFiles("consumer-rules.pro")
     }
 }
+

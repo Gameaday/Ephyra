@@ -1,7 +1,7 @@
 plugins {
     id("mihon.library")
     id("mihon.library.compose")
-    kotlin("android")
+
 }
 
 android {
@@ -28,3 +28,4 @@ dependencies {
     implementation(libs.subsamplingscaleimageview)
     implementation(libs.image.decoder)
 }
+

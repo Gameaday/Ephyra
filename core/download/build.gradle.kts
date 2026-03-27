@@ -1,6 +1,6 @@
 plugins {
     id("mihon.library")
-    kotlin("android")
+
 }
 
 android {
@@ -17,3 +17,4 @@ dependencies {
     implementation(libs.logcat)
     implementation(libs.unifile)
 }
+

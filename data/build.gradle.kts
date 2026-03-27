@@ -1,6 +1,6 @@
 plugins {
     id("mihon.library")
-    kotlin("android")
+
     kotlin("plugin.serialization")
     id("com.google.devtools.ksp")
 }
@@ -29,3 +29,4 @@ dependencies {
     implementation(libs.room.paging)
     ksp(libs.room.compiler)
 }
+

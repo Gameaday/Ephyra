@@ -2,7 +2,7 @@ import ephyra.buildlogic.Config
 
 plugins {
     id("mihon.library")
-    kotlin("android")
+
 }
 
 android {
@@ -27,3 +27,4 @@ dependencies {
         implementation(libs.firebase.crashlytics)
     }
 }
+

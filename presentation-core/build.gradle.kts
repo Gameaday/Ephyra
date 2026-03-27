@@ -1,7 +1,7 @@
 plugins {
     id("mihon.library")
     id("mihon.library.compose")
-    kotlin("android")
+
 }
 
 android {
@@ -53,3 +53,4 @@ dependencies {
     implementation(libs.bundles.coil)
     implementation(libs.okio)
 }
+

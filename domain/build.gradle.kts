@@ -1,6 +1,6 @@
 plugins {
     id("mihon.library")
-    kotlin("android")
+
     kotlin("plugin.serialization")
 }
 
@@ -37,3 +37,4 @@ dependencies {
     testImplementation(kotlinx.coroutines.test)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
+

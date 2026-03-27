@@ -1,7 +1,7 @@
 plugins {
     id("mihon.library")
     id("mihon.library.compose")
-    kotlin("android")
+
     id("com.google.devtools.ksp")
 }
 
@@ -25,3 +25,4 @@ dependencies {
 
     testImplementation(libs.bundles.test)
 }
+

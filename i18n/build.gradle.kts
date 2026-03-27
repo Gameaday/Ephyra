@@ -1,10 +1,11 @@
+import ephyra.buildlogic.AndroidConfig
 import ephyra.buildlogic.generatedBuildDir
 import ephyra.buildlogic.tasks.getLocalesConfigTask
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 
 plugins {
-    id("mihon.library")
+    id("mihon.library.multiplatform")
     kotlin("multiplatform")
+    kotlin("plugin.serialization")
     alias(libs.plugins.moko)
 }
 
@@ -21,27 +22,21 @@ kotlin {
         }
     }
 
-    @OptIn(ExperimentalKotlinGradlePluginApi::class)
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")
     }
 }
 
-val generatedAndroidResourceDir = generatedBuildDir.resolve("android/res")
-
 android {
     namespace = "ephyra.i18n"
 
     sourceSets {
-        val main by getting
-        main.res.srcDirs(
-            "src/commonMain/resources",
-            generatedAndroidResourceDir,
-        )
-    }
-
-    lint {
-        disable.addAll(listOf("MissingTranslation", "ExtraTranslation"))
+        getByName("main") {
+            res.srcDirs(
+                "src/commonMain/resources",
+                generatedBuildDir.resolve("android/res"),
+            )
+        }
     }
 }
 
@@ -50,6 +45,7 @@ multiplatformResources {
 }
 
 tasks {
+    val generatedAndroidResourceDir = generatedBuildDir.resolve("android/res")
     val localesConfigTask = project.getLocalesConfigTask(generatedAndroidResourceDir)
     preBuild {
         dependsOn(localesConfigTask)

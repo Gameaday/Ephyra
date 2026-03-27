@@ -20,13 +20,13 @@ import org.jetbrains.kotlin.compose.compiler.gradle.ComposeCompilerGradlePluginE
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.io.File
 
-val Project.androidx get() = extensions.getByType<VersionCatalogsExtension>().named("androidx")
-val Project.compose get() = extensions.getByType<VersionCatalogsExtension>().named("compose")
-val Project.kotlinx get() = extensions.getByType<VersionCatalogsExtension>().named("kotlinx")
-val Project.libs get() = extensions.getByType<VersionCatalogsExtension>().named("libs")
+val Project.androidxCatalog get() = extensions.getByType<VersionCatalogsExtension>().named("androidx")
+val Project.composeCatalog get() = extensions.getByType<VersionCatalogsExtension>().named("compose")
+val Project.kotlinxCatalog get() = extensions.getByType<VersionCatalogsExtension>().named("kotlinx")
+val Project.libsCatalog get() = extensions.getByType<VersionCatalogsExtension>().named("libs")
 
-fun VersionCatalog.getLib(name: String) = findLibrary(name).orElseThrow { NoSuchElementException("Library $name not found in catalog") }.get()
-fun VersionCatalog.getPlugin(name: String) = findPlugin(name).orElseThrow { NoSuchElementException("Plugin $name not found in catalog") }.get()
+private fun VersionCatalog.getLib(name: String) = findLibrary(name).orElseThrow { NoSuchElementException("Library $name not found in catalog") }.get()
+private fun VersionCatalog.getPlugin(name: String) = findPlugin(name).orElseThrow { NoSuchElementException("Plugin $name not found in catalog") }.get()
 
 internal fun Project.configureAndroid(commonExtension: CommonExtension) {
     val compileSdkValue = AndroidConfig.COMPILE_SDK
@@ -76,13 +76,12 @@ internal fun Project.configureAndroid(commonExtension: CommonExtension) {
     }
 
     dependencies {
-        "coreLibraryDesugaring"(libs.getLib("desugar"))
+        "coreLibraryDesugaring"(libsCatalog.getLib("desugar"))
     }
 }
 
 internal fun Project.configureCompose(commonExtension: CommonExtension) {
-    // kotlinx.versions.toml has "compose-compiler" under [plugins]
-    pluginManager.apply(kotlinx.getPlugin("compose-compiler").pluginId)
+    pluginManager.apply(kotlinxCatalog.getPlugin("compose-compiler").pluginId)
 
     when (commonExtension) {
         is ApplicationExtension -> {
@@ -95,8 +94,7 @@ internal fun Project.configureCompose(commonExtension: CommonExtension) {
 
     commonExtension.apply {
         dependencies {
-            // compose.versions.toml has "compose-bom" under [libraries]
-            "implementation"(platform(compose.getLib("compose-bom")))
+            "implementation"(platform(composeCatalog.getLib("compose-bom")))
         }
     }
 
