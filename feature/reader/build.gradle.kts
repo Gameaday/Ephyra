@@ -22,6 +22,13 @@ dependencies {
     implementation(projects.presentationCore)
 
     implementation(libs.logcat)
+    implementation(compose.material3.core)
+    implementation(compose.foundation)
+    implementation(compose.ui.util)
+    implementation(compose.ui.tooling.preview)
+    debugImplementation(compose.ui.tooling)
+
+    implementation(androidx.lifecycle.runtime.compose)
     implementation(libs.bundles.voyager)
     implementation(libs.koin.android)
     

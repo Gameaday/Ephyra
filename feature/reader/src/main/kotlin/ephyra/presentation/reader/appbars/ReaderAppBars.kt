@@ -25,10 +25,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import ephyra.presentation.reader.components.ChapterNavigator
-import ephyra.app.ui.reader.setting.ReaderOrientation
-import ephyra.app.ui.reader.setting.ReadingMode
-import ephyra.app.ui.reader.viewer.Viewer
-import ephyra.app.ui.reader.viewer.pager.R2LPagerViewer
+import ephyra.feature.reader.setting.ReaderOrientation
+import ephyra.feature.reader.setting.ReadingMode
+import ephyra.feature.reader.viewer.Viewer
+import ephyra.feature.reader.viewer.pager.R2LPagerViewer
 import ephyra.presentation.core.components.material.padding
 
 private val readerBarsSlideAnimationSpec = tween<IntOffset>(200)

@@ -7,8 +7,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import ephyra.app.ui.reader.setting.ReaderPreferences
-import ephyra.app.ui.reader.setting.ReaderSettingsScreenModel
+import ephyra.feature.reader.setting.ReaderPreferences
+import ephyra.feature.reader.setting.ReaderSettingsScreenModel
 import ephyra.app.util.system.hasDisplayCutout
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.CheckboxItem

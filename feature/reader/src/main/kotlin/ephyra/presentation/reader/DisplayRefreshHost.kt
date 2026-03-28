@@ -11,7 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import ephyra.app.ui.reader.setting.ReaderPreferences
+import ephyra.feature.reader.setting.ReaderPreferences
 import kotlinx.coroutines.delay
 import ephyra.presentation.core.util.collectAsState
 import kotlin.time.Duration.Companion.milliseconds

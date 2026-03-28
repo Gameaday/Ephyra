@@ -35,8 +35,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ephyra.presentation.theme.TachiyomiPreviewTheme
 import ephyra.app.data.database.models.toDomainChapter
-import ephyra.app.ui.reader.model.ChapterTransition
-import ephyra.app.ui.reader.model.ReaderChapter
+import ephyra.feature.reader.model.ChapterTransition
+import ephyra.feature.reader.model.ReaderChapter
 import kotlinx.collections.immutable.persistentMapOf
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.service.calculateChapterGap

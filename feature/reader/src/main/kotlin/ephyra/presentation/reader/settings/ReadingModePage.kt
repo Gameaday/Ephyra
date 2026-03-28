@@ -10,11 +10,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import ephyra.domain.manga.model.readerOrientation
 import ephyra.domain.manga.model.readingMode
-import ephyra.app.ui.reader.setting.ReaderOrientation
-import ephyra.app.ui.reader.setting.ReaderPreferences
-import ephyra.app.ui.reader.setting.ReaderSettingsScreenModel
-import ephyra.app.ui.reader.setting.ReadingMode
-import ephyra.app.ui.reader.viewer.webtoon.WebtoonViewer
+import ephyra.feature.reader.setting.ReaderOrientation
+import ephyra.feature.reader.setting.ReaderPreferences
+import ephyra.feature.reader.setting.ReaderSettingsScreenModel
+import ephyra.feature.reader.setting.ReadingMode
+import ephyra.feature.reader.viewer.webtoon.WebtoonViewer
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.CheckboxItem
 import ephyra.presentation.core.components.HeadingItem

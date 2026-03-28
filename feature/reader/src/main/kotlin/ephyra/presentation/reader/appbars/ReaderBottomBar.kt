@@ -12,8 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import ephyra.app.R
-import ephyra.app.ui.reader.setting.ReaderOrientation
-import ephyra.app.ui.reader.setting.ReadingMode
+import ephyra.feature.reader.setting.ReaderOrientation
+import ephyra.feature.reader.setting.ReadingMode
 import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource
 

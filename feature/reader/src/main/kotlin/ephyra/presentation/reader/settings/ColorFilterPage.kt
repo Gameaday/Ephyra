@@ -10,8 +10,8 @@ import androidx.core.graphics.alpha
 import androidx.core.graphics.blue
 import androidx.core.graphics.green
 import androidx.core.graphics.red
-import ephyra.app.ui.reader.setting.ReaderPreferences.Companion.ColorFilterMode
-import ephyra.app.ui.reader.setting.ReaderSettingsScreenModel
+import ephyra.feature.reader.setting.ReaderPreferences.Companion.ColorFilterMode
+import ephyra.feature.reader.setting.ReaderSettingsScreenModel
 import ephyra.core.common.preference.getAndSet
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.CheckboxItem
