@@ -19,6 +19,7 @@ dependencies {
     api(projects.presentationCore)
 
     implementation(compose.material3.core)
+    implementation(compose.material.icons)
     implementation(compose.ui.tooling.preview)
     debugImplementation(compose.ui.tooling)
 

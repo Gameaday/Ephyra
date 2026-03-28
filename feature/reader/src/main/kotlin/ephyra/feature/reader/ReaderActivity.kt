@@ -57,6 +57,17 @@ import ephyra.presentation.reader.ReaderPageIndicator
 import ephyra.presentation.reader.ReadingModeSelectDialog
 import ephyra.presentation.reader.appbars.ReaderAppBars
 import ephyra.presentation.reader.settings.ReaderSettingsDialog
+import android.app.NotificationManager
+import android.os.Build
+import android.os.Bundle
+import android.view.KeyEvent
+import android.view.View
+import android.view.WindowManager
+import androidx.activity.viewModels
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.lifecycleScope
 import ephyra.feature.reader.R
 import ephyra.feature.reader.databinding.ReaderActivityBinding
 import eu.kanade.tachiyomi.source.online.HttpSource
@@ -129,9 +140,9 @@ class ReaderActivity : BaseActivity() {
 
     private var menuToggleToast: Toast? = null
     private var readingModeToast: Toast? = null
-    private val displayRefreshHost by lazy { DisplayRefreshHost(readerPreferences) }
+    private val displayRefreshHost: DisplayRefreshHost by lazy { DisplayRefreshHost(readerPreferences) }
 
-    private val windowInsetsController by lazy { WindowInsetsControllerCompat(window, window.decorView) }
+    private val windowInsetsController: WindowInsetsControllerCompat by lazy { WindowInsetsControllerCompat(window, window.decorView) }
 
     private var loadingIndicator: ReaderProgressIndicator? = null
 
