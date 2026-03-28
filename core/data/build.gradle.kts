@@ -15,6 +15,7 @@ dependencies {
     implementation(projects.core.download)
     
     implementation(libs.unifile)
+    implementation(platform(libs.coil.bom))
     implementation(libs.coil.core)
     implementation(libs.okhttp.core)
     
