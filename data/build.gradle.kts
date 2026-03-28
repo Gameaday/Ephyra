@@ -2,34 +2,42 @@ import ephyra.buildlogic.AndroidConfig
 
 plugins {
     id("mihon.library.multiplatform")
-
     kotlin("plugin.serialization")
     id("com.google.devtools.ksp")
 }
 
 kotlin {
     android {
-        namespace = "tachiyomi.data"
+        namespace = "ephyra.data"
         compileSdk = AndroidConfig.COMPILE_SDK
         minSdk = AndroidConfig.MIN_SDK
-
-        defaultConfig {
-            consumerProguardFiles("consumer-rules.pro")
+        
+        // defaultConfig is removed. Proguard rules move to the android block.
+        // Note: Use add() for the collection in newer DSL versions
+        optimization {
+            consumerKeepRules.file("consumer-rules.pro")
         }
     }
+    
     compilerOptions {
         freeCompilerArgs.add("-opt-in=kotlinx.serialization.ExperimentalSerializationApi")
     }
+
+    // Dependencies MUST move into sourceSets for Multiplatform/AGP 9.1
+    sourceSets {
+        commonMain.dependencies {
+            implementation(projects.sourceApi)
+            implementation(projects.domain)
+            implementation(projects.core.common)
+
+            implementation(libs.room.runtime)
+            implementation(libs.room.ktx)
+            implementation(libs.room.paging)
+        }
+    }
 }
 
+// KSP must stay top-level but needs the target-aware configuration
 dependencies {
-    implementation(projects.sourceApi)
-    implementation(projects.domain)
-    implementation(projects.core.common)
-
-    implementation(libs.room.runtime)
-    implementation(libs.room.ktx)
-    implementation(libs.room.paging)
-    ksp(libs.room.compiler)
+    add("kspAndroid", libs.room.compiler)
 }
-

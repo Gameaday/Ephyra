@@ -35,10 +35,9 @@ multiplatformResources {
     resourcesPackage.set("ephyra.i18n")
 }
 
-tasks {
-    val generatedAndroidResourceDir = generatedBuildDir.resolve("android/res")
-    val localesConfigTask = project.getLocalesConfigTask(generatedAndroidResourceDir)
-    preBuild {
-        dependsOn(localesConfigTask)
-    }
+val generatedAndroidResourceDir = generatedBuildDir.resolve("android/res")
+val localesConfigTask = project.getLocalesConfigTask(generatedAndroidResourceDir)
+
+tasks.matching { it.name == "preBuild" }.configureEach {
+    dependsOn(localesConfigTask)
 }

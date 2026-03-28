@@ -7,36 +7,33 @@ plugins {
 }
 
 kotlin {
-    android {
-        namespace = "eu.kanade.tachiyomi.source"
+    androidLibrary {
+        namespace = "ephyra.source.api"
         compileSdk = AndroidConfig.COMPILE_SDK
         minSdk = AndroidConfig.MIN_SDK
 
-        defaultConfig {
-            consumerProguardFile("consumer-proguard.pro")
+        optimization {
+            consumerKeepRules.file("consumer-proguard.pro")
         }
     }
 
     sourceSets {
-        val commonMain by getting {
-            dependencies {
-                api(kotlinx.serialization.json)
-                api(libs.koin.core)
-                api(libs.jsoup)
+        commonMain.dependencies {
+            api(kotlinx.serialization.json)
+            api(libs.koin.core)
+            api(libs.jsoup)
 
-                implementation(project.dependencies.platform(compose.bom))
-                implementation(compose.runtime)
-            }
+            implementation(project.dependencies.platform(compose.compose.bom))
+            implementation(compose.runtime)
         }
-        val androidMain by getting {
-            dependencies {
-                implementation(projects.core.common)
-                api(libs.preferencektx)
+        
+        androidMain.dependencies {
+            implementation(projects.core.common)
+            api(libs.preferencektx)
 
-                // Workaround for https://youtrack.jetbrains.com/issue/KT-57605
-                implementation(kotlinx.coroutines.android)
-                implementation(project.dependencies.platform(kotlinx.coroutines.bom))
-            }
+            // Workaround for https://youtrack.jetbrains.com/issue/KT-57605
+            implementation(kotlinx.coroutines.android)
+            implementation(project.dependencies.platform(kotlinx.coroutines.bom))
         }
     }
 
@@ -45,5 +42,3 @@ kotlin {
         freeCompilerArgs.add("-Xexpect-actual-classes")
     }
 }
-
-
