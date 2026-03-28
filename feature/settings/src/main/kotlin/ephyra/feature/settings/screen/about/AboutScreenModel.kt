@@ -58,6 +58,7 @@ class AboutScreenModel(
                     }
                 }
             }
+
             isPreviewBuildType -> {
                 "Beta r${BuildConfig.COMMIT_COUNT}".let {
                     if (withBuildDate) {
@@ -67,6 +68,7 @@ class AboutScreenModel(
                     }
                 }
             }
+
             isNightlyBuildType -> {
                 "Ephyra ${BuildConfig.VERSION_NAME}".let {
                     if (withBuildDate) {
@@ -76,6 +78,7 @@ class AboutScreenModel(
                     }
                 }
             }
+
             else -> {
                 "Stable ${BuildConfig.VERSION_NAME}".let {
                     if (withBuildDate) {

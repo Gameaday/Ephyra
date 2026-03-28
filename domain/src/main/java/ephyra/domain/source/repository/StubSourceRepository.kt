@@ -1,7 +1,7 @@
 package ephyra.domain.source.repository
 
-import kotlinx.coroutines.flow.Flow
 import ephyra.domain.source.model.StubSource
+import kotlinx.coroutines.flow.Flow
 
 interface StubSourceRepository {
     fun subscribeAll(): Flow<List<StubSource>>

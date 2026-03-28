@@ -1,12 +1,12 @@
 package ephyra.domain.track.service
 
-import ephyra.domain.track.model.AutoTrackState
-import ephyra.app.data.track.Tracker
-import ephyra.app.data.track.anilist.Anilist
 import ephyra.core.common.preference.Preference
 import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.common.preference.getEnum
 import ephyra.core.common.preference.getLongArray
+import ephyra.data.track.Tracker
+import ephyra.data.track.anilist.Anilist
+import ephyra.domain.track.model.AutoTrackState
 
 class TrackPreferences(
     private val preferenceStore: PreferenceStore,

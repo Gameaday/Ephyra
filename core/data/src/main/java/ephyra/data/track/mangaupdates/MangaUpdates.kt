@@ -1,5 +1,6 @@
 package ephyra.app.data.track.mangaupdates
 
+import android.app.Application
 import dev.icerock.moko.resources.StringResource
 import ephyra.app.R
 import ephyra.app.data.database.models.Track
@@ -10,15 +11,14 @@ import ephyra.app.data.track.mangaupdates.dto.MURating
 import ephyra.app.data.track.mangaupdates.dto.copyTo
 import ephyra.app.data.track.mangaupdates.dto.toTrackSearch
 import ephyra.app.data.track.model.TrackSearch
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.toImmutableList
-import ephyra.i18n.MR
-import ephyra.domain.track.model.Track as DomainTrack
-import android.app.Application
-import ephyra.domain.track.service.TrackPreferences
-import eu.kanade.tachiyomi.network.NetworkHelper
 import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.InsertTrack
+import ephyra.domain.track.service.TrackPreferences
+import ephyra.i18n.MR
+import eu.kanade.tachiyomi.network.NetworkHelper
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
+import ephyra.domain.track.model.Track as DomainTrack
 
 class MangaUpdates(
     id: Long,
@@ -27,7 +27,8 @@ class MangaUpdates(
     networkService: NetworkHelper,
     addTracks: AddTracks,
     insertTrack: InsertTrack,
-) : BaseTracker(id, "MangaUpdates", context, trackPreferences, networkService, addTracks, insertTrack), DeletableTracker {
+) : BaseTracker(id, "MangaUpdates", context, trackPreferences, networkService, addTracks, insertTrack),
+    DeletableTracker {
 
     companion object {
         const val READING_LIST = 0L

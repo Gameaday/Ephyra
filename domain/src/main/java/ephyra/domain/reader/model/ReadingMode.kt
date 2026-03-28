@@ -10,7 +10,6 @@ import ephyra.feature.reader.viewer.pager.R2LPagerViewer
 import ephyra.feature.reader.viewer.pager.VerticalPagerViewer
 import ephyra.feature.reader.viewer.webtoon.WebtoonViewer
 import ephyra.i18n.MR
-import org.koin.android.ext.android.get
 
 enum class ReadingMode(
     val stringRes: StringResource,

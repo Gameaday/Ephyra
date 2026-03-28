@@ -140,6 +140,7 @@ class PagerPageHolder(
                             progressIndicator?.setProgress(value)
                         }
                     }
+
                     Page.State.Ready -> setImage()
                     is Page.State.Error -> setError(state.error)
                 }
@@ -295,7 +296,7 @@ class PagerPageHolder(
             nextPage.statusFlow.filter { it == Page.State.Ready }.first()
             // isAttachedToWindow() returns true while this view is part of the window's
             // view hierarchy, i.e. the page holder is still on screen.
-            if (!isAttachedToWindow()) return@launch
+            if (!isAttachedToWindow) return@launch
             // The merge may have been completed by another path while we were waiting.
             if (page.mergedBitmap != null) return@launch
             // Use the cached dimensions of the current page so no stream re-read is needed.

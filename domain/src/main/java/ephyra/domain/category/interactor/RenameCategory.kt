@@ -1,11 +1,11 @@
 package ephyra.domain.category.interactor
 
-import logcat.LogPriority
 import ephyra.core.common.util.lang.withNonCancellableContext
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.category.model.Category
 import ephyra.domain.category.model.CategoryUpdate
 import ephyra.domain.category.repository.CategoryRepository
+import logcat.LogPriority
 
 class RenameCategory(
     private val categoryRepository: CategoryRepository,

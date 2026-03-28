@@ -2,9 +2,9 @@ package ephyra.app.data.coil
 
 import coil3.key.Keyer
 import coil3.request.Options
-import ephyra.domain.manga.model.hasCustomCover
 import ephyra.app.data.cache.CoverCache
 import ephyra.domain.manga.model.MangaCover
+import ephyra.domain.manga.model.hasCustomCover
 import ephyra.domain.manga.model.Manga as DomainManga
 
 class MangaKeyer : Keyer<DomainManga> {

@@ -1,9 +1,9 @@
 package ephyra.domain.chapter.interactor
 
-import logcat.LogPriority
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.repository.ChapterRepository
+import logcat.LogPriority
 
 class GetChapter(
     private val chapterRepository: ChapterRepository,

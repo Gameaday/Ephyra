@@ -13,16 +13,17 @@ import ephyra.app.data.backup.models.LongPreferenceValue
 import ephyra.app.data.backup.models.StringPreferenceValue
 import ephyra.app.data.backup.models.StringSetPreferenceValue
 import ephyra.app.data.library.LibraryUpdateJob
-import eu.kanade.tachiyomi.source.sourcePreferences
+import ephyra.app.data.preference.SharedPreferencesDataStore
 import ephyra.core.common.preference.DataStorePreferenceStore
 import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.common.preference.plusAssign
-import ephyra.app.data.preference.SharedPreferencesDataStore
+import ephyra.domain.backup.service.BackupPreferences
 import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.category.model.Category
 import ephyra.domain.download.service.DownloadPreferences
 import ephyra.domain.library.service.LibraryPreferences
-import ephyra.domain.backup.service.BackupPreferences
+import eu.kanade.tachiyomi.source.sourcePreferences
+
 class PreferenceRestorer(
     private val context: Context,
     private val getCategories: GetCategories,
@@ -75,26 +76,31 @@ class PreferenceRestorer(
                             newValue?.let { preferenceStore.getInt(key).set(it) }
                         }
                     }
+
                     is LongPreferenceValue -> {
                         if (prefs[key] is Long?) {
                             preferenceStore.getLong(key).set(value.value)
                         }
                     }
+
                     is FloatPreferenceValue -> {
                         if (prefs[key] is Float?) {
                             preferenceStore.getFloat(key).set(value.value)
                         }
                     }
+
                     is StringPreferenceValue -> {
                         if (prefs[key] is String?) {
                             preferenceStore.getString(key).set(value.value)
                         }
                     }
+
                     is BooleanPreferenceValue -> {
                         if (prefs[key] is Boolean?) {
                             preferenceStore.getBoolean(key).set(value.value)
                         }
                     }
+
                     is StringSetPreferenceValue -> {
                         if (prefs[key] is Set<*>?) {
                             val restored = restoreCategoriesPreference(

@@ -1,9 +1,9 @@
 package ephyra.domain.manga.model
 
 import androidx.compose.runtime.Immutable
+import ephyra.core.common.preference.TriState
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.model.UpdateStrategy
-import ephyra.core.common.preference.TriState
 import java.io.Serializable
 import java.time.Instant
 

@@ -1,10 +1,10 @@
 package ephyra.domain.track.interactor
 
-import kotlinx.coroutines.flow.Flow
-import logcat.LogPriority
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.track.model.Track
 import ephyra.domain.track.repository.TrackRepository
+import kotlinx.coroutines.flow.Flow
+import logcat.LogPriority
 
 class GetTracks(
     private val trackRepository: TrackRepository,

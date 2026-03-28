@@ -16,4 +16,12 @@ kotlin {
     configureTest()
 }
 
+// Android Multiplatform plugin does not provide standard assemble tasks by default.
+// Adding them for compatibility with standard Android project commands.
+tasks.register("assembleDebug") {
+    dependsOn("assemble")
+}
 
+tasks.register("assembleRelease") {
+    dependsOn("assemble")
+}

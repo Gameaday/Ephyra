@@ -3,10 +3,11 @@ package ephyra.app.data.track.komga
 import ephyra.app.BuildConfig
 import ephyra.app.data.database.models.Track
 import ephyra.app.data.track.model.TrackSearch
+import ephyra.core.common.util.lang.withIOContext
+import ephyra.core.common.util.system.logcat
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.awaitSuccess
 import eu.kanade.tachiyomi.network.parseAs
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import logcat.LogPriority
 import okhttp3.Headers
@@ -14,8 +15,6 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import ephyra.core.common.util.lang.withIOContext
-import ephyra.core.common.util.system.logcat
 
 class KomgaApi(
     private val trackId: Long,

@@ -322,12 +322,15 @@ class LibraryScreenModel(
                 LibrarySort.Type.Alphabetical -> {
                     sortAlphabetically(manga1, manga2)
                 }
+
                 LibrarySort.Type.LastRead -> {
                     manga1.libraryManga.lastRead.compareTo(manga2.libraryManga.lastRead)
                 }
+
                 LibrarySort.Type.LastUpdate -> {
                     manga1.libraryManga.manga.lastUpdate.compareTo(manga2.libraryManga.manga.lastUpdate)
                 }
+
                 LibrarySort.Type.UnreadCount -> when {
                     // Ensure unread content comes first
                     manga1.libraryManga.unreadCount == manga2.libraryManga.unreadCount -> 0
@@ -335,23 +338,29 @@ class LibraryScreenModel(
                     manga2.libraryManga.unreadCount == 0L -> if (this.isAscending) -1 else 1
                     else -> manga1.libraryManga.unreadCount.compareTo(manga2.libraryManga.unreadCount)
                 }
+
                 LibrarySort.Type.TotalChapters -> {
                     manga1.libraryManga.totalChapters.compareTo(manga2.libraryManga.totalChapters)
                 }
+
                 LibrarySort.Type.LatestChapter -> {
                     manga1.libraryManga.latestUpload.compareTo(manga2.libraryManga.latestUpload)
                 }
+
                 LibrarySort.Type.ChapterFetchDate -> {
                     manga1.libraryManga.chapterFetchedAt.compareTo(manga2.libraryManga.chapterFetchedAt)
                 }
+
                 LibrarySort.Type.DateAdded -> {
                     manga1.libraryManga.manga.dateAdded.compareTo(manga2.libraryManga.manga.dateAdded)
                 }
+
                 LibrarySort.Type.TrackerMean -> {
                     val item1Score = trackerScores[manga1.id] ?: defaultTrackerScoreSortValue
                     val item2Score = trackerScores[manga2.id] ?: defaultTrackerScoreSortValue
                     item1Score.compareTo(item2Score)
                 }
+
                 LibrarySort.Type.Random -> {
                     error("Why Are We Still Here? Just To Suffer?")
                 }
@@ -547,7 +556,8 @@ class LibraryScreenModel(
             DownloadAction.SYNC_TO_JELLYFIN,
             DownloadAction.SYNC_READ_TO_JELLYFIN,
             DownloadAction.SYNC_ALL_TO_JELLYFIN,
-            -> { /* no-op at library level */ }
+                -> { /* no-op at library level */
+            }
         }
         clearSelection()
     }
@@ -810,6 +820,7 @@ class LibraryScreenModel(
             val manga: List<Manga>,
             val initialSelection: ImmutableList<CheckboxState<Category>>,
         ) : Dialog
+
         data class DeleteManga(val manga: List<Manga>) : Dialog
     }
 

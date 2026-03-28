@@ -73,7 +73,7 @@ interface MangaDao {
 
     @Query("DELETE FROM mangas WHERE favorite = 0 AND source IN (:sourceIds)")
     suspend fun deleteNonLibraryManga(sourceIds: List<Long>)
-    
+
     @Query("DELETE FROM mangas_categories WHERE manga_id = :mangaId")
     suspend fun deleteMangaCategoriesByMangaId(mangaId: Long)
 

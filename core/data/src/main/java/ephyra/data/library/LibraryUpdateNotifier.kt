@@ -1,5 +1,6 @@
 package ephyra.app.data.library
 
+import android.R.attr.priority
 import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
@@ -14,14 +15,12 @@ import coil3.imageLoader
 import coil3.request.ImageRequest
 import coil3.request.transformations
 import coil3.transform.CircleCropTransformation
-import ephyra.presentation.util.formatChapterNumber
 import ephyra.app.R
 import ephyra.app.core.security.SecurityPreferences
 import ephyra.app.data.download.Downloader
 import ephyra.app.data.notification.NotificationHandler
 import ephyra.app.data.notification.NotificationReceiver
 import ephyra.app.data.notification.Notifications
-import eu.kanade.tachiyomi.source.UnmeteredSource
 import ephyra.app.ui.main.MainActivity
 import ephyra.app.util.lang.chop
 import ephyra.app.util.system.cancelNotification
@@ -37,6 +36,8 @@ import ephyra.domain.library.model.LibraryManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.service.SourceManager
 import ephyra.i18n.MR
+import ephyra.presentation.util.formatChapterNumber
+import eu.kanade.tachiyomi.source.UnmeteredSource
 import java.math.RoundingMode
 import java.text.NumberFormat
 

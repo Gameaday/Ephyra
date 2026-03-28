@@ -1,8 +1,8 @@
 package ephyra.domain.extension.interactor
 
-import ephyra.domain.source.service.SourcePreferences
 import ephyra.app.extension.ExtensionManager
-import ephyra.app.util.system.LocaleHelper
+import ephyra.core.common.util.system.LocaleHelper
+import ephyra.domain.source.service.SourcePreferences
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 

@@ -37,13 +37,13 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ephyra.core.download.model.Download
-import me.saket.swipe.SwipeableActionsBox
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.DISABLED_ALPHA
 import ephyra.presentation.core.components.material.SECONDARY_ALPHA
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.selectedBackground
+import me.saket.swipe.SwipeableActionsBox
 
 @Composable
 fun MangaChapterListItem(
@@ -197,12 +197,14 @@ private fun getSwipeAction(
             isUndo = read,
             onSwipe = onSwipe,
         )
+
         LibraryPreferences.ChapterSwipeAction.ToggleBookmark -> swipeAction(
             icon = if (!bookmark) Icons.Outlined.BookmarkAdd else Icons.Outlined.BookmarkRemove,
             background = background,
             isUndo = bookmark,
             onSwipe = onSwipe,
         )
+
         LibraryPreferences.ChapterSwipeAction.Download -> swipeAction(
             icon = when (downloadState) {
                 Download.State.NOT_DOWNLOADED, Download.State.ERROR -> Icons.Outlined.Download
@@ -212,6 +214,7 @@ private fun getSwipeAction(
             background = background,
             onSwipe = onSwipe,
         )
+
         LibraryPreferences.ChapterSwipeAction.Disabled -> null
     }
 }

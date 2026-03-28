@@ -1,24 +1,24 @@
 package ephyra.app.data.track.suwayomi
 
+import android.app.Application
 import dev.icerock.moko.resources.StringResource
 import ephyra.app.R
 import ephyra.app.data.database.models.Track
 import ephyra.app.data.track.BaseTracker
 import ephyra.app.data.track.EnhancedTracker
 import ephyra.app.data.track.model.TrackSearch
+import ephyra.domain.source.service.SourceManager
+import ephyra.domain.track.interactor.AddTracks
+import ephyra.domain.track.interactor.InsertTrack
+import ephyra.domain.track.service.TrackPreferences
+import ephyra.i18n.MR
+import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.source.Source
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
-import ephyra.i18n.MR
+import kotlinx.serialization.json.Json
 import ephyra.domain.manga.model.Manga as DomainManga
 import ephyra.domain.track.model.Track as DomainTrack
-import kotlinx.serialization.json.Json
-import android.app.Application
-import ephyra.domain.track.service.TrackPreferences
-import eu.kanade.tachiyomi.network.NetworkHelper
-import ephyra.domain.track.interactor.AddTracks
-import ephyra.domain.track.interactor.InsertTrack
-import ephyra.domain.source.service.SourceManager
 
 class Suwayomi(
     id: Long,

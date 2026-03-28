@@ -13,33 +13,31 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.util.fastForEach
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
-import ephyra.domain.manga.model.hasCustomCover
-import ephyra.domain.source.service.SourcePreferences
+import cafe.adriel.voyager.koin.koinScreenModel
 import ephyra.app.data.cache.CoverCache
 import ephyra.app.data.download.DownloadManager
-import kotlinx.coroutines.flow.update
-import ephyra.domain.migration.models.MigrationFlag
-import ephyra.domain.migration.usecases.MigrateMangaUseCase
-import ephyra.feature.common.utils.getLabel
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.withUIContext
 import ephyra.domain.manga.model.Manga
+import ephyra.domain.manga.model.hasCustomCover
+import ephyra.domain.migration.models.MigrationFlag
+import ephyra.domain.migration.usecases.MigrateMangaUseCase
+import ephyra.domain.source.service.SourcePreferences
+import ephyra.feature.common.utils.getLabel
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.LabeledCheckbox
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.LoadingScreen
-import org.koin.androidx.compose.koinViewModel
-import org.koin.core.parameter.parametersOf
-import org.koin.compose.koinInject
+import kotlinx.coroutines.flow.update
+import kotlin.collections.toMutableSet
 
 @Composable
 internal fun Screen.MigrateMangaDialog(

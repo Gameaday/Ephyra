@@ -3,13 +3,15 @@ package ephyra.app.data.backup
 import android.content.Context
 import android.net.Uri
 import ephyra.app.data.backup.models.Backup
+import ephyra.core.common.i18n.stringResource
+import ephyra.i18n.MR
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.protobuf.ProtoBuf
 import okio.buffer
 import okio.gzip
 import okio.source
-import ephyra.core.common.i18n.stringResource
-import ephyra.i18n.MR
+
 class BackupDecoder(
     private val context: Context,
     private val parser: ProtoBuf,
@@ -22,26 +24,27 @@ class BackupDecoder(
             context.contentResolver.openInputStream(uri)
                 ?: throw IOException(context.stringResource(MR.strings.invalid_backup_file_unknown))
             ).use { inputStream ->
-            val source = inputStream.source().buffer()
+                val source = inputStream.source().buffer()
 
-            val peeked = source.peek().apply {
-                require(2)
-            }
-            val id1id2 = peeked.readShort()
-            val backupString = when (id1id2.toInt()) {
-                0x1f8b -> source.gzip().buffer() // 0x1f8b is gzip magic bytes
-                MAGIC_JSON_SIGNATURE1, MAGIC_JSON_SIGNATURE2, MAGIC_JSON_SIGNATURE3 -> {
-                    throw IOException(context.stringResource(MR.strings.invalid_backup_file_json))
+                val peeked = source.peek().apply {
+                    require(2)
                 }
-                else -> source
-            }.use { it.readByteArray() }
+                val id1id2 = peeked.readShort()
+                val backupString = when (id1id2.toInt()) {
+                    0x1f8b -> source.gzip().buffer() // 0x1f8b is gzip magic bytes
+                    MAGIC_JSON_SIGNATURE1, MAGIC_JSON_SIGNATURE2, MAGIC_JSON_SIGNATURE3 -> {
+                        throw IOException(context.stringResource(MR.strings.invalid_backup_file_json))
+                    }
 
-            try {
-                parser.decodeFromByteArray(Backup.serializer(), backupString)
-            } catch (_: SerializationException) {
-                throw IOException(context.stringResource(MR.strings.invalid_backup_file_unknown))
+                    else -> source
+                }.use { it.readByteArray() }
+
+                try {
+                    parser.decodeFromByteArray(Backup.serializer(), backupString)
+                } catch (_: SerializationException) {
+                    throw IOException(context.stringResource(MR.strings.invalid_backup_file_unknown))
+                }
             }
-        }
     }
 
     companion object {

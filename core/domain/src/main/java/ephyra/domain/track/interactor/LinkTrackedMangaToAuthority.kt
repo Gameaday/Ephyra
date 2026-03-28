@@ -1,12 +1,11 @@
 package ephyra.domain.track.interactor
 
-import logcat.LogPriority
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaUpdate
 import ephyra.domain.manga.repository.MangaRepository
-import ephyra.domain.track.interactor.GetTracks
+import logcat.LogPriority
 
 /**
  * Retroactively assigns canonical IDs to existing library manga based on their tracker bindings.

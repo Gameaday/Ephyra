@@ -17,15 +17,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
+import ephyra.feature.manga.presentation.DownloadAction
+import ephyra.i18n.MR
 import ephyra.presentation.components.AppBar
 import ephyra.presentation.components.AppBarActions
 import ephyra.presentation.components.AppBarTitle
 import ephyra.presentation.components.DownloadDropdownMenu
-import ephyra.feature.manga.presentation.DownloadAction
-import kotlinx.collections.immutable.persistentListOf
-import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.theme.active
+import kotlinx.collections.immutable.persistentListOf
 
 @Composable
 fun MangaToolbar(

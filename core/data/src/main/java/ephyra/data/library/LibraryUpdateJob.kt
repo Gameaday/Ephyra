@@ -17,36 +17,22 @@ import androidx.work.WorkInfo
 import androidx.work.WorkQuery
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-import ephyra.domain.chapter.interactor.SyncChaptersWithSource
-import ephyra.domain.manga.interactor.UpdateManga
-import ephyra.domain.manga.model.toSManga
 import ephyra.app.data.cache.CoverCache
 import ephyra.app.data.download.DownloadManager
 import ephyra.app.data.notification.Notifications
-import eu.kanade.tachiyomi.source.model.SManga
-import eu.kanade.tachiyomi.source.model.UpdateStrategy
 import ephyra.app.util.storage.getUriCompat
-import ephyra.presentation.core.util.system.createFileInCacheDir
-import ephyra.app.util.system.isConnectedToWifi
 import ephyra.app.util.system.isPowerSaveMode
 import ephyra.app.util.system.isRunning
 import ephyra.app.util.system.setForegroundSafely
 import ephyra.app.util.system.workManager
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
-import logcat.LogPriority
-import ephyra.domain.chapter.interactor.FilterChaptersForDownload
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.preference.getAndSet
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.category.model.Category
+import ephyra.domain.chapter.interactor.FilterChaptersForDownload
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
+import ephyra.domain.chapter.interactor.SyncChaptersWithSource
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.model.NoChaptersException
 import ephyra.domain.library.model.LibraryManga
@@ -61,13 +47,26 @@ import ephyra.domain.library.service.LibraryPreferences.Companion.MANGA_OUTSIDE_
 import ephyra.domain.manga.interactor.FetchInterval
 import ephyra.domain.manga.interactor.GetLibraryManga
 import ephyra.domain.manga.interactor.GetManga
+import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaUpdate
 import ephyra.domain.manga.model.SourceStatus
+import ephyra.domain.manga.model.toSManga
 import ephyra.domain.source.model.SourceNotInstalledException
 import ephyra.domain.source.service.SourceManager
 import ephyra.i18n.MR
+import ephyra.presentation.core.util.system.createFileInCacheDir
 import ephyra.source.local.isLocal
+import eu.kanade.tachiyomi.source.model.SManga
+import eu.kanade.tachiyomi.source.model.UpdateStrategy
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
+import logcat.LogPriority
 import java.io.File
 import java.time.Instant
 import java.time.ZonedDateTime
@@ -332,6 +331,7 @@ class LibraryUpdateJob(
                                             is SourceNotInstalledException -> context.stringResource(
                                                 MR.strings.loader_not_implemented_error,
                                             )
+
                                             else -> e.message
                                         }
                                         failedUpdates.add(manga to errorMessage)
@@ -379,7 +379,8 @@ class LibraryUpdateJob(
             when (SourceStatus.fromValue(refreshed.sourceStatus)) {
                 SourceStatus.DEAD -> deadManga.add(refreshed)
                 SourceStatus.DEGRADED -> degradedManga.add(refreshed)
-                else -> { /* HEALTHY or REPLACED — no notification needed */ }
+                else -> { /* HEALTHY or REPLACED — no notification needed */
+                }
             }
         }
         notifier.showSourceHealthNotification(deadManga, degradedManga)
@@ -544,8 +545,10 @@ class LibraryUpdateJob(
                 val deadSince = when {
                     newStatus == SourceStatus.DEAD && oldStatus != SourceStatus.DEAD ->
                         System.currentTimeMillis()
+
                     newStatus != SourceStatus.DEAD && oldStatus == SourceStatus.DEAD ->
                         DEAD_SINCE_CLEARED
+
                     else -> null // No change to dead_since
                 }
                 updateManga.await(
@@ -667,6 +670,7 @@ class LibraryUpdateJob(
                 previousCount > 0 &&
                     fetchedCount * CHAPTER_DROP_THRESHOLD_DENOMINATOR <
                     previousCount * CHAPTER_DROP_THRESHOLD_NUMERATOR -> SourceStatus.DEGRADED
+
                 else -> SourceStatus.HEALTHY
             }
         }
@@ -771,7 +775,7 @@ class LibraryUpdateJob(
 
                     // Re-enqueue cancelled scheduled work
                     if (it.tags.contains(WORK_NAME_AUTO)) {
-                        // TODO: how to get preferences here? 
+                        // TODO: how to get preferences here?
                         // For now we assume setupTask will be called correctly from elsewhere
                         // Or we can use Koin Java API
                         // setupTask(context, GlobalContext.get().get())

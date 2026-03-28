@@ -1,18 +1,17 @@
 package ephyra.domain.track.interactor
 
-import ephyra.app.data.track.TrackerManager
-import ephyra.app.data.track.model.TrackSearch
-import ephyra.app.data.track.myanimelist.MyAnimeList
-import ephyra.app.data.track.myanimelist.dto.MALListItemStatus
-import kotlinx.coroutines.yield
-import logcat.LogPriority
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.logcat
+import ephyra.data.track.TrackerManager
+import ephyra.data.track.model.TrackSearch
+import ephyra.data.track.myanimelist.MyAnimeList
+import ephyra.data.track.myanimelist.dto.MALListItemStatus
 import ephyra.domain.chapter.interactor.GenerateAuthorityChapters
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaUpdate
 import ephyra.domain.manga.repository.MangaRepository
-import ephyra.domain.track.interactor.InsertTrack
+import kotlinx.coroutines.yield
+import logcat.LogPriority
 
 /**
  * Imports a user's reading list from a tracker (currently MAL) into the local library.

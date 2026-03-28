@@ -1,8 +1,8 @@
 package ephyra.domain.track.interactor
 
-import logcat.LogPriority
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.track.repository.TrackRepository
+import logcat.LogPriority
 
 class DeleteTrack(
     private val trackRepository: TrackRepository,

@@ -1,5 +1,10 @@
 package ephyra.app.data.download.model
 
+import ephyra.domain.chapter.interactor.GetChapter
+import ephyra.domain.chapter.model.Chapter
+import ephyra.domain.manga.interactor.GetManga
+import ephyra.domain.manga.model.Manga
+import ephyra.domain.source.service.SourceManager
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.delay
@@ -10,11 +15,6 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
-import ephyra.domain.chapter.interactor.GetChapter
-import ephyra.domain.chapter.model.Chapter
-import ephyra.domain.manga.interactor.GetManga
-import ephyra.domain.manga.model.Manga
-import ephyra.domain.source.service.SourceManager
 
 data class Download(
     val source: HttpSource,

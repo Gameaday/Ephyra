@@ -32,7 +32,7 @@ object SettingsSecurityScreen : SearchableSettings {
         val screenModel = koinScreenModel<SettingsSecurityScreenModel>()
         val securityPreferences = screenModel.securityPreferences
         val privacyPreferences = screenModel.privacyPreferences
-        
+
         return buildList(2) {
             add(getSecurityGroup(securityPreferences))
             if (!telemetryIncluded) return@buildList

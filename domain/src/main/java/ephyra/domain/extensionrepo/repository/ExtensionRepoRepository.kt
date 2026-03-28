@@ -1,7 +1,7 @@
 package ephyra.domain.extensionrepo.repository
 
-import kotlinx.coroutines.flow.Flow
 import ephyra.domain.extensionrepo.model.ExtensionRepo
+import kotlinx.coroutines.flow.Flow
 
 interface ExtensionRepoRepository {
 

@@ -43,7 +43,7 @@ import eu.kanade.tachiyomi.source.model.UpdateStrategy
         ) AS MC
         ON MC.manga_id = M._id
         WHERE M.favorite = 1
-    """
+    """,
 )
 data class LibraryView(
     val _id: Long,
@@ -79,12 +79,12 @@ data class LibraryView(
     val dead_since: Long?,
     val content_type: Int,
     val locked_fields: Long,
-    
+
     val totalCount: Long,
     val readCount: Long,
     val latestUpload: Long,
     val chapterFetchedAt: Long,
     val lastRead: Long,
     val bookmarkCount: Long,
-    val categories: String
+    val categories: String,
 )

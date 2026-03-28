@@ -1,15 +1,15 @@
 package ephyra.feature.manga.interactor
 
+import ephyra.domain.category.interactor.SetMangaCategories
+import ephyra.domain.jellyfin.interactor.SyncJellyfin
+import ephyra.domain.manga.interactor.SetExcludedScanlators
 import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.Manga
-import ephyra.domain.track.interactor.RefreshCanonicalMetadata
-import ephyra.domain.manga.repository.MangaRepository
-import ephyra.domain.jellyfin.interactor.SyncJellyfin
-import org.koin.core.annotation.Factory
-import ephyra.domain.track.interactor.MatchUnlinkedManga
 import ephyra.domain.manga.model.MangaUpdate
-import ephyra.domain.manga.interactor.SetExcludedScanlators
-import ephyra.domain.category.interactor.SetMangaCategories
+import ephyra.domain.manga.repository.MangaRepository
+import ephyra.domain.track.interactor.MatchUnlinkedManga
+import ephyra.domain.track.interactor.RefreshCanonicalMetadata
+import org.koin.core.annotation.Factory
 
 @Factory
 class MangaInfoInteractor(
@@ -56,7 +56,11 @@ class MangaInfoInteractor(
         syncJellyfin.markJellyfinFavoriteIfLinked(manga, favorite)
     }
 
-    suspend fun updateUpdateStrategy(manga: Manga, networkManga: eu.kanade.tachiyomi.source.model.SManga?, manualFetch: Boolean) {
+    suspend fun updateUpdateStrategy(
+        manga: Manga,
+        networkManga: eu.kanade.tachiyomi.source.model.SManga?,
+        manualFetch: Boolean,
+    ) {
         updateManga.awaitUpdateFromSource(manga, networkManga, manualFetch)
     }
 

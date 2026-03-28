@@ -14,13 +14,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.PreviewLightDark
-import ephyra.presentation.theme.TachiyomiPreviewTheme
 import ephyra.app.util.CrashLogUtil
-import kotlinx.coroutines.launch
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.InfoScreen
+import ephyra.presentation.theme.TachiyomiPreviewTheme
+import kotlinx.coroutines.launch
 
 @Composable
 fun CrashScreen(

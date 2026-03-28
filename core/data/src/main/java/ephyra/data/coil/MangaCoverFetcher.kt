@@ -14,6 +14,10 @@ import coil3.request.Options
 import com.hippo.unifile.UniFile
 import ephyra.app.data.cache.CoverCache
 import ephyra.app.data.coil.MangaCoverFetcher.Companion.USE_CUSTOM_COVER_KEY
+import ephyra.core.common.util.system.logcat
+import ephyra.domain.manga.model.Manga
+import ephyra.domain.manga.model.MangaCover
+import ephyra.domain.source.service.SourceManager
 import eu.kanade.tachiyomi.network.await
 import eu.kanade.tachiyomi.source.online.HttpSource
 import logcat.LogPriority
@@ -27,10 +31,6 @@ import okio.Source
 import okio.buffer
 import okio.sink
 import okio.source
-import ephyra.core.common.util.system.logcat
-import ephyra.domain.manga.model.Manga
-import ephyra.domain.manga.model.MangaCover
-import ephyra.domain.source.service.SourceManager
 import java.io.File
 import java.io.IOException
 
@@ -194,6 +194,7 @@ class MangaCoverFetcher(
                 // don't take up okhttp cache
                 request.cacheControl(CACHE_CONTROL_NO_STORE)
             }
+
             else -> {
                 // This causes the request to fail with a 504 Unsatisfiable Request.
                 request.cacheControl(CACHE_CONTROL_NO_NETWORK_NO_CACHE)

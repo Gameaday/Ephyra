@@ -3,7 +3,6 @@ package ephyra.presentation.more.onboarding
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import ephyra.domain.ui.UiPreferences
 import ephyra.domain.ui.model.setAppCompatDelegateThemeMode
 import ephyra.feature.settings.widget.AppThemeModePreferenceWidget
 import ephyra.feature.settings.widget.AppThemePreferenceWidget

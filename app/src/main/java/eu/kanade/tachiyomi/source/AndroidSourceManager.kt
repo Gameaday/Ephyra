@@ -3,6 +3,11 @@ package eu.kanade.tachiyomi.source
 import android.content.Context
 import ephyra.app.data.download.DownloadManager
 import ephyra.app.extension.ExtensionManager
+import ephyra.core.common.i18n.stringResource
+import ephyra.domain.source.model.StubSource
+import ephyra.domain.source.repository.StubSourceRepository
+import ephyra.domain.source.service.SourceManager
+import ephyra.source.local.LocalSource
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -14,12 +19,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import ephyra.core.common.i18n.stringResource
-import ephyra.domain.source.model.StubSource
-import ephyra.domain.source.repository.StubSourceRepository
-import ephyra.domain.source.service.SourceManager
-import ephyra.source.local.LocalSource
-
 import java.util.concurrent.ConcurrentHashMap
 
 class AndroidSourceManager(

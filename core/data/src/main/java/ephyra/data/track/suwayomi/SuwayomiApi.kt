@@ -3,6 +3,8 @@ package ephyra.app.data.track.suwayomi
 import android.content.SharedPreferences
 import ephyra.app.data.database.models.Track
 import ephyra.app.data.track.model.TrackSearch
+import ephyra.core.common.util.lang.withIOContext
+import ephyra.domain.source.service.SourceManager
 import eu.kanade.tachiyomi.network.POST
 import eu.kanade.tachiyomi.network.awaitSuccess
 import eu.kanade.tachiyomi.network.jsonMime
@@ -18,9 +20,6 @@ import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody.Companion.toRequestBody
-import ephyra.core.common.util.lang.withIOContext
-import ephyra.domain.source.service.SourceManager
-import java.nio.charset.Charset
 import java.security.MessageDigest
 
 class SuwayomiApi(

@@ -11,12 +11,8 @@ import ephyra.app.data.download.DownloadManager
 import ephyra.app.data.library.LibraryUpdateJob
 import ephyra.app.data.updater.AppUpdateDownloadJob
 import ephyra.app.ui.main.MainActivity
-import ephyra.feature.reader.ReaderActivity
 import ephyra.app.util.system.cancelNotification
-import ephyra.presentation.core.util.system.getParcelableExtraCompat
 import ephyra.app.util.system.notificationManager
-import ephyra.presentation.core.util.system.toShareIntent
-import ephyra.presentation.core.util.system.toast
 import ephyra.core.common.Constants
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.withUIContext
@@ -28,7 +24,11 @@ import ephyra.domain.download.service.DownloadPreferences
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.service.SourceManager
+import ephyra.feature.reader.ReaderActivity
 import ephyra.i18n.MR
+import ephyra.presentation.core.util.system.getParcelableExtraCompat
+import ephyra.presentation.core.util.system.toShareIntent
+import ephyra.presentation.core.util.system.toast
 import org.koin.core.context.GlobalContext
 import ephyra.app.BuildConfig.APPLICATION_ID as ID
 
@@ -67,6 +67,7 @@ class NotificationReceiver : BroadcastReceiver() {
                     intent.getParcelableExtraCompat(EXTRA_URI)!!,
                     "application/x-protobuf+gzip",
                 )
+
             ACTION_CANCEL_RESTORE -> cancelRestore(context)
             // Cancel library update and dismiss notification
             ACTION_CANCEL_LIBRARY_UPDATE -> cancelLibraryUpdate(context)

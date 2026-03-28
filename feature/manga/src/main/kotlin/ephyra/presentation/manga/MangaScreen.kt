@@ -46,7 +46,15 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastMap
-import ephyra.presentation.components.relativeDateText
+import ephyra.core.download.model.Download
+import ephyra.domain.chapter.model.Chapter
+import ephyra.domain.chapter.service.missingChaptersCount
+import ephyra.domain.library.service.LibraryPreferences
+import ephyra.domain.manga.model.Manga
+import ephyra.domain.manga.model.SourceStatus
+import ephyra.domain.source.model.StubSource
+import ephyra.feature.manga.ChapterList
+import ephyra.feature.manga.MangaScreenModel
 import ephyra.feature.manga.presentation.components.ChapterDownloadAction
 import ephyra.feature.manga.presentation.components.ChapterHeader
 import ephyra.feature.manga.presentation.components.ExpandableMangaDescription
@@ -57,26 +65,18 @@ import ephyra.feature.manga.presentation.components.MangaInfoBox
 import ephyra.feature.manga.presentation.components.MangaToolbar
 import ephyra.feature.manga.presentation.components.MissingChapterCountListItem
 import ephyra.feature.manga.presentation.components.SourceHealthBanner
-import ephyra.presentation.util.formatChapterNumber
-import ephyra.core.download.model.Download
-import eu.kanade.tachiyomi.source.getNameForMangaInfo
-import ephyra.feature.manga.ChapterList
-import ephyra.feature.manga.MangaScreenModel
-import ephyra.presentation.core.util.system.copyToClipboard
-import ephyra.domain.chapter.model.Chapter
-import ephyra.domain.chapter.service.missingChaptersCount
-import ephyra.domain.library.service.LibraryPreferences
-import ephyra.domain.manga.model.Manga
-import ephyra.domain.manga.model.SourceStatus
-import ephyra.domain.source.model.StubSource
 import ephyra.i18n.MR
+import ephyra.presentation.components.relativeDateText
 import ephyra.presentation.core.components.TwoPanelBox
 import ephyra.presentation.core.components.VerticalFastScroller
 import ephyra.presentation.core.components.material.PullRefresh
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.shouldExpandFAB
+import ephyra.presentation.core.util.system.copyToClipboard
+import ephyra.presentation.util.formatChapterNumber
 import ephyra.source.local.isLocal
+import eu.kanade.tachiyomi.source.getNameForMangaInfo
 import java.time.Instant
 
 @Composable
@@ -803,6 +803,7 @@ private fun LazyListScope.sharedChapterItems(
             is ChapterList.MissingCount -> {
                 MissingChapterCountListItem(count = item.count)
             }
+
             is ChapterList.Item -> {
                 MangaChapterListItem(
                     title = if (manga.displayMode == Manga.CHAPTER_DISPLAY_NUMBER) {

@@ -1,14 +1,14 @@
 package ephyra.domain.source.interactor
 
-import ephyra.domain.source.service.SourcePreferences
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
 import ephyra.domain.source.model.Pin
 import ephyra.domain.source.model.Pins
 import ephyra.domain.source.model.Source
 import ephyra.domain.source.repository.SourceRepository
+import ephyra.domain.source.service.SourcePreferences
 import ephyra.source.local.isLocal
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 class GetEnabledSources(
     private val repository: SourceRepository,

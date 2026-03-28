@@ -2,9 +2,9 @@ package ephyra.domain.extension.interactor
 
 import android.content.pm.PackageInfo
 import androidx.core.content.pm.PackageInfoCompat
-import ephyra.domain.source.service.SourcePreferences
-import ephyra.domain.extensionrepo.repository.ExtensionRepoRepository
 import ephyra.core.common.preference.getAndSet
+import ephyra.domain.extensionrepo.repository.ExtensionRepoRepository
+import ephyra.domain.source.service.SourcePreferences
 
 class TrustExtension(
     private val extensionRepoRepository: ExtensionRepoRepository,

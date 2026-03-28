@@ -1,5 +1,12 @@
 package ephyra.domain.manga.interactor
 
+import ephyra.domain.library.model.LibraryManga
+import ephyra.domain.manga.model.Manga
+import ephyra.domain.manga.model.MangaUpdate
+import ephyra.domain.manga.model.MangaWithChapterCount
+import ephyra.domain.manga.repository.MangaRepository
+import ephyra.domain.source.model.StubSource
+import ephyra.domain.source.service.SourceManager
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.source.model.MangasPage
@@ -14,13 +21,6 @@ import kotlinx.coroutines.flow.flowOf
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
-import ephyra.domain.library.model.LibraryManga
-import ephyra.domain.manga.model.Manga
-import ephyra.domain.manga.model.MangaUpdate
-import ephyra.domain.manga.model.MangaWithChapterCount
-import ephyra.domain.manga.repository.MangaRepository
-import ephyra.domain.source.model.StubSource
-import ephyra.domain.source.service.SourceManager
 
 /**
  * Tests for the post-processing pipeline in [FindContentSource]:
@@ -31,7 +31,7 @@ class FindContentSourceTest {
 
     private val interactor = FindContentSource(
         sourceManager = FakeSourceManager(),
-        getFavoritesByCanonicalId = ephyra.domain.manga.interactor.GetFavoritesByCanonicalId(
+        getFavoritesByCanonicalId = GetFavoritesByCanonicalId(
             FakeMangaRepository(),
         ),
     )

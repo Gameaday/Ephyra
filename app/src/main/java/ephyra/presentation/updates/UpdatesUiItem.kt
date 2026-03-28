@@ -32,22 +32,22 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import ephyra.app.data.download.model.Download
+import ephyra.app.ui.updates.UpdatesItem
+import ephyra.domain.updates.model.UpdatesWithRelations
+import ephyra.i18n.MR
 import ephyra.presentation.components.relativeDateText
+import ephyra.presentation.core.components.ListGroupHeader
+import ephyra.presentation.core.components.material.DISABLED_ALPHA
+import ephyra.presentation.core.components.material.padding
+import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.util.selectedBackground
 import ephyra.presentation.manga.components.ChapterDownloadAction
 import ephyra.presentation.manga.components.ChapterDownloadIndicator
 import ephyra.presentation.manga.components.DotSeparatorText
 import ephyra.presentation.manga.components.MangaCover
 import ephyra.presentation.util.animateItemFastScroll
 import ephyra.presentation.util.relativeTimeSpanString
-import ephyra.app.data.download.model.Download
-import ephyra.app.ui.updates.UpdatesItem
-import ephyra.domain.updates.model.UpdatesWithRelations
-import ephyra.i18n.MR
-import ephyra.presentation.core.components.ListGroupHeader
-import ephyra.presentation.core.components.material.DISABLED_ALPHA
-import ephyra.presentation.core.components.material.padding
-import ephyra.presentation.core.i18n.stringResource
-import ephyra.presentation.core.util.selectedBackground
 
 internal fun LazyListScope.updatesLastUpdatedItem(
     lastUpdated: Long,

@@ -107,6 +107,7 @@ actual class LocalSource(
                         mangaDirs.sortedWith(compareByDescending(String.CASE_INSENSITIVE_ORDER) { it.name.orEmpty() })
                     }
                 }
+
                 is OrderBy.Latest -> {
                     mangaDirs = if (filter.state!!.ascending) {
                         mangaDirs.sortedBy(UniFile::lastModified)
@@ -114,6 +115,7 @@ actual class LocalSource(
                         mangaDirs.sortedByDescending(UniFile::lastModified)
                     }
                 }
+
                 else -> {
                     /* Do nothing */
                 }
@@ -364,6 +366,7 @@ actual class LocalSource(
 
                     entry?.let { coverManager.update(manga, it.openInputStream()) }
                 }
+
                 is Format.Archive -> {
                     format.file.archiveReader(context).use { reader ->
                         val entry = reader.useEntries { entries ->
@@ -389,6 +392,7 @@ actual class LocalSource(
                         }
                     }
                 }
+
                 is Format.Epub -> {
                     format.file.epubReader(context).use { epub ->
                         val entry = epub.getImagesFromPages().firstOrNull()

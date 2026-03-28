@@ -1,8 +1,8 @@
 package ephyra.app.data.backup.models
 
+import ephyra.domain.extensionrepo.model.ExtensionRepo
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoNumber
-import ephyra.domain.extensionrepo.model.ExtensionRepo
 
 @Serializable
 class BackupExtensionRepos(

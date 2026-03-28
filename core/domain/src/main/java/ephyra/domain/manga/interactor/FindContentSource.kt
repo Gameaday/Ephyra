@@ -1,5 +1,11 @@
 package ephyra.domain.manga.interactor
 
+import ephyra.core.common.util.lang.withIOContext
+import ephyra.core.common.util.system.logcat
+import ephyra.domain.manga.interactor.FindContentSource.Companion.CHAPTER_COUNT_UNKNOWN
+import ephyra.domain.manga.model.Manga
+import ephyra.domain.source.service.SourceManager
+import ephyra.feature.migration.list.search.SmartSourceSearchEngine
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.model.SManga
 import kotlinx.coroutines.async
@@ -8,12 +14,6 @@ import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import logcat.LogPriority
-import ephyra.feature.migration.list.search.SmartSourceSearchEngine
-import ephyra.core.common.util.lang.withIOContext
-import ephyra.core.common.util.system.logcat
-import ephyra.domain.manga.interactor.GetFavoritesByCanonicalId
-import ephyra.domain.manga.model.Manga
-import ephyra.domain.source.service.SourceManager
 import java.util.concurrent.atomic.AtomicInteger
 
 /**

@@ -8,12 +8,13 @@ import ephyra.app.data.backup.models.IntPreferenceValue
 import ephyra.app.data.backup.models.LongPreferenceValue
 import ephyra.app.data.backup.models.StringPreferenceValue
 import ephyra.app.data.backup.models.StringSetPreferenceValue
-import eu.kanade.tachiyomi.source.ConfigurableSource
-import eu.kanade.tachiyomi.source.preferenceKey
-import eu.kanade.tachiyomi.source.sourcePreferences
 import ephyra.core.common.preference.Preference
 import ephyra.core.common.preference.PreferenceStore
 import ephyra.domain.source.service.SourceManager
+import eu.kanade.tachiyomi.source.ConfigurableSource
+import eu.kanade.tachiyomi.source.preferenceKey
+import eu.kanade.tachiyomi.source.sourcePreferences
+
 class PreferenceBackupCreator(
     private val sourceManager: SourceManager,
     private val preferenceStore: PreferenceStore,
@@ -51,6 +52,7 @@ class PreferenceBackupCreator(
                     is Set<*> -> (value as? Set<String>)?.let {
                         BackupPreference(key, StringSetPreferenceValue(it))
                     }
+
                     else -> null
                 }
             }

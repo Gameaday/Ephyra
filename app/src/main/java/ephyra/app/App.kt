@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.app.Application
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
-import android.content.ComponentCallbacks2
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -24,9 +23,6 @@ import coil3.request.allowRgb565
 import coil3.request.bitmapConfig
 import coil3.request.crossfade
 import coil3.util.DebugLogger
-import ephyra.domain.base.BasePreferences
-import ephyra.domain.ui.UiPreferences
-import ephyra.domain.ui.model.setAppCompatDelegateThemeMode
 import ephyra.app.core.security.PrivacyPreferences
 import ephyra.app.crash.CrashActivity
 import ephyra.app.crash.GlobalExceptionHandler
@@ -34,13 +30,11 @@ import ephyra.app.data.coil.BufferedSourceFetcher
 import ephyra.app.data.coil.MangaCoverFetcher
 import ephyra.app.data.coil.MangaCoverKeyer
 import ephyra.app.data.coil.MangaKeyer
-import ephyra.presentation.core.data.coil.TachiyomiImageDecoder
 import ephyra.app.data.notification.Notifications
 import ephyra.app.di.koinAppModule
+import ephyra.app.di.koinAppModule_UI
 import ephyra.app.di.koinDomainModule
 import ephyra.app.di.koinPreferenceModule
-import eu.kanade.tachiyomi.network.NetworkHelper
-import eu.kanade.tachiyomi.network.NetworkPreferences
 import ephyra.app.ui.base.delegate.SecureActivityDelegate
 import ephyra.app.util.system.DeviceUtil
 import ephyra.app.util.system.GLUtil
@@ -48,27 +42,31 @@ import ephyra.app.util.system.WebViewUtil
 import ephyra.app.util.system.animatorDurationScale
 import ephyra.app.util.system.cancelNotification
 import ephyra.app.util.system.notify
+import ephyra.core.common.preference.PreferenceStore
+import ephyra.core.common.util.system.ImageUtil
+import ephyra.core.common.util.system.logcat
+import ephyra.core.migration.Migrator
+import ephyra.core.migration.migrations.migrations
+import ephyra.domain.base.BasePreferences
+import ephyra.domain.ui.UiPreferences
+import ephyra.domain.ui.model.setAppCompatDelegateThemeMode
+import ephyra.i18n.MR
+import ephyra.presentation.core.data.coil.TachiyomiImageDecoder
+import ephyra.presentation.widget.WidgetManager
+import ephyra.telemetry.TelemetryConfig
+import eu.kanade.tachiyomi.network.NetworkHelper
+import eu.kanade.tachiyomi.network.NetworkPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import logcat.AndroidLogcatLogger
 import logcat.LogPriority
 import logcat.LogcatLogger
-import ephyra.core.migration.Migrator
-import ephyra.telemetry.TelemetryConfig
 import org.koin.android.ext.android.get
 import org.koin.android.ext.android.inject
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.workmanager.koin.workManagerFactory
 import org.koin.core.context.startKoin
-import ephyra.app.di.koinAppModule
-import ephyra.app.di.koinAppModule_UI
-import ephyra.app.di.koinDomainModule
-import ephyra.app.di.koinPreferenceModule
-import ephyra.core.common.preference.PreferenceStore
-import ephyra.core.common.util.system.ImageUtil
-import ephyra.core.common.util.system.logcat
-import ephyra.presentation.widget.WidgetManager
 
 class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factory {
 
@@ -241,9 +239,9 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
         val cache = SingletonImageLoader.get(this).memoryCache ?: return
-        if (level >= ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN) {
+        if (level >= TRIM_MEMORY_UI_HIDDEN) {
             cache.clear()
-        } else if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
+        } else if (level >= TRIM_MEMORY_RUNNING_LOW) {
             cache.trimToSize(cache.maxSize / 2)
         }
     }

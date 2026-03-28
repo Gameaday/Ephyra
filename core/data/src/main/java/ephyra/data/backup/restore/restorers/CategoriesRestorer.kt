@@ -4,6 +4,7 @@ import ephyra.app.data.backup.models.BackupCategory
 import ephyra.data.DatabaseHandler
 import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.library.service.LibraryPreferences
+
 class CategoriesRestorer(
     private val handler: DatabaseHandler,
     private val getCategories: GetCategories,

@@ -1,8 +1,8 @@
 package ephyra.domain.updates.interactor
 
-import kotlinx.coroutines.flow.Flow
 import ephyra.domain.updates.model.UpdatesWithRelations
 import ephyra.domain.updates.repository.UpdatesRepository
+import kotlinx.coroutines.flow.Flow
 import java.time.Instant
 
 class GetUpdates(

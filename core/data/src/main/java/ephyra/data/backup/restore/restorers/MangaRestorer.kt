@@ -1,6 +1,5 @@
 package ephyra.app.data.backup.restore.restorers
 
-import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.app.data.backup.models.BackupCategory
 import ephyra.app.data.backup.models.BackupChapter
 import ephyra.app.data.backup.models.BackupHistory
@@ -14,6 +13,7 @@ import ephyra.domain.chapter.interactor.GetChaptersByMangaId
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.manga.interactor.FetchInterval
 import ephyra.domain.manga.interactor.GetMangaByUrlAndSourceId
+import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.track.interactor.GetTracks
 import ephyra.domain.track.interactor.InsertTrack

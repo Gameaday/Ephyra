@@ -17,18 +17,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import ephyra.presentation.components.TabbedDialog
-import ephyra.presentation.components.TabbedDialogPaddings
 import ephyra.app.ui.updates.UpdatesSettingsScreenModel
-import kotlinx.collections.immutable.persistentListOf
 import ephyra.core.common.preference.getAndSet
 import ephyra.domain.updates.service.UpdatesPreferences
 import ephyra.i18n.MR
+import ephyra.presentation.components.TabbedDialog
+import ephyra.presentation.components.TabbedDialogPaddings
 import ephyra.presentation.core.components.SettingsItemsPaddings
 import ephyra.presentation.core.components.TriStateItem
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.collectAsState
+import kotlinx.collections.immutable.persistentListOf
 
 @Composable
 fun UpdatesFilterDialog(

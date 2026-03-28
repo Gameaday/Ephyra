@@ -3,20 +3,20 @@ package ephyra.app.ui.deeplink
 import androidx.compose.runtime.Immutable
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import ephyra.core.common.util.lang.launchIO
+import ephyra.domain.chapter.interactor.GetChapterByUrlAndMangaId
 import ephyra.domain.chapter.interactor.SyncChaptersWithSource
+import ephyra.domain.chapter.model.Chapter
+import ephyra.domain.manga.interactor.NetworkToLocalManga
+import ephyra.domain.manga.model.Manga
+import ephyra.domain.manga.model.toDomainManga
 import ephyra.domain.manga.model.toSManga
+import ephyra.domain.source.service.SourceManager
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.model.SChapter
 import eu.kanade.tachiyomi.source.online.ResolvableSource
 import eu.kanade.tachiyomi.source.online.UriType
 import kotlinx.coroutines.flow.update
-import ephyra.domain.manga.model.toDomainManga
-import ephyra.core.common.util.lang.launchIO
-import ephyra.domain.chapter.interactor.GetChapterByUrlAndMangaId
-import ephyra.domain.chapter.model.Chapter
-import ephyra.domain.manga.interactor.NetworkToLocalManga
-import ephyra.domain.manga.model.Manga
-import ephyra.domain.source.service.SourceManager
 
 class DeepLinkScreenModel(
     query: String,

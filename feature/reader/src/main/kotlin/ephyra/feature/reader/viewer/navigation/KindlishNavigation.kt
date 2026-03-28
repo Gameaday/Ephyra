@@ -12,7 +12,7 @@ import ephyra.feature.reader.viewer.ViewerNavigation
  * +---+---+---+
  * | P | N | N |   N: Next
  * +---+---+---+
-*/
+ */
 class KindlishNavigation : ViewerNavigation() {
 
     override var regionList: List<Region> = listOf(

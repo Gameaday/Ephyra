@@ -9,14 +9,14 @@ import androidx.room.*
             entity = MangaEntity::class,
             parentColumns = ["_id"],
             childColumns = ["manga_id"],
-            onDelete = ForeignKey.CASCADE
-        )
+            onDelete = ForeignKey.CASCADE,
+        ),
     ],
     indices = [
         Index(value = ["manga_id"]),
         Index(value = ["url"]),
-        Index(value = ["manga_id", "read"], name = "chapters_unread_by_manga_index", where = "read = 0")
-    ]
+        Index(value = ["manga_id", "read"], name = "chapters_unread_by_manga_index", where = "read = 0"),
+    ],
 )
 data class ChapterEntity(
     @PrimaryKey(autoGenerate = true) @ColumnInfo(name = "_id") val id: Long,

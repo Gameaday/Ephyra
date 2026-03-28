@@ -9,6 +9,7 @@ import ephyra.app.data.track.kitsu.dto.KitsuListSearchResult
 import ephyra.app.data.track.kitsu.dto.KitsuOAuth
 import ephyra.app.data.track.kitsu.dto.KitsuSearchResult
 import ephyra.app.data.track.model.TrackSearch
+import ephyra.core.common.util.lang.withIOContext
 import eu.kanade.tachiyomi.network.DELETE
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.POST
@@ -27,7 +28,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import ephyra.core.common.util.lang.withIOContext
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import kotlin.time.Duration.Companion.seconds

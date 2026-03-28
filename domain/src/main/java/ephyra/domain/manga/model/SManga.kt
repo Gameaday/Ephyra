@@ -1,7 +1,6 @@
 package ephyra.domain.manga.model
 
 import eu.kanade.tachiyomi.source.model.SManga
-import ephyra.domain.manga.model.Manga
 
 fun SManga.toDomainManga(sourceId: Long): Manga {
     return Manga.create().copy(

@@ -1,26 +1,26 @@
 package ephyra.domain.migration.usecases
 
-import ephyra.domain.chapter.interactor.SyncChaptersWithSource
-import ephyra.domain.manga.interactor.UpdateManga
-import ephyra.domain.manga.model.hasCustomCover
-import ephyra.domain.manga.model.toSManga
-import ephyra.domain.source.service.SourcePreferences
-import ephyra.app.data.cache.CoverCache
-import ephyra.app.data.download.DownloadManager
-import ephyra.app.data.track.EnhancedTracker
-import ephyra.app.data.track.TrackerManager
-import kotlinx.coroutines.CancellationException
-import ephyra.domain.migration.models.MigrationFlag
+import ephyra.data.cache.CoverCache
+import ephyra.data.download.DownloadManager
+import ephyra.data.track.EnhancedTracker
+import ephyra.data.track.TrackerManager
 import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.category.interactor.SetMangaCategories
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
+import ephyra.domain.chapter.interactor.SyncChaptersWithSource
 import ephyra.domain.chapter.interactor.UpdateChapter
 import ephyra.domain.chapter.model.toChapterUpdate
+import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaUpdate
+import ephyra.domain.manga.model.hasCustomCover
+import ephyra.domain.manga.model.toSManga
+import ephyra.domain.migration.models.MigrationFlag
 import ephyra.domain.source.service.SourceManager
+import ephyra.domain.source.service.SourcePreferences
 import ephyra.domain.track.interactor.GetTracks
 import ephyra.domain.track.interactor.InsertTrack
+import kotlinx.coroutines.CancellationException
 import java.time.Instant
 
 class MigrateMangaUseCase(

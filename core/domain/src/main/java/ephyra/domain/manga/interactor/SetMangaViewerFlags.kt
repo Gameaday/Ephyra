@@ -1,9 +1,9 @@
 package ephyra.domain.manga.interactor
 
-import ephyra.feature.reader.setting.ReaderOrientation
-import ephyra.feature.reader.setting.ReadingMode
 import ephyra.domain.manga.model.MangaUpdate
 import ephyra.domain.manga.repository.MangaRepository
+import ephyra.feature.reader.setting.ReaderOrientation
+import ephyra.feature.reader.setting.ReadingMode
 
 class SetMangaViewerFlags(
     private val mangaRepository: MangaRepository,

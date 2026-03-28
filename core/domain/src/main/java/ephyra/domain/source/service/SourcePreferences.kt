@@ -1,13 +1,13 @@
 package ephyra.domain.source.service
 
-import ephyra.domain.source.interactor.SetMigrateSorting
-import ephyra.app.util.system.LocaleHelper
-import ephyra.domain.migration.models.MigrationFlag
 import ephyra.core.common.preference.Preference
 import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.common.preference.getEnum
 import ephyra.core.common.preference.getLongArray
+import ephyra.core.common.util.system.LocaleHelper
 import ephyra.domain.library.model.LibraryDisplayMode
+import ephyra.domain.migration.models.MigrationFlag
+import ephyra.domain.source.interactor.SetMigrateSorting
 
 class SourcePreferences(
     private val preferenceStore: PreferenceStore,

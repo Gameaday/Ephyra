@@ -1,9 +1,9 @@
 package ephyra.domain.extension.interactor
 
-import ephyra.domain.extension.model.Extensions
-import ephyra.domain.source.service.SourcePreferences
 import ephyra.app.extension.ExtensionManager
 import ephyra.app.extension.model.Extension
+import ephyra.domain.extension.model.Extensions
+import ephyra.domain.source.service.SourcePreferences
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 

@@ -4,6 +4,7 @@ import eu.kanade.tachiyomi.source.getNameForMangaInfo
 import ephyra.domain.library.model.LibraryManga
 import ephyra.domain.source.service.SourceManager
 import ephyra.source.local.LocalSource
+
 data class LibraryItem(
     val libraryManga: LibraryManga,
     val downloadCount: Long = -1,

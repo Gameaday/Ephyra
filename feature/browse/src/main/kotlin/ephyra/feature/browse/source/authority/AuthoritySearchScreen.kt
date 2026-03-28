@@ -368,6 +368,7 @@ private fun DiscoverContent(
                 DiscoverDisplayState.LANDING -> {
                     EmptyScreen(stringResource(MR.strings.discover_empty_state))
                 }
+
                 DiscoverDisplayState.ERROR -> {
                     Column(
                         modifier = Modifier.fillMaxSize(),
@@ -392,9 +393,11 @@ private fun DiscoverContent(
                         }
                     }
                 }
+
                 DiscoverDisplayState.NO_RESULTS -> {
                     EmptyScreen(stringResource(MR.strings.no_results_found))
                 }
+
                 DiscoverDisplayState.RESULTS -> {
                     ScrollbarLazyColumn(
                         contentPadding = PaddingValues(
@@ -846,9 +849,11 @@ private fun FindSourceDialog(
                                                 MR.strings.discover_find_source_chapters,
                                                 match.chapterCount,
                                             )
+
                                             match.chapterCount == 0 -> stringResource(
                                                 MR.strings.discover_find_source_no_chapters,
                                             )
+
                                             else -> null
                                         }
                                         if (chapterText != null) {

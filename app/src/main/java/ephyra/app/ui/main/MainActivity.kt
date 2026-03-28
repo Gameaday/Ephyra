@@ -28,7 +28,128 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,21 +163,12 @@ import androidx.core.net.toUri
 import androidx.core.splashscreen.SplashScreen
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.util.Consumer
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.NavigatorDisposeBehavior
 import cafe.adriel.voyager.navigator.currentOrThrow
-import ephyra.domain.base.BasePreferences
-import ephyra.domain.source.interactor.GetIncognitoState
-import ephyra.presentation.components.AppStateBanners
-import ephyra.presentation.components.DownloadedOnlyBannerBackgroundColor
-import ephyra.presentation.components.IncognitoModeBannerBackgroundColor
-import ephyra.presentation.components.IndexingBannerBackgroundColor
-import ephyra.feature.settings.screen.browse.ExtensionReposScreen
-import ephyra.feature.settings.screen.data.RestoreBackupScreen
-import ephyra.presentation.util.AssistContentScreen
-import ephyra.presentation.util.DefaultNavigatorScreenTransition
 import ephyra.app.BuildConfig
 import ephyra.app.data.cache.ChapterCache
 import ephyra.app.data.download.DownloadCache
@@ -64,7 +176,6 @@ import ephyra.app.data.notification.NotificationReceiver
 import ephyra.app.data.updater.AppUpdateChecker
 import ephyra.app.data.updater.RELEASE_URL
 import ephyra.app.extension.api.ExtensionApi
-import ephyra.presentation.core.ui.activity.BaseActivity
 import ephyra.app.ui.browse.source.authority.MatchResultsScreen
 import ephyra.app.ui.browse.source.browse.BrowseSourceScreen
 import ephyra.app.ui.browse.source.globalsearch.GlobalSearchScreen
@@ -73,11 +184,30 @@ import ephyra.app.ui.home.HomeScreen
 import ephyra.app.ui.manga.MangaScreen
 import ephyra.app.ui.more.NewUpdateScreen
 import ephyra.app.ui.more.OnboardingScreen
-import ephyra.app.util.system.dpToPx
 import ephyra.app.util.system.isNavigationBarNeedsScrim
-import ephyra.presentation.core.util.system.openInBrowser
 import ephyra.app.util.system.updaterEnabled
 import ephyra.app.util.view.setComposeContent
+import ephyra.core.common.Constants
+import ephyra.core.common.util.lang.launchIO
+import ephyra.core.common.util.system.logcat
+import ephyra.core.migration.Migrator
+import ephyra.domain.base.BasePreferences
+import ephyra.domain.library.service.LibraryPreferences
+import ephyra.domain.release.interactor.GetApplicationRelease
+import ephyra.domain.source.interactor.GetIncognitoState
+import ephyra.feature.settings.screen.browse.ExtensionReposScreen
+import ephyra.feature.settings.screen.data.RestoreBackupScreen
+import ephyra.i18n.MR
+import ephyra.presentation.components.AppStateBanners
+import ephyra.presentation.components.DownloadedOnlyBannerBackgroundColor
+import ephyra.presentation.components.IncognitoModeBannerBackgroundColor
+import ephyra.presentation.components.IndexingBannerBackgroundColor
+import ephyra.presentation.core.components.material.Scaffold
+import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.ui.activity.BaseActivity
+import ephyra.presentation.core.util.system.openInBrowser
+import ephyra.presentation.util.AssistContentScreen
+import ephyra.presentation.util.DefaultNavigatorScreenTransition
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -87,21 +217,11 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import logcat.LogPriority
-import ephyra.core.migration.Migrator
-import ephyra.core.common.Constants
-import ephyra.core.common.util.lang.launchIO
-import ephyra.core.common.util.system.logcat
-import ephyra.domain.library.service.LibraryPreferences
-import ephyra.domain.release.interactor.GetApplicationRelease
-import ephyra.i18n.MR
-import ephyra.presentation.core.components.material.Scaffold
-import ephyra.presentation.core.i18n.stringResource
-import ephyra.presentation.core.util.collectAsState
 import org.koin.android.ext.android.inject
 
 class MainActivity : BaseActivity() {
 
-    private val libraryPreferences: ephyra.domain.library.service.LibraryPreferences by inject()
+    private val libraryPreferences: LibraryPreferences by inject()
     private val preferences: ephyra.domain.base.BasePreferences by inject()
 
     private val downloadCache: ephyra.app.data.download.DownloadCache by inject()

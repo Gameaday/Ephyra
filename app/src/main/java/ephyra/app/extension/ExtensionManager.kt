@@ -2,8 +2,6 @@ package ephyra.app.extension
 
 import android.content.Context
 import android.graphics.drawable.Drawable
-import ephyra.domain.extension.interactor.TrustExtension
-import ephyra.domain.source.service.SourcePreferences
 import ephyra.app.core.security.SecurityPreferences
 import ephyra.app.extension.api.ExtensionApi
 import ephyra.app.extension.api.ExtensionUpdateNotifier
@@ -13,6 +11,12 @@ import ephyra.app.extension.model.LoadResult
 import ephyra.app.extension.util.ExtensionInstallReceiver
 import ephyra.app.extension.util.ExtensionInstaller
 import ephyra.app.extension.util.ExtensionLoader
+import ephyra.core.common.util.lang.withUIContext
+import ephyra.core.common.util.system.logcat
+import ephyra.domain.extension.interactor.TrustExtension
+import ephyra.domain.source.model.StubSource
+import ephyra.domain.source.service.SourcePreferences
+import ephyra.i18n.MR
 import ephyra.presentation.core.util.system.toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -26,10 +30,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import logcat.LogPriority
-import ephyra.core.common.util.lang.withUIContext
-import ephyra.core.common.util.system.logcat
-import ephyra.domain.source.model.StubSource
-import ephyra.i18n.MR
 import java.util.Locale
 
 /**

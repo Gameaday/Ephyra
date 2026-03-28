@@ -1,9 +1,9 @@
 package ephyra.domain.track.interactor
 
-import logcat.LogPriority
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.track.model.Track
 import ephyra.domain.track.repository.TrackRepository
+import logcat.LogPriority
 
 class InsertTrack(
     private val trackRepository: TrackRepository,

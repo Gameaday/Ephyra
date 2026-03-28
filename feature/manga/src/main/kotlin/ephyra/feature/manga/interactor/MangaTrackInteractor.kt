@@ -1,22 +1,21 @@
 package ephyra.feature.manga.interactor
 
 import android.content.Context
-import ephyra.app.data.track.EnhancedTracker
+import ephyra.app.data.track.Tracker
 import ephyra.app.data.track.TrackerManager
+import ephyra.domain.manga.model.Manga
 import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.GetTracks
 import ephyra.domain.track.interactor.MatchUnlinkedManga
 import ephyra.domain.track.interactor.RefreshCanonicalMetadata
 import ephyra.domain.track.interactor.RefreshTracks
 import ephyra.domain.track.interactor.TrackChapter
-import ephyra.domain.track.service.TrackPreferences
 import ephyra.domain.track.model.AutoTrackState
-import ephyra.domain.manga.model.Manga
-import org.koin.core.annotation.Factory
+import ephyra.domain.track.model.Track
+import ephyra.domain.track.service.TrackPreferences
 import eu.kanade.tachiyomi.source.Source
 import kotlinx.coroutines.flow.Flow
-import ephyra.domain.track.model.Track
-import ephyra.app.data.track.Tracker
+import org.koin.core.annotation.Factory
 
 @Factory
 class MangaTrackInteractor(

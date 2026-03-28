@@ -1,9 +1,9 @@
 package ephyra.feature.migration.list.search
 
+import ephyra.domain.manga.model.Manga
+import ephyra.domain.manga.model.toDomainManga
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.model.SManga
-import ephyra.domain.manga.model.toDomainManga
-import ephyra.domain.manga.model.Manga
 
 class SmartSourceSearchEngine(extraSearchParams: String?) : BaseSmartSearchEngine<SManga>(extraSearchParams) {
 

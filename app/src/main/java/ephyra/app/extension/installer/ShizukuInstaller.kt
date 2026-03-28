@@ -13,17 +13,17 @@ import android.os.IBinder
 import androidx.core.content.ContextCompat
 import ephyra.app.BuildConfig
 import ephyra.app.extension.model.InstallStep
+import ephyra.app.shizuku.IShellInterface
+import ephyra.app.shizuku.ShellInterface
+import ephyra.core.common.util.system.logcat
+import ephyra.i18n.MR
 import ephyra.presentation.core.util.system.toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import logcat.LogPriority
-import ephyra.app.shizuku.IShellInterface
-import ephyra.app.shizuku.ShellInterface
 import rikka.shizuku.Shizuku
-import ephyra.core.common.util.system.logcat
-import ephyra.i18n.MR
 
 class ShizukuInstaller(
     private val service: Service,

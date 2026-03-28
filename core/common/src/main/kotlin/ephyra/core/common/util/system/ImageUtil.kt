@@ -22,6 +22,8 @@ import androidx.core.graphics.green
 import androidx.core.graphics.red
 import com.hippo.unifile.UniFile
 import ephyra.app.util.system.GLUtil
+import ephyra.core.common.util.system.ImageUtil.STUB_MAX_HEIGHT_FRACTION
+import ephyra.core.common.util.system.ImageUtil.STUB_MIN_HEIGHT_FRACTION
 import logcat.LogPriority
 import okio.Buffer
 import okio.BufferedSource
@@ -273,12 +275,10 @@ object ImageUtil {
             val width = info.size.width
             val height = info.size.height
             decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
-            decoder.setCrop(
-                when (side) {
-                    Side.RIGHT -> Rect(width - width / 2, 0, width, height)
-                    Side.LEFT -> Rect(0, 0, width / 2, height)
-                },
-            )
+            decoder.crop = when (side) {
+                Side.RIGHT -> Rect(width - width / 2, 0, width, height)
+                Side.LEFT -> Rect(0, 0, width / 2, height)
+            }
         }
     }
 
@@ -500,10 +500,12 @@ object ImageUtil {
         filenamePrefix: String,
         index: Int,
         extension: String,
-    ) = "${filenamePrefix}__${"%03d".format(
-        Locale.ENGLISH,
-        index + 1,
-    )}.$extension"
+    ) = "${filenamePrefix}__${
+        "%03d".format(
+            Locale.ENGLISH,
+            index + 1,
+        )
+    }.$extension"
 
     private val BitmapFactory.Options.splitData
         get(): List<SplitData> {
@@ -711,6 +713,7 @@ object ImageUtil {
                     overallWhitePixels = 0
                     break@outer
                 }
+
                 blackStreak -> {
                     darkBG = true
                     if (x == right || x == rightOffsetX) {
@@ -725,6 +728,7 @@ object ImageUtil {
                         break@outer
                     }
                 }
+
                 whiteStreak || whitePixels > 22 -> darkBG = false
             }
         }
@@ -758,12 +762,15 @@ object ImageUtil {
             darkBG && botCornersIsWhite -> {
                 intArrayOf(blackColor, blackColor, whiteColor, whiteColor)
             }
+
             darkBG && topCornersIsWhite -> {
                 intArrayOf(whiteColor, whiteColor, blackColor, blackColor)
             }
+
             darkBG -> {
                 return ColorDrawable(blackColor)
             }
+
             topIsBlackStreak ||
                 (
                     topCornersIsDark &&
@@ -772,6 +779,7 @@ object ImageUtil {
                     ) -> {
                 intArrayOf(blackColor, blackColor, whiteColor, whiteColor)
             }
+
             bottomIsBlackStreak ||
                 (
                     botCornersIsDark &&
@@ -780,6 +788,7 @@ object ImageUtil {
                     ) -> {
                 intArrayOf(whiteColor, whiteColor, blackColor, blackColor)
             }
+
             else -> {
                 return ColorDrawable(whiteColor)
             }

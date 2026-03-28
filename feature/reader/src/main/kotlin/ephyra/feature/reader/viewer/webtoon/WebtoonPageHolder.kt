@@ -148,6 +148,7 @@ class WebtoonPageHolder(
                             progressIndicator.setProgress(value)
                         }
                     }
+
                     Page.State.Ready -> setImage()
                     is Page.State.Error -> setError(state.error)
                 }

@@ -9,16 +9,16 @@ android {
 dependencies {
     api(projects.data)
     api(projects.core.domain)
-    
+
     implementation(projects.core.common)
     implementation(projects.core.archive)
     implementation(projects.core.download)
-    
+
     implementation(libs.unifile)
     implementation(platform(libs.coil.bom))
     implementation(libs.coil.core)
     implementation(libs.okhttp.core)
-    
+
     api(libs.koin.core)
     api(kotlinx.coroutines.core)
 }

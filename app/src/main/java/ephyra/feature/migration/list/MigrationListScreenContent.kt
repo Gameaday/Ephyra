@@ -38,7 +38,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,18 +52,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import ephyra.app.R
+import ephyra.domain.manga.model.Manga
+import ephyra.feature.migration.list.models.MigratingManga
+import ephyra.i18n.MR
 import ephyra.presentation.components.AppBar
 import ephyra.presentation.components.AppBarActions
-import ephyra.presentation.manga.components.MangaCover
-import ephyra.presentation.util.animateItemFastScroll
-import ephyra.presentation.util.formatChapterNumber
-import ephyra.presentation.util.rememberResourceBitmapPainter
-import ephyra.app.R
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import ephyra.feature.migration.list.models.MigratingManga
-import ephyra.domain.manga.model.Manga
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.Badge
 import ephyra.presentation.core.components.BadgeGroup
 import ephyra.presentation.core.components.FastScrollLazyColumn
@@ -74,6 +68,12 @@ import ephyra.presentation.core.components.material.topSmallPaddingValues
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.theme.MotionTokens
 import ephyra.presentation.core.util.plus
+import ephyra.presentation.manga.components.MangaCover
+import ephyra.presentation.util.animateItemFastScroll
+import ephyra.presentation.util.formatChapterNumber
+import ephyra.presentation.util.rememberResourceBitmapPainter
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 
 @Composable
 fun MigrationListScreenContent(

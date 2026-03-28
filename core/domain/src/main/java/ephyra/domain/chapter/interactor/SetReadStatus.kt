@@ -1,15 +1,15 @@
 package ephyra.domain.chapter.interactor
 
-import ephyra.domain.download.interactor.DeleteDownload
-import logcat.LogPriority
 import ephyra.core.common.util.lang.withNonCancellableContext
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.model.ChapterUpdate
 import ephyra.domain.chapter.repository.ChapterRepository
+import ephyra.domain.download.interactor.DeleteDownload
 import ephyra.domain.download.service.DownloadPreferences
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.repository.MangaRepository
+import logcat.LogPriority
 
 class SetReadStatus(
     private val downloadPreferences: DownloadPreferences,

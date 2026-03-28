@@ -23,17 +23,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
-import ephyra.presentation.components.AppBar
-import ephyra.presentation.components.AppBarActions
-import ephyra.presentation.manga.components.ChapterDownloadAction
-import ephyra.presentation.manga.components.MangaBottomActionMenu
 import ephyra.app.data.download.model.Download
 import ephyra.app.ui.updates.UpdatesItem
 import ephyra.app.ui.updates.UpdatesScreenModel
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import ephyra.i18n.MR
+import ephyra.presentation.components.AppBar
+import ephyra.presentation.components.AppBarActions
 import ephyra.presentation.core.components.FastScrollLazyColumn
 import ephyra.presentation.core.components.material.PullRefresh
 import ephyra.presentation.core.components.material.Scaffold
@@ -41,7 +36,13 @@ import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.theme.active
+import ephyra.presentation.manga.components.ChapterDownloadAction
+import ephyra.presentation.manga.components.MangaBottomActionMenu
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.time.LocalDate
+import kotlin.collections.isNotEmpty
 import kotlin.time.Duration.Companion.seconds
 
 @Composable

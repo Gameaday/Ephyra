@@ -1,7 +1,7 @@
 package ephyra.domain.source.interactor
 
-import ephyra.domain.source.service.SourcePreferences
 import ephyra.core.common.preference.getAndSet
+import ephyra.domain.source.service.SourcePreferences
 
 class ToggleLanguage(
     val preferences: SourcePreferences,

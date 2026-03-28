@@ -1,9 +1,9 @@
 package ephyra.domain.history.repository
 
-import kotlinx.coroutines.flow.Flow
 import ephyra.domain.history.model.History
 import ephyra.domain.history.model.HistoryUpdate
 import ephyra.domain.history.model.HistoryWithRelations
+import kotlinx.coroutines.flow.Flow
 
 interface HistoryRepository {
 

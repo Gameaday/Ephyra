@@ -11,31 +11,29 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.koin.koinScreenModel
-import org.koin.core.annotation.Factory
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
+import ephyra.app.data.download.DownloadManager
+import ephyra.app.ui.setting.SettingsScreen
+import ephyra.core.common.util.lang.launchIO
 import ephyra.core.preference.asState
 import ephyra.domain.base.BasePreferences
-import ephyra.presentation.more.MoreScreen
-import ephyra.presentation.util.Tab
-import ephyra.app.R
-import ephyra.app.data.download.DownloadManager
 import ephyra.feature.category.CategoryScreen
 import ephyra.feature.download.DownloadQueueScreen
-import ephyra.app.ui.setting.SettingsScreen
 import ephyra.feature.stats.StatsScreen
+import ephyra.i18n.MR
+import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.more.MoreScreen
+import ephyra.presentation.util.Tab
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
-import ephyra.core.common.util.lang.launchIO
-import ephyra.i18n.MR
-import ephyra.presentation.core.i18n.stringResource
-import ephyra.presentation.core.i18n.stringResource
+import org.koin.core.annotation.Factory
 
 data object MoreTab : Tab {
 

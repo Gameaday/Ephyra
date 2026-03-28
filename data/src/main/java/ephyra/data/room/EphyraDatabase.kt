@@ -24,7 +24,7 @@ import ephyra.data.room.views.*
         UpdatesView::class,
     ],
     version = 1, // Start with 1, but it will pick up legacy schema
-    exportSchema = false
+    exportSchema = false,
 )
 @TypeConverters(RoomTypeConverters::class)
 abstract class EphyraDatabase : RoomDatabase() {

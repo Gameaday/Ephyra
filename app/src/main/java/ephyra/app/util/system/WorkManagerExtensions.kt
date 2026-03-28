@@ -4,9 +4,9 @@ import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import ephyra.core.common.util.system.logcat
 import kotlinx.coroutines.delay
 import logcat.LogPriority
-import ephyra.core.common.util.system.logcat
 
 val Context.workManager: WorkManager
     get() = WorkManager.getInstance(this)

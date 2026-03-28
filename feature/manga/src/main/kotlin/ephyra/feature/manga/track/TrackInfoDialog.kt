@@ -1,7 +1,5 @@
 package ephyra.app.ui.manga.track
 
-import org.koin.compose.koinInject
-
 import android.app.Application
 import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
@@ -23,7 +21,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.rememberScreenModel
@@ -40,16 +38,6 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.icerock.moko.resources.StringResource
-import ephyra.domain.track.interactor.RefreshTracks
-import ephyra.domain.track.model.toDbTrack
-import ephyra.domain.ui.UiPreferences
-import ephyra.presentation.track.TrackChapterSelector
-import ephyra.presentation.track.TrackDateSelector
-import ephyra.presentation.track.TrackInfoDialogHome
-import ephyra.presentation.track.TrackScoreSelector
-import ephyra.presentation.track.TrackStatusSelector
-import ephyra.presentation.track.TrackerSearch
-import ephyra.presentation.util.Screen
 import ephyra.app.data.track.DeletableTracker
 import ephyra.app.data.track.EnhancedTracker
 import ephyra.app.data.track.Tracker
@@ -57,17 +45,7 @@ import ephyra.app.data.track.TrackerManager
 import ephyra.app.data.track.model.TrackSearch
 import ephyra.app.util.lang.convertEpochMillisZone
 import ephyra.app.util.lang.toLocalDate
-import ephyra.presentation.core.util.system.copyToClipboard
-import ephyra.presentation.core.util.system.openInBrowser
 import ephyra.app.util.system.toast
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
-import logcat.LogPriority
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.lang.launchNonCancellable
 import ephyra.core.common.util.lang.withIOContext
@@ -77,13 +55,35 @@ import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.track.interactor.DeleteTrack
 import ephyra.domain.track.interactor.GetTracks
+import ephyra.domain.track.interactor.RefreshTracks
 import ephyra.domain.track.model.Track
+import ephyra.domain.track.model.toDbTrack
+import ephyra.domain.ui.UiPreferences
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.LabeledCheckbox
 import ephyra.presentation.core.components.material.AlertDialogContent
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
-
+import ephyra.presentation.core.util.system.copyToClipboard
+import ephyra.presentation.core.util.system.openInBrowser
+import ephyra.presentation.track.TrackChapterSelector
+import ephyra.presentation.track.TrackDateSelector
+import ephyra.presentation.track.TrackInfoDialogHome
+import ephyra.presentation.track.TrackScoreSelector
+import ephyra.presentation.track.TrackStatusSelector
+import ephyra.presentation.track.TrackerSearch
+import ephyra.presentation.util.Screen
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.forEach
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import logcat.LogPriority
+import org.koin.compose.koinInject
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -109,7 +109,17 @@ data class TrackInfoDialogHomeScreen(
         val deleteTrack = koinInject<DeleteTrack>()
 
         val screenModel = rememberScreenModel {
-            Model(mangaId, sourceId, getTracks, trackerManager, sourceManager, getManga, refreshTracks, application, deleteTrack)
+            Model(
+                mangaId,
+                sourceId,
+                getTracks,
+                trackerManager,
+                sourceManager,
+                getManga,
+                refreshTracks,
+                application,
+                deleteTrack,
+            )
         }
 
         val uiPreferences = koinInject<UiPreferences>()
@@ -492,6 +502,7 @@ private data class TrackDateSelectorScreen(
                     val startDate = Instant.ofEpochMilli(track.startDate).toLocalDate(ZoneOffset.UTC)
                     startDate <= targetDate
                 }
+
                 else -> {
                     true
                 }
@@ -513,6 +524,7 @@ private data class TrackDateSelectorScreen(
                     val startDate = Instant.ofEpochMilli(track.startDate).toLocalDate(ZoneOffset.UTC)
                     startDate.year <= year
                 }
+
                 else -> {
                     true
                 }

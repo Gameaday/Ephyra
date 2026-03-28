@@ -1,25 +1,26 @@
 package ephyra.app.di
 
-import ephyra.feature.migration.list.MigrationListScreenModel
-import ephyra.feature.category.CategoryScreenModel
-import ephyra.feature.reader.ReaderViewModel
 import ephyra.app.ui.deeplink.DeepLinkScreenModel
-import ephyra.feature.settings.screen.browse.ExtensionReposScreenModel
-import ephyra.feature.settings.screen.advanced.ClearDatabaseScreenModel
-import ephyra.feature.upcoming.UpcomingScreenModel
+import ephyra.feature.category.CategoryScreenModel
 import ephyra.feature.migration.config.MigrationConfigScreen
-import ephyra.feature.settings.screen.debug.WorkerInfoScreen
 import ephyra.feature.migration.dialog.MigrateDialogScreenModel
-import ephyra.feature.settings.screen.about.AboutScreenModel
-import ephyra.feature.settings.screen.SettingsDownloadScreenModel
-import ephyra.feature.settings.screen.SettingsDataScreenModel
-import ephyra.feature.settings.screen.SettingsBrowseScreenModel
-import ephyra.feature.settings.screen.SettingsLibraryScreenModel
-import ephyra.feature.settings.screen.SettingsTrackingScreenModel
+import ephyra.feature.migration.list.MigrationListScreenModel
+import ephyra.feature.reader.ReaderViewModel
+import ephyra.feature.settings.screen.SettingsAdvancedScreenModel
 import ephyra.feature.settings.screen.SettingsAppearanceScreenModel
+import ephyra.feature.settings.screen.SettingsBrowseScreenModel
+import ephyra.feature.settings.screen.SettingsDataScreenModel
+import ephyra.feature.settings.screen.SettingsDownloadScreenModel
+import ephyra.feature.settings.screen.SettingsLibraryScreenModel
 import ephyra.feature.settings.screen.SettingsReaderScreenModel
 import ephyra.feature.settings.screen.SettingsSecurityScreenModel
-import ephyra.feature.settings.screen.SettingsAdvancedScreenModel
+import ephyra.feature.settings.screen.SettingsTrackingScreenModel
+import ephyra.feature.settings.screen.about.AboutScreenModel
+import ephyra.feature.settings.screen.advanced.ClearDatabaseScreenModel
+import ephyra.feature.settings.screen.browse.ExtensionReposScreenModel
+import ephyra.feature.settings.screen.debug.WorkerInfoScreen
+import ephyra.feature.upcoming.UpcomingScreenModel
+import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
@@ -40,7 +41,7 @@ val koinAppModule_UI = module {
         )
     }
 
-    factory { 
+    factory {
         CategoryScreenModel(
             getCategories = get(),
             createCategoryWithName = get(),
@@ -50,7 +51,7 @@ val koinAppModule_UI = module {
         )
     }
 
-    viewModel { 
+    viewModel {
         ReaderViewModel(
             savedState = get(),
             sourceManager = get(),
@@ -88,7 +89,7 @@ val koinAppModule_UI = module {
         )
     }
 
-    factory { 
+    factory {
         ClearDatabaseScreenModel(
             getSourcesWithNonLibraryManga = get(),
             deleteNonLibraryManga = get(),
@@ -109,7 +110,7 @@ val koinAppModule_UI = module {
     factory { UpcomingScreenModel(get()) }
     factory { WorkerInfoScreen.Model(androidContext(), get()) }
 
-    factory { 
+    factory {
         MigrateDialogScreenModel(
             sourcePreference = get(),
             coverCache = get(),

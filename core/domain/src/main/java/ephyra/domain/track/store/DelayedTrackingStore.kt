@@ -2,8 +2,8 @@ package ephyra.domain.track.store
 
 import android.content.Context
 import androidx.core.content.edit
-import logcat.LogPriority
 import ephyra.core.common.util.system.logcat
+import logcat.LogPriority
 
 class DelayedTrackingStore(context: Context) {
 

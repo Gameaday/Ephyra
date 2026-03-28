@@ -1,10 +1,11 @@
 package ephyra.feature.manga
 
 import androidx.compose.runtime.Immutable
+import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import ephyra.domain.source.service.SourceManager
+import ephyra.feature.manga.CoverSearchScreenModel.Companion.MAX_CACHE_ENTRIES
 import eu.kanade.tachiyomi.source.online.HttpSource
-import org.koin.core.annotation.Factory
-import org.koin.core.annotation.InjectedParam
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -12,7 +13,8 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import ephyra.domain.source.service.SourceManager
+import org.koin.core.annotation.Factory
+import org.koin.core.annotation.InjectedParam
 
 /**
  * Screen model for searching cover images across sources.

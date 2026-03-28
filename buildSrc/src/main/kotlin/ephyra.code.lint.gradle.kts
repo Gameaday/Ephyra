@@ -26,7 +26,7 @@ spotless {
 
         val ktlintLib = libs.findLibrary("ktlint-core").get().get()
         ktlint(ktlintLib.versionConstraint.requiredVersion)
-        
+
         trimTrailingWhitespace()
         endWithNewline()
     }

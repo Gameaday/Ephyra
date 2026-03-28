@@ -1,8 +1,8 @@
 package ephyra.domain.category.interactor
 
-import logcat.LogPriority
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.manga.repository.MangaRepository
+import logcat.LogPriority
 
 class SetMangaCategories(
     private val mangaRepository: MangaRepository,

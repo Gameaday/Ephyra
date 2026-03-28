@@ -26,8 +26,11 @@ val Project.composeCatalog get() = extensions.getByType<VersionCatalogsExtension
 val Project.kotlinxCatalog get() = extensions.getByType<VersionCatalogsExtension>().named("kotlinx")
 val Project.libsCatalog get() = extensions.getByType<VersionCatalogsExtension>().named("libs")
 
-private fun VersionCatalog.getLib(name: String) = findLibrary(name).orElseThrow { NoSuchElementException("Library $name not found in catalog") }.get()
-private fun VersionCatalog.getPlugin(name: String) = findPlugin(name).orElseThrow { NoSuchElementException("Plugin $name not found in catalog") }.get()
+private fun VersionCatalog.getLib(name: String) =
+    findLibrary(name).orElseThrow { NoSuchElementException("Library $name not found in catalog") }.get()
+
+private fun VersionCatalog.getPlugin(name: String) =
+    findPlugin(name).orElseThrow { NoSuchElementException("Plugin $name not found in catalog") }.get()
 
 internal fun Project.configureAndroid(commonExtension: CommonExtension) {
     val compileSdkValue = AndroidConfig.COMPILE_SDK
@@ -43,6 +46,7 @@ internal fun Project.configureAndroid(commonExtension: CommonExtension) {
                 isCoreLibraryDesugaringEnabled = true
             }
         }
+
         is LibraryExtension -> {
             commonExtension.compileSdk = compileSdkValue
             commonExtension.defaultConfig.minSdk = minSdkVersion
@@ -52,6 +56,7 @@ internal fun Project.configureAndroid(commonExtension: CommonExtension) {
                 isCoreLibraryDesugaringEnabled = true
             }
         }
+
         is TestExtension -> {
             commonExtension.compileSdk = compileSdkValue
             commonExtension.defaultConfig.minSdk = minSdkVersion
@@ -86,6 +91,11 @@ internal fun Project.configureAndroidMultiplatform(androidExtension: KotlinMulti
         compileSdk = AndroidConfig.COMPILE_SDK
         minSdk = AndroidConfig.MIN_SDK
 
+        withHostTest { }
+        withDeviceTest {
+            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        }
+
         // Additional common configs could go here if needed
     }
 
@@ -110,6 +120,7 @@ internal fun Project.configureCompose(commonExtension: CommonExtension) {
         is ApplicationExtension -> {
             commonExtension.buildFeatures.compose = true
         }
+
         is LibraryExtension -> {
             commonExtension.buildFeatures.compose = true
         }
@@ -136,9 +147,9 @@ internal fun Project.configureCompose(commonExtension: CommonExtension) {
             reportsDestination.set(rootBuildDir.dir("compose-reports").map { it.dir(relativePath.path) })
         }
 
-        val stabilityConfig = project.rootDir.resolve("app/compose_stability.conf")
-        if (stabilityConfig.exists()) {
-            stabilityConfigurationFile.set(stabilityConfig)
+        val stabilityConfig = rootProject.layout.projectDirectory.file("app/compose_stability.conf")
+        if (stabilityConfig.asFile.exists()) {
+            stabilityConfigurationFiles.add(stabilityConfig)
         }
     }
 }

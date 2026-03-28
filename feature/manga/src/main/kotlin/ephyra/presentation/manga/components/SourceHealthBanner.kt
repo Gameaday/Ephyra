@@ -81,6 +81,7 @@ fun SourceHealthBanner(
                 val durationText = deadSince?.let { formatDeadDuration(it) }
                 if (durationText != null) "$baseText ($durationText)" else baseText
             }
+
             else -> stringResource(MR.strings.source_health_degraded)
         }
 

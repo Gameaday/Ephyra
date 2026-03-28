@@ -1,8 +1,8 @@
 package ephyra.core.migration.migrations
 
+import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.migration.Migration
 import ephyra.core.migration.MigrationContext
-import ephyra.core.common.util.lang.withIOContext
 import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.download.service.DownloadPreferences
 import ephyra.domain.library.service.LibraryPreferences

@@ -1,21 +1,22 @@
 package ephyra.domain.track.interactor
 
-import ephyra.domain.track.service.TrackPreferences
-import ephyra.app.data.track.Tracker
-import ephyra.app.data.track.TrackerManager
-import ephyra.app.data.track.model.TrackSearch
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.yield
-import logcat.LogPriority
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.logcat
+import ephyra.data.track.Tracker
+import ephyra.data.track.TrackerManager
+import ephyra.data.track.model.TrackSearch
 import ephyra.domain.manga.model.ContentType
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaUpdate
 import ephyra.domain.manga.model.mergedAlternativeTitles
 import ephyra.domain.manga.repository.MangaRepository
-import ephyra.domain.track.interactor.GetTracks
+import ephyra.domain.track.interactor.MatchUnlinkedManga.Companion.MIN_SUBSTRING_LENGTH
+import ephyra.domain.track.service.TrackPreferences
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.yield
+import logcat.LogPriority
+import kotlin.collections.firstOrNull
 
 /**
  * Comprehensive resolver for canonical IDs on all unlinked library manga.

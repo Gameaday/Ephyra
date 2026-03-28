@@ -1,8 +1,8 @@
 package ephyra.app.extension.model
 
 import android.graphics.drawable.Drawable
-import eu.kanade.tachiyomi.source.Source
 import ephyra.domain.source.model.StubSource
+import eu.kanade.tachiyomi.source.Source
 
 sealed class Extension {
 

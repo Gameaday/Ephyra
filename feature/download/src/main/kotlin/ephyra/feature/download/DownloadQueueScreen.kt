@@ -295,6 +295,7 @@ object DownloadQueueScreen : Screen() {
                                 color = MaterialTheme.colorScheme.primary,
                             )
                         }
+
                         is DownloadListDisplayItem.Item -> {
                             ReorderableItem(reorderableState, key = displayItem.download.chapter.id) { isDragging ->
                                 DownloadQueueItem(

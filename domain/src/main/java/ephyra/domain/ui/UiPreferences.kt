@@ -1,12 +1,12 @@
 package ephyra.domain.ui
 
-import ephyra.domain.ui.model.AppTheme
-import ephyra.domain.ui.model.TabletUiMode
-import ephyra.domain.ui.model.ThemeMode
 import ephyra.app.util.system.DeviceUtil
 import ephyra.app.util.system.isDynamicColorAvailable
 import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.common.preference.getEnum
+import ephyra.domain.ui.model.AppTheme
+import ephyra.domain.ui.model.TabletUiMode
+import ephyra.domain.ui.model.ThemeMode
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale

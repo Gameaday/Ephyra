@@ -12,13 +12,13 @@ import androidx.core.net.toUri
 import ephyra.app.util.storage.DiskUtil
 import ephyra.app.util.storage.cacheImageDir
 import ephyra.app.util.storage.getUriCompat
-import logcat.LogPriority
-import okio.Buffer
-import okio.IOException
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.system.ImageUtil
 import ephyra.core.common.util.system.logcat
 import ephyra.i18n.MR
+import logcat.LogPriority
+import okio.Buffer
+import okio.IOException
 import java.io.File
 import java.io.InputStream
 import java.time.Instant
@@ -169,6 +169,7 @@ sealed class Image(
                         buffer.inputStream()
                     }
                 }
+
                 is Page -> inputStream
             }
         }

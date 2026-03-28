@@ -16,11 +16,11 @@ import ephyra.app.util.system.cancelNotification
 import ephyra.app.util.system.isRunning
 import ephyra.app.util.system.setForegroundSafely
 import ephyra.app.util.system.workManager
-import kotlinx.coroutines.CancellationException
-import logcat.LogPriority
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.system.logcat
 import ephyra.i18n.MR
+import kotlinx.coroutines.CancellationException
+import logcat.LogPriority
 
 class BackupRestoreJob(
     private val context: Context,

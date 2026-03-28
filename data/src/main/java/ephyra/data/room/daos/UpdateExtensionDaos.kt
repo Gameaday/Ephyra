@@ -13,15 +13,17 @@ interface UpdateDao {
     @androidx.room.Query("SELECT * FROM updatesView WHERE read = :read AND dateFetch > :after ORDER BY dateFetch DESC LIMIT :limit")
     suspend fun getUpdatesByReadStatusBlocking(read: Boolean, after: Long, limit: Long): List<UpdatesView>
 
-    @androidx.room.Query("""
-        SELECT * FROM updatesView 
-        WHERE dateFetch > :after 
+    @androidx.room.Query(
+        """
+        SELECT * FROM updatesView
+        WHERE dateFetch > :after
         AND (:read IS NULL OR read = :read)
         AND (:bookmarked IS NULL OR bookmark = :bookmarked)
         AND (:hideExcludedScanlators = 0 OR excludedScanlator IS NULL)
-        ORDER BY dateFetch DESC 
+        ORDER BY dateFetch DESC
         LIMIT :limit
-    """)
+    """,
+    )
     fun getRecentUpdatesWithFilters(
         after: Long,
         limit: Long,

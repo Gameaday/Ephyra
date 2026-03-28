@@ -13,13 +13,13 @@ import ephyra.app.data.backup.restore.restorers.CategoriesRestorer
 import ephyra.app.data.backup.restore.restorers.ExtensionRepoRestorer
 import ephyra.app.data.backup.restore.restorers.MangaRestorer
 import ephyra.app.data.backup.restore.restorers.PreferenceRestorer
+import ephyra.core.common.i18n.stringResource
+import ephyra.i18n.MR
 import ephyra.presentation.core.util.system.createFileInCacheDir
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
-import ephyra.core.common.i18n.stringResource
-import ephyra.i18n.MR
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -95,13 +95,21 @@ class BackupRestorer(
                 restoreCategories(backup.backupCategories, isSync)
             }
             if (options.appSettings) {
-                restoreAppPreferences(backup.backupPreferences, backup.backupCategories.takeIf { options.categories }, isSync)
+                restoreAppPreferences(
+                    backup.backupPreferences,
+                    backup.backupCategories.takeIf { options.categories },
+                    isSync,
+                )
             }
             if (options.sourceSettings) {
                 restoreSourcePreferences(backup.backupSourcePreferences, isSync)
             }
             if (options.libraryEntries) {
-                restoreManga(backup.backupManga, if (options.categories) backup.backupCategories else emptyList(), isSync)
+                restoreManga(
+                    backup.backupManga,
+                    if (options.categories) backup.backupCategories else emptyList(),
+                    isSync,
+                )
             }
             if (options.extensionRepoSettings) {
                 restoreExtensionRepos(backup.backupExtensionRepo, isSync)

@@ -10,9 +10,10 @@ import androidx.biometric.auth.AuthPromptCallback
 import androidx.biometric.auth.startClass2BiometricOrCredentialAuthentication
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
-import kotlinx.coroutines.suspendCancellableCoroutine
+import ephyra.app.util.system.AuthenticatorUtil.isAuthenticating
 import ephyra.core.common.i18n.stringResource
 import ephyra.i18n.MR
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
 object AuthenticatorUtil {

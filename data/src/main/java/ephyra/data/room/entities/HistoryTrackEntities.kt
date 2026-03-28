@@ -10,13 +10,13 @@ import java.util.Date
             entity = ChapterEntity::class,
             parentColumns = ["_id"],
             childColumns = ["chapter_id"],
-            onDelete = ForeignKey.CASCADE
-        )
+            onDelete = ForeignKey.CASCADE,
+        ),
     ],
     indices = [
         Index(value = ["chapter_id"], unique = true),
-        Index(value = ["last_read"])
-    ]
+        Index(value = ["last_read"]),
+    ],
 )
 data class HistoryEntity(
     @PrimaryKey(autoGenerate = true) @ColumnInfo(name = "_id") val id: Long,
@@ -32,12 +32,12 @@ data class HistoryEntity(
             entity = MangaEntity::class,
             parentColumns = ["_id"],
             childColumns = ["manga_id"],
-            onDelete = ForeignKey.CASCADE
-        )
+            onDelete = ForeignKey.CASCADE,
+        ),
     ],
     indices = [
-        Index(value = ["manga_id", "sync_id"], unique = true)
-    ]
+        Index(value = ["manga_id", "sync_id"], unique = true),
+    ],
 )
 data class TrackEntity(
     @PrimaryKey(autoGenerate = true) @ColumnInfo(name = "_id") val id: Long,
@@ -75,9 +75,9 @@ data class ExtensionRepoEntity(
             entity = MangaEntity::class,
             parentColumns = ["_id"],
             childColumns = ["manga_id"],
-            onDelete = ForeignKey.CASCADE
-        )
-    ]
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
 )
 data class ExcludedScanlatorEntity(
     @ColumnInfo(name = "manga_id") val mangaId: Long,

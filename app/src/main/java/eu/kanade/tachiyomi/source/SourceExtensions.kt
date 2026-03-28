@@ -1,7 +1,7 @@
 package eu.kanade.tachiyomi.source
 
-import ephyra.domain.source.service.SourcePreferences
 import ephyra.domain.source.model.StubSource
+import ephyra.domain.source.service.SourcePreferences
 import ephyra.source.local.isLocal
 
 

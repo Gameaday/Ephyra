@@ -20,13 +20,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import ephyra.app.util.system.isReleaseBuildType
-import kotlinx.collections.immutable.toImmutableList
 import ephyra.domain.manga.interactor.FetchInterval
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.WheelTextPicker
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
+import kotlinx.collections.immutable.toImmutableList
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import kotlin.math.absoluteValue
@@ -141,10 +141,12 @@ fun SetIntervalDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = {
-                onValueChanged?.invoke(selectedInterval)
-                onDismissRequest()
-            }) {
+            TextButton(
+                onClick = {
+                    onValueChanged?.invoke(selectedInterval)
+                    onDismissRequest()
+                },
+            ) {
                 Text(text = stringResource(MR.strings.action_ok))
             }
         },

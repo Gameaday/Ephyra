@@ -1,18 +1,16 @@
 package ephyra.domain.track.interactor
 
+import ephyra.core.common.util.system.logcat
+import ephyra.data.track.Tracker
+import ephyra.data.track.TrackerManager
 import ephyra.domain.track.model.toDbTrack
 import ephyra.domain.track.model.toDomainTrack
-import ephyra.app.data.track.Tracker
-import ephyra.app.data.track.TrackerManager
 import eu.kanade.tachiyomi.network.HttpException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.supervisorScope
 import logcat.LogPriority
-import ephyra.core.common.util.system.logcat
-import ephyra.domain.track.interactor.GetTracks
-import ephyra.domain.track.interactor.InsertTrack
 
 class RefreshTracks(
     private val getTracks: GetTracks,

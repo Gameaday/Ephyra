@@ -74,6 +74,7 @@ object AboutScreen : Screen() {
                         )
                         navigator.push(updateScreen)
                     }
+
                     is AboutEvent.UpdateError -> {
                         context.toast(event.error.message)
                         logcat(LogPriority.ERROR, event.error)
@@ -162,7 +163,7 @@ object AboutScreen : Screen() {
                             label = stringResource(MR.strings.website),
                             icon = Icons.Outlined.Public,
                             url = "https://github.com/Gameaday/Ephyra",
-                        )          
+                        )
                         LinkIcon(
                             label = "GitHub",
                             icon = CustomIcons.Github,

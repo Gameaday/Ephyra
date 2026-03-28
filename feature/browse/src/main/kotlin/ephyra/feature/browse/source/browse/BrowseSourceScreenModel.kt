@@ -341,6 +341,7 @@ class BrowseSourceScreenModel(
             val manga: Manga,
             val initialSelection: ImmutableList<CheckboxState.State<Category>>,
         ) : Dialog
+
         data class Migrate(val target: Manga, val current: Manga) : Dialog
     }
 

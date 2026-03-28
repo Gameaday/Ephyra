@@ -1,8 +1,9 @@
 package ephyra.app.data.backup.restore.restorers
 
 import ephyra.app.data.backup.models.BackupExtensionRepos
-import ephyra.domain.extensionrepo.interactor.GetExtensionRepo
 import ephyra.data.DatabaseHandler
+import ephyra.domain.extensionrepo.interactor.GetExtensionRepo
+
 class ExtensionRepoRestorer(
     private val handler: DatabaseHandler,
     private val getExtensionRepos: GetExtensionRepo,

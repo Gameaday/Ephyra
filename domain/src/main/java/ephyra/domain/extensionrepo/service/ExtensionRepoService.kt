@@ -1,14 +1,14 @@
 package ephyra.domain.extensionrepo.service
 
+import ephyra.core.common.util.lang.withIOContext
+import ephyra.core.common.util.system.logcat
+import ephyra.domain.extensionrepo.model.ExtensionRepo
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.awaitSuccess
 import eu.kanade.tachiyomi.network.parseAs
 import kotlinx.serialization.json.Json
 import logcat.LogPriority
-import ephyra.domain.extensionrepo.model.ExtensionRepo
-import ephyra.core.common.util.lang.withIOContext
-import ephyra.core.common.util.system.logcat
 
 class ExtensionRepoService(
     networkHelper: NetworkHelper,

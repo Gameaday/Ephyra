@@ -17,15 +17,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
-import ephyra.feature.settings.screen.SettingsDataScreen
-import ephyra.presentation.core.util.system.toast
-import kotlinx.coroutines.flow.collectLatest
+import cafe.adriel.voyager.koin.koinInject
 import ephyra.domain.storage.service.StoragePreferences
+import ephyra.feature.settings.screen.SettingsDataScreen
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.Button
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
-import cafe.adriel.voyager.koin.koinInject
+import ephyra.presentation.core.util.system.toast
+import kotlinx.coroutines.flow.collectLatest
 
 internal class StorageStep : OnboardingStep {
 

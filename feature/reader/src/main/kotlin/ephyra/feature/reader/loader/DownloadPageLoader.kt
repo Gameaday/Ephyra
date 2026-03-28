@@ -12,6 +12,7 @@ import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.core.archive.archiveReader
 import ephyra.domain.manga.model.Manga
+
 internal class DownloadPageLoader(
     private val chapter: ReaderChapter,
     private val manga: Manga,

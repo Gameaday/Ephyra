@@ -17,19 +17,19 @@ data class CategoryEntity(
             entity = MangaEntity::class,
             parentColumns = ["_id"],
             childColumns = ["manga_id"],
-            onDelete = ForeignKey.CASCADE
+            onDelete = ForeignKey.CASCADE,
         ),
         ForeignKey(
             entity = CategoryEntity::class,
             parentColumns = ["_id"],
             childColumns = ["category_id"],
-            onDelete = ForeignKey.CASCADE
-        )
+            onDelete = ForeignKey.CASCADE,
+        ),
     ],
     indices = [
         Index(value = ["manga_id"]),
-        Index(value = ["category_id"])
-    ]
+        Index(value = ["category_id"]),
+    ],
 )
 data class MangaCategoryEntity(
     @PrimaryKey(autoGenerate = true) @ColumnInfo(name = "_id") val id: Long,

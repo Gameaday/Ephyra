@@ -1,8 +1,8 @@
 package ephyra.app.data.backup.models
 
+import ephyra.domain.track.model.Track
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoNumber
-import ephyra.domain.track.model.Track
 
 @Serializable
 data class BackupTracking(

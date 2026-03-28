@@ -3,9 +3,14 @@ package ephyra.app.data.cache
 import android.content.Context
 import android.text.format.Formatter
 import coil3.disk.DiskCache
-import eu.kanade.tachiyomi.source.model.Page
+import ephyra.app.data.cache.ChapterCache.Companion.CACHE_SIZE_HIGH
+import ephyra.app.data.cache.ChapterCache.Companion.CACHE_SIZE_LOW
+import ephyra.app.data.cache.ChapterCache.Companion.CACHE_SIZE_MEDIUM
 import ephyra.app.util.storage.DiskUtil
 import ephyra.app.util.system.DeviceUtil
+import ephyra.core.common.util.system.logcat
+import ephyra.domain.chapter.model.Chapter
+import eu.kanade.tachiyomi.source.model.Page
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -13,8 +18,6 @@ import logcat.LogPriority
 import okhttp3.Response
 import okio.Path.Companion.toOkioPath
 import okio.buffer
-import ephyra.core.common.util.system.logcat
-import ephyra.domain.chapter.model.Chapter
 import java.io.File
 import java.io.IOException
 
@@ -119,7 +122,8 @@ class ChapterCache(
             } catch (e: Exception) {
                 try {
                     editor.abort()
-                } catch (_: Exception) {}
+                } catch (_: Exception) {
+                }
                 throw e
             }
         } catch (e: Exception) {
@@ -180,7 +184,8 @@ class ChapterCache(
             } catch (e: Exception) {
                 try {
                     editor.abort()
-                } catch (_: Exception) {}
+                } catch (_: Exception) {
+                }
                 throw e
             }
         } finally {
@@ -217,7 +222,8 @@ class ChapterCache(
         } catch (e: Exception) {
             try {
                 editor.abort()
-            } catch (_: Exception) {}
+            } catch (_: Exception) {
+            }
             throw e
         }
     }

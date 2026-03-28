@@ -1,9 +1,15 @@
 package ephyra.domain.track.interactor
 
-import ephyra.domain.track.service.TrackPreferences
 import ephyra.app.data.track.Tracker
 import ephyra.app.data.track.TrackerManager
 import ephyra.app.data.track.model.TrackSearch
+import ephyra.core.common.preference.Preference
+import ephyra.domain.manga.model.ContentType
+import ephyra.domain.manga.model.Manga
+import ephyra.domain.manga.model.MangaUpdate
+import ephyra.domain.manga.repository.MangaRepository
+import ephyra.domain.track.model.Track
+import ephyra.domain.track.service.TrackPreferences
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.coEvery
@@ -16,13 +22,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
-import ephyra.core.common.preference.Preference
-import ephyra.domain.manga.model.ContentType
-import ephyra.domain.manga.model.Manga
-import ephyra.domain.manga.model.MangaUpdate
-import ephyra.domain.manga.repository.MangaRepository
-import ephyra.domain.track.interactor.GetTracks
-import ephyra.domain.track.model.Track
 
 /**
  * Unit tests for [MatchUnlinkedManga] — comprehensive canonical ID resolution.

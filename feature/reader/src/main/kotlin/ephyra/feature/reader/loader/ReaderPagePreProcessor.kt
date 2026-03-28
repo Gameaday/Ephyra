@@ -76,7 +76,8 @@ class ReaderPagePreProcessor(
                     pageRatios[page.index] = ar
                     allRatios.add(ar)
                 }
-            } catch (_: Exception) { /* skip */ }
+            } catch (_: Exception) { /* skip */
+            }
         }
         val dominantAR = if (allRatios.isNotEmpty()) {
             allRatios.sort()

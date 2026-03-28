@@ -2,10 +2,8 @@ package ephyra.app.data.download
 
 import android.content.Context
 import com.hippo.unifile.UniFile
-import eu.kanade.tachiyomi.source.Source
 import ephyra.app.util.lang.Hash.md5
 import ephyra.app.util.storage.DiskUtil
-import logcat.LogPriority
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.storage.displayablePath
 import ephyra.core.common.util.system.logcat
@@ -15,6 +13,8 @@ import ephyra.domain.manga.model.JellyfinNaming
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.storage.service.StorageManager
 import ephyra.i18n.MR
+import eu.kanade.tachiyomi.source.Source
+import logcat.LogPriority
 import java.io.IOException
 
 /**

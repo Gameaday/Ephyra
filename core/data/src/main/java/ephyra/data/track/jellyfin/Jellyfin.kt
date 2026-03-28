@@ -1,12 +1,22 @@
 package ephyra.app.data.track.jellyfin
 
+import android.app.Application
 import dev.icerock.moko.resources.StringResource
 import ephyra.app.R
 import ephyra.app.data.database.models.Track
 import ephyra.app.data.track.BaseTracker
 import ephyra.app.data.track.DeletableTracker
 import ephyra.app.data.track.EnhancedTracker
+import ephyra.app.data.track.jellyfin.Jellyfin.Companion.PUNCTUATION_REGEX
+import ephyra.app.data.track.jellyfin.Jellyfin.Companion.WHITESPACE_REGEX
 import ephyra.app.data.track.model.TrackSearch
+import ephyra.core.common.util.system.logcat
+import ephyra.domain.library.service.LibraryPreferences
+import ephyra.domain.track.interactor.AddTracks
+import ephyra.domain.track.interactor.InsertTrack
+import ephyra.domain.track.service.TrackPreferences
+import ephyra.i18n.MR
+import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.interceptor.rateLimit
 import eu.kanade.tachiyomi.source.Source
 import kotlinx.collections.immutable.ImmutableList
@@ -15,16 +25,9 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import logcat.LogPriority
 import okhttp3.Dns
-import ephyra.domain.track.model.Track as DomainTrack
-import kotlin.time.Duration.Companion.seconds
-import android.app.Application
 import okhttp3.OkHttpClient
-import ephyra.core.common.util.system.logcat
-import ephyra.domain.library.service.LibraryPreferences
-import ephyra.domain.track.service.TrackPreferences
-import eu.kanade.tachiyomi.network.NetworkHelper
-import ephyra.domain.track.interactor.AddTracks
-import ephyra.domain.track.interactor.InsertTrack
+import kotlin.time.Duration.Companion.seconds
+import ephyra.domain.track.model.Track as DomainTrack
 
 /**
  * Jellyfin tracker for syncing read progress with a Jellyfin media server.
@@ -57,7 +60,8 @@ class Jellyfin(
     addTracks: AddTracks,
     insertTrack: InsertTrack,
     private val libraryPreferences: LibraryPreferences,
-) : BaseTracker(id, "Jellyfin", context, trackPreferences, networkService, addTracks, insertTrack), EnhancedTracker, DeletableTracker {
+) : BaseTracker(id, "Jellyfin", context, trackPreferences, networkService, addTracks, insertTrack), EnhancedTracker,
+    DeletableTracker {
 
     companion object {
         const val UNREAD = 1L

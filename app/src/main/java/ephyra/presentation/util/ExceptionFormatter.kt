@@ -1,12 +1,12 @@
 package ephyra.presentation.util
 
 import android.content.Context
-import eu.kanade.tachiyomi.network.HttpException
 import ephyra.app.util.system.isOnline
 import ephyra.core.common.i18n.stringResource
 import ephyra.data.source.NoResultsException
 import ephyra.domain.source.model.SourceNotInstalledException
 import ephyra.i18n.MR
+import eu.kanade.tachiyomi.network.HttpException
 import java.net.UnknownHostException
 
 context(context: Context)

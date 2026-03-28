@@ -88,13 +88,13 @@ object SettingsTrackingScreen : SearchableSettings {
     override fun getPreferences(): List<Preference> {
         val context = LocalContext.current
         val screenModel = koinScreenModel<SettingsTrackingScreenModel>()
-        
+
         val trackPreferences = screenModel.trackPreferences
         val trackerManager = screenModel.trackerManager
         val sourceManager = screenModel.sourceManager
         val libraryPreferences = screenModel.libraryPreferences
         val trackerListImporter = screenModel.trackerListImporter
-        
+
         val scope = rememberCoroutineScope()
 
         var dialog by remember { mutableStateOf<Any?>(null) }
@@ -109,12 +109,14 @@ object SettingsTrackingScreen : SearchableSettings {
                         onDismissRequest = { dialog = null },
                     )
                 }
+
                 is LogoutDialog -> {
                     TrackingLogoutDialog(
                         tracker = tracker,
                         onDismissRequest = { dialog = null },
                     )
                 }
+
                 is ImportConfirmDialog -> {
                     TrackingImportConfirmDialog(
                         trackerName = trackerName,
@@ -152,6 +154,7 @@ object SettingsTrackingScreen : SearchableSettings {
                         onDismissRequest = { dialog = null },
                     )
                 }
+
                 is JellyfinLogin -> {
                     JellyfinLoginDialog(
                         tracker = tracker,
@@ -555,7 +558,8 @@ object SettingsTrackingScreen : SearchableSettings {
                                             it.id == currentLibraryId
                                         }?.name
                                     }
-                                } catch (_: Exception) {}
+                                } catch (_: Exception) {
+                                }
                             }
                         }
                         add(
@@ -749,9 +753,9 @@ object SettingsTrackingScreen : SearchableSettings {
                                 Icon(
                                     imageVector = if (hidePassword) {
                                         Icons.Filled.Visibility
-                                      } else {
+                                    } else {
                                         Icons.Filled.VisibilityOff
-                                      },
+                                    },
                                     contentDescription = null,
                                 )
                             }

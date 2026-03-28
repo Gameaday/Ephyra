@@ -1,7 +1,6 @@
 package ephyra.domain.chapter.interactor
 
 import ephyra.domain.category.interactor.GetCategories
-import ephyra.domain.chapter.interactor.GetChaptersByMangaId
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.download.service.DownloadPreferences
 import ephyra.domain.manga.model.Manga

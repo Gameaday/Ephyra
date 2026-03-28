@@ -1,8 +1,8 @@
 package ephyra.app.data.track.jellyfin
 
 import ephyra.app.data.track.model.TrackSearch
+import ephyra.core.common.util.lang.withIOContext
 import eu.kanade.tachiyomi.network.GET
-import eu.kanade.tachiyomi.network.POST
 import eu.kanade.tachiyomi.network.awaitSuccess
 import eu.kanade.tachiyomi.network.parseAs
 import kotlinx.serialization.json.Json
@@ -10,7 +10,6 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody.Companion.toRequestBody
-import ephyra.core.common.util.lang.withIOContext
 
 /**
  * Jellyfin REST API client.
@@ -533,6 +532,7 @@ class JellyfinApi(
                     response.close()
                     LibraryScanResult.Forbidden
                 }
+
                 else -> {
                     val msg = "HTTP ${response.code}"
                     response.close()

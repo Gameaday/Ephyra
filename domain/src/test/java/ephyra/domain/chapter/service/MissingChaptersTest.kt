@@ -1,10 +1,10 @@
 package ephyra.domain.chapter.service
 
+import ephyra.domain.chapter.model.Chapter
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
-import ephyra.domain.chapter.model.Chapter
 
 @Execution(ExecutionMode.CONCURRENT)
 class MissingChaptersTest {

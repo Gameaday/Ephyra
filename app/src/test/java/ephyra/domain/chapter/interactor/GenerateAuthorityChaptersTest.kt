@@ -1,5 +1,8 @@
 package ephyra.domain.chapter.interactor
 
+import ephyra.domain.chapter.model.Chapter
+import ephyra.domain.chapter.model.ChapterUpdate
+import ephyra.domain.chapter.repository.ChapterRepository
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -10,9 +13,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
-import ephyra.domain.chapter.model.Chapter
-import ephyra.domain.chapter.model.ChapterUpdate
-import ephyra.domain.chapter.repository.ChapterRepository
 
 /**
  * Unit tests for [GenerateAuthorityChapters] interactor.

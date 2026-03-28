@@ -1,59 +1,62 @@
 package ephyra.app.di
 
+import android.app.DownloadManager
+import androidx.fragment.app.strictmode.FragmentStrictMode.defaultPolicy
 import androidx.room.*
-import ephyra.domain.track.store.DelayedTrackingStore
-import ephyra.app.BuildConfig
-import ephyra.app.data.cache.ChapterCache
-import ephyra.app.data.cache.CoverCache
 import ephyra.app.data.backup.BackupDecoder
 import ephyra.app.data.backup.BackupFileValidator
 import ephyra.app.data.backup.BackupNotifier
-import ephyra.app.data.backup.restore.BackupRestoreJob
-import ephyra.app.data.backup.restore.BackupRestorer
-import ephyra.app.data.backup.restore.restorers.CategoriesRestorer
-import ephyra.app.data.backup.restore.restorers.ExtensionRepoRestorer
 import ephyra.app.data.backup.create.BackupCreator
 import ephyra.app.data.backup.create.creators.CategoriesBackupCreator
 import ephyra.app.data.backup.create.creators.ExtensionRepoBackupCreator
 import ephyra.app.data.backup.create.creators.MangaBackupCreator
 import ephyra.app.data.backup.create.creators.PreferenceBackupCreator
 import ephyra.app.data.backup.create.creators.SourcesBackupCreator
+import ephyra.app.data.backup.restore.BackupRestoreJob
+import ephyra.app.data.backup.restore.BackupRestorer
+import ephyra.app.data.backup.restore.restorers.CategoriesRestorer
+import ephyra.app.data.cache.ChapterCache
+import ephyra.app.data.cache.CoverCache
+import ephyra.app.data.coil.MangaCoverKeyer
+import ephyra.app.data.coil.MangaKeyer
 import ephyra.app.data.download.DownloadCache
-import ephyra.app.extension.util.ExtensionInstaller
-import ephyra.app.extension.util.ExtensionLoader
-import ephyra.app.util.CrashLogUtil
+import ephyra.app.data.download.DownloadJob
 import ephyra.app.data.download.DownloadNotifier
 import ephyra.app.data.download.DownloadPendingDeleter
 import ephyra.app.data.download.Downloader
+import ephyra.app.data.library.LibraryUpdateJob
+import ephyra.app.data.library.LibraryUpdateNotifier
+import ephyra.app.data.library.MetadataUpdateJob
 import ephyra.app.data.saver.ImageSaver
-import ephyra.app.data.coil.MangaCoverKeyer
-import ephyra.app.data.coil.MangaKeyer
-import ephyra.presentation.core.ui.delegate.SecureActivityDelegate as CoreSecureActivityDelegate
-import ephyra.presentation.core.ui.delegate.ThemingDelegate as CoreThemingDelegate
-import ephyra.app.ui.base.delegate.SecureActivityDelegateImpl
-import ephyra.app.ui.base.delegate.ThemingDelegateImpl
+import ephyra.app.data.updater.AppUpdateDownloadJob
 import ephyra.app.extension.ExtensionManager
 import ephyra.app.extension.api.ExtensionApi
-import ephyra.domain.track.interactor.GetExtensionRepo
-import ephyra.domain.track.interactor.UpdateExtensionRepo
-import eu.kanade.tachiyomi.network.JavaScriptEngine
-import eu.kanade.tachiyomi.network.NetworkHelper
-import eu.kanade.tachiyomi.source.AndroidSourceManager
+import ephyra.app.extension.util.ExtensionInstaller
+import ephyra.app.extension.util.ExtensionLoader
+import ephyra.app.ui.base.delegate.SecureActivityDelegateImpl
+import ephyra.app.ui.base.delegate.ThemingDelegateImpl
+import ephyra.app.util.CrashLogUtil
 import ephyra.core.common.storage.AndroidStorageFolderProvider
 import ephyra.data.room.EphyraDatabase
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.storage.service.StorageManager
+import ephyra.domain.track.service.DelayedTrackingUpdateJob
+import ephyra.domain.track.store.DelayedTrackingStore
 import ephyra.source.local.image.LocalCoverManager
 import ephyra.source.local.io.LocalSourceFileSystem
-import ephyra.app.data.download.DownloadJob
-import ephyra.app.data.library.LibraryUpdateJob
-import ephyra.app.data.library.LibraryUpdateNotifier
-import ephyra.app.data.library.MetadataUpdateJob
-import ephyra.app.data.updater.AppUpdateDownloadJob
-import ephyra.domain.track.service.DelayedTrackingUpdateJob
+import eu.kanade.tachiyomi.network.JavaScriptEngine
+import eu.kanade.tachiyomi.network.NetworkHelper
+import eu.kanade.tachiyomi.source.AndroidSourceManager
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.protobuf.ProtoBuf
+import nl.adaptivity.xmlutil.XmlDeclMode
+import nl.adaptivity.xmlutil.core.XmlVersion
 import org.koin.android.ext.koin.androidApplication
+import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.workmanager.dsl.worker
 import org.koin.dsl.module
+import ephyra.presentation.core.ui.delegate.SecureActivityDelegate as CoreSecureActivityDelegate
+import ephyra.presentation.core.ui.delegate.ThemingDelegate as CoreThemingDelegate
 
 val koinAppModule = module {
     single {
@@ -165,9 +168,9 @@ val koinAppModule = module {
     worker { DownloadJob(get(), get(), get(), get()) }
     worker { DelayedTrackingUpdateJob(get(), get(), get(), get(), get()) }
     worker { MetadataUpdateJob(get(), get(), get(), get(), get(), get(), get()) }
-    worker { 
+    worker {
         LibraryUpdateJob(
             get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()
-        ) 
+        )
     }
 }

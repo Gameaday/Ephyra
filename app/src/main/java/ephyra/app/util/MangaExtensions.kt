@@ -1,13 +1,13 @@
 package ephyra.app.util
 
+import ephyra.app.data.cache.CoverCache
 import ephyra.domain.manga.interactor.UpdateManga
+import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.hasCustomCover
 import ephyra.domain.manga.model.toSManga
-import ephyra.app.data.cache.CoverCache
-import eu.kanade.tachiyomi.source.model.SManga
-import ephyra.domain.manga.model.Manga
 import ephyra.source.local.image.LocalCoverManager
 import ephyra.source.local.isLocal
+import eu.kanade.tachiyomi.source.model.SManga
 import java.io.InputStream
 import java.time.Instant
 

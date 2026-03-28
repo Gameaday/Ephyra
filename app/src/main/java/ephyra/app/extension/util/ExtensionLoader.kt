@@ -5,21 +5,21 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import androidx.core.content.pm.PackageInfoCompat
-import ephyra.domain.extension.interactor.TrustExtension
-import ephyra.domain.source.service.SourcePreferences
 import ephyra.app.extension.model.Extension
 import ephyra.app.extension.model.LoadResult
-import eu.kanade.tachiyomi.source.CatalogueSource
-import eu.kanade.tachiyomi.source.Source
-import eu.kanade.tachiyomi.source.SourceFactory
 import ephyra.app.util.lang.Hash
 import ephyra.app.util.storage.copyAndSetReadOnlyTo
 import ephyra.app.util.system.ChildFirstPathClassLoader
+import ephyra.core.common.util.system.logcat
+import ephyra.domain.extension.interactor.TrustExtension
+import ephyra.domain.source.service.SourcePreferences
+import eu.kanade.tachiyomi.source.CatalogueSource
+import eu.kanade.tachiyomi.source.Source
+import eu.kanade.tachiyomi.source.SourceFactory
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import logcat.LogPriority
-import ephyra.core.common.util.system.logcat
 import java.io.File
 
 /**

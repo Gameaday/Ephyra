@@ -2,26 +2,43 @@ package ephyra.app.data.download
 
 import android.content.Context
 import com.hippo.unifile.UniFile
-import ephyra.domain.chapter.model.toSChapter
-import ephyra.domain.manga.model.getComicInfo
 import ephyra.app.data.cache.ChapterCache
+import ephyra.app.data.download.Downloader.Companion.BOUNDARY_PAGES
 import ephyra.app.data.download.model.Download
 import ephyra.app.data.library.LibraryUpdateNotifier
 import ephyra.app.data.notification.NotificationHandler
-import eu.kanade.tachiyomi.source.UnmeteredSource
-import eu.kanade.tachiyomi.source.model.Page
-import eu.kanade.tachiyomi.source.online.HttpSource
-import ephyra.feature.reader.setting.ReaderPreferences
 import ephyra.app.util.storage.DiskUtil
 import ephyra.app.util.storage.DiskUtil.NOMEDIA_FILE
 import ephyra.app.util.storage.saveTo
 import ephyra.app.util.system.encoder
+import ephyra.core.archive.ZipWriter
+import ephyra.core.common.i18n.stringResource
+import ephyra.core.common.storage.extension
+import ephyra.core.common.util.lang.launchIO
+import ephyra.core.common.util.lang.withIOContext
+import ephyra.core.common.util.system.ImageUtil
+import ephyra.core.common.util.system.logcat
+import ephyra.core.metadata.comicinfo.COMIC_INFO_FILE
+import ephyra.core.metadata.comicinfo.ComicInfo
+import ephyra.domain.category.interactor.GetCategories
+import ephyra.domain.chapter.model.Chapter
+import ephyra.domain.chapter.model.toSChapter
+import ephyra.domain.download.service.DownloadPreferences
+import ephyra.domain.library.service.LibraryPreferences
+import ephyra.domain.manga.model.Manga
+import ephyra.domain.manga.model.getComicInfo
+import ephyra.domain.source.service.SourceManager
+import ephyra.domain.track.interactor.GetTracks
+import ephyra.feature.reader.setting.ReaderPreferences
+import ephyra.i18n.MR
+import eu.kanade.tachiyomi.source.UnmeteredSource
+import eu.kanade.tachiyomi.source.model.Page
+import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asFlow
@@ -40,28 +57,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import logcat.LogPriority
-import ephyra.core.archive.ZipWriter
 import nl.adaptivity.xmlutil.serialization.XML
 import okhttp3.Response
 import okio.Buffer
-import ephyra.core.common.i18n.stringResource
-import ephyra.core.common.storage.extension
-import ephyra.core.common.util.lang.launchIO
-import ephyra.core.common.util.lang.launchNow
-import ephyra.core.common.util.lang.withIOContext
-import ephyra.core.common.util.system.ImageUtil
-import ephyra.core.common.util.system.logcat
-import ephyra.core.metadata.comicinfo.COMIC_INFO_FILE
-import ephyra.core.metadata.comicinfo.ComicInfo
-import ephyra.domain.category.interactor.GetCategories
-import ephyra.domain.chapter.model.Chapter
-import ephyra.domain.download.service.DownloadPreferences
-import ephyra.domain.library.service.LibraryPreferences
-import ephyra.domain.manga.model.Manga
-import ephyra.domain.source.service.SourceManager
-import ephyra.domain.track.interactor.GetTracks
-import ephyra.domain.track.interactor.GetTracks
-import ephyra.i18n.MR
 import java.io.File
 import java.io.IOException
 import java.util.Locale
@@ -493,6 +491,7 @@ class Downloader(
                 chapterCache.isImageInCache(
                     page.imageUrl!!,
                 ) -> copyImageFromCache(chapterCache.getImageFile(page.imageUrl!!), tmpDir, filename)
+
                 else -> downloadImage(page, download.source, tmpDir, filename)
             }
 
@@ -688,7 +687,8 @@ class Downloader(
                     fileAspectRatios[idx] = ar
                     validRatios.add(ar)
                 }
-            } catch (_: Exception) { /* skip */ }
+            } catch (_: Exception) { /* skip */
+            }
         }
         val dominantAR = if (validRatios.isNotEmpty()) {
             validRatios.sort()

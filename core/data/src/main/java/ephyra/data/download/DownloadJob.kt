@@ -17,13 +17,14 @@ import ephyra.app.util.system.activeNetworkState
 import ephyra.app.util.system.networkStateFlow
 import ephyra.app.util.system.notificationBuilder
 import ephyra.app.util.system.setForegroundSafely
+import ephyra.domain.download.service.DownloadPreferences
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combineTransform
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
-import ephyra.domain.download.service.DownloadPreferences
+import okhttp3.internal.platform.PlatformRegistry.applicationContext
 
 /**
  * This worker is used to manage the downloader. The system can decide to stop the worker, in

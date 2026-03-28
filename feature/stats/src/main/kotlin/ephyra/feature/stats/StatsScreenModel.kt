@@ -4,15 +4,10 @@ import androidx.compose.ui.util.fastDistinctBy
 import androidx.compose.ui.util.fastFilter
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import org.koin.core.annotation.Factory
-import ephyra.core.util.fastCountNot
-import ephyra.presentation.more.stats.StatsScreenState
-import ephyra.presentation.more.stats.data.StatsData
 import ephyra.app.data.download.DownloadManager
 import ephyra.app.data.track.TrackerManager
-import eu.kanade.tachiyomi.source.model.SManga
-import kotlinx.coroutines.flow.update
 import ephyra.core.common.util.lang.launchIO
+import ephyra.core.util.fastCountNot
 import ephyra.domain.history.interactor.GetTotalReadDuration
 import ephyra.domain.library.model.LibraryManga
 import ephyra.domain.library.service.LibraryPreferences
@@ -22,8 +17,12 @@ import ephyra.domain.library.service.LibraryPreferences.Companion.MANGA_NON_READ
 import ephyra.domain.manga.interactor.GetLibraryManga
 import ephyra.domain.track.interactor.GetTracks
 import ephyra.domain.track.model.Track
+import ephyra.presentation.more.stats.StatsScreenState
+import ephyra.presentation.more.stats.data.StatsData
 import ephyra.source.local.isLocal
-import ephyra.source.local.isLocal
+import eu.kanade.tachiyomi.source.model.SManga
+import kotlinx.coroutines.flow.update
+import org.koin.core.annotation.Factory
 
 @Factory
 class StatsScreenModel(

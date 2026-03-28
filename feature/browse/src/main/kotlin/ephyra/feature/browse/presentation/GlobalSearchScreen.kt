@@ -87,6 +87,7 @@ internal fun GlobalSearchContent(
                         SearchItemResult.Loading -> {
                             GlobalSearchLoadingResultItem()
                         }
+
                         is SearchItemResult.Success -> {
                             GlobalSearchCardRow(
                                 titles = result.result,
@@ -95,6 +96,7 @@ internal fun GlobalSearchContent(
                                 onLongClick = onLongClickItem,
                             )
                         }
+
                         is SearchItemResult.Error -> {
                             GlobalSearchErrorResultItem(message = result.throwable.message)
                         }

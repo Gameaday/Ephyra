@@ -1,7 +1,7 @@
 package ephyra.domain.extension.interactor
 
-import ephyra.domain.source.service.SourcePreferences
 import ephyra.app.extension.model.Extension
+import ephyra.domain.source.service.SourcePreferences
 import eu.kanade.tachiyomi.source.Source
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map

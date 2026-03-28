@@ -11,7 +11,7 @@ import ephyra.feature.reader.viewer.ViewerNavigation
  * +---+---+---+
  * | M | M | M |   N: Next
  * +---+---+---+
-*/
+ */
 class DisabledNavigation : ViewerNavigation() {
 
     override var regionList: List<Region> = emptyList()

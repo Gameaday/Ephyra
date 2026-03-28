@@ -6,11 +6,12 @@ import ephyra.app.data.backup.models.BackupHistory
 import ephyra.app.data.backup.models.BackupManga
 import ephyra.app.data.backup.models.backupChapterMapper
 import ephyra.app.data.backup.models.backupTrackMapper
-import ephyra.feature.reader.setting.ReadingMode
 import ephyra.data.DatabaseHandler
 import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.history.interactor.GetHistory
 import ephyra.domain.manga.model.Manga
+import ephyra.feature.reader.setting.ReadingMode
+
 class MangaBackupCreator(
     private val handler: DatabaseHandler,
     private val getCategories: GetCategories,

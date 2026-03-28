@@ -1,15 +1,14 @@
 package ephyra.domain.track.interactor
 
-import ephyra.domain.track.model.toDbTrack
-import ephyra.app.data.track.EnhancedTracker
-import ephyra.app.data.track.Tracker
-import logcat.LogPriority
 import ephyra.core.common.util.system.logcat
+import ephyra.data.track.EnhancedTracker
+import ephyra.data.track.Tracker
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
 import ephyra.domain.chapter.interactor.UpdateChapter
 import ephyra.domain.chapter.model.toChapterUpdate
-import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.model.Track
+import ephyra.domain.track.model.toDbTrack
+import logcat.LogPriority
 import kotlin.math.max
 
 class SyncChapterProgressWithTrack(

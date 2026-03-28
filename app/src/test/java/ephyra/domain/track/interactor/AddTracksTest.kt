@@ -1,5 +1,9 @@
 package ephyra.domain.track.interactor
 
+import ephyra.domain.chapter.interactor.GetChaptersByMangaId
+import ephyra.domain.manga.model.Manga
+import ephyra.domain.manga.model.MangaUpdate
+import ephyra.domain.manga.repository.MangaRepository
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.coEvery
@@ -11,11 +15,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
-import ephyra.domain.chapter.interactor.GetChaptersByMangaId
-import ephyra.domain.manga.model.Manga
-import ephyra.domain.manga.model.MangaUpdate
-import ephyra.domain.manga.repository.MangaRepository
-import ephyra.domain.track.interactor.InsertTrack
 
 /**
  * Unit tests for [AddTracks] canonical ID and alternative titles pipeline.

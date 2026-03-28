@@ -1,6 +1,7 @@
 package ephyra.app.util.lang
 
 import android.graphics.RectF
+import ephyra.domain.reader.model.*
 import ephyra.feature.reader.setting.ReaderPreferences
 
 fun RectF.invert(invertMode: ReaderPreferences.TappingInvertMode): RectF {

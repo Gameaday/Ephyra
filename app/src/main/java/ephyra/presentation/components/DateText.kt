@@ -3,11 +3,10 @@ package ephyra.presentation.components
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import ephyra.domain.ui.UiPreferences
 import ephyra.app.util.lang.toRelativeString
+import ephyra.domain.ui.UiPreferences
 import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource
-import cafe.adriel.voyager.koin.koinInject
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId

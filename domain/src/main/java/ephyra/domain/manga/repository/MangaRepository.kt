@@ -1,10 +1,10 @@
 package ephyra.domain.manga.repository
 
-import kotlinx.coroutines.flow.Flow
 import ephyra.domain.library.model.LibraryManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaUpdate
 import ephyra.domain.manga.model.MangaWithChapterCount
+import kotlinx.coroutines.flow.Flow
 
 interface MangaRepository {
 

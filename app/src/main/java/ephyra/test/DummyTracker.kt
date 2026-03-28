@@ -4,13 +4,13 @@ import dev.icerock.moko.resources.StringResource
 import ephyra.app.R
 import ephyra.app.data.track.Tracker
 import ephyra.app.data.track.model.TrackSearch
+import ephyra.domain.track.model.Track
+import ephyra.i18n.MR
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import okhttp3.OkHttpClient
-import ephyra.domain.track.model.Track
-import ephyra.i18n.MR
 
 data class DummyTracker(
     override val id: Long,

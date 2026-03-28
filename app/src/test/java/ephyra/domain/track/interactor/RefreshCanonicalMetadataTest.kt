@@ -1,10 +1,13 @@
 package ephyra.domain.track.interactor
 
-import ephyra.domain.track.service.TrackPreferences
 import ephyra.app.data.cache.CoverCache
 import ephyra.app.data.track.Tracker
 import ephyra.app.data.track.TrackerManager
 import ephyra.app.data.track.model.TrackSearch
+import ephyra.domain.manga.model.Manga
+import ephyra.domain.manga.model.MangaUpdate
+import ephyra.domain.manga.repository.MangaRepository
+import ephyra.domain.track.service.TrackPreferences
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -16,9 +19,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
-import ephyra.domain.manga.model.Manga
-import ephyra.domain.manga.model.MangaUpdate
-import ephyra.domain.manga.repository.MangaRepository
 
 /**
  * Unit tests for [RefreshCanonicalMetadata].

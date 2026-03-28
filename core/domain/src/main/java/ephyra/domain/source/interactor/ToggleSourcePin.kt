@@ -1,8 +1,8 @@
 package ephyra.domain.source.interactor
 
-import ephyra.domain.source.service.SourcePreferences
 import ephyra.core.common.preference.getAndSet
 import ephyra.domain.source.model.Source
+import ephyra.domain.source.service.SourcePreferences
 
 class ToggleSourcePin(
     private val preferences: SourcePreferences,

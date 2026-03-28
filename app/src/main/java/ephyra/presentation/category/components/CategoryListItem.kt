@@ -16,11 +16,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import sh.calvin.reorderable.ReorderableCollectionItemScope
 import ephyra.domain.category.model.Category
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
+import sh.calvin.reorderable.ReorderableCollectionItemScope
 
 @Composable
 fun ReorderableCollectionItemScope.CategoryListItem(

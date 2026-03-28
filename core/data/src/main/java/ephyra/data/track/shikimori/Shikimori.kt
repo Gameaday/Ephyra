@@ -1,5 +1,6 @@
 package ephyra.app.data.track.shikimori
 
+import android.app.Application
 import dev.icerock.moko.resources.StringResource
 import ephyra.app.R
 import ephyra.app.data.database.models.Track
@@ -7,16 +8,15 @@ import ephyra.app.data.track.BaseTracker
 import ephyra.app.data.track.DeletableTracker
 import ephyra.app.data.track.model.TrackSearch
 import ephyra.app.data.track.shikimori.dto.SMOAuth
+import ephyra.domain.track.interactor.AddTracks
+import ephyra.domain.track.interactor.InsertTrack
+import ephyra.domain.track.service.TrackPreferences
+import ephyra.i18n.MR
+import eu.kanade.tachiyomi.network.NetworkHelper
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.serialization.json.Json
-import ephyra.i18n.MR
 import ephyra.domain.track.model.Track as DomainTrack
-import android.app.Application
-import ephyra.domain.track.service.TrackPreferences
-import eu.kanade.tachiyomi.network.NetworkHelper
-import ephyra.domain.track.interactor.AddTracks
-import ephyra.domain.track.interactor.InsertTrack
 
 class Shikimori(
     id: Long,

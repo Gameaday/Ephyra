@@ -1,12 +1,12 @@
 package ephyra.domain.category.interactor
 
-import logcat.LogPriority
 import ephyra.core.common.util.lang.withNonCancellableContext
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.category.model.CategoryUpdate
 import ephyra.domain.category.repository.CategoryRepository
 import ephyra.domain.download.service.DownloadPreferences
 import ephyra.domain.library.service.LibraryPreferences
+import logcat.LogPriority
 
 class DeleteCategory(
     private val categoryRepository: CategoryRepository,

@@ -27,21 +27,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import ephyra.core.common.preference.TriState
 import ephyra.domain.base.BasePreferences
+import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.downloadedFilter
-import ephyra.domain.manga.model.chaptersFiltered
+import ephyra.i18n.MR
 import ephyra.presentation.components.TabbedDialog
 import ephyra.presentation.components.TabbedDialogPaddings
-import kotlinx.collections.immutable.persistentListOf
-import ephyra.core.common.preference.TriState
-import ephyra.domain.manga.model.Manga
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.LabeledCheckbox
 import ephyra.presentation.core.components.RadioItem
 import ephyra.presentation.core.components.SortItem
 import ephyra.presentation.core.components.TriStateItem
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.theme.active
+import kotlinx.collections.immutable.persistentListOf
 
 @Composable
 fun ChapterSettingsDialog(
@@ -111,6 +110,7 @@ fun ChapterSettingsDialog(
                         onScanlatorFilterClicked = onScanlatorFilterClicked,
                     )
                 }
+
                 1 -> {
                     SortPage(
                         sortingMode = manga?.sorting ?: 0,
@@ -118,6 +118,7 @@ fun ChapterSettingsDialog(
                         onItemSelected = onSortModeChanged,
                     )
                 }
+
                 2 -> {
                     DisplayPage(
                         displayMode = manga?.displayMode ?: 0,

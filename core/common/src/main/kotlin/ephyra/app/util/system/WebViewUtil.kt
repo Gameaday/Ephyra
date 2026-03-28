@@ -6,9 +6,9 @@ import android.content.pm.PackageManager
 import android.webkit.CookieManager
 import android.webkit.WebSettings
 import android.webkit.WebView
+import ephyra.core.common.util.system.logcat
 import kotlinx.coroutines.suspendCancellableCoroutine
 import logcat.LogPriority
-import ephyra.core.common.util.system.logcat
 import kotlin.coroutines.resume
 
 object WebViewUtil {

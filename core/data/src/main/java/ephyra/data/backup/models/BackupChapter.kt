@@ -1,8 +1,8 @@
 package ephyra.app.data.backup.models
 
+import ephyra.domain.chapter.model.Chapter
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoNumber
-import ephyra.domain.chapter.model.Chapter
 
 @Serializable
 data class BackupChapter(

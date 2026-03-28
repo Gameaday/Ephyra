@@ -64,12 +64,14 @@ internal fun SourceHealthBadge(sourceStatus: Int) {
             iconColor = MaterialTheme.colorScheme.onError,
             contentDescription = stringResource(MR.strings.source_health_warning_dead),
         )
+
         SourceStatus.DEGRADED -> Badge(
             imageVector = Icons.Outlined.Warning,
             color = MaterialTheme.colorScheme.tertiary,
             iconColor = MaterialTheme.colorScheme.onTertiary,
             contentDescription = stringResource(MR.strings.source_health_warning_degraded),
         )
+
         else -> {}
     }
 }

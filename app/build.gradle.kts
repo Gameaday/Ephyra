@@ -199,7 +199,7 @@ dependencies {
     implementation(projects.domain)
     implementation(projects.presentationCore)
     implementation(projects.presentationWidget)
-    
+
     // Feature modules
     implementation(projects.feature.category)
     implementation(projects.feature.download)

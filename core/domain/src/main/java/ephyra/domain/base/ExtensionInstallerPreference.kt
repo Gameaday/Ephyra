@@ -1,13 +1,13 @@
 package ephyra.domain.base
 
 import android.content.Context
-import ephyra.domain.base.BasePreferences.ExtensionInstaller
-import ephyra.app.util.system.hasMiuiPackageInstaller
-import ephyra.app.util.system.isShizukuInstalled
-import kotlinx.coroutines.CoroutineScope
 import ephyra.core.common.preference.Preference
 import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.common.preference.getEnum
+import ephyra.core.common.util.system.hasMiuiPackageInstaller
+import ephyra.core.common.util.system.isShizukuInstalled
+import ephyra.domain.base.BasePreferences.ExtensionInstaller
+import kotlinx.coroutines.CoroutineScope
 
 class ExtensionInstallerPreference(
     private val context: Context,
@@ -18,13 +18,14 @@ class ExtensionInstallerPreference(
 
     override fun key() = "extension_installer"
 
-    val entries get() = ExtensionInstaller.entries.run {
-        if (context.hasMiuiPackageInstaller) {
-            filter { it != ExtensionInstaller.PACKAGEINSTALLER }
-        } else {
-            toList()
+    val entries
+        get() = ExtensionInstaller.entries.run {
+            if (context.hasMiuiPackageInstaller) {
+                filter { it != ExtensionInstaller.PACKAGEINSTALLER }
+            } else {
+                toList()
+            }
         }
-    }
 
     override fun defaultValue() = if (context.hasMiuiPackageInstaller) {
         ExtensionInstaller.LEGACY
@@ -37,9 +38,11 @@ class ExtensionInstallerPreference(
             ExtensionInstaller.PACKAGEINSTALLER -> {
                 if (context.hasMiuiPackageInstaller) return ExtensionInstaller.LEGACY
             }
+
             ExtensionInstaller.SHIZUKU -> {
                 if (!context.isShizukuInstalled) return defaultValue()
             }
+
             else -> {}
         }
         return value

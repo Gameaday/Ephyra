@@ -13,7 +13,7 @@ import androidx.room.PrimaryKey
         Index(value = ["favorite"], name = "library_favorite_index", where = "favorite = 1"),
         Index(value = ["canonical_id"], name = "idx_mangas_canonical_id", where = "canonical_id IS NOT NULL"),
         Index(value = ["next_update"], name = "idx_mangas_next_update", where = "favorite = 1 AND next_update > 0"),
-    ]
+    ],
 )
 data class MangaEntity(
     @PrimaryKey(autoGenerate = true) @ColumnInfo(name = "_id") val id: Long,

@@ -1,11 +1,11 @@
 package ephyra.app.ui.library
 
+import ephyra.core.common.preference.TriState
+import ephyra.domain.manga.model.SourceStatus
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import ephyra.core.common.preference.TriState
-import ephyra.domain.manga.model.SourceStatus
 
 /**
  * Tests for the library source health filter logic.

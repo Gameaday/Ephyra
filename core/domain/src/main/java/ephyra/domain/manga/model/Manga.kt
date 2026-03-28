@@ -1,16 +1,15 @@
 package ephyra.domain.manga.model
 
-import ephyra.domain.base.BasePreferences
-import ephyra.app.data.cache.CoverCache
-import eu.kanade.tachiyomi.source.model.SManga
-import ephyra.feature.reader.setting.ReaderOrientation
-import ephyra.feature.reader.setting.ReadingMode
 import ephyra.core.common.preference.TriState
 import ephyra.core.metadata.comicinfo.ComicInfo
 import ephyra.core.metadata.comicinfo.ComicInfoPublishingStatus
+import ephyra.data.cache.CoverCache
+import ephyra.domain.base.BasePreferences
 import ephyra.domain.chapter.model.Chapter
-import ephyra.domain.manga.model.ContentType
 import ephyra.domain.manga.model.Manga
+import ephyra.feature.reader.setting.ReaderOrientation
+import ephyra.feature.reader.setting.ReadingMode
+import eu.kanade.tachiyomi.source.model.SManga
 
 // TODO: move these into the domain model
 val Manga.readingMode: Long
@@ -27,6 +26,7 @@ fun Manga.downloadedFilter(basePreferences: BasePreferences): TriState {
         else -> TriState.DISABLED
     }
 }
+
 fun Manga.chaptersFiltered(basePreferences: BasePreferences): Boolean {
     return unreadFilter != TriState.DISABLED ||
         downloadedFilter(basePreferences) != TriState.DISABLED ||
@@ -134,7 +134,7 @@ private fun determineMangaField(manga: Manga): ComicInfo.Manga? {
                 ReadingMode.WEBTOON,
                 ReadingMode.CONTINUOUS_VERTICAL,
                 ReadingMode.VERTICAL,
-                -> ComicInfo.Manga("Yes")
+                    -> ComicInfo.Manga("Yes")
                 // RIGHT_TO_LEFT and DEFAULT both get manga RTL
                 else -> ComicInfo.Manga("YesAndRightToLeft")
             }

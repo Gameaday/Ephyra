@@ -29,6 +29,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,6 +54,7 @@ import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.secondaryItemAlpha
+import ephyra.presentation.util.LocalUiPreferences
 
 
 @Composable
@@ -255,9 +257,6 @@ fun AppThemePreviewItem(
         }
     }
 }
-
-import ephyra.presentation.util.LocalUiPreferences
-import androidx.compose.runtime.CompositionLocalProvider
 
 @PreviewLightDark
 @Composable

@@ -1,8 +1,8 @@
 package ephyra.app.data.backup.models
 
+import ephyra.domain.category.model.Category
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoNumber
-import ephyra.domain.category.model.Category
 
 @Serializable
 class BackupCategory(

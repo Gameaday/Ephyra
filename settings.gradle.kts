@@ -41,6 +41,7 @@ dependencyResolutionManagement {
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 rootProject.name = "Ephyra"
+include(":buildSrc")
 include(":app")
 include(":core-metadata")
 include(":core:archive")

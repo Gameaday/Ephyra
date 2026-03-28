@@ -1,24 +1,24 @@
 package ephyra.app.data.track.komga
 
+import android.app.Application
 import dev.icerock.moko.resources.StringResource
 import ephyra.app.R
 import ephyra.app.data.database.models.Track
 import ephyra.app.data.track.BaseTracker
 import ephyra.app.data.track.EnhancedTracker
 import ephyra.app.data.track.model.TrackSearch
+import ephyra.domain.manga.model.Manga
+import ephyra.domain.track.interactor.AddTracks
+import ephyra.domain.track.interactor.InsertTrack
+import ephyra.domain.track.service.TrackPreferences
+import ephyra.i18n.MR
+import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.source.Source
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import okhttp3.Dns
 import okhttp3.OkHttpClient
-import ephyra.domain.manga.model.Manga
-import ephyra.i18n.MR
 import ephyra.domain.track.model.Track as DomainTrack
-import android.app.Application
-import ephyra.domain.track.service.TrackPreferences
-import eu.kanade.tachiyomi.network.NetworkHelper
-import ephyra.domain.track.interactor.AddTracks
-import ephyra.domain.track.interactor.InsertTrack
 
 class Komga(
     id: Long,

@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Notification
 import android.app.NotificationManager
 import android.content.Context
+import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationChannelGroupCompat
 import androidx.core.app.NotificationCompat
@@ -23,16 +24,19 @@ private fun Context.hasNotificationPermission(): Boolean {
     ) == PermissionChecker.PERMISSION_GRANTED
 }
 
+@RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
 fun Context.notify(id: Int, channelId: String, block: (NotificationCompat.Builder.() -> Unit)? = null) {
     val notification = notificationBuilder(channelId, block).build()
     this.notify(id, notification)
 }
 
+@RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
 fun Context.notify(id: Int, notification: Notification) {
     if (!hasNotificationPermission()) return
     NotificationManagerCompat.from(this).notify(id, notification)
 }
 
+@RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
 fun Context.notify(notificationWithIdAndTags: List<NotificationWithIdAndTag>) {
     if (!hasNotificationPermission()) return
     NotificationManagerCompat.from(this).notify(notificationWithIdAndTags)

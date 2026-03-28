@@ -7,7 +7,7 @@ plugins {
 }
 
 kotlin {
-    androidLibrary {
+    android {
         namespace = "ephyra.source.api"
         compileSdk = AndroidConfig.COMPILE_SDK
         minSdk = AndroidConfig.MIN_SDK
@@ -26,7 +26,7 @@ kotlin {
             implementation(project.dependencies.platform(compose.compose.bom))
             implementation(compose.runtime)
         }
-        
+
         androidMain.dependencies {
             implementation(projects.core.common)
             api(libs.preferencektx)

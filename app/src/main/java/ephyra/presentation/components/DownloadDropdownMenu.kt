@@ -6,11 +6,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.DpOffset
-import ephyra.presentation.manga.DownloadAction
-import kotlinx.collections.immutable.persistentListOf
 import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.manga.DownloadAction
+import kotlinx.collections.immutable.persistentListOf
 
 @Composable
 fun DownloadDropdownMenu(

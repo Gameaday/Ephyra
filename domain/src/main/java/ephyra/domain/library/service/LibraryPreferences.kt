@@ -41,6 +41,7 @@ class LibraryPreferences(
             DEVICE_ONLY_ON_WIFI,
         ),
     )
+
     fun autoUpdateMangaRestrictions() = preferenceStore.getStringSet(
         "library_update_manga_restriction",
         setOf(

@@ -51,7 +51,7 @@ fun Window.applyHighRefreshRate() {
     // and enable automatic rate boost when touch input is detected so the rate is high
     // during scrolling/swiping and can be reduced by the OS when the display is static.
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-        setFrameRatePowerSavingsBalanced(false)
-        setFrameRateBoostOnTouchEnabled(true)
+        isFrameRatePowerSavingsBalanced = false
+        frameRateBoostOnTouchEnabled = true
     }
 }

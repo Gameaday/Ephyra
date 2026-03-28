@@ -89,23 +89,13 @@ import coil3.size.Precision
 import com.mikepenz.markdown.model.markdownAnnotator
 import com.mikepenz.markdown.model.markdownAnnotatorConfig
 import com.mikepenz.markdown.utils.getUnescapedTextInNode
-import ephyra.domain.ui.UiPreferences
-import ephyra.presentation.components.DropdownMenu
-import ephyra.presentation.library.components.authorityBrandColor
-import ephyra.presentation.library.components.authorityBrandGradient
 import ephyra.app.R
-import ephyra.app.data.track.TrackerManager
-import eu.kanade.tachiyomi.source.model.SManga
-import ephyra.presentation.core.util.system.copyToClipboard
-import ephyra.presentation.core.util.system.openInBrowser
-import org.intellij.markdown.MarkdownElementTypes
-import org.intellij.markdown.MarkdownTokenTypes
-import org.intellij.markdown.ast.findChildOfType
 import ephyra.domain.manga.model.CanonicalId
 import ephyra.domain.manga.model.LockedField
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.SourceStatus
 import ephyra.i18n.MR
+import ephyra.presentation.components.DropdownMenu
 import ephyra.presentation.core.components.material.DISABLED_ALPHA
 import ephyra.presentation.core.components.material.TextButton
 import ephyra.presentation.core.components.material.padding
@@ -113,6 +103,14 @@ import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.clickableNoIndication
 import ephyra.presentation.core.util.secondaryItemAlpha
+import ephyra.presentation.core.util.system.copyToClipboard
+import ephyra.presentation.core.util.system.openInBrowser
+import ephyra.presentation.library.components.authorityBrandColor
+import ephyra.presentation.library.components.authorityBrandGradient
+import eu.kanade.tachiyomi.source.model.SManga
+import org.intellij.markdown.MarkdownElementTypes
+import org.intellij.markdown.MarkdownTokenTypes
+import org.intellij.markdown.ast.findChildOfType
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import kotlin.math.roundToInt
@@ -284,7 +282,7 @@ fun ExpandableMangaDescription(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.animateContentSize()) {
-        val (expanded, onExpanded) = rememberSaveable {
+        val (expanded, _) = rememberSaveable {
             mutableStateOf(defaultExpandState)
         }
         val desc =

@@ -1,8 +1,8 @@
 package ephyra.domain.chapter.repository
 
-import kotlinx.coroutines.flow.Flow
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.model.ChapterUpdate
+import kotlinx.coroutines.flow.Flow
 
 interface ChapterRepository {
 

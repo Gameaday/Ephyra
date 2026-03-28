@@ -1,12 +1,12 @@
 package ephyra.domain.extensionrepo.interactor
 
-import logcat.LogPriority
+import ephyra.core.common.util.system.logcat
 import ephyra.domain.extensionrepo.exception.SaveExtensionRepoException
 import ephyra.domain.extensionrepo.model.ExtensionRepo
 import ephyra.domain.extensionrepo.repository.ExtensionRepoRepository
 import ephyra.domain.extensionrepo.service.ExtensionRepoService
+import logcat.LogPriority
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
-import ephyra.core.common.util.system.logcat
 
 class CreateExtensionRepo(
     private val repository: ExtensionRepoRepository,

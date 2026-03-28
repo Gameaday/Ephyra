@@ -142,7 +142,12 @@ class ReaderActivity : BaseActivity() {
     private var readingModeToast: Toast? = null
     private val displayRefreshHost: DisplayRefreshHost by lazy { DisplayRefreshHost(readerPreferences) }
 
-    private val windowInsetsController: WindowInsetsControllerCompat by lazy { WindowInsetsControllerCompat(window, window.decorView) }
+    private val windowInsetsController: WindowInsetsControllerCompat by lazy {
+        WindowInsetsControllerCompat(
+            window,
+            window.decorView,
+        )
+    }
 
     private var loadingIndicator: ReaderProgressIndicator? = null
 
@@ -224,24 +229,31 @@ class ReaderActivity : BaseActivity() {
                     ReaderViewModel.Event.ReloadViewerChapters -> {
                         viewModel.state.value.viewerChapters?.let(::setChapters)
                     }
+
                     ReaderViewModel.Event.PageChanged -> {
                         displayRefreshHost.flash()
                     }
+
                     is ReaderViewModel.Event.SetOrientation -> {
                         setOrientation(event.orientation)
                     }
+
                     is ReaderViewModel.Event.SavedImage -> {
                         onSaveImageResult(event.result)
                     }
+
                     is ReaderViewModel.Event.ShareImage -> {
                         onShareImageResult(event.uri, event.page)
                     }
+
                     is ReaderViewModel.Event.CopyImage -> {
                         onCopyImageResult(event.uri)
                     }
+
                     is ReaderViewModel.Event.SetCoverResult -> {
                         onSetAsCoverResult(event.result)
                     }
+
                     is ReaderViewModel.Event.BlockPageResult -> {
                         onBlockPageResult(event.result)
                     }
@@ -295,6 +307,7 @@ class ReaderActivity : BaseActivity() {
                     },
                 )
             }
+
             is ReaderViewModel.Dialog.Settings -> {
                 ReaderSettingsDialog(
                     onDismissRequest = onDismissRequest,
@@ -303,6 +316,7 @@ class ReaderActivity : BaseActivity() {
                     screenModel = settingsScreenModel,
                 )
             }
+
             is ReaderViewModel.Dialog.ReadingModeSelect -> {
                 ReadingModeSelectDialog(
                     onDismissRequest = onDismissRequest,
@@ -317,6 +331,7 @@ class ReaderActivity : BaseActivity() {
                     },
                 )
             }
+
             is ReaderViewModel.Dialog.OrientationModeSelect -> {
                 OrientationSelectDialog(
                     onDismissRequest = onDismissRequest,
@@ -327,6 +342,7 @@ class ReaderActivity : BaseActivity() {
                     },
                 )
             }
+
             is ReaderViewModel.Dialog.PageActions -> {
                 ReaderPageActionsDialog(
                     onDismissRequest = onDismissRequest,
@@ -341,6 +357,7 @@ class ReaderActivity : BaseActivity() {
                     findMatchingBlockedHash = viewModel::findMatchingBlockedHash,
                 )
             }
+
             null -> {}
         }
     }
@@ -762,6 +779,7 @@ class ReaderActivity : BaseActivity() {
             is ReaderViewModel.SaveImageResult.Success -> {
                 toast(MR.strings.picture_saved)
             }
+
             is ReaderViewModel.SaveImageResult.Error -> {
                 logcat(LogPriority.ERROR, result.error)
             }
@@ -787,6 +805,7 @@ class ReaderActivity : BaseActivity() {
             is ReaderViewModel.BlockPageResult.Success -> {
                 toast(MR.strings.page_blocked)
             }
+
             is ReaderViewModel.BlockPageResult.Error -> {
                 toast(MR.strings.page_block_error)
             }
@@ -981,15 +1000,18 @@ class ReaderActivity : BaseActivity() {
                 value > 0 -> {
                     value / 100f
                 }
+
                 value < 0 -> {
                     0.01f
                 }
+
                 else -> WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
             }
             window.attributes = window.attributes.apply { screenBrightness = readerBrightness }
 
             viewModel.setBrightnessOverlayValue(value)
         }
+
         private fun setLayerPaint(grayscale: Boolean, invertedColors: Boolean) {
             val paint = if (grayscale || invertedColors) getCombinedPaint(grayscale, invertedColors) else null
             binding.viewerContainer.setLayerType(LAYER_TYPE_HARDWARE, paint)

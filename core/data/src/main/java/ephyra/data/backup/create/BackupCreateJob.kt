@@ -22,10 +22,10 @@ import ephyra.app.util.system.cancelNotification
 import ephyra.app.util.system.isRunning
 import ephyra.app.util.system.setForegroundSafely
 import ephyra.app.util.system.workManager
-import logcat.LogPriority
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.backup.service.BackupPreferences
 import ephyra.domain.storage.service.StorageManager
+import logcat.LogPriority
 import java.util.concurrent.TimeUnit
 
 class BackupCreateJob(

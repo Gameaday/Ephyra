@@ -1,8 +1,8 @@
 package ephyra.domain.category.interactor
 
-import kotlinx.coroutines.flow.Flow
 import ephyra.domain.category.model.Category
 import ephyra.domain.category.repository.CategoryRepository
+import kotlinx.coroutines.flow.Flow
 
 class GetCategories(
     private val categoryRepository: CategoryRepository,

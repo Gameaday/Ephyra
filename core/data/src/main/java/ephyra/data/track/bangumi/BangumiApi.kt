@@ -8,6 +8,7 @@ import ephyra.app.data.track.bangumi.dto.BGMOAuth
 import ephyra.app.data.track.bangumi.dto.BGMSearchResult
 import ephyra.app.data.track.bangumi.dto.BGMUser
 import ephyra.app.data.track.model.TrackSearch
+import ephyra.core.common.util.lang.withIOContext
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.HttpException
 import eu.kanade.tachiyomi.network.POST
@@ -26,7 +27,6 @@ import okhttp3.Headers.Companion.headersOf
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import ephyra.core.common.util.lang.withIOContext
 import kotlin.time.Duration.Companion.seconds
 
 class BangumiApi(

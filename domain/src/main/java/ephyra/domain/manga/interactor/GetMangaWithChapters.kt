@@ -1,11 +1,11 @@
 package ephyra.domain.manga.interactor
 
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.repository.ChapterRepository
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.repository.MangaRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 
 class GetMangaWithChapters(
     private val mangaRepository: MangaRepository,

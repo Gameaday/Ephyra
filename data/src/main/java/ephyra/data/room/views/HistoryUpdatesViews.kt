@@ -32,7 +32,7 @@ import java.util.Date
             GROUP BY chapters.manga_id
         ) AS max_last_read
         ON chapters.manga_id = max_last_read.manga_id
-    """
+    """,
 )
 data class HistoryView(
     val id: Long,
@@ -47,7 +47,7 @@ data class HistoryView(
     val readAt: Date?,
     val readDuration: Long,
     val maxReadAt: Long?,
-    val maxReadAtChapterId: Long?
+    val maxReadAtChapterId: Long?,
 )
 
 @DatabaseView(
@@ -75,7 +75,7 @@ data class HistoryView(
         LEFT JOIN excluded_scanlators
         ON mangas._id = excluded_scanlators.manga_id
         AND chapters.scanlator = excluded_scanlators.scanlator
-    """
+    """,
 )
 data class UpdatesView(
     val mangaId: Long,
@@ -93,5 +93,5 @@ data class UpdatesView(
     val coverLastModified: Long,
     val dateUpload: Long,
     val datefetch: Long,
-    val excludedScanlator: String?
+    val excludedScanlator: String?,
 )

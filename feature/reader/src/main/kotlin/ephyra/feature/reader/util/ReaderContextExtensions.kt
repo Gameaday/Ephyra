@@ -24,6 +24,7 @@ fun Context.createReaderThemeContext(
             ThemeMode.SYSTEM -> applicationContext.isNightMode()
             else -> themeMode == ThemeMode.DARK
         }
+
         else -> false // White
     }
     val expected = if (isDarkBackground) Configuration.UI_MODE_NIGHT_YES else Configuration.UI_MODE_NIGHT_NO

@@ -8,12 +8,12 @@ import ephyra.app.util.system.DeviceUtil
 import ephyra.app.util.system.WebViewUtil
 import ephyra.app.util.system.setDefaultSettings
 import ephyra.app.util.system.toast
+import ephyra.core.common.util.lang.launchUI
+import ephyra.i18n.MR
 import okhttp3.Headers
 import okhttp3.Interceptor
 import okhttp3.Request
 import okhttp3.Response
-import ephyra.core.common.util.lang.launchUI
-import ephyra.i18n.MR
 import java.util.Locale
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -102,6 +102,7 @@ private fun isRequestHeaderSafe(_name: String, _value: String): Boolean {
     if (name == "connection" && value == "upgrade") return false
     return true
 }
+
 private val unsafeHeaderNames = listOf(
     "content-length", "host", "trailer", "te", "upgrade", "cookie2", "keep-alive", "transfer-encoding", "set-cookie",
 )

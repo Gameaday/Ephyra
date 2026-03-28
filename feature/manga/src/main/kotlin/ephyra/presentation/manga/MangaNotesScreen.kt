@@ -5,11 +5,11 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import ephyra.feature.manga.notes.MangaNotesScreen
+import ephyra.feature.manga.presentation.components.MangaNotesTextArea
+import ephyra.i18n.MR
 import ephyra.presentation.components.AppBar
 import ephyra.presentation.components.AppBarTitle
-import ephyra.feature.manga.presentation.components.MangaNotesTextArea
-import ephyra.feature.manga.notes.MangaNotesScreen
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
 

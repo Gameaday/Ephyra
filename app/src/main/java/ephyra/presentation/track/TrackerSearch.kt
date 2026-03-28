@@ -69,13 +69,9 @@ import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
-import ephyra.presentation.components.DropdownMenu
-import ephyra.presentation.manga.components.MangaCover
-import ephyra.presentation.theme.TachiyomiPreviewTheme
 import ephyra.app.data.track.model.TrackSearch
-import ephyra.presentation.core.util.system.openInBrowser
-import kotlinx.coroutines.launch
 import ephyra.i18n.MR
+import ephyra.presentation.components.DropdownMenu
 import ephyra.presentation.core.components.ScrollbarLazyColumn
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding
@@ -85,6 +81,10 @@ import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.util.plus
 import ephyra.presentation.core.util.runOnEnterKeyPressed
 import ephyra.presentation.core.util.secondaryItemAlpha
+import ephyra.presentation.core.util.system.openInBrowser
+import ephyra.presentation.manga.components.MangaCover
+import ephyra.presentation.theme.TachiyomiPreviewTheme
+import kotlinx.coroutines.launch
 
 @Composable
 fun TrackerSearch(

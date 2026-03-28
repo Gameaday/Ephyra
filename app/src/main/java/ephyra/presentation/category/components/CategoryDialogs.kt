@@ -25,16 +25,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import ephyra.core.common.preference.CheckboxState
 import ephyra.core.preference.asToggleableState
+import ephyra.domain.category.model.Category
+import ephyra.i18n.MR
 import ephyra.presentation.category.visualName
+import ephyra.presentation.core.components.material.padding
+import ephyra.presentation.core.i18n.stringResource
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.delay
-import ephyra.core.common.preference.CheckboxState
-import ephyra.domain.category.model.Category
-import ephyra.i18n.MR
-import ephyra.presentation.core.components.material.padding
-import ephyra.presentation.core.i18n.stringResource
 import kotlin.time.Duration.Companion.seconds
 
 @Composable

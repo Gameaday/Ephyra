@@ -3,6 +3,7 @@ package uy.kohesive.injekt
 import org.koin.core.context.GlobalContext
 import org.koin.core.parameter.parametersOf
 import org.koin.core.qualifier.qualifier
+import uy.kohesive.injekt.Injekt.get
 import kotlin.reflect.KClass
 
 /**

@@ -53,10 +53,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import eu.kanade.tachiyomi.source.model.SManga
 import ephyra.domain.manga.model.LockedField
 import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource
+import eu.kanade.tachiyomi.source.model.SManga
 
 /**
  * Jellyfin-style metadata editor dialog.

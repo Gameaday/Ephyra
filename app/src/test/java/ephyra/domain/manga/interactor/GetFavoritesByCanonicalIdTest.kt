@@ -1,10 +1,10 @@
 package ephyra.domain.manga.interactor
 
+import ephyra.domain.manga.model.Manga
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import ephyra.domain.manga.model.Manga
 
 class GetFavoritesByCanonicalIdTest {
 

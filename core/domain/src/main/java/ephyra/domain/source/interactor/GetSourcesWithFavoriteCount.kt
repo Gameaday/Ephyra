@@ -1,12 +1,12 @@
 package ephyra.domain.source.interactor
 
-import ephyra.domain.source.service.SourcePreferences
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
 import ephyra.core.common.util.lang.compareToWithCollator
 import ephyra.domain.source.model.Source
 import ephyra.domain.source.repository.SourceRepository
+import ephyra.domain.source.service.SourcePreferences
 import ephyra.source.local.isLocal
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import java.util.Collections
 
 class GetSourcesWithFavoriteCount(
@@ -40,6 +40,7 @@ class GetSourcesWithFavoriteCount(
                         else -> a.first.name.compareToWithCollator(b.first.name)
                     }
                 }
+
                 SetMigrateSorting.Mode.TOTAL -> {
                     when {
                         a.first.isStub && !b.first.isStub -> -1

@@ -7,14 +7,14 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.ForegroundInfo
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkerParameters
-import ephyra.app.data.notification.Notifications
-import ephyra.app.util.system.cancelNotification
-import ephyra.app.util.system.isRunning
-import ephyra.app.util.system.setForegroundSafely
-import ephyra.app.util.system.workManager
+import ephyra.core.common.util.system.cancelNotification
+import ephyra.core.common.util.system.isRunning
+import ephyra.core.common.util.system.logcat
+import ephyra.core.common.util.system.setForegroundSafely
+import ephyra.core.common.util.system.workManager
+import ephyra.data.notification.Notifications
 import kotlinx.coroutines.CancellationException
 import logcat.LogPriority
-import ephyra.core.common.util.system.logcat
 
 /**
  * WorkManager job that resolves canonical IDs for all unlinked library manga.

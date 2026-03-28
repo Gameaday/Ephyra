@@ -1,8 +1,8 @@
 package ephyra.domain.source.interactor
 
+import ephyra.app.extension.ExtensionManager
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.source.service.SourcePreferences
-import ephyra.app.extension.ExtensionManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged

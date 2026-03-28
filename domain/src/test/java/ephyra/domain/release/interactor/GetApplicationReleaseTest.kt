@@ -1,5 +1,9 @@
 package ephyra.domain.release.interactor
 
+import ephyra.core.common.preference.Preference
+import ephyra.core.common.preference.PreferenceStore
+import ephyra.domain.release.model.Release
+import ephyra.domain.release.service.ReleaseService
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -8,10 +12,6 @@ import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import ephyra.core.common.preference.Preference
-import ephyra.core.common.preference.PreferenceStore
-import ephyra.domain.release.model.Release
-import ephyra.domain.release.service.ReleaseService
 import java.time.Instant
 
 class GetApplicationReleaseTest {

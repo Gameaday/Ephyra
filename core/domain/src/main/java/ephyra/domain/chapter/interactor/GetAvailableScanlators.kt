@@ -1,8 +1,8 @@
 package ephyra.domain.chapter.interactor
 
+import ephyra.domain.chapter.repository.ChapterRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import ephyra.domain.chapter.repository.ChapterRepository
 
 class GetAvailableScanlators(
     private val repository: ChapterRepository,

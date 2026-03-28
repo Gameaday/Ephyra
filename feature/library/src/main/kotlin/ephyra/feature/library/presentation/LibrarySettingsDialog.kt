@@ -62,10 +62,12 @@ fun LibrarySettingsDialog(
                 0 -> FilterPage(
                     screenModel = screenModel,
                 )
+
                 1 -> SortPage(
                     category = category,
                     screenModel = screenModel,
                 )
+
                 2 -> DisplayPage(
                     screenModel = screenModel,
                 )
@@ -80,7 +82,8 @@ private fun ColumnScope.FilterPage(
 ) {
     val filterDownloaded by screenModel.libraryPreferences.filterDownloaded().collectAsStateWithLifecycle()
     val downloadedOnly by screenModel.preferences.downloadedOnly().collectAsStateWithLifecycle()
-    val autoUpdateMangaRestrictions by screenModel.libraryPreferences.autoUpdateMangaRestrictions().collectAsStateWithLifecycle()
+    val autoUpdateMangaRestrictions by screenModel.libraryPreferences.autoUpdateMangaRestrictions()
+        .collectAsStateWithLifecycle()
 
     TriStateItem(
         label = stringResource(MR.strings.label_downloaded),
@@ -143,19 +146,23 @@ private fun ColumnScope.FilterPage(
         0 -> {
             // No trackers
         }
+
         1 -> {
             val service = trackers[0]
-            val filterTracker by screenModel.libraryPreferences.filterTracking(service.id.toInt()).collectAsStateWithLifecycle()
+            val filterTracker by screenModel.libraryPreferences.filterTracking(service.id.toInt())
+                .collectAsStateWithLifecycle()
             TriStateItem(
                 label = stringResource(MR.strings.action_filter_tracked),
                 state = filterTracker,
                 onClick = { screenModel.toggleTracker(service.id.toInt()) },
             )
         }
+
         else -> {
             HeadingItem(MR.strings.action_filter_tracked)
             trackers.map { service ->
-                val filterTracker by screenModel.libraryPreferences.filterTracking(service.id.toInt()).collectAsStateWithLifecycle()
+                val filterTracker by screenModel.libraryPreferences.filterTracking(service.id.toInt())
+                    .collectAsStateWithLifecycle()
                 TriStateItem(
                     label = service.name,
                     state = filterTracker,
@@ -218,6 +225,7 @@ private fun ColumnScope.SortPage(
                     } else {
                         LibrarySort.Direction.Descending
                     }
+
                     else -> if (sortDescending) {
                         LibrarySort.Direction.Descending
                     } else {

@@ -32,7 +32,7 @@ interface HistoryDao {
 
     @androidx.room.Query("DELETE FROM history WHERE last_read = 0")
     suspend fun removeResettedHistory()
-    
+
     @androidx.room.Query("SELECT * FROM history WHERE chapter_id = :chapterId")
     suspend fun getHistoryByChapterId(chapterId: Long): HistoryEntity?
 

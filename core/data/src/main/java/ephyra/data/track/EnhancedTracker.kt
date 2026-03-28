@@ -1,9 +1,9 @@
 package ephyra.app.data.track
 
 import ephyra.app.data.track.model.TrackSearch
-import eu.kanade.tachiyomi.source.Source
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.track.model.Track
+import eu.kanade.tachiyomi.source.Source
 
 /**
  * A tracker that will never prompt the user to manually bind an entry.

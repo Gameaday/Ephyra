@@ -1,12 +1,12 @@
 package ephyra.app.data.library
 
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Test
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaUpdate
 import ephyra.domain.manga.model.SourceStatus
 import ephyra.domain.manga.model.toMangaUpdate
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Test
 
 class DeadSinceTrackingTest {
 
@@ -113,6 +113,7 @@ class DeadSinceTrackingTest {
                 1000L // Represents System.currentTimeMillis() in tests
             newStatus != SourceStatus.DEAD && oldStatus == SourceStatus.DEAD ->
                 LibraryUpdateJob.DEAD_SINCE_CLEARED
+
             else -> null
         }
     }

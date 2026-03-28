@@ -1,11 +1,11 @@
 package ephyra.domain.extensionrepo.interactor
 
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import ephyra.domain.extensionrepo.model.ExtensionRepo
 import ephyra.domain.extensionrepo.repository.ExtensionRepoRepository
 import ephyra.domain.extensionrepo.service.ExtensionRepoService
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 
 class UpdateExtensionRepo(
     private val repository: ExtensionRepoRepository,

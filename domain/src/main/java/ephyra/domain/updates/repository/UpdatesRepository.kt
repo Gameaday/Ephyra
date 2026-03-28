@@ -1,7 +1,7 @@
 package ephyra.domain.updates.repository
 
-import kotlinx.coroutines.flow.Flow
 import ephyra.domain.updates.model.UpdatesWithRelations
+import kotlinx.coroutines.flow.Flow
 
 interface UpdatesRepository {
 

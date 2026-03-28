@@ -237,6 +237,7 @@ class ReaderViewModel @JvmOverloads constructor(
                                 (manga.bookmarkedFilterRaw == Manga.CHAPTER_SHOW_BOOKMARKED && !it.bookmark) ||
                                 (manga.bookmarkedFilterRaw == Manga.CHAPTER_SHOW_NOT_BOOKMARKED && it.bookmark)
                         }
+
                         else -> false
                     }
                 }
@@ -247,6 +248,7 @@ class ReaderViewModel @JvmOverloads constructor(
                     filteredChapters + listOf(selectedChapter)
                 }
             }
+
             else -> chapters
         }
 
@@ -335,7 +337,15 @@ class ReaderViewModel @JvmOverloads constructor(
                     if (chapterId == -1L) chapterId = initialChapterId
 
                     val source = sourceManager.getOrStub(manga.source)
-                    loader = ChapterLoader(app, downloadManager, downloadProvider, manga, source, downloadPreferences, chapterCache)
+                    loader = ChapterLoader(
+                        app,
+                        downloadManager,
+                        downloadProvider,
+                        manga,
+                        source,
+                        downloadPreferences,
+                        chapterCache,
+                    )
 
                     loadChapter(loader!!, getChapterList().first { chapterId == it.chapter.id })
                     Result.success(true)
@@ -865,6 +875,7 @@ class ReaderViewModel @JvmOverloads constructor(
                     default
                 }
             }
+
             else -> manga?.readingMode?.toInt() ?: default
         }
     }

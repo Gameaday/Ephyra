@@ -1,8 +1,8 @@
 package ephyra.app.data.library
 
+import ephyra.domain.manga.model.SourceStatus
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import ephyra.domain.manga.model.SourceStatus
 
 class SourceHealthDetectionTest {
 

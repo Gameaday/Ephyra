@@ -19,6 +19,7 @@ fun ImageFormat.encoder(): (Bitmap, OutputStream) -> Unit = when (this) {
     ImageFormat.PNG -> { bitmap, os ->
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, os)
     }
+
     ImageFormat.WEBP -> { bitmap, os ->
         bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSLESS, 100, os)
     }

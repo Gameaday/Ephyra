@@ -5,9 +5,9 @@ import android.util.AttributeSet
 import android.widget.EditText
 import androidx.core.view.inputmethod.EditorInfoCompat
 import com.google.android.material.textfield.TextInputEditText
-import ephyra.domain.base.BasePreferences
 import ephyra.app.R
 import ephyra.app.widget.TachiyomiTextInputEditText.Companion.setIncognito
+import ephyra.domain.base.BasePreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

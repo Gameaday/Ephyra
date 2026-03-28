@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--https://www.nordtheme.com/docs/colors-and-palettes-->
+<?xml version="1.0" encoding="utf-8"?><!--https://www.nordtheme.com/docs/colors-and-palettes-->
 <!--for the light theme, the primary color is switched with the tertiary for better contrast in some case-->
 <resources>
     <color name="nord_primary">#5E81AC</color>
@@ -25,6 +24,7 @@
     <color name="nord_inverseSurface">#3B4252</color>
     <color name="nord_inverseOnSurface">#ECEFF4</color>
     <color name="nord_outline">#2E3440</color>
+    <color name="nord_outlineVariant">#D8DEE9</color>
     <color name="nord_onError">#ECEFF4</color>
     <color name="nord_errorContainer">#BF616A</color>
     <color name="nord_onErrorContainer">#000000</color>

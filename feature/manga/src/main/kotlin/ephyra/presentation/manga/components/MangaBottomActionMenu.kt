@@ -54,16 +54,16 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import ephyra.app.R
+import ephyra.feature.manga.presentation.DownloadAction
+import ephyra.i18n.MR
 import ephyra.presentation.components.DownloadDropdownMenu
 import ephyra.presentation.components.DropdownMenu
-import ephyra.feature.manga.presentation.DownloadAction
-import ephyra.app.R
+import ephyra.presentation.core.i18n.stringResource
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import ephyra.i18n.MR
-import ephyra.presentation.core.i18n.stringResource
 import kotlin.time.Duration.Companion.seconds
 
 @Composable

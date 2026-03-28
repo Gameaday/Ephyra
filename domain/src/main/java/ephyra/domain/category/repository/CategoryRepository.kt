@@ -1,8 +1,8 @@
 package ephyra.domain.category.repository
 
-import kotlinx.coroutines.flow.Flow
 import ephyra.domain.category.model.Category
 import ephyra.domain.category.model.CategoryUpdate
+import kotlinx.coroutines.flow.Flow
 
 interface CategoryRepository {
 

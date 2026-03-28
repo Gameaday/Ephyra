@@ -1,8 +1,8 @@
 package ephyra.app.data.backup.models
 
+import ephyra.domain.history.model.History
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoNumber
-import ephyra.domain.history.model.History
 import java.util.Date
 
 @Serializable

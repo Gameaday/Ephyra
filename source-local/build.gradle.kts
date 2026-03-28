@@ -1,5 +1,4 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
-import ephyra.buildlogic.AndroidConfig
 
 plugins {
     id("ephyra.library.multiplatform")
@@ -10,13 +9,6 @@ kotlin {
     android {
         // Matches your folder structure: ephyra/source/local
         namespace = "ephyra.source.local"
-        compileSdk = AndroidConfig.COMPILE_SDK
-        minSdk = AndroidConfig.MIN_SDK
-
-        // AGP 9.1 KMP FIX: Use withDeviceTest and instrumentationRunner
-        withDeviceTest {
-            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        }
 
         optimization {
             consumerKeepRules.file("consumer-rules.pro")
@@ -39,7 +31,7 @@ kotlin {
         }
     }
 
-    @OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
+    @OptIn(ExperimentalKotlinGradlePluginApi::class)
     compilerOptions {
         freeCompilerArgs.addAll(
             "-Xexpect-actual-classes",

@@ -5,8 +5,8 @@ import android.app.ActivityManager
 import android.content.Context
 import android.os.Build
 import androidx.core.content.getSystemService
-import logcat.LogPriority
 import ephyra.core.common.util.system.logcat
+import logcat.LogPriority
 
 object DeviceUtil {
 
@@ -110,7 +110,8 @@ object DeviceUtil {
     enum class PerformanceTier { LOW, MEDIUM, HIGH }
 
     // Cached so the ActivityManager query is only performed once per process.
-    @Volatile private var cachedPerformanceTier: PerformanceTier? = null
+    @Volatile
+    private var cachedPerformanceTier: PerformanceTier? = null
 
     /**
      * Returns the [PerformanceTier] for the device by reading total physical RAM.

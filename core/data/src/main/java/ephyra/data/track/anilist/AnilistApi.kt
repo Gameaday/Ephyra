@@ -10,6 +10,7 @@ import ephyra.app.data.track.anilist.dto.ALOAuth
 import ephyra.app.data.track.anilist.dto.ALSearchResult
 import ephyra.app.data.track.anilist.dto.ALUserListMangaQueryResult
 import ephyra.app.data.track.model.TrackSearch
+import ephyra.core.common.util.lang.withIOContext
 import eu.kanade.tachiyomi.network.POST
 import eu.kanade.tachiyomi.network.awaitSuccess
 import eu.kanade.tachiyomi.network.interceptor.rateLimit
@@ -23,7 +24,6 @@ import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody.Companion.toRequestBody
-import ephyra.core.common.util.lang.withIOContext
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime

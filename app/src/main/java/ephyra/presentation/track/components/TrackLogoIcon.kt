@@ -10,9 +10,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
-import ephyra.presentation.theme.TachiyomiPreviewTheme
 import ephyra.app.data.track.Tracker
 import ephyra.presentation.core.util.clickableNoIndication
+import ephyra.presentation.theme.TachiyomiPreviewTheme
 
 @Composable
 fun TrackLogoIcon(

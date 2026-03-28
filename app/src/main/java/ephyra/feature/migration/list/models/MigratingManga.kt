@@ -1,10 +1,10 @@
 package ephyra.feature.migration.list.models
 
+import ephyra.domain.manga.model.Manga
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
-import ephyra.domain.manga.model.Manga
 import kotlin.coroutines.CoroutineContext
 
 class MigratingManga(

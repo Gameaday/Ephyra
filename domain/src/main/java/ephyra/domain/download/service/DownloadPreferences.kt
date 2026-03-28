@@ -1,6 +1,7 @@
 package ephyra.domain.download.service
 
 import ephyra.core.common.preference.PreferenceStore
+import ephyra.domain.download.service.DownloadPreferences.Companion.BLOCKED_PAGE_DHASH_THRESHOLD
 
 class DownloadPreferences(
     private val preferenceStore: PreferenceStore,

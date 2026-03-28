@@ -5,6 +5,15 @@ import android.content.Context
 import androidx.core.net.toUri
 import com.hippo.unifile.UniFile
 import ephyra.app.extension.ExtensionManager
+import ephyra.core.common.storage.extension
+import ephyra.core.common.storage.nameWithoutExtension
+import ephyra.core.common.util.lang.launchIO
+import ephyra.core.common.util.lang.launchNonCancellable
+import ephyra.core.common.util.system.logcat
+import ephyra.domain.chapter.model.Chapter
+import ephyra.domain.manga.model.Manga
+import ephyra.domain.source.service.SourceManager
+import ephyra.domain.storage.service.StorageManager
 import eu.kanade.tachiyomi.source.Source
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -32,7 +41,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromByteArray
@@ -44,19 +52,9 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.protobuf.ProtoBuf
 import logcat.LogPriority
-import ephyra.core.common.storage.extension
-import ephyra.core.common.storage.nameWithoutExtension
-import ephyra.core.common.util.lang.launchIO
-import ephyra.core.common.util.lang.launchNonCancellable
-import ephyra.core.common.util.system.logcat
-import ephyra.domain.chapter.model.Chapter
-import ephyra.domain.manga.model.Manga
-import ephyra.domain.source.service.SourceManager
-import ephyra.domain.storage.service.StorageManager
 import org.koin.core.context.GlobalContext
 import java.io.File
 import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.seconds
 
 /**
  * Cache where we dump the downloads directory from the filesystem. This class is needed because

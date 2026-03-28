@@ -1,17 +1,18 @@
 package ephyra.app.ui.base.delegate
 
+import android.app.Activity
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
-import ephyra.domain.base.BasePreferences
 import ephyra.app.core.security.SecurityPreferences
 import ephyra.app.ui.security.UnlockActivity
 import ephyra.app.util.system.AuthenticatorUtil
 import ephyra.app.util.system.AuthenticatorUtil.isAuthenticationSupported
 import ephyra.app.util.view.overrideTransitionCompat
 import ephyra.app.util.view.setSecureScreen
+import ephyra.domain.base.BasePreferences
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach

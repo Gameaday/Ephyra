@@ -1,9 +1,9 @@
 package ephyra.app.ui.base.delegate
 
 import android.app.Activity
+import ephyra.app.R
 import ephyra.domain.ui.UiPreferences
 import ephyra.domain.ui.model.AppTheme
-import ephyra.app.R
 import ephyra.presentation.core.ui.delegate.ThemingDelegate as CoreThemingDelegate
 
 class ThemingDelegateImpl(

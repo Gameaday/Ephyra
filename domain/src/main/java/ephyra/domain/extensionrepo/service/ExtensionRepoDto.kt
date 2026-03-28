@@ -1,7 +1,7 @@
 package ephyra.domain.extensionrepo.service
 
-import kotlinx.serialization.Serializable
 import ephyra.domain.extensionrepo.model.ExtensionRepo
+import kotlinx.serialization.Serializable
 
 @Serializable
 data class ExtensionRepoMetaDto(

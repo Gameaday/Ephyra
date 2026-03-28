@@ -27,7 +27,8 @@ class MangaRepositoryImpl(
     }
 
     override suspend fun getMangaByIdAsFlow(id: Long): Flow<Manga> {
-        return mangaDao.getMangaByIdAsFlow(id).map { it?.let(MangaMapper::mapManga) ?: throw Exception("Manga not found") }
+        return mangaDao.getMangaByIdAsFlow(id)
+            .map { it?.let(MangaMapper::mapManga) ?: throw Exception("Manga not found") }
     }
 
     override suspend fun getMangaByUrlAndSourceId(url: String, sourceId: Long): Manga? {
@@ -69,7 +70,8 @@ class MangaRepositoryImpl(
     override suspend fun getDuplicateLibraryManga(id: Long, title: String): List<MangaWithChapterCount> {
         // This is a bit tricky with Room views, but we can return MangaWithChapterCount if we have a view or aggregate query.
         // For now, mirroring old logic using the entities.
-        return mangaDao.getDuplicateLibraryManga(id, title).map { MangaWithChapterCount(MangaMapper.mapManga(it), 0 /* count needs join */) }
+        return mangaDao.getDuplicateLibraryManga(id, title)
+            .map { MangaWithChapterCount(MangaMapper.mapManga(it), 0 /* count needs join */) }
     }
 
     override suspend fun getUpcomingManga(statuses: Set<Long>): Flow<List<Manga>> {
@@ -202,7 +204,8 @@ class MangaRepositoryImpl(
                 metadataUrl = value.metadataUrl ?: existing.metadataUrl,
                 canonicalId = value.canonicalId ?: existing.canonicalId,
                 sourceStatus = value.sourceStatus ?: existing.sourceStatus,
-                alternativeTitles = value.alternativeTitles?.let { MangaMapper.serializeAlternativeTitles(it) } ?: existing.alternativeTitles,
+                alternativeTitles = value.alternativeTitles?.let { MangaMapper.serializeAlternativeTitles(it) }
+                    ?: existing.alternativeTitles,
                 deadSince = value.deadSince ?: existing.deadSince,
                 contentType = value.contentType?.value ?: existing.contentType,
                 lockedFields = value.lockedFields ?: existing.lockedFields,

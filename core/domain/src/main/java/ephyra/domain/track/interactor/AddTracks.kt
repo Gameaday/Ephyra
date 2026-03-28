@@ -1,18 +1,14 @@
 package ephyra.domain.track.interactor
 
-import ephyra.domain.track.model.toDbTrack
-import ephyra.domain.track.model.toDomainTrack
-import ephyra.app.data.database.models.Track
-import ephyra.app.data.track.EnhancedTracker
-import ephyra.app.data.track.Tracker
-import ephyra.app.data.track.TrackerManager
-import ephyra.app.data.track.model.TrackSearch
-import eu.kanade.tachiyomi.source.Source
-import ephyra.app.util.lang.convertEpochMillisZone
-import logcat.LogPriority
+import ephyra.core.common.util.lang.convertEpochMillisZone
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.lang.withNonCancellableContext
 import ephyra.core.common.util.system.logcat
+import ephyra.data.database.models.Track
+import ephyra.data.track.EnhancedTracker
+import ephyra.data.track.Tracker
+import ephyra.data.track.TrackerManager
+import ephyra.data.track.model.TrackSearch
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
 import ephyra.domain.history.interactor.GetHistory
 import ephyra.domain.manga.model.ContentType
@@ -20,7 +16,11 @@ import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaUpdate
 import ephyra.domain.manga.model.mergedAlternativeTitles
 import ephyra.domain.manga.repository.MangaRepository
-import ephyra.domain.track.interactor.InsertTrack
+import ephyra.domain.track.interactor.AddTracks.Companion.TRACKER_CANONICAL_PREFIXES
+import ephyra.domain.track.model.toDbTrack
+import ephyra.domain.track.model.toDomainTrack
+import eu.kanade.tachiyomi.source.Source
+import logcat.LogPriority
 import java.time.ZoneOffset
 
 class AddTracks(

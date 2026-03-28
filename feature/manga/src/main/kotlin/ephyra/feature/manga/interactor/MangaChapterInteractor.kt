@@ -1,9 +1,11 @@
 package ephyra.feature.manga.interactor
 
+import ephyra.core.common.preference.TriState
 import ephyra.core.download.DownloadManager
 import ephyra.domain.chapter.interactor.FilterChaptersForDownload
 import ephyra.domain.chapter.interactor.SetMangaDefaultChapterFlags
 import ephyra.domain.chapter.interactor.SetReadStatus
+import ephyra.domain.chapter.interactor.SyncChaptersWithSource
 import ephyra.domain.chapter.interactor.UpdateChapter
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.model.ChapterUpdate
@@ -11,11 +13,7 @@ import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.interactor.SetMangaChapterFlags
 import ephyra.domain.manga.model.Manga
 import eu.kanade.tachiyomi.source.Source
-import kotlinx.coroutines.flow.update
 import org.koin.core.annotation.Factory
-import ephyra.core.common.preference.TriState
-import ephyra.domain.chapter.interactor.SyncChaptersWithSource
-import kotlinx.coroutines.flow.MutableStateFlow
 
 @Factory
 class MangaChapterInteractor(
@@ -89,8 +87,13 @@ class MangaChapterInteractor(
         return filterChaptersForDownload.await(manga, chapters)
     }
 
-    suspend fun syncChaptersWithSource(chapters: List<ephyra.domain.chapter.model.Chapter>, manga: Manga, source: Source, manualFetch: Boolean) : List<Chapter> {
-       return syncChaptersWithSource.await(
+    suspend fun syncChaptersWithSource(
+        chapters: List<Chapter>,
+        manga: Manga,
+        source: Source,
+        manualFetch: Boolean,
+    ): List<Chapter> {
+        return syncChaptersWithSource.await(
             chapters,
             manga,
             source,

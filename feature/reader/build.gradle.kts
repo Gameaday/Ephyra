@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "ephyra.feature.reader"
-    
+
     buildFeatures {
         viewBinding = true
     }
@@ -37,7 +37,7 @@ dependencies {
     implementation(kotlinx.immutables)
     implementation(libs.bundles.voyager)
     implementation(libs.koin.android)
-    
+
     implementation(libs.subsamplingscaleimageview)
     implementation(libs.image.decoder)
     implementation(libs.unifile)

@@ -51,13 +51,13 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.collections.immutable.ImmutableList
 import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.clearFocusOnSoftKeyboardHide
 import ephyra.presentation.core.util.runOnEnterKeyPressed
 import ephyra.presentation.core.util.secondaryItemAlpha
 import ephyra.presentation.core.util.showSoftKeyboard
+import kotlinx.collections.immutable.ImmutableList
 
 const val SEARCH_DEBOUNCE_MILLIS = 250L
 

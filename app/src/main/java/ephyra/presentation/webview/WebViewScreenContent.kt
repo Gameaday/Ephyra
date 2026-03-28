@@ -41,18 +41,18 @@ import com.kevinnzou.web.WebContent
 import com.kevinnzou.web.WebView
 import com.kevinnzou.web.WebViewNavigator
 import com.kevinnzou.web.WebViewState
-import ephyra.presentation.components.AppBar
-import ephyra.presentation.components.AppBarActions
-import ephyra.presentation.components.WarningBanner
 import ephyra.app.BuildConfig
 import ephyra.app.R
 import ephyra.app.util.system.getHtml
 import ephyra.app.util.system.setDefaultSettings
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.coroutines.launch
 import ephyra.i18n.MR
+import ephyra.presentation.components.AppBar
+import ephyra.presentation.components.AppBarActions
+import ephyra.presentation.components.WarningBanner
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.launch
 
 class WebViewWindow(webContent: WebContent, val navigator: WebViewNavigator) {
     var state by mutableStateOf(WebViewState(webContent))

@@ -4,9 +4,9 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.SharedPreferencesMigration
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
@@ -24,7 +24,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 
 /**
  * Modern [PreferenceStore] implementation backed by Jetpack DataStore.
@@ -170,7 +169,11 @@ class DataStorePreferenceStore(
 
         override fun getSync(): T {
             val raw = snapshot[prefsKey] ?: return defaultValue
-            return try { fromRaw(raw) } catch (_: Exception) { defaultValue }
+            return try {
+                fromRaw(raw)
+            } catch (_: Exception) {
+                defaultValue
+            }
         }
 
         override suspend fun get(): T = changes().first()
@@ -189,7 +192,11 @@ class DataStorePreferenceStore(
 
         override fun changes(): Flow<T> = dataStore.data.map { prefs ->
             val raw = prefs[prefsKey] ?: return@map defaultValue
-            try { fromRaw(raw) } catch (_: Exception) { defaultValue }
+            try {
+                fromRaw(raw)
+            } catch (_: Exception) {
+                defaultValue
+            }
         }.distinctUntilChanged()
 
         override fun stateIn(scope: CoroutineScope): StateFlow<T> =

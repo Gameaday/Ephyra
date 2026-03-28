@@ -60,11 +60,13 @@ class GetApplicationRelease(
                 // tagged as something like "r1234"
                 newVersion.toInt() > commitCount
             }
+
             isNightly -> {
                 // Nightly builds: version is the short git SHA extracted from the release assets.
                 // A different SHA means a newer nightly is available.
                 versionTag.isNotBlank() && versionTag != commitSha
             }
+
             else -> {
                 // Release builds: based on releases in "Gameaday/Ephyra" repo
                 // tagged as something like "v0.1.2"

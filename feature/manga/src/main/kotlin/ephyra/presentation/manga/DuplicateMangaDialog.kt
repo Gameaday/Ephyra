@@ -56,24 +56,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastMaxOfOrNull
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import ephyra.presentation.components.AdaptiveSheet
-import ephyra.presentation.components.TabbedDialogPaddings
-import ephyra.feature.manga.presentation.components.MangaCover
-import ephyra.feature.settings.LocalPreferenceMinHeight
-import ephyra.feature.settings.widget.TextPreferenceWidget
-import eu.kanade.tachiyomi.source.Source
-import eu.kanade.tachiyomi.source.model.SManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaWithChapterCount
 import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.service.SourceManager
+import ephyra.feature.manga.presentation.components.MangaCover
+import ephyra.feature.settings.LocalPreferenceMinHeight
+import ephyra.feature.settings.widget.TextPreferenceWidget
 import ephyra.i18n.MR
+import ephyra.presentation.components.AdaptiveSheet
+import ephyra.presentation.components.TabbedDialogPaddings
 import ephyra.presentation.core.components.Badge
 import ephyra.presentation.core.components.BadgeGroup
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.secondaryItemAlpha
+import eu.kanade.tachiyomi.source.Source
+import eu.kanade.tachiyomi.source.model.SManga
 
 @Composable
 fun DuplicateMangaDialog(
@@ -84,7 +84,7 @@ fun DuplicateMangaDialog(
     onMigrate: (manga: Manga) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val sourceManager = org.koin.compose.koinInject<ephyra.domain.source.service.SourceManager>()
+    val sourceManager = org.koin.compose.koinInject<SourceManager>()
     val minHeight = LocalPreferenceMinHeight.current
     val horizontalPadding = PaddingValues(horizontal = TabbedDialogPaddings.Horizontal)
     val horizontalPaddingModifier = Modifier.padding(horizontalPadding)

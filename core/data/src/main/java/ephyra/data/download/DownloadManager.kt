@@ -2,6 +2,19 @@ package ephyra.app.data.download
 
 import android.content.Context
 import ephyra.app.data.download.model.Download
+import ephyra.core.common.i18n.stringResource
+import ephyra.core.common.storage.extension
+import ephyra.core.common.util.lang.launchIO
+import ephyra.core.common.util.system.ImageUtil
+import ephyra.core.common.util.system.logcat
+import ephyra.domain.category.interactor.GetCategories
+import ephyra.domain.chapter.interactor.GetChapter
+import ephyra.domain.chapter.model.Chapter
+import ephyra.domain.download.service.DownloadPreferences
+import ephyra.domain.manga.interactor.GetManga
+import ephyra.domain.manga.model.Manga
+import ephyra.domain.source.service.SourceManager
+import ephyra.i18n.MR
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.model.Page
 import kotlinx.coroutines.flow.Flow
@@ -13,18 +26,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onStart
 import logcat.LogPriority
-import ephyra.core.common.i18n.stringResource
-import ephyra.core.common.storage.extension
-import ephyra.core.common.util.lang.launchIO
-import ephyra.core.common.util.system.ImageUtil
-import ephyra.core.common.util.system.logcat
-import ephyra.domain.chapter.interactor.GetChapter
-import ephyra.domain.chapter.model.Chapter
-import ephyra.domain.download.service.DownloadPreferences
-import ephyra.domain.manga.interactor.GetManga
-import ephyra.domain.manga.model.Manga
-import ephyra.domain.source.service.SourceManager
-import ephyra.i18n.MR
 
 /**
  * This class is used to manage chapter downloads in the application. It must be instantiated once

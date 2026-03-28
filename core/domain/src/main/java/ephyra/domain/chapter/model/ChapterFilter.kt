@@ -1,20 +1,31 @@
 package ephyra.domain.chapter.model
 
-import ephyra.domain.base.BasePreferences
-import ephyra.domain.manga.model.downloadedFilter
-import ephyra.app.data.download.DownloadManager
 import ephyra.app.ui.manga.ChapterList
-import ephyra.domain.chapter.model.Chapter
+import ephyra.data.download.DownloadManager
+import ephyra.domain.base.BasePreferences
 import ephyra.domain.chapter.service.getChapterSort
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.applyFilter
+import ephyra.domain.manga.model.downloadedFilter
 import ephyra.source.local.isLocal
+import kotlin.collections.List
+import kotlin.collections.asSequence
+import kotlin.collections.filter
+import kotlin.collections.sortedWith
+import kotlin.sequences.Sequence
+import kotlin.sequences.filter
+import kotlin.sequences.sortedWith
+import kotlin.text.filter
 
 /**
  * Applies the view filters to the list of chapters obtained from the database.
  * @return an observable of the list of chapters filtered and sorted.
  */
-fun List<Chapter>.applyFilters(manga: Manga, downloadManager: DownloadManager, basePreferences: BasePreferences): List<Chapter> {
+fun List<Chapter>.applyFilters(
+    manga: Manga,
+    downloadManager: DownloadManager,
+    basePreferences: BasePreferences,
+): List<Chapter> {
     val isLocalManga = manga.isLocal()
     val unreadFilter = manga.unreadFilter
     val downloadedFilter = manga.downloadedFilter(basePreferences)

@@ -1,8 +1,8 @@
 package ephyra.domain.manga.interactor
 
-import kotlinx.coroutines.flow.Flow
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.repository.MangaRepository
+import kotlinx.coroutines.flow.Flow
 
 class GetFavorites(
     private val mangaRepository: MangaRepository,

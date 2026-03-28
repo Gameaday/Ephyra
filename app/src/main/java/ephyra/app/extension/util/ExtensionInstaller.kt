@@ -4,13 +4,14 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
-import ephyra.domain.base.BasePreferences
 import ephyra.app.extension.installer.Installer
 import ephyra.app.extension.model.Extension
 import ephyra.app.extension.model.InstallStep
-import eu.kanade.tachiyomi.network.NetworkHelper
 import ephyra.app.util.storage.getUriCompat
+import ephyra.core.common.util.system.logcat
+import ephyra.domain.base.BasePreferences
 import ephyra.presentation.core.util.system.isPackageInstalled
+import eu.kanade.tachiyomi.network.NetworkHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -22,7 +23,6 @@ import kotlinx.coroutines.launch
 import logcat.LogPriority
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import ephyra.core.common.util.system.logcat
 import java.io.File
 
 /**

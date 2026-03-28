@@ -34,31 +34,31 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabNavigator
+import ephyra.app.ui.manga.MangaScreen
+import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.source.service.SourcePreferences
-import ephyra.presentation.util.Screen
-import ephyra.presentation.util.isTabletUi
-import ephyra.feature.more.MoreTab
-import ephyra.feature.updates.UpdatesTab
-import ephyra.feature.library.LibraryTab
-import ephyra.feature.history.HistoryTab
 import ephyra.feature.browse.BrowseTab
 import ephyra.feature.download.DownloadQueueScreen
-import ephyra.app.ui.manga.MangaScreen
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.launch
-import soup.compose.material.motion.animation.materialFadeThroughIn
-import soup.compose.material.motion.animation.materialFadeThroughOut
-import ephyra.domain.library.service.LibraryPreferences
+import ephyra.feature.history.HistoryTab
+import ephyra.feature.library.LibraryTab
+import ephyra.feature.more.MoreTab
+import ephyra.feature.updates.UpdatesTab
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.NavigationBar
 import ephyra.presentation.core.components.material.NavigationRail
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.theme.MotionTokens
+import ephyra.presentation.util.Screen
+import ephyra.presentation.util.isTabletUi
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+import soup.compose.material.motion.animation.materialFadeThroughIn
+import soup.compose.material.motion.animation.materialFadeThroughOut
 
 object HomeScreen : Screen() {
 

@@ -3,14 +3,13 @@ package ephyra.app.data.download
 import android.content.Context
 import androidx.core.content.edit
 import ephyra.app.data.download.model.Download
-import eu.kanade.tachiyomi.source.online.HttpSource
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import ephyra.domain.chapter.interactor.GetChapter
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.service.SourceManager
+import eu.kanade.tachiyomi.source.online.HttpSource
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
 /**
  * This class is used to persist active downloads across application restarts.

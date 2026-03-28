@@ -1,10 +1,10 @@
 package ephyra.app.data.backup.models
 
+import ephyra.domain.manga.model.ContentType
+import ephyra.domain.manga.model.Manga
 import eu.kanade.tachiyomi.source.model.UpdateStrategy
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoNumber
-import ephyra.domain.manga.model.ContentType
-import ephyra.domain.manga.model.Manga
 
 @Suppress("DEPRECATION")
 @Serializable

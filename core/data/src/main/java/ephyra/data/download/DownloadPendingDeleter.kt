@@ -2,11 +2,11 @@ package ephyra.app.data.download
 
 import android.content.Context
 import androidx.core.content.edit
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.manga.model.Manga
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+
 class DownloadPendingDeleter(
     context: Context,
     private val json: Json,

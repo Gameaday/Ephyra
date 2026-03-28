@@ -2,9 +2,9 @@ package ephyra.domain.base
 
 import android.content.Context
 import dev.icerock.moko.resources.StringResource
-import ephyra.app.util.system.GLUtil
 import ephyra.core.common.preference.Preference
 import ephyra.core.common.preference.PreferenceStore
+import ephyra.core.common.util.system.GLUtil
 import ephyra.i18n.MR
 
 class BasePreferences(

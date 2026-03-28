@@ -1,8 +1,8 @@
 package ephyra.domain.source.interactor
 
-import eu.kanade.tachiyomi.source.model.FilterList
 import ephyra.domain.source.repository.SourcePagingSource
 import ephyra.domain.source.repository.SourceRepository
+import eu.kanade.tachiyomi.source.model.FilterList
 
 class GetRemoteManga(
     private val repository: SourceRepository,

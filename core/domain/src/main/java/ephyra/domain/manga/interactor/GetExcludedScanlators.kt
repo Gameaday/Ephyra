@@ -1,8 +1,8 @@
 package ephyra.domain.manga.interactor
 
+import ephyra.data.DatabaseHandler
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import ephyra.data.DatabaseHandler
 
 class GetExcludedScanlators(
     private val handler: DatabaseHandler,

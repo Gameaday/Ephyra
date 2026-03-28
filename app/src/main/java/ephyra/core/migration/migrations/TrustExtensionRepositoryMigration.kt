@@ -1,13 +1,13 @@
 package ephyra.core.migration.migrations
 
-import ephyra.domain.source.service.SourcePreferences
-import logcat.LogPriority
+import ephyra.core.common.util.lang.withIOContext
+import ephyra.core.common.util.system.logcat
 import ephyra.core.migration.Migration
 import ephyra.core.migration.MigrationContext
 import ephyra.domain.extensionrepo.exception.SaveExtensionRepoException
 import ephyra.domain.extensionrepo.repository.ExtensionRepoRepository
-import ephyra.core.common.util.lang.withIOContext
-import ephyra.core.common.util.system.logcat
+import ephyra.domain.source.service.SourcePreferences
+import logcat.LogPriority
 
 class TrustExtensionRepositoryMigration : Migration {
     override val version: Float = 7f

@@ -17,11 +17,6 @@ import ephyra.app.data.backup.models.BackupManga
 import ephyra.app.data.backup.models.BackupPreference
 import ephyra.app.data.backup.models.BackupSource
 import ephyra.app.data.backup.models.BackupSourcePreferences
-import kotlinx.serialization.protobuf.ProtoBuf
-import logcat.LogPriority
-import okio.buffer
-import okio.gzip
-import okio.sink
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.backup.service.BackupPreferences
@@ -29,6 +24,12 @@ import ephyra.domain.manga.interactor.GetFavorites
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.repository.MangaRepository
 import ephyra.i18n.MR
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.protobuf.ProtoBuf
+import logcat.LogPriority
+import okio.buffer
+import okio.gzip
+import okio.sink
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.time.Instant

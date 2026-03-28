@@ -1,7 +1,6 @@
 package ephyra.feature.manga
 
 import android.content.Context
-import android.net.Uri
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -12,45 +11,52 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import org.koin.core.annotation.Factory
-import org.koin.core.annotation.InjectedParam
-import com.hippo.unifile.UniFile
-import ephyra.core.preference.asState
-import ephyra.core.util.addOrRemove
-import ephyra.core.util.insertSeparators
-import ephyra.domain.chapter.interactor.GetAvailableScanlators
-import ephyra.domain.chapter.interactor.SetReadStatus
-import ephyra.domain.chapter.interactor.SyncChaptersWithSource
-import ephyra.domain.manga.interactor.GetExcludedScanlators
-import ephyra.domain.manga.interactor.SetExcludedScanlators
-import ephyra.domain.manga.interactor.UpdateManga
-import ephyra.domain.manga.model.chaptersFiltered
-import ephyra.domain.manga.model.downloadedFilter
-import ephyra.domain.manga.model.toSManga
-import ephyra.domain.track.interactor.AddTracks
-import ephyra.domain.track.interactor.MatchUnlinkedManga
-import ephyra.domain.track.interactor.RefreshTracks
-import ephyra.domain.track.interactor.TrackChapter
-import ephyra.domain.track.model.AutoTrackState
-import ephyra.domain.track.service.TrackPreferences
-import ephyra.feature.manga.presentation.DownloadAction
-import ephyra.feature.manga.presentation.components.ChapterDownloadAction
-import ephyra.presentation.util.formattedMessage
-import ephyra.core.download.DownloadCache
-import ephyra.core.download.DownloadManager
-import ephyra.core.download.DownloadProvider
-import ephyra.core.download.model.Download
 import ephyra.app.data.track.EnhancedTracker
-import ephyra.app.data.track.TrackerManager
-import ephyra.app.data.track.jellyfin.JellyfinApi
-import eu.kanade.tachiyomi.network.HttpException
-import eu.kanade.tachiyomi.source.Source
-import eu.kanade.tachiyomi.source.model.SManga
 import ephyra.app.ui.reader.setting.ReaderPreferences
 import ephyra.app.util.chapter.getNextUnread
 import ephyra.app.util.removeCovers
-import ephyra.app.util.storage.DiskUtil
 import ephyra.app.util.system.toast
+import ephyra.core.common.i18n.stringResource
+import ephyra.core.common.preference.CheckboxState
+import ephyra.core.common.preference.TriState
+import ephyra.core.common.preference.mapAsCheckboxState
+import ephyra.core.common.util.lang.launchIO
+import ephyra.core.common.util.lang.launchNonCancellable
+import ephyra.core.common.util.lang.withIOContext
+import ephyra.core.common.util.lang.withUIContext
+import ephyra.core.common.util.system.logcat
+import ephyra.core.download.DownloadCache
+import ephyra.core.download.DownloadManager
+import ephyra.core.download.model.Download
+import ephyra.core.preference.asState
+import ephyra.core.util.addOrRemove
+import ephyra.core.util.insertSeparators
+import ephyra.domain.category.interactor.GetCategories
+import ephyra.domain.category.model.Category
+import ephyra.domain.chapter.interactor.GetAvailableScanlators
+import ephyra.domain.chapter.model.Chapter
+import ephyra.domain.chapter.model.NoChaptersException
+import ephyra.domain.chapter.service.calculateChapterGap
+import ephyra.domain.chapter.service.getChapterSort
+import ephyra.domain.library.service.LibraryPreferences
+import ephyra.domain.manga.interactor.GetDuplicateLibraryManga
+import ephyra.domain.manga.interactor.GetExcludedScanlators
+import ephyra.domain.manga.interactor.GetMangaWithChapters
+import ephyra.domain.manga.model.Manga
+import ephyra.domain.manga.model.MangaWithChapterCount
+import ephyra.domain.manga.model.applyFilter
+import ephyra.domain.manga.model.chaptersFiltered
+import ephyra.domain.manga.model.downloadedFilter
+import ephyra.domain.manga.model.toSManga
+import ephyra.domain.source.service.SourceManager
+import ephyra.feature.manga.presentation.DownloadAction
+import ephyra.feature.manga.presentation.components.ChapterDownloadAction
+import ephyra.i18n.MR
+import ephyra.presentation.util.formattedMessage
+import ephyra.source.local.isLocal
+import eu.kanade.tachiyomi.network.HttpException
+import eu.kanade.tachiyomi.source.Source
+import eu.kanade.tachiyomi.source.model.SManga
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CancellationException
@@ -61,43 +67,13 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.forEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import logcat.LogPriority
-import ephyra.domain.chapter.interactor.FilterChaptersForDownload
-import ephyra.core.common.i18n.stringResource
-import ephyra.core.common.preference.CheckboxState
-import ephyra.core.common.preference.TriState
-import ephyra.core.common.preference.mapAsCheckboxState
-import ephyra.core.common.util.lang.launchIO
-import ephyra.core.common.util.lang.launchNonCancellable
-import ephyra.core.common.util.lang.withIOContext
-import ephyra.core.common.util.lang.withUIContext
-import ephyra.core.common.util.system.logcat
-import ephyra.domain.category.interactor.GetCategories
-import ephyra.domain.category.interactor.SetMangaCategories
-import ephyra.domain.category.model.Category
-import ephyra.domain.chapter.interactor.SetMangaDefaultChapterFlags
-import ephyra.domain.chapter.interactor.UpdateChapter
-import ephyra.domain.chapter.model.Chapter
-import ephyra.domain.chapter.model.ChapterUpdate
-import ephyra.domain.chapter.model.NoChaptersException
-import ephyra.domain.chapter.service.calculateChapterGap
-import ephyra.domain.chapter.service.getChapterSort
-import ephyra.domain.download.service.DownloadPreferences
-import ephyra.domain.library.service.LibraryPreferences
-import ephyra.domain.manga.interactor.GetDuplicateLibraryManga
-import ephyra.domain.manga.interactor.GetMangaWithChapters
-import ephyra.domain.manga.interactor.SetMangaChapterFlags
-import ephyra.domain.manga.model.Manga
-import ephyra.domain.manga.model.MangaWithChapterCount
-import ephyra.domain.manga.model.applyFilter
-import ephyra.domain.manga.repository.MangaRepository
-import ephyra.domain.source.service.SourceManager
-import ephyra.domain.track.interactor.GetTracks
-import ephyra.i18n.MR
-import ephyra.source.local.isLocal
+import org.koin.core.annotation.Factory
+import org.koin.core.annotation.InjectedParam
 import java.io.IOException
 import kotlin.math.floor
 
@@ -249,7 +225,8 @@ class MangaScreenModel(
                     chapterSwipeStartAction = libraryPreferences.swipeToEndAction().getSync(),
                     chapterSwipeEndAction = libraryPreferences.swipeToStartAction().getSync(),
                     autoTrackState = mangaTrackInteractor.autoUpdateTrackOnMarkRead().getSync(),
-                    isUpdateIntervalEnabled = LibraryPreferences.MANGA_OUTSIDE_RELEASE_PERIOD in libraryPreferences.autoUpdateMangaRestrictions().getSync(),
+                    isUpdateIntervalEnabled = LibraryPreferences.MANGA_OUTSIDE_RELEASE_PERIOD in libraryPreferences.autoUpdateMangaRestrictions()
+                        .getSync(),
                     metadataSourceName = metadataSourceName,
                 )
             }
@@ -282,7 +259,11 @@ class MangaScreenModel(
             is MangaScreenEvent.ShowChangeCategoryDialog -> showChangeCategoryDialog()
             is MangaScreenEvent.ShowSetFetchIntervalDialog -> showSetFetchIntervalDialog()
             is MangaScreenEvent.SetFetchInterval -> setFetchInterval(event.manga, event.interval)
-            is MangaScreenEvent.MoveMangaToCategoriesAndAddToLibrary -> moveMangaToCategoriesAndAddToLibrary(event.manga, event.categories)
+            is MangaScreenEvent.MoveMangaToCategoriesAndAddToLibrary -> moveMangaToCategoriesAndAddToLibrary(
+                event.manga,
+                event.categories,
+            )
+
             is MangaScreenEvent.ChapterSwipe -> chapterSwipe(event.chapterItem, event.swipeAction)
             is MangaScreenEvent.RunChapterDownloadActions -> runChapterDownloadActions(event.items, event.action)
             is MangaScreenEvent.RunDownloadAction -> runDownloadAction(event.action)
@@ -842,17 +823,21 @@ class MangaScreenModel(
             LibraryPreferences.ChapterSwipeAction.ToggleRead -> {
                 markChaptersRead(listOf(chapter), !chapter.read)
             }
+
             LibraryPreferences.ChapterSwipeAction.ToggleBookmark -> {
                 bookmarkChapters(listOf(chapter), !chapter.bookmark)
             }
+
             LibraryPreferences.ChapterSwipeAction.Download -> {
                 val downloadAction: ChapterDownloadAction = when (chapterItem.downloadState) {
                     Download.State.ERROR,
                     Download.State.NOT_DOWNLOADED,
-                    -> ChapterDownloadAction.START_NOW
+                        -> ChapterDownloadAction.START_NOW
+
                     Download.State.QUEUE,
                     Download.State.DOWNLOADING,
-                    -> ChapterDownloadAction.CANCEL
+                        -> ChapterDownloadAction.CANCEL
+
                     Download.State.DOWNLOADED -> ChapterDownloadAction.DELETE
                 }
                 runChapterDownloadActions(
@@ -860,6 +845,7 @@ class MangaScreenModel(
                     action = downloadAction,
                 )
             }
+
             LibraryPreferences.ChapterSwipeAction.Disabled -> throw IllegalStateException()
         }
     }
@@ -933,14 +919,17 @@ class MangaScreenModel(
                     downloadManager.startDownloads()
                 }
             }
+
             ChapterDownloadAction.START_NOW -> {
                 val chapter = items.singleOrNull()?.chapter ?: return
                 startDownload(listOf(chapter), true)
             }
+
             ChapterDownloadAction.CANCEL -> {
                 val chapterId = items.singleOrNull()?.id ?: return
                 cancelDownload(chapterId)
             }
+
             ChapterDownloadAction.DELETE -> {
                 deleteChapters(items.map { it.chapter })
             }
@@ -952,17 +941,19 @@ class MangaScreenModel(
             DownloadAction.SYNC_TO_JELLYFIN,
             DownloadAction.SYNC_READ_TO_JELLYFIN,
             DownloadAction.SYNC_ALL_TO_JELLYFIN,
-            -> {
+                -> {
                 syncToJellyfin(action)
                 return
             }
+
             DownloadAction.NEXT_1_CHAPTER,
             DownloadAction.NEXT_5_CHAPTERS,
             DownloadAction.NEXT_10_CHAPTERS,
             DownloadAction.NEXT_25_CHAPTERS,
             DownloadAction.UNREAD_CHAPTERS,
             DownloadAction.BOOKMARKED_CHAPTERS,
-            -> { /* handled below */ }
+                -> { /* handled below */
+            }
         }
         val chaptersToDownload = when (action) {
             DownloadAction.NEXT_1_CHAPTER -> getUnreadChaptersSorted().take(1)
@@ -974,7 +965,7 @@ class MangaScreenModel(
             DownloadAction.SYNC_TO_JELLYFIN,
             DownloadAction.SYNC_READ_TO_JELLYFIN,
             DownloadAction.SYNC_ALL_TO_JELLYFIN,
-            -> emptyList() // already handled above
+                -> emptyList() // already handled above
         }
         if (chaptersToDownload.isNotEmpty()) {
             startDownload(chaptersToDownload, false)
@@ -1361,6 +1352,7 @@ class MangaScreenModel(
             val manga: Manga,
             val initialSelection: ImmutableList<CheckboxState<Category>>,
         ) : Dialog
+
         data class DeleteChapters(val chapters: List<Chapter>) : Dialog
         data class DuplicateManga(val manga: Manga, val duplicates: List<MangaWithChapterCount>) : Dialog
         data class Migrate(val target: Manga, val current: Manga) : Dialog

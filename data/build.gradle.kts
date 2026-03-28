@@ -11,14 +11,14 @@ kotlin {
         namespace = "ephyra.data"
         compileSdk = AndroidConfig.COMPILE_SDK
         minSdk = AndroidConfig.MIN_SDK
-        
+
         // defaultConfig is removed. Proguard rules move to the android block.
         // Note: Use add() for the collection in newer DSL versions
         optimization {
             consumerKeepRules.file("consumer-rules.pro")
         }
     }
-    
+
     compilerOptions {
         freeCompilerArgs.add("-opt-in=kotlinx.serialization.ExperimentalSerializationApi")
     }

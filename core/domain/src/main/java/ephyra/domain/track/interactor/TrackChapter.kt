@@ -1,19 +1,17 @@
 package ephyra.domain.track.interactor
 
 import android.content.Context
+import ephyra.core.common.util.lang.withNonCancellableContext
+import ephyra.core.common.util.system.logcat
+import ephyra.data.track.TrackerManager
 import ephyra.domain.track.model.toDbTrack
 import ephyra.domain.track.model.toDomainTrack
 import ephyra.domain.track.service.DelayedTrackingUpdateJob
 import ephyra.domain.track.store.DelayedTrackingStore
-import ephyra.app.data.track.TrackerManager
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import logcat.LogPriority
-import ephyra.core.common.util.lang.withNonCancellableContext
-import ephyra.core.common.util.system.logcat
-import ephyra.domain.track.interactor.GetTracks
-import ephyra.domain.track.interactor.InsertTrack
 
 class TrackChapter(
     private val getTracks: GetTracks,

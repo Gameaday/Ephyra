@@ -1,7 +1,7 @@
 package ephyra.domain.track.repository
 
-import kotlinx.coroutines.flow.Flow
 import ephyra.domain.track.model.Track
+import kotlinx.coroutines.flow.Flow
 
 interface TrackRepository {
 

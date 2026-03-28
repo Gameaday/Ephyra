@@ -163,6 +163,7 @@ data object LibraryTab : Tab {
                 state.isLoading -> {
                     LoadingScreen(Modifier.padding(contentPadding))
                 }
+
                 state.searchQuery.isNullOrEmpty() && !state.hasActiveFilters && state.isLibraryEmpty -> {
                     val handler = LocalUriHandler.current
                     EmptyScreen(
@@ -177,6 +178,7 @@ data object LibraryTab : Tab {
                         ),
                     )
                 }
+
                 else -> {
                     LibraryContent(
                         categories = state.displayedCategories,
@@ -231,6 +233,7 @@ data object LibraryTab : Tab {
                     category = state.activeCategory,
                 )
             }
+
             is LibraryScreenModel.Dialog.ChangeCategory -> {
                 ChangeCategoryDialog(
                     initialSelection = dialog.initialSelection,
@@ -245,6 +248,7 @@ data object LibraryTab : Tab {
                     },
                 )
             }
+
             is LibraryScreenModel.Dialog.DeleteManga -> {
                 DeleteLibraryMangaDialog(
                     containsLocalManga = dialog.manga.any(Manga::isLocal),
@@ -255,6 +259,7 @@ data object LibraryTab : Tab {
                     },
                 )
             }
+
             null -> {}
         }
 

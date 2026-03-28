@@ -3,8 +3,8 @@ package ephyra.app.util
 import android.content.Context
 import android.content.Intent
 import ephyra.app.ui.main.MainActivity
-import ephyra.feature.webview.WebViewActivity
 import ephyra.core.common.Constants
+import ephyra.feature.webview.WebViewActivity
 import ephyra.presentation.core.util.Navigator
 
 /**

@@ -1,7 +1,6 @@
 package ephyra.domain.track.model
 
-import ephyra.domain.track.model.Track
-import ephyra.app.data.database.models.Track as DbTrack
+import ephyra.data.database.models.Track as DbTrack
 
 fun Track.copyPersonalFrom(other: Track): Track {
     return this.copy(

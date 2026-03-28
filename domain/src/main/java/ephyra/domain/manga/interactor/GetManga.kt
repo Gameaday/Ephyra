@@ -1,10 +1,10 @@
 package ephyra.domain.manga.interactor
 
-import kotlinx.coroutines.flow.Flow
-import logcat.LogPriority
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.repository.MangaRepository
+import kotlinx.coroutines.flow.Flow
+import logcat.LogPriority
 
 class GetManga(
     private val mangaRepository: MangaRepository,

@@ -1,11 +1,11 @@
 package ephyra.domain.manga.interactor
 
+import ephyra.domain.chapter.model.Chapter
 import io.kotest.matchers.shouldBe
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
-import ephyra.domain.chapter.model.Chapter
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import kotlin.time.Duration

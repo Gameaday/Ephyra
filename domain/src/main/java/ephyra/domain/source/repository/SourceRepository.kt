@@ -1,11 +1,11 @@
 package ephyra.domain.source.repository
 
 import androidx.paging.PagingSource
-import eu.kanade.tachiyomi.source.model.FilterList
-import kotlinx.coroutines.flow.Flow
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.model.Source
 import ephyra.domain.source.model.SourceWithCount
+import eu.kanade.tachiyomi.source.model.FilterList
+import kotlinx.coroutines.flow.Flow
 
 typealias SourcePagingSource = PagingSource<Long, Manga>
 

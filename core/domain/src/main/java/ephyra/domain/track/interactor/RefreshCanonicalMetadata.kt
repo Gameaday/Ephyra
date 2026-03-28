@@ -1,20 +1,20 @@
 package ephyra.domain.track.interactor
 
-import ephyra.domain.track.service.TrackPreferences
-import ephyra.app.data.cache.CoverCache
-import ephyra.app.data.track.Tracker
-import ephyra.app.data.track.TrackerManager
-import ephyra.app.data.track.model.TrackSearch
-import kotlinx.coroutines.CancellationException
-import logcat.LogPriority
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.logcat
+import ephyra.data.cache.CoverCache
+import ephyra.data.track.Tracker
+import ephyra.data.track.TrackerManager
+import ephyra.data.track.model.TrackSearch
 import ephyra.domain.manga.model.ContentType
 import ephyra.domain.manga.model.LockedField
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaUpdate
 import ephyra.domain.manga.model.mergedAlternativeTitles
 import ephyra.domain.manga.repository.MangaRepository
+import ephyra.domain.track.service.TrackPreferences
+import kotlinx.coroutines.CancellationException
+import logcat.LogPriority
 import java.time.Instant
 
 /**

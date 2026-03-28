@@ -1,8 +1,14 @@
 package ephyra.domain.manga.interactor
 
-import ephyra.domain.track.service.TrackPreferences
 import ephyra.app.data.cache.CoverCache
 import ephyra.app.data.download.DownloadManager
+import ephyra.core.common.preference.Preference
+import ephyra.domain.library.service.LibraryPreferences
+import ephyra.domain.manga.model.LockedField
+import ephyra.domain.manga.model.Manga
+import ephyra.domain.manga.model.MangaUpdate
+import ephyra.domain.manga.repository.MangaRepository
+import ephyra.domain.track.service.TrackPreferences
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.model.UpdateStrategy
 import io.kotest.matchers.shouldBe
@@ -16,13 +22,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
-import ephyra.core.common.preference.Preference
-import ephyra.domain.library.service.LibraryPreferences
-import ephyra.domain.manga.interactor.FetchInterval
-import ephyra.domain.manga.model.LockedField
-import ephyra.domain.manga.model.Manga
-import ephyra.domain.manga.model.MangaUpdate
-import ephyra.domain.manga.repository.MangaRepository
 
 /**
  * Unit tests for [UpdateManga.awaitUpdateFromSource] change detection.
