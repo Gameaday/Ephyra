@@ -63,8 +63,8 @@ internal fun ColumnScope.ReadingModePage(screenModel: ReaderSettingsScreenModel)
 private fun ColumnScope.PagerViewerSettings(screenModel: ReaderSettingsScreenModel) {
     HeadingItem(MR.strings.pager_viewer)
 
-    val navigationModePager by screenModel.preferences.navigationModePager().collectAsStateWithLifecycle()
-    val pagerNavInverted by screenModel.preferences.pagerNavInverted().collectAsStateWithLifecycle()
+    val navigationModePager by screenModel.preferences.navigationModePager().collectAsState()
+    val pagerNavInverted by screenModel.preferences.pagerNavInverted().collectAsState()
     TapZonesItems(
         selected = navigationModePager,
         onSelect = screenModel.preferences.navigationModePager()::set,
@@ -72,7 +72,7 @@ private fun ColumnScope.PagerViewerSettings(screenModel: ReaderSettingsScreenMod
         onSelectInvertMode = screenModel.preferences.pagerNavInverted()::set,
     )
 
-    val imageScaleType by screenModel.preferences.imageScaleType().collectAsStateWithLifecycle()
+    val imageScaleType by screenModel.preferences.imageScaleType().collectAsState()
     SettingsChipRow(MR.strings.pref_image_scale_type) {
         ReaderPreferences.ImageScaleType.mapIndexed { index, it ->
             FilterChip(
@@ -83,7 +83,7 @@ private fun ColumnScope.PagerViewerSettings(screenModel: ReaderSettingsScreenMod
         }
     }
 
-    val zoomStart by screenModel.preferences.zoomStart().collectAsStateWithLifecycle()
+    val zoomStart by screenModel.preferences.zoomStart().collectAsState()
     SettingsChipRow(MR.strings.pref_zoom_start) {
         ReaderPreferences.ZoomStart.mapIndexed { index, it ->
             FilterChip(
@@ -109,7 +109,7 @@ private fun ColumnScope.PagerViewerSettings(screenModel: ReaderSettingsScreenMod
         pref = screenModel.preferences.navigateToPan(),
     )
 
-    val dualPageSplitPaged by screenModel.preferences.dualPageSplitPaged().collectAsStateWithLifecycle()
+    val dualPageSplitPaged by screenModel.preferences.dualPageSplitPaged().collectAsState()
     CheckboxItem(
         label = stringResource(MR.strings.pref_dual_page_split),
         pref = screenModel.preferences.dualPageSplitPaged(),
@@ -122,7 +122,7 @@ private fun ColumnScope.PagerViewerSettings(screenModel: ReaderSettingsScreenMod
         )
     }
 
-    val dualPageRotateToFit by screenModel.preferences.dualPageRotateToFit().collectAsStateWithLifecycle()
+    val dualPageRotateToFit by screenModel.preferences.dualPageRotateToFit().collectAsState()
     CheckboxItem(
         label = stringResource(MR.strings.pref_page_rotate),
         pref = screenModel.preferences.dualPageRotateToFit(),
@@ -147,8 +147,8 @@ private fun ColumnScope.WebtoonViewerSettings(screenModel: ReaderSettingsScreenM
 
     HeadingItem(MR.strings.webtoon_viewer)
 
-    val navigationModeWebtoon by screenModel.preferences.navigationModeWebtoon().collectAsStateWithLifecycle()
-    val webtoonNavInverted by screenModel.preferences.webtoonNavInverted().collectAsStateWithLifecycle()
+    val navigationModeWebtoon by screenModel.preferences.navigationModeWebtoon().collectAsState()
+    val webtoonNavInverted by screenModel.preferences.webtoonNavInverted().collectAsState()
     TapZonesItems(
         selected = navigationModeWebtoon,
         onSelect = screenModel.preferences.navigationModeWebtoon()::set,
@@ -156,7 +156,7 @@ private fun ColumnScope.WebtoonViewerSettings(screenModel: ReaderSettingsScreenM
         onSelectInvertMode = screenModel.preferences.webtoonNavInverted()::set,
     )
 
-    val webtoonSidePadding by screenModel.preferences.webtoonSidePadding().collectAsStateWithLifecycle()
+    val webtoonSidePadding by screenModel.preferences.webtoonSidePadding().collectAsState()
     SliderItem(
         value = webtoonSidePadding,
         valueRange = ReaderPreferences.let { it.WEBTOON_PADDING_MIN..it.WEBTOON_PADDING_MAX },
@@ -173,7 +173,7 @@ private fun ColumnScope.WebtoonViewerSettings(screenModel: ReaderSettingsScreenM
         pref = screenModel.preferences.cropBordersWebtoon(),
     )
 
-    val dualPageSplitWebtoon by screenModel.preferences.dualPageSplitWebtoon().collectAsStateWithLifecycle()
+    val dualPageSplitWebtoon by screenModel.preferences.dualPageSplitWebtoon().collectAsState()
     CheckboxItem(
         label = stringResource(MR.strings.pref_dual_page_split),
         pref = screenModel.preferences.dualPageSplitWebtoon(),
@@ -186,7 +186,7 @@ private fun ColumnScope.WebtoonViewerSettings(screenModel: ReaderSettingsScreenM
         )
     }
 
-    val dualPageRotateToFitWebtoon by screenModel.preferences.dualPageRotateToFitWebtoon().collectAsStateWithLifecycle()
+    val dualPageRotateToFitWebtoon by screenModel.preferences.dualPageRotateToFitWebtoon().collectAsState()
     CheckboxItem(
         label = stringResource(MR.strings.pref_page_rotate),
         pref = screenModel.preferences.dualPageRotateToFitWebtoon(),
