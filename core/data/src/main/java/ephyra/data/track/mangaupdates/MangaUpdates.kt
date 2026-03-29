@@ -1,24 +1,24 @@
-package ephyra.app.data.track.mangaupdates
+package ephyra.data.track.mangaupdates
 
 import android.app.Application
 import dev.icerock.moko.resources.StringResource
-import ephyra.app.R
-import ephyra.data.database.models.Track
-import ephyra.app.data.track.BaseTracker
-import ephyra.app.data.track.DeletableTracker
-import ephyra.app.data.track.mangaupdates.dto.MUListItem
-import ephyra.app.data.track.mangaupdates.dto.MURating
-import ephyra.app.data.track.mangaupdates.dto.copyTo
-import ephyra.app.data.track.mangaupdates.dto.toTrackSearch
-import ephyra.app.data.track.model.TrackSearch
+import ephyra.app.core.common.R
+import ephyra.data.database.models.Track as DbTrack
+import ephyra.data.track.BaseTracker
+import ephyra.data.track.DeletableTracker
+import ephyra.data.track.mangaupdates.dto.MUListItem
+import ephyra.data.track.mangaupdates.dto.MURating
+import ephyra.data.track.mangaupdates.dto.copyTo
+import ephyra.data.track.mangaupdates.dto.toTrackSearch
+import ephyra.data.track.model.TrackSearch
+import ephyra.data.track.model.toDomainTrackSearch
 import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.service.TrackPreferences
 import ephyra.i18n.MR
 import eu.kanade.tachiyomi.network.NetworkHelper
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.toImmutableList
-import ephyra.domain.track.model.Track as DomainTrack
+import kotlinx.serialization.json.Json
+import ephyra.domain.track.model.Track
 
 class MangaUpdates(
     id: Long,
@@ -27,6 +27,7 @@ class MangaUpdates(
     networkService: NetworkHelper,
     addTracks: AddTracks,
     insertTrack: InsertTrack,
+    private val json: Json,
 ) : BaseTracker(id, "MangaUpdates", context, trackPreferences, networkService, addTracks, insertTrack),
     DeletableTracker {
 
@@ -49,7 +50,6 @@ class MangaUpdates(
                     }
                 }
             }
-            .toImmutableList()
     }
 
     private val interceptor by lazy { MangaUpdatesInterceptor(this) }
@@ -77,13 +77,13 @@ class MangaUpdates(
 
     override fun getCompletionStatus(): Long = COMPLETE_LIST
 
-    override fun getScoreList(): ImmutableList<String> = SCORE_LIST
+    override fun getScoreList(): List<String> = SCORE_LIST
 
     override fun indexToScore(index: Int): Double = if (index == 0) 0.0 else SCORE_LIST[index].toDouble()
 
-    override fun displayScore(track: DomainTrack): String = track.score.toString()
+    override fun displayScore(track: Track): String = track.score.toString()
 
-    override suspend fun update(track: Track, didReadChapter: Boolean): Track {
+    override suspend fun updateInternal(track: DbTrack, didReadChapter: Boolean): DbTrack {
         if (track.status != COMPLETE_LIST && didReadChapter) {
             track.status = READING_LIST
         }
@@ -91,11 +91,11 @@ class MangaUpdates(
         return track
     }
 
-    override suspend fun delete(track: DomainTrack) {
+    override suspend fun delete(track: Track) {
         api.deleteSeriesFromList(track)
     }
 
-    override suspend fun bind(track: Track, hasReadChapters: Boolean): Track {
+    override suspend fun bindInternal(track: DbTrack, hasReadChapters: Boolean): DbTrack {
         return try {
             val (series, rating) = api.getSeriesListItem(track)
             track.copyFrom(series, rating)
@@ -106,26 +106,26 @@ class MangaUpdates(
         }
     }
 
-    override suspend fun search(query: String): List<TrackSearch> {
+    override suspend fun search(query: String): List<ephyra.domain.track.model.TrackSearch> {
         if (query.startsWith(SEARCH_ID_PREFIX)) {
             query.substringAfter(SEARCH_ID_PREFIX).toLongOrNull()?.let { seriesId ->
                 val record = api.getSeriesById(seriesId)
-                return listOfNotNull(record?.toTrackSearch(id))
+                return listOfNotNull(record?.toTrackSearch(id)?.toDomainTrackSearch())
             }
         }
 
         return api.search(query)
             .map {
-                it.toTrackSearch(id)
+                it.toTrackSearch(id).toDomainTrackSearch()
             }
     }
 
-    override suspend fun refresh(track: Track): Track {
+    override suspend fun refreshInternal(track: DbTrack): DbTrack {
         val (series, rating) = api.getSeriesListItem(track)
         return track.copyFrom(series, rating)
     }
 
-    private fun Track.copyFrom(item: MUListItem, rating: MURating?): Track = apply {
+    private fun DbTrack.copyFrom(item: MUListItem, rating: MURating?): DbTrack = apply {
         item.copyTo(this)
         score = rating?.rating ?: 0.0
     }
@@ -136,7 +136,8 @@ class MangaUpdates(
         interceptor.newAuth(authenticated.sessionToken)
     }
 
+    @Suppress("DEPRECATION")
     fun restoreSession(): String? {
-        return trackPreferences.trackPassword(this).get().ifBlank { null }
+        return trackPreferences.trackPassword(this).getSync().ifBlank { null }
     }
 }

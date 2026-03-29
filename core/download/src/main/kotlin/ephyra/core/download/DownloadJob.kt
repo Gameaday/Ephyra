@@ -1,8 +1,7 @@
-package ephyra.data.download
+package ephyra.core.download
 
 import android.content.Context
 import android.content.pm.ServiceInfo
-import androidx.lifecycle.asFlow
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
 import androidx.work.ForegroundInfo
@@ -10,36 +9,37 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import ephyra.app.R
-import ephyra.app.data.notification.Notifications
-import ephyra.app.util.system.NetworkState
-import ephyra.app.util.system.activeNetworkState
-import ephyra.app.util.system.networkStateFlow
-import ephyra.app.util.system.notificationBuilder
-import ephyra.app.util.system.setForegroundSafely
+import ephyra.app.core.common.R
+import ephyra.data.notification.Notifications
+import ephyra.core.common.util.system.NetworkState
+import ephyra.core.common.util.system.activeNetworkState
+import ephyra.core.common.util.system.networkStateFlow
+import ephyra.core.common.util.system.notificationBuilder
+import ephyra.core.common.util.system.setForegroundSafely
 import ephyra.domain.download.service.DownloadPreferences
+import ephyra.core.common.i18n.stringResource
+import ephyra.i18n.MR
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combineTransform
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
-import okhttp3.internal.platform.PlatformRegistry.applicationContext
 
 /**
  * This worker is used to manage the downloader. The system can decide to stop the worker, in
  * which case the downloader is also stopped. It's also stopped while there's no network available.
  */
 class DownloadJob(
-    context: Context,
+    private val context: Context,
     workerParams: WorkerParameters,
     private val downloadManager: DownloadManager,
     private val downloadPreferences: DownloadPreferences,
 ) : CoroutineWorker(context, workerParams) {
 
     override suspend fun getForegroundInfo(): ForegroundInfo {
-        val notification = applicationContext.notificationBuilder(Notifications.CHANNEL_DOWNLOADER_PROGRESS) {
-            setContentTitle(applicationContext.getString(R.string.download_notifier_downloader_title))
+        val notification = context.notificationBuilder(Notifications.CHANNEL_DOWNLOADER_PROGRESS) {
+            setContentTitle(context.stringResource(MR.strings.download_notifier_downloader_title))
             setSmallIcon(android.R.drawable.stat_sys_download)
         }.build()
         return ForegroundInfo(
@@ -51,7 +51,7 @@ class DownloadJob(
 
     override suspend fun doWork(): Result {
         var networkCheck = checkNetworkState(
-            applicationContext.activeNetworkState(),
+            context.activeNetworkState(),
             downloadPreferences.downloadOnlyOverWifi().get(),
         )
         var active = networkCheck && downloadManager.downloaderStart()
@@ -64,7 +64,7 @@ class DownloadJob(
 
         coroutineScope {
             combineTransform(
-                applicationContext.networkStateFlow(),
+                context.networkStateFlow(),
                 downloadPreferences.downloadOnlyOverWifi().changes(),
                 transform = { a, b -> emit(checkNetworkState(a, b)) },
             )
@@ -85,12 +85,12 @@ class DownloadJob(
             val noWifi = requireWifi && !state.isWifi
             if (noWifi) {
                 downloadManager.downloaderStop(
-                    applicationContext.getString(R.string.download_notifier_text_only_wifi),
+                    context.stringResource(MR.strings.download_notifier_text_only_wifi),
                 )
             }
             !noWifi
         } else {
-            downloadManager.downloaderStop(applicationContext.getString(R.string.download_notifier_no_network))
+            downloadManager.downloaderStop(context.stringResource(MR.strings.download_notifier_no_network))
             false
         }
     }
@@ -120,8 +120,7 @@ class DownloadJob(
 
         fun isRunningFlow(context: Context): Flow<Boolean> {
             return WorkManager.getInstance(context)
-                .getWorkInfosForUniqueWorkLiveData(TAG)
-                .asFlow()
+                .getWorkInfosByTagFlow(TAG)
                 .map { list -> list.count { it.state == WorkInfo.State.RUNNING } == 1 }
         }
     }

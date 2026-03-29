@@ -1,4 +1,4 @@
-package ephyra.app.data.backup.models
+package ephyra.data.backup.models
 
 import ephyra.domain.extensionrepo.model.ExtensionRepo
 import kotlinx.serialization.Serializable

@@ -2,9 +2,9 @@ package ephyra.domain.track.interactor
 
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.logcat
-import ephyra.data.track.Tracker
-import ephyra.data.track.TrackerManager
-import ephyra.data.track.model.TrackSearch
+import ephyra.domain.track.service.Tracker
+import ephyra.domain.track.service.TrackerManager
+import ephyra.domain.track.model.TrackSearch
 import ephyra.domain.manga.model.ContentType
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaUpdate
@@ -183,13 +183,21 @@ class MatchUnlinkedManga(
         canonicalId
     }
 
-    /**
-     * Checks whether at least one tracker is available for canonical ID resolution.
-     * A tracker is queryable if it has a canonical prefix AND is either logged in
-     * or supports unauthenticated public search.
-     * Use this to determine whether to show the "Link to authority" action.
-     */
-    fun hasQueryableTracker(): Boolean = findQueryableTracker() != null
+    suspend fun hasQueryableTracker(): Boolean {
+        // Walk the user's ordered preference list
+        val orderedIds = trackPreferences.authorityTrackerOrder().get()
+        val validTrackerIds = AddTracks.trackersForContentType(ContentType.UNKNOWN)
+        for (trackerId in orderedIds) {
+            if (trackerId !in validTrackerIds) continue
+            val tracker = trackerManager.get(trackerId) ?: continue
+            if (isTrackerQueryable(tracker)) return true
+        }
+        return validTrackerIds
+            .filter { it !in orderedIds && it in AddTracks.TRACKER_CANONICAL_PREFIXES }
+            .any { id ->
+                trackerManager.get(id)?.let { isTrackerQueryable(it) } ?: false
+            }
+    }
 
     /**
      * Finds the best queryable tracker for search operations.
@@ -203,7 +211,7 @@ class MatchUnlinkedManga(
      * If the ordered list produces no match (all unavailable), falls back to the
      * original automatic selection: public-search trackers first, then logged-in.
      */
-    private fun findQueryableTracker(contentType: ContentType = ContentType.UNKNOWN): Tracker? {
+    private suspend fun findQueryableTracker(contentType: ContentType = ContentType.UNKNOWN): Tracker? {
         val validTrackerIds = AddTracks.trackersForContentType(contentType)
 
         // Walk the user's ordered preference list
@@ -222,14 +230,9 @@ class MatchUnlinkedManga(
             }
     }
 
-    /**
-     * Checks whether a tracker can be used for authority search.
-     * A tracker is queryable if it supports public (unauthenticated) search
-     * OR the user is logged in.
-     */
-    private fun isTrackerQueryable(tracker: Tracker): Boolean {
+    private suspend fun isTrackerQueryable(tracker: Tracker): Boolean {
         if (tracker.id in AddTracks.TRACKERS_WITH_PUBLIC_SEARCH) return true
-        return tracker.isLoggedIn
+        return tracker.isLoggedIn()
     }
 
     /**

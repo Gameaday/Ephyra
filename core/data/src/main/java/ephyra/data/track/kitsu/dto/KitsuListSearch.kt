@@ -1,10 +1,10 @@
-package ephyra.app.data.track.kitsu.dto
+package ephyra.data.track.kitsu.dto
 
-import ephyra.app.data.track.TrackerManager
-import ephyra.app.data.track.kitsu.Kitsu
-import ephyra.app.data.track.kitsu.KitsuApi
-import ephyra.app.data.track.kitsu.KitsuDateHelper
-import ephyra.app.data.track.model.TrackSearch
+import ephyra.domain.track.service.TrackerManager
+import ephyra.data.track.kitsu.Kitsu
+import ephyra.data.track.kitsu.KitsuApi
+import ephyra.data.track.kitsu.KitsuDateHelper
+import ephyra.data.track.model.TrackSearch
 import kotlinx.serialization.Serializable
 
 @Serializable

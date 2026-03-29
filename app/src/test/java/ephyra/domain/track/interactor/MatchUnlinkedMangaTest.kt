@@ -1,8 +1,8 @@
 package ephyra.domain.track.interactor
 
-import ephyra.app.data.track.Tracker
-import ephyra.app.data.track.TrackerManager
-import ephyra.app.data.track.model.TrackSearch
+import ephyra.data.track.Tracker
+import ephyra.data.track.TrackerManager
+import ephyra.data.track.model.TrackSearch
 import ephyra.core.common.preference.Preference
 import ephyra.domain.manga.model.ContentType
 import ephyra.domain.manga.model.Manga

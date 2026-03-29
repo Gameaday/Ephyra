@@ -1,8 +1,8 @@
 package ephyra.domain.extension.interactor
 
-import ephyra.app.extension.ExtensionManager
-import ephyra.app.extension.model.Extension
+import ephyra.domain.extension.model.Extension
 import ephyra.domain.extension.model.Extensions
+import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.source.service.SourcePreferences
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -13,14 +13,13 @@ class GetExtensionsByType(
 ) {
 
     fun subscribe(): Flow<Extensions> {
-        val showNsfwSources = preferences.showNsfwSource().get()
-
         return combine(
+            preferences.showNsfwSource().changes(),
             preferences.enabledLanguages().changes(),
             extensionManager.installedExtensionsFlow,
             extensionManager.untrustedExtensionsFlow,
             extensionManager.availableExtensionsFlow,
-        ) { enabledLanguages, _installed, _untrusted, _available ->
+        ) { showNsfwSources, enabledLanguages, _installed, _untrusted, _available ->
             val (updates, installed) = _installed
                 .filter { (showNsfwSources || !it.isNsfw) }
                 .sortedWith(

@@ -1,4 +1,4 @@
-package ephyra.app.data.coil
+package ephyra.data.coil
 
 import androidx.core.net.toUri
 import coil3.Extras
@@ -13,7 +13,7 @@ import coil3.getOrDefault
 import coil3.request.Options
 import com.hippo.unifile.UniFile
 import ephyra.data.cache.CoverCache
-import ephyra.app.data.coil.MangaCoverFetcher.Companion.USE_CUSTOM_COVER_KEY
+import ephyra.data.coil.MangaCoverFetcher.Companion.USE_CUSTOM_COVER_KEY
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaCover

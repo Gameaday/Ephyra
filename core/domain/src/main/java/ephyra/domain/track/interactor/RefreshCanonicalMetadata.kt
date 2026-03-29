@@ -2,17 +2,17 @@ package ephyra.domain.track.interactor
 
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.logcat
-import ephyra.data.cache.CoverCache
-import ephyra.data.track.Tracker
-import ephyra.data.track.TrackerManager
-import ephyra.data.track.model.TrackSearch
 import ephyra.domain.manga.model.ContentType
 import ephyra.domain.manga.model.LockedField
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaUpdate
 import ephyra.domain.manga.model.mergedAlternativeTitles
 import ephyra.domain.manga.repository.MangaRepository
+import ephyra.domain.manga.service.CoverCache
+import ephyra.domain.track.model.TrackSearch
 import ephyra.domain.track.service.TrackPreferences
+import ephyra.domain.track.service.Tracker
+import ephyra.domain.track.service.TrackerManager
 import kotlinx.coroutines.CancellationException
 import logcat.LogPriority
 import java.time.Instant
@@ -65,7 +65,7 @@ class RefreshCanonicalMetadata(
         }
 
         val tracker = trackerManager.get(trackerId) ?: return@withIOContext false
-        if (!tracker.isLoggedIn && trackerId !in AddTracks.TRACKERS_WITH_PUBLIC_SEARCH) {
+        if (!tracker.isLoggedIn() && trackerId !in AddTracks.TRACKERS_WITH_PUBLIC_SEARCH) {
             return@withIOContext false
         }
 

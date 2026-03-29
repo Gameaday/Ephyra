@@ -1,13 +1,12 @@
 package ephyra.domain.track.interactor
 
 import ephyra.core.common.util.system.logcat
-import ephyra.data.track.EnhancedTracker
-import ephyra.data.track.Tracker
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
 import ephyra.domain.chapter.interactor.UpdateChapter
 import ephyra.domain.chapter.model.toChapterUpdate
 import ephyra.domain.track.model.Track
-import ephyra.domain.track.model.toDbTrack
+import ephyra.domain.track.service.EnhancedTracker
+import ephyra.domain.track.service.Tracker
 import logcat.LogPriority
 import kotlin.math.max
 
@@ -40,7 +39,7 @@ class SyncChapterProgressWithTrack(
         val updatedTrack = remoteTrack.copy(lastChapterRead = lastRead)
 
         try {
-            tracker.update(updatedTrack.toDbTrack())
+            tracker.update(updatedTrack)
             updateChapter.awaitAll(chapterUpdates)
             insertTrack.await(updatedTrack)
         } catch (e: Throwable) {

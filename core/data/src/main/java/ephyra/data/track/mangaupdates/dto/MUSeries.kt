@@ -1,4 +1,4 @@
-package ephyra.app.data.track.mangaupdates.dto
+package ephyra.data.track.mangaupdates.dto
 
 import kotlinx.serialization.Serializable
 

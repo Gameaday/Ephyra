@@ -1,4 +1,4 @@
-package ephyra.app.data.track.bangumi
+package ephyra.data.track.bangumi
 
 import ephyra.data.database.models.Track
 

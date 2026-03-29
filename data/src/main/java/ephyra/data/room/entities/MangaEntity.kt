@@ -10,9 +10,9 @@ import androidx.room.PrimaryKey
     indices = [
         Index(value = ["url"]),
         Index(value = ["source"]),
-        Index(value = ["favorite"], name = "library_favorite_index", where = "favorite = 1"),
-        Index(value = ["canonical_id"], name = "idx_mangas_canonical_id", where = "canonical_id IS NOT NULL"),
-        Index(value = ["next_update"], name = "idx_mangas_next_update", where = "favorite = 1 AND next_update > 0"),
+        Index(value = ["favorite"], name = "library_favorite_index"),
+        Index(value = ["canonical_id"], name = "idx_mangas_canonical_id"),
+        Index(value = ["next_update"], name = "idx_mangas_next_update"),
     ],
 )
 data class MangaEntity(

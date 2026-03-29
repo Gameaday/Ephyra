@@ -32,6 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.core.view.WindowInsetsCompat
@@ -41,6 +42,7 @@ import androidx.lifecycle.lifecycleScope
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 import com.google.android.material.transition.platform.MaterialContainerTransform
 import com.hippo.unifile.UniFile
+import dev.icerock.moko.resources.StringResource
 import ephyra.core.common.Constants
 import ephyra.core.common.notification.NotificationManager
 import ephyra.core.common.util.lang.launchNonCancellable
@@ -49,6 +51,7 @@ import ephyra.core.common.util.system.logcat
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.reader.model.ReaderOrientation
 import ephyra.domain.reader.model.ReadingMode
+import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.feature.reader.R
 import ephyra.feature.reader.ReaderViewModel.SetAsCoverResult.AddToLibraryFirst
 import ephyra.feature.reader.ReaderViewModel.SetAsCoverResult.Error
@@ -57,13 +60,14 @@ import ephyra.feature.reader.databinding.ReaderActivityBinding
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.model.ViewerChapters
-import ephyra.feature.reader.setting.ReaderPreferences
+import ephyra.feature.reader.setting.ReaderSettingsScreenModel
 import ephyra.feature.reader.viewer.ReaderProgressIndicator
 import ephyra.i18n.MR
 import ephyra.presentation.core.data.coil.TachiyomiImageDecoder
 import ephyra.presentation.core.ui.activity.BaseActivity
 import ephyra.presentation.core.util.Navigator
 import ephyra.presentation.core.util.ifSourcesLoaded
+import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.core.util.system.isNightMode
 import ephyra.presentation.core.util.system.openInBrowser
 import ephyra.presentation.core.util.system.toShareIntent
@@ -72,8 +76,11 @@ import ephyra.presentation.core.util.view.applyHighRefreshRate
 import ephyra.presentation.core.util.view.overrideTransitionCompat
 import ephyra.presentation.core.util.view.setComposeContent
 import ephyra.presentation.reader.DisplayRefreshHost
+import ephyra.presentation.reader.OrientationSelectDialog
 import ephyra.presentation.reader.ReaderContentOverlay
+import ephyra.presentation.reader.ReaderPageActionsDialog
 import ephyra.presentation.reader.ReaderPageIndicator
+import ephyra.presentation.reader.ReadingModeSelectDialog
 import ephyra.presentation.reader.appbars.ReaderAppBars
 import ephyra.presentation.reader.settings.ReaderSettingsDialog
 import eu.kanade.tachiyomi.source.online.HttpSource
@@ -83,6 +90,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import logcat.LogPriority
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -217,7 +225,7 @@ class ReaderActivity : BaseActivity() {
 
             val currentChapter = state.currentChapter
             if (currentChapter != null) {
-                val showPageNumber: Boolean by readerPreferences.showPageNumber().collectAsStateWithLifecycle()
+                val showPageNumber: Boolean by readerPreferences.showPageNumber().collectAsState()
                 if (showPageNumber) {
                     ReaderPageIndicator(
                         currentPage = state.currentPage,
@@ -227,6 +235,61 @@ class ReaderActivity : BaseActivity() {
                             .navigationBarsPadding()
                             .padding(bottom = 16.dp),
                     )
+                }
+            }
+
+            val dialog = state.dialog
+            if (dialog != null) {
+                when (dialog) {
+                    is ReaderViewModel.Dialog.Loading -> { /* Handled by successState logic maybe? */ }
+                    is ReaderViewModel.Dialog.Settings -> {
+                        ReaderSettingsDialog(
+                            onDismissRequest = viewModel::closeDialog,
+                            onShowMenus = { viewModel.showMenus(true) },
+                            onHideMenus = { viewModel.showMenus(false) },
+                            screenModel = ReaderSettingsScreenModel(
+                                readerState = viewModel.state,
+                                onChangeReadingMode = viewModel::setMangaReadingMode,
+                                onChangeOrientation = viewModel::setMangaOrientationType,
+                                preferences = readerPreferences,
+                            ),
+                        )
+                    }
+                    is ReaderViewModel.Dialog.ReadingModeSelect -> {
+                        ReadingModeSelectDialog(
+                            onDismissRequest = viewModel::closeDialog,
+                            screenModel = ReaderSettingsScreenModel(
+                                readerState = viewModel.state,
+                                onChangeReadingMode = viewModel::setMangaReadingMode,
+                                onChangeOrientation = viewModel::setMangaOrientationType,
+                                preferences = readerPreferences,
+                            ),
+                            onChange = { showToast(it) },
+                        )
+                    }
+                    is ReaderViewModel.Dialog.OrientationModeSelect -> {
+                        OrientationSelectDialog(
+                            onDismissRequest = viewModel::closeDialog,
+                            screenModel = ReaderSettingsScreenModel(
+                                readerState = viewModel.state,
+                                onChangeReadingMode = viewModel::setMangaReadingMode,
+                                onChangeOrientation = viewModel::setMangaOrientationType,
+                                preferences = readerPreferences,
+                            ),
+                            onChange = { showToast(it) },
+                        )
+                    }
+                    is ReaderViewModel.Dialog.PageActions -> {
+                        ReaderPageActionsDialog(
+                            onDismissRequest = viewModel::closeDialog,
+                            onSetAsCover = viewModel::setAsCover,
+                            onShare = { viewModel.shareImage(it) },
+                            onSave = viewModel::saveImage,
+                            onBlockPage = viewModel::blockPage,
+                            onUnblockPage = viewModel::unblockPage,
+                            findMatchingBlockedHash = viewModel::findMatchingBlockedHash,
+                        )
+                    }
                 }
             }
         }
@@ -291,13 +354,20 @@ class ReaderActivity : BaseActivity() {
 
     @Composable
     private fun ContentOverlay(state: ReaderViewModel.State) {
-        val flashOnPageChange: Boolean by readerPreferences.flashOnPageChange().collectAsStateWithLifecycle()
+        val flashOnPageChange: Boolean by readerPreferences.flashOnPageChange().collectAsState()
 
-        val colorOverlayEnabled: Boolean by readerPreferences.colorFilter().collectAsStateWithLifecycle()
-        val colorOverlay: Int by readerPreferences.colorFilterValue().collectAsStateWithLifecycle()
-        val colorOverlayMode: Int by readerPreferences.colorFilterMode().collectAsStateWithLifecycle()
+        val colorOverlayEnabled: Boolean by readerPreferences.colorFilter().collectAsState()
+        val colorOverlay: Int by readerPreferences.colorFilterValue().collectAsState()
+        val colorOverlayMode: Int by readerPreferences.colorFilterMode().collectAsState()
         val colorOverlayBlendMode = remember(colorOverlayMode) {
-            ReaderPreferences.ColorFilterMode.getOrNull(colorOverlayMode)?.second
+            when (colorOverlayMode) {
+                1 -> BlendMode.Modulate
+                2 -> BlendMode.Screen
+                3 -> BlendMode.Overlay
+                4 -> BlendMode.Lighten
+                5 -> BlendMode.Darken
+                else -> BlendMode.SrcOver
+            }
         }
 
         ReaderContentOverlay(
@@ -319,8 +389,8 @@ class ReaderActivity : BaseActivity() {
 
         val isHttpSource = viewModel.getSource() is HttpSource
 
-        val cropBorderPaged: Boolean by readerPreferences.cropBorders().collectAsStateWithLifecycle()
-        val cropBorderWebtoon: Boolean by readerPreferences.cropBordersWebtoon().collectAsStateWithLifecycle()
+        val cropBorderPaged: Boolean by readerPreferences.cropBorders().collectAsState()
+        val cropBorderWebtoon: Boolean by readerPreferences.cropBordersWebtoon().collectAsState()
         val isPagerType = ReadingMode.isPagerType(viewModel.getMangaReadingMode())
         val cropEnabled = if (isPagerType) cropBorderPaged else cropBorderWebtoon
 
@@ -337,32 +407,22 @@ class ReaderActivity : BaseActivity() {
             onOpenInBrowser = ::openChapterInBrowser.takeIf { isHttpSource },
             onShare = ::shareChapter.takeIf { isHttpSource },
 
+            viewer = state.viewer,
+            onNextChapter = { lifecycleScope.launch { viewModel.loadNextChapter() } },
+            enabledNext = state.viewerChapters?.nextChapter != null,
+            onPreviousChapter = { lifecycleScope.launch { viewModel.loadPreviousChapter() } },
+            enabledPrevious = state.viewerChapters?.prevChapter != null,
+            currentPage = state.currentPage,
+            totalPages = state.totalPages,
+            onPageIndexChange = { viewModel.state.value.viewer?.moveToPage(it) },
+
             readingMode = ReadingMode.fromPreference(viewModel.getMangaReadingMode()),
-            onReadingModeChange = viewModel::setMangaReadingMode,
-
+            onClickReadingMode = { viewModel.openReadingModeSelectDialog() },
             orientation = ReaderOrientation.fromPreference(viewModel.getMangaOrientation()),
-            onOrientationChange = viewModel::setMangaOrientationType,
-
+            onClickOrientation = { viewModel.openOrientationModeSelectDialog() },
             cropEnabled = cropEnabled,
-            onCropEnabledChange = {
-                if (isPagerType) {
-                    readerPreferences.cropBorders().set(it)
-                } else {
-                    readerPreferences.cropBordersWebtoon().set(it)
-                }
-            },
-
-            onSettingsClicked = {
-                navigator.show(ReaderSettingsDialog())
-            },
-            onPageActionsClicked = {
-                // TODO
-            },
-
-            onNextChapter = { lifecycleScope.launchNonCancellable { viewModel.loadNextChapter() } },
-            onPreviousChapter = { lifecycleScope.launchNonCancellable { viewModel.loadPreviousChapter() } },
-            hasNextChapter = state.viewerChapters?.nextChapter != null,
-            hasPreviousChapter = state.viewerChapters?.prevChapter != null,
+            onClickCropBorder = { viewModel.toggleCropBorders() },
+            onClickSettings = { viewModel.openSettingsDialog() },
         )
     }
 
@@ -404,8 +464,7 @@ class ReaderActivity : BaseActivity() {
         startActivity(toShareIntent(url))
     }
 
-    private fun showReadingModeToast(readingMode: Int) {
-        val stringRes = ReadingMode.fromPreference(readingMode).stringRes
+    private fun showToast(stringRes: StringResource) {
         readingModeToast?.cancel()
         readingModeToast = toast(stringRes)
     }
@@ -615,7 +674,7 @@ class ReaderActivity : BaseActivity() {
 
         fun setCustomBrightness(enabled: Boolean) {
             if (enabled) {
-                setCustomBrightnessValue(readerPreferences.customBrightnessValue().get())
+                setCustomBrightnessValue(readerPreferences.customBrightnessValue().getSync())
             } else {
                 val layoutParams = window.attributes
                 layoutParams.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
@@ -624,7 +683,7 @@ class ReaderActivity : BaseActivity() {
         }
 
         fun setCustomBrightnessValue(value: Int) {
-            if (readerPreferences.customBrightness().get()) {
+            if (readerPreferences.customBrightness().getSync()) {
                 val layoutParams = window.attributes
                 layoutParams.screenBrightness = value / 100f
                 window.attributes = layoutParams

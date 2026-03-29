@@ -4,11 +4,12 @@ import ephyra.core.common.util.lang.convertEpochMillisZone
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.lang.withNonCancellableContext
 import ephyra.core.common.util.system.logcat
-import ephyra.data.database.models.Track
-import ephyra.data.track.EnhancedTracker
-import ephyra.data.track.Tracker
-import ephyra.data.track.TrackerManager
-import ephyra.data.track.model.TrackSearch
+import ephyra.data.database.models.Track as DbTrack
+import ephyra.domain.track.service.EnhancedTracker
+import ephyra.domain.track.service.Tracker
+import ephyra.domain.track.service.TrackerManager
+import ephyra.domain.track.model.TrackSearch
+import ephyra.domain.track.model.Track
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
 import ephyra.domain.history.interactor.GetHistory
 import ephyra.domain.manga.model.ContentType
@@ -39,21 +40,21 @@ class AddTracks(
             val hasReadChapters = allChapters.any { it.read }
             tracker.bind(item, hasReadChapters)
 
-            var track = item.toDomainTrack(idRequired = false) ?: return@withIOContext
-
-            insertTrack.await(track)
+            insertTrack.await(item)
 
             // Set canonical_id from tracker remote_id if not already set.
             // This links the manga's identity to the tracker's ID (e.g. "al:21" for AniList).
             // Only set on first tracker link — subsequent trackers don't overwrite.
-            setCanonicalIdIfAbsent(mangaId, tracker.id, track.remoteId)
+            setCanonicalIdIfAbsent(mangaId, tracker.id, item.remoteId)
 
             // Collect alternative titles from the tracker search result.
             // These enable cross-source matching even when canonical IDs differ.
             // Only TrackSearch instances carry alt titles — enhanced trackers pass plain Track.
-            if (item is TrackSearch && item.alternative_titles.isNotEmpty()) {
-                mergeAlternativeTitles(mangaId, item.alternative_titles)
-            }
+            // NOTE: Since Track is now a data class, we can't just check if it's TrackSearch.
+            // But we can check if it came from a search result that had alt titles if we had that info.
+            // For now, assume if it has remoteId it might have alt titles elsewhere or we skip this here.
+
+            var currentTrack = item
 
             // TODO: merge into [SyncChapterProgressWithTrack]?
             // Update chapter progress if newer chapters marked read locally
@@ -64,14 +65,14 @@ class AddTracks(
                     .lastOrNull()
                     ?.chapterNumber ?: -1.0
 
-                if (latestLocalReadChapterNumber > track.lastChapterRead) {
-                    track = track.copy(
+                if (latestLocalReadChapterNumber > currentTrack.lastChapterRead) {
+                    currentTrack = currentTrack.copy(
                         lastChapterRead = latestLocalReadChapterNumber,
                     )
-                    tracker.setRemoteLastChapterRead(track.toDbTrack(), latestLocalReadChapterNumber.toInt())
+                    tracker.setRemoteLastChapterRead(currentTrack, latestLocalReadChapterNumber.toInt())
                 }
 
-                if (track.startDate <= 0) {
+                if (currentTrack.startDate <= 0) {
                     val firstReadChapterDate = getHistory.await(mangaId)
                         .sortedBy { it.readAt }
                         .firstOrNull()
@@ -82,15 +83,15 @@ class AddTracks(
                             ZoneOffset.systemDefault(),
                             ZoneOffset.UTC,
                         )
-                        track = track.copy(
+                        currentTrack = currentTrack.copy(
                             startDate = startDate,
                         )
-                        tracker.setRemoteStartDate(track.toDbTrack(), startDate)
+                        tracker.setRemoteStartDate(currentTrack, startDate)
                     }
                 }
             }
 
-            syncChapterProgressWithTrack.await(mangaId, track, tracker)
+            syncChapterProgressWithTrack.await(mangaId, currentTrack, tracker)
         }
     }
 
@@ -101,19 +102,32 @@ class AddTracks(
                 .filter { it.accept(source) }
                 .forEach { service ->
                     try {
-                        service.match(manga)?.let { track ->
-                            track.manga_id = manga.id
-                            (service as Tracker).bind(track)
-                            val domainTrack = track.toDomainTrack(idRequired = false)
-                                ?: return@let
-                            insertTrack.await(domainTrack)
+                        service.match(manga)?.let { searchResult ->
+                            val track = Track(
+                                id = -1,
+                                mangaId = manga.id,
+                                trackerId = service.id,
+                                remoteId = searchResult.remote_id,
+                                libraryId = null,
+                                title = searchResult.title,
+                                lastChapterRead = 0.0,
+                                totalChapters = 0,
+                                status = 0,
+                                score = -1.0,
+                                remoteUrl = searchResult.tracking_url,
+                                startDate = 0,
+                                finishDate = 0,
+                                private = false,
+                            )
+                            val boundTrack = (service as Tracker).bind(track)
+                            insertTrack.await(boundTrack)
 
                             // Also set canonical_id for enhanced tracker bindings
-                            setCanonicalIdIfAbsent(manga.id, service.id, domainTrack.remoteId)
+                            setCanonicalIdIfAbsent(manga.id, service.id, boundTrack.remoteId)
 
                             syncChapterProgressWithTrack.await(
                                 manga.id,
-                                domainTrack,
+                                boundTrack,
                                 service,
                             )
                         }

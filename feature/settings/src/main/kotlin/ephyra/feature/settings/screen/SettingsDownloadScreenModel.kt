@@ -1,7 +1,7 @@
 package ephyra.feature.settings.screen
 
 import cafe.adriel.voyager.core.model.ScreenModel
-import ephyra.app.data.track.TrackerManager
+import ephyra.data.track.TrackerManager
 import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.download.service.DownloadPreferences
 import ephyra.domain.library.service.LibraryPreferences

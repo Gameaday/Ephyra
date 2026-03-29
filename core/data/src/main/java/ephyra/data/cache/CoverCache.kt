@@ -3,6 +3,7 @@ package ephyra.data.cache
 import android.content.Context
 import ephyra.core.common.util.storage.DiskUtil
 import ephyra.domain.manga.model.Manga
+import ephyra.domain.manga.service.CoverCache as ICoverCache
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
@@ -11,11 +12,8 @@ import java.io.InputStream
  * Class used to create cover cache.
  * It is used to store the covers of the library.
  * Names of files are created with the md5 of the thumbnail URL.
- *
- * @param context the application context.
- * @constructor creates an instance of the cover cache.
  */
-class CoverCache(private val context: Context) {
+class CoverCache(private val context: Context) : ICoverCache {
 
     companion object {
         private const val COVERS_DIR = "covers"
@@ -44,6 +42,8 @@ class CoverCache(private val context: Context) {
         }
     }
 
+    override fun getCoverFile(manga: Manga): File? = getCoverFile(manga.thumbnailUrl)
+
     /**
      * Returns the custom cover from cache.
      *
@@ -54,19 +54,13 @@ class CoverCache(private val context: Context) {
         return File(customCoverCacheDir, DiskUtil.hashKeyForDisk(mangaId.toString()))
     }
 
+    override fun getCustomCoverFile(manga: Manga): File = getCustomCoverFile(manga.id)
+
     /**
      * Saves the given stream as the manga's custom cover to cache.
-     *
-     * **Stream ownership:** this method takes ownership of [inputStream] and always closes it
-     * before returning (whether or not an exception occurs). Callers must not close the stream
-     * themselves after passing it here.
-     *
-     * @param manga the manga.
-     * @param inputStream the stream to copy. Closed by this method.
-     * @throws IOException if there's any error.
      */
     @Throws(IOException::class)
-    fun setCustomCoverToCache(manga: Manga, inputStream: InputStream) {
+    override fun setCustomCoverToCache(manga: Manga, inputStream: InputStream) {
         getCustomCoverFile(manga.id).outputStream().use { output ->
             inputStream.use { input ->
                 input.copyTo(output)
@@ -76,12 +70,8 @@ class CoverCache(private val context: Context) {
 
     /**
      * Delete the cover files of the manga from the cache.
-     *
-     * @param manga the manga.
-     * @param deleteCustomCover whether the custom cover should be deleted.
-     * @return number of files that were deleted.
      */
-    fun deleteFromCache(manga: Manga, deleteCustomCover: Boolean = false): Int {
+    fun deleteFromCacheWithResult(manga: Manga, deleteCustomCover: Boolean = false): Int {
         var deleted = 0
 
         getCoverFile(manga.thumbnailUrl)?.let {
@@ -95,11 +85,19 @@ class CoverCache(private val context: Context) {
         return deleted
     }
 
+    override fun deleteFromCache(manga: Manga, deleteCustom: Boolean): Int {
+        return deleteFromCacheWithResult(manga, deleteCustom)
+    }
+
+    override fun deleteAll() {
+        cacheDir.deleteRecursively()
+        customCoverCacheDir.deleteRecursively()
+        cacheDir.mkdirs()
+        customCoverCacheDir.mkdirs()
+    }
+
     /**
      * Delete custom cover of the manga from the cache
-     *
-     * @param mangaId the manga id.
-     * @return whether the cover was deleted.
      */
     fun deleteCustomCover(mangaId: Long?): Boolean {
         return getCustomCoverFile(mangaId).let {
@@ -109,19 +107,7 @@ class CoverCache(private val context: Context) {
 
     /**
      * Removes cached cover files whose [java.io.File.lastModified] timestamp is older
-     * than [maxAgeMs]. This effectively prunes covers that haven't been downloaded or
-     * updated recently, based on their last write time rather than last read/access.
-     *
-     * Custom covers are never pruned — only auto-downloaded covers from browsing.
-     * Files whose names appear in [protectedNames] are always kept (e.g. covers
-     * of favorited manga so offline viewing still looks good after a long break).
-     *
-     * Call from a background thread (e.g. the library update job) to reclaim storage
-     * consumed by covers of manga the user is no longer interacting with.
-     *
-     * @param protectedNames set of filenames (MD5 hashes) to keep regardless of age.
-     * @param maxAgeMs maximum age in milliseconds since last modification. Default: 30 days.
-     * @return number of files deleted.
+     * than [maxAgeMs].
      */
     fun pruneOldCovers(
         protectedNames: Set<String> = emptySet(),
@@ -140,8 +126,7 @@ class CoverCache(private val context: Context) {
 
     /**
      * Returns the set of cover cache filenames (MD5 hashes) for the given
-     * thumbnail URLs. Useful for building a protected-set so that covers of
-     * favorited manga are never pruned.
+     * thumbnail URLs.
      */
     fun coverFileNames(thumbnailUrls: List<String?>): Set<String> {
         return thumbnailUrls

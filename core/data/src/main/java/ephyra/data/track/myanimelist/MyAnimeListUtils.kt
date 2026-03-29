@@ -1,4 +1,4 @@
-package ephyra.app.data.track.myanimelist
+package ephyra.data.track.myanimelist
 
 import ephyra.data.database.models.Track
 

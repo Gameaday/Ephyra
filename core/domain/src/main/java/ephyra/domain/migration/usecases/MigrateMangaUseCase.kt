@@ -1,25 +1,25 @@
 package ephyra.domain.migration.usecases
 
-import ephyra.data.cache.CoverCache
-import ephyra.data.download.DownloadManager
-import ephyra.data.track.EnhancedTracker
-import ephyra.data.track.TrackerManager
 import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.category.interactor.SetMangaCategories
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
 import ephyra.domain.chapter.interactor.SyncChaptersWithSource
 import ephyra.domain.chapter.interactor.UpdateChapter
 import ephyra.domain.chapter.model.toChapterUpdate
+import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaUpdate
 import ephyra.domain.manga.model.hasCustomCover
 import ephyra.domain.manga.model.toSManga
+import ephyra.domain.manga.service.CoverCache
 import ephyra.domain.migration.models.MigrationFlag
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
 import ephyra.domain.track.interactor.GetTracks
 import ephyra.domain.track.interactor.InsertTrack
+import ephyra.domain.track.service.EnhancedTracker
+import ephyra.domain.track.service.TrackerManager
 import kotlinx.coroutines.CancellationException
 import java.time.Instant
 
@@ -38,12 +38,12 @@ class MigrateMangaUseCase(
     private val insertTrack: InsertTrack,
     private val coverCache: CoverCache,
 ) {
-    private val enhancedServices by lazy { trackerManager.trackers.filterIsInstance<EnhancedTracker>() }
 
     suspend operator fun invoke(current: Manga, target: Manga, replace: Boolean) {
         val targetSource = sourceManager.get(target.source) ?: return
         val currentSource = sourceManager.get(current.source)
         val flags = sourcePreferences.migrationFlags().get()
+        val enhancedServices = trackerManager.loggedInTrackers().filterIsInstance<EnhancedTracker>()
 
         try {
             val chapters = targetSource.getChapterList(target.toSManga())
@@ -116,8 +116,10 @@ class MigrateMangaUseCase(
             }
 
             // Update custom cover (recheck if custom cover exists)
-            if (MigrationFlag.CUSTOM_COVER in flags && current.hasCustomCover()) {
-                coverCache.setCustomCoverToCache(target, coverCache.getCustomCoverFile(current.id).inputStream())
+            if (MigrationFlag.CUSTOM_COVER in flags && current.hasCustomCover(coverCache)) {
+                coverCache.getCustomCoverFile(current)?.inputStream()?.use { input ->
+                    coverCache.setCustomCoverToCache(target, input)
+                }
             }
 
             val currentMangaUpdate = MangaUpdate(

@@ -7,13 +7,13 @@ import ephyra.data.room.views.UpdatesView
 
 @Dao
 interface UpdateDao {
-    @androidx.room.Query("SELECT * FROM updatesView WHERE read = :read AND dateFetch > :after ORDER BY dateFetch DESC LIMIT :limit")
+    @Query("SELECT * FROM updatesView WHERE read = :read AND dateFetch > :after ORDER BY dateFetch DESC LIMIT :limit")
     fun getUpdatesByReadStatus(read: Boolean, after: Long, limit: Long): Flow<List<UpdatesView>>
 
-    @androidx.room.Query("SELECT * FROM updatesView WHERE read = :read AND dateFetch > :after ORDER BY dateFetch DESC LIMIT :limit")
+    @Query("SELECT * FROM updatesView WHERE read = :read AND dateFetch > :after ORDER BY dateFetch DESC LIMIT :limit")
     suspend fun getUpdatesByReadStatusBlocking(read: Boolean, after: Long, limit: Long): List<UpdatesView>
 
-    @androidx.room.Query(
+    @Query(
         """
         SELECT * FROM updatesView
         WHERE dateFetch > :after
@@ -41,10 +41,10 @@ interface ExtensionRepoDao {
     @Query("SELECT * FROM extension_repos")
     suspend fun getExtensionRepos(): List<ExtensionRepoEntity>
 
-    @Query("SELECT * FROM extension_repos WHERE baseUrl = :baseUrl")
+    @Query("SELECT * FROM extension_repos WHERE base_url = :baseUrl")
     suspend fun getRepo(baseUrl: String): ExtensionRepoEntity?
 
-    @Query("SELECT * FROM extension_repos WHERE signingKeyFingerprint = :fingerprint")
+    @Query("SELECT * FROM extension_repos WHERE signing_key_fingerprint = :fingerprint")
     suspend fun getRepoBySigningKeyFingerprint(fingerprint: String): ExtensionRepoEntity?
 
     @Query("SELECT count(*) FROM extension_repos")
@@ -66,6 +66,6 @@ interface ExtensionRepoDao {
         }
     }
 
-    @Query("DELETE FROM extension_repos WHERE baseUrl = :baseUrl")
+    @Query("DELETE FROM extension_repos WHERE base_url = :baseUrl")
     suspend fun delete(baseUrl: String)
 }

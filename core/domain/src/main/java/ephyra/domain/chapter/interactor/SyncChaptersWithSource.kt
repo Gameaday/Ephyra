@@ -1,8 +1,8 @@
 package ephyra.domain.chapter.interactor
 
 import ephyra.data.chapter.ChapterSanitizer
-import ephyra.data.download.DownloadManager
-import ephyra.data.download.DownloadProvider
+import ephyra.domain.download.service.DownloadManager
+import ephyra.domain.download.service.DownloadProvider
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.model.NoChaptersException
 import ephyra.domain.chapter.model.copyFromSChapter

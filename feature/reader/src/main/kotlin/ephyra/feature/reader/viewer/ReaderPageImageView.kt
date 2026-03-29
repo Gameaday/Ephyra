@@ -32,8 +32,8 @@ import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.EASE_IN_OUT
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.EASE_OUT_QUAD
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.SCALE_TYPE_CENTER_INSIDE
 import ephyra.domain.base.BasePreferences
-import ephyra.app.data.coil.cropBorders
-import ephyra.app.data.coil.customDecoder
+import ephyra.data.coil.cropBorders
+import ephyra.data.coil.customDecoder
 import ephyra.feature.reader.viewer.webtoon.WebtoonSubsamplingImageView
 import ephyra.app.util.system.animatorDurationScale
 import ephyra.app.util.view.isVisibleOnScreen

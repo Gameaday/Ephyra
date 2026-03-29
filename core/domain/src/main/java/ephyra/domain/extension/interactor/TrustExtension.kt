@@ -17,7 +17,7 @@ class TrustExtension(
         return trustedFingerprints.any { fingerprints.contains(it) } || key in preferences.trustedExtensions().get()
     }
 
-    fun trust(pkgName: String, versionCode: Long, signatureHash: String) {
+    suspend fun trust(pkgName: String, versionCode: Long, signatureHash: String) {
         preferences.trustedExtensions().getAndSet { exts ->
             // Remove previously trusted versions
             val removed = exts.filterNot { it.startsWith("$pkgName:") }.toMutableSet()

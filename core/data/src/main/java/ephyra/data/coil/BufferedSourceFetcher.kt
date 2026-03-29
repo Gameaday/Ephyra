@@ -1,4 +1,4 @@
-package ephyra.app.data.coil
+package ephyra.data.coil
 
 import coil3.ImageLoader
 import coil3.decode.DataSource

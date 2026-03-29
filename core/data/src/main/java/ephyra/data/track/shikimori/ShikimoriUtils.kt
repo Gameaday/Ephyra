@@ -1,4 +1,4 @@
-package ephyra.app.data.track.shikimori
+package ephyra.data.track.shikimori
 
 import ephyra.data.database.models.Track
 

@@ -1,8 +1,8 @@
-package ephyra.app.data.track.anilist
+package ephyra.data.track.anilist
 
-import ephyra.app.BuildConfig
-import ephyra.app.data.track.anilist.dto.ALOAuth
-import ephyra.app.data.track.anilist.dto.isExpired
+import ephyra.core.data.BuildConfig
+import ephyra.data.track.anilist.dto.ALOAuth
+import ephyra.data.track.anilist.dto.isExpired
 import okhttp3.Interceptor
 import okhttp3.Response
 import java.io.IOException

@@ -1,8 +1,8 @@
-package ephyra.app.data.track.suwayomi
+package ephyra.data.track.suwayomi
 
 import android.content.SharedPreferences
 import ephyra.data.database.models.Track
-import ephyra.app.data.track.model.TrackSearch
+import ephyra.data.track.model.TrackSearch
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.domain.source.service.SourceManager
 import eu.kanade.tachiyomi.network.POST

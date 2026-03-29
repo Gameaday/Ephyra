@@ -1,6 +1,7 @@
-package ephyra.app.data.track.kavita
+package ephyra.data.track.kavita
 
-import ephyra.app.BuildConfig
+import ephyra.core.data.BuildConfig
+import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.Response
 
@@ -9,7 +10,9 @@ class KavitaInterceptor(private val kavita: Kavita) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val originalRequest = chain.request()
         if (kavita.authentications == null) {
-            kavita.loadOAuth()
+            runBlocking {
+                kavita.loadOAuth()
+            }
         }
         val jwtToken = kavita.authentications?.getToken(
             kavita.api.getApiFromUrl(originalRequest.url.toString()),
@@ -24,4 +27,3 @@ class KavitaInterceptor(private val kavita: Kavita) : Interceptor {
         return chain.proceed(authRequest)
     }
 }
-

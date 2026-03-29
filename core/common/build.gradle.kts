@@ -44,6 +44,10 @@ dependencies {
     api(libs.preferencektx)
     api(libs.datastore)
 
+    api(androidx.workmanager)
+
+    api(libs.bundles.shizuku)
+
     implementation(libs.jsoup)
 
     // JavaScript engine

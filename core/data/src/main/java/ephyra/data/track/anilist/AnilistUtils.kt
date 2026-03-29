@@ -1,4 +1,4 @@
-package ephyra.app.data.track.anilist
+package ephyra.data.track.anilist
 
 import ephyra.data.database.models.Track
 import ephyra.domain.track.service.TrackPreferences
@@ -10,12 +10,12 @@ fun Track.toApiStatus() = when (status) {
     Anilist.ON_HOLD -> "PAUSED"
     Anilist.DROPPED -> "DROPPED"
     Anilist.PLAN_TO_READ -> "PLANNING"
-    Anilist.REREADING -> "REPEATING"
+    Anilist.REPEATING -> "REPEATING"
     else -> throw NotImplementedError("Unknown status: $status")
 }
 
 
-fun DomainTrack.toApiScore(preferences: TrackPreferences): String = when (preferences.anilistScoreType().get()) {
+suspend fun DomainTrack.toApiScore(preferences: TrackPreferences): String = when (preferences.anilistScoreType().get()) {
     // 10 point
     "POINT_10" -> (score.toInt() / 10).toString()
     // 100 point

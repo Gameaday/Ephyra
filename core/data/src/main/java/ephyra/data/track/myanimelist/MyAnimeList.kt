@@ -1,22 +1,22 @@
-package ephyra.app.data.track.myanimelist
+package ephyra.data.track.myanimelist
 
 import android.app.Application
 import dev.icerock.moko.resources.StringResource
-import ephyra.app.R
-import ephyra.data.database.models.Track
-import ephyra.app.data.track.BaseTracker
-import ephyra.app.data.track.DeletableTracker
-import ephyra.app.data.track.model.TrackSearch
-import ephyra.app.data.track.myanimelist.dto.MALOAuth
+import ephyra.app.core.common.R
+import ephyra.data.database.models.Track as DbTrack
+import ephyra.data.track.BaseTracker
+import ephyra.data.track.DeletableTracker
+import ephyra.data.track.myanimelist.dto.MALOAuth
 import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.service.TrackPreferences
 import ephyra.i18n.MR
 import eu.kanade.tachiyomi.network.NetworkHelper
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.toImmutableList
 import kotlinx.serialization.json.Json
-import ephyra.domain.track.model.Track as DomainTrack
+import ephyra.domain.track.model.Track
+import ephyra.domain.track.model.TrackSearch
+import ephyra.domain.track.model.toDbTrack
+import ephyra.domain.track.model.toDomainTrack
 
 class MyAnimeList(
     id: Long,
@@ -42,7 +42,6 @@ class MyAnimeList(
 
         private val SCORE_LIST = IntRange(0, 10)
             .map(Int::toString)
-            .toImmutableList()
     }
 
 
@@ -73,17 +72,17 @@ class MyAnimeList(
 
     override fun getCompletionStatus(): Long = COMPLETED
 
-    override fun getScoreList(): ImmutableList<String> = SCORE_LIST
+    override fun getScoreList(): List<String> = SCORE_LIST
 
-    override fun displayScore(track: DomainTrack): String {
+    override fun displayScore(track: Track): String {
         return track.score.toInt().toString()
     }
 
-    private suspend fun add(track: Track): Track {
+    private suspend fun add(track: DbTrack): DbTrack {
         return api.updateItem(track)
     }
 
-    override suspend fun update(track: Track, didReadChapter: Boolean): Track {
+    override suspend fun updateInternal(track: DbTrack, didReadChapter: Boolean): DbTrack {
         if (track.status != COMPLETED) {
             if (didReadChapter) {
                 if (track.last_chapter_read.toLong() == track.total_chapters && track.total_chapters > 0) {
@@ -101,11 +100,11 @@ class MyAnimeList(
         return api.updateItem(track)
     }
 
-    override suspend fun delete(track: DomainTrack) {
+    override suspend fun delete(track: Track) {
         api.deleteItem(track)
     }
 
-    override suspend fun bind(track: Track, hasReadChapters: Boolean): Track {
+    override suspend fun bindInternal(track: DbTrack, hasReadChapters: Boolean): DbTrack {
         val remoteTrack = api.findListItem(track)
         return if (remoteTrack != null) {
             track.copyPersonalFrom(remoteTrack)
@@ -116,7 +115,7 @@ class MyAnimeList(
                 track.status = if (!isRereading && hasReadChapters) READING else track.status
             }
 
-            update(track)
+            updateInternal(track)
         } else {
             // Set default fields if it's not found in the list
             track.status = if (hasReadChapters) READING else PLAN_TO_READ
@@ -126,22 +125,22 @@ class MyAnimeList(
     }
 
     override suspend fun search(query: String): List<TrackSearch> {
-        if (query.startsWith(SEARCH_ID_PREFIX)) {
+        val results = if (query.startsWith(SEARCH_ID_PREFIX)) {
             query.substringAfter(SEARCH_ID_PREFIX).toIntOrNull()?.let { id ->
-                return listOf(api.getMangaDetails(id))
-            }
-        }
-
-        if (query.startsWith(SEARCH_LIST_PREFIX)) {
+                listOf(api.getMangaDetails(id))
+            } ?: emptyList()
+        } else if (query.startsWith(SEARCH_LIST_PREFIX)) {
             query.substringAfter(SEARCH_LIST_PREFIX).let { title ->
-                return api.findListItems(title)
+                api.findListItems(title)
             }
+        } else {
+            api.search(query)
         }
 
-        return api.search(query)
+        return results.map { it.toDomainTrackSearch() }
     }
 
-    override suspend fun refresh(track: Track): Track {
+    override suspend fun refreshInternal(track: DbTrack): DbTrack {
         return api.findListItem(track) ?: add(track)
     }
 
@@ -166,8 +165,13 @@ class MyAnimeList(
         interceptor.setAuth(null)
     }
 
-    fun getIfAuthExpired(): Boolean {
+    suspend fun getIfAuthExpired(): Boolean {
         return trackPreferences.trackAuthExpired(this).get()
+    }
+
+    @Suppress("DEPRECATION")
+    fun getIfAuthExpiredSync(): Boolean {
+        return trackPreferences.trackAuthExpired(this).getSync()
     }
 
     fun setAuthExpired() {
@@ -178,11 +182,33 @@ class MyAnimeList(
         trackPreferences.trackToken(this).set(json.encodeToString(oAuth))
     }
 
-    fun loadOAuth(): MALOAuth? {
+    suspend fun loadOAuth(): MALOAuth? {
         return try {
             json.decodeFromString<MALOAuth>(trackPreferences.trackToken(this).get())
         } catch (e: Exception) {
             null
         }
     }
+
+    @Suppress("DEPRECATION")
+    fun loadOAuthSync(): MALOAuth? {
+        return try {
+            json.decodeFromString<MALOAuth>(trackPreferences.trackToken(this).getSync())
+        } catch (e: Exception) {
+            null
+        }
+    }
 }
+
+// Extension to convert data TrackSearch to domain TrackSearch
+fun ephyra.data.track.model.TrackSearch.toDomainTrackSearch() = TrackSearch(
+    remote_id = remote_id,
+    title = title,
+    tracking_url = tracking_url,
+    summary = summary ?: "",
+    authors = authors ?: emptyList(),
+    artists = artists ?: emptyList(),
+    cover_url = cover_url ?: "",
+    publishing_type = publishing_type ?: "",
+    alternative_titles = alternative_titles ?: emptyList(),
+)

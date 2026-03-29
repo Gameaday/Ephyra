@@ -1,4 +1,4 @@
-package ephyra.app.data.coil
+package ephyra.data.coil
 
 import coil3.key.Keyer
 import coil3.request.Options
@@ -7,9 +7,11 @@ import ephyra.domain.manga.model.MangaCover
 import ephyra.domain.manga.model.hasCustomCover
 import ephyra.domain.manga.model.Manga as DomainManga
 
-class MangaKeyer : Keyer<DomainManga> {
+class MangaKeyer(
+    private val coverCache: CoverCache,
+) : Keyer<DomainManga> {
     override fun key(data: DomainManga, options: Options): String {
-        return if (data.hasCustomCover()) {
+        return if (data.hasCustomCover(coverCache)) {
             "${data.id};${data.coverLastModified}"
         } else {
             "${data.thumbnailUrl};${data.coverLastModified}"

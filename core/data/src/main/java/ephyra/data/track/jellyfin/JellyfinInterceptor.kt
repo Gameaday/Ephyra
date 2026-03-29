@@ -1,6 +1,6 @@
-package ephyra.app.data.track.jellyfin
+package ephyra.data.track.jellyfin
 
-import ephyra.app.BuildConfig
+import ephyra.core.data.BuildConfig
 import okhttp3.Interceptor
 import okhttp3.Response
 
@@ -16,7 +16,7 @@ class JellyfinInterceptor(private val jellyfin: Jellyfin) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val originalRequest = chain.request()
 
-        val token = jellyfin.getPassword() // stores access token from AuthenticateByName
+        val token = jellyfin.getPasswordSync() // stores access token from AuthenticateByName
 
         val authRequest = originalRequest.newBuilder()
             .header("X-Emby-Token", token)

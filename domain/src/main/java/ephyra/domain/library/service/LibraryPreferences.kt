@@ -8,6 +8,8 @@ import ephyra.domain.library.model.LibraryDisplayMode
 import ephyra.domain.library.model.LibrarySort
 import ephyra.domain.manga.model.Manga
 
+import ephyra.core.common.util.system.ImageFormat
+
 class LibraryPreferences(
     private val preferenceStore: PreferenceStore,
 ) {
@@ -256,25 +258,6 @@ class LibraryPreferences(
         ToggleBookmark,
         Download,
         Disabled,
-    }
-
-    /**
-     * Lossless image format for derived images (splits, merges, cover saves).
-     *
-     * Both options are **lossless** — pixel-identical to the decoded source.
-     * Derived images start from already-compressed data, so lossy re-encoding
-     * would introduce generational quality loss for marginal size benefit.
-     *
-     * WebP lossless is the default: it has hardware-accelerated decoding on all
-     * Android devices, produces files ~25 % smaller than PNG, and encodes quickly
-     * using the platform's native codec.  PNG is offered for maximum compatibility.
-     *
-     * @property extension file extension (without dot)
-     * @property mime      MIME type
-     */
-    enum class ImageFormat(val extension: String, val mime: String) {
-        WEBP("webp", "image/webp"),
-        PNG("png", "image/png"),
     }
 
     companion object {

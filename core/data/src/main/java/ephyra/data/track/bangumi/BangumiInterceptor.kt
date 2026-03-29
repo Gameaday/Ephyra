@@ -1,8 +1,8 @@
-package ephyra.app.data.track.bangumi
+package ephyra.data.track.bangumi
 
-import ephyra.app.BuildConfig
-import ephyra.app.data.track.bangumi.dto.BGMOAuth
-import ephyra.app.data.track.bangumi.dto.isExpired
+import ephyra.core.data.BuildConfig
+import ephyra.data.track.bangumi.dto.BGMOAuth
+import ephyra.data.track.bangumi.dto.isExpired
 import kotlinx.serialization.json.Json
 import okhttp3.Interceptor
 import okhttp3.Response

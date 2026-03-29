@@ -1,4 +1,4 @@
-package ephyra.app.data.track.myanimelist.dto
+package ephyra.data.track.myanimelist.dto
 
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.SerialName

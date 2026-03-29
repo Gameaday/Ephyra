@@ -1,12 +1,12 @@
-package ephyra.app.data.notification
+package ephyra.data.notification
 
 import android.content.Context
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.NotificationManagerCompat.IMPORTANCE_DEFAULT
 import androidx.core.app.NotificationManagerCompat.IMPORTANCE_HIGH
 import androidx.core.app.NotificationManagerCompat.IMPORTANCE_LOW
-import ephyra.app.util.system.buildNotificationChannel
-import ephyra.app.util.system.buildNotificationChannelGroup
+import ephyra.core.common.util.system.buildNotificationChannel
+import ephyra.core.common.util.system.buildNotificationChannelGroup
 import ephyra.core.common.i18n.stringResource
 import ephyra.i18n.MR
 

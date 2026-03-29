@@ -12,10 +12,10 @@ import ephyra.app.R
 import ephyra.app.data.notification.NotificationHandler
 import ephyra.app.data.notification.NotificationReceiver
 import ephyra.app.data.notification.Notifications
-import ephyra.app.util.system.cancelNotification
+import ephyra.core.common.util.system.cancelNotification
 import ephyra.app.util.system.getBitmapOrNull
-import ephyra.app.util.system.notificationBuilder
-import ephyra.app.util.system.notify
+import ephyra.core.common.util.system.notificationBuilder
+import ephyra.core.common.util.system.notify
 import ephyra.core.common.i18n.stringResource
 import ephyra.i18n.MR
 

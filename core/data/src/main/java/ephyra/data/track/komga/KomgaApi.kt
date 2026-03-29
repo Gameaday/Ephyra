@@ -1,8 +1,8 @@
-package ephyra.app.data.track.komga
+package ephyra.data.track.komga
 
-import ephyra.app.BuildConfig
+import ephyra.core.data.BuildConfig
 import ephyra.data.database.models.Track
-import ephyra.app.data.track.model.TrackSearch
+import ephyra.data.track.model.TrackSearch
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.logcat
 import eu.kanade.tachiyomi.network.GET

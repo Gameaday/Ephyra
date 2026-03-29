@@ -96,7 +96,6 @@ import ephyra.domain.track.interactor.GetTracks
 import ephyra.domain.track.interactor.GetTracksPerManga
 import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.interactor.LinkTrackedMangaToAuthority
-import ephyra.domain.track.interactor.MatchUnlinkedJob
 import ephyra.domain.track.interactor.MatchUnlinkedManga
 import ephyra.domain.track.interactor.RefreshCanonicalMetadata
 import ephyra.domain.track.interactor.RefreshTracks
@@ -107,6 +106,7 @@ import ephyra.domain.track.repository.TrackRepository
 import ephyra.domain.upcoming.interactor.GetUpcomingManga
 import ephyra.domain.updates.interactor.GetUpdates
 import ephyra.domain.updates.repository.UpdatesRepository
+import org.koin.androidx.workmanager.dsl.worker
 import org.koin.dsl.module
 
 val koinDomainModule = module {
@@ -132,6 +132,7 @@ val koinDomainModule = module {
     factory { GetManga(get()) }
     factory { GetNextChapters(get(), get(), get()) }
     factory { GetUpcomingManga(get()) }
+    factory { ephyra.domain.jellyfin.interactor.SyncJellyfin() }
     factory { ResetViewerFlags(get()) }
     factory { SetMangaChapterFlags(get()) }
     factory { FetchInterval(get()) }
@@ -167,7 +168,6 @@ val koinDomainModule = module {
     factory { LinkTrackedMangaToAuthority(get(), get()) }
     factory { MatchUnlinkedManga(get(), get(), get(), get()) }
     factory { RefreshCanonicalMetadata(get(), get(), get(), get()) }
-    org.koin.androidx.workmanager.dsl.worker { MatchUnlinkedJob(get(), get(), get()) }
 
     single<ChapterRepository> { ChapterRepositoryImpl(get()) }
     factory { GetChapter(get()) }

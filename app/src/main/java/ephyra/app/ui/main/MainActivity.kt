@@ -171,7 +171,7 @@ import cafe.adriel.voyager.navigator.NavigatorDisposeBehavior
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.app.BuildConfig
 import ephyra.data.cache.ChapterCache
-import ephyra.data.download.DownloadCache
+import ephyra.core.download.DownloadCache
 import ephyra.app.data.notification.NotificationReceiver
 import ephyra.app.data.updater.AppUpdateChecker
 import ephyra.app.data.updater.RELEASE_URL

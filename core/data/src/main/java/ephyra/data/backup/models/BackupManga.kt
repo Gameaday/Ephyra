@@ -1,4 +1,4 @@
-package ephyra.app.data.backup.models
+package ephyra.data.backup.models
 
 import ephyra.domain.manga.model.ContentType
 import ephyra.domain.manga.model.Manga

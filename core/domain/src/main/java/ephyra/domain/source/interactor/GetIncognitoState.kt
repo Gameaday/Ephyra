@@ -1,7 +1,7 @@
 package ephyra.domain.source.interactor
 
-import ephyra.app.extension.ExtensionManager
 import ephyra.domain.base.BasePreferences
+import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.source.service.SourcePreferences
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -13,11 +13,13 @@ class GetIncognitoState(
     private val extensionManager: ExtensionManager,
 ) {
     fun await(sourceId: Long?): Boolean {
-        if (basePreferences.incognitoMode().get()) return true
+        @Suppress("DEPRECATION")
+        if (basePreferences.incognitoMode().getSync()) return true
         if (sourceId == null) return false
         val extensionPackage = extensionManager.getExtensionPackage(sourceId) ?: return false
 
-        return extensionPackage in sourcePreferences.incognitoExtensions().get()
+        @Suppress("DEPRECATION")
+        return extensionPackage in sourcePreferences.incognitoExtensions().getSync()
     }
 
     fun subscribe(sourceId: Long?): Flow<Boolean> {

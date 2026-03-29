@@ -1,10 +1,9 @@
-package ephyra.data.download
+package ephyra.core.download
 
 import android.app.Application
 import android.content.Context
 import androidx.core.net.toUri
 import com.hippo.unifile.UniFile
-import ephyra.app.extension.ExtensionManager
 import ephyra.core.common.storage.extension
 import ephyra.core.common.storage.nameWithoutExtension
 import ephyra.core.common.util.lang.launchIO
@@ -41,6 +40,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromByteArray
@@ -66,7 +66,6 @@ class DownloadCache(
     private val context: Context,
     private val provider: DownloadProvider,
     private val sourceManager: SourceManager,
-    private val extensionManager: ExtensionManager,
     private val storageManager: StorageManager,
 ) {
 
@@ -116,6 +115,7 @@ class DownloadCache(
             rootDownloadsDirMutex.withLock {
                 try {
                     if (diskCacheFile.exists()) {
+                        @OptIn(ExperimentalSerializationApi::class)
                         val diskCache = diskCacheFile.inputStream().use {
                             ProtoBuf.decodeFromByteArray<RootDirectory>(it.readBytes())
                         }
@@ -469,6 +469,7 @@ class DownloadCache(
             previousJob?.cancelAndJoin()
             delay(1000)
             ensureActive()
+            @OptIn(ExperimentalSerializationApi::class)
             val bytes = ProtoBuf.encodeToByteArray(rootDownloadsDir)
             ensureActive()
             try {

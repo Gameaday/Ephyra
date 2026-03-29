@@ -5,7 +5,7 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import androidx.core.graphics.drawable.toBitmap
 import coil3.size.ScaleDrawable
-import ephyra.domain.library.service.LibraryPreferences.ImageFormat
+import ephyra.core.common.util.system.ImageFormat
 import java.io.OutputStream
 
 /**
@@ -21,6 +21,7 @@ fun ImageFormat.encoder(): (Bitmap, OutputStream) -> Unit = when (this) {
     }
 
     ImageFormat.WEBP -> { bitmap, os ->
+        @Suppress("DEPRECATION")
         bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSLESS, 100, os)
     }
 }

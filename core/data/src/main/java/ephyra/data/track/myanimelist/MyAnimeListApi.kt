@@ -1,16 +1,16 @@
-package ephyra.app.data.track.myanimelist
+package ephyra.data.track.myanimelist
 
 import android.net.Uri
 import androidx.core.net.toUri
 import ephyra.data.database.models.Track
-import ephyra.app.data.track.model.TrackSearch
-import ephyra.app.data.track.myanimelist.dto.MALListItem
-import ephyra.app.data.track.myanimelist.dto.MALListItemStatus
-import ephyra.app.data.track.myanimelist.dto.MALManga
-import ephyra.app.data.track.myanimelist.dto.MALOAuth
-import ephyra.app.data.track.myanimelist.dto.MALSearchResult
-import ephyra.app.data.track.myanimelist.dto.MALUser
-import ephyra.app.util.PkceUtil
+import ephyra.data.track.model.TrackSearch
+import ephyra.data.track.myanimelist.dto.MALListItem
+import ephyra.data.track.myanimelist.dto.MALListItemStatus
+import ephyra.data.track.myanimelist.dto.MALManga
+import ephyra.data.track.myanimelist.dto.MALOAuth
+import ephyra.data.track.myanimelist.dto.MALSearchResult
+import ephyra.data.track.myanimelist.dto.MALUser
+import ephyra.core.common.util.PkceUtil
 import ephyra.core.common.util.lang.withIOContext
 import eu.kanade.tachiyomi.network.DELETE
 import eu.kanade.tachiyomi.network.GET

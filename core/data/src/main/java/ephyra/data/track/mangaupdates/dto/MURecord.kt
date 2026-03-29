@@ -1,7 +1,7 @@
-package ephyra.app.data.track.mangaupdates.dto
+package ephyra.data.track.mangaupdates.dto
 
-import ephyra.app.data.track.model.TrackSearch
-import ephyra.app.util.lang.htmlDecode
+import ephyra.data.track.model.TrackSearch
+import ephyra.core.common.util.lang.htmlDecode
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 

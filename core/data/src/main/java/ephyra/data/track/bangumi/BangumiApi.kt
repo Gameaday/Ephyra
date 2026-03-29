@@ -1,13 +1,13 @@
-package ephyra.app.data.track.bangumi
+package ephyra.data.track.bangumi
 
 import android.net.Uri
 import androidx.core.net.toUri
 import ephyra.data.database.models.Track
-import ephyra.app.data.track.bangumi.dto.BGMCollectionResponse
-import ephyra.app.data.track.bangumi.dto.BGMOAuth
-import ephyra.app.data.track.bangumi.dto.BGMSearchResult
-import ephyra.app.data.track.bangumi.dto.BGMUser
-import ephyra.app.data.track.model.TrackSearch
+import ephyra.data.track.bangumi.dto.BGMCollectionResponse
+import ephyra.data.track.bangumi.dto.BGMOAuth
+import ephyra.data.track.bangumi.dto.BGMSearchResult
+import ephyra.data.track.bangumi.dto.BGMUser
+import ephyra.data.track.model.TrackSearch
 import ephyra.core.common.util.lang.withIOContext
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.HttpException

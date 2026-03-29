@@ -6,9 +6,9 @@ import org.koin.core.annotation.Factory
 import ephyra.domain.manga.interactor.FindContentSource
 import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.TrackerListImporter
-import ephyra.app.data.track.Tracker
-import ephyra.app.data.track.TrackerManager
-import ephyra.app.data.track.model.TrackSearch
+import ephyra.data.track.Tracker
+import ephyra.data.track.TrackerManager
+import ephyra.data.track.model.TrackSearch
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList

@@ -6,8 +6,8 @@ import ephyra.app.R
 import ephyra.core.common.core.security.SecurityPreferences
 import ephyra.app.data.notification.NotificationReceiver
 import ephyra.app.data.notification.Notifications
-import ephyra.app.util.system.cancelNotification
-import ephyra.app.util.system.notify
+import ephyra.core.common.util.system.cancelNotification
+import ephyra.core.common.util.system.notify
 import ephyra.core.common.i18n.pluralStringResource
 import ephyra.i18n.MR
 

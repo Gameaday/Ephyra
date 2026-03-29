@@ -5,7 +5,7 @@ import android.graphics.drawable.Drawable
 import ephyra.core.common.core.security.SecurityPreferences
 import ephyra.app.extension.api.ExtensionApi
 import ephyra.app.extension.api.ExtensionUpdateNotifier
-import ephyra.app.extension.model.Extension
+import ephyra.domain.extension.model.Extension
 import ephyra.app.extension.model.InstallStep
 import ephyra.app.extension.model.LoadResult
 import ephyra.app.extension.util.ExtensionInstallReceiver
@@ -14,6 +14,7 @@ import ephyra.app.extension.util.ExtensionLoader
 import ephyra.core.common.util.lang.withUIContext
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.extension.interactor.TrustExtension
+import ephyra.domain.extension.service.ExtensionManager as IExtensionManager
 import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.service.SourcePreferences
 import ephyra.i18n.MR
@@ -46,12 +47,12 @@ class ExtensionManager(
     private val securityPreferences: SecurityPreferences,
     private val extensionLoader: ExtensionLoader,
     private val api: ExtensionApi,
-) {
+) : IExtensionManager {
 
     val scope = CoroutineScope(SupervisorJob())
 
     private val _isInitialized = MutableStateFlow(false)
-    val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
+    override val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
 
     /**
      * The installer which installs, updates and uninstalls the extensions.
@@ -61,7 +62,7 @@ class ExtensionManager(
     private val iconMap = mutableMapOf<String, Drawable>()
 
     private val installedExtensionMapFlow = MutableStateFlow(emptyMap<String, Extension.Installed>())
-    val installedExtensionsFlow = installedExtensionMapFlow.mapExtensions(scope)
+    override val installedExtensionsFlow = installedExtensionMapFlow.mapExtensions(scope)
 
     /**
      * A flat map from source ID → extension package name, derived from [installedExtensionMapFlow].
@@ -79,10 +80,10 @@ class ExtensionManager(
         .stateIn(scope, SharingStarted.Eagerly, emptyMap())
 
     private val availableExtensionMapFlow = MutableStateFlow(emptyMap<String, Extension.Available>())
-    val availableExtensionsFlow = availableExtensionMapFlow.mapExtensions(scope)
+    override val availableExtensionsFlow = availableExtensionMapFlow.mapExtensions(scope)
 
     private val untrustedExtensionMapFlow = MutableStateFlow(emptyMap<String, Extension.Untrusted>())
-    val untrustedExtensionsFlow = untrustedExtensionMapFlow.mapExtensions(scope)
+    override val untrustedExtensionsFlow = untrustedExtensionMapFlow.mapExtensions(scope)
 
     init {
         initExtensions()
@@ -91,15 +92,15 @@ class ExtensionManager(
 
     private var subLanguagesEnabledOnFirstRun = preferences.enabledLanguages().isSet()
 
-    fun getExtensionPackage(sourceId: Long): String? {
+    override fun getExtensionPackage(sourceId: Long): String? {
         return sourceIdToPkgFlow.value[sourceId]
     }
 
-    fun getExtensionPackageAsFlow(sourceId: Long): Flow<String?> {
+    override fun getExtensionPackageAsFlow(sourceId: Long): Flow<String?> {
         return sourceIdToPkgFlow.map { it[sourceId] }
     }
 
-    fun getAppIconForSource(sourceId: Long): Drawable? {
+    override fun getAppIconForSource(sourceId: Long): Drawable? {
         val pkgName = getExtensionPackage(sourceId) ?: return null
 
         return iconMap.getOrPut(pkgName) {
@@ -141,7 +142,7 @@ class ExtensionManager(
     /**
      * Finds the available extensions in the [api] and updates [availableExtensionMapFlow].
      */
-    suspend fun findAvailableExtensions() {
+    override suspend fun findAvailableExtensions() {
         val extensions: List<Extension.Available> = try {
             api.findExtensions()
         } catch (e: Exception) {
@@ -269,7 +270,7 @@ class ExtensionManager(
      *
      * @param extension The extension to uninstall.
      */
-    fun uninstallExtension(extension: Extension) {
+    override fun uninstallExtension(extension: Extension) {
         installer.uninstallApk(extension.pkgName)
     }
 
@@ -279,7 +280,7 @@ class ExtensionManager(
      *
      * @param extension the extension to trust
      */
-    suspend fun trust(extension: Extension.Untrusted) {
+    override suspend fun trust(extension: Extension.Untrusted) {
         untrustedExtensionMapFlow.value[extension.pkgName] ?: return
 
         trustExtension.trust(extension.pkgName, extension.versionCode, extension.signatureHash)

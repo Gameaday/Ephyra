@@ -1,7 +1,7 @@
 package ephyra.domain.ui
 
 import ephyra.core.common.util.system.DeviceUtil
-import ephyra.app.util.system.isDynamicColorAvailable
+import ephyra.core.common.util.system.isDynamicColorAvailable
 import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.common.preference.getEnum
 import ephyra.domain.ui.model.AppTheme

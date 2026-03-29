@@ -1,55 +1,47 @@
-package ephyra.app.data.backup
+package ephyra.data.backup
 
 import android.content.Context
 import android.net.Uri
-import ephyra.app.data.backup.models.Backup
-import ephyra.core.common.i18n.stringResource
-import ephyra.i18n.MR
-import kotlinx.serialization.SerializationException
-import kotlinx.serialization.builtins.serializer
+import ephyra.data.backup.models.Backup
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.protobuf.ProtoBuf
-import okio.buffer
-import okio.gzip
-import okio.source
+import java.io.IOException
 
+/**
+ * Class used to decode a backup file.
+ */
+@OptIn(ExperimentalSerializationApi::class)
 class BackupDecoder(
     private val context: Context,
-    private val parser: ProtoBuf,
+    private val protoBuf: ProtoBuf,
 ) {
+
     /**
-     * Decode a potentially-gzipped backup.
+     * Decodes a backup file from the given uri.
+     *
+     * @param uri the uri of the backup file.
+     * @return the decoded backup.
      */
     fun decode(uri: Uri): Backup {
         return (
             context.contentResolver.openInputStream(uri)
-                ?: throw IOException(context.stringResource(MR.strings.invalid_backup_file_unknown))
-            ).use { inputStream ->
-                val source = inputStream.source().buffer()
-
-                val peeked = source.peek().apply {
-                    require(2)
-                }
-                val id1id2 = peeked.readShort()
-                val backupString = when (id1id2.toInt()) {
-                    0x1f8b -> source.gzip().buffer() // 0x1f8b is gzip magic bytes
-                    MAGIC_JSON_SIGNATURE1, MAGIC_JSON_SIGNATURE2, MAGIC_JSON_SIGNATURE3 -> {
-                        throw IOException(context.stringResource(MR.strings.invalid_backup_file_json))
-                    }
-
-                    else -> source
-                }.use { it.readByteArray() }
-
-                try {
-                    parser.decodeFromByteArray(Backup.serializer(), backupString)
-                } catch (_: SerializationException) {
-                    throw IOException(context.stringResource(MR.strings.invalid_backup_file_unknown))
-                }
-            }
+                ?: throw IOException("Unable to open input stream")
+            ).use {
+            decode(it)
+        }
     }
 
-    companion object {
-        private const val MAGIC_JSON_SIGNATURE1 = 0x7b7d // `{}`
-        private const val MAGIC_JSON_SIGNATURE2 = 0x7b22 // `{"`
-        private const val MAGIC_JSON_SIGNATURE3 = 0x7b0a // `{\n`
+    /**
+     * Decodes a backup file from the given input stream.
+     *
+     * @param inputStream the input stream of the backup file.
+     * @return the decoded backup.
+     */
+    fun decode(inputStream: java.io.InputStream): Backup {
+        return try {
+            protoBuf.decodeFromByteArray(Backup.serializer(), inputStream.readBytes())
+        } catch (e: Exception) {
+            throw IOException(e)
+        }
     }
 }

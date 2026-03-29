@@ -1,14 +1,14 @@
-package ephyra.app.data.track.mangaupdates
+package ephyra.data.track.mangaupdates
 
 import ephyra.data.database.models.Track
-import ephyra.app.data.track.mangaupdates.MangaUpdates.Companion.READING_LIST
-import ephyra.app.data.track.mangaupdates.MangaUpdates.Companion.WISH_LIST
-import ephyra.app.data.track.mangaupdates.dto.MUContext
-import ephyra.app.data.track.mangaupdates.dto.MUListItem
-import ephyra.app.data.track.mangaupdates.dto.MULoginResponse
-import ephyra.app.data.track.mangaupdates.dto.MURating
-import ephyra.app.data.track.mangaupdates.dto.MURecord
-import ephyra.app.data.track.mangaupdates.dto.MUSearchResult
+import ephyra.data.track.mangaupdates.MangaUpdates.Companion.READING_LIST
+import ephyra.data.track.mangaupdates.MangaUpdates.Companion.WISH_LIST
+import ephyra.data.track.mangaupdates.dto.MUContext
+import ephyra.data.track.mangaupdates.dto.MUListItem
+import ephyra.data.track.mangaupdates.dto.MULoginResponse
+import ephyra.data.track.mangaupdates.dto.MURating
+import ephyra.data.track.mangaupdates.dto.MURecord
+import ephyra.data.track.mangaupdates.dto.MUSearchResult
 import eu.kanade.tachiyomi.network.DELETE
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.POST

@@ -3,7 +3,7 @@ package ephyra.feature.settings.track
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import ephyra.app.data.track.TrackerManager
+import ephyra.data.track.TrackerManager
 import ephyra.app.ui.base.activity.BaseActivity
 import ephyra.app.ui.main.MainActivity
 import ephyra.presentation.core.util.view.setComposeContent

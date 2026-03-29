@@ -1,15 +1,15 @@
-package ephyra.app.data.track.anilist
+package ephyra.data.track.anilist
 
 import android.net.Uri
 import androidx.core.net.toUri
 import ephyra.data.database.models.Track
-import ephyra.app.data.track.anilist.dto.ALAddMangaResult
-import ephyra.app.data.track.anilist.dto.ALCurrentUserResult
-import ephyra.app.data.track.anilist.dto.ALMediaResult
-import ephyra.app.data.track.anilist.dto.ALOAuth
-import ephyra.app.data.track.anilist.dto.ALSearchResult
-import ephyra.app.data.track.anilist.dto.ALUserListMangaQueryResult
-import ephyra.app.data.track.model.TrackSearch
+import ephyra.data.track.anilist.dto.ALAddMangaResult
+import ephyra.data.track.anilist.dto.ALCurrentUserResult
+import ephyra.data.track.anilist.dto.ALMediaResult
+import ephyra.data.track.anilist.dto.ALOAuth
+import ephyra.data.track.anilist.dto.ALSearchResult
+import ephyra.data.track.anilist.dto.ALUserListMangaQueryResult
+import ephyra.data.track.model.TrackSearch
 import ephyra.core.common.util.lang.withIOContext
 import eu.kanade.tachiyomi.network.POST
 import eu.kanade.tachiyomi.network.awaitSuccess

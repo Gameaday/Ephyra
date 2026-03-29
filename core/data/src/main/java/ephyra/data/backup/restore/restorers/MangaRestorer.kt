@@ -1,10 +1,10 @@
-package ephyra.app.data.backup.restore.restorers
+package ephyra.data.backup.restore.restorers
 
-import ephyra.app.data.backup.models.BackupCategory
-import ephyra.app.data.backup.models.BackupChapter
-import ephyra.app.data.backup.models.BackupHistory
-import ephyra.app.data.backup.models.BackupManga
-import ephyra.app.data.backup.models.BackupTracking
+import ephyra.data.backup.models.BackupCategory
+import ephyra.data.backup.models.BackupChapter
+import ephyra.data.backup.models.BackupHistory
+import ephyra.data.backup.models.BackupManga
+import ephyra.data.backup.models.BackupTracking
 import ephyra.data.DatabaseHandler
 import ephyra.data.UpdateStrategyColumnAdapter
 import ephyra.data.manga.MangaMapper

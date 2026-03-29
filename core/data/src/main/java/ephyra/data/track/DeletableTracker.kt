@@ -1,4 +1,4 @@
-package ephyra.app.data.track
+package ephyra.data.track
 
 import ephyra.domain.track.model.Track
 

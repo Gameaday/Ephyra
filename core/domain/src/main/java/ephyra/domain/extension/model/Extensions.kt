@@ -1,6 +1,6 @@
 package ephyra.domain.extension.model
 
-import ephyra.app.extension.model.Extension
+import ephyra.domain.extension.model.Extension
 
 data class Extensions(
     val updates: List<Extension.Installed>,

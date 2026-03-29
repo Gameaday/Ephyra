@@ -1,22 +1,21 @@
-package ephyra.app.data.track.shikimori
+package ephyra.data.track.shikimori
 
 import android.app.Application
 import dev.icerock.moko.resources.StringResource
-import ephyra.app.R
-import ephyra.data.database.models.Track
-import ephyra.app.data.track.BaseTracker
-import ephyra.app.data.track.DeletableTracker
-import ephyra.app.data.track.model.TrackSearch
-import ephyra.app.data.track.shikimori.dto.SMOAuth
+import ephyra.app.core.common.R
+import ephyra.data.database.models.Track as DbTrack
+import ephyra.data.track.BaseTracker
+import ephyra.data.track.DeletableTracker
+import ephyra.data.track.model.TrackSearch
+import ephyra.data.track.model.toDomainTrackSearch
+import ephyra.data.track.shikimori.dto.SMOAuth
 import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.service.TrackPreferences
 import ephyra.i18n.MR
 import eu.kanade.tachiyomi.network.NetworkHelper
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.toImmutableList
 import kotlinx.serialization.json.Json
-import ephyra.domain.track.model.Track as DomainTrack
+import ephyra.domain.track.model.Track
 
 class Shikimori(
     id: Long,
@@ -38,7 +37,6 @@ class Shikimori(
 
         private val SCORE_LIST = IntRange(0, 10)
             .map(Int::toString)
-            .toImmutableList()
     }
 
 
@@ -46,17 +44,17 @@ class Shikimori(
 
     private val api by lazy { ShikimoriApi(id, client, interceptor, json) }
 
-    override fun getScoreList(): ImmutableList<String> = SCORE_LIST
+    override fun getScoreList(): List<String> = SCORE_LIST
 
-    override fun displayScore(track: DomainTrack): String {
+    override fun displayScore(track: Track): String {
         return track.score.toInt().toString()
     }
 
-    private suspend fun add(track: Track): Track {
-        return api.addLibManga(track, getUsername())
+    private suspend fun add(track: DbTrack): DbTrack {
+        return api.addLibManga(track, getUsernameSync())
     }
 
-    override suspend fun update(track: Track, didReadChapter: Boolean): Track {
+    override suspend fun updateInternal(track: DbTrack, didReadChapter: Boolean): DbTrack {
         if (track.status != COMPLETED) {
             if (didReadChapter) {
                 if (track.last_chapter_read.toLong() == track.total_chapters && track.total_chapters > 0) {
@@ -67,15 +65,16 @@ class Shikimori(
             }
         }
 
-        return api.updateLibManga(track, getUsername())
+        return api.updateLibManga(track, getUsernameSync())
     }
 
-    override suspend fun delete(track: DomainTrack) {
+    override suspend fun delete(track: Track) {
+        // api.deleteLibManga takes DomainTrack
         api.deleteLibManga(track)
     }
 
-    override suspend fun bind(track: Track, hasReadChapters: Boolean): Track {
-        val remoteTrack = api.findLibManga(track, getUsername())
+    override suspend fun bindInternal(track: DbTrack, hasReadChapters: Boolean): DbTrack {
+        val remoteTrack = api.findLibManga(track, getUsernameSync())
         return if (remoteTrack != null) {
             track.copyPersonalFrom(remoteTrack)
             track.library_id = remoteTrack.library_id
@@ -85,7 +84,7 @@ class Shikimori(
                 track.status = if (!isRereading && hasReadChapters) READING else track.status
             }
 
-            update(track)
+            updateInternal(track)
         } else {
             // Set default fields if it's not found in the list
             track.status = if (hasReadChapters) READING else PLAN_TO_READ
@@ -94,12 +93,12 @@ class Shikimori(
         }
     }
 
-    override suspend fun search(query: String): List<TrackSearch> {
-        return api.search(query)
+    override suspend fun search(query: String): List<ephyra.domain.track.model.TrackSearch> {
+        return api.search(query).map { it.toDomainTrackSearch() }
     }
 
-    override suspend fun refresh(track: Track): Track {
-        api.findLibManga(track, getUsername())?.let { remoteTrack ->
+    override suspend fun refreshInternal(track: DbTrack): DbTrack {
+        api.findLibManga(track, getUsernameSync())?.let { remoteTrack ->
             track.library_id = remoteTrack.library_id
             track.copyPersonalFrom(remoteTrack)
             track.total_chapters = remoteTrack.total_chapters
@@ -146,9 +145,10 @@ class Shikimori(
         trackPreferences.trackToken(this).set(json.encodeToString(oauth))
     }
 
+    @Suppress("DEPRECATION")
     fun restoreToken(): SMOAuth? {
         return try {
-            json.decodeFromString<SMOAuth>(trackPreferences.trackToken(this).get())
+            json.decodeFromString<SMOAuth>(trackPreferences.trackToken(this).getSync())
         } catch (e: Exception) {
             null
         }

@@ -1,7 +1,7 @@
-package ephyra.app.data.backup.create.creators
+package ephyra.data.backup.create.creators
 
-import ephyra.app.data.backup.models.BackupManga
-import ephyra.app.data.backup.models.BackupSource
+import ephyra.data.backup.models.BackupManga
+import ephyra.data.backup.models.BackupSource
 import ephyra.domain.source.service.SourceManager
 import eu.kanade.tachiyomi.source.Source
 

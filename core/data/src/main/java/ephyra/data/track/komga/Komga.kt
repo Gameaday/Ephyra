@@ -1,12 +1,13 @@
-package ephyra.app.data.track.komga
+package ephyra.data.track.komga
 
 import android.app.Application
 import dev.icerock.moko.resources.StringResource
-import ephyra.app.R
-import ephyra.data.database.models.Track
-import ephyra.app.data.track.BaseTracker
-import ephyra.app.data.track.EnhancedTracker
-import ephyra.app.data.track.model.TrackSearch
+import ephyra.app.core.common.R
+import ephyra.data.database.models.Track as DbTrack
+import ephyra.data.track.BaseTracker
+import ephyra.domain.track.service.EnhancedTracker
+import ephyra.data.track.model.TrackSearch
+import ephyra.data.track.model.toDomainTrackSearch
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.InsertTrack
@@ -14,11 +15,10 @@ import ephyra.domain.track.service.TrackPreferences
 import ephyra.i18n.MR
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.source.Source
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
+import kotlinx.serialization.json.Json
 import okhttp3.Dns
 import okhttp3.OkHttpClient
-import ephyra.domain.track.model.Track as DomainTrack
+import ephyra.domain.track.model.Track
 
 class Komga(
     id: Long,
@@ -27,6 +27,7 @@ class Komga(
     networkService: NetworkHelper,
     addTracks: AddTracks,
     insertTrack: InsertTrack,
+    private val json: Json,
 ) : BaseTracker(id, "Komga", context, trackPreferences, networkService, addTracks, insertTrack), EnhancedTracker {
 
     companion object {
@@ -59,11 +60,11 @@ class Komga(
 
     override fun getCompletionStatus(): Long = COMPLETED
 
-    override fun getScoreList(): ImmutableList<String> = persistentListOf()
+    override fun getScoreList(): List<String> = emptyList()
 
-    override fun displayScore(track: DomainTrack): String = ""
+    override fun displayScore(track: Track): String = ""
 
-    override suspend fun update(track: Track, didReadChapter: Boolean): Track {
+    override suspend fun updateInternal(track: DbTrack, didReadChapter: Boolean): DbTrack {
         if (track.status != COMPLETED) {
             if (didReadChapter) {
                 if (track.last_chapter_read.toLong() == track.total_chapters && track.total_chapters > 0) {
@@ -77,17 +78,17 @@ class Komga(
         return api.updateProgress(track)
     }
 
-    override suspend fun bind(track: Track, hasReadChapters: Boolean): Track {
+    override suspend fun bindInternal(track: DbTrack, hasReadChapters: Boolean): DbTrack {
         return track
     }
 
-    override suspend fun search(query: String): List<TrackSearch> {
+    override suspend fun search(query: String): List<ephyra.domain.track.model.TrackSearch> {
         // Komga is a self-hosted tracker that auto-binds via enhanced matching.
         // It does not support general title search — return empty so callers don't crash.
         return emptyList()
     }
 
-    override suspend fun refresh(track: Track): Track {
+    override suspend fun refreshInternal(track: DbTrack): DbTrack {
         val remoteTrack = api.getTrackSearch(track.tracking_url)
         track.copyPersonalFrom(remoteTrack)
         track.total_chapters = remoteTrack.total_chapters
@@ -106,17 +107,21 @@ class Komga(
 
     override fun getAcceptedSources() = listOf("ephyra.app.extension.all.komga.Komga")
 
-    override suspend fun match(manga: Manga): TrackSearch? =
+    override fun accept(source: Source): Boolean {
+        return source.javaClass.name in getAcceptedSources()
+    }
+
+    override suspend fun match(manga: Manga): ephyra.domain.track.model.TrackSearch? =
         try {
-            api.getTrackSearch(manga.url)
+            api.getTrackSearch(manga.url).toDomainTrackSearch()
         } catch (e: Exception) {
             null
         }
 
-    override fun isTrackFrom(track: DomainTrack, manga: Manga, source: Source?): Boolean =
+    override fun isTrackFrom(track: Track, manga: Manga, source: Source?): Boolean =
         track.remoteUrl == manga.url && source?.let { accept(it) } == true
 
-    override fun migrateTrack(track: DomainTrack, manga: Manga, newSource: Source): DomainTrack? =
+    override fun migrateTrack(track: Track, manga: Manga, newSource: Source): Track? =
         if (accept(newSource)) {
             track.copy(remoteUrl = manga.url)
         } else {

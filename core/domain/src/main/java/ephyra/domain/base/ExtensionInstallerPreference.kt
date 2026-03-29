@@ -48,7 +48,13 @@ class ExtensionInstallerPreference(
         return value
     }
 
-    override fun get(): ExtensionInstaller {
+    @Deprecated("Use suspend fun get() instead", ReplaceWith("get()"))
+    override fun getSync(): ExtensionInstaller {
+        @Suppress("DEPRECATION")
+        return check(basePref.getSync())
+    }
+
+    override suspend fun get(): ExtensionInstaller {
         val value = basePref.get()
         val checkedValue = check(value)
         if (value != checkedValue) {

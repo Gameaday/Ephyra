@@ -42,7 +42,7 @@ import ephyra.domain.track.service.TrackPreferences
 import ephyra.presentation.category.visualName
 import ephyra.feature.settings.Preference
 import ephyra.feature.settings.widget.TriStateListDialog
-import ephyra.app.data.track.TrackerManager
+import ephyra.data.track.TrackerManager
 import ephyra.presentation.core.util.system.toast
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf

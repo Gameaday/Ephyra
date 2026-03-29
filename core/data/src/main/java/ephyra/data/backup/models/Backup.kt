@@ -1,4 +1,4 @@
-package ephyra.app.data.backup.models
+package ephyra.data.backup.models
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoNumber

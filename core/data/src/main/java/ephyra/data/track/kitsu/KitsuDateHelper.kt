@@ -1,4 +1,4 @@
-package ephyra.app.data.track.kitsu
+package ephyra.data.track.kitsu
 
 import java.text.SimpleDateFormat
 import java.util.Date

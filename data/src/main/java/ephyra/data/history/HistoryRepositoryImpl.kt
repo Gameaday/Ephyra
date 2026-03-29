@@ -51,7 +51,7 @@ class HistoryRepositoryImpl(
             id = 0,
             chapterId = historyUpdate.chapterId,
             lastRead = historyUpdate.readAt,
-            timeRead = historyUpdate.readDuration,
+            timeRead = historyUpdate.sessionReadDuration,
         )
         historyDao.upsert(entity)
     }

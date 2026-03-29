@@ -4,7 +4,7 @@ import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import org.koin.core.annotation.Factory
 import ephyra.domain.base.BasePreferences
-import ephyra.app.data.track.TrackerManager
+import ephyra.data.track.TrackerManager
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import ephyra.core.common.preference.Preference

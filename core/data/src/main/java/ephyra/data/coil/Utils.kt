@@ -1,4 +1,4 @@
-package ephyra.app.data.coil
+package ephyra.data.coil
 
 import coil3.Extras
 import coil3.getExtra

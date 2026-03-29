@@ -15,7 +15,7 @@ import androidx.room.*
     indices = [
         Index(value = ["manga_id"]),
         Index(value = ["url"]),
-        Index(value = ["manga_id", "read"], name = "chapters_unread_by_manga_index", where = "read = 0"),
+        Index(value = ["manga_id", "read"], name = "chapters_unread_by_manga_index"),
     ],
 )
 data class ChapterEntity(

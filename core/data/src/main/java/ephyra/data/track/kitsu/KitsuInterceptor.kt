@@ -1,8 +1,8 @@
-package ephyra.app.data.track.kitsu
+package ephyra.data.track.kitsu
 
-import ephyra.app.BuildConfig
-import ephyra.app.data.track.kitsu.dto.KitsuOAuth
-import ephyra.app.data.track.kitsu.dto.isExpired
+import ephyra.core.data.BuildConfig
+import ephyra.data.track.kitsu.dto.KitsuOAuth
+import ephyra.data.track.kitsu.dto.isExpired
 import kotlinx.serialization.json.Json
 import okhttp3.Interceptor
 import okhttp3.Response

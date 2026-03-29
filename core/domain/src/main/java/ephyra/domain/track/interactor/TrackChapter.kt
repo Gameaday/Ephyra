@@ -3,10 +3,7 @@ package ephyra.domain.track.interactor
 import android.content.Context
 import ephyra.core.common.util.lang.withNonCancellableContext
 import ephyra.core.common.util.system.logcat
-import ephyra.data.track.TrackerManager
-import ephyra.domain.track.model.toDbTrack
-import ephyra.domain.track.model.toDomainTrack
-import ephyra.domain.track.service.DelayedTrackingUpdateJob
+import ephyra.domain.track.service.TrackerManager
 import ephyra.domain.track.store.DelayedTrackingStore
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -25,21 +22,24 @@ class TrackChapter(
             val tracks = getTracks.await(mangaId)
             if (tracks.isEmpty()) return@withNonCancellableContext
 
-            tracks.mapNotNull { track ->
+            val trackersToUpdate = tracks.mapNotNull { track ->
                 val service = trackerManager.get(track.trackerId)
-                if (service == null || !service.isLoggedIn || chapterNumber <= track.lastChapterRead) {
-                    return@mapNotNull null
+                if (service == null || !service.isLoggedIn() || chapterNumber <= track.lastChapterRead) {
+                    null
+                } else {
+                    track to service
                 }
+            }
 
+            trackersToUpdate.map { (track, service) ->
                 async {
                     runCatching {
                         // Stagger concurrent tracker updates to reduce burst API load
                         delay(track.trackerId * STAGGER_DELAY_PER_TRACKER_MS)
                         try {
-                            val updatedTrack = service.refresh(track.toDbTrack())
-                                .toDomainTrack(idRequired = true)!!
+                            val updatedTrack = service.refresh(track)
                                 .copy(lastChapterRead = chapterNumber)
-                            service.update(updatedTrack.toDbTrack(), true)
+                            service.update(updatedTrack, true)
                             insertTrack.await(updatedTrack)
                             delayedTrackingStore.remove(track.id)
                         } catch (e: Exception) {
@@ -48,7 +48,7 @@ class TrackChapter(
                             }
                             delayedTrackingStore.add(track.id, chapterNumber)
                             if (setupJobOnFailure) {
-                                DelayedTrackingUpdateJob.setupTask(context)
+                                ephyra.domain.track.service.DelayedTrackingUpdateJob.setupTask(context)
                             }
                             throw e
                         }

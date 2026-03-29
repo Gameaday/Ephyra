@@ -1,11 +1,11 @@
-package ephyra.app.data.track.anilist.dto
+package ephyra.data.track.anilist.dto
 
 import ephyra.data.database.models.Track
-import ephyra.app.data.track.TrackerManager
-import ephyra.app.data.track.anilist.Anilist
-import ephyra.app.data.track.anilist.AnilistApi
-import ephyra.app.data.track.model.TrackSearch
-import ephyra.app.util.lang.htmlDecode
+import ephyra.domain.track.service.TrackerManager
+import ephyra.data.track.anilist.Anilist
+import ephyra.data.track.anilist.AnilistApi
+import ephyra.data.track.model.TrackSearch
+import ephyra.core.common.util.lang.htmlDecode
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -82,7 +82,7 @@ data class ALUserManga(
         "PAUSED" -> Anilist.ON_HOLD
         "DROPPED" -> Anilist.DROPPED
         "PLANNING" -> Anilist.PLAN_TO_READ
-        "REPEATING" -> Anilist.REREADING
+        "REPEATING" -> Anilist.REPEATING
         else -> throw NotImplementedError("Unknown status: $listStatus")
     }
 }

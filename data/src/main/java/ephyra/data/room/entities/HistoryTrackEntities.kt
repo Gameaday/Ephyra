@@ -58,13 +58,11 @@ data class TrackEntity(
 
 @Entity(tableName = "extension_repos")
 data class ExtensionRepoEntity(
-    @PrimaryKey @ColumnInfo(name = "url") val url: String,
+    @PrimaryKey @ColumnInfo(name = "base_url") val baseUrl: String,
     @ColumnInfo(name = "name") val name: String,
     @ColumnInfo(name = "short_name") val shortName: String?,
-    @ColumnInfo(name = "description") val description: String?,
-    @ColumnInfo(name = "node_id") val nodeId: String,
-    @ColumnInfo(name = "hash") val hash: String,
-    @ColumnInfo(name = "base_url") val baseUrl: String,
+    @ColumnInfo(name = "website") val website: String,
+    @ColumnInfo(name = "signing_key_fingerprint") val signingKeyFingerprint: String,
 )
 
 @Entity(

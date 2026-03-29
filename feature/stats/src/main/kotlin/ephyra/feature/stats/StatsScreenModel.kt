@@ -4,8 +4,8 @@ import androidx.compose.ui.util.fastDistinctBy
 import androidx.compose.ui.util.fastFilter
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import ephyra.data.download.DownloadManager
-import ephyra.app.data.track.TrackerManager
+import ephyra.core.download.DownloadManager
+import ephyra.data.track.TrackerManager
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.util.fastCountNot
 import ephyra.domain.history.interactor.GetTotalReadDuration

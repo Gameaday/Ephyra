@@ -1,7 +1,7 @@
 package ephyra.feature.reader.viewer.pager
 
 import ephyra.feature.reader.ReaderActivity
-import ephyra.data.download.DownloadManager
+import ephyra.core.download.DownloadManager
 import ephyra.feature.reader.setting.ReaderPreferences
 
 /**

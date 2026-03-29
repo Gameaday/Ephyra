@@ -1,4 +1,4 @@
-package ephyra.app.data.track.anilist.dto
+package ephyra.data.track.anilist.dto
 
 import kotlinx.serialization.Serializable
 import java.time.LocalDate

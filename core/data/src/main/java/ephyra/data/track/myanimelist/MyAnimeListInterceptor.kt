@@ -1,6 +1,6 @@
-package ephyra.app.data.track.myanimelist
+package ephyra.data.track.myanimelist
 
-import ephyra.app.data.track.myanimelist.dto.MALOAuth
+import ephyra.data.track.myanimelist.dto.MALOAuth
 import eu.kanade.tachiyomi.network.parseAs
 import kotlinx.serialization.json.Json
 import okhttp3.Interceptor
@@ -13,8 +13,8 @@ class MyAnimeListInterceptor(
 ) : Interceptor {
 
 
-    private var oauth: MALOAuth? = myanimelist.loadOAuth()
-    private val tokenExpired get() = myanimelist.getIfAuthExpired()
+    private var oauth: MALOAuth? = myanimelist.loadOAuthSync()
+    private val tokenExpired get() = myanimelist.getIfAuthExpiredSync()
 
     override fun intercept(chain: Interceptor.Chain): Response {
         if (tokenExpired) {
@@ -83,4 +83,3 @@ class MyAnimeListInterceptor(
 
 class MALTokenRefreshFailed : IOException("MAL: Failed to refresh account token")
 class MALTokenExpired : IOException("MAL: Login has expired")
-

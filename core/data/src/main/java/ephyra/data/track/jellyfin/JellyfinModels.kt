@@ -1,4 +1,4 @@
-package ephyra.app.data.track.jellyfin
+package ephyra.data.track.jellyfin
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

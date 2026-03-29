@@ -1,13 +1,13 @@
 package ephyra.domain.manga.interactor
 
-import ephyra.data.cache.CoverCache
-import ephyra.data.download.DownloadManager
+import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.model.LockedField
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaUpdate
 import ephyra.domain.manga.model.hasCustomCover
 import ephyra.domain.manga.repository.MangaRepository
+import ephyra.domain.manga.service.CoverCache
 import ephyra.domain.track.service.TrackPreferences
 import ephyra.source.local.isLocal
 import eu.kanade.tachiyomi.source.model.SManga

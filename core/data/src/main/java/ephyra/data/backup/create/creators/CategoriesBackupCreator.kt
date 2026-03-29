@@ -1,7 +1,7 @@
-package ephyra.app.data.backup.create.creators
+package ephyra.data.backup.create.creators
 
-import ephyra.app.data.backup.models.BackupCategory
-import ephyra.app.data.backup.models.backupCategoryMapper
+import ephyra.data.backup.models.BackupCategory
+import ephyra.data.backup.models.backupCategoryMapper
 import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.category.model.Category
 

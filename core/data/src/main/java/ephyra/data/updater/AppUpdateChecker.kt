@@ -1,15 +1,14 @@
-package ephyra.app.data.updater
+package ephyra.data.updater
 
 import android.content.Context
-import ephyra.app.BuildConfig
-import ephyra.app.util.system.isFossBuildType
-import ephyra.app.util.system.isNightlyBuildType
-import ephyra.app.util.system.isPreviewBuildType
+import ephyra.core.data.BuildConfig
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.domain.release.interactor.GetApplicationRelease
+import ephyra.domain.release.service.AppUpdateNotifier
 
 class AppUpdateChecker(
     private val getApplicationRelease: GetApplicationRelease,
+    private val notifier: AppUpdateNotifier,
 ) {
 
     suspend fun checkForUpdate(context: Context, forceCheck: Boolean = false): GetApplicationRelease.Result {
@@ -28,7 +27,7 @@ class AppUpdateChecker(
             )
 
             when (result) {
-                is GetApplicationRelease.Result.NewUpdate -> AppUpdateNotifier(context).promptUpdate(result.release)
+                is GetApplicationRelease.Result.NewUpdate -> notifier.promptUpdate(result.release)
                 else -> {}
             }
 
@@ -36,6 +35,10 @@ class AppUpdateChecker(
         }
     }
 }
+
+private val isFossBuildType: Boolean = false // Placeholder
+private val isPreviewBuildType: Boolean = false // Placeholder
+private val isNightlyBuildType: Boolean = false // Placeholder
 
 val GITHUB_REPO: String by lazy {
     when {

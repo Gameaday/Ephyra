@@ -2,8 +2,8 @@ package ephyra.test
 
 import dev.icerock.moko.resources.StringResource
 import ephyra.app.R
-import ephyra.app.data.track.Tracker
-import ephyra.app.data.track.model.TrackSearch
+import ephyra.data.track.Tracker
+import ephyra.data.track.model.TrackSearch
 import ephyra.domain.track.model.Track
 import ephyra.i18n.MR
 import kotlinx.collections.immutable.ImmutableList

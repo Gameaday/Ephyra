@@ -17,9 +17,9 @@ import ephyra.presentation.components.SEARCH_DEBOUNCE_MILLIS
 import ephyra.feature.library.presentation.components.LibraryToolbarTitle
 import ephyra.presentation.manga.DownloadAction
 import ephyra.data.cache.CoverCache
-import ephyra.data.download.DownloadCache
-import ephyra.data.download.DownloadManager
-import ephyra.app.data.track.TrackerManager
+import ephyra.core.download.DownloadCache
+import ephyra.core.download.DownloadManager
+import ephyra.data.track.TrackerManager
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.online.HttpSource
 import ephyra.app.util.chapter.getNextUnread

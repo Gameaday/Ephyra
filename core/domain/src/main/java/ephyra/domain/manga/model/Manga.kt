@@ -3,10 +3,10 @@ package ephyra.domain.manga.model
 import ephyra.core.common.preference.TriState
 import ephyra.core.metadata.comicinfo.ComicInfo
 import ephyra.core.metadata.comicinfo.ComicInfoPublishingStatus
-import ephyra.data.cache.CoverCache
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.manga.model.Manga
+import ephyra.domain.manga.service.CoverCache
 import ephyra.domain.reader.model.ReaderOrientation
 import ephyra.domain.reader.model.ReadingMode
 import eu.kanade.tachiyomi.source.model.SManga
@@ -19,7 +19,8 @@ val Manga.readerOrientation: Long
     get() = viewerFlags and ReaderOrientation.MASK.toLong()
 
 fun Manga.downloadedFilter(basePreferences: BasePreferences): TriState {
-    if (basePreferences.downloadedOnly().get()) return TriState.ENABLED_IS
+    @Suppress("DEPRECATION")
+    if (basePreferences.downloadedOnly().getSync()) return TriState.ENABLED_IS
     return when (downloadedFilterRaw) {
         Manga.CHAPTER_SHOW_DOWNLOADED -> TriState.ENABLED_IS
         Manga.CHAPTER_SHOW_NOT_DOWNLOADED -> TriState.ENABLED_NOT
@@ -68,7 +69,7 @@ fun Manga.copyFrom(other: SManga): Manga {
 }
 
 fun Manga.hasCustomCover(coverCache: CoverCache): Boolean {
-    return coverCache.getCustomCoverFile(id).exists()
+    return coverCache.getCustomCoverFile(this)?.exists() ?: false
 }
 
 /**

@@ -17,7 +17,7 @@ materialKolor = "5.0.0-alpha07"
 koin = "4.2.0"
 ksp = "2.3.6"
 koin_annotations = "2.3.1"
-room = "2.6.1"
+room = "2.8.4"
 paging = "3.4.1"
 
 [libraries]

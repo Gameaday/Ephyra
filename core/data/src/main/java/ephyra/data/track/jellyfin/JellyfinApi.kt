@@ -1,6 +1,6 @@
-package ephyra.app.data.track.jellyfin
+package ephyra.data.track.jellyfin
 
-import ephyra.app.data.track.model.TrackSearch
+import ephyra.data.track.model.TrackSearch
 import ephyra.core.common.util.lang.withIOContext
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.awaitSuccess

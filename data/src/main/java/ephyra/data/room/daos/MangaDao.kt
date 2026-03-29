@@ -1,5 +1,9 @@
 package ephyra.data.room.daos
 
+import ephyra.data.room.entities.CategoryEntity
+
+import ephyra.data.room.entities.MangaCategoryEntity
+
 import androidx.paging.PagingSource
 import androidx.room.*
 import ephyra.data.room.entities.MangaEntity
@@ -78,13 +82,13 @@ interface MangaDao {
     suspend fun deleteMangaCategoriesByMangaId(mangaId: Long)
 
     @Insert
-    suspend fun insertMangaCategory(mangaCategory: ephyra.data.room.entities.MangaCategoryEntity)
+    suspend fun insertMangaCategory(mangaCategory: MangaCategoryEntity)
 
     @Transaction
     suspend fun setMangaCategories(mangaId: Long, categoryIds: List<Long>) {
         deleteMangaCategoriesByMangaId(mangaId)
         categoryIds.forEach { categoryId ->
-            insertMangaCategory(ephyra.data.room.entities.MangaCategoryEntity(0, mangaId, categoryId))
+            insertMangaCategory(MangaCategoryEntity(0, mangaId, categoryId))
         }
     }
 

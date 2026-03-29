@@ -1,4 +1,4 @@
-package ephyra.app.data.track.komga
+package ephyra.data.track.komga
 
 import kotlinx.serialization.Serializable
 

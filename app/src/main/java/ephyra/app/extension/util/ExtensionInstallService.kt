@@ -11,7 +11,7 @@ import ephyra.app.extension.installer.Installer
 import ephyra.app.extension.installer.PackageInstallerInstaller
 import ephyra.app.extension.installer.ShizukuInstaller
 import ephyra.app.extension.util.ExtensionInstaller.Companion.EXTRA_DOWNLOAD_ID
-import ephyra.app.util.system.notificationBuilder
+import ephyra.core.common.util.system.notificationBuilder
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.base.BasePreferences

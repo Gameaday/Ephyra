@@ -3,8 +3,8 @@ package ephyra.feature.reader.loader
 import android.app.Application
 import android.content.Context
 import ephyra.data.cache.ChapterCache
-import ephyra.data.download.DownloadManager
-import ephyra.data.download.DownloadProvider
+import ephyra.core.download.DownloadManager
+import ephyra.core.download.DownloadProvider
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.online.HttpSource
 import ephyra.feature.reader.model.ReaderChapter

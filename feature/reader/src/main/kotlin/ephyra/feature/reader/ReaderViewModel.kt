@@ -18,9 +18,9 @@ import ephyra.domain.track.service.TrackPreferences
 import ephyra.data.cache.ChapterCache
 import ephyra.data.cache.CoverCache
 import ephyra.data.database.models.toDomainChapter
-import ephyra.data.download.DownloadManager
-import ephyra.data.download.DownloadProvider
-import ephyra.data.download.model.Download
+import ephyra.core.download.DownloadManager
+import ephyra.core.download.DownloadProvider
+import ephyra.core.download.model.Download
 import ephyra.data.saver.Image
 import ephyra.data.saver.ImageSaver
 import ephyra.data.saver.Location

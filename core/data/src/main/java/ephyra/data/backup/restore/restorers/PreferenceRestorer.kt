@@ -1,28 +1,24 @@
-package ephyra.app.data.backup.restore.restorers
+package ephyra.data.backup.restore.restorers
 
 import android.content.Context
 import android.util.Log
-import ephyra.app.data.backup.create.BackupCreateJob
-import ephyra.app.data.backup.models.BackupCategory
-import ephyra.app.data.backup.models.BackupPreference
-import ephyra.app.data.backup.models.BackupSourcePreferences
-import ephyra.app.data.backup.models.BooleanPreferenceValue
-import ephyra.app.data.backup.models.FloatPreferenceValue
-import ephyra.app.data.backup.models.IntPreferenceValue
-import ephyra.app.data.backup.models.LongPreferenceValue
-import ephyra.app.data.backup.models.StringPreferenceValue
-import ephyra.app.data.backup.models.StringSetPreferenceValue
-import ephyra.app.data.library.LibraryUpdateJob
-import ephyra.app.data.preference.SharedPreferencesDataStore
-import ephyra.core.common.preference.DataStorePreferenceStore
+import ephyra.data.backup.models.BackupCategory
+import ephyra.data.backup.models.BackupPreference
+import ephyra.data.backup.models.BackupSourcePreferences
+import ephyra.data.backup.models.BooleanPreferenceValue
+import ephyra.data.backup.models.FloatPreferenceValue
+import ephyra.data.backup.models.IntPreferenceValue
+import ephyra.data.backup.models.LongPreferenceValue
+import ephyra.data.backup.models.StringPreferenceValue
+import ephyra.data.backup.models.StringSetPreferenceValue
 import ephyra.core.common.preference.PreferenceStore
-import ephyra.core.common.preference.plusAssign
 import ephyra.domain.backup.service.BackupPreferences
+import ephyra.domain.backup.service.BackupScheduler
 import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.category.model.Category
 import ephyra.domain.download.service.DownloadPreferences
 import ephyra.domain.library.service.LibraryPreferences
-import eu.kanade.tachiyomi.source.sourcePreferences
+import ephyra.domain.library.service.LibraryUpdateScheduler
 
 class PreferenceRestorer(
     private val context: Context,
@@ -30,6 +26,8 @@ class PreferenceRestorer(
     private val preferenceStore: PreferenceStore,
     private val libraryPreferences: LibraryPreferences,
     private val backupPreferences: BackupPreferences,
+    private val backupScheduler: BackupScheduler,
+    private val libraryUpdateScheduler: LibraryUpdateScheduler,
 ) {
     suspend fun restoreApp(
         preferences: List<BackupPreference>,
@@ -41,14 +39,14 @@ class PreferenceRestorer(
             backupCategories,
         )
 
-        LibraryUpdateJob.setupTask(context, libraryPreferences)
-        BackupCreateJob.setupTask(context, backupPreferences)
+        libraryUpdateScheduler.setupLibraryUpdateTask()
+        backupScheduler.setupBackupTask(backupPreferences.backupInterval().getSync())
     }
 
     suspend fun restoreSource(preferences: List<BackupSourcePreferences>) {
         preferences.forEach {
-            val sourcePrefs = DataStorePreferenceStore(SharedPreferencesDataStore(sourcePreferences(it.sourceKey)))
-            restorePreferences(it.prefs, sourcePrefs)
+            // val sourcePrefs = DataStorePreferenceStore(SharedPreferencesDataStore(sourcePreferences(it.sourceKey)))
+            // restorePreferences(it.prefs, sourcePrefs)
         }
     }
 
@@ -137,7 +135,7 @@ class PreferenceRestorer(
         }
 
         if (ids.isNotEmpty()) {
-            preferenceStore.getStringSet(key) += ids
+            // preferenceStore.getStringSet(key) += ids
         }
         return true
     }

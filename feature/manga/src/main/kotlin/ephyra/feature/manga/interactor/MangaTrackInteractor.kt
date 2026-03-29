@@ -1,8 +1,8 @@
 package ephyra.feature.manga.interactor
 
 import android.content.Context
-import ephyra.app.data.track.Tracker
-import ephyra.app.data.track.TrackerManager
+import ephyra.data.track.Tracker
+import ephyra.data.track.TrackerManager
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.GetTracks

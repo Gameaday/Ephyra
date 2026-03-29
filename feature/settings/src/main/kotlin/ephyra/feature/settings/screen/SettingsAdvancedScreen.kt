@@ -29,7 +29,7 @@ import ephyra.domain.extension.interactor.TrustExtension
 import ephyra.feature.settings.Preference
 import ephyra.feature.settings.screen.advanced.ClearDatabaseScreen
 import ephyra.feature.settings.screen.debug.DebugInfoScreen
-import ephyra.data.download.DownloadCache
+import ephyra.core.download.DownloadCache
 import ephyra.app.data.library.MetadataUpdateJob
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.NetworkPreferences

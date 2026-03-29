@@ -1,14 +1,14 @@
-package ephyra.app.data.track.kitsu
+package ephyra.data.track.kitsu
 
 import androidx.core.net.toUri
 import ephyra.data.database.models.Track
-import ephyra.app.data.track.kitsu.dto.KitsuAddMangaResult
-import ephyra.app.data.track.kitsu.dto.KitsuAlgoliaSearchResult
-import ephyra.app.data.track.kitsu.dto.KitsuCurrentUserResult
-import ephyra.app.data.track.kitsu.dto.KitsuListSearchResult
-import ephyra.app.data.track.kitsu.dto.KitsuOAuth
-import ephyra.app.data.track.kitsu.dto.KitsuSearchResult
-import ephyra.app.data.track.model.TrackSearch
+import ephyra.data.track.kitsu.dto.KitsuAddMangaResult
+import ephyra.data.track.kitsu.dto.KitsuAlgoliaSearchResult
+import ephyra.data.track.kitsu.dto.KitsuCurrentUserResult
+import ephyra.data.track.kitsu.dto.KitsuListSearchResult
+import ephyra.data.track.kitsu.dto.KitsuOAuth
+import ephyra.data.track.kitsu.dto.KitsuSearchResult
+import ephyra.data.track.model.TrackSearch
 import ephyra.core.common.util.lang.withIOContext
 import eu.kanade.tachiyomi.network.DELETE
 import eu.kanade.tachiyomi.network.GET

@@ -1,4 +1,4 @@
-package ephyra.app.data.track.shikimori.dto
+package ephyra.data.track.shikimori.dto
 
 import kotlinx.serialization.Serializable
 

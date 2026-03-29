@@ -49,7 +49,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import dev.icerock.moko.resources.StringResource
-import ephyra.app.data.track.Tracker
+import ephyra.data.track.Tracker
 import ephyra.app.ui.manga.track.TrackItem
 import ephyra.app.util.lang.toLocalDate
 import ephyra.i18n.MR

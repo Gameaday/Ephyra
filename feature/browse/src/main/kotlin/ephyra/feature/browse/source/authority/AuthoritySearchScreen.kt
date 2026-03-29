@@ -68,7 +68,7 @@ import ephyra.domain.manga.interactor.FindContentSource
 import ephyra.domain.track.interactor.AddTracks
 import ephyra.presentation.components.AdaptiveSheet
 import ephyra.presentation.components.TabContent
-import ephyra.app.data.track.model.TrackSearch
+import ephyra.data.track.model.TrackSearch
 import ephyra.feature.browse.source.globalsearch.GlobalSearchScreen
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf

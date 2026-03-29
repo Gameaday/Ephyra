@@ -1,21 +1,20 @@
-package ephyra.app.data.track.bangumi
+package ephyra.data.track.bangumi
 
 import android.app.Application
 import dev.icerock.moko.resources.StringResource
-import ephyra.app.R
-import ephyra.data.database.models.Track
-import ephyra.app.data.track.BaseTracker
-import ephyra.app.data.track.bangumi.dto.BGMOAuth
-import ephyra.app.data.track.model.TrackSearch
+import ephyra.app.core.common.R
+import ephyra.data.database.models.Track as DbTrack
+import ephyra.data.track.BaseTracker
+import ephyra.data.track.bangumi.dto.BGMOAuth
+import ephyra.data.track.model.TrackSearch
+import ephyra.data.track.model.toDomainTrackSearch
 import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.service.TrackPreferences
 import ephyra.i18n.MR
 import eu.kanade.tachiyomi.network.NetworkHelper
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.toImmutableList
 import kotlinx.serialization.json.Json
-import ephyra.domain.track.model.Track as DomainTrack
+import ephyra.domain.track.model.Track
 
 class Bangumi(
     id: Long,
@@ -34,17 +33,17 @@ class Bangumi(
 
     override val supportsPrivateTracking: Boolean = true
 
-    override fun getScoreList(): ImmutableList<String> = SCORE_LIST
+    override fun getScoreList(): List<String> = SCORE_LIST
 
-    override fun displayScore(track: DomainTrack): String {
+    override fun displayScore(track: Track): String {
         return track.score.toInt().toString()
     }
 
-    private suspend fun add(track: Track): Track {
+    private suspend fun add(track: DbTrack): DbTrack {
         return api.addLibManga(track)
     }
 
-    override suspend fun update(track: Track, didReadChapter: Boolean): Track {
+    override suspend fun updateInternal(track: DbTrack, didReadChapter: Boolean): DbTrack {
         if (track.status != COMPLETED) {
             if (didReadChapter) {
                 if (track.last_chapter_read.toLong() == track.total_chapters && track.total_chapters > 0) {
@@ -58,8 +57,8 @@ class Bangumi(
         return api.updateLibManga(track)
     }
 
-    override suspend fun bind(track: Track, hasReadChapters: Boolean): Track {
-        val statusTrack = api.statusLibManga(track, getUsername())
+    override suspend fun bindInternal(track: DbTrack, hasReadChapters: Boolean): DbTrack {
+        val statusTrack = api.statusLibManga(track, getUsernameSync())
         return if (statusTrack != null) {
             track.copyPersonalFrom(statusTrack, copyRemotePrivate = false)
             track.library_id = statusTrack.library_id
@@ -70,7 +69,7 @@ class Bangumi(
                 track.status = if (hasReadChapters) READING else statusTrack.status
             }
 
-            update(track)
+            updateInternal(track)
         } else {
             // Set default fields if it's not found in the list
             track.status = if (hasReadChapters) READING else PLAN_TO_READ
@@ -79,12 +78,12 @@ class Bangumi(
         }
     }
 
-    override suspend fun search(query: String): List<TrackSearch> {
-        return api.search(query)
+    override suspend fun search(query: String): List<ephyra.domain.track.model.TrackSearch> {
+        return api.search(query).map { it.toDomainTrackSearch() }
     }
 
-    override suspend fun refresh(track: Track): Track {
-        val remoteStatusTrack = api.statusLibManga(track, getUsername()) ?: throw Exception("Could not find manga")
+    override suspend fun refreshInternal(track: DbTrack): DbTrack {
+        val remoteStatusTrack = api.statusLibManga(track, getUsernameSync()) ?: throw Exception("Could not find manga")
         track.copyPersonalFrom(remoteStatusTrack)
         return track
     }
@@ -130,9 +129,10 @@ class Bangumi(
         trackPreferences.trackToken(this).set(json.encodeToString(oauth))
     }
 
+    @Suppress("DEPRECATION")
     fun restoreToken(): BGMOAuth? {
         return try {
-            json.decodeFromString<BGMOAuth>(trackPreferences.trackToken(this).get())
+            json.decodeFromString<BGMOAuth>(trackPreferences.trackToken(this).getSync())
         } catch (_: Exception) {
             null
         }
@@ -153,6 +153,5 @@ class Bangumi(
 
         private val SCORE_LIST = IntRange(0, 10)
             .map(Int::toString)
-            .toImmutableList()
     }
 }

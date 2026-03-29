@@ -1,4 +1,4 @@
-package ephyra.app.data.track.suwayomi
+package ephyra.data.track.suwayomi
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

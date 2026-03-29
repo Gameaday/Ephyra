@@ -1,4 +1,4 @@
-package ephyra.app.data.track.anilist.dto
+package ephyra.data.track.anilist.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

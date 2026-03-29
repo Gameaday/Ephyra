@@ -1,6 +1,6 @@
-package ephyra.app.data.track.bangumi.dto
+package ephyra.data.track.bangumi.dto
 
-import ephyra.app.data.track.bangumi.Bangumi
+import ephyra.data.track.bangumi.Bangumi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 

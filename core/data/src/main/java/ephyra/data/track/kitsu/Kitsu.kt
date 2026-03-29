@@ -1,23 +1,22 @@
-package ephyra.app.data.track.kitsu
+package ephyra.data.track.kitsu
 
 import android.app.Application
 import dev.icerock.moko.resources.StringResource
-import ephyra.app.R
-import ephyra.data.database.models.Track
-import ephyra.app.data.track.BaseTracker
-import ephyra.app.data.track.DeletableTracker
-import ephyra.app.data.track.kitsu.dto.KitsuOAuth
-import ephyra.app.data.track.model.TrackSearch
+import ephyra.app.core.common.R
+import ephyra.data.database.models.Track as DbTrack
+import ephyra.data.track.BaseTracker
+import ephyra.data.track.DeletableTracker
+import ephyra.data.track.kitsu.dto.KitsuOAuth
+import ephyra.data.track.model.TrackSearch
+import ephyra.data.track.model.toDomainTrackSearch
 import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.service.TrackPreferences
 import ephyra.i18n.MR
 import eu.kanade.tachiyomi.network.NetworkHelper
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.toImmutableList
 import kotlinx.serialization.json.Json
 import java.text.DecimalFormat
-import ephyra.domain.track.model.Track as DomainTrack
+import ephyra.domain.track.model.Track
 
 class Kitsu(
     id: Long,
@@ -67,25 +66,25 @@ class Kitsu(
 
     override fun getCompletionStatus(): Long = COMPLETED
 
-    override fun getScoreList(): ImmutableList<String> {
+    override fun getScoreList(): List<String> {
         val df = DecimalFormat("0.#")
-        return (listOf("0") + IntRange(2, 20).map { df.format(it / 2f) }).toImmutableList()
+        return (listOf("0") + IntRange(2, 20).map { df.format(it / 2f) })
     }
 
     override fun indexToScore(index: Int): Double {
         return if (index > 0) (index + 1) / 2.0 else 0.0
     }
 
-    override fun displayScore(track: DomainTrack): String {
+    override fun displayScore(track: Track): String {
         val df = DecimalFormat("0.#")
         return df.format(track.score)
     }
 
-    private suspend fun add(track: Track): Track {
+    private suspend fun add(track: DbTrack): DbTrack {
         return api.addLibManga(track, getUserId())
     }
 
-    override suspend fun update(track: Track, didReadChapter: Boolean): Track {
+    override suspend fun updateInternal(track: DbTrack, didReadChapter: Boolean): DbTrack {
         if (track.status != COMPLETED) {
             if (didReadChapter) {
                 if (track.last_chapter_read.toLong() == track.total_chapters && track.total_chapters > 0) {
@@ -103,11 +102,12 @@ class Kitsu(
         return api.updateLibManga(track)
     }
 
-    override suspend fun delete(track: DomainTrack) {
+    override suspend fun delete(track: Track) {
+        // api.removeLibManga takes DomainTrack
         api.removeLibManga(track)
     }
 
-    override suspend fun bind(track: Track, hasReadChapters: Boolean): Track {
+    override suspend fun bindInternal(track: DbTrack, hasReadChapters: Boolean): DbTrack {
         val remoteTrack = api.findLibManga(track, getUserId())
         return if (remoteTrack != null) {
             track.copyPersonalFrom(remoteTrack, copyRemotePrivate = false)
@@ -118,7 +118,7 @@ class Kitsu(
                 track.status = if (hasReadChapters) READING else track.status
             }
 
-            update(track)
+            updateInternal(track)
         } else {
             track.status = if (hasReadChapters) READING else PLAN_TO_READ
             track.score = 0.0
@@ -126,11 +126,11 @@ class Kitsu(
         }
     }
 
-    override suspend fun search(query: String): List<TrackSearch> {
-        return api.search(query)
+    override suspend fun search(query: String): List<ephyra.domain.track.model.TrackSearch> {
+        return api.search(query).map { it.toDomainTrackSearch() }
     }
 
-    override suspend fun refresh(track: Track): Track {
+    override suspend fun refreshInternal(track: DbTrack): DbTrack {
         val remoteTrack = api.getLibManga(track)
         track.copyPersonalFrom(remoteTrack)
         track.total_chapters = remoteTrack.total_chapters
@@ -149,7 +149,7 @@ class Kitsu(
         interceptor.newAuth(null)
     }
 
-    private fun getUserId(): String {
+    private suspend fun getUserId(): String {
         return getPassword()
     }
 
@@ -157,9 +157,10 @@ class Kitsu(
         trackPreferences.trackToken(this).set(json.encodeToString(oauth))
     }
 
+    @Suppress("DEPRECATION")
     fun restoreToken(): KitsuOAuth? {
         return try {
-            json.decodeFromString<KitsuOAuth>(trackPreferences.trackToken(this).get())
+            json.decodeFromString<KitsuOAuth>(trackPreferences.trackToken(this).getSync())
         } catch (_: Exception) {
             null
         }

@@ -1,8 +1,8 @@
-package ephyra.app.data.track.shikimori
+package ephyra.data.track.shikimori
 
-import ephyra.app.BuildConfig
-import ephyra.app.data.track.shikimori.dto.SMOAuth
-import ephyra.app.data.track.shikimori.dto.isExpired
+import ephyra.core.data.BuildConfig
+import ephyra.data.track.shikimori.dto.SMOAuth
+import ephyra.data.track.shikimori.dto.isExpired
 import kotlinx.serialization.json.Json
 import okhttp3.Interceptor
 import okhttp3.Response

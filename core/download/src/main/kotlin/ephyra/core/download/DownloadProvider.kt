@@ -1,4 +1,4 @@
-package ephyra.data.download
+package ephyra.core.download
 
 import android.content.Context
 import com.hippo.unifile.UniFile
@@ -17,6 +17,8 @@ import eu.kanade.tachiyomi.source.Source
 import logcat.LogPriority
 import java.io.IOException
 
+import ephyra.domain.download.service.DownloadProvider as IDownloadProvider
+
 /**
  * This class is used to provide the directories where the downloads should be saved.
  * It uses the following path scheme: /<root downloads dir>/<source name>/<manga>/<chapter>
@@ -27,7 +29,7 @@ class DownloadProvider(
     private val context: Context,
     private val storageManager: StorageManager,
     private val libraryPreferences: LibraryPreferences,
-) {
+) : IDownloadProvider {
 
     private val downloadsDir: UniFile?
         get() = storageManager.getDownloadsDirectory()
@@ -75,7 +77,7 @@ class DownloadProvider(
      *
      * @param source the source to query.
      */
-    fun findSourceDir(source: Source): UniFile? {
+    override fun findSourceDir(source: Source): UniFile? {
         return downloadsDir?.findFile(getSourceDirName(source))
     }
 
@@ -85,7 +87,7 @@ class DownloadProvider(
      * @param mangaTitle the title of the manga to query.
      * @param source the source of the manga.
      */
-    fun findMangaDir(mangaTitle: String, source: Source): UniFile? {
+    override fun findMangaDir(mangaTitle: String, source: Source): UniFile? {
         val sourceDir = findSourceDir(source)
         return sourceDir?.findFile(getMangaDirName(mangaTitle))
     }
@@ -95,10 +97,11 @@ class DownloadProvider(
      *
      * @param chapterName the name of the chapter to query.
      * @param chapterScanlator scanlator of the chapter to query
+     * @param chapterUrl the url of the chapter to query
      * @param mangaTitle the title of the manga to query.
      * @param source the source of the chapter.
      */
-    fun findChapterDir(
+    override fun findChapterDir(
         chapterName: String,
         chapterScanlator: String?,
         chapterUrl: String,
@@ -118,7 +121,7 @@ class DownloadProvider(
      * @param manga the manga of the chapter.
      * @param source the source of the chapter.
      */
-    fun findChapterDirs(chapters: List<Chapter>, manga: Manga, source: Source): Pair<UniFile?, List<UniFile>> {
+    override fun findChapterDirs(chapters: List<Chapter>, manga: Manga, source: Source): Pair<UniFile?, List<UniFile>> {
         val mangaDir = findMangaDir(manga.title, source) ?: return null to emptyList()
         return mangaDir to chapters.mapNotNull { chapter ->
             getValidChapterDirNames(chapter.name, chapter.scanlator, chapter.url).asSequence()
@@ -132,10 +135,11 @@ class DownloadProvider(
      *
      * @param source the source to query.
      */
-    fun getSourceDirName(source: Source): String {
+    override fun getSourceDirName(source: Source): String {
+        @Suppress("DEPRECATION")
         return DiskUtil.buildValidFilename(
             source.toString(),
-            disallowNonAscii = libraryPreferences.disallowNonAsciiFilenames().get(),
+            disallowNonAscii = libraryPreferences.disallowNonAsciiFilenames().getSync(),
         )
     }
 
@@ -144,10 +148,11 @@ class DownloadProvider(
      *
      * @param mangaTitle the title of the manga to query.
      */
-    fun getMangaDirName(mangaTitle: String): String {
+    override fun getMangaDirName(mangaTitle: String): String {
+        @Suppress("DEPRECATION")
         return DiskUtil.buildValidFilename(
             mangaTitle,
-            disallowNonAscii = libraryPreferences.disallowNonAsciiFilenames().get(),
+            disallowNonAscii = libraryPreferences.disallowNonAsciiFilenames().getSync(),
         )
     }
 
@@ -158,11 +163,11 @@ class DownloadProvider(
      * @param chapterScanlator scanlator of the chapter to query.
      * @param chapterUrl url of the chapter to query.
      */
-    fun getChapterDirName(
+    override fun getChapterDirName(
         chapterName: String,
         chapterScanlator: String?,
         chapterUrl: String,
-        disallowNonAsciiFilenames: Boolean = libraryPreferences.disallowNonAsciiFilenames().get(),
+        disallowNonAsciiFilenames: Boolean,
     ): String {
         var dirName = sanitizeChapterName(chapterName)
         if (!chapterScanlator.isNullOrBlank()) {
@@ -187,7 +192,7 @@ class DownloadProvider(
      * @param chapterName the chapter name (used as fallback title).
      * @return Jellyfin-compatible file name without extension.
      */
-    fun getJellyfinChapterDirName(
+    override fun getJellyfinChapterDirName(
         mangaTitle: String,
         chapterNumber: Double,
         chapterName: String,
@@ -225,12 +230,13 @@ class DownloadProvider(
         // using the other value for the disallow non-ASCII
         // filenames setting. This ensures that chapters downloaded
         // before the user changed the setting can still be found.
+        @Suppress("DEPRECATION")
         val otherChapterDirName =
             getChapterDirName(
                 chapterName,
                 chapterScanlator,
                 chapterUrl,
-                !libraryPreferences.disallowNonAsciiFilenames().get(),
+                !libraryPreferences.disallowNonAsciiFilenames().getSync(),
             )
 
         return buildList(2) {
@@ -252,9 +258,11 @@ class DownloadProvider(
         }
     }
 
-    fun isChapterDirNameChanged(oldChapter: Chapter, newChapter: Chapter): Boolean {
-        return getChapterDirName(oldChapter.name, oldChapter.scanlator, oldChapter.url) !=
-            getChapterDirName(newChapter.name, newChapter.scanlator, newChapter.url)
+    override fun isChapterDirNameChanged(oldChapter: Chapter, newChapter: Chapter): Boolean {
+        @Suppress("DEPRECATION")
+        val disallowNonAscii = libraryPreferences.disallowNonAsciiFilenames().getSync()
+        return getChapterDirName(oldChapter.name, oldChapter.scanlator, oldChapter.url, disallowNonAscii) !=
+            getChapterDirName(newChapter.name, newChapter.scanlator, newChapter.url, disallowNonAscii)
     }
 
     /**
@@ -262,8 +270,10 @@ class DownloadProvider(
      *
      * @param chapter the domain chapter object.
      */
-    fun getValidChapterDirNames(chapterName: String, chapterScanlator: String?, chapterUrl: String): List<String> {
-        val chapterDirName = getChapterDirName(chapterName, chapterScanlator, chapterUrl)
+    override fun getValidChapterDirNames(chapterName: String, chapterScanlator: String?, chapterUrl: String): List<String> {
+        @Suppress("DEPRECATION")
+        val disallowNonAscii = libraryPreferences.disallowNonAsciiFilenames().getSync()
+        val chapterDirName = getChapterDirName(chapterName, chapterScanlator, chapterUrl, disallowNonAscii)
         val legacyChapterDirNames = getLegacyChapterDirNames(chapterName, chapterScanlator, chapterUrl)
 
         return buildList {

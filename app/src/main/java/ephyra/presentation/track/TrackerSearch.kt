@@ -69,7 +69,7 @@ import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
-import ephyra.app.data.track.model.TrackSearch
+import ephyra.data.track.model.TrackSearch
 import ephyra.i18n.MR
 import ephyra.presentation.components.DropdownMenu
 import ephyra.presentation.core.components.ScrollbarLazyColumn

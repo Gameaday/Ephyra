@@ -4,9 +4,8 @@ import ephyra.core.common.preference.Preference
 import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.common.preference.getEnum
 import ephyra.core.common.preference.getLongArray
-import ephyra.data.track.Tracker
-import ephyra.data.track.anilist.Anilist
 import ephyra.domain.track.model.AutoTrackState
+import ephyra.domain.track.service.Tracker
 
 class TrackPreferences(
     private val preferenceStore: PreferenceStore,
@@ -58,7 +57,7 @@ class TrackPreferences(
         AUTHORITY_TRACKER_AUTO,
     )
 
-    fun anilistScoreType() = preferenceStore.getString("anilist_score_type", Anilist.POINT_10)
+    fun anilistScoreType() = preferenceStore.getString("anilist_score_type", "POINT_10")
 
     fun autoUpdateTrack() = preferenceStore.getBoolean("pref_auto_update_manga_sync_key", true)
 

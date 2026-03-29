@@ -7,7 +7,7 @@ import android.content.IntentFilter
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import ephyra.app.BuildConfig
-import ephyra.app.extension.model.Extension
+import ephyra.domain.extension.model.Extension
 import ephyra.app.extension.model.LoadResult
 import ephyra.core.common.util.system.logcat
 import kotlinx.coroutines.CoroutineScope

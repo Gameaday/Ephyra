@@ -6,8 +6,8 @@ import android.webkit.WebView
 import android.widget.Toast
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.WebViewUtil
-import ephyra.app.util.system.setDefaultSettings
-import ephyra.presentation.core.util.system.toast
+import ephyra.core.common.util.system.setDefaultSettings
+import ephyra.core.common.util.system.toast
 import ephyra.core.common.util.lang.launchUI
 import ephyra.i18n.MR
 import okhttp3.Headers

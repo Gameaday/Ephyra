@@ -1,14 +1,14 @@
-package ephyra.app.data.track.shikimori
+package ephyra.data.track.shikimori
 
 import android.net.Uri
 import androidx.core.net.toUri
 import ephyra.data.database.models.Track
-import ephyra.app.data.track.model.TrackSearch
-import ephyra.app.data.track.shikimori.dto.SMAddMangaResponse
-import ephyra.app.data.track.shikimori.dto.SMManga
-import ephyra.app.data.track.shikimori.dto.SMOAuth
-import ephyra.app.data.track.shikimori.dto.SMUser
-import ephyra.app.data.track.shikimori.dto.SMUserListEntry
+import ephyra.data.track.model.TrackSearch
+import ephyra.data.track.shikimori.dto.SMAddMangaResponse
+import ephyra.data.track.shikimori.dto.SMManga
+import ephyra.data.track.shikimori.dto.SMOAuth
+import ephyra.data.track.shikimori.dto.SMUser
+import ephyra.data.track.shikimori.dto.SMUserListEntry
 import ephyra.core.common.util.lang.withIOContext
 import eu.kanade.tachiyomi.network.DELETE
 import eu.kanade.tachiyomi.network.GET

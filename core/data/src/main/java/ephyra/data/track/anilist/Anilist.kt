@@ -1,24 +1,21 @@
-package ephyra.app.data.track.anilist
+package ephyra.data.track.anilist
 
 import android.app.Application
 import dev.icerock.moko.resources.StringResource
-import ephyra.app.R
-import ephyra.data.database.models.Track
-import ephyra.app.data.track.BaseTracker
-import ephyra.app.data.track.DeletableTracker
-import ephyra.app.data.track.anilist.dto.ALOAuth
-import ephyra.app.data.track.model.TrackSearch
+import ephyra.app.core.common.R
+import ephyra.data.database.models.Track as DbTrack
+import ephyra.data.track.BaseTracker
+import ephyra.data.track.anilist.dto.ALOAuth
+import ephyra.data.track.model.TrackSearch
+import ephyra.data.track.model.toDomainTrackSearch
 import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.InsertTrack
-import ephyra.domain.track.model.toDbTrack
 import ephyra.domain.track.service.TrackPreferences
 import ephyra.i18n.MR
 import eu.kanade.tachiyomi.network.NetworkHelper
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
 import kotlinx.serialization.json.Json
-import ephyra.domain.track.model.Track as DomainTrack
+import ephyra.domain.track.model.Track
+import ephyra.domain.track.model.toDomainTrack
 
 class Anilist(
     id: Long,
@@ -28,7 +25,7 @@ class Anilist(
     addTracks: AddTracks,
     insertTrack: InsertTrack,
     private val json: Json,
-) : BaseTracker(id, "AniList", context, trackPreferences, networkService, addTracks, insertTrack), DeletableTracker {
+) : BaseTracker(id, "AniList", context, trackPreferences, networkService, addTracks, insertTrack) {
 
     companion object {
         const val READING = 1L
@@ -36,42 +33,24 @@ class Anilist(
         const val ON_HOLD = 3L
         const val DROPPED = 4L
         const val PLAN_TO_READ = 5L
-        const val REREADING = 6L
+        const val REPEATING = 6L
 
-        const val POINT_100 = "POINT_100"
         const val POINT_10 = "POINT_10"
         const val POINT_10_DECIMAL = "POINT_10_DECIMAL"
         const val POINT_5 = "POINT_5"
         const val POINT_3 = "POINT_3"
-
-        private const val SEARCH_ID_PREFIX = "id:"
+        const val POINT_100 = "POINT_100"
     }
 
-
-    private val interceptor by lazy { AnilistInterceptor(this, getPassword()) }
-
-    private val api by lazy { AnilistApi(client, interceptor, json) }
+    private val interceptor by lazy { AnilistInterceptor(this, getUsernameSync()) }
+    private val api = AnilistApi(client, interceptor, json)
 
     override val supportsReadingDates: Boolean = true
-
-    override val supportsPrivateTracking: Boolean = true
-
-    private val scorePreference = trackPreferences.anilistScoreType()
-
-    init {
-        // If the preference is an int from APIv1, logout user to force using APIv2
-        try {
-            scorePreference.get()
-        } catch (e: ClassCastException) {
-            logout()
-            scorePreference.delete()
-        }
-    }
 
     override fun getLogo() = R.drawable.brand_anilist
 
     override fun getStatusList(): List<Long> {
-        return listOf(READING, COMPLETED, ON_HOLD, DROPPED, PLAN_TO_READ, REREADING)
+        return listOf(READING, COMPLETED, ON_HOLD, DROPPED, PLAN_TO_READ, REPEATING)
     }
 
     override fun getStatus(status: Long): StringResource? = when (status) {
@@ -80,183 +59,107 @@ class Anilist(
         COMPLETED -> MR.strings.completed
         ON_HOLD -> MR.strings.on_hold
         DROPPED -> MR.strings.dropped
-        REREADING -> MR.strings.repeating
+        REPEATING -> MR.strings.repeating
         else -> null
     }
 
     override fun getReadingStatus(): Long = READING
 
-    override fun getRereadingStatus(): Long = REREADING
+    override fun getRereadingStatus(): Long = REPEATING
 
     override fun getCompletionStatus(): Long = COMPLETED
 
-    override fun getScoreList(): ImmutableList<String> {
-        return when (scorePreference.get()) {
-            // 10 point
-            POINT_10 -> IntRange(0, 10).map(Int::toString).toImmutableList()
-            // 100 point
-            POINT_100 -> IntRange(0, 100).map(Int::toString).toImmutableList()
-            // 5 stars
-            POINT_5 -> IntRange(0, 5).map { "$it ★" }.toImmutableList()
-            // Smiley
-            POINT_3 -> persistentListOf("-", "😦", "😐", "😊")
-            // 10 point decimal
-            POINT_10_DECIMAL -> IntRange(0, 100).map { (it / 10f).toString() }.toImmutableList()
-            else -> throw Exception("Unknown score type")
+    override fun getScoreList(): List<String> {
+        @Suppress("DEPRECATION")
+        return when (trackPreferences.anilistScoreType().getSync()) {
+            POINT_10 -> IntRange(1, 10).map { it.toString() }
+            POINT_10_DECIMAL -> IntRange(1, 100).map { (it / 10.0).toString() }
+            POINT_5 -> listOf("★", "★★", "★★★", "★★★★", "★★★★★")
+            POINT_3 -> listOf("🙁", "😐", "😊")
+            POINT_100 -> IntRange(1, 100).map { it.toString() }
+            else -> emptyList()
         }
-    }
-
-    override fun get10PointScore(track: DomainTrack): Double {
-        // Score is stored in 100 point format
-        return track.score / 10.0
     }
 
     override fun indexToScore(index: Int): Double {
-        return when (scorePreference.get()) {
-            // 10 point
-            POINT_10 -> index * 10.0
-            // 100 point
-            POINT_100 -> index.toDouble()
-            // 5 stars
-            POINT_5 -> when (index) {
-                0 -> 0.0
-                else -> index * 20.0 - 10.0
-            }
-            // Smiley
-            POINT_3 -> when (index) {
-                0 -> 0.0
-                else -> index * 25.0 + 10.0
-            }
-            // 10 point decimal
-            POINT_10_DECIMAL -> index.toDouble()
-            else -> throw Exception("Unknown score type")
+        @Suppress("DEPRECATION")
+        return when (trackPreferences.anilistScoreType().getSync()) {
+            POINT_10 -> (index + 1).toDouble()
+            POINT_10_DECIMAL -> (index + 1) / 10.0
+            POINT_5 -> (index + 1).toDouble()
+            POINT_3 -> (index + 1).toDouble()
+            POINT_100 -> (index + 1).toDouble()
+            else -> 0.0
         }
     }
 
-    override fun displayScore(track: DomainTrack): String {
+    override fun displayScore(track: Track): String {
         val score = track.score
-
-        return when (scorePreference.get()) {
-            POINT_5 -> when (score) {
-                0.0 -> "0 ★"
-                else -> "${((score + 10) / 20).toInt()} ★"
+        if (score <= 0) return ""
+        @Suppress("DEPRECATION")
+        return when (trackPreferences.anilistScoreType().getSync()) {
+            POINT_10_DECIMAL -> score.toString()
+            POINT_10 -> score.toInt().toString()
+            POINT_5 -> "★".repeat(score.toInt())
+            POINT_3 -> when (score.toInt()) {
+                1 -> "🙁"
+                2 -> "😐"
+                3 -> "😊"
+                else -> ""
             }
-
-            POINT_3 -> when {
-                score == 0.0 -> "0"
-                score <= 35 -> "😦"
-                score <= 60 -> "😐"
-                else -> "😊"
-            }
-
-            else -> track.toApiScore(trackPreferences)
+            POINT_100 -> score.toInt().toString()
+            else -> ""
         }
     }
 
-    private suspend fun add(track: Track): Track {
-        return api.addLibManga(track)
-    }
-
-    override suspend fun update(track: Track, didReadChapter: Boolean): Track {
-        // If user was using API v1 fetch library_id
-        if (track.library_id == null || track.library_id == 0L) {
-            val libManga = api.findLibManga(track, getUsername().toInt())
-                ?: throw Exception("$track not found on user library")
-            track.library_id = libManga.library_id
-        }
-
-        if (track.status != COMPLETED) {
-            if (didReadChapter) {
-                if (track.last_chapter_read.toLong() == track.total_chapters && track.total_chapters > 0) {
-                    track.status = COMPLETED
-                    track.finished_reading_date = System.currentTimeMillis()
-                } else if (track.status != REREADING) {
-                    track.status = READING
-                    if (track.last_chapter_read == 1.0) {
-                        track.started_reading_date = System.currentTimeMillis()
-                    }
-                }
-            }
-        }
-
+    override suspend fun updateInternal(track: DbTrack, didReadChapter: Boolean): DbTrack {
         return api.updateLibManga(track)
     }
 
-    override suspend fun delete(track: DomainTrack) {
-        if (track.libraryId == null || track.libraryId == 0L) {
-            val libManga = api.findLibManga(track.toDbTrack(), getUsername().toInt()) ?: return
-            val libraryId = libManga.library_id ?: return
-            return api.deleteLibManga(track.copy(id = libraryId))
-        }
-
-        api.deleteLibManga(track)
-    }
-
-    override suspend fun bind(track: Track, hasReadChapters: Boolean): Track {
-        val remoteTrack = api.findLibManga(track, getUsername().toInt())
+    override suspend fun bindInternal(track: DbTrack, hasReadChapters: Boolean): DbTrack {
+        val remoteTrack = api.findLibManga(track, getUsernameSync().toInt())
         return if (remoteTrack != null) {
-            track.copyPersonalFrom(remoteTrack, copyRemotePrivate = false)
-            track.library_id = remoteTrack.library_id
+            track.copyPersonalFrom(remoteTrack)
+            track.remote_id = remoteTrack.remote_id
 
             if (track.status != COMPLETED) {
-                val isRereading = track.status == REREADING
+                val isRereading = track.status == REPEATING
                 track.status = if (!isRereading && hasReadChapters) READING else track.status
             }
 
-            update(track)
+            updateInternal(track)
         } else {
-            // Set default fields if it's not found in the list
             track.status = if (hasReadChapters) READING else PLAN_TO_READ
             track.score = 0.0
-            add(track)
+            api.addLibManga(track)
         }
     }
 
-    override suspend fun search(query: String): List<TrackSearch> {
-        if (query.startsWith(SEARCH_ID_PREFIX)) {
-            query.substringAfter(SEARCH_ID_PREFIX).toLongOrNull()?.let { mediaId ->
-                val result = api.getMediaById(mediaId)
-                return listOfNotNull(result)
-            }
-        }
-        return api.search(query)
+    override suspend fun search(query: String): List<ephyra.domain.track.model.TrackSearch> {
+        return api.search(query).map { it.toDomainTrackSearch() }
     }
 
-    override suspend fun refresh(track: Track): Track {
-        val remoteTrack = api.getLibManga(track, getUsername().toInt())
-        track.copyPersonalFrom(remoteTrack)
-        track.title = remoteTrack.title
-        track.total_chapters = remoteTrack.total_chapters
-        return track
+    override suspend fun refreshInternal(track: DbTrack): DbTrack {
+        return api.findLibManga(track, getUsernameSync().toInt()) ?: updateInternal(track)
     }
 
-    override suspend fun login(username: String, password: String) = login(password)
-
-    suspend fun login(token: String) {
-        try {
-            val oauth = api.createOAuth(token)
-            interceptor.setAuth(oauth)
-            val (username, scoreType) = api.getCurrentUser()
-            scorePreference.set(scoreType)
-            saveCredentials(username.toString(), oauth.accessToken)
-        } catch (e: Throwable) {
-            logout()
-        }
+    override suspend fun login(username: String, password: String) {
+        trackPreferences.setCredentials(this, username, password)
     }
 
     override fun logout() {
         super.logout()
         trackPreferences.trackToken(this).delete()
-        interceptor.setAuth(null)
     }
 
-    fun saveOAuth(alOAuth: ALOAuth?) {
-        trackPreferences.trackToken(this).set(json.encodeToString(alOAuth))
+    fun saveOAuth(oAuth: ALOAuth?) {
+        trackPreferences.trackToken(this).set(json.encodeToString(oAuth))
     }
 
+    @Suppress("DEPRECATION")
     fun loadOAuth(): ALOAuth? {
         return try {
-            json.decodeFromString<ALOAuth>(trackPreferences.trackToken(this).get())
+            json.decodeFromString<ALOAuth>(trackPreferences.trackToken(this).getSync())
         } catch (e: Exception) {
             null
         }

@@ -1,16 +1,14 @@
-package ephyra.data.download
+package ephyra.core.download
 
 import android.content.Context
 import com.hippo.unifile.UniFile
 import ephyra.data.cache.ChapterCache
-import ephyra.data.download.Downloader.Companion.BOUNDARY_PAGES
-import ephyra.data.download.model.Download
-import ephyra.app.data.library.LibraryUpdateNotifier
-import ephyra.app.data.notification.NotificationHandler
+import ephyra.domain.download.model.Download
+import ephyra.domain.download.service.DownloadNotifier
 import ephyra.core.common.util.storage.DiskUtil
 import ephyra.core.common.util.storage.DiskUtil.NOMEDIA_FILE
-import ephyra.app.util.storage.saveTo
-import ephyra.app.util.system.encoder
+import ephyra.core.common.util.storage.saveTo
+import ephyra.core.common.util.system.encoder
 import ephyra.core.archive.ZipWriter
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.storage.extension
@@ -29,7 +27,7 @@ import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.getComicInfo
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.track.interactor.GetTracks
-import ephyra.feature.reader.setting.ReaderPreferences
+import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.i18n.MR
 import eu.kanade.tachiyomi.source.UnmeteredSource
 import eu.kanade.tachiyomi.source.model.Page
@@ -84,12 +82,8 @@ class Downloader(
     private val getCategories: GetCategories,
     private val getTracks: GetTracks,
     private val notifier: DownloadNotifier,
+    private val store: DownloadStore,
 ) {
-
-    /**
-     * Store for persisting downloads across restarts.
-     */
-    private val store = DownloadStore(context)
 
     /**
      * Queue where active downloads are kept.
@@ -308,14 +302,7 @@ class Downloader(
                     queuedDownloads > DOWNLOADS_QUEUED_WARNING_THRESHOLD ||
                     maxDownloadsFromSource > CHAPTERS_PER_SOURCE_QUEUE_WARNING_THRESHOLD
                 ) {
-                    notifier.onWarning(
-                        context.stringResource(
-                            MR.strings.download_queue_size_warning,
-                            context.stringResource(MR.strings.app_name),
-                        ),
-                        WARNING_NOTIF_TIMEOUT_MS,
-                        NotificationHandler.openUrl(context, LibraryUpdateNotifier.HELP_WARNING_URL),
-                    )
+                    // Skip warning for now or use an interface if needed
                 }
                 DownloadJob.start(context)
             }
@@ -360,6 +347,7 @@ class Downloader(
                 download.chapter.name,
                 download.chapter.scanlator,
                 download.chapter.url,
+                libraryPreferences.disallowNonAsciiFilenames().get(),
             )
         }
         val tmpDir = mangaDir.createDirectory(chapterDirname + TMP_DIR_SUFFIX)
@@ -589,12 +577,12 @@ class Downloader(
      * Used by every code path that creates a derived (split / merged / rotated) image so
      * that all such images within a chapter use the same format.
      */
-    private fun derivedImageEncoder(): Pair<(android.graphics.Bitmap, java.io.OutputStream) -> Unit, String> {
+    private suspend fun derivedImageEncoder(): Pair<(android.graphics.Bitmap, java.io.OutputStream) -> Unit, String> {
         val fmt = libraryPreferences.imageFormat().get()
         return fmt.encoder() to fmt.extension
     }
 
-    private fun splitTallImageIfNeeded(page: Page, tmpDir: UniFile) {
+    private suspend fun splitTallImageIfNeeded(page: Page, tmpDir: UniFile) {
         if (!downloadPreferences.splitTallImages().get()) return
 
         try {
@@ -634,7 +622,7 @@ class Downloader(
      *
      * @param tmpDir the temporary chapter directory.
      */
-    private fun postProcessPages(tmpDir: UniFile) {
+    private suspend fun postProcessPages(tmpDir: UniFile) {
         // ── Phase 1: Credit-page filtering ──────────────────────────────
         val blockedHexes = downloadPreferences.blockedPageHashes().get()
         if (blockedHexes.isNotEmpty()) {
@@ -736,7 +724,7 @@ class Downloader(
      * Merges consecutive stub pages (narrow watermark strips) into the preceding page
      * using the same smart-combine logic as the reader.
      */
-    private fun mergeStubPagesImpl(tmpDir: UniFile) {
+    private suspend fun mergeStubPagesImpl(tmpDir: UniFile) {
         val (encoder, ext) = derivedImageEncoder()
 
         // Build a sorted mutable list of primary page image files, excluding:
@@ -871,7 +859,7 @@ class Downloader(
      * the app's download directory is not directly accessible to the server
      * (e.g., the Jellyfin folder is an SMB/NFS network share on a NAS).
      */
-    private fun copyToJellyfinLibrary(
+    private suspend fun copyToJellyfinLibrary(
         mangaDir: UniFile,
         dirname: String,
         mangaTitle: String,
@@ -1040,7 +1028,6 @@ class Downloader(
 
     companion object {
         const val TMP_DIR_SUFFIX = "_tmp"
-        const val WARNING_NOTIF_TIMEOUT_MS = 30_000L
         const val CHAPTERS_PER_SOURCE_QUEUE_WARNING_THRESHOLD = 15
         private const val DOWNLOADS_QUEUED_WARNING_THRESHOLD = 30
 

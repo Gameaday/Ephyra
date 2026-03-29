@@ -1,4 +1,4 @@
-package ephyra.app.data.track.kitsu.dto
+package ephyra.data.track.kitsu.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

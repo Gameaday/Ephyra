@@ -1,6 +1,6 @@
-package ephyra.app.data.backup.restore.restorers
+package ephyra.data.backup.restore.restorers
 
-import ephyra.app.data.backup.models.BackupCategory
+import ephyra.data.backup.models.BackupCategory
 import ephyra.data.DatabaseHandler
 import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.library.service.LibraryPreferences

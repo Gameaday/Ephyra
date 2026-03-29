@@ -1,10 +1,9 @@
 package ephyra.domain.track.interactor
 
 import ephyra.core.common.util.system.logcat
-import ephyra.data.track.Tracker
-import ephyra.data.track.TrackerManager
-import ephyra.domain.track.model.toDbTrack
-import ephyra.domain.track.model.toDomainTrack
+import ephyra.domain.track.model.Track
+import ephyra.domain.track.service.Tracker
+import ephyra.domain.track.service.TrackerManager
 import eu.kanade.tachiyomi.network.HttpException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -26,10 +25,16 @@ class RefreshTracks(
      */
     suspend fun await(mangaId: Long): List<Pair<Tracker?, Throwable>> {
         return supervisorScope {
-            return@supervisorScope getTracks.await(mangaId)
-                .map { it to trackerManager.get(it.trackerId) }
-                .filter { (_, service) -> service?.isLoggedIn == true }
-                .map { (track, service) ->
+            val tracks = getTracks.await(mangaId)
+            val trackersWithLoginStatus = tracks.map { track ->
+                val service = trackerManager.get(track.trackerId)
+                val isLoggedIn = service?.isLoggedIn() == true
+                Triple(track, service, isLoggedIn)
+            }
+
+            return@supervisorScope trackersWithLoginStatus
+                .filter { it.third }
+                .map { (track, service, _) ->
                     async {
                         return@async try {
                             refreshWithRetry(service!!, track, mangaId)
@@ -49,13 +54,13 @@ class RefreshTracks(
      */
     private suspend fun refreshWithRetry(
         service: Tracker,
-        track: ephyra.domain.track.model.Track,
+        track: Track,
         mangaId: Long,
         maxRetries: Int = MAX_RETRIES,
     ) {
         repeat(maxRetries) { attempt ->
             try {
-                val updatedTrack = service.refresh(track.toDbTrack()).toDomainTrack()!!
+                val updatedTrack = service.refresh(track)
                 insertTrack.await(updatedTrack)
                 syncChapterProgressWithTrack.await(mangaId, updatedTrack, service)
                 return

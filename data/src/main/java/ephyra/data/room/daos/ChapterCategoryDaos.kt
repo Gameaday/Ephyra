@@ -1,5 +1,7 @@
 package ephyra.data.room.daos
 
+import ephyra.data.room.entities.CategoryEntity
+
 import androidx.room.*
 import ephyra.data.room.entities.ChapterEntity
 import kotlinx.coroutines.flow.Flow
@@ -64,25 +66,25 @@ interface ChapterDao {
 interface CategoryDao {
 
     @Query("SELECT * FROM categories")
-    fun getCategoriesAsFlow(): Flow<List<ephyra.data.room.entities.CategoryEntity>>
+    fun getCategoriesAsFlow(): Flow<List<CategoryEntity>>
 
     @Query("SELECT * FROM categories")
-    suspend fun getCategories(): List<ephyra.data.room.entities.CategoryEntity>
+    suspend fun getCategories(): List<CategoryEntity>
 
     @Query("SELECT * FROM categories WHERE _id IN (SELECT category_id FROM mangas_categories WHERE manga_id = :mangaId)")
-    fun getCategoriesByMangaIdAsFlow(mangaId: Long): Flow<List<ephyra.data.room.entities.CategoryEntity>>
+    fun getCategoriesByMangaIdAsFlow(mangaId: Long): Flow<List<CategoryEntity>>
 
     @Query("SELECT * FROM categories WHERE _id IN (SELECT category_id FROM mangas_categories WHERE manga_id = :mangaId)")
-    suspend fun getCategoriesByMangaId(mangaId: Long): List<ephyra.data.room.entities.CategoryEntity>
+    suspend fun getCategoriesByMangaId(mangaId: Long): List<CategoryEntity>
 
     @Query("UPDATE categories SET flags = :flags")
     suspend fun updateAllFlags(flags: Long?)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(category: ephyra.data.room.entities.CategoryEntity): Long
+    suspend fun insert(category: CategoryEntity): Long
 
     @Update
-    suspend fun update(category: ephyra.data.room.entities.CategoryEntity)
+    suspend fun update(category: CategoryEntity)
 
     @Query("DELETE FROM categories WHERE _id = :categoryId")
     suspend fun delete(categoryId: Long)

@@ -1,58 +1,43 @@
-package ephyra.app.data.backup
+package ephyra.data.backup
 
 import android.content.Context
 import android.net.Uri
-import ephyra.app.data.track.TrackerManager
+import ephyra.data.backup.models.Backup
+import ephyra.domain.track.service.TrackerManager
+import eu.kanade.tachiyomi.source.Source
 import ephyra.domain.source.service.SourceManager
 
 class BackupFileValidator(
     private val context: Context,
-    private val sourceManager: SourceManager,
     private val trackerManager: TrackerManager,
-    private val backupDecoder: BackupDecoder,
+    private val sourceManager: SourceManager,
 ) {
 
     /**
-     * Checks for critical backup file data.
+     * Checks if the given backup file is valid.
      *
-     * @return List of missing sources or missing trackers.
+     * @param uri the uri of the backup file.
+     * @return the validation result.
      */
-    fun validate(uri: Uri): Results {
-        val backup = try {
-            backupDecoder.decode(uri)
-        } catch (e: Exception) {
-            throw IllegalStateException(e)
-        }
+    fun validate(uri: Uri): ValidationResult {
+        val backup = BackupDecoder(context, kotlinx.serialization.protobuf.ProtoBuf).decode(uri)
 
         val sources = backup.backupSources.associate { it.sourceId to it.name }
-        val missingSources = sources
-            .filter { sourceManager.get(it.key) == null }
-            .values.map {
-                val id = it.toLongOrNull()
-                if (id == null) {
-                    it
-                } else {
-                    sourceManager.getOrStub(id).toString()
-                }
-            }
-            .distinct()
-            .sorted()
+        val missingSources = sources.filterKeys { sourceManager.get(it) == null }
+            .values.toSet()
 
-        val trackers = backup.backupManga
-            .flatMap { it.tracking }
-            .map { it.syncId }
-            .distinct()
-        val missingTrackers = trackers
-            .mapNotNull { trackerManager.get(it.toLong()) }
-            .filter { !it.isLoggedIn }
-            .map { it.name }
-            .sorted()
+        val trackers = backup.backupManga.flatMap { it.tracking }.map { it.syncId }.toSet()
+        val missingTrackers = trackers.filter { trackerManager.get(it.toLong()) == null }
+            .mapNotNull { trackerManager.get(it.toLong())?.name }.toSet()
 
-        return Results(missingSources, missingTrackers)
+        return ValidationResult(
+            missingSources = missingSources,
+            missingTrackers = missingTrackers,
+        )
     }
 
-    data class Results(
-        val missingSources: List<String>,
-        val missingTrackers: List<String>,
+    data class ValidationResult(
+        val missingSources: Set<String>,
+        val missingTrackers: Set<String>,
     )
 }

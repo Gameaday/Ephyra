@@ -1,7 +1,7 @@
-package ephyra.app.data.track.shikimori.dto
+package ephyra.data.track.shikimori.dto
 
-import ephyra.app.data.track.model.TrackSearch
-import ephyra.app.data.track.shikimori.ShikimoriApi
+import ephyra.data.track.model.TrackSearch
+import ephyra.data.track.shikimori.ShikimoriApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 

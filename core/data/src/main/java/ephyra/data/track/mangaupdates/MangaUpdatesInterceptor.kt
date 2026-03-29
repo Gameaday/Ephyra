@@ -1,6 +1,6 @@
-package ephyra.app.data.track.mangaupdates
+package ephyra.data.track.mangaupdates
 
-import ephyra.app.BuildConfig
+import ephyra.core.data.BuildConfig
 import okhttp3.Interceptor
 import okhttp3.Response
 import java.io.IOException

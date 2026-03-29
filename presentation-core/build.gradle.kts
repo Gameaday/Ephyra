@@ -33,6 +33,7 @@ dependencies {
     api(projects.core.domain)
     api(projects.core.data)
     api(projects.sourceLocal)
+    api(projects.sourceApi)
     api(projects.i18n)
 
     // Compose

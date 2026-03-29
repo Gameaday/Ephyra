@@ -1,6 +1,6 @@
 @file:Suppress("PropertyName")
 
-package ephyra.app.data.track.model
+package ephyra.data.track.model
 
 import ephyra.data.database.models.Track
 
@@ -80,3 +80,18 @@ class TrackSearch : Track {
         }
     }
 }
+
+fun TrackSearch.toDomainTrackSearch() = ephyra.domain.track.model.TrackSearch(
+    remote_id = remote_id,
+    title = title,
+    tracking_url = tracking_url,
+    summary = summary,
+    authors = authors,
+    artists = artists,
+    cover_url = cover_url,
+    publishing_type = publishing_type,
+    publishing_status = publishing_status,
+    alternative_titles = alternative_titles,
+    genres = genres,
+    total_chapters = total_chapters,
+)
