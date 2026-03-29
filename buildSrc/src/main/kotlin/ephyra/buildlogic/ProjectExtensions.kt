@@ -143,7 +143,7 @@ internal fun Project.configureAndroidMultiplatform(androidExtension: KotlinMulti
 }
 
 internal fun Project.configureCompose(commonExtension: CommonExtension) {
-    pluginManager.apply(kotlinxCatalog.getPlugin("compose-compiler").pluginId)
+    pluginManager.apply("org.jetbrains.kotlin.plugin.compose")
 
     when (commonExtension) {
         is ApplicationExtension -> {

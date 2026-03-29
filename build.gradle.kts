@@ -15,7 +15,10 @@ tasks.register<Delete>("clean") {
 // Suppress warnings for the following:
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-    kotlinOptions {
-        freeCompilerArgs += "-opt-in=kotlinx.serialization.ExperimentalSerializationApi"
+    compilerOptions {
+        freeCompilerArgs.addAll(
+            "-opt-in=kotlinx.serialization.ExperimentalSerializationApi"
+        )
     }
 }
+

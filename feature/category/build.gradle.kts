@@ -1,7 +1,7 @@
 plugins {
     id("ephyra.library")
     id("ephyra.library.compose")
-    // Use the native compiler plugin instead of KSP to save memory
+    id("org.jetbrains.kotlin.plugin.compose")
     alias(libs.plugins.koin.compiler)
 }
 
@@ -12,6 +12,8 @@ android {
 dependencies {
     // Internal project dependencies
     api(projects.core.common)
+    api(projects.core.domain) // FIX: Koin needs this to verify UiPreferences
+    api(projects.core.data)   // FIX: Koin needs this to verify repositories
     api(projects.domain)
     api(projects.data)
     api(projects.sourceApi)
@@ -29,6 +31,7 @@ dependencies {
 
     // Dependency Injection (Koin)
     api(libs.koin.core)
+    implementation(libs.koin.androidx.compose) // FIX: Resolves koinScreenModel
     implementation(libs.koin.annotations)
 
     // Testing

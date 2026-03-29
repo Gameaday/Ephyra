@@ -1,7 +1,8 @@
 plugins {
     id("ephyra.library")
     id("ephyra.library.compose")
-
+    // ADD THIS: It tells Gradle this is an Android Kotlin module
+    alias(libs.plugins.koin.compiler)
 }
 
 android {
@@ -28,6 +29,7 @@ kotlin {
 }
 
 dependencies {
+    // Internal Layers
     api(projects.core.common)
     api(projects.domain)
     api(projects.core.domain)
@@ -38,7 +40,7 @@ dependencies {
     api(projects.sourceApi)
     api(projects.i18n)
 
-    // Compose
+    // Compose Core
     api(compose.activity)
     api(compose.foundation)
     api(compose.material3.core)
@@ -49,6 +51,7 @@ dependencies {
     api(compose.ui.tooling.preview)
     api(compose.ui.util)
 
+    // Essential UI/Lifecycle Libraries
     api(androidx.paging.runtime)
     api(androidx.paging.compose)
     api(androidx.appcompat)
@@ -59,14 +62,19 @@ dependencies {
     api(libs.materialKolor)
     api(libs.compose.materialmotion)
     api(libs.reorderable)
+
+    // Image Loading & Files
     api(platform(libs.coil.bom))
     api(libs.bundles.coil)
+    api(libs.unifile)
+    api(libs.okio)
+
+    // Navigation & DI
     api(libs.bundles.voyager)
     api(libs.koin.android)
     api(libs.koin.androidx.compose)
-    api(libs.unifile)
+    api(libs.koin.annotations) // Added this so features can use DI annotations
+
+    // Utilities
     api(libs.shizuku.api)
-    api(libs.okio)
 }
-
-

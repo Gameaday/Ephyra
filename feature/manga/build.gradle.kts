@@ -1,8 +1,7 @@
 plugins {
     id("ephyra.library")
     id("ephyra.library.compose")
-
-    // FIX: Use the native compiler plugin instead of KSP for Koin 4.2 compatibility
+    id("org.jetbrains.kotlin.plugin.compose")
     alias(libs.plugins.koin.compiler)
 }
 
@@ -21,6 +20,16 @@ dependencies {
     api(projects.sourceLocal)
     api(projects.i18n)
     api(projects.presentationCore)
+
+    // 1. SIBLING FEATURES (MangaScreen launches these!)
+    implementation(projects.feature.reader)
+    implementation(projects.feature.webview)
+    implementation(projects.feature.category)
+
+    // 2. MISSING UI LIBRARIES (Markdown, Swipe, etc.)
+    implementation(libs.bundles.markdown)
+    implementation(libs.swipe)
+    implementation(libs.compose.materialmotion)
 
     // Image loading (Coil 3)
     implementation(platform(libs.coil.bom))
@@ -42,6 +51,7 @@ dependencies {
     // Dependency Injection (Koin 4.2.0)
     api(libs.koin.core)
     implementation(libs.koin.annotations)
+    implementation(libs.koin.androidx.compose)
 
     // Testing
     testImplementation(libs.bundles.test)

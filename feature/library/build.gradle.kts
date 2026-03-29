@@ -1,7 +1,7 @@
 plugins {
     id("ephyra.library")
     id("ephyra.library.compose")
-    // FIX: Use the native compiler plugin to fix the KSP errors
+    id("org.jetbrains.kotlin.plugin.compose")
     alias(libs.plugins.koin.compiler)
 }
 
@@ -10,6 +10,7 @@ android {
 }
 
 dependencies {
+    implementation(projects.presentationCore)
     // Internal project dependencies
     api(projects.core.common)
     api(projects.domain)
