@@ -102,12 +102,19 @@
     <string name="include">Уключаць: %s</string>
     <string name="none">Ніхто</string>
     <string name="all">Усе</string>
-    <string name="pref_library_update_categories_details">Манга ў выключаных катэгорыях не будзе абнаўляцца, нават калі яны таксама знаходзяцца ў уключаных катэгорыях.</string>
-    <string name="categorized_display_settings">Налады для кожнай катэгорыі для сартавання і адлюстравання</string>
+    <string name="pref_library_update_categories_details">Манга ў выключаных катэгорыях не будзе
+        абнаўляцца, нават калі яны таксама знаходзяцца ў уключаных катэгорыях.
+    </string>
+    <string name="categorized_display_settings">Налады для кожнай катэгорыі для сартавання і
+        адлюстравання
+    </string>
     <string name="default_category_summary">Заўсёды пытацца</string>
     <string name="default_category">Катэгорыя па змаўчанні</string>
-    <string name="pref_library_update_refresh_metadata_summary">Правераць наяўнасць новай вокладкі і дэталяў пры абнаўленні бібліятэкі</string>
-    <string name="pref_library_update_refresh_metadata">Аўтаматычнае абнаўленне метададзеных</string>
+    <string name="pref_library_update_refresh_metadata_summary">Правераць наяўнасць новай вокладкі і
+        дэталяў пры абнаўленні бібліятэкі
+    </string>
+    <string name="pref_library_update_refresh_metadata">Аўтаматычнае абнаўленне метададзеных
+    </string>
     <string name="pref_update_only_non_completed">Абнаўляць толькі незавершаную мангу</string>
     <string name="restrictions">Абмежаванні: %s</string>
     <string name="charging">Зарадка</string>
@@ -124,11 +131,15 @@
     <string name="portrait">Партрэтная</string>
     <string name="pref_library_columns">Элементы ў радку</string>
     <string name="pref_category_display">Адлюстраванне</string>
-    <string name="parental_controls_info">Гэта не перашкаджае таму, каб неафіцыйныя або патэнцыйна няправільна пазначаныя пашырэння адлюстроўвалі змесціва NSFW (18+) у дадатку.</string>
+    <string name="parental_controls_info">Гэта не перашкаджае таму, каб неафіцыйныя або патэнцыйна
+        няправільна пазначаныя пашырэння адлюстроўвалі змесціва NSFW (18+) у дадатку.
+    </string>
     <string name="pref_show_nsfw_source">Паказаць у спісе крыніц</string>
     <string name="pref_category_nsfw_content">Крыніцы NSFW (18+)</string>
     <string name="hide_notification_content">Схаваць змесціва апавяшчэнняў</string>
-    <string name="secure_screen_summary">Схаваць змесціва прыкладання пры пераключэнні на іншыя прыкладання і блакаваць скрыншоты</string>
+    <string name="secure_screen_summary">Схаваць змесціва прыкладання пры пераключэнні на іншыя
+        прыкладання і блакаваць скрыншоты
+    </string>
     <string name="secure_screen">Абарона экрана</string>
     <string name="lock_never">Ніколі</string>
     <string name="lock_always">Заўсёды</string>
@@ -176,20 +187,27 @@
     <string name="information_no_downloads">Няма загрузак</string>
     <string name="pref_page_transitions">Анімацыя пераходаў паміж старонкамі</string>
     <string name="pref_cutout_short">Паказваць змесціва ў галіне выраза</string>
-    <string name="pref_dual_page_invert_summary">Калі размяшчэнне падзелу на дзве старонкі не адпавядае кірунку чытання</string>
-    <string name="pref_dual_page_invert">Інвертаваць размяшчэнне з падзелам на дзве старонкі</string>
+    <string name="pref_dual_page_invert_summary">Калі размяшчэнне падзелу на дзве старонкі не
+        адпавядае кірунку чытання
+    </string>
+    <string name="pref_dual_page_invert">Інвертаваць размяшчэнне з падзелам на дзве старонкі
+    </string>
     <string name="pref_dual_page_split">Падзел на дзве старонкі</string>
-    <string name="pref_show_navigation_mode_summary">Паказваць зоны дотыку калі чыталка адкрыта</string>
+    <string name="pref_show_navigation_mode_summary">Паказваць зоны дотыку калі чыталка адкрыта
+    </string>
     <string name="pref_show_navigation_mode">Паказваць накладанне схемы навігацыі</string>
     <string name="pref_fullscreen">Поўнаэкранны рэжым</string>
     <string name="ext_nsfw_warning">Можа ўтрымліваць кантэнт NSFW (18+)</string>
     <string name="ext_nsfw_short">18+</string>
     <string name="obsolete_extension_message">Гэта пашырэнне больш недаступна.</string>
-    <string name="untrusted_extension_message">Гэта пашырэнне было падпісана ненадзейным сертыфікатам і не было актывавана.
-\n
-\nШкоднаснае пашырэнне можа счытваць любыя ўліковыя дадзеныя для ўваходу, якія захоўваюцца ў Mihon, або выконваць адвольны код.
-\n
-\nДавяраючы гэтаму сертыфікату, вы прымаеце на сябе гэтыя рызыкі.</string>
+    <string name="untrusted_extension_message">Гэта пашырэнне было падпісана ненадзейным
+        сертыфікатам і не было актывавана.
+        \n
+        \nШкоднаснае пашырэнне можа счытваць любыя ўліковыя дадзеныя для ўваходу, якія захоўваюцца ў
+        Ephyra, або выконваць адвольны код.
+        \n
+        \nДавяраючы гэтаму сертыфікату, вы прымаеце на сябе гэтыя рызыкі.
+    </string>
     <string name="untrusted_extension">Ненадзейнае пашырэнне</string>
     <string name="pref_viewer_nav">Схема навігацыі</string>
     <string name="pager_viewer">Пастаронкава</string>
@@ -212,7 +230,9 @@
     <string name="gray_background">Шэры</string>
     <string name="white_background">Белы</string>
     <string name="pref_reader_theme">Колер фону</string>
-    <string name="pref_create_folder_per_manga_summary">Ствараць тэчкі ў адпаведнасці з назвай мангі</string>
+    <string name="pref_create_folder_per_manga_summary">Ствараць тэчкі ў адпаведнасці з назвай
+        мангі
+    </string>
     <string name="pref_create_folder_per_manga">Захоўваць старонкі ў асобныя тэчкі</string>
     <string name="pref_read_with_long_tap">Паказаць пры доўгім націску</string>
     <string name="pref_reader_actions">Дзеяння</string>
@@ -221,7 +241,8 @@
     <string name="tapping_inverted_horizontal">Гарызантальна</string>
     <string name="tapping_inverted_none">Не</string>
     <string name="pref_read_with_tapping_inverted">Націск наадварот</string>
-    <string name="pref_read_with_volume_keys_inverted">Інвертаваць клавішы рэгулявання гучнасці</string>
+    <string name="pref_read_with_volume_keys_inverted">Інвертаваць клавішы рэгулявання гучнасці
+    </string>
     <string name="pref_read_with_volume_keys">Клавішы рэгулявання гучнасці</string>
     <string name="pref_reader_navigation">Навігацыя</string>
     <string name="pref_skip_filtered_chapters">Прапусціць адфільтраваныя часткi</string>
@@ -239,7 +260,9 @@
     <string name="off">Выключаны</string>
     <string name="on">Уключаны</string>
     <string name="pref_crop_borders">Абрэзаць поля</string>
-    <string name="pref_show_reading_mode_summary">Ненадоўга адлюстраваць бягучы рэжым пры адкрыцці чыталкі</string>
+    <string name="pref_show_reading_mode_summary">Ненадоўга адлюстраваць бягучы рэжым пры адкрыцці
+        чыталкі
+    </string>
     <string name="pref_show_reading_mode">Паказаць рэжым чытання</string>
     <string name="pref_show_page_number">Паказаць нумар старонкі</string>
     <string name="pref_double_tap_anim_speed">Хуткасць анімацыі падвойнага націску</string>
@@ -264,17 +287,25 @@
     <string name="pref_category_appearance">Знешнасць</string>
     <string name="confirm_lock_change">Аўтэнтыфікацыя для пацверджання змяненняў</string>
     <string name="label_default">Па змаўчанні</string>
-    <string name="information_empty_category">У вас няма катэгорый. Націсніце кнопку \"Плюс\", каб стварыць яе для арганізацыі вашай бібліятэкі.</string>
+    <string name="information_empty_category">У вас няма катэгорый. Націсніце кнопку \"Плюс\", каб
+        стварыць яе для арганізацыі вашай бібліятэкі.
+    </string>
     <string name="information_empty_library">Ваша бібліятэка пустая</string>
     <string name="information_no_recent_manga">У апошні час нічога не прачытана</string>
     <string name="action_track">Адсочваць</string>
-    <string name="enhanced_tracking_info">Службы, якія прадстаўляюць пашыраныя функцыі для пэўных крыніц. Манга аўтаматычна адсочваецца пры даданні ў вашу бібліятэку.</string>
+    <string name="enhanced_tracking_info">Службы, якія прадстаўляюць пашыраныя функцыі для пэўных
+        крыніц. Манга аўтаматычна адсочваецца пры даданні ў вашу бібліятэку.
+    </string>
     <string name="enhanced_services">Пашыраныя паслугі</string>
-    <string name="tracking_info">Аднабаковая сінхранізацыя для абнаўлення прагрэсу частак у службах адсочвання. Наладзьце адсочванне асобных запісаў мангі з дапамогай кнопкі адсочвання.</string>
+    <string name="tracking_info">Аднабаковая сінхранізацыя для абнаўлення прагрэсу частак у службах
+        адсочвання. Наладзьце адсочванне асобных запісаў мангі з дапамогай кнопкі адсочвання.
+    </string>
     <string name="services">Паслугi</string>
     <string name="pref_auto_update_manga_sync">Абнаўляць прагрэс пасля чытання</string>
     <string name="tracking_guide">Кіраўніцтва па адсочванні</string>
-    <string name="pref_download_new_categories_details">Манга ў выключаных катэгорыях не будзе загружана, нават калі яны таксама знаходзяцца ў уключаных катэгорыях.</string>
+    <string name="pref_download_new_categories_details">Манга ў выключаных катэгорыях не будзе
+        загружана, нават калі яны таксама знаходзяцца ў уключаных катэгорыях.
+    </string>
     <string name="pref_download_new">Спампаваць новыя часткi</string>
     <string name="pref_category_auto_download">Аўтаматычная загрузка</string>
     <string name="fifth_to_last">Пятая ад прачытанай часткi</string>
@@ -285,17 +316,20 @@
     <string name="disabled">Адключана</string>
     <string name="pref_remove_bookmarked_chapters">Дазволіць выдаленне частак з закладкамі</string>
     <string name="pref_remove_after_read">Аўтаматычна пасля чытання</string>
-    <string name="pref_remove_after_marked_as_read">Пасля таго, як пазначана як \"Прачытанае\"</string>
+    <string name="pref_remove_after_marked_as_read">Пасля таго, як пазначана як \"Прачытанае\"
+    </string>
     <string name="pref_category_delete_chapters">Выдаліць часткі</string>
     <string name="pref_lowest">Найнізкая</string>
     <string name="pref_low">Нізкая</string>
     <string name="pref_high">Высокая</string>
     <string name="pref_highest">Найвышэйшая</string>
-    <string name="pref_hide_threshold">Аўтаматычнае утойванне меню пры адчувальнасці да прагортцы</string>
+    <string name="pref_hide_threshold">Аўтаматычнае утойванне меню пры адчувальнасці да прагортцы
+    </string>
     <string name="pref_webtoon_side_padding">Бакавой водступ</string>
     <string name="pref_category_reading">Чытаньне</string>
     <string name="pref_category_reading_mode">Рэжым чытання</string>
-    <string name="pref_always_show_chapter_transition">Заўсёды паказваць пераход паміж часткамі</string>
+    <string name="pref_always_show_chapter_transition">Заўсёды паказваць пераход паміж часткамі
+    </string>
     <string name="color_filter_a_value">A</string>
     <string name="color_filter_b_value">B</string>
     <string name="color_filter_g_value">G</string>
@@ -310,7 +344,9 @@
     <string name="label_warning">папярэджанне</string>
     <string name="delete_category">Выдаліць катэгорыю</string>
     <string name="delete_category_confirmation">Вы хочаце выдаліць катэгорыю \"%s\"?</string>
-    <string name="internal_error">InternalError: Праверце журнал збояў для атрымання дадатковай інфармацыі</string>
+    <string name="internal_error">InternalError: Праверце журнал збояў для атрымання дадатковай
+        інфармацыі
+    </string>
     <string name="ext_update_all">Абнавіць усё</string>
     <string name="ext_info_age_rating">Узроставае абмежаванне</string>
     <string name="pref_update_only_started">Не пачата</string>
@@ -353,3 +389,4 @@
     <string name="scanlator">Перакладчык</string>
     <string name="label_downloaded">Загружана</string>
 </resources>
+

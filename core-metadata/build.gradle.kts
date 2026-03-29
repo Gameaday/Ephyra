@@ -1,11 +1,10 @@
 plugins {
-    id("mihon.library")
-    kotlin("android")
+    id("ephyra.library")
     kotlin("plugin.serialization")
 }
 
 android {
-    namespace = "tachiyomi.core.metadata"
+    namespace = "ephyra.core.metadata"
 
     defaultConfig {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -18,3 +17,5 @@ dependencies {
 
     implementation(kotlinx.bundles.serialization)
 }
+
+

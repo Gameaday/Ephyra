@@ -1,31 +1,19 @@
 plugins {
-    id("mihon.library")
-    kotlin("android")
+    id("ephyra.library")
     kotlin("plugin.serialization")
+    id("com.google.devtools.ksp")
     alias(libs.plugins.sqldelight)
 }
 
 android {
-    namespace = "tachiyomi.data"
-
-    defaultConfig {
-        consumerProguardFiles("consumer-rules.pro")
-    }
-
-    sqldelight {
-        databases {
-            create("Database") {
-                packageName.set("tachiyomi.data")
-                dialect(libs.sqldelight.dialects.sql)
-                schemaOutputDirectory.set(project.file("./src/main/sqldelight"))
-            }
-        }
-    }
+    namespace = "ephyra.data"
 }
 
-kotlin {
-    compilerOptions {
-        freeCompilerArgs.add("-opt-in=kotlinx.serialization.ExperimentalSerializationApi")
+sqldelight {
+    databases {
+        create("Database") {
+            packageName.set("ephyra.data")
+        }
     }
 }
 
@@ -34,5 +22,11 @@ dependencies {
     implementation(projects.domain)
     implementation(projects.core.common)
 
-    api(libs.bundles.sqldelight)
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    implementation(libs.room.paging)
+    ksp(libs.room.compiler)
+
+    implementation(libs.sqldelight.android.driver)
+    implementation(libs.sqldelight.coroutines)
 }

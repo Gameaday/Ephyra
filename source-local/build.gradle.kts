@@ -1,32 +1,33 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 
 plugins {
-    id("mihon.library")
-    kotlin("multiplatform")
+    id("ephyra.library.multiplatform")
+    kotlin("plugin.serialization")
 }
 
 kotlin {
-    androidTarget()
-    sourceSets {
-        val commonMain by getting {
-            dependencies {
-                implementation(projects.sourceApi)
-                api(projects.i18n)
+    android {
+        // Matches your folder structure: ephyra/source/local
+        namespace = "ephyra.source.local"
 
-                implementation(libs.unifile)
-            }
+        optimization {
+            consumerKeepRules.file("consumer-rules.pro")
         }
-        val androidMain by getting {
-            dependencies {
-                implementation(projects.core.archive)
-                implementation(projects.core.common)
-                implementation(projects.coreMetadata)
+    }
 
-                // Move ChapterRecognition to separate module?
-                implementation(projects.domain)
+    sourceSets {
+        commonMain.dependencies {
+            implementation(projects.sourceApi)
+            api(projects.i18n)
+            implementation(libs.unifile)
+        }
 
-                implementation(kotlinx.bundles.serialization)
-            }
+        androidMain.dependencies {
+            implementation(projects.core.archive)
+            implementation(projects.core.common)
+            implementation(projects.coreMetadata)
+            implementation(projects.domain)
+            implementation(kotlinx.bundles.serialization)
         }
     }
 
@@ -36,14 +37,5 @@ kotlin {
             "-Xexpect-actual-classes",
             "-opt-in=kotlinx.serialization.ExperimentalSerializationApi",
         )
-    }
-}
-
-android {
-    namespace = "tachiyomi.source.local"
-
-    defaultConfig {
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles("consumer-rules.pro")
     }
 }

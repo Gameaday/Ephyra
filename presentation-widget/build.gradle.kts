@@ -1,7 +1,7 @@
 plugins {
-    id("mihon.library")
-    id("mihon.library.compose")
-    kotlin("android")
+    id("ephyra.library")
+    id("ephyra.library.compose")
+
 }
 
 android {
@@ -27,5 +27,6 @@ dependencies {
     implementation(platform(libs.coil.bom))
     implementation(libs.coil.core)
 
-    api(libs.injekt)
 }
+
+

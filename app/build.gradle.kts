@@ -1,11 +1,12 @@
-import mihon.buildlogic.Config
-import mihon.buildlogic.getBuildTime
-import mihon.buildlogic.getCommitCount
-import mihon.buildlogic.getGitSha
+import ephyra.buildlogic.Config
+import ephyra.buildlogic.getBuildTime
+import ephyra.buildlogic.getCommitCount
+import ephyra.buildlogic.getGitSha
+import ephyra.buildlogic.tasks.LocalesConfigTask
 
 plugins {
-    id("mihon.android.application")
-    id("mihon.android.application.compose")
+    id("ephyra.android.application")
+    id("ephyra.android.application.compose")
     kotlin("plugin.serialization")
     alias(libs.plugins.aboutLibraries)
 }
@@ -18,17 +19,17 @@ if (Config.includeTelemetry) {
 }
 
 android {
-    namespace = "eu.kanade.tachiyomi"
+    namespace = "ephyra.app"
 
     // NDK r29+ is required for ARMv9.2-A (arm64-v8a with SVE2/SME) support used by
     // devices such as the Samsung Galaxy S24 series (Snapdragon 8 Gen 3 / Exynos 2400).
     ndkVersion = "29.0.14206865"
 
     defaultConfig {
-        applicationId = "app.mihon"
+        applicationId = "app.Ephyra"
 
-        versionCode = 17
-        versionName = "0.19.4"
+        versionCode = 20
+        versionName = "0.20.0"
 
         buildConfigField("String", "COMMIT_COUNT", "\"${getCommitCount()}\"")
         buildConfigField("String", "COMMIT_SHA", "\"${getGitSha()}\"")
@@ -191,6 +192,8 @@ dependencies {
     implementation(projects.i18n)
     implementation(projects.core.archive)
     implementation(projects.core.common)
+    implementation(projects.core.data)
+    implementation(projects.core.download)
     implementation(projects.coreMetadata)
     implementation(projects.sourceApi)
     implementation(projects.sourceLocal)
@@ -198,6 +201,20 @@ dependencies {
     implementation(projects.domain)
     implementation(projects.presentationCore)
     implementation(projects.presentationWidget)
+
+    // Feature modules
+    implementation(projects.feature.category)
+    implementation(projects.feature.download)
+    implementation(projects.feature.history)
+    implementation(projects.feature.library)
+    implementation(projects.feature.manga)
+    implementation(projects.feature.more)
+    implementation(projects.feature.reader)
+    implementation(projects.feature.security)
+    implementation(projects.feature.settings)
+    implementation(projects.feature.stats)
+    implementation(projects.feature.updates)
+    implementation(projects.feature.webview)
     implementation(projects.telemetry)
 
     // Compose
@@ -254,7 +271,7 @@ dependencies {
     implementation(libs.preferencektx)
 
     // Dependency injection
-    implementation(libs.injekt)
+    implementation(libs.bundles.koin)
 
     // Image loading
     implementation(platform(libs.coil.bom))
@@ -296,7 +313,15 @@ dependencies {
     testImplementation(kotlinx.coroutines.test)
 }
 
+val generateLocalesConfig = tasks.register<LocalesConfigTask>("generateLocalesConfig") {
+    mokoResourcesDir.set(project(":i18n").file("src/commonMain/moko-resources/"))
+    outputDir.set(layout.buildDirectory.dir("generated/res/locales_config"))
+}
+
 androidComponents {
+    onVariants { variant ->
+        variant.sources.res?.addGeneratedSourceDirectory(generateLocalesConfig, LocalesConfigTask::outputDir)
+    }
     onVariants(selector().withFlavor("default" to "standard")) {
         // Only excluding in standard flavor because this breaks
         // Layout Inspector's Compose tree
@@ -322,3 +347,4 @@ buildscript {
         classpath(kotlinx.gradle)
     }
 }
+

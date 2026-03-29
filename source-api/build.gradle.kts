@@ -1,46 +1,44 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import ephyra.buildlogic.AndroidConfig
 
 plugins {
-    id("mihon.library")
-    kotlin("multiplatform")
+    id("ephyra.library.multiplatform")
     kotlin("plugin.serialization")
 }
 
 kotlin {
-    androidTarget()
-    sourceSets {
-        val commonMain by getting {
-            dependencies {
-                api(kotlinx.serialization.json)
-                api(libs.injekt)
-                api(libs.jsoup)
+    android {
+        namespace = "ephyra.source.api"
+        compileSdk = AndroidConfig.COMPILE_SDK
+        minSdk = AndroidConfig.MIN_SDK
 
-                implementation(project.dependencies.platform(compose.bom))
-                implementation(compose.runtime)
-            }
+        optimization {
+            consumerKeepRules.file("consumer-proguard.pro")
         }
-        val androidMain by getting {
-            dependencies {
-                implementation(projects.core.common)
-                api(libs.preferencektx)
+    }
 
-                // Workaround for https://youtrack.jetbrains.com/issue/KT-57605
-                implementation(kotlinx.coroutines.android)
-                implementation(project.dependencies.platform(kotlinx.coroutines.bom))
-            }
+    sourceSets {
+        commonMain.dependencies {
+            api(kotlinx.serialization.json)
+            api(libs.koin.core)
+            api(libs.jsoup)
+
+            implementation(project.dependencies.platform(compose.compose.bom))
+            implementation(compose.runtime)
+        }
+
+        androidMain.dependencies {
+            implementation(projects.core.common)
+            api(libs.preferencektx)
+
+            // Workaround for https://youtrack.jetbrains.com/issue/KT-57605
+            implementation(kotlinx.coroutines.android)
+            implementation(project.dependencies.platform(kotlinx.coroutines.bom))
         }
     }
 
     @OptIn(ExperimentalKotlinGradlePluginApi::class)
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")
-    }
-}
-
-android {
-    namespace = "eu.kanade.tachiyomi.source"
-
-    defaultConfig {
-        consumerProguardFile("consumer-proguard.pro")
     }
 }

@@ -1,11 +1,11 @@
 plugins {
-    id("mihon.library")
-    kotlin("android")
+    id("ephyra.library")
+
     kotlin("plugin.serialization")
 }
 
 android {
-    namespace = "eu.kanade.tachiyomi.core.common"
+    namespace = "ephyra.app.core.common"
 }
 
 kotlin {
@@ -21,7 +21,9 @@ kotlin {
 dependencies {
     implementation(projects.i18n)
 
+    api(libs.koin.core)
     api(libs.logcat)
+    implementation(libs.material)
 
     api(libs.okhttp.core)
     api(libs.okhttp.logging)
@@ -34,11 +36,17 @@ dependencies {
     implementation(libs.unifile)
     implementation(libs.libarchive)
 
+    api(platform(kotlinx.coroutines.bom))
     api(kotlinx.coroutines.core)
     api(kotlinx.serialization.json)
     api(kotlinx.serialization.json.okio)
 
     api(libs.preferencektx)
+    api(libs.datastore)
+
+    api(androidx.workmanager)
+
+    api(libs.bundles.shizuku)
 
     implementation(libs.jsoup)
 
@@ -48,3 +56,5 @@ dependencies {
     testImplementation(libs.bundles.test)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
+
+

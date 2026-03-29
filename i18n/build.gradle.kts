@@ -1,15 +1,19 @@
-import mihon.buildlogic.generatedBuildDir
-import mihon.buildlogic.tasks.getLocalesConfigTask
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import ephyra.buildlogic.AndroidConfig
+import ephyra.buildlogic.generatedBuildDir
+import ephyra.buildlogic.tasks.getLocalesConfigTask
 
 plugins {
-    id("mihon.library")
-    kotlin("multiplatform")
+    id("ephyra.library.multiplatform")
+    kotlin("plugin.serialization")
     alias(libs.plugins.moko)
 }
 
 kotlin {
-    androidTarget()
+    android {
+        namespace = "ephyra.i18n"
+        compileSdk = AndroidConfig.COMPILE_SDK
+        minSdk = AndroidConfig.MIN_SDK
+    }
 
     applyDefaultHierarchyTemplate()
 
@@ -21,37 +25,20 @@ kotlin {
         }
     }
 
-    @OptIn(ExperimentalKotlinGradlePluginApi::class)
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")
     }
 }
 
-val generatedAndroidResourceDir = generatedBuildDir.resolve("android/res")
-
-android {
-    namespace = "tachiyomi.i18n"
-
-    sourceSets {
-        val main by getting
-        main.res.srcDirs(
-            "src/commonMain/resources",
-            generatedAndroidResourceDir,
-        )
-    }
-
-    lint {
-        disable.addAll(listOf("MissingTranslation", "ExtraTranslation"))
-    }
-}
 
 multiplatformResources {
-    resourcesPackage.set("tachiyomi.i18n")
+    resourcesPackage.set("ephyra.i18n")
 }
 
-tasks {
-    val localesConfigTask = project.getLocalesConfigTask(generatedAndroidResourceDir)
-    preBuild {
-        dependsOn(localesConfigTask)
-    }
+val generatedAndroidResourceDir = generatedBuildDir.resolve("android/res")
+val localesConfigTask = project.getLocalesConfigTask(generatedAndroidResourceDir)
+
+tasks.matching { it.name == "preBuild" }.configureEach {
+    dependsOn(localesConfigTask)
 }
+

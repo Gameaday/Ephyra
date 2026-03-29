@@ -4,16 +4,16 @@ import android.content.Context
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.widget.Toast
-import eu.kanade.tachiyomi.util.system.DeviceUtil
-import eu.kanade.tachiyomi.util.system.WebViewUtil
-import eu.kanade.tachiyomi.util.system.setDefaultSettings
-import eu.kanade.tachiyomi.util.system.toast
+import ephyra.core.common.util.system.DeviceUtil
+import ephyra.core.common.util.system.WebViewUtil
+import ephyra.core.common.util.system.setDefaultSettings
+import ephyra.core.common.util.system.toast
+import ephyra.core.common.util.lang.launchUI
+import ephyra.i18n.MR
 import okhttp3.Headers
 import okhttp3.Interceptor
 import okhttp3.Request
 import okhttp3.Response
-import tachiyomi.core.common.util.lang.launchUI
-import tachiyomi.i18n.MR
 import java.util.Locale
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -37,7 +37,9 @@ abstract class WebViewInterceptor(
         }
 
         try {
-            WebSettings.getDefaultUserAgent(context)
+            // Use applicationContext: WebSettings must not hold a reference to an Activity context
+            // as this interceptor is held for the lifetime of the singleton NetworkHelper.
+            WebSettings.getDefaultUserAgent(context.applicationContext)
         } catch (_: Exception) {
             // Avoid some crashes like when Chrome/WebView is being updated.
         }
@@ -80,7 +82,10 @@ abstract class WebViewInterceptor(
     }
 
     fun createWebView(request: Request): WebView {
-        return WebView(context).apply {
+        // Always use applicationContext: this interceptor lives as long as NetworkHelper (process
+        // lifetime). Passing an Activity context here would leak the Activity via the WebView
+        // native peer, preventing GC long after the Activity is destroyed.
+        return WebView(context.applicationContext).apply {
             setDefaultSettings()
             // Avoid sending empty User-Agent, Chromium WebView will reset to default if empty
             settings.userAgentString = request.header("User-Agent") ?: defaultUserAgentProvider()
@@ -97,6 +102,7 @@ private fun isRequestHeaderSafe(_name: String, _value: String): Boolean {
     if (name == "connection" && value == "upgrade") return false
     return true
 }
+
 private val unsafeHeaderNames = listOf(
     "content-length", "host", "trailer", "te", "upgrade", "cookie2", "keep-alive", "transfer-encoding", "set-cookie",
 )

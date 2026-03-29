@@ -14,6 +14,9 @@ pluginManagement {
         maven(url = "https://www.jitpack.io")
     }
 }
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
+}
 
 dependencyResolutionManagement {
     versionCatalogs {
@@ -37,13 +40,28 @@ dependencyResolutionManagement {
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
-rootProject.name = "Mihon"
+rootProject.name = "Ephyra"
 include(":app")
 include(":core-metadata")
 include(":core:archive")
 include(":core:common")
+include(":core:domain")
+include(":core:data")
+include(":core:download")
 include(":data")
 include(":domain")
+include(":feature:category")
+include(":feature:download")
+include(":feature:history")
+include(":feature:library")
+include(":feature:manga")
+include(":feature:more")
+include(":feature:reader")
+include(":feature:security")
+include(":feature:settings")
+include(":feature:stats")
+include(":feature:updates")
+include(":feature:webview")
 include(":i18n")
 include(":macrobenchmark")
 include(":presentation-core")

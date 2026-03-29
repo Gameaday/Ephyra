@@ -1,6 +1,6 @@
 plugins {
-    id("mihon.library")
-    kotlin("android")
+    id("ephyra.library")
+
     kotlin("plugin.serialization")
 }
 
@@ -22,6 +22,7 @@ kotlin {
 dependencies {
     implementation(projects.sourceApi)
     implementation(projects.core.common)
+    api(projects.i18n)
 
     implementation(platform(kotlinx.coroutines.bom))
     implementation(kotlinx.bundles.coroutines)
@@ -31,9 +32,11 @@ dependencies {
 
     api(libs.sqldelight.android.paging)
 
+    compileOnly(platform(compose.compose.bom))
     compileOnly(compose.runtime.annotation)
 
     testImplementation(libs.bundles.test)
     testImplementation(kotlinx.coroutines.test)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
+

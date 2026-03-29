@@ -1,1 +1,27 @@
-.idx/dev.nix
+# Gradle
+.gradle/
+.kotlin/
+build/
+*.pyc
+
+# IDE - IntelliJ / Android Studio
+*.iml
+.idea/
+!.idea/icon.svg
+/captures/
+/.externalNativeBuild/
+/.cxx/
+
+# Configuration
+local.properties
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project IDX
+# .idx/dev.nix (Keep tracked)
+*.pytroubleshooting/

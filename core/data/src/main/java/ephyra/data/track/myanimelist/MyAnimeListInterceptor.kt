@@ -1,0 +1,85 @@
+package ephyra.data.track.myanimelist
+
+import ephyra.data.track.myanimelist.dto.MALOAuth
+import eu.kanade.tachiyomi.network.parseAs
+import kotlinx.serialization.json.Json
+import okhttp3.Interceptor
+import okhttp3.Response
+import java.io.IOException
+
+class MyAnimeListInterceptor(
+    private val myanimelist: MyAnimeList,
+    private val json: Json,
+) : Interceptor {
+
+
+    private var oauth: MALOAuth? = myanimelist.loadOAuthSync()
+    private val tokenExpired get() = myanimelist.getIfAuthExpiredSync()
+
+    override fun intercept(chain: Interceptor.Chain): Response {
+        if (tokenExpired) {
+            throw MALTokenExpired()
+        }
+        val originalRequest = chain.request()
+
+        if (oauth?.isExpired() == true) {
+            refreshToken(chain)
+        }
+
+        if (oauth == null) {
+            throw IOException("MAL: User is not authenticated")
+        }
+
+        // Add the authorization header to the original request
+        val authRequest = originalRequest.newBuilder()
+            .addHeader("Authorization", "Bearer ${oauth!!.accessToken}")
+            // TODO(antsy): Add back custom user agent when they stop blocking us for no apparent reason
+            // .header("User-Agent", "Ephyra v${BuildConfig.VERSION_NAME} (${BuildConfig.APPLICATION_ID})")
+            .build()
+
+        return chain.proceed(authRequest)
+    }
+
+    /**
+     * Called when the user authenticates with MyAnimeList for the first time. Sets the refresh token
+     * and the oauth object.
+     */
+    fun setAuth(oauth: MALOAuth?) {
+        this.oauth = oauth
+        myanimelist.saveOAuth(oauth)
+    }
+
+    private fun refreshToken(chain: Interceptor.Chain): MALOAuth = synchronized(this) {
+        if (tokenExpired) throw MALTokenExpired()
+        oauth?.takeUnless { it.isExpired() }?.let { return@synchronized it }
+
+        val response = try {
+            chain.proceed(MyAnimeListApi.refreshTokenRequest(oauth!!))
+        } catch (_: Throwable) {
+            throw MALTokenRefreshFailed()
+        }
+
+        if (response.code == 401) {
+            myanimelist.setAuthExpired()
+            throw MALTokenExpired()
+        }
+
+        return runCatching {
+            if (response.isSuccessful) {
+                with(json) { response.parseAs<MALOAuth>() }
+            } else {
+                response.close()
+                null
+            }
+        }
+            .getOrNull()
+            ?.also {
+                this.oauth = it
+                myanimelist.saveOAuth(it)
+            }
+            ?: throw MALTokenRefreshFailed()
+    }
+}
+
+class MALTokenRefreshFailed : IOException("MAL: Failed to refresh account token")
+class MALTokenExpired : IOException("MAL: Login has expired")

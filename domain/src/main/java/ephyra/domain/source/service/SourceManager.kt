@@ -1,0 +1,25 @@
+package ephyra.domain.source.service
+
+import ephyra.domain.source.model.StubSource
+import eu.kanade.tachiyomi.source.CatalogueSource
+import eu.kanade.tachiyomi.source.Source
+import eu.kanade.tachiyomi.source.online.HttpSource
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
+
+interface SourceManager {
+
+    val isInitialized: StateFlow<Boolean>
+
+    val catalogueSources: Flow<List<CatalogueSource>>
+
+    fun get(sourceKey: Long): Source?
+
+    fun getOrStub(sourceKey: Long): Source
+
+    fun getOnlineSources(): List<HttpSource>
+
+    fun getCatalogueSources(): List<CatalogueSource>
+
+    fun getStubSources(): List<StubSource>
+}

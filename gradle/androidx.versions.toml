@@ -1,5 +1,5 @@
 [versions]
-agp_version = "8.13.2"
+agp_version = "9.1.0"
 lifecycle_version = "2.10.0"
 paging_version = "3.4.1"
 
@@ -18,6 +18,7 @@ profileinstaller = "androidx.profileinstaller:profileinstaller:1.4.1"
 lifecycle-common = { module = "androidx.lifecycle:lifecycle-common", version.ref = "lifecycle_version" }
 lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "lifecycle_version" }
 lifecycle-runtimektx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle_version" }
+lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle_version" }
 
 workmanager = "androidx.work:work-runtime:2.11.1"
 
@@ -30,4 +31,4 @@ test-espresso-core = "androidx.test.espresso:espresso-core:3.7.0"
 test-uiautomator = "androidx.test.uiautomator:uiautomator:2.3.0"
 
 [bundles]
-lifecycle = ["lifecycle-common", "lifecycle-process", "lifecycle-runtimektx"]
+lifecycle = ["lifecycle-common", "lifecycle-process", "lifecycle-runtimektx", "lifecycle-runtime-compose"]

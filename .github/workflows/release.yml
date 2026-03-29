@@ -13,7 +13,7 @@ jobs:
     if: github.repository == 'Gameaday/Ephyra'
     name: Extract tag name
     runs-on: 'ubuntu-24.04'
-    permissions: {}
+    permissions: { }
     outputs:
       tag: ${{ steps.extract.outputs.tag }}
 
@@ -133,7 +133,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
-    needs: [get_tag, build, build_foss]
+    needs: [ get_tag, build, build_foss ]
 
     steps:
       - name: Download all artifacts
@@ -177,4 +177,4 @@ jobs:
             ephyra-x86_64-${{ needs.get_tag.outputs.tag }}.apk
           draft: true
           prerelease: false
-          token: ${{ secrets.MIHON_BOT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}

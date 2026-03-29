@@ -1,11 +1,11 @@
 plugins {
-    id("mihon.library")
-    id("mihon.library.compose")
-    kotlin("android")
+    id("ephyra.library")
+    id("ephyra.library.compose")
+
 }
 
 android {
-    namespace = "tachiyomi.presentation.core"
+    namespace = "ephyra.presentation.core"
 
     defaultConfig {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -29,6 +29,11 @@ kotlin {
 
 dependencies {
     api(projects.core.common)
+    api(projects.domain)
+    api(projects.core.domain)
+    api(projects.core.data)
+    api(projects.sourceLocal)
+    api(projects.sourceApi)
     api(projects.i18n)
 
     // Compose
@@ -44,5 +49,20 @@ dependencies {
 
     implementation(androidx.paging.runtime)
     implementation(androidx.paging.compose)
+    implementation(androidx.appcompat)
+    implementation(androidx.lifecycle.runtimektx)
     implementation(kotlinx.immutables)
+    implementation(androidx.lifecycle.runtime.compose)
+    implementation(libs.image.decoder)
+    implementation(libs.materialKolor)
+    implementation(platform(libs.coil.bom))
+    implementation(libs.bundles.coil)
+    implementation(libs.bundles.voyager)
+    implementation(libs.koin.android)
+    implementation(libs.koin.androidx.compose)
+    implementation(libs.unifile)
+    implementation(libs.shizuku.api)
+    implementation(libs.okio)
 }
+
+

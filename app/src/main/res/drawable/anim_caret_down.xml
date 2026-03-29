@@ -70,8 +70,7 @@
                 android:valueType="floatType" />
         </aapt:attr>
     </target>
-    <target
-        android:name="caret_r">
+    <target android:name="caret_r">
         <aapt:attr name="android:animation">
             <objectAnimator
                 android:duration="300"

@@ -17,29 +17,29 @@ read design tokens (shape, spacing, alpha, typography weight) from this
 config so that the visual identity changes *beyond just color*.
 
 All non-branded themes (Default, Catppuccin, Nord, etc.) use the default
-config, which matches the existing `MihonShapes` radii and standard M3 values.
+config, which matches the existing `Shapes` radii and standard M3 values.
 
 ---
 
 ## Ephyra — "Glassmorphic" Aesthetic
 
-| Property            | Value         |
-|---------------------|---------------|
-| **Feeling**         | Translucent, modern, premium |
+| Property            | Value                                      |
+|---------------------|--------------------------------------------|
+| **Feeling**         | Translucent, modern, premium               |
 | **Colors**          | Electric Indigo (#4F46E5) & Cyan (#0891B2) |
-| **Card radius**     | 20 dp (soft, airy) |
-| **Cover radius**    | 16 dp |
-| **Badge shape**     | Pill (50%) |
-| **Sheet radius**    | 32 dp |
-| **Dialog radius**   | 32 dp |
-| **Card elevation**  | 0 dp (flat / frosted glass) |
-| **Card border**     | 0 dp (no border) |
-| **Grid spacing**    | 10 dp H × 10 dp V (more breathing room) |
-| **Surface alpha**   | 0.85 (translucent glass) |
-| **Container alpha** | 0.78 (deeper transparency layers) |
-| **Heading weight**  | SemiBold (modern clarity through glass) |
-| **Body weight**     | Normal |
-| **Card padding**    | 10 dp (spacious) |
+| **Card radius**     | 20 dp (soft, airy)                         |
+| **Cover radius**    | 16 dp                                      |
+| **Badge shape**     | Pill (50%)                                 |
+| **Sheet radius**    | 32 dp                                      |
+| **Dialog radius**   | 32 dp                                      |
+| **Card elevation**  | 0 dp (flat / frosted glass)                |
+| **Card border**     | 0 dp (no border)                           |
+| **Grid spacing**    | 10 dp H × 10 dp V (more breathing room)    |
+| **Surface alpha**   | 0.85 (translucent glass)                   |
+| **Container alpha** | 0.78 (deeper transparency layers)          |
+| **Heading weight**  | SemiBold (modern clarity through glass)    |
+| **Body weight**     | Normal                                     |
+| **Card padding**    | 10 dp (spacious)                           |
 
 ### Design Notes
 
@@ -60,23 +60,23 @@ three clean, vertical lines of varying lengths beneath it.
 
 ## Nagare — "Minimalist Zen" Aesthetic
 
-| Property            | Value         |
-|---------------------|---------------|
-| **Feeling**         | Fluid, lightweight, effortless |
+| Property            | Value                               |
+|---------------------|-------------------------------------|
+| **Feeling**         | Fluid, lightweight, effortless      |
 | **Colors**          | Charcoal (#374151) & Mint (#059669) |
-| **Card radius**     | 12 dp (clean, moderate) |
-| **Cover radius**    | 8 dp |
-| **Badge shape**     | Pill (50%) |
-| **Sheet radius**    | 24 dp |
-| **Dialog radius**   | 24 dp |
-| **Card elevation**  | 0 dp |
-| **Card border**     | 0 dp |
-| **Grid spacing**    | 6 dp H × 6 dp V (tight, dense) |
-| **Surface alpha**   | 1.0 (fully opaque — no effects) |
-| **Container alpha** | 1.0 |
-| **Heading weight**  | Medium (understated elegance) |
-| **Body weight**     | Normal |
-| **Card padding**    | 6 dp (compact) |
+| **Card radius**     | 12 dp (clean, moderate)             |
+| **Cover radius**    | 8 dp                                |
+| **Badge shape**     | Pill (50%)                          |
+| **Sheet radius**    | 24 dp                               |
+| **Dialog radius**   | 24 dp                               |
+| **Card elevation**  | 0 dp                                |
+| **Card border**     | 0 dp                                |
+| **Grid spacing**    | 6 dp H × 6 dp V (tight, dense)      |
+| **Surface alpha**   | 1.0 (fully opaque — no effects)     |
+| **Container alpha** | 1.0                                 |
+| **Heading weight**  | Medium (understated elegance)       |
+| **Body weight**     | Normal                              |
+| **Card padding**    | 6 dp (compact)                      |
 
 ### Design Notes
 
@@ -97,23 +97,23 @@ Looks like a brush stroke or a gentle wave.
 
 ## Atolla — "System Hub" Aesthetic
 
-| Property            | Value         |
-|---------------------|---------------|
-| **Feeling**         | Bold, stable, industrial |
+| Property            | Value                                     |
+|---------------------|-------------------------------------------|
+| **Feeling**         | Bold, stable, industrial                  |
 | **Colors**          | Deep Sea Blue (#1E3A5F) & Amber (#F59E0B) |
-| **Card radius**     | 6 dp (crisp, squared) |
-| **Cover radius**    | 4 dp |
-| **Badge shape**     | 4 dp (nearly square) |
-| **Sheet radius**    | 16 dp |
-| **Dialog radius**   | 16 dp |
-| **Card elevation**  | 2 dp (tactile, raised) |
-| **Card border**     | 1 dp |
-| **Grid spacing**    | 8 dp H × 8 dp V (standard) |
-| **Surface alpha**   | 1.0 (solid, functional panels) |
-| **Container alpha** | 1.0 |
-| **Heading weight**  | Bold (authority and structure) |
-| **Body weight**     | Medium (increased readability) |
-| **Card padding**    | 6 dp (dense, efficient) |
+| **Card radius**     | 6 dp (crisp, squared)                     |
+| **Cover radius**    | 4 dp                                      |
+| **Badge shape**     | 4 dp (nearly square)                      |
+| **Sheet radius**    | 16 dp                                     |
+| **Dialog radius**   | 16 dp                                     |
+| **Card elevation**  | 2 dp (tactile, raised)                    |
+| **Card border**     | 1 dp                                      |
+| **Grid spacing**    | 8 dp H × 8 dp V (standard)                |
+| **Surface alpha**   | 1.0 (solid, functional panels)            |
+| **Container alpha** | 1.0                                       |
+| **Heading weight**  | Bold (authority and structure)            |
+| **Body weight**     | Medium (increased readability)            |
+| **Card padding**    | 6 dp (dense, efficient)                   |
 
 ### Design Notes
 
@@ -134,11 +134,11 @@ button or sync symbol). Represents a "Central Hub."
 
 ## Comparison
 
-| Name   | Logo Concept       | Color Palette            | Primary Feeling       | Surface Style      | Heading Weight |
-|--------|--------------------|--------------------------|----------------------|--------------------|----------------|
-| Ephyra | Geometric Bell     | Electric Indigo & Cyan   | Translucent / Modern | Glassmorphic (85%) | SemiBold       |
-| Nagare | Continuous Wave    | Charcoal & Mint          | Fluid / Lightweight  | Solid / Clean M3   | Medium         |
-| Atolla | Concentric Rings   | Deep Sea Blue & Amber    | Reliable / Structured| Solid + Borders    | Bold           |
+| Name   | Logo Concept     | Color Palette          | Primary Feeling       | Surface Style      | Heading Weight |
+|--------|------------------|------------------------|-----------------------|--------------------|----------------|
+| Ephyra | Geometric Bell   | Electric Indigo & Cyan | Translucent / Modern  | Glassmorphic (85%) | SemiBold       |
+| Nagare | Continuous Wave  | Charcoal & Mint        | Fluid / Lightweight   | Solid / Clean M3   | Medium         |
+| Atolla | Concentric Rings | Deep Sea Blue & Amber  | Reliable / Structured | Solid + Borders    | Bold           |
 
 ---
 
@@ -147,12 +147,12 @@ button or sync symbol). Represents a "Central Hub."
 The following tokens are **automatically applied** by the theme engine
 (in `TachiyomiTheme.kt`) — component authors don't need to read them manually:
 
-| Token | Wired Into | Effect |
-|-------|-----------|--------|
-| `surfaceAlpha` | `ColorScheme.surface`, `surfaceVariant` | Translucent surface backgrounds |
+| Token            | Wired Into                                     | Effect                            |
+|------------------|------------------------------------------------|-----------------------------------|
+| `surfaceAlpha`   | `ColorScheme.surface`, `surfaceVariant`        | Translucent surface backgrounds   |
 | `containerAlpha` | `ColorScheme.surfaceContainer*` (all 5 levels) | Translucent container backgrounds |
-| `headingWeight` | `Typography` display/headline/title styles | Per-theme heading weight |
-| `bodyWeight` | `Typography` body/label styles | Per-theme body text weight |
+| `headingWeight`  | `Typography` display/headline/title styles     | Per-theme heading weight          |
+| `bodyWeight`     | `Typography` body/label styles                 | Per-theme body text weight        |
 
 The Typography extension functions (`header`, `titleEmphasis`, `displayEmphasis`,
 `sectionLabel`) also read `headingWeight` from `LocalBrandedTheme` to stay

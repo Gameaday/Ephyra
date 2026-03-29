@@ -1,7 +1,7 @@
 package eu.kanade.tachiyomi.network
 
-import tachiyomi.core.common.preference.Preference
-import tachiyomi.core.common.preference.PreferenceStore
+import ephyra.core.common.preference.Preference
+import ephyra.core.common.preference.PreferenceStore
 
 class NetworkPreferences(
     private val preferenceStore: PreferenceStore,
