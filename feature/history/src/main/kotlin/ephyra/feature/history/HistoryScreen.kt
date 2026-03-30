@@ -14,11 +14,11 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import ephyra.domain.history.model.HistoryWithRelations
 import ephyra.feature.history.components.HistoryItem
 import ephyra.i18n.MR
-import ephyra.presentation.components.AppBar
-import ephyra.presentation.components.AppBarActions
-import ephyra.presentation.components.AppBarTitle
-import ephyra.presentation.components.SearchToolbar
-import ephyra.presentation.components.relativeDateText
+import ephyra.presentation.core.components.AppBar
+import ephyra.presentation.core.components.AppBarActions
+import ephyra.presentation.core.components.AppBarTitle
+import ephyra.presentation.core.components.SearchToolbar
+import ephyra.presentation.core.components.relativeDateText
 import ephyra.presentation.core.components.FastScrollLazyColumn
 import ephyra.presentation.core.components.ListGroupHeader
 import ephyra.presentation.core.components.material.Scaffold
@@ -26,7 +26,7 @@ import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.theme.TachiyomiPreviewTheme
-import ephyra.presentation.util.animateItemFastScroll
+import ephyra.presentation.core.util.animateItemFastScroll
 import kotlinx.collections.immutable.persistentListOf
 import java.time.LocalDate
 

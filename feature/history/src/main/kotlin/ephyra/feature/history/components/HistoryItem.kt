@@ -30,7 +30,7 @@ import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.manga.components.MangaCover
 import ephyra.presentation.theme.TachiyomiPreviewTheme
-import ephyra.presentation.util.formatChapterNumber
+import ephyra.presentation.core.util.formatChapterNumber
 
 private val HistoryItemHeight = 96.dp
 

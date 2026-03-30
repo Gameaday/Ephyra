@@ -20,8 +20,8 @@ import androidx.compose.ui.Modifier
 import ephyra.core.common.preference.getAndSet
 import ephyra.domain.updates.service.UpdatesPreferences
 import ephyra.i18n.MR
-import ephyra.presentation.components.TabbedDialog
-import ephyra.presentation.components.TabbedDialogPaddings
+import ephyra.presentation.core.components.TabbedDialog
+import ephyra.presentation.core.components.TabbedDialogPaddings
 import ephyra.presentation.core.components.SettingsItemsPaddings
 import ephyra.presentation.core.components.TriStateItem
 import ephyra.presentation.core.components.material.padding

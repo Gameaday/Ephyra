@@ -25,8 +25,8 @@ import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
 import ephyra.core.download.model.Download
 import ephyra.i18n.MR
-import ephyra.presentation.components.AppBar
-import ephyra.presentation.components.AppBarActions
+import ephyra.presentation.core.components.AppBar
+import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.FastScrollLazyColumn
 import ephyra.presentation.core.components.material.PullRefresh
 import ephyra.presentation.core.components.material.Scaffold

@@ -17,6 +17,7 @@ import ephyra.domain.source.service.SourceManager
 import ephyra.i18n.MR
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.model.Page
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.drop
@@ -424,6 +425,7 @@ class DownloadManager(
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun statusFlow(): Flow<Download> = queueState
         .flatMapLatest { downloads ->
             downloads
@@ -438,6 +440,7 @@ class DownloadManager(
             )
         }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun progressFlow(): Flow<Download> = queueState
         .flatMapLatest { downloads ->
             downloads

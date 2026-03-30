@@ -31,7 +31,7 @@ import ephyra.presentation.history.HistoryScreen
 import ephyra.presentation.history.components.HistoryDeleteAllDialog
 import ephyra.presentation.history.components.HistoryDeleteDialog
 import ephyra.presentation.manga.DuplicateMangaDialog
-import ephyra.presentation.util.Tab
+import ephyra.presentation.core.util.Tab
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow

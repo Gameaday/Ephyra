@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.dp
 import ephyra.core.download.model.Download
 import ephyra.domain.updates.model.UpdatesWithRelations
 import ephyra.i18n.MR
-import ephyra.presentation.components.relativeDateText
+import ephyra.presentation.core.components.relativeDateText
 import ephyra.presentation.core.components.ListGroupHeader
 import ephyra.presentation.core.components.material.DISABLED_ALPHA
 import ephyra.presentation.core.components.material.padding
@@ -45,8 +45,8 @@ import ephyra.presentation.manga.components.ChapterDownloadAction
 import ephyra.presentation.manga.components.ChapterDownloadIndicator
 import ephyra.presentation.manga.components.DotSeparatorText
 import ephyra.presentation.manga.components.MangaCover
-import ephyra.presentation.util.animateItemFastScroll
-import ephyra.presentation.util.relativeTimeSpanString
+import ephyra.presentation.core.util.animateItemFastScroll
+import ephyra.presentation.core.util.relativeTimeSpanString
 import kotlin.compareTo
 
 internal fun LazyListScope.updatesLastUpdatedItem(

@@ -45,9 +45,9 @@ import ephyra.app.BuildConfig
 import ephyra.app.util.system.getHtml
 import ephyra.app.util.system.setDefaultSettings
 import ephyra.i18n.MR
-import ephyra.presentation.components.AppBar
-import ephyra.presentation.components.AppBarActions
-import ephyra.presentation.components.WarningBanner
+import ephyra.presentation.core.components.AppBar
+import ephyra.presentation.core.components.AppBarActions
+import ephyra.presentation.core.components.WarningBanner
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
 import kotlinx.collections.immutable.persistentListOf

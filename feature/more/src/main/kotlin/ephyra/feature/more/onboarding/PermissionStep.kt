@@ -40,8 +40,8 @@ import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.core.util.secondaryItemAlpha
 import ephyra.presentation.core.util.system.launchRequestPackageInstallsPermission
-import ephyra.presentation.util.LocalPrivacyPreferences
-import ephyra.presentation.util.rememberRequestPackageInstallsPermissionState
+import ephyra.presentation.core.util.LocalPrivacyPreferences
+import ephyra.presentation.core.util.rememberRequestPackageInstallsPermissionState
 
 internal class PermissionStep : OnboardingStep {
 

@@ -13,6 +13,7 @@ import ephyra.core.common.util.storage.saveTo
 import ephyra.core.common.util.system.ImageUtil
 import ephyra.core.common.util.system.encoder
 import ephyra.core.common.util.system.logcat
+import ephyra.core.download.Downloader.Companion.BOUNDARY_PAGES
 import ephyra.core.metadata.comicinfo.COMIC_INFO_FILE
 import ephyra.core.metadata.comicinfo.ComicInfo
 import ephyra.data.cache.ChapterCache
@@ -35,6 +36,7 @@ import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
@@ -187,6 +189,7 @@ class Downloader(
     /**
      * Prepares the subscriptions to start downloading.
      */
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun launchDownloaderJob() {
         if (isRunning) return
 
@@ -314,6 +317,7 @@ class Downloader(
      *
      * @param download the chapter to be downloaded.
      */
+    @OptIn(ExperimentalCoroutinesApi::class)
     private suspend fun downloadChapter(download: Download) {
         val mangaDir = provider.getMangaDir(download.manga.title, download.source).getOrElse { e ->
             download.status = Download.State.ERROR

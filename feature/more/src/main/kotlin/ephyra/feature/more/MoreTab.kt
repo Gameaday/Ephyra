@@ -27,7 +27,7 @@ import ephyra.feature.stats.StatsScreen
 import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.more.MoreScreen
-import ephyra.presentation.util.Tab
+import ephyra.presentation.core.util.Tab
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
