@@ -33,7 +33,7 @@ import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.model.ViewerChapters
 import ephyra.domain.reader.model.ReaderOrientation
-import ephyra.feature.reader.setting.ReaderPreferences
+import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.domain.reader.model.ReadingMode
 import ephyra.feature.reader.viewer.Viewer
 import ephyra.app.util.chapter.filterDownloaded

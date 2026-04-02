@@ -1,6 +1,6 @@
 package ephyra.feature.reader.viewer.webtoon
 
-import ephyra.feature.reader.setting.ReaderPreferences
+import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.feature.reader.viewer.ViewerConfig
 import ephyra.feature.reader.viewer.ViewerNavigation
 import ephyra.feature.reader.viewer.navigation.DisabledNavigation

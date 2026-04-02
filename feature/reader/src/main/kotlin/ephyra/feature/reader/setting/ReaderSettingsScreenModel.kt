@@ -1,6 +1,9 @@
 package ephyra.feature.reader.setting
 
 import cafe.adriel.voyager.core.model.ScreenModel
+import ephyra.domain.reader.model.ReaderOrientation
+import ephyra.domain.reader.model.ReadingMode
+import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.presentation.core.util.ioCoroutineScope
 import ephyra.feature.reader.ReaderViewModel
 import kotlinx.coroutines.flow.SharingStarted

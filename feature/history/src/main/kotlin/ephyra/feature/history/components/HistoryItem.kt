@@ -23,7 +23,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
-import ephyra.app.util.lang.toTimestampString
+import ephyra.core.common.util.lang.toTimestampString
 import ephyra.domain.history.model.HistoryWithRelations
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.padding

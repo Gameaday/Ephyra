@@ -139,7 +139,7 @@ val koinAppModule = module {
     single { DownloadStore(androidApplication(), get(), get(), get(), get()) }
     single { DownloadProvider(androidApplication(), get()) }
     single { DownloadCache(androidApplication(), get(), get()) }
-    single { ephyra.core.download.DownloadManager(androidApplication(), get(), get(), get(), get(), get(), get()) }
+    single<ephyra.domain.download.service.DownloadManager> { ephyra.core.download.DownloadManager(androidApplication(), get(), get(), get(), get(), get(), get()) }
     single { Downloader(androidApplication(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { DownloadPendingDeleter(androidApplication(), get()) }
     single { DownloadNotifier(androidApplication(), get()) }

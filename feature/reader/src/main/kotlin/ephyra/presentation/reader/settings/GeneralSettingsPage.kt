@@ -7,7 +7,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import ephyra.feature.reader.setting.ReaderPreferences
+import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.feature.reader.setting.ReaderSettingsScreenModel
 import ephyra.presentation.core.util.system.hasDisplayCutout
 import ephyra.i18n.MR
