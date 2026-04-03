@@ -27,7 +27,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.WarningBanner
 import ephyra.presentation.core.util.Screen
-import ephyra.app.data.backup.BackupFileValidator
+import ephyra.data.backup.BackupFileValidator
 import ephyra.domain.backup.service.RestoreScheduler
 import ephyra.data.backup.restore.RestoreOptions
 import ephyra.core.common.util.system.DeviceUtil

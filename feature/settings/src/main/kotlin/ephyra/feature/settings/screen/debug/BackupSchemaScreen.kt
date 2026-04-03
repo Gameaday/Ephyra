@@ -17,7 +17,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.util.Screen
-import ephyra.app.data.backup.models.Backup
+import ephyra.data.backup.models.Backup
 import ephyra.presentation.core.util.system.copyToClipboard
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.serialization.protobuf.schema.ProtoBufSchemaGenerator

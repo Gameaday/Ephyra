@@ -50,7 +50,7 @@ import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.WarningBanner
 import ephyra.feature.settings.widget.TextPreferenceWidget
 import ephyra.feature.settings.widget.TrailingWidgetBuffer
-import ephyra.app.R
+import ephyra.presentation.core.R
 import ephyra.domain.extension.model.Extension
 import eu.kanade.tachiyomi.source.ConfigurableSource
 import ephyra.feature.browse.extension.details.ExtensionDetailsScreenModel

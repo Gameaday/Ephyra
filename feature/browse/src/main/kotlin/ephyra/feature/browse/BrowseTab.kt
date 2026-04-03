@@ -15,7 +15,7 @@ import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import ephyra.presentation.core.components.TabbedScreen
 import ephyra.presentation.core.util.Tab
-import ephyra.app.R
+import ephyra.presentation.core.R
 import ephyra.feature.browse.extension.ExtensionsScreenModel
 import ephyra.feature.browse.extension.extensionsTab
 import ephyra.feature.browse.migration.sources.migrateSourceTab

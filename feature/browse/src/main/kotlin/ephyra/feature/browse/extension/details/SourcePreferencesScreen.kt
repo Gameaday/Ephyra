@@ -34,7 +34,6 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.core.util.ifSourcesLoaded
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.util.Screen
-import ephyra.app.R
 import ephyra.data.preference.SharedPreferencesDataStore
 import eu.kanade.tachiyomi.source.ConfigurableSource
 import eu.kanade.tachiyomi.source.sourcePreferences
@@ -125,7 +124,7 @@ class SourcePreferencesFragment : PreferenceFragmentCompat() {
     override fun getContext(): Context? {
         val superCtx = super.getContext() ?: return null
         val tv = TypedValue()
-        superCtx.theme.resolveAttribute(R.attr.preferenceTheme, tv, true)
+        superCtx.theme.resolveAttribute(androidx.preference.R.attr.preferenceTheme, tv, true)
         return ContextThemeWrapper(superCtx, tv.resourceId)
     }
 
