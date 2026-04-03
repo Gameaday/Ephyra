@@ -177,7 +177,9 @@ val koinAppModule = module {
 
     single { WorkSchedulerImpl(androidApplication()) }
     single<ephyra.domain.backup.service.BackupScheduler> { get<WorkSchedulerImpl>() }
+    single<ephyra.domain.backup.service.RestoreScheduler> { get<WorkSchedulerImpl>() }
     single<ephyra.domain.library.service.LibraryUpdateScheduler> { get<WorkSchedulerImpl>() }
+    single<ephyra.domain.library.service.MetadataUpdateScheduler> { get<WorkSchedulerImpl>() }
 
     single { PreferenceRestorer(androidApplication(), get(), get(), get(), get(), get(), get()) }
     single { MangaRestorer(get(), get(), get(), get(), get(), get(), get(), get()) }
