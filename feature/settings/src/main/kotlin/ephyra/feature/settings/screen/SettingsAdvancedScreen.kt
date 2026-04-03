@@ -49,9 +49,9 @@ import ephyra.feature.more.OnboardingScreen
 import ephyra.presentation.core.util.CrashLogUtil
 import ephyra.core.common.util.system.GLUtil
 import ephyra.presentation.core.ui.AppInfo
-import ephyra.app.util.system.isShizukuInstalled
-import ephyra.app.util.system.powerManager
-import ephyra.app.util.system.setDefaultSettings
+import ephyra.presentation.core.util.system.isShizukuInstalled
+import ephyra.presentation.core.util.system.powerManager
+import ephyra.core.common.util.system.setDefaultSettings
 import org.koin.compose.koinInject
 import ephyra.presentation.core.util.system.toast
 import kotlinx.collections.immutable.persistentListOf

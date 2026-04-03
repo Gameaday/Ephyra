@@ -9,8 +9,8 @@ import androidx.fragment.app.FragmentActivity
 import ephyra.feature.settings.Preference
 import ephyra.domain.security.service.PrivacyPreferences
 import ephyra.domain.security.service.SecurityPreferences
-import ephyra.app.util.system.AuthenticatorUtil.authenticate
-import ephyra.app.util.system.AuthenticatorUtil.isAuthenticationSupported
+import ephyra.presentation.core.util.system.AuthenticatorUtil.authenticate
+import ephyra.presentation.core.util.system.AuthenticatorUtil.isAuthenticationSupported
 import ephyra.presentation.core.ui.AppInfo
 import org.koin.compose.koinInject
 import kotlinx.collections.immutable.persistentListOf

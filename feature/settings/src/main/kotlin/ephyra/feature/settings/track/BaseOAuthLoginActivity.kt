@@ -5,7 +5,6 @@ import android.net.Uri
 import android.os.Bundle
 import ephyra.data.track.TrackerManager
 import ephyra.presentation.core.ui.activity.BaseActivity
-import ephyra.app.ui.main.MainActivity
 import ephyra.presentation.core.util.view.setComposeContent
 import ephyra.presentation.core.screens.LoadingScreen
 import org.koin.android.ext.android.inject
@@ -34,9 +33,11 @@ abstract class BaseOAuthLoginActivity : BaseActivity() {
     internal fun returnToSettings() {
         finish()
 
-        val intent = Intent(this, MainActivity::class.java).apply {
+        val intent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         }
-        startActivity(intent)
+        if (intent != null) {
+            startActivity(intent)
+        }
     }
 }

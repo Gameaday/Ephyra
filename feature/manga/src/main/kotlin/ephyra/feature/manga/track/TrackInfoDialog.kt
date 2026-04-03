@@ -1,4 +1,4 @@
-package ephyra.app.ui.manga.track
+package ephyra.feature.manga.track
 
 import android.app.Application
 import android.content.Context

@@ -2,7 +2,7 @@ package ephyra.presentation.manga.track
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
-import ephyra.app.ui.manga.track.TrackItem
+import ephyra.feature.manga.track.TrackItem
 import ephyra.domain.track.model.Track
 import ephyra.test.DummyTracker
 import java.time.format.DateTimeFormatter
