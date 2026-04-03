@@ -188,6 +188,8 @@ object SettingsDataScreen : SearchableSettings {
     private fun getBackupAndRestoreGroup(backupPreferences: BackupPreferences): Preference.PreferenceGroup {
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
+        val backupScheduler: BackupScheduler = koinInject()
+        val restoreScheduler: RestoreScheduler = koinInject()
 
         val lastAutoBackup by backupPreferences.lastAutoBackupTimestamp().collectAsState()
 
@@ -234,7 +236,7 @@ object SettingsDataScreen : SearchableSettings {
                                     modifier = Modifier.fillMaxHeight(),
                                     checked = false,
                                     onCheckedChange = {
-                                        if (!BackupRestoreJob.isRunning(context)) {
+                                        if (!restoreScheduler.isRestoreRunning()) {
                                             if (DeviceUtil.isMiui && DeviceUtil.isMiuiOptimizationDisabled()) {
                                                 context.toast(MR.strings.restore_miui_warning)
                                             }
@@ -267,7 +269,7 @@ object SettingsDataScreen : SearchableSettings {
                     ),
                     title = stringResource(MR.strings.pref_backup_interval),
                     onValueChanged = {
-                        BackupCreateJob.setupTask(context, backupPreferences, it)
+                        backupScheduler.setupBackupTask(it)
                         true
                     },
                 ),

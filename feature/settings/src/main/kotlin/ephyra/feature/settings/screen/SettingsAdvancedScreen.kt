@@ -30,7 +30,7 @@ import ephyra.feature.settings.Preference
 import ephyra.feature.settings.screen.advanced.ClearDatabaseScreen
 import ephyra.feature.settings.screen.debug.DebugInfoScreen
 import ephyra.core.download.DownloadCache
-import ephyra.app.data.library.MetadataUpdateJob
+import ephyra.domain.library.service.MetadataUpdateScheduler
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.NetworkPreferences
 import eu.kanade.tachiyomi.network.PREF_DOH_360
@@ -307,13 +307,14 @@ object SettingsAdvancedScreen : SearchableSettings {
     ): Preference.PreferenceGroup {
         val scope = rememberCoroutineScope()
         val context = LocalContext.current
+        val metadataUpdateScheduler: MetadataUpdateScheduler = koinInject()
 
         return Preference.PreferenceGroup(
             title = stringResource(MR.strings.label_library),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.TextPreference(
                     title = stringResource(MR.strings.pref_refresh_library_covers),
-                    onClick = { MetadataUpdateJob.startNow(context) },
+                    onClick = { metadataUpdateScheduler.startMetadataUpdateNow() },
                 ),
                 Preference.PreferenceItem.TextPreference(
                     title = stringResource(MR.strings.pref_reset_viewer_flags),
