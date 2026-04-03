@@ -1,10 +1,10 @@
 package ephyra.app.extension.api
 
 import android.content.Context
-import ephyra.core.common.core.security.SecurityPreferences
 import ephyra.app.extension.model.Extension
 import ephyra.app.extension.model.LoadResult
 import ephyra.app.extension.util.ExtensionLoader
+import ephyra.core.common.core.security.SecurityPreferences
 import ephyra.core.common.preference.Preference
 import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.common.util.lang.withIOContext

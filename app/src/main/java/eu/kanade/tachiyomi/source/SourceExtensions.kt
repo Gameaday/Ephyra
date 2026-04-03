@@ -4,7 +4,6 @@ import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.service.SourcePreferences
 import ephyra.source.local.isLocal
 
-
 fun Source.getNameForMangaInfo(preferences: SourcePreferences): String {
     val enabledLanguages = preferences.enabledLanguages().get()
         .filterNot { it in listOf("all", "other") }

@@ -1,11 +1,10 @@
-package ephyra.app.widget
+package ephyra.presentation.core.widget
 
 import android.content.Context
 import android.util.AttributeSet
 import android.widget.EditText
 import androidx.core.view.inputmethod.EditorInfoCompat
 import com.google.android.material.textfield.TextInputEditText
-import ephyra.app.widget.TachiyomiTextInputEditText.Companion.setIncognito
 import ephyra.domain.base.BasePreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -56,6 +55,10 @@ class TachiyomiTextInputEditText @JvmOverloads constructor(
                     }
                 }
                 .launchIn(viewScope)
+        }
+
+        fun EditText.setIncognito(viewScope: CoroutineScope) {
+            setIncognito(viewScope, GlobalContext.get().get())
         }
     }
 }

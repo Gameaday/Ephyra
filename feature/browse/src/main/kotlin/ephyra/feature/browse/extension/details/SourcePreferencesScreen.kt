@@ -37,7 +37,7 @@ import ephyra.presentation.core.util.Screen
 import ephyra.data.preference.SharedPreferencesDataStore
 import eu.kanade.tachiyomi.source.ConfigurableSource
 import eu.kanade.tachiyomi.source.sourcePreferences
-import ephyra.app.widget.TachiyomiTextInputEditText.Companion.setIncognito
+import ephyra.presentation.core.widget.TachiyomiTextInputEditText.Companion.setIncognito
 import ephyra.domain.source.service.SourceManager
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.screens.LoadingScreen

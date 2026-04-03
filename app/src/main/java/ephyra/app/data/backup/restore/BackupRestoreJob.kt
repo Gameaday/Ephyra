@@ -8,11 +8,11 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkerParameters
 import ephyra.app.data.backup.BackupNotifier
-import ephyra.data.backup.restore.BackupRestorer
 import ephyra.core.common.util.system.isRunning
 import ephyra.core.common.util.system.logcat
 import ephyra.core.common.util.system.setForegroundSafely
 import ephyra.core.common.util.system.workManager
+import ephyra.data.backup.restore.BackupRestorer
 import logcat.LogPriority
 
 class BackupRestoreJob(

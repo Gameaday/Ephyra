@@ -1,8 +1,8 @@
 package ephyra.domain.manga.interactor
 
-import ephyra.data.cache.CoverCache
-import ephyra.core.download.DownloadManager
 import ephyra.core.common.preference.Preference
+import ephyra.core.download.DownloadManager
+import ephyra.data.cache.CoverCache
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.model.LockedField
 import ephyra.domain.manga.model.Manga

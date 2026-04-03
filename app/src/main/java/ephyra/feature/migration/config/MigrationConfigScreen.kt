@@ -58,8 +58,8 @@ import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.LoadingScreen
-import ephyra.presentation.core.util.shouldExpandFAB
 import ephyra.presentation.core.util.Screen
+import ephyra.presentation.core.util.shouldExpandFAB
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.update

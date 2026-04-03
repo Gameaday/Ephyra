@@ -37,7 +37,7 @@ val koinAppModule_UI = module {
             syncChaptersWithSource = get(),
             getChaptersByMangaId = get(),
             migrateManga = get(),
-            getFavoritesByCanonicalId = get()
+            getFavoritesByCanonicalId = get(),
         )
     }
 
@@ -47,7 +47,7 @@ val koinAppModule_UI = module {
             createCategoryWithName = get(),
             deleteCategory = get(),
             reorderCategory = get(),
-            renameCategory = get()
+            renameCategory = get(),
         )
     }
 
@@ -75,7 +75,7 @@ val koinAppModule_UI = module {
             coverCache = get(),
             localCoverManager = get(),
             updateManga = get(),
-            chapterCache = get()
+            chapterCache = get(),
         )
     }
     factory {
@@ -85,7 +85,7 @@ val koinAppModule_UI = module {
             deleteExtensionRepo = get(),
             replaceExtensionRepo = get(),
             updateExtensionRepo = get(),
-            extensionManager = get()
+            extensionManager = get(),
         )
     }
 
@@ -93,7 +93,7 @@ val koinAppModule_UI = module {
         ClearDatabaseScreenModel(
             getSourcesWithNonLibraryManga = get(),
             deleteNonLibraryManga = get(),
-            removeResettedHistory = get()
+            removeResettedHistory = get(),
         )
     }
     factory { (query: String) ->
@@ -102,7 +102,7 @@ val koinAppModule_UI = module {
             sourceManager = get(),
             networkToLocalManga = get(),
             getChapterByUrlAndMangaId = get(),
-            syncChaptersWithSource = get()
+            syncChaptersWithSource = get(),
         )
     }
 
@@ -115,7 +115,7 @@ val koinAppModule_UI = module {
             sourcePreference = get(),
             coverCache = get(),
             downloadManager = get(),
-            migrateManga = get()
+            migrateManga = get(),
         )
     }
 

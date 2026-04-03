@@ -23,30 +23,31 @@ import coil3.request.allowRgb565
 import coil3.request.bitmapConfig
 import coil3.request.crossfade
 import coil3.util.DebugLogger
-import ephyra.core.common.core.security.PrivacyPreferences
 import ephyra.app.crash.CrashActivity
 import ephyra.app.crash.GlobalExceptionHandler
+import ephyra.app.data.notification.Notifications
+import ephyra.app.di.koinAppModule
+import ephyra.app.di.koinAppModule_UI
+import ephyra.app.di.koinPreferenceModule
+import ephyra.core.common.core.security.PrivacyPreferences
+import ephyra.core.common.i18n.stringResource
+import ephyra.core.common.preference.Preference
+import ephyra.core.common.preference.PreferenceStore
+import ephyra.core.common.util.system.DeviceUtil
+import ephyra.core.common.util.system.GLUtil
+import ephyra.core.common.util.system.ImageUtil
+import ephyra.core.common.util.system.WebViewUtil
+import ephyra.core.common.util.system.cancelNotification
+import ephyra.core.common.util.system.logcat
+import ephyra.core.common.util.system.notify
+import ephyra.core.migration.Migrator
+import ephyra.core.migration.migrations.migrations
 import ephyra.data.coil.BufferedSourceFetcher
 import ephyra.data.coil.MangaCoverFetcher
 import ephyra.data.coil.MangaCoverKeyer
 import ephyra.data.coil.MangaKeyer
-import ephyra.app.data.notification.Notifications
-import ephyra.app.di.koinAppModule
-import ephyra.app.di.koinAppModule_UI
-import ephyra.domain.koinDomainModule
-import ephyra.app.di.koinPreferenceModule
-import ephyra.core.common.util.system.DeviceUtil
-import ephyra.core.common.util.system.GLUtil
-import ephyra.core.common.util.system.WebViewUtil
-import ephyra.core.common.util.system.cancelNotification
-import ephyra.core.common.util.system.notify
-import ephyra.core.common.preference.Preference
-import ephyra.core.common.preference.PreferenceStore
-import ephyra.core.common.util.system.ImageUtil
-import ephyra.core.common.util.system.logcat
-import ephyra.core.migration.Migrator
-import ephyra.core.migration.migrations.migrations
 import ephyra.domain.base.BasePreferences
+import ephyra.domain.koinDomainModule
 import ephyra.domain.ui.UiPreferences
 import ephyra.domain.ui.model.setAppCompatDelegateThemeMode
 import ephyra.i18n.MR
@@ -68,7 +69,6 @@ import org.koin.android.ext.android.inject
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.workmanager.koin.workManagerFactory
 import org.koin.core.context.startKoin
-import ephyra.core.common.i18n.stringResource
 
 class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factory {
 

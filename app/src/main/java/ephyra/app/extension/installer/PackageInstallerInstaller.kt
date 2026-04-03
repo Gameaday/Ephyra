@@ -10,9 +10,9 @@ import android.content.IntentFilter
 import android.content.pm.PackageInstaller
 import androidx.core.content.ContextCompat
 import androidx.core.content.IntentSanitizer
-import ephyra.domain.extension.model.InstallStep
 import ephyra.app.util.lang.use
 import ephyra.core.common.util.system.logcat
+import ephyra.domain.extension.model.InstallStep
 import ephyra.presentation.core.util.system.getParcelableExtraCompat
 import ephyra.presentation.core.util.system.getUriSize
 import logcat.LogPriority

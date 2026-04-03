@@ -17,12 +17,13 @@ object SecureActivityDelegateState {
      */
     var requireUnlock = true
 
+    @Suppress("DEPRECATION")
     fun onApplicationStopped(preferences: SecurityPreferences) {
-        if (!preferences.useAuthenticator().get()) return
+        if (!preferences.useAuthenticator().getSync()) return
 
         if (!AuthenticatorUtil.isAuthenticating) {
             if (requireUnlock) return
-            if (preferences.lockAppAfter().get() > 0) {
+            if (preferences.lockAppAfter().getSync() > 0) {
                 preferences.lastAppClosed().set(System.currentTimeMillis())
             }
         }
@@ -31,16 +32,17 @@ object SecureActivityDelegateState {
     /**
      * Checks if unlock is needed when the app comes to the foreground.
      */
+    @Suppress("DEPRECATION")
     fun onApplicationStart(preferences: SecurityPreferences) {
-        if (!preferences.useAuthenticator().get()) return
+        if (!preferences.useAuthenticator().getSync()) return
 
         val lastClosedPref = preferences.lastAppClosed()
 
         if (!AuthenticatorUtil.isAuthenticating && !requireUnlock) {
-            requireUnlock = when (val lockDelay = preferences.lockAppAfter().get()) {
+            requireUnlock = when (val lockDelay = preferences.lockAppAfter().getSync()) {
                 -1 -> false
                 0 -> true
-                else -> lastClosedPref.get() + lockDelay * 60_000 <= System.currentTimeMillis()
+                else -> lastClosedPref.getSync() + lockDelay * 60_000 <= System.currentTimeMillis()
             }
         }
 

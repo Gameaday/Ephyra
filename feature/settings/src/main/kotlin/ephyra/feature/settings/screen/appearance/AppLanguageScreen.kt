@@ -25,7 +25,6 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.util.Screen
-import ephyra.app.R
 import ephyra.core.common.util.system.LocaleHelper
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
@@ -96,7 +95,7 @@ class AppLanguageScreen : Screen() {
 
     private fun getLangs(context: Context): ImmutableList<Language> {
         val langs = mutableListOf<Language>()
-        val parser = context.resources.getXml(R.xml.locales_config)
+        val parser = context.resources.getXml(context.resources.getIdentifier("locales_config", "xml", context.packageName))
         var eventType = parser.eventType
         while (eventType != XmlPullParser.END_DOCUMENT) {
             if (eventType == XmlPullParser.START_TAG && parser.name == "locale") {

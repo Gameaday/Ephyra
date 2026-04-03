@@ -60,6 +60,7 @@ dependencies {
     api(androidx.lifecycle.runtime.compose)
     api(libs.image.decoder)
     api(libs.materialKolor)
+    api(libs.material)
     api(libs.compose.materialmotion)
     api(libs.reorderable)
 

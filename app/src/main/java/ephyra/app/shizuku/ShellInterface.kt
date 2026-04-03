@@ -167,4 +167,3 @@ class ShellInterface : IShellInterface.Stub() {
         private const val REPLACE_EXISTING_INSTALL_FLAG = 0x00000002
     }
 }
-
