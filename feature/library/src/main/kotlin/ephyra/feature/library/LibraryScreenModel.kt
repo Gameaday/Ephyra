@@ -39,6 +39,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
+import kotlinx.coroutines.runBlocking
 import ephyra.core.common.utils.mutate
 import ephyra.core.common.preference.CheckboxState
 import ephyra.core.common.preference.TriState
@@ -92,7 +93,7 @@ class LibraryScreenModel(
 
     init {
         mutableState.update { state ->
-            state.copy(activeCategoryIndex = libraryPreferences.lastUsedCategory().getSync())
+            state.copy(activeCategoryIndex = runBlocking { libraryPreferences.lastUsedCategory().get() })
         }
         screenModelScope.launchIO {
             combine(
@@ -367,7 +368,7 @@ class LibraryScreenModel(
 
         return mapValues { (key, value) ->
             if (key.sort.type == LibrarySort.Type.Random) {
-                return@mapValues value.shuffled(Random(libraryPreferences.randomSortSeed().getSync()))
+                return@mapValues value.shuffled(Random(runBlocking { libraryPreferences.randomSortSeed().get() }))
             }
 
             val manga = value.mapNotNull { favoritesById[it] }

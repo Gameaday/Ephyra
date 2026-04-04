@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:filename")
+
 package ephyra.app.ui.base.delegate
 
 import android.app.Activity

@@ -91,6 +91,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import logcat.LogPriority
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -674,7 +675,7 @@ class ReaderActivity : BaseActivity() {
 
         fun setCustomBrightness(enabled: Boolean) {
             if (enabled) {
-                setCustomBrightnessValue(readerPreferences.customBrightnessValue().getSync())
+                setCustomBrightnessValue(runBlocking { readerPreferences.customBrightnessValue().get() })
             } else {
                 val layoutParams = window.attributes
                 layoutParams.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
@@ -683,7 +684,7 @@ class ReaderActivity : BaseActivity() {
         }
 
         fun setCustomBrightnessValue(value: Int) {
-            if (readerPreferences.customBrightness().getSync()) {
+            if (runBlocking { readerPreferences.customBrightness().get() }) {
                 val layoutParams = window.attributes
                 layoutParams.screenBrightness = value / 100f
                 window.attributes = layoutParams
