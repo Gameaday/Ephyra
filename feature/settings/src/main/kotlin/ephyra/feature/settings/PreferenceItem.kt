@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -71,7 +70,7 @@ internal fun PreferenceItem(
     ) {
         when (item) {
             is Preference.PreferenceItem.SwitchPreference -> {
-                val value by item.preference.collectAsStateWithLifecycle()
+                val value by item.preference.collectAsState()
                 SwitchPreferenceWidget(
                     title = item.title,
                     subtitle = item.subtitle,
@@ -109,7 +108,7 @@ internal fun PreferenceItem(
             }
 
             is Preference.PreferenceItem.ListPreference<*> -> {
-                val value by item.preference.collectAsStateWithLifecycle()
+                val value by item.preference.collectAsState()
                 ListPreferenceWidget(
                     value = value,
                     title = item.title,
@@ -138,7 +137,7 @@ internal fun PreferenceItem(
             }
 
             is Preference.PreferenceItem.MultiSelectListPreference -> {
-                val values by item.preference.collectAsStateWithLifecycle()
+                val values by item.preference.collectAsState()
                 MultiSelectListPreferenceWidget(
                     preference = item,
                     values = values,
@@ -162,7 +161,7 @@ internal fun PreferenceItem(
             }
 
             is Preference.PreferenceItem.EditTextPreference -> {
-                val values by item.preference.collectAsStateWithLifecycle()
+                val values by item.preference.collectAsState()
                 EditTextPreferenceWidget(
                     title = item.title,
                     subtitle = item.subtitle,

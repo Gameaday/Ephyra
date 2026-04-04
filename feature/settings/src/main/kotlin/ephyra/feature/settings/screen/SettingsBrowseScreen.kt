@@ -2,7 +2,6 @@ package ephyra.feature.settings.screen
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
@@ -14,7 +13,7 @@ import ephyra.feature.settings.Preference
 import ephyra.feature.settings.screen.browse.ExtensionReposScreen
 import ephyra.presentation.core.util.system.AuthenticatorUtil.authenticate
 import kotlinx.collections.immutable.persistentListOf
-import ephyra.domain.extensionrepo.interactor.GetExtensionRepoCount
+import ephyra.presentation.core.util.collectAsState
 import ephyra.core.common.i18n.stringResource
 import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.pluralStringResource
@@ -33,7 +32,7 @@ object SettingsBrowseScreen : SearchableSettings {
         val navigator = LocalNavigator.currentOrThrow
 
         val screenModel = koinScreenModel<SettingsBrowseScreenModel>()
-        val reposCount by screenModel.getExtensionRepoCount().collectAsStateWithLifecycle(0L)
+        val reposCount by screenModel.getExtensionRepoCount().collectAsState(0)
 
         return listOf(
             Preference.PreferenceGroup(
@@ -45,7 +44,7 @@ object SettingsBrowseScreen : SearchableSettings {
                     ),
                     Preference.PreferenceItem.TextPreference(
                         title = stringResource(MR.strings.label_extension_repos),
-                        subtitle = pluralStringResource(MR.plurals.num_repos, reposCount.toInt(), reposCount.toInt()),
+                        subtitle = pluralStringResource(MR.plurals.num_repos, reposCount, reposCount),
                         onClick = {
                             navigator.push(ExtensionReposScreen())
                         },
