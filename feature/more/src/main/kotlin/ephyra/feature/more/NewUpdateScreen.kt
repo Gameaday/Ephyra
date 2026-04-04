@@ -3,9 +3,9 @@ package ephyra.feature.more
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import cafe.adriel.voyager.koin.koinInject
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import org.koin.compose.koinInject
 import ephyra.domain.release.service.AppUpdateDownloader
 import ephyra.presentation.core.util.system.openInBrowser
 import ephyra.presentation.core.util.Screen

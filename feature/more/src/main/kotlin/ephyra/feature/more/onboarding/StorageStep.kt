@@ -17,7 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
-import cafe.adriel.voyager.koin.koinInject
+import org.koin.compose.koinInject
 import ephyra.domain.storage.service.StoragePreferences
 import ephyra.feature.settings.screen.SettingsDataScreen
 import ephyra.i18n.MR

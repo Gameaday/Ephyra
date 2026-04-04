@@ -58,7 +58,7 @@ import ephyra.presentation.core.util.LocalUiPreferences
 
 
 @Composable
-internal fun AppThemePreferenceWidget(
+fun AppThemePreferenceWidget(
     value: AppTheme,
     amoled: Boolean,
     onItemClick: (AppTheme) -> Unit,

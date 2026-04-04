@@ -12,6 +12,7 @@ import ephyra.feature.settings.screen.SettingsDataScreen
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.core.util.Screen
+import ephyra.feature.more.onboarding.OnboardingScreen as OnboardingContent
 import org.koin.compose.koinInject
 
 class OnboardingScreen : Screen() {
@@ -34,7 +35,7 @@ class OnboardingScreen : Screen() {
             // Prevent exiting if onboarding hasn't been completed
         }
 
-        OnboardingScreen(
+        OnboardingContent(
             onComplete = finishOnboarding,
             onRestoreBackup = {
                 finishOnboarding()

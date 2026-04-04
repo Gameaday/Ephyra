@@ -19,7 +19,7 @@ import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.InfoScreen
-import ephyra.presentation.manga.components.MarkdownRender
+import ephyra.feature.manga.presentation.components.MarkdownRender
 import ephyra.presentation.theme.TachiyomiPreviewTheme
 import org.intellij.markdown.flavours.gfm.GFMFlavourDescriptor
 
