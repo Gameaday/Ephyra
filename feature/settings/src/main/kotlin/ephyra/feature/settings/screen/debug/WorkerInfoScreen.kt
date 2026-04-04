@@ -11,7 +11,7 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -40,9 +40,7 @@ import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.plus
-import org.koin.androidx.compose.koinViewModel
-import org.koin.core.parameter.parametersOf
-import org.koin.compose.koinInject
+import cafe.adriel.voyager.koin.koinScreenModel
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -59,9 +57,9 @@ class WorkerInfoScreen : Screen() {
         val navigator = LocalNavigator.currentOrThrow
 
         val screenModel = koinScreenModel<Model>()
-        val enqueued by screenModel.enqueued.collectAsStateWithLifecycle()
-        val finished by screenModel.finished.collectAsStateWithLifecycle()
-        val running by screenModel.running.collectAsStateWithLifecycle()
+        val enqueued by screenModel.enqueued.collectAsState()
+        val finished by screenModel.finished.collectAsState()
+        val running by screenModel.running.collectAsState()
 
         Scaffold(
             topBar = {
@@ -160,7 +158,7 @@ class WorkerInfoScreen : Screen() {
                         )
                             .toDateTimestampString(
                                 UiPreferences.dateFormat(
-                                    uiPreferences.dateFormat().get(),
+                                    uiPreferences.dateFormat().getSync(),
                                 ),
                             )
                         appendLine("Next scheduled run: $timestamp")

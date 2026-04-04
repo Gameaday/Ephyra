@@ -32,34 +32,38 @@ class TrackLoginActivity : BaseOAuthLoginActivity() {
     }
 
     private suspend fun handleAniList(accessToken: String?) {
+        val tracker = trackerManager.get(2L) ?: return
         if (accessToken != null) {
-            trackerManager.aniList.login(accessToken)
+            tracker.login(accessToken)
         } else {
-            trackerManager.aniList.logout()
+            tracker.logout()
         }
     }
 
     private suspend fun handleBangumi(code: String?) {
+        val tracker = trackerManager.get(5L) ?: return
         if (code != null) {
-            trackerManager.bangumi.login(code)
+            tracker.login(code)
         } else {
-            trackerManager.bangumi.logout()
+            tracker.logout()
         }
     }
 
     private suspend fun handleMyAnimeList(code: String?) {
+        val tracker = trackerManager.get(1L) ?: return
         if (code != null) {
-            trackerManager.myAnimeList.login(code)
+            tracker.login(code)
         } else {
-            trackerManager.myAnimeList.logout()
+            tracker.logout()
         }
     }
 
     private suspend fun handleShikimori(code: String?) {
+        val tracker = trackerManager.get(4L) ?: return
         if (code != null) {
-            trackerManager.shikimori.login(code)
+            tracker.login(code)
         } else {
-            trackerManager.shikimori.logout()
+            tracker.logout()
         }
     }
 }

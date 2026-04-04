@@ -18,6 +18,7 @@ import ephyra.feature.settings.screen.SettingsTrackingScreenModel
 import ephyra.feature.settings.screen.about.AboutScreenModel
 import ephyra.feature.settings.screen.advanced.ClearDatabaseScreenModel
 import ephyra.feature.settings.screen.browse.ExtensionReposScreenModel
+import ephyra.feature.download.DownloadQueueScreenModel
 import ephyra.feature.settings.screen.debug.WorkerInfoScreen
 import ephyra.feature.upcoming.UpcomingScreenModel
 import org.koin.android.ext.koin.androidContext
@@ -106,6 +107,7 @@ val koinAppModule_UI = module {
         )
     }
 
+    factory { DownloadQueueScreenModel(get()) }
     factory { MigrationConfigScreen.ScreenModel(get(), get()) }
     factory { UpcomingScreenModel(get()) }
     factory { WorkerInfoScreen.Model(androidContext(), get()) }
