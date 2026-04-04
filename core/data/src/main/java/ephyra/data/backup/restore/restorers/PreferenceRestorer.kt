@@ -40,7 +40,7 @@ class PreferenceRestorer(
         )
 
         libraryUpdateScheduler.setupLibraryUpdateTask()
-        backupScheduler.setupBackupTask(backupPreferences.backupInterval().getSync())
+        backupScheduler.setupBackupTask(backupPreferences.backupInterval().get())
     }
 
     suspend fun restoreSource(preferences: List<BackupSourcePreferences>) {

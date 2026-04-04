@@ -130,10 +130,9 @@ class Bangumi(
         trackPreferences.trackToken(this).set(json.encodeToString(oauth))
     }
 
-    @Suppress("DEPRECATION")
     fun restoreToken(): BGMOAuth? {
         return try {
-            json.decodeFromString<BGMOAuth>(trackPreferences.trackToken(this).getSync())
+            json.decodeFromString<BGMOAuth>(runBlocking { trackPreferences.trackToken(this@Bangumi).get() })
         } catch (_: Exception) {
             null
         }
