@@ -1,7 +1,7 @@
 package ephyra.app.util.chapter
 
-import ephyra.core.download.DownloadManager
 import ephyra.app.ui.manga.ChapterList
+import ephyra.core.download.DownloadManager
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.model.applyFilters
 import ephyra.domain.manga.model.Manga

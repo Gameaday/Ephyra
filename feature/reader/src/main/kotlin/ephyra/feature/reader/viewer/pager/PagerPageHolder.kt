@@ -8,15 +8,16 @@ import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import androidx.core.view.isVisible
 import ephyra.presentation.core.util.formattedMessage
-import ephyra.app.databinding.ReaderErrorBinding
+import ephyra.feature.reader.databinding.ReaderErrorBinding
 import eu.kanade.tachiyomi.source.model.Page
 import ephyra.feature.reader.model.InsertPage
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.viewer.ReaderPageImageView
 import ephyra.feature.reader.viewer.ReaderProgressIndicator
-import ephyra.app.ui.webview.WebViewActivity
-import ephyra.app.widget.ViewPagerAdapter
+import ephyra.feature.webview.WebViewActivity
+import ephyra.feature.reader.widget.ViewPagerAdapter
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collectLatest
@@ -270,6 +271,12 @@ class PagerPageHolder(
             // and re-render once it arrives so the merge still fires automatically.
             setupSmartCombineRetry()
         } catch (e: Throwable) {
+            if (e is CancellationException) throw e
+            // When the stream lambda detects that the cache entry was evicted (LRU pressure /
+            // rapid progress-bar seek), it resets page.status to Queue and throws IOException.
+            // In that case the loader will automatically re-download the page — don't surface
+            // an error UI, just return and let the status-flow subscriber trigger a fresh load.
+            if (page.status == Page.State.Queue) return
             logcat(LogPriority.ERROR, e)
             withUIContext {
                 setError(e)

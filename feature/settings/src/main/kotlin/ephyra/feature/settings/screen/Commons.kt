@@ -3,7 +3,7 @@ package ephyra.feature.settings.screen
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.platform.LocalContext
-import ephyra.presentation.category.visualName
+import ephyra.feature.category.presentation.visualName
 import ephyra.domain.category.model.Category
 import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource

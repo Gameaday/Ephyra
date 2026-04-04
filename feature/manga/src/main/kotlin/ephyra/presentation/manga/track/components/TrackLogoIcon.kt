@@ -10,7 +10,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
-import ephyra.data.track.Tracker
+import ephyra.domain.track.service.Tracker
 import ephyra.presentation.core.util.clickableNoIndication
 import ephyra.presentation.theme.TachiyomiPreviewTheme
 

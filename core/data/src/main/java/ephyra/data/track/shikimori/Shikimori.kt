@@ -14,6 +14,7 @@ import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.service.TrackPreferences
 import ephyra.i18n.MR
 import eu.kanade.tachiyomi.network.NetworkHelper
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import ephyra.domain.track.model.Track
 
@@ -145,10 +146,9 @@ class Shikimori(
         trackPreferences.trackToken(this).set(json.encodeToString(oauth))
     }
 
-    @Suppress("DEPRECATION")
     fun restoreToken(): SMOAuth? {
         return try {
-            json.decodeFromString<SMOAuth>(trackPreferences.trackToken(this).getSync())
+            json.decodeFromString<SMOAuth>(runBlocking { trackPreferences.trackToken(this@Shikimori).get() })
         } catch (e: Exception) {
             null
         }

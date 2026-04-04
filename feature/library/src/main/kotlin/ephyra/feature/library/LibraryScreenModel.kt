@@ -7,23 +7,23 @@ import androidx.compose.ui.util.fastMap
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import org.koin.core.annotation.Factory
-import ephyra.core.preference.PreferenceMutableState
-import ephyra.core.preference.asState
-import ephyra.core.util.fastFilterNot
+import ephyra.presentation.core.util.PreferenceMutableState
+import ephyra.presentation.core.util.asState
+import ephyra.core.common.util.fastFilterNot
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.chapter.interactor.SetReadStatus
 import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.presentation.core.components.SEARCH_DEBOUNCE_MILLIS
 import ephyra.feature.library.presentation.components.LibraryToolbarTitle
-import ephyra.presentation.manga.DownloadAction
+import ephyra.feature.manga.presentation.DownloadAction
 import ephyra.data.cache.CoverCache
 import ephyra.core.download.DownloadCache
-import ephyra.core.download.DownloadManager
-import ephyra.data.track.TrackerManager
+import ephyra.domain.download.service.DownloadManager
+import ephyra.domain.track.service.TrackerManager
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.online.HttpSource
-import ephyra.app.util.chapter.getNextUnread
-import ephyra.app.util.removeCovers
+import ephyra.core.download.util.getNextUnread
+import ephyra.presentation.core.util.manga.removeCovers
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.Flow
@@ -39,6 +39,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
+import kotlinx.coroutines.runBlocking
 import ephyra.core.common.utils.mutate
 import ephyra.core.common.preference.CheckboxState
 import ephyra.core.common.preference.TriState
@@ -68,8 +69,6 @@ import ephyra.domain.track.interactor.GetTracksPerManga
 import ephyra.domain.track.model.Track
 import ephyra.source.local.isLocal
 import eu.kanade.tachiyomi.source.online.HttpSource
-import ephyra.app.util.chapter.getNextUnread
-import ephyra.app.util.removeCovers
 import kotlin.random.Random
 
 @Factory
@@ -94,7 +93,7 @@ class LibraryScreenModel(
 
     init {
         mutableState.update { state ->
-            state.copy(activeCategoryIndex = libraryPreferences.lastUsedCategory().getSync())
+            state.copy(activeCategoryIndex = runBlocking { libraryPreferences.lastUsedCategory().get() })
         }
         screenModelScope.launchIO {
             combine(
@@ -369,7 +368,7 @@ class LibraryScreenModel(
 
         return mapValues { (key, value) ->
             if (key.sort.type == LibrarySort.Type.Random) {
-                return@mapValues value.shuffled(Random(libraryPreferences.randomSortSeed().getSync()))
+                return@mapValues value.shuffled(Random(runBlocking { libraryPreferences.randomSortSeed().get() }))
             }
 
             val manga = value.mapNotNull { favoritesById[it] }

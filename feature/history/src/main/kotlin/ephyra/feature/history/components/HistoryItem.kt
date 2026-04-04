@@ -23,12 +23,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
-import ephyra.app.util.lang.toTimestampString
+import ephyra.core.common.util.lang.toTimestampString
 import ephyra.domain.history.model.HistoryWithRelations
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
-import ephyra.presentation.manga.components.MangaCover
+import ephyra.feature.manga.presentation.components.MangaCover
 import ephyra.presentation.theme.TachiyomiPreviewTheme
 import ephyra.presentation.core.util.formatChapterNumber
 

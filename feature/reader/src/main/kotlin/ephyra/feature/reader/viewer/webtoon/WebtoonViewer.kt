@@ -16,12 +16,13 @@ import ephyra.feature.reader.ReaderActivity
 import ephyra.feature.reader.model.ChapterTransition
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.model.ViewerChapters
-import ephyra.feature.reader.setting.ReaderPreferences
+import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.feature.reader.viewer.Viewer
 import ephyra.feature.reader.viewer.ViewerNavigation.NavigationRegion
 import ephyra.core.common.util.system.DeviceUtil
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.runBlocking
 import ephyra.core.common.util.system.logcat
 import kotlin.math.max
 import kotlin.math.min
@@ -76,7 +77,7 @@ class WebtoonViewer(
     private val threshold: Int =
         readerPreferences
             .readerHideThreshold()
-            .get()
+            .let { runBlocking { it.get() } }
             .threshold
 
     init {

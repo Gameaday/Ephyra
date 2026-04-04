@@ -6,6 +6,7 @@ import ephyra.domain.source.service.SourcePreferences
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.runBlocking
 
 class GetIncognitoState(
     private val basePreferences: BasePreferences,
@@ -13,13 +14,11 @@ class GetIncognitoState(
     private val extensionManager: ExtensionManager,
 ) {
     fun await(sourceId: Long?): Boolean {
-        @Suppress("DEPRECATION")
-        if (basePreferences.incognitoMode().getSync()) return true
+        if (runBlocking { basePreferences.incognitoMode().get() }) return true
         if (sourceId == null) return false
         val extensionPackage = extensionManager.getExtensionPackage(sourceId) ?: return false
 
-        @Suppress("DEPRECATION")
-        return extensionPackage in sourcePreferences.incognitoExtensions().getSync()
+        return extensionPackage in runBlocking { sourcePreferences.incognitoExtensions().get() }
     }
 
     fun subscribe(sourceId: Long?): Flow<Boolean> {

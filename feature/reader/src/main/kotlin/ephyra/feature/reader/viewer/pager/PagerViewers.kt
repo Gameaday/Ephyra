@@ -2,7 +2,7 @@ package ephyra.feature.reader.viewer.pager
 
 import ephyra.feature.reader.ReaderActivity
 import ephyra.core.download.DownloadManager
-import ephyra.feature.reader.setting.ReaderPreferences
+import ephyra.domain.reader.service.ReaderPreferences
 
 /**
  * Implementation of a left to right PagerViewer.

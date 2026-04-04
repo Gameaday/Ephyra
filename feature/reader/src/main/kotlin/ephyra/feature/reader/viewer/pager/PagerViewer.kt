@@ -10,7 +10,7 @@ import androidx.core.view.children
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.viewpager.widget.ViewPager
-import ephyra.app.R
+import ephyra.feature.reader.R
 import ephyra.core.download.DownloadManager
 import eu.kanade.tachiyomi.source.model.Page
 import ephyra.feature.reader.ReaderActivity
@@ -18,7 +18,7 @@ import ephyra.feature.reader.model.ChapterTransition
 import ephyra.feature.reader.model.InsertPage
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.model.ViewerChapters
-import ephyra.feature.reader.setting.ReaderPreferences
+import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.feature.reader.viewer.Viewer
 import ephyra.feature.reader.viewer.ViewerNavigation.NavigationRegion
 import kotlinx.coroutines.Job

@@ -1,4 +1,4 @@
-package ephyra.app.extension.model
+package ephyra.domain.extension.model
 
 enum class InstallStep {
     Idle,

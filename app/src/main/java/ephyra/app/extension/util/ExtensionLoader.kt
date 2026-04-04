@@ -7,9 +7,9 @@ import android.content.pm.PackageManager
 import androidx.core.content.pm.PackageInfoCompat
 import ephyra.app.extension.model.Extension
 import ephyra.app.extension.model.LoadResult
+import ephyra.app.util.system.ChildFirstPathClassLoader
 import ephyra.core.common.util.lang.Hash
 import ephyra.core.common.util.storage.copyAndSetReadOnlyTo
-import ephyra.app.util.system.ChildFirstPathClassLoader
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.extension.interactor.TrustExtension
 import ephyra.domain.source.service.SourcePreferences
@@ -52,7 +52,7 @@ internal class ExtensionLoader(
     const val LIB_VERSION_MIN = 1.4
     const val LIB_VERSION_MAX = 1.5
 
-    private val PACKAGE_FLAGS = PackageManager.GET_CONFIGURATIONS or
+    private val packageFlags = PackageManager.GET_CONFIGURATIONS or
         PackageManager.GET_META_DATA or
         PackageManager.GET_SIGNING_CERTIFICATES
 
@@ -61,7 +61,7 @@ internal class ExtensionLoader(
     private fun getPrivateExtensionDir(context: Context) = File(context.filesDir, "exts")
 
     fun installPrivateExtensionFile(context: Context, file: File): Boolean {
-        val extension = context.packageManager.getPackageArchiveInfo(file.absolutePath, PACKAGE_FLAGS)
+        val extension = context.packageManager.getPackageArchiveInfo(file.absolutePath, packageFlags)
             ?.takeIf { isPackageAnExtension(it) } ?: return false
         val currentExtension = getExtensionPackageInfoFromPkgName(context, extension.packageName)
 
@@ -115,7 +115,7 @@ internal class ExtensionLoader(
         val pkgManager = context.packageManager
 
         val installedPkgs =
-            pkgManager.getInstalledPackages(PackageManager.PackageInfoFlags.of(PACKAGE_FLAGS.toLong()))
+            pkgManager.getInstalledPackages(PackageManager.PackageInfoFlags.of(packageFlags.toLong()))
 
         val sharedExtPkgs = installedPkgs
             .asSequence()
@@ -133,7 +133,7 @@ internal class ExtensionLoader(
                 }
 
                 val path = it.absolutePath
-                pkgManager.getPackageArchiveInfo(path, PACKAGE_FLAGS)
+                pkgManager.getPackageArchiveInfo(path, packageFlags)
                     ?.apply { applicationInfo!!.fixBasePaths(path) }
             }
             ?.filter { isPackageAnExtension(it) }
@@ -181,7 +181,7 @@ internal class ExtensionLoader(
     private fun getExtensionInfoFromPkgName(context: Context, pkgName: String): ExtensionInfo? {
         val privateExtensionFile = File(getPrivateExtensionDir(context), "$pkgName.$PRIVATE_EXTENSION_EXTENSION")
         val privatePkg = if (privateExtensionFile.isFile) {
-            context.packageManager.getPackageArchiveInfo(privateExtensionFile.absolutePath, PACKAGE_FLAGS)
+            context.packageManager.getPackageArchiveInfo(privateExtensionFile.absolutePath, packageFlags)
                 ?.takeIf { isPackageAnExtension(it) }
                 ?.let {
                     it.applicationInfo!!.fixBasePaths(privateExtensionFile.absolutePath)
@@ -197,7 +197,7 @@ internal class ExtensionLoader(
         val sharedPkg = try {
             val packageInfo = context.packageManager.getPackageInfo(
                 pkgName,
-                PackageManager.PackageInfoFlags.of(PACKAGE_FLAGS.toLong()),
+                PackageManager.PackageInfoFlags.of(packageFlags.toLong()),
             )
             packageInfo.takeIf { isPackageAnExtension(it) }
                 ?.let {

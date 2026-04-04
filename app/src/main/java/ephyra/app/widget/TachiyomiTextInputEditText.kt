@@ -5,7 +5,6 @@ import android.util.AttributeSet
 import android.widget.EditText
 import androidx.core.view.inputmethod.EditorInfoCompat
 import com.google.android.material.textfield.TextInputEditText
-import ephyra.app.R
 import ephyra.app.widget.TachiyomiTextInputEditText.Companion.setIncognito
 import ephyra.domain.base.BasePreferences
 import kotlinx.coroutines.CoroutineScope
@@ -25,7 +24,7 @@ import org.koin.core.context.GlobalContext
 class TachiyomiTextInputEditText @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
-    defStyleAttr: Int = R.attr.editTextStyle,
+    defStyleAttr: Int = android.R.attr.editTextStyle,
 ) : TextInputEditText(context, attrs, defStyleAttr) {
 
     private var scope: CoroutineScope? = null

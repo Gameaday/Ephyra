@@ -21,10 +21,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
-import ephyra.data.cache.CoverCache
-import ephyra.core.download.DownloadManager
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.withUIContext
+import ephyra.core.download.DownloadManager
+import ephyra.data.cache.CoverCache
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.hasCustomCover
 import ephyra.domain.migration.models.MigrationFlag

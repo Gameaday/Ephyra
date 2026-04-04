@@ -15,14 +15,14 @@ import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import ephyra.presentation.core.components.TabbedScreen
 import ephyra.presentation.core.util.Tab
-import ephyra.app.R
+import ephyra.presentation.core.R
 import ephyra.feature.browse.extension.ExtensionsScreenModel
 import ephyra.feature.browse.extension.extensionsTab
 import ephyra.feature.browse.migration.sources.migrateSourceTab
 import ephyra.feature.browse.source.authority.discoverTab
 import ephyra.feature.browse.source.globalsearch.GlobalSearchScreen
 import ephyra.feature.browse.source.sourcesTab
-import ephyra.app.ui.main.MainActivity
+import ephyra.presentation.core.ui.AppReadySignal
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
@@ -85,7 +85,7 @@ data object BrowseTab : Tab {
         }
 
         LaunchedEffect(Unit) {
-            (context as? MainActivity)?.ready = true
+            (context as? AppReadySignal)?.signalReady()
         }
     }
 }

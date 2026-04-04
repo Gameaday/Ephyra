@@ -30,7 +30,7 @@ import ephyra.feature.settings.Preference
 import ephyra.feature.settings.screen.advanced.ClearDatabaseScreen
 import ephyra.feature.settings.screen.debug.DebugInfoScreen
 import ephyra.core.download.DownloadCache
-import ephyra.app.data.library.MetadataUpdateJob
+import ephyra.domain.library.service.MetadataUpdateScheduler
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.NetworkPreferences
 import eu.kanade.tachiyomi.network.PREF_DOH_360
@@ -45,13 +45,13 @@ import eu.kanade.tachiyomi.network.PREF_DOH_NJALLA
 import eu.kanade.tachiyomi.network.PREF_DOH_QUAD101
 import eu.kanade.tachiyomi.network.PREF_DOH_QUAD9
 import eu.kanade.tachiyomi.network.PREF_DOH_SHECAN
-import ephyra.app.ui.more.OnboardingScreen
-import ephyra.app.util.CrashLogUtil
+import ephyra.presentation.core.util.CrashLogUtil
 import ephyra.core.common.util.system.GLUtil
-import ephyra.app.util.system.isReleaseBuildType
-import ephyra.app.util.system.isShizukuInstalled
-import ephyra.app.util.system.powerManager
-import ephyra.app.util.system.setDefaultSettings
+import ephyra.presentation.core.ui.AppInfo
+import ephyra.presentation.core.util.system.isShizukuInstalled
+import ephyra.presentation.core.util.system.powerManager
+import ephyra.core.common.util.system.setDefaultSettings
+import org.koin.compose.koinInject
 import ephyra.presentation.core.util.system.toast
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
@@ -82,6 +82,7 @@ object SettingsAdvancedScreen : SearchableSettings {
         val scope = rememberCoroutineScope()
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
+        val appInfo: AppInfo = koinInject()
 
         val basePreferences = screenModel.basePreferences
         val networkPreferences = screenModel.networkPreferences
@@ -109,10 +110,6 @@ object SettingsAdvancedScreen : SearchableSettings {
             Preference.PreferenceItem.TextPreference(
                 title = stringResource(MR.strings.pref_debug_info),
                 onClick = { navigator.push(DebugInfoScreen()) },
-            ),
-            Preference.PreferenceItem.TextPreference(
-                title = stringResource(MR.strings.pref_onboarding_guide),
-                onClick = { navigator.push(OnboardingScreen()) },
             ),
             Preference.PreferenceItem.TextPreference(
                 title = stringResource(MR.strings.pref_manage_notifications),
@@ -305,13 +302,14 @@ object SettingsAdvancedScreen : SearchableSettings {
     ): Preference.PreferenceGroup {
         val scope = rememberCoroutineScope()
         val context = LocalContext.current
+        val metadataUpdateScheduler: MetadataUpdateScheduler = koinInject()
 
         return Preference.PreferenceGroup(
             title = stringResource(MR.strings.label_library),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.TextPreference(
                     title = stringResource(MR.strings.pref_refresh_library_covers),
-                    onClick = { MetadataUpdateJob.startNow(context) },
+                    onClick = { metadataUpdateScheduler.startMetadataUpdateNow() },
                 ),
                 Preference.PreferenceItem.TextPreference(
                     title = stringResource(MR.strings.pref_reset_viewer_flags),
@@ -387,7 +385,7 @@ object SettingsAdvancedScreen : SearchableSettings {
                 ),
                 Preference.PreferenceItem.TextPreference(
                     title = stringResource(MR.strings.pref_display_profile),
-                    subtitle = basePreferences.displayProfile().get(),
+                    subtitle = basePreferences.displayProfile().getSync(),
                     onClick = {
                         chooseColorProfile.launch(arrayOf("*/*"))
                     },
@@ -437,7 +435,7 @@ object SettingsAdvancedScreen : SearchableSettings {
                     entries = extensionInstallerPref.entries
                         .filter {
                             // TODO: allow private option in stable versions once URL handling is more fleshed out
-                            if (isReleaseBuildType) {
+                            if (appInfo.isRelease) {
                                 it != BasePreferences.ExtensionInstaller.PRIVATE
                             } else {
                                 true

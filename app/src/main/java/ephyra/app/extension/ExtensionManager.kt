@@ -2,19 +2,18 @@ package ephyra.app.extension
 
 import android.content.Context
 import android.graphics.drawable.Drawable
-import ephyra.core.common.core.security.SecurityPreferences
 import ephyra.app.extension.api.ExtensionApi
 import ephyra.app.extension.api.ExtensionUpdateNotifier
-import ephyra.domain.extension.model.Extension
-import ephyra.app.extension.model.InstallStep
 import ephyra.app.extension.model.LoadResult
 import ephyra.app.extension.util.ExtensionInstallReceiver
 import ephyra.app.extension.util.ExtensionInstaller
 import ephyra.app.extension.util.ExtensionLoader
+import ephyra.core.common.core.security.SecurityPreferences
 import ephyra.core.common.util.lang.withUIContext
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.extension.interactor.TrustExtension
-import ephyra.domain.extension.service.ExtensionManager as IExtensionManager
+import ephyra.domain.extension.model.Extension
+import ephyra.domain.extension.model.InstallStep
 import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.service.SourcePreferences
 import ephyra.i18n.MR
@@ -32,6 +31,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import java.util.Locale
+import ephyra.domain.extension.service.ExtensionManager as IExtensionManager
 
 /**
  * The manager of extensions installed as another apk which extend the available sources. It handles
@@ -106,6 +106,17 @@ class ExtensionManager(
         return iconMap.getOrPut(pkgName) {
             extensionLoader.getExtensionPackageInfoFromPkgName(context, pkgName)!!.applicationInfo!!
                 .loadIcon(context.packageManager)
+        }
+    }
+
+    override fun getExtensionIcon(pkgName: String, density: Int): Drawable? {
+        val appInfo = extensionLoader.getExtensionPackageInfoFromPkgName(context, pkgName)
+            ?.applicationInfo ?: return null
+        val appResources = context.packageManager.getResourcesForApplication(appInfo)
+        return try {
+            appResources.getDrawableForDensity(appInfo.icon, density, null)
+        } catch (e: Exception) {
+            null
         }
     }
 
@@ -232,7 +243,7 @@ class ExtensionManager(
      *
      * @param extension The extension to be installed.
      */
-    fun installExtension(extension: Extension.Available): Flow<InstallStep> {
+    override fun installExtension(extension: Extension.Available): Flow<InstallStep> {
         return installer.downloadAndInstall(api.getApkUrl(extension), extension)
     }
 
@@ -243,12 +254,12 @@ class ExtensionManager(
      *
      * @param extension The extension to be updated.
      */
-    fun updateExtension(extension: Extension.Installed): Flow<InstallStep> {
+    override fun updateExtension(extension: Extension.Installed): Flow<InstallStep> {
         val availableExt = availableExtensionMapFlow.value[extension.pkgName] ?: return emptyFlow()
         return installExtension(availableExt)
     }
 
-    fun cancelInstallUpdateExtension(extension: Extension) {
+    override fun cancelInstallUpdateExtension(extension: Extension) {
         installer.cancelInstall(extension.pkgName)
     }
 

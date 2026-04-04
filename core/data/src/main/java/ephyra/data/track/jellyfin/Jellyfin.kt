@@ -18,6 +18,7 @@ import ephyra.i18n.MR
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.interceptor.rateLimit
 import eu.kanade.tachiyomi.source.Source
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
@@ -116,8 +117,7 @@ class Jellyfin(
             }
         }
         // Sync read state back to Jellyfin only when sync is enabled
-        @Suppress("DEPRECATION")
-        if (libraryPreferences.jellyfinSyncEnabled().getSync()) {
+        if (libraryPreferences.jellyfinSyncEnabled().get()) {
             try {
                 syncReadProgressToServer(track)
             } catch (e: Exception) {
@@ -131,8 +131,7 @@ class Jellyfin(
         if (track.last_chapter_read < 1.0) {
             pullRemoteProgress(track)
         } else {
-            @Suppress("DEPRECATION")
-            if (libraryPreferences.jellyfinSyncEnabled().getSync()) {
+            if (libraryPreferences.jellyfinSyncEnabled().get()) {
                 try {
                     syncReadProgressToServer(track)
                 } catch (e: Exception) {
@@ -146,11 +145,9 @@ class Jellyfin(
     override suspend fun search(query: String): List<ephyra.domain.track.model.TrackSearch> {
         if (!isLoggedIn()) return emptyList()
         val serverUrl = getServerUrl()
-        @Suppress("DEPRECATION")
-        val userId = trackPreferences.jellyfinUserId().getSync()
+        val userId = trackPreferences.jellyfinUserId().get()
         if (userId.isBlank()) return emptyList()
-        @Suppress("DEPRECATION")
-        val libraryId = libraryPreferences.jellyfinLibraryId().getSync().takeIf { it.isNotBlank() }
+        val libraryId = libraryPreferences.jellyfinLibraryId().get().takeIf { it.isNotBlank() }
         return try {
             // Support direct ID lookup: "id:itemId"
             if (query.startsWith("id:")) {
@@ -169,8 +166,7 @@ class Jellyfin(
     override suspend fun refreshInternal(track: DbTrack): DbTrack {
         val serverUrl = resolveServerUrl(track.tracking_url)
         val itemId = api.getItemIdFromUrl(track.tracking_url)
-        @Suppress("DEPRECATION")
-        val userId = trackPreferences.jellyfinUserId().getSync()
+        val userId = trackPreferences.jellyfinUserId().get()
         if (userId.isBlank()) return track
 
         return try {
@@ -184,8 +180,7 @@ class Jellyfin(
                 track.last_chapter_read = remoteTrack.last_chapter_read
                 track.status = remoteTrack.status
             } else if (track.last_chapter_read > remoteTrack.last_chapter_read) {
-                @Suppress("DEPRECATION")
-                if (libraryPreferences.jellyfinSyncEnabled().getSync()) {
+                if (libraryPreferences.jellyfinSyncEnabled().get()) {
                     // Local is ahead — push progress to server
                     try {
                         syncReadProgressToServer(track)
@@ -204,8 +199,7 @@ class Jellyfin(
     // -- Authentication --
 
     fun getServerUrl(): String {
-        @Suppress("DEPRECATION")
-        val stored = trackPreferences.jellyfinServerUrl().getSync()
+        val stored = runBlocking { trackPreferences.jellyfinServerUrl().get() }
         if (stored.isNotBlank()) return stored.trimEnd('/')
         // Legacy fallback: server URL was stored in the username field
         val legacy = getUsernameSync()
@@ -282,8 +276,7 @@ class Jellyfin(
     suspend fun updateServerUrl(newServerUrl: String) {
         val cleanUrl = newServerUrl.trimEnd('/')
         val info = api.getSystemInfo(cleanUrl)
-        @Suppress("DEPRECATION")
-        val storedServerId = trackPreferences.jellyfinServerId().getSync()
+        val storedServerId = trackPreferences.jellyfinServerId().get()
 
         if (storedServerId.isNotBlank() && info.id != storedServerId) {
             throw IllegalStateException(
@@ -323,11 +316,9 @@ class Jellyfin(
     override suspend fun match(manga: ephyra.domain.manga.model.Manga): ephyra.domain.track.model.TrackSearch? {
         if (!isLoggedIn()) return null
         val serverUrl = getServerUrl()
-        @Suppress("DEPRECATION")
-        val userId = trackPreferences.jellyfinUserId().getSync()
+        val userId = trackPreferences.jellyfinUserId().get()
         if (userId.isBlank()) return null
-        @Suppress("DEPRECATION")
-        val libraryId = libraryPreferences.jellyfinLibraryId().getSync().takeIf { it.isNotBlank() }
+        val libraryId = libraryPreferences.jellyfinLibraryId().get().takeIf { it.isNotBlank() }
 
         return try {
             val results = api.searchSeries(serverUrl, userId, manga.title, parentId = libraryId)
@@ -405,8 +396,7 @@ class Jellyfin(
         if (!isLoggedIn()) return emptyList()
         val serverUrl = resolveServerUrl(trackingUrl)
         val itemId = api.getItemIdFromUrl(trackingUrl)
-        @Suppress("DEPRECATION")
-        val userId = trackPreferences.jellyfinUserId().getSync()
+        val userId = trackPreferences.jellyfinUserId().get()
         if (userId.isBlank()) return emptyList()
         return try {
             api.getSeriesChildren(serverUrl, userId, itemId)
@@ -426,8 +416,7 @@ class Jellyfin(
     private suspend fun syncReadProgressToServer(track: DbTrack) = syncMutex.withLock {
         val serverUrl = resolveServerUrl(track.tracking_url)
         val itemId = api.getItemIdFromUrl(track.tracking_url)
-        @Suppress("DEPRECATION")
-        val userId = trackPreferences.jellyfinUserId().getSync()
+        val userId = trackPreferences.jellyfinUserId().get()
         if (userId.isBlank()) return@withLock
 
         val children = api.getSeriesChildren(serverUrl, userId, itemId)
@@ -450,8 +439,7 @@ class Jellyfin(
         val remote = remoteTrack ?: run {
             val serverUrl = resolveServerUrl(track.tracking_url)
             val itemId = api.getItemIdFromUrl(track.tracking_url)
-            @Suppress("DEPRECATION")
-            val userId = trackPreferences.jellyfinUserId().getSync()
+            val userId = trackPreferences.jellyfinUserId().get()
             if (userId.isBlank()) return@withLock
             try {
                 api.getSeries(serverUrl, userId, itemId)

@@ -1,6 +1,6 @@
 package ephyra.feature.reader.viewer.webtoon
 
-import ephyra.feature.reader.setting.ReaderPreferences
+import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.feature.reader.viewer.ViewerConfig
 import ephyra.feature.reader.viewer.ViewerNavigation
 import ephyra.feature.reader.viewer.navigation.DisabledNavigation
@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.runBlocking
 
 /**
  * Configuration used by webtoon viewers.
@@ -40,7 +41,7 @@ class WebtoonConfig(
 
     var doubleTapZoomChangedListener: ((Boolean) -> Unit)? = null
 
-    val theme = readerPreferences.readerTheme().get()
+    val theme = runBlocking { readerPreferences.readerTheme().get() }
 
     init {
         readerPreferences.cropBordersWebtoon()

@@ -33,11 +33,11 @@ import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.model.ViewerChapters
 import ephyra.domain.reader.model.ReaderOrientation
-import ephyra.feature.reader.setting.ReaderPreferences
+import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.domain.reader.model.ReadingMode
 import ephyra.feature.reader.viewer.Viewer
-import ephyra.app.util.chapter.filterDownloaded
-import ephyra.app.util.chapter.removeDuplicates
+import ephyra.core.download.util.filterDownloaded
+import ephyra.core.download.util.removeDuplicates
 import ephyra.presentation.core.util.manga.editCover
 import ephyra.core.common.util.lang.byteSize
 import ephyra.core.common.util.storage.DiskUtil
@@ -45,6 +45,7 @@ import ephyra.core.common.util.storage.cacheImageDir
 import ephyra.core.common.util.system.DeviceUtil
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -945,9 +946,9 @@ class ReaderViewModel @JvmOverloads constructor(
     fun toggleCropBorders(): Boolean {
         val isPagerType = ReadingMode.isPagerType(getMangaReadingMode())
         return if (isPagerType) {
-            readerPreferences.cropBorders().toggle()
+            runBlocking { readerPreferences.cropBorders().toggle() }
         } else {
-            readerPreferences.cropBordersWebtoon().toggle()
+            runBlocking { readerPreferences.cropBordersWebtoon().toggle() }
         }
     }
 
@@ -1014,7 +1015,7 @@ class ReaderViewModel @JvmOverloads constructor(
         val filename = generateFilename(manga, page)
 
         // Pictures directory.
-        val relativePath = if (readerPreferences.folderPerManga().get()) {
+        val relativePath = if (runBlocking { readerPreferences.folderPerManga().get() }) {
             DiskUtil.buildValidFilename(
                 manga.title,
             )
@@ -1217,7 +1218,7 @@ class ReaderViewModel @JvmOverloads constructor(
      */
     private fun updateTrackChapterRead(readerChapter: ReaderChapter) {
         if (incognitoMode) return
-        if (!trackPreferences.autoUpdateTrack().get()) return
+        if (!runBlocking { trackPreferences.autoUpdateTrack().get() }) return
 
         val manga = manga ?: return
         viewModelScope.launchNonCancellable {

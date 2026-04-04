@@ -5,19 +5,19 @@ import android.content.Context
 import android.graphics.BitmapFactory
 import androidx.core.app.NotificationCompat
 import ephyra.app.R
-import ephyra.core.common.core.security.SecurityPreferences
-import ephyra.domain.download.model.Download
-import ephyra.domain.download.service.DownloadNotifier as IDownloadNotifier
 import ephyra.app.data.notification.NotificationHandler
 import ephyra.app.data.notification.NotificationReceiver
-import ephyra.data.notification.Notifications
+import ephyra.core.common.core.security.SecurityPreferences
+import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.lang.chop
 import ephyra.core.common.util.system.cancelNotification
 import ephyra.core.common.util.system.notificationBuilder
 import ephyra.core.common.util.system.notify
-import ephyra.core.common.i18n.stringResource
+import ephyra.data.notification.Notifications
+import ephyra.domain.download.model.Download
 import ephyra.i18n.MR
 import java.util.regex.Pattern
+import ephyra.domain.download.service.DownloadNotifier as IDownloadNotifier
 
 /**
  * DownloadNotifier is used to show notifications when downloading one or multiple chapters.

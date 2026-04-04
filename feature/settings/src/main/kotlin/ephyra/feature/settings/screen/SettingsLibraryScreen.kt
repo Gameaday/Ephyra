@@ -2,7 +2,7 @@ package ephyra.feature.settings.screen
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -15,11 +15,12 @@ import androidx.core.content.ContextCompat
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import ephyra.presentation.category.visualName
+import ephyra.feature.category.presentation.visualName
 import ephyra.feature.settings.Preference
 import ephyra.feature.settings.widget.TriStateListDialog
-import ephyra.app.data.library.LibraryUpdateJob
-import ephyra.app.ui.category.CategoryScreen
+import ephyra.domain.library.service.LibraryUpdateScheduler
+import ephyra.feature.category.CategoryScreen
+import org.koin.compose.koinInject
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.toImmutableMap
@@ -50,7 +51,7 @@ object SettingsLibraryScreen : SearchableSettings {
     @Composable
     override fun getPreferences(): List<Preference> {
         val screenModel = koinScreenModel<SettingsLibraryScreenModel>()
-        val allCategories by screenModel.getCategories().collectAsStateWithLifecycle(initialValue = emptyList())
+        val allCategories by screenModel.getCategories().collectAsState(emptyList())
 
         return listOf(
             getCategoriesGroup(
@@ -120,15 +121,16 @@ object SettingsLibraryScreen : SearchableSettings {
         libraryPreferences: LibraryPreferences,
     ): Preference.PreferenceGroup {
         val context = LocalContext.current
+        val scheduler: LibraryUpdateScheduler = koinInject()
 
         val autoUpdateIntervalPref = libraryPreferences.autoUpdateInterval()
         val autoUpdateCategoriesPref = libraryPreferences.updateCategories()
         val autoUpdateCategoriesExcludePref = libraryPreferences.updateCategoriesExclude()
 
-        val autoUpdateInterval by autoUpdateIntervalPref.collectAsStateWithLifecycle()
+        val autoUpdateInterval by autoUpdateIntervalPref.collectAsState()
 
-        val included by autoUpdateCategoriesPref.collectAsStateWithLifecycle()
-        val excluded by autoUpdateCategoriesExcludePref.collectAsStateWithLifecycle()
+        val included by autoUpdateCategoriesPref.collectAsState()
+        val excluded by autoUpdateCategoriesExcludePref.collectAsState()
         var showCategoriesDialog by rememberSaveable { mutableStateOf(false) }
         if (showCategoriesDialog) {
             val categoryById = remember(allCategories) { allCategories.associateBy { it.id.toString() } }
@@ -163,7 +165,7 @@ object SettingsLibraryScreen : SearchableSettings {
                     ),
                     title = stringResource(MR.strings.pref_library_update_interval),
                     onValueChanged = {
-                        LibraryUpdateJob.setupTask(context, libraryPreferences, it)
+                        scheduler.setupLibraryUpdateTask()
                         true
                     },
                 ),
@@ -180,7 +182,7 @@ object SettingsLibraryScreen : SearchableSettings {
                     onValueChanged = {
                         // Post to event looper to allow the preference to be updated.
                         ContextCompat.getMainExecutor(context)
-                            .execute { LibraryUpdateJob.setupTask(context, libraryPreferences) }
+                            .execute { scheduler.setupLibraryUpdateTask() }
                         true
                     },
                 ),

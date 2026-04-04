@@ -43,7 +43,7 @@ import coil3.imageLoader
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.size.Size
-import ephyra.app.ui.reader.viewer.ReaderPageImageView
+import ephyra.feature.reader.viewer.ReaderPageImageView
 import ephyra.domain.manga.model.Manga
 import ephyra.feature.manga.presentation.EditCoverAction
 import ephyra.i18n.MR

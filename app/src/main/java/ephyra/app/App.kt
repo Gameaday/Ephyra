@@ -23,36 +23,37 @@ import coil3.request.allowRgb565
 import coil3.request.bitmapConfig
 import coil3.request.crossfade
 import coil3.util.DebugLogger
-import ephyra.core.common.core.security.PrivacyPreferences
 import ephyra.app.crash.CrashActivity
 import ephyra.app.crash.GlobalExceptionHandler
+import ephyra.app.data.notification.Notifications
+import ephyra.app.di.koinAppModule
+import ephyra.app.di.koinAppModule_UI
+import ephyra.app.di.koinPreferenceModule
+import ephyra.core.common.core.security.PrivacyPreferences
+import ephyra.core.common.i18n.stringResource
+import ephyra.core.common.preference.Preference
+import ephyra.core.common.preference.PreferenceStore
+import ephyra.core.common.util.system.DeviceUtil
+import ephyra.core.common.util.system.GLUtil
+import ephyra.core.common.util.system.ImageUtil
+import ephyra.core.common.util.system.WebViewUtil
+import ephyra.core.common.util.system.cancelNotification
+import ephyra.core.common.util.system.logcat
+import ephyra.core.common.util.system.notify
+import ephyra.core.migration.Migrator
+import ephyra.core.migration.migrations.migrations
 import ephyra.data.coil.BufferedSourceFetcher
 import ephyra.data.coil.MangaCoverFetcher
 import ephyra.data.coil.MangaCoverKeyer
 import ephyra.data.coil.MangaKeyer
-import ephyra.app.data.notification.Notifications
-import ephyra.app.di.koinAppModule
-import ephyra.app.di.koinAppModule_UI
-import ephyra.domain.koinDomainModule
-import ephyra.app.di.koinPreferenceModule
-import ephyra.core.common.util.system.DeviceUtil
-import ephyra.core.common.util.system.GLUtil
-import ephyra.core.common.util.system.WebViewUtil
-import ephyra.core.common.util.system.cancelNotification
-import ephyra.core.common.util.system.notify
-import ephyra.core.common.preference.Preference
-import ephyra.core.common.preference.PreferenceStore
-import ephyra.core.common.util.system.ImageUtil
-import ephyra.core.common.util.system.logcat
-import ephyra.core.migration.Migrator
-import ephyra.core.migration.migrations.migrations
 import ephyra.domain.base.BasePreferences
+import ephyra.domain.koinDomainModule
 import ephyra.domain.ui.UiPreferences
 import ephyra.domain.ui.model.setAppCompatDelegateThemeMode
 import ephyra.i18n.MR
 import ephyra.presentation.core.data.coil.TachiyomiImageDecoder
 import ephyra.presentation.core.ui.delegate.SecureActivityDelegate
-import ephyra.app.ui.base.delegate.SecureActivityDelegateState
+import ephyra.presentation.core.ui.delegate.SecureActivityDelegateState
 import ephyra.presentation.widget.WidgetManager
 import ephyra.telemetry.TelemetryConfig
 import eu.kanade.tachiyomi.network.NetworkHelper
@@ -60,6 +61,7 @@ import eu.kanade.tachiyomi.network.NetworkPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.runBlocking
 import logcat.AndroidLogcatLogger
 import logcat.LogPriority
 import logcat.LogcatLogger
@@ -68,7 +70,6 @@ import org.koin.android.ext.android.inject
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.workmanager.koin.workManagerFactory
 import org.koin.core.context.startKoin
-import ephyra.core.common.i18n.stringResource
 
 class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factory {
 
@@ -148,14 +149,14 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
             .onEach { ImageUtil.hardwareBitmapThreshold = it }
             .launchIn(scope)
 
-        setAppCompatDelegateThemeMode(get<UiPreferences>().themeMode().getSync())
+        setAppCompatDelegateThemeMode(runBlocking { get<UiPreferences>().themeMode().get() })
 
         // Updates widget update
         WidgetManager(get(), get()).apply { init(scope) }
 
         if (!LogcatLogger.isInstalled) {
             val minLogPriority = when {
-                networkPreferences.verboseLogging().getSync() -> LogPriority.VERBOSE
+                runBlocking { networkPreferences.verboseLogging().get() } -> LogPriority.VERBOSE
                 BuildConfig.DEBUG -> LogPriority.DEBUG
                 else -> LogPriority.INFO
             }
@@ -169,9 +170,9 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
     private fun initializeMigrator() {
         val preferenceStore = get<PreferenceStore>()
         val preference = preferenceStore.getInt(Preference.appStateKey("last_version_code"), 0)
-        logcat { "Migration from ${preference.getSync()} to ${BuildConfig.VERSION_CODE}" }
+        logcat { "Migration from ${runBlocking { preference.get() }} to ${BuildConfig.VERSION_CODE}" }
         Migrator.initialize(
-            old = preference.getSync(),
+            old = runBlocking { preference.get() },
             new = BuildConfig.VERSION_CODE,
             migrations = migrations,
             onMigrationComplete = {
@@ -211,7 +212,7 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
             // This eliminates the CPU→GPU upload on every render frame for covers and browse
             // images. getBitmapOrNull() handles the soft-copy needed for compress/notifications.
             if (!lowRam) bitmapConfig(Bitmap.Config.HARDWARE)
-            if (networkPreferences.verboseLogging().getSync()) logger(DebugLogger())
+            if (runBlocking { networkPreferences.verboseLogging().get() }) logger(DebugLogger())
 
             // Coil spawns a new thread for every image load by default
             fetcherCoroutineContext(Dispatchers.IO.limitedParallelism(8))

@@ -16,8 +16,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.asMangaCover
+import ephyra.feature.manga.presentation.components.MangaCover
 import ephyra.presentation.core.components.material.padding
-import ephyra.presentation.manga.components.MangaCover
 
 private val UpcomingItemHeight = 96.dp
 

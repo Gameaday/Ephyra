@@ -67,11 +67,11 @@ import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.components.material.topSmallPaddingValues
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.theme.MotionTokens
-import ephyra.presentation.core.util.plus
-import ephyra.presentation.manga.components.MangaCover
 import ephyra.presentation.core.util.animateItemFastScroll
 import ephyra.presentation.core.util.formatChapterNumber
+import ephyra.presentation.core.util.plus
 import ephyra.presentation.core.util.rememberResourceBitmapPainter
+import ephyra.presentation.manga.components.MangaCover
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 

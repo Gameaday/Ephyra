@@ -1,6 +1,8 @@
 package ephyra.feature.reader
 
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.core.app.NotificationCompat
@@ -8,15 +10,14 @@ import coil3.asDrawable
 import coil3.imageLoader
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
-import ephyra.app.R
-import ephyra.app.data.notification.NotificationHandler
-import ephyra.app.data.notification.NotificationReceiver
-import ephyra.app.data.notification.Notifications
+import ephyra.data.notification.Notifications
+import ephyra.presentation.core.R
 import ephyra.core.common.util.system.cancelNotification
-import ephyra.app.util.system.getBitmapOrNull
+import ephyra.presentation.core.util.system.getBitmapOrNull
 import ephyra.core.common.util.system.notificationBuilder
 import ephyra.core.common.util.system.notify
 import ephyra.core.common.i18n.stringResource
+import ephyra.presentation.core.util.system.toShareIntent
 import ephyra.i18n.MR
 
 /**
@@ -77,12 +78,27 @@ class SaveImageNotifier(private val context: Context) {
             // Clear old actions if they exist
             clearActions()
 
-            setContentIntent(NotificationHandler.openImagePendingActivity(context, uri))
-            // Share action
+            setContentIntent(
+                PendingIntent.getActivity(
+                    context,
+                    0,
+                    Intent(Intent.ACTION_VIEW).apply {
+                        setDataAndType(uri, "image/*")
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    },
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                ),
+            )
+            // Share action — direct PendingIntent avoids a broadcast roundtrip
             addAction(
                 R.drawable.ic_share_24dp,
                 context.stringResource(MR.strings.action_share),
-                NotificationReceiver.shareImagePendingBroadcast(context, uri),
+                PendingIntent.getActivity(
+                    context,
+                    0,
+                    uri.toShareIntent(context),
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                ),
             )
 
             updateNotification()

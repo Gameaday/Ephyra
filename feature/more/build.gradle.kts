@@ -18,6 +18,11 @@ dependencies {
     api(projects.sourceApi)
     api(projects.i18n)
     api(projects.presentationCore)
+    api(projects.feature.settings)
+    api(projects.feature.download)
+    api(projects.feature.category)
+    api(projects.feature.stats)
+    api(projects.feature.manga)
 
     // Third-party libraries
     implementation(libs.logcat)
@@ -26,6 +31,7 @@ dependencies {
     // Dependency Injection (Koin 4.2.0)
     api(libs.koin.core)
     implementation(libs.koin.annotations)
+    implementation(libs.koin.androidx.compose)
 
     // Testing
     testImplementation(libs.bundles.test)

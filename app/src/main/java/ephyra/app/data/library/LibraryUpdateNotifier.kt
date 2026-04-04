@@ -14,20 +14,20 @@ import coil3.request.ImageRequest
 import coil3.request.transformations
 import coil3.transform.CircleCropTransformation
 import ephyra.app.R
-import ephyra.core.common.core.security.SecurityPreferences
-import ephyra.core.download.Downloader
 import ephyra.app.data.notification.NotificationHandler
 import ephyra.app.data.notification.NotificationReceiver
-import ephyra.data.notification.Notifications
 import ephyra.app.ui.main.MainActivity
-import ephyra.core.common.util.lang.chop
-import ephyra.core.common.util.system.cancelNotification
 import ephyra.app.util.system.getBitmapOrNull
-import ephyra.core.common.util.system.notificationBuilder
-import ephyra.core.common.util.system.notify
 import ephyra.core.common.Constants
+import ephyra.core.common.core.security.SecurityPreferences
 import ephyra.core.common.i18n.pluralStringResource
 import ephyra.core.common.i18n.stringResource
+import ephyra.core.common.util.lang.chop
+import ephyra.core.common.util.system.cancelNotification
+import ephyra.core.common.util.system.notificationBuilder
+import ephyra.core.common.util.system.notify
+import ephyra.core.download.Downloader
+import ephyra.data.notification.Notifications
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.library.model.LibraryManga
 import ephyra.domain.manga.model.Manga
@@ -37,7 +37,6 @@ import ephyra.presentation.core.util.formatChapterNumber
 import eu.kanade.tachiyomi.source.UnmeteredSource
 import java.math.RoundingMode
 import java.text.NumberFormat
-
 import ephyra.domain.library.service.LibraryUpdateNotifier as DomainLibraryUpdateNotifier
 
 class LibraryUpdateNotifier(

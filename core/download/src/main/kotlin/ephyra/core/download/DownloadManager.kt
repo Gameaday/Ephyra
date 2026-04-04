@@ -383,8 +383,7 @@ class DownloadManager(
             .mapNotNull { mangaDir.findFile(it) }
             .firstOrNull() ?: return
 
-        @Suppress("DEPRECATION")
-        val disallowNonAscii = downloadPreferences.downloadOnlyOverWifi().getSync() // Placeholder
+        val disallowNonAscii = downloadPreferences.downloadOnlyOverWifi().get() // Placeholder
         var newName = provider.getChapterDirName(
             newChapter.name,
             newChapter.scanlator,

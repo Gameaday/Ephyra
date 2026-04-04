@@ -27,9 +27,9 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.WarningBanner
 import ephyra.presentation.core.util.Screen
-import ephyra.app.data.backup.BackupFileValidator
-import ephyra.app.data.backup.restore.BackupRestoreJob
-import ephyra.app.data.backup.restore.RestoreOptions
+import ephyra.data.backup.BackupFileValidator
+import ephyra.domain.backup.service.RestoreScheduler
+import ephyra.data.backup.restore.RestoreOptions
 import ephyra.core.common.util.system.DeviceUtil
 import kotlinx.coroutines.flow.update
 import ephyra.i18n.MR
@@ -39,6 +39,8 @@ import ephyra.presentation.core.components.SectionCard
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 class RestoreBackupScreen(
     private val uri: String,
@@ -167,7 +169,9 @@ class RestoreBackupScreen(
 private class RestoreBackupScreenModel(
     private val context: Context,
     private val uri: String,
-) : StateScreenModel<RestoreBackupScreenModel.State>(State()) {
+) : StateScreenModel<RestoreBackupScreenModel.State>(State()), KoinComponent {
+
+    private val restoreScheduler: RestoreScheduler by inject()
 
     init {
         validate(uri.toUri())
@@ -182,10 +186,9 @@ private class RestoreBackupScreenModel(
     }
 
     fun startRestore() {
-        BackupRestoreJob.start(
-            context = context,
+        restoreScheduler.startRestoreNow(
             uri = uri.toUri(),
-            options = state.value.options,
+            optionsArray = state.value.options.asBooleanArray(),
         )
     }
 

@@ -49,11 +49,11 @@ import ephyra.feature.settings.screen.data.StorageInfo
 import ephyra.feature.settings.widget.BasePreferenceWidget
 import ephyra.feature.settings.widget.PrefsHorizontalPadding
 import ephyra.presentation.core.util.relativeTimeSpanString
-import ephyra.app.data.backup.create.BackupCreateJob
-import ephyra.app.data.backup.restore.BackupRestoreJob
+import ephyra.domain.backup.service.BackupScheduler
+import ephyra.domain.backup.service.RestoreScheduler
 import ephyra.data.cache.ChapterCache
-import ephyra.app.data.export.LibraryExporter
-import ephyra.app.data.export.LibraryExporter.ExportOptions
+import ephyra.data.export.LibraryExporter
+import ephyra.data.export.LibraryExporter.ExportOptions
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.presentation.core.util.system.toast
 import kotlinx.collections.immutable.persistentListOf
@@ -76,6 +76,7 @@ import ephyra.presentation.core.components.material.TextButton
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.collectAsState
 import cafe.adriel.voyager.koin.koinScreenModel
+import org.koin.compose.koinInject
 
 object SettingsDataScreen : SearchableSettings {
 
@@ -187,6 +188,8 @@ object SettingsDataScreen : SearchableSettings {
     private fun getBackupAndRestoreGroup(backupPreferences: BackupPreferences): Preference.PreferenceGroup {
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
+        val backupScheduler: BackupScheduler = koinInject()
+        val restoreScheduler: RestoreScheduler = koinInject()
 
         val lastAutoBackup by backupPreferences.lastAutoBackupTimestamp().collectAsState()
 
@@ -233,7 +236,7 @@ object SettingsDataScreen : SearchableSettings {
                                     modifier = Modifier.fillMaxHeight(),
                                     checked = false,
                                     onCheckedChange = {
-                                        if (!BackupRestoreJob.isRunning(context)) {
+                                        if (!restoreScheduler.isRestoreRunning()) {
                                             if (DeviceUtil.isMiui && DeviceUtil.isMiuiOptimizationDisabled()) {
                                                 context.toast(MR.strings.restore_miui_warning)
                                             }
@@ -266,7 +269,7 @@ object SettingsDataScreen : SearchableSettings {
                     ),
                     title = stringResource(MR.strings.pref_backup_interval),
                     onValueChanged = {
-                        BackupCreateJob.setupTask(context, backupPreferences, it)
+                        backupScheduler.setupBackupTask(it)
                         true
                     },
                 ),

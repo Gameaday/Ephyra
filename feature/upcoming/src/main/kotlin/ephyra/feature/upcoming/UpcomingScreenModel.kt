@@ -4,8 +4,8 @@ import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMapIndexedNotNull
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import ephyra.app.util.lang.toLocalDate
-import ephyra.core.util.insertSeparatorsReversed
+import ephyra.core.common.util.insertSeparatorsReversed
+import ephyra.core.common.util.lang.toLocalDate
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.upcoming.interactor.GetUpcomingManga
 import kotlinx.collections.immutable.ImmutableList
