@@ -2,6 +2,7 @@ package ephyra.app.di
 
 import ephyra.app.ui.deeplink.DeepLinkScreenModel
 import ephyra.feature.category.CategoryScreenModel
+import ephyra.feature.download.DownloadQueueScreenModel
 import ephyra.feature.migration.config.MigrationConfigScreen
 import ephyra.feature.migration.dialog.MigrateDialogScreenModel
 import ephyra.feature.migration.list.MigrationListScreenModel
@@ -18,7 +19,6 @@ import ephyra.feature.settings.screen.SettingsTrackingScreenModel
 import ephyra.feature.settings.screen.about.AboutScreenModel
 import ephyra.feature.settings.screen.advanced.ClearDatabaseScreenModel
 import ephyra.feature.settings.screen.browse.ExtensionReposScreenModel
-import ephyra.feature.download.DownloadQueueScreenModel
 import ephyra.feature.settings.screen.debug.WorkerInfoScreen
 import ephyra.feature.upcoming.UpcomingScreenModel
 import org.koin.android.ext.koin.androidContext

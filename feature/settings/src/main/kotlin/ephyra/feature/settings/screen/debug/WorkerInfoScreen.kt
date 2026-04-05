@@ -158,7 +158,7 @@ class WorkerInfoScreen : Screen() {
                         )
                             .toDateTimestampString(
                                 UiPreferences.dateFormat(
-                                    uiPreferences.dateFormat().getSync(),
+                                    kotlinx.coroutines.runBlocking { uiPreferences.dateFormat().get() },
                                 ),
                             )
                         appendLine("Next scheduled run: $timestamp")
