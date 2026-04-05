@@ -20,7 +20,7 @@ import ephyra.data.cache.CoverCache
 import ephyra.data.database.models.toDomainChapter
 import ephyra.core.download.DownloadManager
 import ephyra.core.download.DownloadProvider
-import ephyra.core.download.model.Download
+import ephyra.domain.download.model.Download
 import ephyra.data.saver.Image
 import ephyra.data.saver.ImageSaver
 import ephyra.data.saver.Location
@@ -289,7 +289,7 @@ class ReaderViewModel @JvmOverloads constructor(
                     // value in sync with real progress via onPageSelected().
                     hasAppliedSavedPageIndex = true
                 } else if (!currentChapter.chapter.read) {
-                    currentChapter.requestedPage = currentChapter.chapter.lastPageRead.toInt()
+                    currentChapter.requestedPage = currentChapter.chapter.last_page_read.toInt()
                 }
                 chapterId = currentChapter.chapter.id!!
             }

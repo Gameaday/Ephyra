@@ -3,7 +3,7 @@ package ephyra.feature.stats
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.core.model.rememberScreenModel
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.i18n.MR
@@ -19,7 +19,7 @@ class StatsScreen : Screen() {
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
 
-        val screenModel = rememberScreenModel { StatsScreenModel() }
+        val screenModel = koinScreenModel<StatsScreenModel>()
         val state by screenModel.state.collectAsStateWithLifecycle()
 
         Scaffold(
