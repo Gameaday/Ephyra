@@ -342,8 +342,7 @@ class ReaderActivity : BaseActivity() {
             onBackPressedDispatcher.onBackPressed()
             return true
         }
-        val handled = viewModel.state.value.viewer?.handleKeyUp(keyCode, event) ?: false
-        return handled || super.onKeyUp(keyCode, event)
+        return super.onKeyUp(keyCode, event)
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
@@ -562,7 +561,7 @@ class ReaderActivity : BaseActivity() {
     private fun updateViewerInset(all: Boolean, bottom: Boolean) {
         val viewer = viewModel.state.value.viewer ?: return
         val view = viewer.getView()
-        view.applyInsetsPadding(windowInsetsController.lastWindowInsets, all, bottom)
+        view.applyInsetsPadding(ViewCompat.getRootWindowInsets(window.decorView), all, bottom)
     }
 
     private fun View.applyInsetsPadding(insets: WindowInsetsCompat?, all: Boolean, bottom: Boolean) {
