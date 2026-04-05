@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -65,10 +66,12 @@ import ephyra.feature.reader.viewer.ReaderProgressIndicator
 import ephyra.i18n.MR
 import ephyra.presentation.core.data.coil.TachiyomiImageDecoder
 import ephyra.presentation.core.ui.activity.BaseActivity
-import ephyra.presentation.core.util.Navigator
+import ephyra.presentation.core.R as CoreR
+import ephyra.presentation.core.util.AppNavigator
 import ephyra.presentation.core.util.ifSourcesLoaded
 import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.core.util.system.isNightMode
+import ephyra.presentation.core.util.system.copyToClipboard
 import ephyra.presentation.core.util.system.openInBrowser
 import ephyra.presentation.core.util.system.toShareIntent
 import ephyra.presentation.core.util.system.toast
@@ -112,7 +115,7 @@ class ReaderActivity : BaseActivity() {
 
     private val readerPreferences: ReaderPreferences by inject()
     private val preferences: BasePreferences by inject()
-    private val navigator: Navigator by inject()
+    private val navigator: AppNavigator by inject()
     private val notificationManager: NotificationManager by inject()
 
     lateinit var binding: ReaderActivityBinding
@@ -329,8 +332,8 @@ class ReaderActivity : BaseActivity() {
         viewModel.onActivityFinish()
         super.finish()
         overrideTransitionCompat(
-            R.anim.shared_axis_x_pop_enter,
-            R.anim.shared_axis_x_pop_exit,
+            CoreR.anim.shared_axis_x_pop_enter,
+            CoreR.anim.shared_axis_x_pop_exit,
         )
     }
 
