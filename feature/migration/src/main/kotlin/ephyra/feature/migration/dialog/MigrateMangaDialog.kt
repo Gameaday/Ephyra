@@ -24,6 +24,7 @@ import cafe.adriel.voyager.koin.koinScreenModel
 import dev.icerock.moko.resources.StringResource
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.withUIContext
+import kotlinx.coroutines.runBlocking
 import ephyra.data.cache.CoverCache
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.manga.model.Manga
@@ -152,7 +153,7 @@ class MigrateDialogScreenModel(
                 if (applicable) add(it)
             }
         }
-        val selectedFlags = sourcePreference.migrationFlags().get()
+        val selectedFlags = runBlocking { sourcePreference.migrationFlags().get() }
         mutableState.update {
             State(
                 current = current,

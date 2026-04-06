@@ -46,10 +46,10 @@ import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.lang.withUIContext
 import ephyra.core.common.util.system.logcat
 import ephyra.data.track.DeletableTracker
-import ephyra.data.track.EnhancedTracker
-import ephyra.data.track.Tracker
-import ephyra.data.track.TrackerManager
-import ephyra.data.track.model.TrackSearch
+import ephyra.domain.track.service.EnhancedTracker
+import ephyra.domain.track.service.Tracker
+import ephyra.domain.track.service.TrackerManager
+import ephyra.domain.track.model.TrackSearch
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.track.interactor.DeleteTrack
@@ -765,7 +765,25 @@ data class TrackerSearchScreen(
         }
 
         fun registerTracking(item: TrackSearch) {
-            screenModelScope.launchNonCancellable { tracker.register(item, mangaId) }
+            screenModelScope.launchNonCancellable {
+                val track = Track(
+                    id = 0L,
+                    mangaId = mangaId,
+                    trackerId = tracker.id,
+                    remoteId = item.remote_id,
+                    libraryId = null,
+                    title = item.title,
+                    lastChapterRead = 0.0,
+                    totalChapters = item.total_chapters,
+                    status = tracker.getReadingStatus(),
+                    score = 0.0,
+                    remoteUrl = item.tracking_url,
+                    startDate = 0L,
+                    finishDate = 0L,
+                    private = item.private,
+                )
+                tracker.register(track, mangaId)
+            }
         }
 
         fun updateSelection(selected: TrackSearch) {
