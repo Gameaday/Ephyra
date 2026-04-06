@@ -18,6 +18,7 @@ dependencies {
     api(projects.presentationCore)
     api(projects.feature.manga)
     api(projects.feature.webview)
+    implementation(projects.feature.settings)
 
     implementation(libs.logcat)
     api(libs.bundles.voyager)

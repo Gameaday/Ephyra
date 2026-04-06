@@ -124,17 +124,21 @@ class ExtensionDetailsScreenModel(
     }
 
     fun toggleSource(sourceId: Long) {
-        toggleSource.await(sourceId)
+        screenModelScope.launch {
+            toggleSource.await(sourceId)
+        }
     }
 
     fun toggleSources(enable: Boolean) {
-        state.value.extension?.sources
-            ?.map { it.id }
-            ?.let { toggleSource.await(it, enable) }
+        val sourceIds = state.value.extension?.sources?.map { it.id } ?: return
+        screenModelScope.launch {
+            toggleSource.await(sourceIds, enable)
+        }
     }
 
     fun toggleIncognito(enable: Boolean) {
-        state.value.extension?.pkgName?.let { packageName ->
+        val packageName = state.value.extension?.pkgName ?: return
+        screenModelScope.launch {
             toggleIncognito.await(packageName, enable)
         }
     }

@@ -55,7 +55,9 @@ class ExtensionFilterScreenModel(
     }
 
     fun toggle(language: String) {
-        toggleLanguage.await(language)
+        screenModelScope.launch {
+            toggleLanguage.await(language)
+        }
     }
 }
 

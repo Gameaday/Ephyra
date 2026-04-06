@@ -17,8 +17,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastForEach
-import ephyra.core.designsystem.utils.isExpandedWidthWindow
-import ephyra.core.designsystem.utils.isMediumWidthWindow
+import ephyra.presentation.core.util.isExpandedWidthWindow
+import ephyra.presentation.core.util.isMediumWidthWindow
 import ephyra.presentation.core.components.material.padding
 import io.woong.compose.grid.SimpleGridCells
 import io.woong.compose.grid.VerticalGrid
