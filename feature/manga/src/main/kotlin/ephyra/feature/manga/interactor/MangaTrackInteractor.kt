@@ -1,8 +1,8 @@
 package ephyra.feature.manga.interactor
 
 import android.content.Context
-import ephyra.data.track.Tracker
-import ephyra.data.track.TrackerManager
+import ephyra.domain.track.service.Tracker
+import ephyra.domain.track.service.TrackerManager
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.GetTracks
@@ -34,7 +34,7 @@ class MangaTrackInteractor(
 
     suspend fun getTracks(mangaId: Long): List<Track> = getTracks.await(mangaId)
 
-    fun hasQueryableTracker(): Boolean = matchUnlinkedManga.hasQueryableTracker()
+    suspend fun hasQueryableTracker(): Boolean = matchUnlinkedManga.hasQueryableTracker()
 
     suspend fun matchUnlinkedManga(manga: Manga): String? = matchUnlinkedManga.awaitSingle(manga)
 
@@ -54,13 +54,7 @@ class MangaTrackInteractor(
         trackChapter.await(context, mangaId, maxChapterNumber)
     }
 
-    fun isAutoTrackStateAlways(): Boolean = trackPreferences.autoUpdateTrackOnMarkRead().get() == AutoTrackState.ALWAYS
-    fun isAutoTrackStateNever(): Boolean = trackPreferences.autoUpdateTrackOnMarkRead().get() == AutoTrackState.NEVER
+    suspend fun isAutoTrackStateAlways(): Boolean = trackPreferences.autoUpdateTrackOnMarkRead().get() == AutoTrackState.ALWAYS
+    suspend fun isAutoTrackStateNever(): Boolean = trackPreferences.autoUpdateTrackOnMarkRead().get() == AutoTrackState.NEVER
     fun autoUpdateTrackOnMarkRead() = trackPreferences.autoUpdateTrackOnMarkRead()
-
-    val jellyfin = trackerManager.jellyfin
-
-    fun jellyfinIsAdmin() = trackPreferences.jellyfinIsAdmin()
-
-    fun jellyfinUserId() = trackPreferences.jellyfinUserId()
 }

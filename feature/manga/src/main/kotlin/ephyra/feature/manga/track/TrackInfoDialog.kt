@@ -67,12 +67,12 @@ import ephyra.presentation.core.util.Screen
 import ephyra.presentation.core.util.system.copyToClipboard
 import ephyra.presentation.core.util.system.openInBrowser
 import ephyra.presentation.core.util.system.toast
-import ephyra.presentation.track.TrackChapterSelector
-import ephyra.presentation.track.TrackDateSelector
-import ephyra.presentation.track.TrackInfoDialogHome
-import ephyra.presentation.track.TrackScoreSelector
-import ephyra.presentation.track.TrackStatusSelector
-import ephyra.presentation.track.TrackerSearch
+import ephyra.presentation.manga.track.TrackChapterSelector
+import ephyra.presentation.manga.track.TrackDateSelector
+import ephyra.presentation.manga.track.TrackInfoDialogHome
+import ephyra.presentation.manga.track.TrackScoreSelector
+import ephyra.presentation.manga.track.TrackStatusSelector
+import ephyra.presentation.manga.track.TrackerSearch
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
@@ -284,12 +284,12 @@ data class TrackInfoDialogHomeScreen(
             }
         }
 
-        private fun List<Track>.mapToTrackItem(): List<TrackItem> {
+        private suspend fun List<Track>.mapToTrackItem(): List<TrackItem> {
             val loggedInTrackers = trackerManager.loggedInTrackers()
             val source = sourceManager.getOrStub(sourceId)
             // Include Jellyfin even when not logged in so users can discover it
-            val jellyfin = trackerManager.jellyfin
-            val visibleTrackers = if (jellyfin.isLoggedIn) {
+            val jellyfin = trackerManager.get(TrackerManager.JELLYFIN)
+            val visibleTrackers = if (jellyfin == null || jellyfin.isLoggedIn) {
                 loggedInTrackers
             } else {
                 loggedInTrackers + jellyfin

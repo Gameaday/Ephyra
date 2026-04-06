@@ -27,6 +27,7 @@ import ephyra.domain.chapter.service.getChapterSort
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.interactor.GetDuplicateLibraryManga
 import ephyra.domain.manga.interactor.GetExcludedScanlators
+import ephyra.domain.manga.interactor.GetMangaWithChapters
 import ephyra.domain.manga.model.MangaWithChapterCount
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.applyFilter
