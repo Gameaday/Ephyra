@@ -268,7 +268,7 @@ private fun MangaScreenSmallImpl(
 
     val (chapters, listItem, isAnySelected) = remember(state) {
         Triple(
-            first = state.processedChapters,
+            first = state.chapterListItems.filterIsInstance<ChapterList.Item>(),
             second = state.chapterListItems,
             third = state.isAnySelected,
         )
@@ -534,7 +534,7 @@ fun MangaScreenLargeImpl(
 
     val (chapters, listItem, isAnySelected) = remember(state) {
         Triple(
-            first = state.processedChapters,
+            first = state.chapterListItems.filterIsInstance<ChapterList.Item>(),
             second = state.chapterListItems,
             third = state.isAnySelected,
         )
