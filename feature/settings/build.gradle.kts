@@ -14,6 +14,7 @@ dependencies {
     api(projects.i18n)
     api(projects.presentationCore)
     implementation(projects.feature.manga)
+    implementation(projects.feature.browse)
     implementation(projects.feature.category)
 
     implementation(compose.material3.core)

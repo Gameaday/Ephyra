@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.rememberScreenModel
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -45,7 +45,7 @@ import ephyra.domain.source.interactor.GetSourcesWithNonLibraryManga
 import ephyra.domain.source.model.Source
 import ephyra.domain.source.model.SourceWithCount
 import ephyra.i18n.MR
-import ephyra.presentation.browse.components.SourceIcon
+import ephyra.feature.browse.presentation.components.SourceIcon
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.LazyColumnWithAction
