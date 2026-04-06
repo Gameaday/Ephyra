@@ -42,6 +42,7 @@ sealed interface MangaScreenEvent {
 
     data class ToggleAllSelection(val selected: Boolean) : MangaScreenEvent
     data object InvertSelection : MangaScreenEvent
+    data object ClearSelection : MangaScreenEvent
     data object DismissDialog : MangaScreenEvent
     data class ShowDeleteChapterDialog(val chapters: List<Chapter>) : MangaScreenEvent
     data object ShowSettingsDialog : MangaScreenEvent

@@ -3,6 +3,8 @@ package ephyra.app.di
 import ephyra.app.ui.deeplink.DeepLinkScreenModel
 import ephyra.feature.category.CategoryScreenModel
 import ephyra.feature.download.DownloadQueueScreenModel
+import ephyra.feature.manga.CoverSearchScreenModel
+import ephyra.feature.manga.MangaCoverScreenModel
 import ephyra.feature.migration.config.MigrationConfigScreen
 import ephyra.feature.migration.dialog.MigrateDialogScreenModel
 import ephyra.feature.migration.list.MigrationListScreenModel
@@ -108,6 +110,8 @@ val koinAppModule_UI = module {
     }
 
     factory { DownloadQueueScreenModel(get()) }
+    factory { (mangaId: Long) -> MangaCoverScreenModel(mangaId, get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    factory { (title: String, sourceId: Long) -> CoverSearchScreenModel(title, sourceId, get()) }
     factory { MigrationConfigScreen.ScreenModel(get(), get()) }
     factory { UpcomingScreenModel(get()) }
     factory { WorkerInfoScreen.Model(androidContext(), get()) }

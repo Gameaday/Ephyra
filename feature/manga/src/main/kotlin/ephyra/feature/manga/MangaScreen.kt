@@ -63,6 +63,7 @@ import ephyra.presentation.core.util.system.toast
 import eu.kanade.tachiyomi.source.Source
 import ephyra.source.local.isLocalOrStub
 import eu.kanade.tachiyomi.source.online.HttpSource
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import org.koin.core.parameter.parametersOf
@@ -229,7 +230,7 @@ class MangaScreen(
             null -> {}
             is MangaScreenModel.Dialog.ChangeCategory -> {
                 ChangeCategoryDialog(
-                    initialSelection = dialog.initialSelection,
+                    initialSelection = dialog.initialSelection.toImmutableList(),
                     onDismissRequest = onDismissRequest,
                     onEditCategories = { navigator.push(CategoryScreen()) },
                     onConfirm = { include, _ ->
@@ -302,7 +303,7 @@ class MangaScreen(
             }
 
             MangaScreenModel.Dialog.FullCover -> {
-                val sm = rememberScreenModel { MangaCoverScreenModel(successState.manga.id) }
+                val sm = koinScreenModel<MangaCoverScreenModel> { parametersOf(successState.manga.id) }
                 val manga by sm.state.collectAsStateWithLifecycle()
                 if (manga != null) {
                     val getContent = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {
@@ -311,11 +312,8 @@ class MangaScreen(
                     }
                     var showCoverSearch by remember { mutableStateOf(false) }
                     if (showCoverSearch) {
-                        val coverSearchSm = rememberScreenModel {
-                            CoverSearchScreenModel(
-                                mangaTitle = manga!!.title,
-                                currentSourceId = successState.source.id,
-                            )
+                        val coverSearchSm = koinScreenModel<CoverSearchScreenModel> {
+                            parametersOf(manga!!.title, successState.source.id)
                         }
                         val coverSearchState by coverSearchSm.state.collectAsStateWithLifecycle()
                         LaunchedEffect(Unit) { coverSearchSm.search() }

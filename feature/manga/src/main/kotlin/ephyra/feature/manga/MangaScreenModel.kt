@@ -27,7 +27,7 @@ import ephyra.domain.chapter.service.getChapterSort
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.interactor.GetDuplicateLibraryManga
 import ephyra.domain.manga.interactor.GetExcludedScanlators
-import ephyra.domain.manga.interactor.GetMangaWithChapters
+import ephyra.domain.manga.model.MangaWithChapterCount
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.applyFilter
 import ephyra.domain.manga.model.chaptersFiltered
@@ -126,9 +126,7 @@ class MangaScreenModel(
                 downloadManager.queueState,
                 libraryPreferences.swipeToEndAction().changes(),
                 libraryPreferences.swipeToStartAction().changes(),
-            ) { mangaAndChapters, _, queue, swipeStart, swipeEnd ->
-                val manga = mangaAndChapters.manga
-                val chapters = mangaAndChapters.chapters
+            ) { (manga, chapters), _, queue, swipeStart, swipeEnd ->
 
                 mutableState.update { state ->
                     val success = state as? State.Success ?: return@update state
@@ -309,6 +307,8 @@ class MangaScreenModel(
             val isAnySelected: Boolean = false,
             val filterActive: Boolean = false,
             val scanlatorFilterActive: Boolean = false,
+            val availableScanlators: Set<String> = emptySet(),
+            val excludedScanlators: Set<String> = emptySet(),
             val isRefreshingData: Boolean = false,
             val isJellyfinLinked: Boolean = false,
             val isUpdateIntervalEnabled: Boolean = false,
@@ -334,7 +334,7 @@ class MangaScreenModel(
             val manga: Manga,
             val initialSelection: List<CheckboxState<Category>>,
         ) : Dialog
-        data class DuplicateManga(val duplicates: List<Manga>) : Dialog
+        data class DuplicateManga(val duplicates: List<MangaWithChapterCount>) : Dialog
         data class DeleteChapters(val chapters: List<Chapter>) : Dialog
         data class Migrate(val current: Manga, val target: Manga) : Dialog
         data class SetFetchInterval(val manga: Manga) : Dialog
