@@ -73,6 +73,7 @@ import ephyra.presentation.manga.track.TrackScoreSelector
 import ephyra.presentation.manga.track.TrackStatusSelector
 import ephyra.presentation.manga.track.TrackerSearch
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -458,7 +459,7 @@ private data class TrackScoreSelectorScreen(
         TrackScoreSelector(
             selection = state.selection,
             onSelectionChange = screenModel::setSelection,
-            selections = remember { screenModel.getSelections() },
+            selections = remember { screenModel.getSelections().toImmutableList() },
             onConfirm = {
                 screenModel.setScore()
                 navigator.pop()

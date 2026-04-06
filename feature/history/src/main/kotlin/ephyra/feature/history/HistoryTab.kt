@@ -30,7 +30,7 @@ import ephyra.presentation.core.R
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.AppReadySignal
 import ephyra.presentation.core.util.Tab
-import ephyra.presentation.manga.presentation.DuplicateMangaDialog
+import ephyra.feature.manga.presentation.DuplicateMangaDialog
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
