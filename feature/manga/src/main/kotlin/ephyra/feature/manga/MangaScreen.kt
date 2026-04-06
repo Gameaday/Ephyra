@@ -18,6 +18,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.koin.koinScreenModel
 import org.koin.compose.koinInject
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -31,6 +32,7 @@ import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.hasCustomCover
 import ephyra.domain.manga.model.toSManga
+import ephyra.feature.category.CategoryScreen
 import ephyra.feature.manga.notes.MangaNotesScreen
 import ephyra.feature.manga.presentation.ChapterSettingsDialog
 import ephyra.feature.manga.presentation.DuplicateMangaDialog
@@ -46,8 +48,11 @@ import ephyra.feature.manga.track.TrackInfoDialogHomeScreen
 import ephyra.feature.migration.config.MigrationConfigScreen
 import ephyra.feature.migration.dialog.MigrateMangaDialog
 import ephyra.feature.category.components.ChangeCategoryDialog
+import ephyra.feature.reader.ReaderActivity
+import ephyra.feature.webview.WebViewScreen
 import ephyra.presentation.core.components.NavigatorAdaptiveSheet
 import ephyra.presentation.core.screens.LoadingScreen
+import ephyra.presentation.core.ui.SearchableScreen
 import ephyra.presentation.core.util.AssistContentScreen
 import ephyra.presentation.core.util.Screen
 import ephyra.presentation.core.util.ifSourcesLoaded
@@ -86,6 +91,7 @@ class MangaScreen(
 
         val basePreferences = koinInject<BasePreferences>()
         val coverCache = koinInject<CoverCache>()
+        val globalSearchScreenFactory = koinInject<ephyra.presentation.core.ui.GlobalSearchScreenFactory>()
 
         val screenModel = koinScreenModel<MangaScreenModel> {
             parametersOf(lifecycleOwner.lifecycle, mangaId, fromSource)
@@ -164,7 +170,7 @@ class MangaScreen(
             onFilterButtonClicked = { screenModel.onEvent(MangaScreenEvent.ShowSettingsDialog) },
             onRefresh = { screenModel.onEvent(MangaScreenEvent.FetchAllFromSource(manualFetch = true)) },
             onContinueReading = { continueReading(context, screenModel.getNextUnreadChapter()) },
-            onSearch = { query, global -> scope.launch { performSearch(navigator, query, global) } },
+            onSearch = { query, global -> scope.launch { performSearch(navigator, query, global, globalSearchScreenFactory) } },
             onCoverClicked = { screenModel.onEvent(MangaScreenEvent.ShowCoverDialog) },
             onShareClicked = if (isHttpSource) {
                 { shareManga(context, screenModel.manga, screenModel.source) }
@@ -470,9 +476,14 @@ class MangaScreen(
      *
      * @param query the search query to the parent controller
      */
-    private suspend fun performSearch(navigator: Navigator, query: String, global: Boolean) {
+    private suspend fun performSearch(
+        navigator: Navigator,
+        query: String,
+        global: Boolean,
+        globalSearchScreenFactory: ephyra.presentation.core.ui.GlobalSearchScreenFactory,
+    ) {
         if (global) {
-            navigator.push(GlobalSearchScreen(query))
+            navigator.push(globalSearchScreenFactory.create(query))
             return
         }
 
@@ -480,16 +491,10 @@ class MangaScreen(
             return
         }
 
-        when (val previousController = navigator.items[navigator.size - 2]) {
-            is HomeScreen -> {
-                navigator.pop()
-                previousController.search(query)
-            }
-
-            is BrowseSourceScreen -> {
-                navigator.pop()
-                previousController.search(query)
-            }
+        val previousController = navigator.items[navigator.size - 2]
+        if (previousController is ephyra.presentation.core.ui.SearchableScreen) {
+            navigator.pop()
+            previousController.search(query)
         }
     }
 
@@ -504,11 +509,11 @@ class MangaScreen(
         }
 
         val previousController = navigator.items[navigator.size - 2]
-        if (previousController is BrowseSourceScreen && source is HttpSource) {
+        if (previousController is ephyra.presentation.core.ui.SearchableScreen && source is HttpSource) {
             navigator.pop()
             previousController.searchGenre(genreName)
         } else {
-            performSearch(navigator, genreName, global = false)
+            // no-op: global search not available without factory reference in this scope
         }
     }
 

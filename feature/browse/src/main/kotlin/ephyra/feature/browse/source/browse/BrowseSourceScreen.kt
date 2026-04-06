@@ -58,6 +58,7 @@ import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.util.AssistContentScreen
 import ephyra.presentation.core.util.Screen
 import ephyra.presentation.core.util.collectAsLazyPagingItems
+import ephyra.presentation.core.ui.SearchableScreen
 import ephyra.presentation.manga.DuplicateMangaDialog
 import ephyra.source.local.LocalSource
 import eu.kanade.tachiyomi.source.CatalogueSource
@@ -69,7 +70,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 data class BrowseSourceScreen(
     val sourceId: Long,
     private val listingQuery: String?,
-) : Screen(), AssistContentScreen {
+) : Screen(), AssistContentScreen, SearchableScreen {
 
     private var assistUrl: String? = null
 
