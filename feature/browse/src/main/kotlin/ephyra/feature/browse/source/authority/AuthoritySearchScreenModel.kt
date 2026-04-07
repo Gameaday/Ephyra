@@ -346,13 +346,13 @@ class AuthoritySearchScreenModel(
                 remoteId = result.remote_id,
                 libraryId = null,
                 title = result.title,
-                lastChapterRead = result.last_chapter_read,
+                lastChapterRead = 0.0,
                 totalChapters = result.total_chapters,
-                status = result.status,
-                score = result.score,
+                status = 0L,
+                score = 0.0,
                 remoteUrl = result.tracking_url,
-                startDate = result.started_reading_date,
-                finishDate = result.finished_reading_date,
+                startDate = 0L,
+                finishDate = 0L,
                 private = result.private,
             )
             insertTrack.await(track)
@@ -363,7 +363,7 @@ class AuthoritySearchScreenModel(
             generateAuthorityChapters.await(
                 mangaId = manga.id,
                 totalChapters = result.total_chapters.toInt(),
-                lastChapterRead = result.last_chapter_read.toInt(),
+                lastChapterRead = 0,
             )
         }
 

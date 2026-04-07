@@ -51,7 +51,7 @@ import ephyra.feature.manga.MangaScreen
 import ephyra.feature.migration.dialog.MigrateMangaDialog
 import ephyra.feature.webview.WebViewScreen
 import ephyra.i18n.MR
-import ephyra.presentation.category.components.ChangeCategoryDialog
+import ephyra.feature.category.components.ChangeCategoryDialog
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
@@ -308,8 +308,8 @@ data class BrowseSourceScreen(
         }
     }
 
-    suspend fun search(query: String) = queryEvent.send(SearchType.Text(query))
-    suspend fun searchGenre(name: String) = queryEvent.send(SearchType.Genre(name))
+    override suspend fun search(query: String) = queryEvent.send(SearchType.Text(query))
+    override suspend fun searchGenre(name: String) = queryEvent.send(SearchType.Genre(name))
 
     companion object {
         private val queryEvent = Channel<SearchType>()
