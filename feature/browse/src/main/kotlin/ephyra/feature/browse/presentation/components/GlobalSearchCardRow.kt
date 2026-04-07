@@ -20,8 +20,8 @@ import ephyra.domain.manga.model.asMangaCover
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
-import ephyra.presentation.library.components.CommonMangaItemDefaults
-import ephyra.presentation.library.components.MangaComfortableGridItem
+import ephyra.presentation.manga.components.CommonMangaItemDefaults
+import ephyra.presentation.manga.components.MangaComfortableGridItem
 
 @Composable
 fun GlobalSearchCardRow(

@@ -34,8 +34,8 @@ import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.theme.active
-import ephyra.presentation.manga.components.ChapterDownloadAction
-import ephyra.presentation.manga.components.MangaBottomActionMenu
+import ephyra.feature.manga.presentation.components.ChapterDownloadAction
+import ephyra.feature.manga.presentation.components.MangaBottomActionMenu
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

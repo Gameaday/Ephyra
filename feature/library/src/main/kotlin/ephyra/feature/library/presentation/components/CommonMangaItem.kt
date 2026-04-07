@@ -41,7 +41,7 @@ import ephyra.i18n.MR
 import ephyra.presentation.core.components.BadgeGroup
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.theme.ShapeTokens
-import ephyra.presentation.manga.components.MangaCover
+import ephyra.feature.manga.presentation.components.MangaCover
 import ephyra.domain.manga.model.MangaCover as MangaCoverModel
 
 object CommonMangaItemDefaults {

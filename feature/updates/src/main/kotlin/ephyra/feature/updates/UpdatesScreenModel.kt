@@ -30,7 +30,7 @@ import ephyra.domain.updates.interactor.GetUpdates
 import ephyra.domain.updates.model.UpdatesWithRelations
 import ephyra.domain.updates.service.UpdatesPreferences
 import ephyra.presentation.core.util.asState
-import ephyra.presentation.manga.components.ChapterDownloadAction
+import ephyra.feature.manga.presentation.components.ChapterDownloadAction
 import ephyra.presentation.updates.UpdatesUiModel
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.mutate

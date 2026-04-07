@@ -71,7 +71,7 @@ import ephyra.presentation.core.util.animateItemFastScroll
 import ephyra.presentation.core.util.formatChapterNumber
 import ephyra.presentation.core.util.plus
 import ephyra.presentation.core.util.rememberResourceBitmapPainter
-import ephyra.presentation.manga.components.MangaCover
+import ephyra.feature.manga.presentation.components.MangaCover
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 

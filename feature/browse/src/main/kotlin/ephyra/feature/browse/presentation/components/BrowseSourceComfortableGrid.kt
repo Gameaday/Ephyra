@@ -16,8 +16,8 @@ import androidx.paging.compose.itemKey
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaCover
 import ephyra.presentation.core.util.plus
-import ephyra.presentation.library.components.CommonMangaItemDefaults
-import ephyra.presentation.library.components.MangaComfortableGridItem
+import ephyra.presentation.manga.components.CommonMangaItemDefaults
+import ephyra.presentation.manga.components.MangaComfortableGridItem
 import kotlinx.coroutines.flow.StateFlow
 
 @Composable

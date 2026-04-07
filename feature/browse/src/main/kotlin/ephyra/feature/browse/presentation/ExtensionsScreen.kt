@@ -67,7 +67,7 @@ import ephyra.presentation.core.util.plus
 import ephyra.presentation.core.util.rememberRequestPackageInstallsPermissionState
 import ephyra.presentation.core.util.secondaryItemAlpha
 import ephyra.presentation.core.util.system.launchRequestPackageInstallsPermission
-import ephyra.presentation.manga.components.DotSeparatorNoSpaceText
+import ephyra.feature.manga.presentation.components.DotSeparatorNoSpaceText
 import kotlinx.collections.immutable.persistentListOf
 
 @Composable

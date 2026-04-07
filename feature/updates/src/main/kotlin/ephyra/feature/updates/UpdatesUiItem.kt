@@ -43,10 +43,10 @@ import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.animateItemFastScroll
 import ephyra.presentation.core.util.relativeTimeSpanString
 import ephyra.presentation.core.util.selectedBackground
-import ephyra.presentation.manga.components.ChapterDownloadAction
-import ephyra.presentation.manga.components.ChapterDownloadIndicator
-import ephyra.presentation.manga.components.DotSeparatorText
-import ephyra.presentation.manga.components.MangaCover
+import ephyra.feature.manga.presentation.components.ChapterDownloadAction
+import ephyra.feature.manga.presentation.components.ChapterDownloadIndicator
+import ephyra.feature.manga.presentation.components.DotSeparatorText
+import ephyra.feature.manga.presentation.components.MangaCover
 import kotlin.compareTo
 
 internal fun LazyListScope.updatesLastUpdatedItem(

@@ -53,7 +53,7 @@ import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.ui.AppReadySignal
 import ephyra.presentation.core.ui.BottomNavController
 import ephyra.presentation.core.util.Tab
-import ephyra.presentation.manga.components.LibraryBottomActionMenu
+import ephyra.feature.manga.presentation.components.LibraryBottomActionMenu
 import ephyra.presentation.more.onboarding.GETTING_STARTED_URL
 import ephyra.source.local.isLocal
 import kotlinx.coroutines.channels.Channel

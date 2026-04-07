@@ -36,7 +36,7 @@ import ephyra.presentation.core.util.Screen
 import ephyra.presentation.core.util.selectedBackground
 import ephyra.presentation.core.util.shouldExpandFAB
 import ephyra.presentation.core.util.system.toast
-import ephyra.presentation.manga.components.BaseMangaListItem
+import ephyra.feature.manga.presentation.components.BaseMangaListItem
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.core.parameter.parametersOf
 
