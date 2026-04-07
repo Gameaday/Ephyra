@@ -32,12 +32,13 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.core.model.rememberScreenModel
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import org.koin.core.parameter.parametersOf
 import ephyra.core.common.Constants
 import ephyra.core.common.util.lang.launchIO
-import ephyra.core.util.ifSourcesLoaded
+import ephyra.presentation.core.util.ifSourcesLoaded
 import ephyra.domain.source.model.StubSource
 import ephyra.feature.browse.extension.details.SourcePreferencesScreen
 import ephyra.feature.browse.presentation.BrowseSourceContent
@@ -83,7 +84,7 @@ data class BrowseSourceScreen(
             return
         }
 
-        val screenModel = rememberScreenModel { BrowseSourceScreenModel(sourceId, listingQuery) }
+        val screenModel = koinScreenModel<BrowseSourceScreenModel> { parametersOf(sourceId, listingQuery) }
         val state by screenModel.state.collectAsStateWithLifecycle()
 
         val navigator = LocalNavigator.currentOrThrow

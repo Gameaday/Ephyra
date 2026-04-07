@@ -64,7 +64,7 @@ import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import coil3.compose.AsyncImage
-import ephyra.data.track.model.TrackSearch
+import ephyra.domain.track.model.TrackSearch
 import ephyra.domain.manga.interactor.FindContentSource
 import ephyra.domain.manga.model.ContentType
 import ephyra.domain.manga.model.MangaWithChapterCount

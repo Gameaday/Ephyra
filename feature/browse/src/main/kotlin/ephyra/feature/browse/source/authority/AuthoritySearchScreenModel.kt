@@ -4,9 +4,9 @@ import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.logcat
-import ephyra.data.track.Tracker
-import ephyra.data.track.TrackerManager
-import ephyra.data.track.model.TrackSearch
+import ephyra.domain.track.service.Tracker
+import ephyra.domain.track.service.TrackerManager
+import ephyra.domain.track.model.TrackSearch
 import ephyra.domain.chapter.interactor.GenerateAuthorityChapters
 import ephyra.domain.manga.interactor.FindContentSource
 import ephyra.domain.manga.model.ContentType
@@ -25,6 +25,7 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import logcat.LogPriority
 import org.koin.core.annotation.Factory
 
@@ -44,10 +45,10 @@ class AuthoritySearchScreenModel(
      * Includes logged-in authoritative trackers AND trackers with public search APIs.
      * This allows discovery to work without login for trackers like MangaUpdates.
      */
-    private val allTrackers: ImmutableList<Tracker> = trackerManager.trackers
+    private val allTrackers: ImmutableList<Tracker> = trackerManager.getAll(AddTracks.TRACKER_CANONICAL_PREFIXES.keys)
         .filter {
             AddTracks.TRACKER_CANONICAL_PREFIXES.containsKey(it.id) &&
-                (it.isLoggedIn || it.id in AddTracks.TRACKERS_WITH_PUBLIC_SEARCH)
+                (runBlocking { it.isLoggedIn() } || it.id in AddTracks.TRACKERS_WITH_PUBLIC_SEARCH)
         }
         .toImmutableList()
 
@@ -238,7 +239,7 @@ class AuthoritySearchScreenModel(
                     mergeAlternativeTitles(manga, result)
 
                     // Bind the tracker if logged in
-                    if (prompt.tracker.isLoggedIn) {
+                    if (runBlocking { prompt.tracker.isLoggedIn() }) {
                         val track = Track(
                             id = 0L,
                             mangaId = manga.id,
