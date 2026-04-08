@@ -310,7 +310,7 @@ object SettingsDownloadScreen : SearchableSettings {
                     TextButton(
                         onClick = {
                             val pref = downloadPreferences.blockedPageHashes()
-                            val current = pref.get().toMutableSet()
+                            val current = kotlinx.coroutines.runBlocking { pref.get() }.toMutableSet()
                             current.remove(currentHashToRemove)
                             pref.set(current)
                             hashToRemove = null
@@ -427,9 +427,12 @@ object SettingsDownloadScreen : SearchableSettings {
     @Composable
     private fun getJellyfinSyncGroup(
         downloadPreferences: DownloadPreferences,
+        trackerManager: TrackerManager,
+        trackPreferences: TrackPreferences,
+        libraryPreferences: LibraryPreferences,
     ): Preference.PreferenceGroup {
         val context = LocalContext.current
-        val isLoggedIn = trackerManager.jellyfin.isLoggedIn
+        val isLoggedIn by trackerManager.get(TrackerManager.JELLYFIN)!!.isLoggedInFlow.collectAsState(initial = false)
         val isAdmin by trackPreferences.jellyfinIsAdmin().collectAsState()
         val autoSync by downloadPreferences.autoSyncToJellyfin().collectAsState()
 

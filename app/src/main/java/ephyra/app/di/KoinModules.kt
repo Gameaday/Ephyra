@@ -134,5 +134,5 @@ val koinAppModule_UI = module {
     factory { SettingsAppearanceScreenModel(get()) }
     factory { SettingsReaderScreenModel(get()) }
     factory { SettingsSecurityScreenModel(get(), get()) }
-    factory { SettingsAdvancedScreenModel(get(), get(), get(), get(), get(), get(), get()) }
+    factory { SettingsAdvancedScreenModel(get(), get(), get(), get(), get(), get(), get(), get()) }
 }

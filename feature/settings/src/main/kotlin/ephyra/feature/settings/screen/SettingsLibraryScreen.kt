@@ -16,6 +16,7 @@ import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import ephyra.core.common.util.system.ImageFormat
 import ephyra.domain.category.interactor.ResetCategoryFlags
 import ephyra.domain.category.model.Category
 import ephyra.domain.library.service.LibraryPreferences
@@ -36,6 +37,7 @@ import ephyra.feature.settings.widget.TriStateListDialog
 import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.util.collectAsState
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.toImmutableMap
@@ -228,9 +230,9 @@ object SettingsLibraryScreen : SearchableSettings {
                 Preference.PreferenceItem.ListPreference(
                     preference = libraryPreferences.imageFormat(),
                     entries = persistentMapOf(
-                        LibraryPreferences.ImageFormat.WEBP to
+                        ImageFormat.WEBP to
                             stringResource(MR.strings.image_format_webp),
-                        LibraryPreferences.ImageFormat.PNG to
+                        ImageFormat.PNG to
                             stringResource(MR.strings.image_format_png),
                     ),
                     title = stringResource(MR.strings.pref_image_format),

@@ -4,6 +4,7 @@ import cafe.adriel.voyager.core.model.ScreenModel
 import ephyra.core.download.DownloadCache
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.extension.interactor.TrustExtension
+import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.interactor.ResetViewerFlags
 import eu.kanade.tachiyomi.network.NetworkHelper
@@ -17,4 +18,5 @@ class SettingsAdvancedScreenModel(
     val networkHelper: NetworkHelper,
     val resetViewerFlags: ResetViewerFlags,
     val trustExtension: TrustExtension,
+    val extensionManager: ExtensionManager,
 ) : ScreenModel

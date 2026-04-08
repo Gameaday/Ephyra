@@ -33,6 +33,7 @@ import ephyra.core.common.util.system.setDefaultSettings
 import ephyra.core.download.DownloadCache
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.extension.interactor.TrustExtension
+import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.library.service.MetadataUpdateScheduler
 import ephyra.domain.manga.interactor.ResetViewerFlags
@@ -85,6 +86,7 @@ object SettingsAdvancedScreen : SearchableSettings {
         val navigator = LocalNavigator.currentOrThrow
         val appInfo: AppInfo = koinInject()
         val onboardingScreenFactory: OnboardingScreenFactory = koinInject()
+        val extensionManager: ExtensionManager = screenModel.extensionManager
 
         val basePreferences = screenModel.basePreferences
         val networkPreferences = screenModel.networkPreferences
@@ -96,7 +98,7 @@ object SettingsAdvancedScreen : SearchableSettings {
                 subtitle = stringResource(MR.strings.pref_dump_crash_logs_summary),
                 onClick = {
                     scope.launch {
-                        CrashLogUtil(context).dumpLogs()
+                        CrashLogUtil(context, extensionManager).dumpLogs()
                     }
                 },
             ),
@@ -138,6 +140,7 @@ object SettingsAdvancedScreen : SearchableSettings {
             ),
             getReaderGroup(basePreferences = basePreferences),
             getExtensionsGroup(
+                appInfo = appInfo,
                 basePreferences = basePreferences,
                 trustExtension = screenModel.trustExtension,
             ),
@@ -402,6 +405,7 @@ object SettingsAdvancedScreen : SearchableSettings {
 
     @Composable
     private fun getExtensionsGroup(
+        appInfo: AppInfo,
         basePreferences: BasePreferences,
         trustExtension: TrustExtension,
     ): Preference.PreferenceGroup {

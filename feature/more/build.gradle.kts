@@ -27,6 +27,7 @@ dependencies {
     // Third-party libraries
     implementation(libs.logcat)
     api(libs.bundles.voyager)
+    implementation(libs.bundles.markdown)
 
     // Dependency Injection (Koin 4.2.0)
     api(libs.koin.core)
