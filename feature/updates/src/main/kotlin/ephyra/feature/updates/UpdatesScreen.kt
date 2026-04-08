@@ -23,7 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
-import ephyra.core.download.model.Download
+import ephyra.domain.download.model.Download
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
@@ -220,7 +220,7 @@ private fun UpdatesBottomBar(
         }.takeIf { selected.fastAny { !it.update.read } },
         onMarkAsUnreadClicked = {
             onMultiMarkAsReadClicked(selected, false)
-        }.takeIf { selected.fastAny { it.update.read || it.update.lastPageRead compareTo 0L } },
+        }.takeIf { selected.fastAny { it.update.read || it.update.lastPageRead > 0L } },
         onDownloadClicked = {
             onDownloadChapter(selected, ChapterDownloadAction.START)
         }.takeIf {

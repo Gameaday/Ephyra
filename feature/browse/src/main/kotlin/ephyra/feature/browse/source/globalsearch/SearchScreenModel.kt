@@ -35,7 +35,7 @@ import kotlinx.coroutines.runBlocking
 abstract class SearchScreenModel(
     initialState: State = State(),
     private val sourcePreferences: SourcePreferences,
-    private val sourceManager: SourceManager,
+    protected val sourceManager: SourceManager,
     private val extensionManager: ExtensionManager,
     private val networkToLocalManga: NetworkToLocalManga,
     private val getManga: GetManga,

@@ -10,7 +10,7 @@ import ephyra.feature.browse.presentation.MigrateSearchScreen
 import ephyra.feature.browse.source.globalsearch.SearchScreenModel
 import ephyra.feature.manga.MangaScreen
 import ephyra.feature.migration.dialog.MigrateMangaDialog
-import ephyra.feature.migration.list.MigrationListScreen
+import ephyra.presentation.core.ui.MigrationListPresenter
 import ephyra.presentation.core.util.Screen
 import org.koin.core.parameter.parametersOf
 
@@ -35,14 +35,14 @@ class MigrateSearchScreen(private val mangaId: Long) : Screen() {
             onClickSource = { navigator.push(MigrateSourceSearchScreen(state.from!!, it.id, state.searchQuery)) },
             onClickItem = {
                 val migrateListScreen = navigator.items
-                    .filterIsInstance<MigrationListScreen>()
+                    .filterIsInstance<MigrationListPresenter>()
                     .lastOrNull()
 
                 if (migrateListScreen == null) {
                     screenModel.setMigrateDialog(mangaId, it)
                 } else {
                     migrateListScreen.addMatchOverride(current = mangaId, target = it.id)
-                    navigator.popUntil { screen -> screen is MigrationListScreen }
+                    navigator.popUntil { screen -> screen is MigrationListPresenter }
                 }
             },
             onLongClickItem = { navigator.push(MangaScreen(it.id, true)) },

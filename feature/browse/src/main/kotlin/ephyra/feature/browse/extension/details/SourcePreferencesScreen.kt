@@ -28,10 +28,9 @@ import androidx.preference.EditTextPreference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceScreen
 import androidx.preference.forEach
-import androidx.preference.getOnBindEditTextListener
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import ephyra.core.util.ifSourcesLoaded
+import ephyra.presentation.core.util.ifSourcesLoaded
 import ephyra.data.preference.SharedPreferencesDataStore
 import ephyra.domain.source.service.SourceManager
 import ephyra.presentation.core.components.AppBar
@@ -151,7 +150,14 @@ class SourcePreferencesFragment : PreferenceFragmentCompat() {
 
                 // Apply incognito IME for EditTextPreference
                 if (pref is EditTextPreference) {
-                    val setListener = pref.getOnBindEditTextListener()
+                    val setListener = try {
+                        val method = EditTextPreference::class.java.getDeclaredMethod("getOnBindEditTextListener")
+                        method.isAccessible = true
+                        @Suppress("UNCHECKED_CAST")
+                        method.invoke(pref) as? EditTextPreference.OnBindEditTextListener
+                    } catch (_: Exception) {
+                        null
+                    }
                     pref.setOnBindEditTextListener {
                         setListener?.onBindEditText(it)
                         it.setIncognito(lifecycleScope)

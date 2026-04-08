@@ -64,7 +64,7 @@ import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import coil3.compose.AsyncImage
-import ephyra.presentation.core.util.Screen
+import cafe.adriel.voyager.core.screen.Screen as VoyagerScreen
 import ephyra.domain.track.model.TrackSearch
 import ephyra.domain.manga.interactor.FindContentSource
 import ephyra.domain.manga.model.ContentType
@@ -93,7 +93,7 @@ import kotlinx.collections.immutable.persistentListOf
  * alongside the search.
  */
 @Composable
-fun Screen.discoverTab(): TabContent {
+fun VoyagerScreen.discoverTab(): TabContent {
     val navigator = LocalNavigator.currentOrThrow
     val screenModel = koinScreenModel<AuthoritySearchScreenModel>()
     val state by screenModel.state.collectAsStateWithLifecycle()

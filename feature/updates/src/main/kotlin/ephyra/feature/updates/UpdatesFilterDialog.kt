@@ -28,6 +28,7 @@ import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.collectAsState
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.runBlocking
 
 @Composable
 fun UpdatesFilterDialog(
@@ -86,7 +87,7 @@ private fun ColumnScope.FilterSheet(
 
     val filterExcludedScanlators by screenModel.updatesPreferences.filterExcludedScanlators().collectAsState()
 
-    fun toggleScanlatorFilter() = screenModel.updatesPreferences.filterExcludedScanlators().getAndSet { !it }
+    fun toggleScanlatorFilter() = runBlocking { screenModel.updatesPreferences.filterExcludedScanlators().getAndSet { !it } }
 
     Row(
         modifier = Modifier

@@ -11,6 +11,7 @@ import ephyra.feature.browse.source.globalsearch.SearchScreenModel
 import eu.kanade.tachiyomi.source.CatalogueSource
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.koin.core.annotation.Factory
 import org.koin.core.annotation.InjectedParam
 
@@ -30,7 +31,7 @@ class MigrateSearchScreenModel(
     getManga = getManga,
 ) {
 
-    private val migrationSources by lazy { sourcePreferences.migrationSources().get() }
+    private val migrationSources by lazy { runBlocking { sourcePreferences.migrationSources().get() } }
     private val migrationSourceRank by lazy { migrationSources.withIndex().associate { (i, id) -> id to i } }
 
     override val sortComparator = { map: Map<CatalogueSource, SearchItemResult> ->
