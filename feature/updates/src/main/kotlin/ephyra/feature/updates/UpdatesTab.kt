@@ -27,9 +27,9 @@ import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.AppReadySignal
 import ephyra.presentation.core.ui.BottomNavController
 import ephyra.presentation.core.util.Tab
-import ephyra.presentation.updates.UpdateScreen
-import ephyra.presentation.updates.UpdatesDeleteConfirmationDialog
-import ephyra.presentation.updates.UpdatesFilterDialog
+import ephyra.feature.updates.UpdatesScreen
+import ephyra.feature.updates.UpdatesDeleteConfirmationDialog
+import ephyra.feature.updates.UpdatesFilterDialog
 import kotlinx.coroutines.flow.collectLatest
 
 data object UpdatesTab : Tab {
@@ -58,7 +58,7 @@ data object UpdatesTab : Tab {
         val settingsScreenModel = koinScreenModel<UpdatesSettingsScreenModel>()
         val state by screenModel.state.collectAsStateWithLifecycle()
 
-        UpdateScreen(
+        UpdatesScreen(
             state = state,
             snackbarHostState = screenModel.snackbarHostState,
             lastUpdated = screenModel.lastUpdated,

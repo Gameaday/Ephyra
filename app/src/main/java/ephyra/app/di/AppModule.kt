@@ -206,7 +206,7 @@ val koinAppModule = module {
 
     single { ImageSaver(androidApplication()) }
     single<GlobalSearchScreenFactory> { GlobalSearchScreenFactory { query -> GlobalSearchScreen(query) } }
-    single<MigrationConfigScreenFactory> { MigrationConfigScreenFactory { mangaId -> MigrationConfigScreen(mangaId) } }
+    single<MigrationConfigScreenFactory> { MigrationConfigScreenFactory { mangaIds -> MigrationConfigScreen(mangaIds) } }
     single<ExtensionReposScreenFactory> { ExtensionReposScreenFactory { url -> ExtensionReposScreen(url) } }
 
     single { AndroidStorageFolderProvider(androidApplication()) }

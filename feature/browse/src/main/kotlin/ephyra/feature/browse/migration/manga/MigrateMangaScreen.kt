@@ -24,7 +24,6 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.domain.manga.model.Manga
 import ephyra.feature.manga.MangaScreen
-import ephyra.feature.migration.config.MigrationConfigScreen
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.FastScrollLazyColumn
@@ -32,12 +31,14 @@ import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.LoadingScreen
+import ephyra.presentation.core.ui.MigrationConfigScreenFactory
 import ephyra.presentation.core.util.Screen
 import ephyra.presentation.core.util.selectedBackground
 import ephyra.presentation.core.util.shouldExpandFAB
 import ephyra.presentation.core.util.system.toast
 import ephyra.feature.manga.presentation.components.BaseMangaListItem
 import kotlinx.coroutines.flow.collectLatest
+import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
 
 data class MigrateMangaScreen(
@@ -49,6 +50,7 @@ data class MigrateMangaScreen(
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
         val screenModel = koinScreenModel<MigrateMangaScreenModel> { parametersOf(sourceId) }
+        val migrationConfigScreenFactory = koinInject<MigrationConfigScreenFactory>()
 
         val state by screenModel.state.collectAsStateWithLifecycle()
 
@@ -86,7 +88,7 @@ data class MigrateMangaScreen(
                     onClick = {
                         val selection = state.selection
                         screenModel.clearSelection()
-                        navigator.push(MigrationConfigScreen(selection))
+                        navigator.push(migrationConfigScreenFactory.create(selection))
                     },
                     expanded = lazyListState.shouldExpandFAB(),
                     modifier = Modifier.alpha(if (state.selectionMode) 1f else 0f),

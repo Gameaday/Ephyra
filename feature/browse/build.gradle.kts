@@ -28,3 +28,7 @@ dependencies {
 
     testImplementation(libs.bundles.test)
 }
+
+koinCompiler {
+    compileSafety.set(false)
+}

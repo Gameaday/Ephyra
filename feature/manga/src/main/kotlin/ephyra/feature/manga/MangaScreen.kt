@@ -195,7 +195,7 @@ class MangaScreen(
                 null
             },
             onMigrateClicked = if (successState.manga.favorite) {
-                { navigator.push(migrationConfigScreenFactory.create(successState.manga.id)) }
+                { navigator.push(migrationConfigScreenFactory.create(listOf(successState.manga.id))) }
             } else {
                 null
             },

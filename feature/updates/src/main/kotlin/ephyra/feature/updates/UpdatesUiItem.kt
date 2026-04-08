@@ -103,7 +103,7 @@ internal fun LazyListScope.updatesUiItems(
                     update = updatesItem.update,
                     selected = updatesItem.selected,
                     readProgress = updatesItem.update.lastPageRead
-                        .takeIf { !updatesItem.update.read && it compareTo 0L }
+                        .takeIf { !updatesItem.update.read && it > 0L }
                         ?.let {
                             stringResource(
                                 MR.strings.chapter_progress,

@@ -5,6 +5,7 @@ import ephyra.core.common.preference.Preference
 import ephyra.core.common.preference.TriState
 import ephyra.core.common.preference.getAndSet
 import ephyra.domain.updates.service.UpdatesPreferences
+import kotlinx.coroutines.runBlocking
 import org.koin.core.annotation.Factory
 
 @Factory
@@ -13,8 +14,10 @@ class UpdatesSettingsScreenModel(
 ) : ScreenModel {
 
     fun toggleFilter(preference: (UpdatesPreferences) -> Preference<TriState>) {
-        preference(updatesPreferences).getAndSet {
-            it.next()
+        runBlocking {
+            preference(updatesPreferences).getAndSet {
+                it.next()
+            }
         }
     }
 }
