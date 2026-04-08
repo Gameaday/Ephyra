@@ -28,6 +28,8 @@ import ephyra.core.common.util.system.DeviceUtil
 import ephyra.data.backup.BackupFileValidator
 import ephyra.data.backup.restore.RestoreOptions
 import ephyra.domain.backup.service.RestoreScheduler
+import ephyra.domain.source.service.SourceManager
+import ephyra.domain.track.service.TrackerManager
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.LabeledCheckbox
@@ -73,7 +75,7 @@ class RestoreBackupScreen(
             ) {
                 if (DeviceUtil.isMiui && DeviceUtil.isMiuiOptimizationDisabled()) {
                     item {
-                        WarningBanner(MR.strings.restore_miui_warning)
+                        WarningBanner(stringResource(MR.strings.restore_miui_warning))
                     }
                 }
 
@@ -172,6 +174,8 @@ private class RestoreBackupScreenModel(
 ) : StateScreenModel<RestoreBackupScreenModel.State>(State()), KoinComponent {
 
     private val restoreScheduler: RestoreScheduler by inject()
+    private val trackerManager: TrackerManager by inject()
+    private val sourceManager: SourceManager by inject()
 
     init {
         validate(uri.toUri())
@@ -194,7 +198,7 @@ private class RestoreBackupScreenModel(
 
     private fun validate(uri: Uri) {
         val results = try {
-            BackupFileValidator(context).validate(uri)
+            BackupFileValidator(context, trackerManager, sourceManager).validate(uri)
         } catch (e: Exception) {
             setError(
                 error = InvalidRestore(uri, e.message.toString()),
@@ -205,7 +209,7 @@ private class RestoreBackupScreenModel(
 
         if (results.missingSources.isNotEmpty() || results.missingTrackers.isNotEmpty()) {
             setError(
-                error = MissingRestoreComponents(uri, results.missingSources, results.missingTrackers),
+                error = MissingRestoreComponents(uri, results.missingSources.toList(), results.missingTrackers.toList()),
                 canRestore = true,
             )
             return

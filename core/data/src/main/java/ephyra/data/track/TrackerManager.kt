@@ -72,4 +72,6 @@ class TrackerManagerImpl(
     override fun get(id: Long) = trackerById[id]
 
     override fun getAll(ids: Set<Long>) = ids.mapNotNull { trackerById[it] }
+
+    override fun getAll(): List<Tracker> = trackers
 }

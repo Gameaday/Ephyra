@@ -5,6 +5,7 @@ import androidx.compose.runtime.Immutable
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import ephyra.core.common.util.lang.launchIO
+import kotlinx.coroutines.runBlocking
 import ephyra.core.common.util.lang.toDateTimestampString
 import ephyra.data.updater.AppUpdateChecker
 import ephyra.domain.release.interactor.GetApplicationRelease
@@ -98,7 +99,7 @@ class AboutScreenModel(
             )
                 .toDateTimestampString(
                     UiPreferences.dateFormat(
-                        uiPreferences.dateFormat().get(),
+                        runBlocking { uiPreferences.dateFormat().get() },
                     ),
                 )
         } catch (e: Exception) {

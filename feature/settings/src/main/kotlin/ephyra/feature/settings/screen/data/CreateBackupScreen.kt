@@ -84,7 +84,7 @@ class CreateBackupScreen : Screen() {
             ) {
                 if (DeviceUtil.isMiui && DeviceUtil.isMiuiOptimizationDisabled()) {
                     item {
-                        WarningBanner(MR.strings.restore_miui_warning)
+                        WarningBanner(stringResource(MR.strings.restore_miui_warning))
                     }
                 }
 

@@ -48,24 +48,26 @@ import dev.icerock.moko.resources.StringResource
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.withUIContext
-import ephyra.data.track.EnhancedTracker
-import ephyra.data.track.Tracker
+import ephyra.domain.track.interactor.AddTracks
+import ephyra.domain.track.model.AutoTrackState
+import ephyra.domain.track.service.EnhancedTracker
+import ephyra.domain.track.service.Tracker
+import ephyra.domain.track.service.TrackerManager
 import ephyra.data.track.anilist.AnilistApi
 import ephyra.data.track.bangumi.BangumiApi
 import ephyra.data.track.myanimelist.MyAnimeListApi
 import ephyra.data.track.shikimori.ShikimoriApi
-import ephyra.domain.track.interactor.AddTracks
-import ephyra.domain.track.interactor.MatchUnlinkedJob
-import ephyra.domain.track.model.AutoTrackState
 import ephyra.feature.settings.Preference
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.ui.MatchUnlinkedJobRunner
 import ephyra.presentation.core.util.system.openInBrowser
 import ephyra.presentation.core.util.system.toast
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toPersistentMap
+import kotlinx.coroutines.runBlocking
 
 object SettingsTrackingScreen : SearchableSettings {
 
@@ -94,6 +96,7 @@ object SettingsTrackingScreen : SearchableSettings {
         val sourceManager = screenModel.sourceManager
         val libraryPreferences = screenModel.libraryPreferences
         val trackerListImporter = screenModel.trackerListImporter
+        val matchUnlinkedJobRunner = screenModel.matchUnlinkedJobRunner
 
         val scope = rememberCoroutineScope()
 
@@ -164,7 +167,7 @@ object SettingsTrackingScreen : SearchableSettings {
             }
         }
 
-        val enhancedTrackers = trackerManager.trackers
+        val enhancedTrackers = trackerManager.getAll()
             .filter { it is EnhancedTracker }
             .partition { service ->
                 val enhanced = service as EnhancedTracker
@@ -183,9 +186,9 @@ object SettingsTrackingScreen : SearchableSettings {
             enhancedTrackerInfo += "\n\n$missingSourcesInfo"
         }
 
-        val malName = trackerManager.myAnimeList.name
+        val malName = trackerManager.get(TrackerManager.MYANIMELIST)!!.name
         val importPreferences = buildList {
-            if (trackerManager.myAnimeList.isLoggedIn) {
+            if (trackerManager.get(TrackerManager.MYANIMELIST)!!.isLoggedIn) {
                 add(
                     Preference.PreferenceItem.TextPreference(
                         title = if (importingFromMal) {
@@ -222,56 +225,56 @@ object SettingsTrackingScreen : SearchableSettings {
                     title = stringResource(MR.strings.services),
                     preferenceItems = persistentListOf(
                         Preference.PreferenceItem.TrackerPreference(
-                            tracker = trackerManager.myAnimeList,
+                            tracker = trackerManager.get(TrackerManager.MYANIMELIST)!!,
                             login = {
                                 context.openInBrowser(
                                     MyAnimeListApi.authUrl(),
                                     forceDefaultBrowser = true,
                                 )
                             },
-                            logout = { dialog = LogoutDialog(trackerManager.myAnimeList) },
+                            logout = { dialog = LogoutDialog(trackerManager.get(TrackerManager.MYANIMELIST)!!) },
                         ),
                         Preference.PreferenceItem.TrackerPreference(
-                            tracker = trackerManager.aniList,
+                            tracker = trackerManager.get(TrackerManager.ANILIST)!!,
                             login = {
                                 context.openInBrowser(
                                     AnilistApi.authUrl(),
                                     forceDefaultBrowser = true,
                                 )
                             },
-                            logout = { dialog = LogoutDialog(trackerManager.aniList) },
+                            logout = { dialog = LogoutDialog(trackerManager.get(TrackerManager.ANILIST)!!) },
                         ),
                         Preference.PreferenceItem.TrackerPreference(
-                            tracker = trackerManager.kitsu,
-                            login = { dialog = LoginDialog(trackerManager.kitsu, MR.strings.email) },
-                            logout = { dialog = LogoutDialog(trackerManager.kitsu) },
+                            tracker = trackerManager.get(TrackerManager.KITSU)!!,
+                            login = { dialog = LoginDialog(trackerManager.get(TrackerManager.KITSU)!!, MR.strings.email) },
+                            logout = { dialog = LogoutDialog(trackerManager.get(TrackerManager.KITSU)!!) },
                         ),
                         Preference.PreferenceItem.TrackerPreference(
-                            tracker = trackerManager.mangaUpdates,
+                            tracker = trackerManager.get(TrackerManager.MANGAUPDATES)!!,
                             login = {
-                                dialog = LoginDialog(trackerManager.mangaUpdates, MR.strings.username)
+                                dialog = LoginDialog(trackerManager.get(TrackerManager.MANGAUPDATES)!!, MR.strings.username)
                             },
-                            logout = { dialog = LogoutDialog(trackerManager.mangaUpdates) },
+                            logout = { dialog = LogoutDialog(trackerManager.get(TrackerManager.MANGAUPDATES)!!) },
                         ),
                         Preference.PreferenceItem.TrackerPreference(
-                            tracker = trackerManager.shikimori,
+                            tracker = trackerManager.get(TrackerManager.SHIKIMORI)!!,
                             login = {
                                 context.openInBrowser(
                                     ShikimoriApi.authUrl(),
                                     forceDefaultBrowser = true,
                                 )
                             },
-                            logout = { dialog = LogoutDialog(trackerManager.shikimori) },
+                            logout = { dialog = LogoutDialog(trackerManager.get(TrackerManager.SHIKIMORI)!!) },
                         ),
                         Preference.PreferenceItem.TrackerPreference(
-                            tracker = trackerManager.bangumi,
+                            tracker = trackerManager.get(TrackerManager.BANGUMI)!!,
                             login = {
                                 context.openInBrowser(
                                     BangumiApi.authUrl(),
                                     forceDefaultBrowser = true,
                                 )
                             },
-                            logout = { dialog = LogoutDialog(trackerManager.bangumi) },
+                            logout = { dialog = LogoutDialog(trackerManager.get(TrackerManager.BANGUMI)!!) },
                         ),
                         Preference.PreferenceItem.InfoPreference(stringResource(MR.strings.tracking_info)),
                     ),
@@ -281,7 +284,7 @@ object SettingsTrackingScreen : SearchableSettings {
             // MangaUpdates is always available (public search — no login required).
             val hasAuthoritativeTracker = true
             if (hasAuthoritativeTracker) {
-                val isJobRunning = MatchUnlinkedJob.isRunning(context)
+                val isJobRunning = matchUnlinkedJobRunner.isRunning(context)
 
                 // --- Authority tracker order (reorderable) ---
                 val orderPref = trackPreferences.authorityTrackerOrder()
@@ -289,16 +292,16 @@ object SettingsTrackingScreen : SearchableSettings {
 
                 // Build label map for all canonical trackers
                 val trackerLabels: Map<Long, String> = buildMap {
-                    put(trackerManager.mangaUpdates.id, trackerManager.mangaUpdates.name)
-                    put(trackerManager.aniList.id, trackerManager.aniList.name)
-                    put(trackerManager.myAnimeList.id, trackerManager.myAnimeList.name)
-                    put(trackerManager.jellyfin.id, trackerManager.jellyfin.name)
+                    put(trackerManager.get(TrackerManager.MANGAUPDATES)!!.id, trackerManager.get(TrackerManager.MANGAUPDATES)!!.name)
+                    put(trackerManager.get(TrackerManager.ANILIST)!!.id, trackerManager.get(TrackerManager.ANILIST)!!.name)
+                    put(trackerManager.get(TrackerManager.MYANIMELIST)!!.id, trackerManager.get(TrackerManager.MYANIMELIST)!!.name)
+                    put((trackerManager.get(TrackerManager.JELLYFIN) as ephyra.data.track.jellyfin.Jellyfin).id, (trackerManager.get(TrackerManager.JELLYFIN) as ephyra.data.track.jellyfin.Jellyfin).name)
                 }
 
                 fun isAvailable(trackerId: Long): Boolean {
                     val tracker = trackerManager.get(trackerId) ?: return false
                     if (trackerId in AddTracks.TRACKERS_WITH_PUBLIC_SEARCH) return true
-                    return tracker.isLoggedIn
+                    return runBlocking { tracker.isLoggedIn() }
                 }
 
                 val authorityItems = buildList {
@@ -497,7 +500,7 @@ object SettingsTrackingScreen : SearchableSettings {
                             enabled = !isJobRunning,
                             onClick = {
                                 resolveResultText = null
-                                MatchUnlinkedJob.start(context)
+                                matchUnlinkedJobRunner.start(context)
                                 context.toast(MR.strings.tracker_match_all_started)
                             },
                         ),
@@ -510,11 +513,11 @@ object SettingsTrackingScreen : SearchableSettings {
                         ),
                     )
                     // Show connection info & settings when Jellyfin is logged in
-                    if (trackerManager.jellyfin.isLoggedIn) {
+                    if ((trackerManager.get(TrackerManager.JELLYFIN) as ephyra.data.track.jellyfin.Jellyfin).isLoggedIn) {
                         var showUpdateServerUrlDialog by remember { mutableStateOf(false) }
                         if (showUpdateServerUrlDialog) {
                             JellyfinUpdateServerUrlDialog(
-                                jellyfin = trackerManager.jellyfin,
+                                jellyfin = (trackerManager.get(TrackerManager.JELLYFIN) as ephyra.data.track.jellyfin.Jellyfin),
                                 onDismissRequest = { showUpdateServerUrlDialog = false },
                             )
                         }
@@ -550,10 +553,10 @@ object SettingsTrackingScreen : SearchableSettings {
                         if (currentLibraryId.isNotBlank()) {
                             androidx.compose.runtime.LaunchedEffect(currentLibraryId) {
                                 try {
-                                    val serverUrl = trackerManager.jellyfin.getServerUrl()
+                                    val serverUrl = (trackerManager.get(TrackerManager.JELLYFIN) as ephyra.data.track.jellyfin.Jellyfin).getServerUrl()
                                     val userId = trackPreferences.jellyfinUserId().get()
                                     if (userId.isNotBlank()) {
-                                        val libs = trackerManager.jellyfin.api.getLibraries(serverUrl, userId)
+                                        val libs = (trackerManager.get(TrackerManager.JELLYFIN) as ephyra.data.track.jellyfin.Jellyfin).api.getLibraries(serverUrl, userId)
                                         jellyfinLibraryName = libs.firstOrNull {
                                             it.id == currentLibraryId
                                         }?.name
@@ -574,10 +577,10 @@ object SettingsTrackingScreen : SearchableSettings {
                                     scope.launchIO {
                                         try {
                                             val serverUrl =
-                                                trackerManager.jellyfin.getServerUrl()
+                                                (trackerManager.get(TrackerManager.JELLYFIN) as ephyra.data.track.jellyfin.Jellyfin).getServerUrl()
                                             val userId = trackPreferences.jellyfinUserId().get()
                                             if (userId.isNotBlank()) {
-                                                val libs = trackerManager.jellyfin.api.getLibraries(
+                                                val libs = (trackerManager.get(TrackerManager.JELLYFIN) as ephyra.data.track.jellyfin.Jellyfin).api.getLibraries(
                                                     serverUrl,
                                                     userId,
                                                 )
@@ -624,8 +627,8 @@ object SettingsTrackingScreen : SearchableSettings {
                                 onClick = {
                                     scope.launchIO {
                                         try {
-                                            val info = trackerManager.jellyfin.api.getSystemInfo(
-                                                trackerManager.jellyfin.getServerUrl(),
+                                            val info = (trackerManager.get(TrackerManager.JELLYFIN) as ephyra.data.track.jellyfin.Jellyfin).api.getSystemInfo(
+                                                (trackerManager.get(TrackerManager.JELLYFIN) as ephyra.data.track.jellyfin.Jellyfin).getServerUrl(),
                                             )
                                             // Refresh stored server name on successful test
                                             trackPreferences.jellyfinServerName().set(info.serverName)

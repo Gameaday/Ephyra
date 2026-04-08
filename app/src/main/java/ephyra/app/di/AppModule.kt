@@ -76,6 +76,7 @@ import ephyra.feature.more.OnboardingScreen
 import ephyra.feature.settings.screen.browse.ExtensionReposScreen
 import ephyra.presentation.core.ui.ExtensionReposScreenFactory
 import ephyra.presentation.core.ui.GlobalSearchScreenFactory
+import ephyra.presentation.core.ui.MatchUnlinkedJobRunner
 import ephyra.presentation.core.ui.MigrationConfigScreenFactory
 import ephyra.presentation.core.ui.NewUpdateScreenFactory
 import ephyra.presentation.core.ui.OnboardingScreenFactory
@@ -214,6 +215,12 @@ val koinAppModule = module {
     single<ExtensionReposScreenFactory> { ExtensionReposScreenFactory { url -> ExtensionReposScreen(url) } }
     single<NewUpdateScreenFactory> { NewUpdateScreenFactory { v, c, r, d -> NewUpdateScreen(v, c, r, d) } }
     single<OnboardingScreenFactory> { OnboardingScreenFactory { OnboardingScreen() } }
+    single<MatchUnlinkedJobRunner> {
+        object : MatchUnlinkedJobRunner {
+            override fun isRunning(context: android.content.Context) = MatchUnlinkedJob.isRunning(context)
+            override fun start(context: android.content.Context) = MatchUnlinkedJob.start(context)
+        }
+    }
 
     single { AndroidStorageFolderProvider(androidApplication()) }
     single { LocalSourceFileSystem(get()) }
