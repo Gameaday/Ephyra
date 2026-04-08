@@ -30,4 +30,5 @@ dependencies {
     implementation(androidx.profileinstaller)
     implementation(kotlinx.coroutines.guava)
     implementation(kotlinx.serialization.protobuf)
+    implementation(libs.aboutLibraries.compose)
 }

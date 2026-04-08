@@ -22,15 +22,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.koin.koinScreenModel
+import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.ui.UiPreferences
 import kotlinx.coroutines.runBlocking
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.core.common.util.lang.launchUI
+import ephyra.core.common.util.lang.toDateTimestampString
 import ephyra.core.common.util.system.logcat
 import ephyra.data.updater.RELEASE_URL
 import ephyra.domain.release.interactor.GetApplicationRelease
-import ephyra.domain.ui.UiPreferences
 import ephyra.feature.settings.widget.TextPreferenceWidget
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
@@ -62,6 +63,7 @@ object AboutScreen : Screen() {
         val state by screenModel.state.collectAsState()
         val appInfo: AppInfo = koinInject()
         val newUpdateScreenFactory: NewUpdateScreenFactory = koinInject()
+        val extensionManager: ExtensionManager = koinInject()
 
         val context = LocalContext.current
         val uriHandler = LocalUriHandler.current
@@ -110,7 +112,7 @@ object AboutScreen : Screen() {
                         title = stringResource(MR.strings.version),
                         subtitle = screenModel.getVersionName(withBuildDate = true),
                         onPreferenceClick = {
-                            val deviceInfo = CrashLogUtil(context).getDebugInfo()
+                            val deviceInfo = CrashLogUtil(context, extensionManager).getDebugInfo()
                             context.copyToClipboard("Debug information", deviceInfo)
                         },
                     )

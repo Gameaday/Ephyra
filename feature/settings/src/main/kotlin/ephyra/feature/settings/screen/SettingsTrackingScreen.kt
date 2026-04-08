@@ -71,6 +71,14 @@ import kotlinx.coroutines.runBlocking
 
 object SettingsTrackingScreen : SearchableSettings {
 
+    private data class LoginDialog(val tracker: Tracker, val uNameStringRes: StringResource)
+
+    private data class LogoutDialog(val tracker: Tracker)
+
+    private data class ImportConfirmDialog(val trackerName: String)
+
+    private data class JellyfinLogin(val tracker: ephyra.data.track.jellyfin.Jellyfin)
+
     @ReadOnlyComposable
     @Composable
     override fun getTitleRes() = MR.strings.pref_category_tracking
@@ -188,7 +196,7 @@ object SettingsTrackingScreen : SearchableSettings {
 
         val malName = trackerManager.get(TrackerManager.MYANIMELIST)!!.name
         val importPreferences = buildList {
-            if (trackerManager.get(TrackerManager.MYANIMELIST)!!.isLoggedIn) {
+            if (runBlocking { trackerManager.get(TrackerManager.MYANIMELIST)!!.isLoggedIn() }) {
                 add(
                     Preference.PreferenceItem.TextPreference(
                         title = if (importingFromMal) {
@@ -288,7 +296,7 @@ object SettingsTrackingScreen : SearchableSettings {
 
                 // --- Authority tracker order (reorderable) ---
                 val orderPref = trackPreferences.authorityTrackerOrder()
-                var currentOrder by remember { mutableStateOf(orderPref.get()) }
+                var currentOrder by remember { mutableStateOf(runBlocking { orderPref.get() }) }
 
                 // Build label map for all canonical trackers
                 val trackerLabels: Map<Long, String> = buildMap {
@@ -415,7 +423,7 @@ object SettingsTrackingScreen : SearchableSettings {
                     addAll(importPreferences)
                     // --- Content source priority per field ---
                     val csPriorityPref = trackPreferences.contentSourcePriorityFields()
-                    var csPriorityMask by remember { mutableLongStateOf(csPriorityPref.get()) }
+                    var csPriorityMask by remember { mutableLongStateOf(runBlocking { csPriorityPref.get() }) }
 
                     add(
                         Preference.PreferenceItem.CustomPreference(
@@ -513,7 +521,7 @@ object SettingsTrackingScreen : SearchableSettings {
                         ),
                     )
                     // Show connection info & settings when Jellyfin is logged in
-                    if ((trackerManager.get(TrackerManager.JELLYFIN) as ephyra.data.track.jellyfin.Jellyfin).isLoggedIn) {
+                    if (runBlocking { (trackerManager.get(TrackerManager.JELLYFIN) as ephyra.data.track.jellyfin.Jellyfin).isLoggedIn() }) {
                         var showUpdateServerUrlDialog by remember { mutableStateOf(false) }
                         if (showUpdateServerUrlDialog) {
                             JellyfinUpdateServerUrlDialog(
@@ -523,8 +531,8 @@ object SettingsTrackingScreen : SearchableSettings {
                         }
 
                         // Server info display
-                        val serverName = trackPreferences.jellyfinServerName().get()
-                        val jellyfinUser = trackPreferences.jellyfinUsername().get()
+                        val serverName = runBlocking { trackPreferences.jellyfinServerName().get() }
+                        val jellyfinUser = runBlocking { trackPreferences.jellyfinUsername().get() }
                         if (serverName.isNotBlank() || jellyfinUser.isNotBlank()) {
                             add(
                                 Preference.PreferenceItem.TextPreference(
@@ -547,7 +555,7 @@ object SettingsTrackingScreen : SearchableSettings {
 
                         // Jellyfin library selection
                         var jellyfinLibraryName by remember { mutableStateOf<String?>(null) }
-                        val currentLibraryId = libraryPreferences.jellyfinLibraryId().get()
+                        val currentLibraryId = runBlocking { libraryPreferences.jellyfinLibraryId().get() }
 
                         // Resolve library name on composition
                         if (currentLibraryId.isNotBlank()) {
@@ -708,8 +716,8 @@ object SettingsTrackingScreen : SearchableSettings {
         val context = LocalContext.current
         val scope = rememberCoroutineScope()
 
-        var username by remember { mutableStateOf(TextFieldValue(tracker.getUsername())) }
-        var password by remember { mutableStateOf(TextFieldValue(tracker.getPassword())) }
+        var username by remember { mutableStateOf(TextFieldValue(runBlocking { tracker.getUsername() })) }
+        var password by remember { mutableStateOf(TextFieldValue(runBlocking { tracker.getPassword() })) }
         var processing by remember { mutableStateOf(false) }
         var inputError by remember { mutableStateOf(false) }
 
@@ -802,4 +810,226 @@ object SettingsTrackingScreen : SearchableSettings {
             },
         )
     }
+
+    @Composable
+    private fun TrackingLogoutDialog(
+        tracker: Tracker,
+        onDismissRequest: () -> Unit,
+    ) {
+        val scope = rememberCoroutineScope()
+        AlertDialog(
+            onDismissRequest = onDismissRequest,
+            title = { Text(stringResource(MR.strings.logout_title, tracker.name)) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        scope.launchIO {
+                            tracker.logout()
+                            withUIContext { onDismissRequest() }
+                        }
+                    },
+                ) {
+                    Text(stringResource(MR.strings.logout))
+                }
+            },
+            dismissButton = {
+                Button(onClick = onDismissRequest) {
+                    Text(stringResource(MR.strings.action_cancel))
+                }
+            },
+        )
+    }
+
+    @Composable
+    private fun TrackingImportConfirmDialog(
+        trackerName: String,
+        onConfirm: () -> Unit,
+        onDismissRequest: () -> Unit,
+    ) {
+        AlertDialog(
+            onDismissRequest = onDismissRequest,
+            title = { Text(stringResource(MR.strings.tracker_import_title, trackerName)) },
+            text = { Text(stringResource(MR.strings.tracker_import_confirm_body, trackerName)) },
+            confirmButton = {
+                Button(onClick = onConfirm) {
+                    Text(stringResource(MR.strings.action_ok))
+                }
+            },
+            dismissButton = {
+                Button(onClick = onDismissRequest) {
+                    Text(stringResource(MR.strings.action_cancel))
+                }
+            },
+        )
+    }
+
+    @Composable
+    private fun JellyfinLoginDialog(
+        tracker: ephyra.data.track.jellyfin.Jellyfin,
+        onDismissRequest: () -> Unit,
+    ) {
+        val context = LocalContext.current
+        val scope = rememberCoroutineScope()
+
+        var serverUrl by remember { mutableStateOf(TextFieldValue(tracker.getServerUrl())) }
+        var username by remember { mutableStateOf(TextFieldValue("")) }
+        var password by remember { mutableStateOf(TextFieldValue("")) }
+        var processing by remember { mutableStateOf(false) }
+        var inputError by remember { mutableStateOf(false) }
+
+        AlertDialog(
+            onDismissRequest = onDismissRequest,
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = stringResource(MR.strings.login_title, tracker.name),
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(onClick = onDismissRequest) {
+                        Icon(
+                            imageVector = Icons.Outlined.Close,
+                            contentDescription = stringResource(MR.strings.action_close),
+                        )
+                    }
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        value = serverUrl,
+                        onValueChange = { serverUrl = it },
+                        label = { Text(stringResource(MR.strings.jellyfin_server_url)) },
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        singleLine = true,
+                        isError = inputError && !processing,
+                    )
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        value = username,
+                        onValueChange = { username = it },
+                        label = { Text(stringResource(MR.strings.jellyfin_username)) },
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        singleLine = true,
+                        isError = inputError && !processing,
+                    )
+                    var hidePassword by remember { mutableStateOf(true) }
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text(stringResource(MR.strings.jellyfin_password)) },
+                        trailingIcon = {
+                            IconButton(onClick = { hidePassword = !hidePassword }) {
+                                Icon(
+                                    imageVector = if (hidePassword) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                                    contentDescription = null,
+                                )
+                            }
+                        },
+                        visualTransformation = if (hidePassword) PasswordVisualTransformation() else VisualTransformation.None,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done,
+                        ),
+                        singleLine = true,
+                        isError = inputError && !processing,
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !processing && serverUrl.text.isNotBlank() && username.text.isNotBlank(),
+                    onClick = {
+                        scope.launchIO {
+                            processing = true
+                            try {
+                                tracker.loginWithCredentials(serverUrl.text, username.text, password.text)
+                                withUIContext { onDismissRequest() }
+                            } catch (e: Exception) {
+                                inputError = true
+                                withUIContext { context.toast(e.message ?: "") }
+                            }
+                            processing = false
+                        }
+                    },
+                ) {
+                    Text(stringResource(if (processing) MR.strings.logging_in else MR.strings.login))
+                }
+            },
+        )
+    }
+
+    @Composable
+    private fun JellyfinUpdateServerUrlDialog(
+        jellyfin: ephyra.data.track.jellyfin.Jellyfin,
+        onDismissRequest: () -> Unit,
+    ) {
+        val context = LocalContext.current
+        val scope = rememberCoroutineScope()
+
+        var newUrl by remember { mutableStateOf(TextFieldValue(jellyfin.getServerUrl())) }
+        var processing by remember { mutableStateOf(false) }
+
+        AlertDialog(
+            onDismissRequest = onDismissRequest,
+            title = { Text(stringResource(MR.strings.jellyfin_update_server_url)) },
+            text = {
+                OutlinedTextField(
+                    modifier = Modifier.fillMaxWidth(),
+                    value = newUrl,
+                    onValueChange = { newUrl = it },
+                    label = { Text(stringResource(MR.strings.jellyfin_server_url)) },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    singleLine = true,
+                )
+            },
+            confirmButton = {
+                Button(
+                    enabled = !processing && newUrl.text.isNotBlank(),
+                    onClick = {
+                        scope.launchIO {
+                            processing = true
+                            try {
+                                jellyfin.updateServerUrl(newUrl.text)
+                                withUIContext {
+                                    context.toast(MR.strings.jellyfin_server_updated)
+                                    onDismissRequest()
+                                }
+                            } catch (e: Exception) {
+                                withUIContext { context.toast(e.message ?: "") }
+                            }
+                            processing = false
+                        }
+                    },
+                ) {
+                    Text(stringResource(MR.strings.action_ok))
+                }
+            },
+            dismissButton = {
+                Button(onClick = onDismissRequest) {
+                    Text(stringResource(MR.strings.action_cancel))
+                }
+            },
+        )
+    }
+
+    private suspend fun checkLogin(
+        context: Context,
+        tracker: Tracker,
+        username: String,
+        password: String,
+    ): Boolean {
+        return try {
+            tracker.login(username, password)
+            true
+        } catch (e: Exception) {
+            withUIContext { context.toast(e.message ?: "") }
+            false
+        }
+    }
+
+    private fun lockedFieldLabel(field: Long): String =
+        ephyra.domain.manga.model.LockedField.label(field)
 }
