@@ -1,7 +1,7 @@
 package ephyra.app.util.system
 
 import android.graphics.Bitmap
-import ephyra.domain.library.service.LibraryPreferences.ImageFormat
+import ephyra.core.common.util.system.ImageFormat
 import java.io.OutputStream
 
 /**

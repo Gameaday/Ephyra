@@ -5,14 +5,14 @@ import android.content.Intent
 import ephyra.app.ui.main.MainActivity
 import ephyra.core.common.Constants
 import ephyra.feature.webview.WebViewActivity
-import ephyra.presentation.core.util.Navigator
+import ephyra.presentation.core.util.AppNavigator
 
 /**
  * Concrete implementation of the Navigator interface that bridges feature modules with
  * application-level activity navigation. Since these activities reside in the app
  * module, this implementation must also live here to resolve the target classes.
  */
-class NavigatorImpl : Navigator {
+class NavigatorImpl : AppNavigator {
     override fun openMangaScreen(context: Context, mangaId: Long) {
         context.startActivity(
             Intent(context, MainActivity::class.java).apply {

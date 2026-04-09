@@ -19,7 +19,7 @@ import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
 import ephyra.feature.migration.list.models.MigratingManga
 import ephyra.feature.migration.list.models.MigratingManga.SearchResult
-import ephyra.feature.migration.list.search.SmartSourceSearchEngine
+import ephyra.domain.manga.interactor.SmartSourceSearchEngine
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.getNameForMangaInfo
 import kotlinx.collections.immutable.ImmutableList
@@ -31,6 +31,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -60,8 +61,8 @@ class MigrationListScreenModel(
     val items
         inline get() = state.value.items
 
-    private val hideUnmatched = preferences.migrationHideUnmatched().get()
-    private val hideWithoutUpdates = preferences.migrationHideWithoutUpdates().get()
+    private val hideUnmatched = runBlocking { preferences.migrationHideUnmatched().get() }
+    private val hideWithoutUpdates = runBlocking { preferences.migrationHideWithoutUpdates().get() }
 
     private val navigateBackChannel = Channel<Unit>()
     val navigateBackEvent = navigateBackChannel.receiveAsFlow()

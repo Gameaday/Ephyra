@@ -1,16 +1,17 @@
 package ephyra.app.util.chapter
 
-import ephyra.app.ui.manga.ChapterList
-import ephyra.core.download.DownloadManager
+import ephyra.core.download.util.applyFilters
+import ephyra.domain.base.BasePreferences
 import ephyra.domain.chapter.model.Chapter
-import ephyra.domain.chapter.model.applyFilters
+import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.manga.model.Manga
+import ephyra.feature.manga.ChapterList
 
 /**
  * Gets next unread chapter with filters and sorting applied
  */
-fun List<Chapter>.getNextUnread(manga: Manga, downloadManager: DownloadManager): Chapter? {
-    return applyFilters(manga, downloadManager).let { chapters ->
+fun List<Chapter>.getNextUnread(manga: Manga, downloadManager: DownloadManager, basePreferences: BasePreferences): Chapter? {
+    return applyFilters(manga, downloadManager, basePreferences).let { chapters ->
         if (manga.sortDescending()) {
             chapters.findLast { !it.read }
         } else {
@@ -23,11 +24,9 @@ fun List<Chapter>.getNextUnread(manga: Manga, downloadManager: DownloadManager):
  * Gets next unread chapter with filters and sorting applied
  */
 fun List<ChapterList.Item>.getNextUnread(manga: Manga): Chapter? {
-    return applyFilters(manga).let { chapters ->
-        if (manga.sortDescending()) {
-            chapters.findLast { !it.chapter.read }
-        } else {
-            chapters.find { !it.chapter.read }
-        }
+    return if (manga.sortDescending()) {
+        findLast { !it.chapter.read }
+    } else {
+        find { !it.chapter.read }
     }?.chapter
 }

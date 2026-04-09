@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -33,6 +34,7 @@ import androidx.compose.ui.util.fastForEach
 import ephyra.core.common.preference.Preference
 import ephyra.core.common.preference.getAndSet
 import ephyra.core.common.preference.toggle
+import kotlinx.coroutines.launch
 import ephyra.core.util.fastFilterNot
 import ephyra.domain.migration.models.MigrationFlag
 import ephyra.domain.source.service.SourcePreferences
@@ -54,6 +56,7 @@ fun MigrationConfigScreenSheet(
 ) {
     var extraSearchQuery by rememberSaveable { mutableStateOf("") }
     val migrationFlags by preferences.migrationFlags().collectAsState()
+    val scope = rememberCoroutineScope()
     AdaptiveSheet(onDismissRequest = onDismissRequest) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Column(
@@ -86,11 +89,13 @@ fun MigrationConfigScreenSheet(
                             FilterChip(
                                 selected = selected,
                                 onClick = {
-                                    preferences.migrationFlags().getAndSet { currentFlags ->
-                                        if (flag in currentFlags) {
-                                            currentFlags - flag
-                                        } else {
-                                            currentFlags + flag
+                                    scope.launch {
+                                        preferences.migrationFlags().getAndSet { currentFlags ->
+                                            if (flag in currentFlags) {
+                                                currentFlags - flag
+                                            } else {
+                                                currentFlags + flag
+                                            }
                                         }
                                     }
                                 },
@@ -112,11 +117,13 @@ fun MigrationConfigScreenSheet(
                     subtitle = null,
                     checked = removeDownloads,
                     onClick = {
-                        preferences.migrationFlags().getAndSet {
-                            if (removeDownloads) {
-                                it - MigrationFlag.REMOVE_DOWNLOAD
-                            } else {
-                                it + MigrationFlag.REMOVE_DOWNLOAD
+                        scope.launch {
+                            preferences.migrationFlags().getAndSet {
+                                if (removeDownloads) {
+                                    it - MigrationFlag.REMOVE_DOWNLOAD
+                                } else {
+                                    it + MigrationFlag.REMOVE_DOWNLOAD
+                                }
                             }
                         }
                     },
@@ -185,11 +192,12 @@ private fun MigrationSheetSwitchItem(
     subtitle: String?,
     preference: Preference<Boolean>,
 ) {
+    val scope = rememberCoroutineScope()
     MigrationSheetSwitchItem(
         title = title,
         subtitle = subtitle,
         checked = preference.collectAsState().value,
-        onClick = { preference.toggle() },
+        onClick = { scope.launch { preference.toggle() } },
     )
 }
 
