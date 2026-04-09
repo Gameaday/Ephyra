@@ -17,7 +17,7 @@ import ephyra.presentation.core.util.system.getParcelableExtraCompat
 import ephyra.presentation.core.util.system.getUriSize
 import logcat.LogPriority
 
-class PackageInstallerInstaller(
+internal class PackageInstallerInstaller(
     private val service: Service,
     extensionManager: ephyra.app.extension.ExtensionManager,
 ) : Installer(service, extensionManager) {

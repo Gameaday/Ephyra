@@ -9,13 +9,10 @@ android {
 
     sourceSets {
         getByName("main") {
-            // FIX: Modern AGP 9.1 syntax
-            java.directories.add(file("src/main/kotlin").toString())
-            res.directories.add(file("src/main/res").toString())
             if (Config.includeTelemetry) {
-                java.directories.add(file("src/firebase/kotlin").toString())
+                java.srcDir("src/firebase/kotlin")
             } else {
-                java.directories.add(file("src/noop/kotlin").toString())
+                java.srcDir("src/noop/kotlin")
             }
         }
     }

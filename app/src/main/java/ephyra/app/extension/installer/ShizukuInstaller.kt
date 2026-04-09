@@ -25,7 +25,7 @@ import kotlinx.coroutines.cancel
 import logcat.LogPriority
 import rikka.shizuku.Shizuku
 
-class ShizukuInstaller(
+internal class ShizukuInstaller(
     private val service: Service,
     extensionManager: ephyra.app.extension.ExtensionManager,
 ) : Installer(service, extensionManager) {
