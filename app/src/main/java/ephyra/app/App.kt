@@ -25,7 +25,7 @@ import coil3.request.crossfade
 import coil3.util.DebugLogger
 import ephyra.app.crash.CrashActivity
 import ephyra.app.crash.GlobalExceptionHandler
-import ephyra.app.data.notification.Notifications
+import ephyra.data.notification.Notifications
 import ephyra.app.di.koinAppModule
 import ephyra.app.di.koinAppModule_UI
 import ephyra.app.di.koinPreferenceModule

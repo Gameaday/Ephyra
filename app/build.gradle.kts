@@ -198,6 +198,7 @@ dependencies {
     implementation(projects.presentationWidget)
 
     // Feature modules
+    implementation(projects.feature.browse)
     implementation(projects.feature.category)
     implementation(projects.feature.download)
     implementation(projects.feature.history)
@@ -227,6 +228,8 @@ dependencies {
     implementation(androidx.paging.compose)
 
     implementation(libs.bundles.sqlite)
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
 
     implementation(kotlinx.reflect)
     implementation(kotlinx.immutables)

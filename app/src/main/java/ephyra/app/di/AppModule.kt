@@ -23,7 +23,7 @@ import ephyra.app.ui.base.delegate.ThemingDelegateImpl
 import ephyra.core.common.storage.AndroidStorageFolderProvider
 import ephyra.core.download.DownloadCache
 import ephyra.core.download.DownloadJob
-import ephyra.core.download.DownloadNotifier
+import ephyra.app.data.download.DownloadNotifier
 import ephyra.core.download.DownloadPendingDeleter
 import ephyra.core.download.DownloadProvider
 import ephyra.core.download.DownloadStore
@@ -147,7 +147,7 @@ val koinAppModule = module {
     single { ChapterCache(androidApplication(), get()) }
     single { CoverCache(androidApplication()) }
     single { MangaKeyer(get()) }
-    single<ephyra.presentation.core.util.Navigator> { ephyra.app.util.NavigatorImpl() }
+    single<ephyra.presentation.core.util.AppNavigator> { ephyra.app.util.NavigatorImpl() }
     single<ephyra.core.common.notification.NotificationManager> {
         ephyra.app.data.notification.NotificationManagerImpl(get())
     }
@@ -164,12 +164,12 @@ val koinAppModule = module {
     single<ephyra.domain.extension.service.ExtensionManager> { get<ExtensionManager>() }
 
     single { DownloadStore(androidApplication(), get(), get(), get(), get()) }
-    single { DownloadProvider(androidApplication(), get()) }
-    single { DownloadCache(androidApplication(), get(), get()) }
+    single { DownloadProvider(androidApplication(), get(), get()) }
+    single { DownloadCache(androidApplication(), get(), get(), get()) }
     single<ephyra.domain.download.service.DownloadManager> {
-        ephyra.core.download.DownloadManager(androidApplication(), get(), get(), get(), get(), get(), get())
+        ephyra.core.download.DownloadManager(androidApplication(), get(), get(), get(), get(), get(), get(), get(), get(), get())
     }
-    single { Downloader(androidApplication(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { Downloader(androidApplication(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { DownloadPendingDeleter(androidApplication(), get()) }
     single { DownloadNotifier(androidApplication(), get()) }
 
