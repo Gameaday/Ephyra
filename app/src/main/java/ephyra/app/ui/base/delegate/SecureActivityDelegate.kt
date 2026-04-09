@@ -8,8 +8,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
-import ephyra.app.ui.security.UnlockActivity
-import ephyra.app.util.view.setSecureScreen
+import ephyra.feature.security.UnlockActivity
+import ephyra.presentation.core.util.view.setSecureScreen
 import ephyra.core.common.core.security.SecurityPreferences
 import ephyra.domain.base.BasePreferences
 import ephyra.presentation.core.ui.delegate.SecureActivityDelegateState
@@ -53,7 +53,7 @@ class SecureActivityDelegateImpl(
     }
 
     private fun setAppLock() {
-        if (!securityPreferences.useAuthenticator().get()) return
+        if (!securityPreferences.useAuthenticator().getSync()) return
         if (activity.isAuthenticationSupported()) {
             if (!SecureActivityDelegateState.requireUnlock) return
             activity.startActivity(Intent(activity, UnlockActivity::class.java))

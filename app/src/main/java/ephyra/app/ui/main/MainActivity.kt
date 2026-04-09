@@ -49,8 +49,8 @@ import cafe.adriel.voyager.navigator.NavigatorDisposeBehavior
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.app.BuildConfig
 import ephyra.app.data.notification.NotificationReceiver
-import ephyra.app.data.updater.AppUpdateChecker
-import ephyra.app.data.updater.RELEASE_URL
+import ephyra.data.updater.AppUpdateChecker
+import ephyra.data.updater.RELEASE_URL
 import ephyra.app.extension.api.ExtensionApi
 import ephyra.app.ui.deeplink.DeepLinkScreen
 import ephyra.app.ui.home.HomeScreen

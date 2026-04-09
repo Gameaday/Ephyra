@@ -6,11 +6,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.core.model.rememberScreenModel
+import cafe.adriel.voyager.koin.koinScreenModel
+import org.koin.core.parameter.parametersOf
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import ephyra.app.ui.browse.source.globalsearch.GlobalSearchScreen
-import ephyra.app.ui.manga.MangaScreen
+import ephyra.feature.browse.source.globalsearch.GlobalSearchScreen
+import ephyra.feature.manga.MangaScreen
 import ephyra.feature.reader.ReaderActivity
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
@@ -28,9 +29,7 @@ class DeepLinkScreen(
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
 
-        val screenModel = rememberScreenModel {
-            DeepLinkScreenModel(query = query)
-        }
+        val screenModel = koinScreenModel<DeepLinkScreenModel> { parametersOf(query) }
         val state by screenModel.state.collectAsStateWithLifecycle()
         Scaffold(
             topBar = { scrollBehavior ->

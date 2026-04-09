@@ -5,7 +5,7 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import androidx.core.content.pm.PackageInfoCompat
-import ephyra.app.extension.model.Extension
+import ephyra.domain.extension.model.Extension
 import ephyra.app.extension.model.LoadResult
 import ephyra.app.util.system.ChildFirstPathClassLoader
 import ephyra.core.common.util.lang.Hash
@@ -19,6 +19,7 @@ import eu.kanade.tachiyomi.source.SourceFactory
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.runBlocking
 import logcat.LogPriority
 import java.io.File
 
@@ -42,21 +43,22 @@ internal class ExtensionLoader(
 ) {
 
     private val loadNsfwSource by lazy {
-        preferences.showNsfwSource().get()
+        runBlocking { preferences.showNsfwSource().get() }
     }
 
-    private const val EXTENSION_FEATURE = "tachiyomi.extension"
-    private const val METADATA_SOURCE_CLASS = "tachiyomi.extension.class"
-    private const val METADATA_SOURCE_FACTORY = "tachiyomi.extension.factory"
-    private const val METADATA_NSFW = "tachiyomi.extension.nsfw"
-    const val LIB_VERSION_MIN = 1.4
-    const val LIB_VERSION_MAX = 1.5
+    companion object {
+        private const val EXTENSION_FEATURE = "tachiyomi.extension"
+        private const val METADATA_SOURCE_CLASS = "tachiyomi.extension.class"
+        private const val METADATA_SOURCE_FACTORY = "tachiyomi.extension.factory"
+        private const val METADATA_NSFW = "tachiyomi.extension.nsfw"
+        const val LIB_VERSION_MIN = 1.4
+        const val LIB_VERSION_MAX = 1.5
+        private const val PRIVATE_EXTENSION_EXTENSION = "ext"
+    }
 
     private val packageFlags = PackageManager.GET_CONFIGURATIONS or
         PackageManager.GET_META_DATA or
         PackageManager.GET_SIGNING_CERTIFICATES
-
-    private const val PRIVATE_EXTENSION_EXTENSION = "ext"
 
     private fun getPrivateExtensionDir(context: Context) = File(context.filesDir, "exts")
 

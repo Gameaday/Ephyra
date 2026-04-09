@@ -34,7 +34,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabNavigator
-import ephyra.app.ui.manga.MangaScreen
+import ephyra.feature.manga.MangaScreen
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.source.service.SourcePreferences
 import ephyra.feature.browse.BrowseTab
@@ -304,7 +304,7 @@ object HomeScreen : Screen(), BottomNavController, SearchableScreen {
         }
     }
 
-    suspend fun search(query: String) {
+    override suspend fun search(query: String) {
         librarySearchEvent.send(query)
     }
 
@@ -312,7 +312,7 @@ object HomeScreen : Screen(), BottomNavController, SearchableScreen {
         openTabEvent.send(tab)
     }
 
-    suspend fun showBottomNav(show: Boolean) {
+    override suspend fun showBottomNav(show: Boolean) {
         showBottomNavEvent.send(show)
     }
 

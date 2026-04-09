@@ -12,7 +12,7 @@ class ThemingDelegateImpl(
     private val uiPreferences: UiPreferences,
 ) : CoreThemingDelegate {
     override fun applyAppTheme(activity: Activity) {
-        getThemeResIds(uiPreferences.appTheme().get(), uiPreferences.themeDarkAmoled().get())
+        getThemeResIds(uiPreferences.appTheme().getSync(), uiPreferences.themeDarkAmoled().getSync())
             .forEach(activity::setTheme)
     }
 
