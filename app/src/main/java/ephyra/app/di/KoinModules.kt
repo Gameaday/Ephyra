@@ -23,6 +23,7 @@ import ephyra.feature.settings.screen.advanced.ClearDatabaseScreenModel
 import ephyra.feature.settings.screen.browse.ExtensionReposScreenModel
 import ephyra.feature.settings.screen.debug.WorkerInfoScreen
 import ephyra.feature.upcoming.UpcomingScreenModel
+import org.koin.android.ext.koin.androidApplication
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
@@ -74,7 +75,7 @@ val koinAppModule_UI = module {
             setMangaViewerFlags = get(),
             getIncognitoState = get(),
             libraryPreferences = get(),
-            app = org.koin.android.ext.koin.androidApplication(),
+            app = androidApplication(),
             coverCache = get(),
             localCoverManager = get(),
             updateManga = get(),
@@ -125,12 +126,12 @@ val koinAppModule_UI = module {
         )
     }
 
-    factory { AboutScreenModel(get(), get()) }
+    factory { AboutScreenModel(get(), get(), get()) }
     factory { SettingsDownloadScreenModel(get(), get(), get(), get(), get()) }
     factory { SettingsDataScreenModel(get(), get(), get(), get(), get()) }
     factory { SettingsBrowseScreenModel(get(), get()) }
     factory { SettingsLibraryScreenModel(get(), get(), get()) }
-    factory { SettingsTrackingScreenModel(get(), get(), get(), get(), get()) }
+    factory { SettingsTrackingScreenModel(get(), get(), get(), get(), get(), get()) }
     factory { SettingsAppearanceScreenModel(get()) }
     factory { SettingsReaderScreenModel(get()) }
     factory { SettingsSecurityScreenModel(get(), get()) }
