@@ -34,13 +34,13 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabNavigator
-import ephyra.app.ui.manga.MangaScreen
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.source.service.SourcePreferences
 import ephyra.feature.browse.BrowseTab
 import ephyra.feature.download.DownloadQueueScreen
 import ephyra.feature.history.HistoryTab
 import ephyra.feature.library.LibraryTab
+import ephyra.feature.manga.MangaScreen
 import ephyra.feature.more.MoreTab
 import ephyra.feature.updates.UpdatesTab
 import ephyra.i18n.MR
@@ -49,6 +49,8 @@ import ephyra.presentation.core.components.material.NavigationRail
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.theme.MotionTokens
+import ephyra.presentation.core.ui.BottomNavController
+import ephyra.presentation.core.ui.SearchableScreen
 import ephyra.presentation.core.util.Screen
 import ephyra.presentation.core.util.isTabletUi
 import kotlinx.coroutines.channels.Channel
@@ -60,7 +62,7 @@ import org.koin.compose.koinInject
 import soup.compose.material.motion.animation.materialFadeThroughIn
 import soup.compose.material.motion.animation.materialFadeThroughOut
 
-object HomeScreen : Screen() {
+object HomeScreen : Screen(), BottomNavController, SearchableScreen {
 
     private val librarySearchEvent = Channel<String>()
     private val openTabEvent = Channel<Tab>()
@@ -302,7 +304,7 @@ object HomeScreen : Screen() {
         }
     }
 
-    suspend fun search(query: String) {
+    override suspend fun search(query: String) {
         librarySearchEvent.send(query)
     }
 
@@ -310,7 +312,7 @@ object HomeScreen : Screen() {
         openTabEvent.send(tab)
     }
 
-    suspend fun showBottomNav(show: Boolean) {
+    override suspend fun showBottomNav(show: Boolean) {
         showBottomNavEvent.send(show)
     }
 

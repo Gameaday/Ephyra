@@ -9,13 +9,13 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkQuery
 import androidx.work.WorkerParameters
-import ephyra.data.cache.CoverCache
-import ephyra.data.notification.Notifications
+import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.isRunning
+import ephyra.core.common.util.system.logcat
 import ephyra.core.common.util.system.setForegroundSafely
 import ephyra.core.common.util.system.workManager
-import ephyra.core.common.util.lang.withIOContext
-import ephyra.core.common.util.system.logcat
+import ephyra.data.cache.CoverCache
+import ephyra.data.notification.Notifications
 import ephyra.domain.library.model.LibraryManga
 import ephyra.domain.manga.interactor.GetLibraryManga
 import ephyra.domain.manga.interactor.UpdateManga
@@ -42,7 +42,6 @@ class MetadataUpdateJob(
     private val updateManga: UpdateManga,
     private val notifier: LibraryUpdateNotifier,
 ) : CoroutineWorker(context, workerParams) {
-
 
     private var mangaToUpdate: List<LibraryManga> = mutableListOf()
 

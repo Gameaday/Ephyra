@@ -96,6 +96,7 @@ internal fun Project.configureAndroid(commonExtension: CommonExtension) {
             freeCompilerArgs.addAll(
                 "-Xcontext-parameters",
                 "-opt-in=kotlin.RequiresOptIn",
+                "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
             )
 
             val warningsAsErrors: String? by project
@@ -134,6 +135,7 @@ internal fun Project.configureAndroidMultiplatform(androidExtension: KotlinMulti
             freeCompilerArgs.addAll(
                 "-Xcontext-parameters",
                 "-opt-in=kotlin.RequiresOptIn",
+                "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
             )
 
             val warningsAsErrors: String? by project

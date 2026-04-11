@@ -11,14 +11,22 @@ import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updateMargins
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
-import ephyra.presentation.core.util.formattedMessage
-import ephyra.app.databinding.ReaderErrorBinding
-import eu.kanade.tachiyomi.source.model.Page
+import ephyra.core.common.i18n.stringResource
+import ephyra.core.common.util.lang.launchIO
+import ephyra.core.common.util.lang.withIOContext
+import ephyra.core.common.util.lang.withUIContext
+import ephyra.core.common.util.system.ImageUtil
+import ephyra.core.common.util.system.dpToPx
+import ephyra.core.common.util.system.logcat
+import ephyra.feature.reader.databinding.ReaderErrorBinding
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.viewer.ReaderPageImageView
 import ephyra.feature.reader.viewer.ReaderProgressIndicator
-import ephyra.app.ui.webview.WebViewActivity
-import ephyra.core.common.util.system.dpToPx
+import ephyra.feature.webview.WebViewActivity
+import ephyra.i18n.MR
+import ephyra.presentation.core.util.formattedMessage
+import eu.kanade.tachiyomi.source.model.Page
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.collectLatest
@@ -27,13 +35,6 @@ import kotlinx.coroutines.supervisorScope
 import logcat.LogPriority
 import okio.Buffer
 import okio.BufferedSource
-import ephyra.core.common.i18n.stringResource
-import ephyra.core.common.util.lang.launchIO
-import ephyra.core.common.util.lang.withIOContext
-import ephyra.core.common.util.lang.withUIContext
-import ephyra.core.common.util.system.ImageUtil
-import ephyra.core.common.util.system.logcat
-import ephyra.i18n.MR
 
 /**
  * Holder of the webtoon reader for a single page of a chapter.
@@ -222,6 +223,10 @@ class WebtoonPageHolder(
                 removeErrorLayout()
             }
         } catch (e: Throwable) {
+            if (e is CancellationException) throw e
+            // When the stream lambda detects a cache eviction, it resets page.status to Queue.
+            // Don't show an error — the loader will re-download the page automatically.
+            if (page?.status == Page.State.Queue) return
             logcat(LogPriority.ERROR, e)
             withUIContext {
                 setError(e)

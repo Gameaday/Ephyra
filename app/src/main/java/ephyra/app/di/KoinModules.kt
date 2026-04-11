@@ -2,6 +2,9 @@ package ephyra.app.di
 
 import ephyra.app.ui.deeplink.DeepLinkScreenModel
 import ephyra.feature.category.CategoryScreenModel
+import ephyra.feature.download.DownloadQueueScreenModel
+import ephyra.feature.manga.CoverSearchScreenModel
+import ephyra.feature.manga.MangaCoverScreenModel
 import ephyra.feature.migration.config.MigrationConfigScreen
 import ephyra.feature.migration.dialog.MigrateDialogScreenModel
 import ephyra.feature.migration.list.MigrationListScreenModel
@@ -20,6 +23,7 @@ import ephyra.feature.settings.screen.advanced.ClearDatabaseScreenModel
 import ephyra.feature.settings.screen.browse.ExtensionReposScreenModel
 import ephyra.feature.settings.screen.debug.WorkerInfoScreen
 import ephyra.feature.upcoming.UpcomingScreenModel
+import org.koin.android.ext.koin.androidApplication
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
@@ -37,7 +41,7 @@ val koinAppModule_UI = module {
             syncChaptersWithSource = get(),
             getChaptersByMangaId = get(),
             migrateManga = get(),
-            getFavoritesByCanonicalId = get()
+            getFavoritesByCanonicalId = get(),
         )
     }
 
@@ -47,7 +51,7 @@ val koinAppModule_UI = module {
             createCategoryWithName = get(),
             deleteCategory = get(),
             reorderCategory = get(),
-            renameCategory = get()
+            renameCategory = get(),
         )
     }
 
@@ -71,11 +75,11 @@ val koinAppModule_UI = module {
             setMangaViewerFlags = get(),
             getIncognitoState = get(),
             libraryPreferences = get(),
-            app = org.koin.android.ext.koin.androidApplication(),
+            app = androidApplication(),
             coverCache = get(),
             localCoverManager = get(),
             updateManga = get(),
-            chapterCache = get()
+            chapterCache = get(),
         )
     }
     factory {
@@ -85,7 +89,7 @@ val koinAppModule_UI = module {
             deleteExtensionRepo = get(),
             replaceExtensionRepo = get(),
             updateExtensionRepo = get(),
-            extensionManager = get()
+            extensionManager = get(),
         )
     }
 
@@ -93,7 +97,7 @@ val koinAppModule_UI = module {
         ClearDatabaseScreenModel(
             getSourcesWithNonLibraryManga = get(),
             deleteNonLibraryManga = get(),
-            removeResettedHistory = get()
+            removeResettedHistory = get(),
         )
     }
     factory { (query: String) ->
@@ -102,10 +106,15 @@ val koinAppModule_UI = module {
             sourceManager = get(),
             networkToLocalManga = get(),
             getChapterByUrlAndMangaId = get(),
-            syncChaptersWithSource = get()
+            syncChaptersWithSource = get(),
         )
     }
 
+    factory { DownloadQueueScreenModel(get()) }
+    factory { (mangaId: Long) ->
+        MangaCoverScreenModel(mangaId, get(), get(), get(), get(), get(), get(), get(), get(), get())
+    }
+    factory { (title: String, sourceId: Long) -> CoverSearchScreenModel(title, sourceId, get()) }
     factory { MigrationConfigScreen.ScreenModel(get(), get()) }
     factory { UpcomingScreenModel(get()) }
     factory { WorkerInfoScreen.Model(androidContext(), get()) }
@@ -115,18 +124,18 @@ val koinAppModule_UI = module {
             sourcePreference = get(),
             coverCache = get(),
             downloadManager = get(),
-            migrateManga = get()
+            migrateManga = get(),
         )
     }
 
-    factory { AboutScreenModel(get(), get()) }
+    factory { AboutScreenModel(get(), get(), get()) }
     factory { SettingsDownloadScreenModel(get(), get(), get(), get(), get()) }
     factory { SettingsDataScreenModel(get(), get(), get(), get(), get()) }
     factory { SettingsBrowseScreenModel(get(), get()) }
     factory { SettingsLibraryScreenModel(get(), get(), get()) }
-    factory { SettingsTrackingScreenModel(get(), get(), get(), get(), get()) }
+    factory { SettingsTrackingScreenModel(get(), get(), get(), get(), get(), get()) }
     factory { SettingsAppearanceScreenModel(get()) }
     factory { SettingsReaderScreenModel(get()) }
     factory { SettingsSecurityScreenModel(get(), get()) }
-    factory { SettingsAdvancedScreenModel(get(), get(), get(), get(), get(), get(), get()) }
+    factory { SettingsAdvancedScreenModel(get(), get(), get(), get(), get(), get(), get(), get()) }
 }

@@ -12,7 +12,7 @@ class SetupBackupCreateMigration : Migration {
     override suspend fun invoke(migrationContext: MigrationContext): Boolean {
         val context = migrationContext.get<Application>() ?: return false
         val backupPreferences = migrationContext.get<BackupPreferences>() ?: return false
-        BackupCreateJob.setupTask(context, backupPreferences)
+        BackupCreateJob.setupTask(context, backupPreferences.backupInterval().get())
         return true
     }
 }

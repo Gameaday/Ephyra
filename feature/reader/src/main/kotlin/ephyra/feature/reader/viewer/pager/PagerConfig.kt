@@ -1,6 +1,6 @@
 package ephyra.feature.reader.viewer.pager
 
-import ephyra.feature.reader.setting.ReaderPreferences
+import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.feature.reader.viewer.ReaderPageImageView
 import ephyra.feature.reader.viewer.ViewerConfig
 import ephyra.feature.reader.viewer.ViewerNavigation
@@ -13,6 +13,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.runBlocking
 
 /**
  * Configuration used by pager viewers.
@@ -23,7 +24,7 @@ class PagerConfig(
     readerPreferences: ReaderPreferences,
 ) : ViewerConfig(readerPreferences, scope) {
 
-    var theme = readerPreferences.readerTheme().get()
+    var theme = runBlocking { readerPreferences.readerTheme().get() }
         private set
 
     var automaticBackground = false

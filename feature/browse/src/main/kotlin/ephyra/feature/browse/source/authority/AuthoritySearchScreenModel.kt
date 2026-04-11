@@ -2,32 +2,32 @@ package ephyra.feature.browse.source.authority
 
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import org.koin.core.annotation.Factory
-import ephyra.domain.manga.interactor.FindContentSource
-import ephyra.domain.track.interactor.AddTracks
-import ephyra.domain.track.interactor.TrackerListImporter
-import ephyra.data.track.Tracker
-import ephyra.data.track.TrackerManager
-import ephyra.data.track.model.TrackSearch
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-import logcat.LogPriority
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.chapter.interactor.GenerateAuthorityChapters
+import ephyra.domain.manga.interactor.FindContentSource
 import ephyra.domain.manga.model.ContentType
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaUpdate
 import ephyra.domain.manga.model.MangaWithChapterCount
 import ephyra.domain.manga.model.mergedAlternativeTitles
 import ephyra.domain.manga.repository.MangaRepository
+import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.InsertTrack
+import ephyra.domain.track.interactor.TrackerListImporter
 import ephyra.domain.track.model.Track
-import ephyra.domain.track.model.Track
+import ephyra.domain.track.model.TrackSearch
+import ephyra.domain.track.service.Tracker
+import ephyra.domain.track.service.TrackerManager
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import logcat.LogPriority
+import org.koin.core.annotation.Factory
 
 @Factory
 class AuthoritySearchScreenModel(
@@ -45,10 +45,10 @@ class AuthoritySearchScreenModel(
      * Includes logged-in authoritative trackers AND trackers with public search APIs.
      * This allows discovery to work without login for trackers like MangaUpdates.
      */
-    private val allTrackers: ImmutableList<Tracker> = trackerManager.trackers
+    private val allTrackers: ImmutableList<Tracker> = trackerManager.getAll(AddTracks.TRACKER_CANONICAL_PREFIXES.keys)
         .filter {
             AddTracks.TRACKER_CANONICAL_PREFIXES.containsKey(it.id) &&
-                (it.isLoggedIn || it.id in AddTracks.TRACKERS_WITH_PUBLIC_SEARCH)
+                (runBlocking { it.isLoggedIn() } || it.id in AddTracks.TRACKERS_WITH_PUBLIC_SEARCH)
         }
         .toImmutableList()
 
@@ -239,7 +239,7 @@ class AuthoritySearchScreenModel(
                     mergeAlternativeTitles(manga, result)
 
                     // Bind the tracker if logged in
-                    if (prompt.tracker.isLoggedIn) {
+                    if (runBlocking { prompt.tracker.isLoggedIn() }) {
                         val track = Track(
                             id = 0L,
                             mangaId = manga.id,
@@ -338,7 +338,7 @@ class AuthoritySearchScreenModel(
         )
 
         // Bind the tracker only if user is logged in
-        if (tracker.isLoggedIn) {
+        if (runBlocking { tracker.isLoggedIn() }) {
             val track = Track(
                 id = 0L,
                 mangaId = manga.id,
@@ -346,13 +346,13 @@ class AuthoritySearchScreenModel(
                 remoteId = result.remote_id,
                 libraryId = null,
                 title = result.title,
-                lastChapterRead = result.last_chapter_read,
+                lastChapterRead = 0.0,
                 totalChapters = result.total_chapters,
-                status = result.status,
-                score = result.score,
+                status = 0L,
+                score = 0.0,
                 remoteUrl = result.tracking_url,
-                startDate = result.started_reading_date,
-                finishDate = result.finished_reading_date,
+                startDate = 0L,
+                finishDate = 0L,
                 private = result.private,
             )
             insertTrack.await(track)
@@ -363,7 +363,7 @@ class AuthoritySearchScreenModel(
             generateAuthorityChapters.await(
                 mangaId = manga.id,
                 totalChapters = result.total_chapters.toInt(),
-                lastChapterRead = result.last_chapter_read.toInt(),
+                lastChapterRead = 0,
             )
         }
 

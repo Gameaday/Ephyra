@@ -119,6 +119,8 @@ class ReaderPreferences(
 
     fun invertedColors() = preferenceStore.getBoolean("pref_inverted_colors", false)
 
+    fun trueColor() = preferenceStore.getBoolean("pref_true_color", false)
+
     // endregion
 
     // region Controls
@@ -202,6 +204,15 @@ class ReaderPreferences(
             MR.strings.zoom_start_left,
             MR.strings.zoom_start_right,
             MR.strings.zoom_start_center,
+        )
+
+        val ColorFilterMode = listOf(
+            Pair(MR.strings.label_default, 0),
+            Pair(MR.strings.filter_mode_multiply, 1),
+            Pair(MR.strings.filter_mode_screen, 2),
+            Pair(MR.strings.filter_mode_overlay, 3),
+            Pair(MR.strings.filter_mode_lighten, 4),
+            Pair(MR.strings.filter_mode_darken, 5),
         )
     }
 }

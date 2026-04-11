@@ -24,7 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,30 +37,30 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastMap
 import androidx.core.net.toUri
+import cafe.adriel.voyager.koin.koinScreenModel
 import com.hippo.unifile.UniFile
-import ephyra.domain.track.service.TrackPreferences
-import ephyra.presentation.category.visualName
-import ephyra.feature.settings.Preference
-import ephyra.feature.settings.widget.TriStateListDialog
-import ephyra.data.track.TrackerManager
-import ephyra.presentation.core.util.system.toast
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.persistentMapOf
-import kotlinx.collections.immutable.toImmutableList
-import kotlinx.collections.immutable.toImmutableMap
-import logcat.LogPriority
 import ephyra.core.common.storage.displayablePath
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.category.model.Category
 import ephyra.domain.download.service.DownloadPreferences
 import ephyra.domain.library.service.LibraryPreferences
+import ephyra.domain.track.service.TrackPreferences
+import ephyra.domain.track.service.TrackerManager
+import ephyra.feature.category.presentation.visualName
+import ephyra.feature.settings.Preference
+import ephyra.feature.settings.widget.TriStateListDialog
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.collectAsState
-import cafe.adriel.voyager.koin.koinScreenModel
+import ephyra.presentation.core.util.system.toast
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.persistentMapOf
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.toImmutableMap
+import logcat.LogPriority
 
 object SettingsDownloadScreen : SearchableSettings {
 
@@ -74,8 +74,8 @@ object SettingsDownloadScreen : SearchableSettings {
         val allCategories by screenModel.getCategories.subscribe().collectAsState(initial = emptyList())
 
         val downloadPreferences = screenModel.downloadPreferences
-        val parallelSourceLimit by downloadPreferences.parallelSourceLimit().collectAsStateWithLifecycle()
-        val parallelPageLimit by downloadPreferences.parallelPageLimit().collectAsStateWithLifecycle()
+        val parallelSourceLimit by downloadPreferences.parallelSourceLimit().collectAsState()
+        val parallelPageLimit by downloadPreferences.parallelPageLimit().collectAsState()
 
         return listOf(
             Preference.PreferenceItem.SwitchPreference(
@@ -183,10 +183,10 @@ object SettingsDownloadScreen : SearchableSettings {
         val downloadNewChapterCategoriesPref = downloadPreferences.downloadNewChapterCategories()
         val downloadNewChapterCategoriesExcludePref = downloadPreferences.downloadNewChapterCategoriesExclude()
 
-        val downloadNewChapters by downloadNewChaptersPref.collectAsStateWithLifecycle()
+        val downloadNewChapters by downloadNewChaptersPref.collectAsState()
 
-        val included by downloadNewChapterCategoriesPref.collectAsStateWithLifecycle()
-        val excluded by downloadNewChapterCategoriesExcludePref.collectAsStateWithLifecycle()
+        val included by downloadNewChapterCategoriesPref.collectAsState()
+        val excluded by downloadNewChapterCategoriesExcludePref.collectAsState()
         var showDialog by rememberSaveable { mutableStateOf(false) }
         if (showDialog) {
             val categoryById = remember(allCategories) { allCategories.associateBy { it.id.toString() } }
@@ -262,7 +262,7 @@ object SettingsDownloadScreen : SearchableSettings {
         downloadPreferences: DownloadPreferences,
     ): Preference.PreferenceGroup {
         val context = LocalContext.current
-        val blockedHashes by downloadPreferences.blockedPageHashes().collectAsStateWithLifecycle()
+        val blockedHashes by downloadPreferences.blockedPageHashes().collectAsState()
         val count = blockedHashes.size
         var showClearDialog by rememberSaveable { mutableStateOf(false) }
         var showManageDialog by rememberSaveable { mutableStateOf(false) }
@@ -310,7 +310,7 @@ object SettingsDownloadScreen : SearchableSettings {
                     TextButton(
                         onClick = {
                             val pref = downloadPreferences.blockedPageHashes()
-                            val current = pref.get().toMutableSet()
+                            val current = kotlinx.coroutines.runBlocking { pref.get() }.toMutableSet()
                             current.remove(currentHashToRemove)
                             pref.set(current)
                             hashToRemove = null
@@ -427,15 +427,18 @@ object SettingsDownloadScreen : SearchableSettings {
     @Composable
     private fun getJellyfinSyncGroup(
         downloadPreferences: DownloadPreferences,
+        trackerManager: TrackerManager,
+        trackPreferences: TrackPreferences,
+        libraryPreferences: LibraryPreferences,
     ): Preference.PreferenceGroup {
         val context = LocalContext.current
-        val isLoggedIn = trackerManager.jellyfin.isLoggedIn
-        val isAdmin by trackPreferences.jellyfinIsAdmin().collectAsStateWithLifecycle()
-        val autoSync by downloadPreferences.autoSyncToJellyfin().collectAsStateWithLifecycle()
+        val isLoggedIn by trackerManager.get(TrackerManager.JELLYFIN)!!.isLoggedInFlow.collectAsState(initial = false)
+        val isAdmin by trackPreferences.jellyfinIsAdmin().collectAsState()
+        val autoSync by downloadPreferences.autoSyncToJellyfin().collectAsState()
 
         // Jellyfin library folder picker (SAF — supports network shares via third-party providers)
         val jellyfinFolderPref = downloadPreferences.jellyfinLibraryFolder()
-        val jellyfinFolder by jellyfinFolderPref.collectAsStateWithLifecycle()
+        val jellyfinFolder by jellyfinFolderPref.collectAsState()
         val pickJellyfinFolder = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.OpenDocumentTree(),
         ) { uri ->

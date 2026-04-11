@@ -12,10 +12,10 @@ import android.content.pm.PackageManager
 import android.os.IBinder
 import androidx.core.content.ContextCompat
 import ephyra.app.BuildConfig
-import ephyra.app.extension.model.InstallStep
 import ephyra.app.shizuku.IShellInterface
 import ephyra.app.shizuku.ShellInterface
 import ephyra.core.common.util.system.logcat
+import ephyra.domain.extension.model.InstallStep
 import ephyra.i18n.MR
 import ephyra.presentation.core.util.system.toast
 import kotlinx.coroutines.CoroutineScope
@@ -25,7 +25,7 @@ import kotlinx.coroutines.cancel
 import logcat.LogPriority
 import rikka.shizuku.Shizuku
 
-class ShizukuInstaller(
+internal class ShizukuInstaller(
     private val service: Service,
     extensionManager: ephyra.app.extension.ExtensionManager,
 ) : Installer(service, extensionManager) {

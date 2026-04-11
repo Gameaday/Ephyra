@@ -2,7 +2,6 @@ plugins {
     id("ephyra.library")
     id("ephyra.library.compose")
     id("org.jetbrains.kotlin.plugin.compose")
-    alias(libs.plugins.koin.compiler)
 }
 
 android {
@@ -48,7 +47,7 @@ dependencies {
     implementation(libs.koin.annotations)
 
     implementation(libs.directionalviewpager) // FIX: Resolves ViewPager errors
-    implementation(platform(libs.coil.bom))   // FIX: Resolves Coil errors
+    implementation(platform(libs.coil.bom)) // FIX: Resolves Coil errors
     implementation(libs.bundles.coil)
 
     implementation(libs.subsamplingscaleimageview)

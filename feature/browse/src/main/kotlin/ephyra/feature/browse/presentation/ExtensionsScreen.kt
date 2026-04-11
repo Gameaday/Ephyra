@@ -43,22 +43,17 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.icerock.moko.resources.StringResource
+import ephyra.core.common.util.system.LocaleHelper
+import ephyra.domain.extension.model.Extension
+import ephyra.domain.extension.model.InstallStep
+import ephyra.feature.browse.extension.ExtensionUiModel
+import ephyra.feature.browse.extension.ExtensionsScreenModel
 import ephyra.feature.browse.presentation.components.BaseBrowseItem
 import ephyra.feature.browse.presentation.components.ExtensionIcon
-import ephyra.presentation.core.components.WarningBanner
-import ephyra.presentation.manga.components.DotSeparatorNoSpaceText
-import ephyra.feature.settings.screen.browse.ExtensionReposScreen
-import ephyra.presentation.core.util.animateItemFastScroll
-import ephyra.presentation.core.util.rememberRequestPackageInstallsPermissionState
-import ephyra.app.extension.model.Extension
-import ephyra.app.extension.model.InstallStep
-import ephyra.app.ui.browse.extension.ExtensionUiModel
-import ephyra.app.ui.browse.extension.ExtensionsScreenModel
-import ephyra.app.util.system.LocaleHelper
-import ephyra.presentation.core.util.system.launchRequestPackageInstallsPermission
-import kotlinx.collections.immutable.persistentListOf
+import ephyra.feature.manga.presentation.components.DotSeparatorNoSpaceText
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.FastScrollLazyColumn
+import ephyra.presentation.core.components.WarningBanner
 import ephyra.presentation.core.components.material.PullRefresh
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.components.material.topSmallPaddingValues
@@ -67,8 +62,14 @@ import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.EmptyScreenAction
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.theme.header
+import ephyra.presentation.core.ui.ExtensionReposScreenFactory
+import ephyra.presentation.core.util.animateItemFastScroll
 import ephyra.presentation.core.util.plus
+import ephyra.presentation.core.util.rememberRequestPackageInstallsPermissionState
 import ephyra.presentation.core.util.secondaryItemAlpha
+import ephyra.presentation.core.util.system.launchRequestPackageInstallsPermission
+import kotlinx.collections.immutable.persistentListOf
+import org.koin.compose.koinInject
 
 @Composable
 fun ExtensionScreen(
@@ -87,6 +88,7 @@ fun ExtensionScreen(
     onRefresh: () -> Unit,
 ) {
     val navigator = LocalNavigator.currentOrThrow
+    val extensionReposFactory = koinInject<ExtensionReposScreenFactory>()
 
     PullRefresh(
         refreshing = state.isRefreshing,
@@ -108,7 +110,7 @@ fun ExtensionScreen(
                         EmptyScreenAction(
                             stringRes = MR.strings.label_extension_repos,
                             icon = Icons.Outlined.Settings,
-                            onClick = { navigator.push(ExtensionReposScreen()) },
+                            onClick = { navigator.push(extensionReposFactory.create(null)) },
                         ),
                     ),
                 )
@@ -157,7 +159,7 @@ private fun ExtensionContent(
         if (!installGranted && state.installer?.requiresSystemPermission == true) {
             item(key = "extension-permissions-warning") {
                 WarningBanner(
-                    textRes = MR.strings.ext_permission_install_apps_warning,
+                    text = stringResource(MR.strings.ext_permission_install_apps_warning),
                     modifier = Modifier.clickable {
                         context.launchRequestPackageInstallsPermission()
                     },

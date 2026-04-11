@@ -4,17 +4,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.mikepenz.aboutlibraries.ui.compose.android.produceLibraries
 import com.mikepenz.aboutlibraries.ui.compose.m3.LibrariesContainer
 import com.mikepenz.aboutlibraries.ui.compose.util.htmlReadyLicenseContent
-import ephyra.presentation.core.components.AppBar
-import ephyra.presentation.core.util.Screen
-import ephyra.app.R
 import ephyra.i18n.MR
+import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.util.Screen
 
 class OpenSourceLicensesScreen : Screen() {
 
@@ -30,7 +30,10 @@ class OpenSourceLicensesScreen : Screen() {
                 )
             },
         ) { contentPadding ->
-            val libraries by produceLibraries(R.raw.aboutlibraries)
+            val context = LocalContext.current
+            val libraries by produceLibraries(
+                context.resources.getIdentifier("aboutlibraries", "raw", context.packageName),
+            )
             LibrariesContainer(
                 libraries = libraries,
                 modifier = Modifier

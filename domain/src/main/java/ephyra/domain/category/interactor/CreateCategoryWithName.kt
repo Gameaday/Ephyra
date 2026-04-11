@@ -5,6 +5,7 @@ import ephyra.core.common.util.system.logcat
 import ephyra.domain.category.model.Category
 import ephyra.domain.category.repository.CategoryRepository
 import ephyra.domain.library.service.LibraryPreferences
+import kotlinx.coroutines.runBlocking
 import logcat.LogPriority
 
 class CreateCategoryWithName(
@@ -14,7 +15,7 @@ class CreateCategoryWithName(
 
     private val initialFlags: Long
         get() {
-            val sort = preferences.sortingMode().getSync()
+            val sort = runBlocking { preferences.sortingMode().get() }
             return sort.type.flag or sort.direction.flag
         }
 

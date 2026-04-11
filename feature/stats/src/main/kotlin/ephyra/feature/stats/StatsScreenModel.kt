@@ -4,10 +4,9 @@ import androidx.compose.ui.util.fastDistinctBy
 import androidx.compose.ui.util.fastFilter
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import ephyra.core.common.util.fastCountNot
 import ephyra.core.common.util.lang.launchIO
-import ephyra.core.download.DownloadManager
-import ephyra.core.util.fastCountNot
-import ephyra.data.track.TrackerManager
+import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.history.interactor.GetTotalReadDuration
 import ephyra.domain.library.model.LibraryManga
 import ephyra.domain.library.service.LibraryPreferences
@@ -17,8 +16,9 @@ import ephyra.domain.library.service.LibraryPreferences.Companion.MANGA_NON_READ
 import ephyra.domain.manga.interactor.GetLibraryManga
 import ephyra.domain.track.interactor.GetTracks
 import ephyra.domain.track.model.Track
-import ephyra.presentation.more.stats.StatsScreenState
-import ephyra.presentation.more.stats.data.StatsData
+import ephyra.domain.track.service.Tracker
+import ephyra.domain.track.service.TrackerManager
+import ephyra.feature.stats.data.StatsData
 import ephyra.source.local.isLocal
 import eu.kanade.tachiyomi.source.model.SManga
 import kotlinx.coroutines.flow.update
@@ -34,15 +34,14 @@ class StatsScreenModel(
     private val trackerManager: TrackerManager,
 ) : StateScreenModel<StatsScreenState>(StatsScreenState.Loading) {
 
-    private val loggedInTrackers by lazy { trackerManager.loggedInTrackers() }
-
     init {
         screenModelScope.launchIO {
+            val loggedInTrackers = trackerManager.loggedInTrackers()
             val libraryManga = getLibraryManga.await()
 
             val distinctLibraryManga = libraryManga.fastDistinctBy { it.id }
 
-            val mangaTrackMap = getMangaTrackMap(distinctLibraryManga)
+            val mangaTrackMap = getMangaTrackMap(distinctLibraryManga, loggedInTrackers)
             val scoredMangaTrackerMap = getScoredMangaTrackMap(mangaTrackMap)
 
             val meanScore = getTrackMeanScore(scoredMangaTrackerMap)
@@ -84,7 +83,7 @@ class StatsScreenModel(
         }
     }
 
-    private fun getGlobalUpdateItemCount(libraryManga: List<LibraryManga>): Int {
+    private suspend fun getGlobalUpdateItemCount(libraryManga: List<LibraryManga>): Int {
         val includedCategories = preferences.updateCategories().get().mapTo(HashSet()) { it.toLong() }
         val excludedCategories = preferences.updateCategoriesExclude().get().mapTo(HashSet()) { it.toLong() }
         val updateRestrictions = preferences.autoUpdateMangaRestrictions().get()
@@ -101,7 +100,10 @@ class StatsScreenModel(
             }
     }
 
-    private suspend fun getMangaTrackMap(libraryManga: List<LibraryManga>): Map<Long, List<Track>> {
+    private suspend fun getMangaTrackMap(
+        libraryManga: List<LibraryManga>,
+        loggedInTrackers: List<Tracker>,
+    ): Map<Long, List<Track>> {
         val loggedInTrackerIds = loggedInTrackers.mapTo(HashSet()) { it.id }
         return libraryManga.associate { manga ->
             val tracks = getTracks.await(manga.id)

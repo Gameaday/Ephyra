@@ -22,15 +22,33 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.core.net.toUri
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import ephyra.core.common.util.lang.launchNonCancellable
+import ephyra.core.common.util.lang.withUIContext
+import ephyra.core.common.util.system.GLUtil
+import ephyra.core.common.util.system.logcat
+import ephyra.core.common.util.system.setDefaultSettings
+import ephyra.core.download.DownloadCache
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.extension.interactor.TrustExtension
+import ephyra.domain.extension.service.ExtensionManager
+import ephyra.domain.library.service.LibraryPreferences
+import ephyra.domain.library.service.MetadataUpdateScheduler
+import ephyra.domain.manga.interactor.ResetViewerFlags
 import ephyra.feature.settings.Preference
 import ephyra.feature.settings.screen.advanced.ClearDatabaseScreen
 import ephyra.feature.settings.screen.debug.DebugInfoScreen
-import ephyra.core.download.DownloadCache
-import ephyra.app.data.library.MetadataUpdateJob
+import ephyra.i18n.MR
+import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.ui.AppInfo
+import ephyra.presentation.core.ui.OnboardingScreenFactory
+import ephyra.presentation.core.util.CrashLogUtil
+import ephyra.presentation.core.util.collectAsState
+import ephyra.presentation.core.util.system.isShizukuInstalled
+import ephyra.presentation.core.util.system.powerManager
+import ephyra.presentation.core.util.system.toast
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.NetworkPreferences
 import eu.kanade.tachiyomi.network.PREF_DOH_360
@@ -45,29 +63,13 @@ import eu.kanade.tachiyomi.network.PREF_DOH_NJALLA
 import eu.kanade.tachiyomi.network.PREF_DOH_QUAD101
 import eu.kanade.tachiyomi.network.PREF_DOH_QUAD9
 import eu.kanade.tachiyomi.network.PREF_DOH_SHECAN
-import ephyra.app.ui.more.OnboardingScreen
-import ephyra.app.util.CrashLogUtil
-import ephyra.core.common.util.system.GLUtil
-import ephyra.app.util.system.isReleaseBuildType
-import ephyra.app.util.system.isShizukuInstalled
-import ephyra.app.util.system.powerManager
-import ephyra.app.util.system.setDefaultSettings
-import ephyra.presentation.core.util.system.toast
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import okhttp3.Headers
-import ephyra.core.common.util.lang.launchNonCancellable
-import ephyra.core.common.util.lang.withUIContext
-import ephyra.core.common.util.system.logcat
-import ephyra.domain.library.service.LibraryPreferences
-import ephyra.domain.manga.interactor.ResetViewerFlags
-import ephyra.i18n.MR
-import ephyra.presentation.core.i18n.stringResource
-import ephyra.presentation.core.util.collectAsState
-import cafe.adriel.voyager.koin.koinScreenModel
+import org.koin.compose.koinInject
 import java.io.File
 
 object SettingsAdvancedScreen : SearchableSettings {
@@ -82,6 +84,9 @@ object SettingsAdvancedScreen : SearchableSettings {
         val scope = rememberCoroutineScope()
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
+        val appInfo: AppInfo = koinInject()
+        val onboardingScreenFactory: OnboardingScreenFactory = koinInject()
+        val extensionManager: ExtensionManager = screenModel.extensionManager
 
         val basePreferences = screenModel.basePreferences
         val networkPreferences = screenModel.networkPreferences
@@ -93,7 +98,7 @@ object SettingsAdvancedScreen : SearchableSettings {
                 subtitle = stringResource(MR.strings.pref_dump_crash_logs_summary),
                 onClick = {
                     scope.launch {
-                        CrashLogUtil(context).dumpLogs()
+                        CrashLogUtil(context, extensionManager).dumpLogs()
                     }
                 },
             ),
@@ -112,7 +117,7 @@ object SettingsAdvancedScreen : SearchableSettings {
             ),
             Preference.PreferenceItem.TextPreference(
                 title = stringResource(MR.strings.pref_onboarding_guide),
-                onClick = { navigator.push(OnboardingScreen()) },
+                onClick = { navigator.push(onboardingScreenFactory.create()) },
             ),
             Preference.PreferenceItem.TextPreference(
                 title = stringResource(MR.strings.pref_manage_notifications),
@@ -135,6 +140,7 @@ object SettingsAdvancedScreen : SearchableSettings {
             ),
             getReaderGroup(basePreferences = basePreferences),
             getExtensionsGroup(
+                appInfo = appInfo,
                 basePreferences = basePreferences,
                 trustExtension = screenModel.trustExtension,
             ),
@@ -305,13 +311,14 @@ object SettingsAdvancedScreen : SearchableSettings {
     ): Preference.PreferenceGroup {
         val scope = rememberCoroutineScope()
         val context = LocalContext.current
+        val metadataUpdateScheduler: MetadataUpdateScheduler = koinInject()
 
         return Preference.PreferenceGroup(
             title = stringResource(MR.strings.label_library),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.TextPreference(
                     title = stringResource(MR.strings.pref_refresh_library_covers),
-                    onClick = { MetadataUpdateJob.startNow(context) },
+                    onClick = { metadataUpdateScheduler.startMetadataUpdateNow() },
                 ),
                 Preference.PreferenceItem.TextPreference(
                     title = stringResource(MR.strings.pref_reset_viewer_flags),
@@ -387,7 +394,7 @@ object SettingsAdvancedScreen : SearchableSettings {
                 ),
                 Preference.PreferenceItem.TextPreference(
                     title = stringResource(MR.strings.pref_display_profile),
-                    subtitle = basePreferences.displayProfile().get(),
+                    subtitle = kotlinx.coroutines.runBlocking { basePreferences.displayProfile().get() },
                     onClick = {
                         chooseColorProfile.launch(arrayOf("*/*"))
                     },
@@ -398,6 +405,7 @@ object SettingsAdvancedScreen : SearchableSettings {
 
     @Composable
     private fun getExtensionsGroup(
+        appInfo: AppInfo,
         basePreferences: BasePreferences,
         trustExtension: TrustExtension,
     ): Preference.PreferenceGroup {
@@ -437,7 +445,7 @@ object SettingsAdvancedScreen : SearchableSettings {
                     entries = extensionInstallerPref.entries
                         .filter {
                             // TODO: allow private option in stable versions once URL handling is more fleshed out
-                            if (isReleaseBuildType) {
+                            if (appInfo.isRelease) {
                                 it != BasePreferences.ExtensionInstaller.PRIVATE
                             } else {
                                 true

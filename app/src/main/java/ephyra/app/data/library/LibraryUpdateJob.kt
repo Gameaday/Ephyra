@@ -14,22 +14,22 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-import ephyra.data.cache.CoverCache
-import ephyra.domain.download.service.DownloadManager
-import ephyra.data.notification.Notifications
-import ephyra.core.common.util.system.isPowerSaveMode
-import ephyra.core.common.util.system.isRunning
-import ephyra.core.common.util.system.setForegroundSafely
-import ephyra.core.common.util.system.workManager
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.preference.getAndSet
 import ephyra.core.common.util.lang.withIOContext
+import ephyra.core.common.util.system.isPowerSaveMode
+import ephyra.core.common.util.system.isRunning
 import ephyra.core.common.util.system.logcat
+import ephyra.core.common.util.system.setForegroundSafely
+import ephyra.core.common.util.system.workManager
+import ephyra.data.cache.CoverCache
+import ephyra.data.notification.Notifications
 import ephyra.domain.chapter.interactor.FilterChaptersForDownload
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
 import ephyra.domain.chapter.interactor.SyncChaptersWithSource
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.model.NoChaptersException
+import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.library.model.LibraryManga
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.library.service.LibraryPreferences.Companion.MANGA_HAS_UNREAD
@@ -79,7 +79,6 @@ class LibraryUpdateJob(
     private val refreshCanonicalMetadata: ephyra.domain.track.interactor.RefreshCanonicalMetadata,
     private val notifier: LibraryUpdateNotifier,
 ) : CoroutineWorker(context, workerParams) {
-
 
     private var mangaToUpdate: List<LibraryManga> = mutableListOf()
 
@@ -386,6 +385,24 @@ class LibraryUpdateJob(
 
         fun stop(context: Context) {
             context.workManager.cancelUniqueWork(TAG)
+        }
+
+        /**
+         * Enqueues a one-time manual library update, optionally restricted to a single [category].
+         *
+         * @return `true` if the work request was enqueued, `false` if a manual run is already
+         *         in progress.
+         */
+        fun startNow(context: Context, category: ephyra.domain.category.model.Category? = null): Boolean {
+            val wm = context.workManager
+            if (wm.isRunning(WORK_NAME_MANUAL)) return false
+            val inputData = workDataOf(KEY_CATEGORY to (category?.id ?: -1L))
+            val request = OneTimeWorkRequestBuilder<LibraryUpdateJob>()
+                .addTag(WORK_NAME_MANUAL)
+                .setInputData(inputData)
+                .build()
+            wm.enqueueUniqueWork(WORK_NAME_MANUAL, ExistingWorkPolicy.KEEP, request)
+            return true
         }
     }
 }

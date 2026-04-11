@@ -1,18 +1,19 @@
-package ephyra.app.ui.more
+package ephyra.feature.more
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import ephyra.app.ui.setting.SettingsScreen
 import ephyra.domain.base.BasePreferences
+import ephyra.feature.settings.SettingsScreen
 import ephyra.feature.settings.screen.SearchableSettings
 import ephyra.feature.settings.screen.SettingsDataScreen
 import ephyra.presentation.core.i18n.stringResource
-import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.core.util.Screen
+import ephyra.presentation.core.util.collectAsState
 import org.koin.compose.koinInject
+import ephyra.feature.more.onboarding.OnboardingScreen as OnboardingContent
 
 class OnboardingScreen : Screen() {
 
@@ -34,7 +35,7 @@ class OnboardingScreen : Screen() {
             // Prevent exiting if onboarding hasn't been completed
         }
 
-        OnboardingScreen(
+        OnboardingContent(
             onComplete = finishOnboarding,
             onRestoreBackup = {
                 finishOnboarding()

@@ -14,53 +14,53 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.util.fastAll
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
-import ephyra.presentation.category.components.ChangeCategoryDialog
-import ephyra.feature.library.presentation.DeleteLibraryMangaDialog
-import ephyra.feature.library.presentation.LibrarySettingsDialog
-import ephyra.feature.library.presentation.components.LibraryContent
-import ephyra.feature.library.presentation.components.LibraryToolbar
-import ephyra.presentation.manga.components.LibraryBottomActionMenu
-import ephyra.presentation.more.onboarding.GETTING_STARTED_URL
-import ephyra.presentation.core.util.Tab
-import ephyra.app.R
-import ephyra.app.data.library.LibraryUpdateJob
-import ephyra.app.ui.browse.source.globalsearch.GlobalSearchScreen
-import ephyra.app.ui.category.CategoryScreen
-import ephyra.app.ui.home.HomeScreen
-import ephyra.app.ui.main.MainActivity
-import ephyra.app.ui.manga.MangaScreen
-import ephyra.app.ui.reader.ReaderActivity
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.launch
-import ephyra.feature.migration.config.MigrationConfigScreen
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.lang.launchIO
 import ephyra.domain.category.model.Category
 import ephyra.domain.library.model.LibraryManga
+import ephyra.domain.library.service.LibraryUpdateScheduler
 import ephyra.domain.manga.model.Manga
+import ephyra.feature.browse.source.globalsearch.GlobalSearchScreen
+import ephyra.feature.category.CategoryScreen
+import ephyra.feature.category.components.ChangeCategoryDialog
+import ephyra.feature.library.presentation.DeleteLibraryMangaDialog
+import ephyra.feature.library.presentation.LibrarySettingsDialog
+import ephyra.feature.library.presentation.components.LibraryContent
+import ephyra.feature.library.presentation.components.LibraryToolbar
+import ephyra.feature.manga.MangaScreen
+import ephyra.feature.manga.presentation.components.LibraryBottomActionMenu
+import ephyra.feature.reader.ReaderActivity
 import ephyra.i18n.MR
+import ephyra.presentation.core.R
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.EmptyScreenAction
 import ephyra.presentation.core.screens.LoadingScreen
+import ephyra.presentation.core.ui.AppReadySignal
+import ephyra.presentation.core.ui.BottomNavController
+import ephyra.presentation.core.ui.MigrationConfigScreenFactory
+import ephyra.presentation.core.util.Tab
 import ephyra.source.local.isLocal
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 
 data object LibraryTab : Tab {
 
@@ -88,13 +88,15 @@ data object LibraryTab : Tab {
         val haptic = LocalHapticFeedback.current
 
         val screenModel = koinScreenModel<LibraryScreenModel>()
+        val updateScheduler = koinInject<LibraryUpdateScheduler>()
         val settingsScreenModel = koinScreenModel<LibrarySettingsScreenModel>()
+        val migrationConfigScreenFactory = koinInject<MigrationConfigScreenFactory>()
         val state by screenModel.state.collectAsStateWithLifecycle()
 
         val snackbarHostState = remember { SnackbarHostState() }
 
         val onClickRefresh: (Category?) -> Boolean = { category ->
-            val started = LibraryUpdateJob.startNow(context, category)
+            val started = updateScheduler.startNow(context, category)
             scope.launch {
                 val msgRes = when {
                     !started -> MR.strings.update_already_running
@@ -153,7 +155,7 @@ data object LibraryTab : Tab {
                     onMigrateClicked = {
                         val selection = state.selection
                         screenModel.clearSelection()
-                        navigator.push(MigrationConfigScreen(selection))
+                        navigator.push(migrationConfigScreenFactory.create(selection))
                     },
                 )
             },
@@ -173,7 +175,7 @@ data object LibraryTab : Tab {
                             EmptyScreenAction(
                                 stringRes = MR.strings.getting_started_guide,
                                 icon = Icons.AutoMirrored.Outlined.HelpOutline,
-                                onClick = { handler.openUri(GETTING_STARTED_URL) },
+                                onClick = { handler.openUri("https://ephyra.app/docs/guides/getting-started") },
                             ),
                         ),
                     )
@@ -271,12 +273,12 @@ data object LibraryTab : Tab {
         }
 
         LaunchedEffect(state.selectionMode, state.dialog) {
-            HomeScreen.showBottomNav(!state.selectionMode)
+            (navigator as? BottomNavController)?.showBottomNav(!state.selectionMode)
         }
 
         LaunchedEffect(state.isLoading) {
             if (!state.isLoading) {
-                (context as? MainActivity)?.ready = true
+                (context as? AppReadySignal)?.signalReady()
             }
         }
 

@@ -23,12 +23,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.SmallExtendedFloatingActionButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.animateFloatingActionButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -37,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
@@ -46,9 +46,9 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastMap
-import ephyra.core.download.model.Download
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.service.missingChaptersCount
+import ephyra.domain.download.model.Download
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.SourceStatus
@@ -66,17 +66,19 @@ import ephyra.feature.manga.presentation.components.MangaToolbar
 import ephyra.feature.manga.presentation.components.MissingChapterCountListItem
 import ephyra.feature.manga.presentation.components.SourceHealthBanner
 import ephyra.i18n.MR
-import ephyra.presentation.core.components.relativeDateText
 import ephyra.presentation.core.components.TwoPanelBox
 import ephyra.presentation.core.components.VerticalFastScroller
 import ephyra.presentation.core.components.material.PullRefresh
 import ephyra.presentation.core.components.material.Scaffold
+import ephyra.presentation.core.components.relativeDateText
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.util.formatChapterNumber
+import ephyra.presentation.core.util.manga.DownloadAction
 import ephyra.presentation.core.util.shouldExpandFAB
 import ephyra.presentation.core.util.system.copyToClipboard
-import ephyra.presentation.core.util.formatChapterNumber
+import ephyra.presentation.core.util.system.getNameForMangaInfo
 import ephyra.source.local.isLocal
-import eu.kanade.tachiyomi.source.getNameForMangaInfo
+import eu.kanade.tachiyomi.source.Source
 import java.time.Instant
 
 @Composable
@@ -267,7 +269,7 @@ private fun MangaScreenSmallImpl(
 
     val (chapters, listItem, isAnySelected) = remember(state) {
         Triple(
-            first = state.processedChapters,
+            first = state.chapterListItems.filterIsInstance<ChapterList.Item>(),
             second = state.chapterListItems,
             third = state.isAnySelected,
         )
@@ -336,10 +338,10 @@ private fun MangaScreenSmallImpl(
             val isFABVisible = remember(chapters) {
                 chapters.fastAny { !it.chapter.read } && !isAnySelected
             }
-            SmallExtendedFloatingActionButton(
+            ExtendedFloatingActionButton(
                 text = {
                     val isReading = remember(state.chapters) {
-                        state.chapters.fastAny { it.chapter.read }
+                        state.chapters.fastAny { it.read }
                     }
                     Text(
                         text = stringResource(if (isReading) MR.strings.action_resume else MR.strings.action_start),
@@ -348,10 +350,7 @@ private fun MangaScreenSmallImpl(
                 icon = { Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = null) },
                 onClick = onContinueReading,
                 expanded = chapterListState.shouldExpandFAB(),
-                modifier = Modifier.animateFloatingActionButton(
-                    visible = isFABVisible,
-                    alignment = Alignment.BottomEnd,
-                ),
+                modifier = Modifier.alpha(if (isFABVisible) 1f else 0f),
             )
         },
     ) { contentPadding ->
@@ -533,7 +532,7 @@ fun MangaScreenLargeImpl(
 
     val (chapters, listItem, isAnySelected) = remember(state) {
         Triple(
-            first = state.processedChapters,
+            first = state.chapterListItems.filterIsInstance<ChapterList.Item>(),
             second = state.chapterListItems,
             third = state.isAnySelected,
         )
@@ -599,10 +598,10 @@ fun MangaScreenLargeImpl(
             val isFABVisible = remember(chapters) {
                 chapters.fastAny { !it.chapter.read } && !isAnySelected
             }
-            SmallExtendedFloatingActionButton(
+            ExtendedFloatingActionButton(
                 text = {
                     val isReading = remember(state.chapters) {
-                        state.chapters.fastAny { it.chapter.read }
+                        state.chapters.fastAny { it.read }
                     }
                     Text(
                         text = stringResource(
@@ -613,10 +612,7 @@ fun MangaScreenLargeImpl(
                 icon = { Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = null) },
                 onClick = onContinueReading,
                 expanded = chapterListState.shouldExpandFAB(),
-                modifier = Modifier.animateFloatingActionButton(
-                    visible = isFABVisible,
-                    alignment = Alignment.BottomEnd,
-                ),
+                modifier = Modifier.alpha(if (isFABVisible) 1f else 0f),
             )
         },
     ) { contentPadding ->

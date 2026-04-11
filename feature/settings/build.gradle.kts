@@ -1,7 +1,6 @@
 plugins {
     id("ephyra.library")
     id("ephyra.library.compose")
-
 }
 
 android {
@@ -14,6 +13,9 @@ dependencies {
     api(projects.data)
     api(projects.i18n)
     api(projects.presentationCore)
+    implementation(projects.feature.manga)
+    implementation(projects.feature.browse)
+    implementation(projects.feature.category)
 
     implementation(compose.material3.core)
     implementation(compose.material.icons)
@@ -24,4 +26,9 @@ dependencies {
     api(libs.bundles.voyager)
     api(libs.koin.core)
     implementation(libs.koin.android)
+
+    implementation(androidx.profileinstaller)
+    implementation(kotlinx.coroutines.guava)
+    implementation(kotlinx.serialization.protobuf)
+    implementation(libs.aboutLibraries.compose)
 }

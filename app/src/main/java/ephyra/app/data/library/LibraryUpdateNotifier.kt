@@ -14,20 +14,20 @@ import coil3.request.ImageRequest
 import coil3.request.transformations
 import coil3.transform.CircleCropTransformation
 import ephyra.app.R
-import ephyra.core.common.core.security.SecurityPreferences
-import ephyra.core.download.Downloader
 import ephyra.app.data.notification.NotificationHandler
 import ephyra.app.data.notification.NotificationReceiver
-import ephyra.data.notification.Notifications
 import ephyra.app.ui.main.MainActivity
-import ephyra.core.common.util.lang.chop
-import ephyra.core.common.util.system.cancelNotification
 import ephyra.app.util.system.getBitmapOrNull
-import ephyra.core.common.util.system.notificationBuilder
-import ephyra.core.common.util.system.notify
 import ephyra.core.common.Constants
+import ephyra.core.common.core.security.SecurityPreferences
 import ephyra.core.common.i18n.pluralStringResource
 import ephyra.core.common.i18n.stringResource
+import ephyra.core.common.util.lang.chop
+import ephyra.core.common.util.system.cancelNotification
+import ephyra.core.common.util.system.notificationBuilder
+import ephyra.core.common.util.system.notify
+import ephyra.core.download.Downloader
+import ephyra.data.notification.Notifications
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.library.model.LibraryManga
 import ephyra.domain.manga.model.Manga
@@ -37,7 +37,6 @@ import ephyra.presentation.core.util.formatChapterNumber
 import eu.kanade.tachiyomi.source.UnmeteredSource
 import java.math.RoundingMode
 import java.text.NumberFormat
-
 import ephyra.domain.library.service.LibraryUpdateNotifier as DomainLibraryUpdateNotifier
 
 class LibraryUpdateNotifier(
@@ -130,7 +129,7 @@ class LibraryUpdateNotifier(
                 NotificationCompat.BigTextStyle().bigText(context.stringResource(MR.strings.notification_size_warning)),
             )
             setSmallIcon(R.drawable.ic_warning_white_24dp)
-            setTimeoutAfter(Downloader.WARNING_NOTIF_TIMEOUT_MS)
+            setTimeoutAfter(WARNING_NOTIF_TIMEOUT_MS)
             setContentIntent(NotificationHandler.openUrl(context, HELP_WARNING_URL))
         }
     }
@@ -164,13 +163,14 @@ class LibraryUpdateNotifier(
      * @param updates a list of manga with new updates.
      */
     override suspend fun showUpdateNotifications(updates: List<Pair<Manga, Array<Chapter>>>) {
+        val hideContent = securityPreferences.hideNotificationContent().get()
         // Parent group notification
         context.notify(
             Notifications.ID_NEW_CHAPTERS,
             Notifications.CHANNEL_NEW_CHAPTERS,
         ) {
             setContentTitle(context.stringResource(MR.strings.notification_new_chapters))
-            if (updates.size == 1 && !securityPreferences.hideNotificationContent().get()) {
+            if (updates.size == 1 && !hideContent) {
                 setContentText(updates.first().first.title.chop(NOTIF_TITLE_MAX_LEN))
             } else {
                 setContentText(
@@ -181,7 +181,7 @@ class LibraryUpdateNotifier(
                     ),
                 )
 
-                if (!securityPreferences.hideNotificationContent().get()) {
+                if (!hideContent) {
                     setStyle(
                         NotificationCompat.BigTextStyle().bigText(
                             updates.joinToString("\n") {
@@ -205,7 +205,7 @@ class LibraryUpdateNotifier(
         }
 
         // Per-manga notification
-        if (!securityPreferences.hideNotificationContent().get()) {
+        if (!hideContent) {
             updates.forEach { (manga, chapters) ->
                 context.notify(
                     manga.id.hashCode(),
@@ -526,5 +526,6 @@ class LibraryUpdateNotifier(
         private const val NOTIF_TITLE_MAX_LEN = 45
         private const val NOTIF_ICON_SIZE = 192
         private const val MANGA_PER_SOURCE_QUEUE_WARNING_THRESHOLD = 60
+        private const val WARNING_NOTIF_TIMEOUT_MS = 30_000L
     }
 }

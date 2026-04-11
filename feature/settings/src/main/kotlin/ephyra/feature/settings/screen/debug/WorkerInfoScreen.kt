@@ -11,7 +11,7 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -22,27 +22,25 @@ import androidx.work.WorkInfo
 import androidx.work.WorkQuery
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.rememberScreenModel
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import ephyra.core.common.util.lang.toDateTimestampString
+import ephyra.core.common.util.system.workManager
 import ephyra.domain.ui.UiPreferences
+import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
+import ephyra.presentation.core.components.material.Scaffold
+import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.Screen
 import ephyra.presentation.core.util.ioCoroutineScope
-import ephyra.app.util.lang.toDateTimestampString
+import ephyra.presentation.core.util.plus
 import ephyra.presentation.core.util.system.copyToClipboard
-import ephyra.app.util.system.workManager
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import ephyra.i18n.MR
-import ephyra.presentation.core.components.material.Scaffold
-import ephyra.presentation.core.i18n.stringResource
-import ephyra.presentation.core.util.plus
-import org.koin.androidx.compose.koinViewModel
-import org.koin.core.parameter.parametersOf
-import org.koin.compose.koinInject
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -59,9 +57,9 @@ class WorkerInfoScreen : Screen() {
         val navigator = LocalNavigator.currentOrThrow
 
         val screenModel = koinScreenModel<Model>()
-        val enqueued by screenModel.enqueued.collectAsStateWithLifecycle()
-        val finished by screenModel.finished.collectAsStateWithLifecycle()
-        val running by screenModel.running.collectAsStateWithLifecycle()
+        val enqueued by screenModel.enqueued.collectAsState()
+        val finished by screenModel.finished.collectAsState()
+        val running by screenModel.running.collectAsState()
 
         Scaffold(
             topBar = {
@@ -119,7 +117,7 @@ class WorkerInfoScreen : Screen() {
         )
     }
 
-    private class Model(
+    class Model(
         context: Context,
         private val uiPreferences: UiPreferences,
     ) : ScreenModel {
@@ -160,7 +158,7 @@ class WorkerInfoScreen : Screen() {
                         )
                             .toDateTimestampString(
                                 UiPreferences.dateFormat(
-                                    uiPreferences.dateFormat().get(),
+                                    kotlinx.coroutines.runBlocking { uiPreferences.dateFormat().get() },
                                 ),
                             )
                         appendLine("Next scheduled run: $timestamp")

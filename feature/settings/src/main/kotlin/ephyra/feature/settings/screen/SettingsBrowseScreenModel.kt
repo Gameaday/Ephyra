@@ -10,7 +10,7 @@ class SettingsBrowseScreenModel(
     private val getExtensionRepoCount: GetExtensionRepoCount,
 ) : ScreenModel {
 
-    fun getExtensionRepoCount(): Flow<Long> {
+    fun getExtensionRepoCount(): Flow<Int> {
         return getExtensionRepoCount.subscribe()
     }
 }

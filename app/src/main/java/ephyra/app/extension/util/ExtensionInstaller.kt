@@ -5,11 +5,11 @@ import android.content.Intent
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import ephyra.app.extension.installer.Installer
-import ephyra.app.extension.model.Extension
-import ephyra.app.extension.model.InstallStep
 import ephyra.core.common.util.storage.getUriCompat
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.base.BasePreferences
+import ephyra.domain.extension.model.Extension
+import ephyra.domain.extension.model.InstallStep
 import ephyra.presentation.core.util.system.isPackageInstalled
 import eu.kanade.tachiyomi.network.NetworkHelper
 import kotlinx.coroutines.CoroutineScope
@@ -102,7 +102,7 @@ internal class ExtensionInstaller(
      * @param tempFile The file of the extension to install. Delete after use.
      */
     private fun installApk(downloadId: Long, tempFile: File) {
-        when (val installer = extensionInstaller.get()) {
+        when (val installer = extensionInstaller.getSync()) {
             BasePreferences.ExtensionInstaller.LEGACY -> {
                 val intent = Intent(context, ExtensionInstallActivity::class.java)
                     .setDataAndType(tempFile.getUriCompat(context), APK_MIME)

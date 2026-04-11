@@ -1,11 +1,12 @@
 package ephyra.feature.reader.viewer
 
-import ephyra.feature.reader.setting.ReaderPreferences
+import ephyra.core.common.preference.Preference
+import ephyra.domain.reader.service.ReaderPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import ephyra.core.common.preference.Preference
+import kotlinx.coroutines.runBlocking
 
 /**
  * Common configuration for all viewers.
@@ -74,7 +75,7 @@ abstract class ViewerConfig(
         readerPreferences.alwaysShowChapterTransition()
             .register({ alwaysShowChapterTransition = it })
 
-        forceNavigationOverlay = readerPreferences.showNavigationOverlayNewUser().get()
+        forceNavigationOverlay = runBlocking { readerPreferences.showNavigationOverlayNewUser().get() }
         if (forceNavigationOverlay) {
             readerPreferences.showNavigationOverlayNewUser().set(false)
         }

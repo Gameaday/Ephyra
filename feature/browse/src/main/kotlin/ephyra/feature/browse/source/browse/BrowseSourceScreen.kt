@@ -22,7 +22,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -32,44 +31,47 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
-import cafe.adriel.voyager.core.model.rememberScreenModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import ephyra.core.util.ifSourcesLoaded
+import ephyra.core.common.Constants
+import ephyra.core.common.util.lang.launchIO
+import ephyra.domain.source.model.StubSource
+import ephyra.feature.browse.extension.details.SourcePreferencesScreen
 import ephyra.feature.browse.presentation.BrowseSourceContent
 import ephyra.feature.browse.presentation.MissingSourceScreen
 import ephyra.feature.browse.presentation.components.BrowseSourceToolbar
 import ephyra.feature.browse.presentation.components.RemoveMangaDialog
-import ephyra.presentation.category.components.ChangeCategoryDialog
-import ephyra.presentation.manga.DuplicateMangaDialog
-import ephyra.presentation.core.util.AssistContentScreen
-import ephyra.presentation.core.util.Screen
-import eu.kanade.tachiyomi.source.CatalogueSource
-import eu.kanade.tachiyomi.source.online.HttpSource
-import ephyra.feature.browse.extension.details.SourcePreferencesScreen
 import ephyra.feature.browse.source.browse.BrowseSourceScreenModel.Listing
-import ephyra.app.ui.category.CategoryScreen
-import ephyra.app.ui.manga.MangaScreen
-import ephyra.app.ui.webview.WebViewScreen
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.receiveAsFlow
+import ephyra.feature.category.CategoryScreen
+import ephyra.feature.category.components.ChangeCategoryDialog
+import ephyra.feature.manga.MangaScreen
+import ephyra.feature.manga.presentation.DuplicateMangaDialog
 import ephyra.feature.migration.dialog.MigrateMangaDialog
-import ephyra.presentation.core.util.collectAsLazyPagingItems
-import ephyra.core.common.Constants
-import ephyra.core.common.util.lang.launchIO
-import ephyra.domain.source.model.StubSource
+import ephyra.feature.webview.WebViewScreen
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.LoadingScreen
+import ephyra.presentation.core.ui.SearchableScreen
+import ephyra.presentation.core.util.AssistContentScreen
+import ephyra.presentation.core.util.Screen
+import ephyra.presentation.core.util.collectAsLazyPagingItems
+import ephyra.presentation.core.util.ifSourcesLoaded
 import ephyra.source.local.LocalSource
+import eu.kanade.tachiyomi.source.CatalogueSource
+import eu.kanade.tachiyomi.source.online.HttpSource
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.receiveAsFlow
+import org.koin.core.parameter.parametersOf
 
 data class BrowseSourceScreen(
     val sourceId: Long,
     private val listingQuery: String?,
-) : Screen(), AssistContentScreen {
+) : Screen(), AssistContentScreen, SearchableScreen {
 
     private var assistUrl: String? = null
 
@@ -82,7 +84,7 @@ data class BrowseSourceScreen(
             return
         }
 
-        val screenModel = rememberScreenModel { BrowseSourceScreenModel(sourceId, listingQuery) }
+        val screenModel = koinScreenModel<BrowseSourceScreenModel> { parametersOf(sourceId, listingQuery) }
         val state by screenModel.state.collectAsStateWithLifecycle()
 
         val navigator = LocalNavigator.currentOrThrow
@@ -306,8 +308,8 @@ data class BrowseSourceScreen(
         }
     }
 
-    suspend fun search(query: String) = queryEvent.send(SearchType.Text(query))
-    suspend fun searchGenre(name: String) = queryEvent.send(SearchType.Genre(name))
+    override suspend fun search(query: String) = queryEvent.send(SearchType.Text(query))
+    override suspend fun searchGenre(name: String) = queryEvent.send(SearchType.Genre(name))
 
     companion object {
         private val queryEvent = Channel<SearchType>()

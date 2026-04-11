@@ -9,14 +9,16 @@ import android.net.Uri
 import androidx.annotation.CallSuper
 import androidx.core.content.ContextCompat
 import ephyra.app.extension.ExtensionManager
-import ephyra.app.extension.model.InstallStep
+import ephyra.domain.extension.model.InstallStep
 import java.util.Collections
 import kotlin.concurrent.atomics.AtomicReference
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
 /**
  * Base implementation class for extension installer. To be used inside a foreground [Service].
  */
-abstract class Installer(
+@OptIn(ExperimentalAtomicApi::class)
+internal abstract class Installer(
     private val service: Service,
     private val extensionManager: ExtensionManager,
 ) {

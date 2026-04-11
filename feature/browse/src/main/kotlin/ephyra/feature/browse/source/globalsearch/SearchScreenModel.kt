@@ -5,9 +5,16 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.produceState
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import ephyra.core.common.preference.toggle
+import ephyra.core.common.util.lang.launchIO
+import ephyra.domain.extension.service.ExtensionManager
+import ephyra.domain.manga.interactor.GetManga
+import ephyra.domain.manga.interactor.NetworkToLocalManga
+import ephyra.domain.manga.model.Manga
+import ephyra.domain.manga.model.toDomainManga
+import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
 import ephyra.presentation.core.util.ioCoroutineScope
-import ephyra.app.extension.ExtensionManager
 import eu.kanade.tachiyomi.source.CatalogueSource
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.mutate
@@ -22,20 +29,13 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import ephyra.domain.manga.model.toDomainManga
-import ephyra.core.common.preference.toggle
-import ephyra.core.common.util.lang.launchIO
-import ephyra.domain.manga.interactor.GetManga
-import ephyra.domain.manga.interactor.NetworkToLocalManga
-import ephyra.domain.manga.model.Manga
-import ephyra.domain.source.service.SourceManager
-import ephyra.domain.source.service.SourceManager
 
 abstract class SearchScreenModel(
     initialState: State = State(),
     private val sourcePreferences: SourcePreferences,
-    private val sourceManager: SourceManager,
+    protected val sourceManager: SourceManager,
     private val extensionManager: ExtensionManager,
     private val networkToLocalManga: NetworkToLocalManga,
     private val getManga: GetManga,
@@ -44,12 +44,16 @@ abstract class SearchScreenModel(
     private val coroutineDispatcher = Dispatchers.IO.limitedParallelism(5)
     private var searchJob: Job? = null
 
-    private val enabledLanguages = sourcePreferences.enabledLanguages().get()
+    private val enabledLanguages = runBlocking { sourcePreferences.enabledLanguages().get() }
 
     // Parse Set<String> source IDs to Set<Long> once at construction time to avoid creating a
     // new String per source on every getEnabledSources()/sortComparator call.
-    private val disabledSourceIds = sourcePreferences.disabledSources().get().mapTo(HashSet()) { it.toLong() }
-    protected val pinnedSourceIds = sourcePreferences.pinnedSources().get().mapTo(HashSet()) { it.toLong() }
+    private val disabledSourceIds = runBlocking {
+        sourcePreferences.disabledSources().get()
+    }.mapTo(HashSet()) { it.toLong() }
+    protected val pinnedSourceIds = runBlocking {
+        sourcePreferences.pinnedSources().get()
+    }.mapTo(HashSet()) { it.toLong() }
 
     private var lastQuery: String? = null
     private var lastSourceFilter: SourceFilter? = null
@@ -131,7 +135,7 @@ abstract class SearchScreenModel(
     }
 
     fun toggleFilterResults() {
-        sourcePreferences.globalSearchFilterState().toggle()
+        screenModelScope.launch { sourcePreferences.globalSearchFilterState().toggle() }
     }
 
     fun search() {

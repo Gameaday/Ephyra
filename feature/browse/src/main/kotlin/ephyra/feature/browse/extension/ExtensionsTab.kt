@@ -5,25 +5,26 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import ephyra.domain.extension.model.Extension
+import ephyra.feature.browse.extension.details.ExtensionDetailsScreen
 import ephyra.feature.browse.presentation.ExtensionScreen
+import ephyra.feature.webview.WebViewScreen
+import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.TabContent
-import ephyra.feature.settings.screen.browse.ExtensionReposScreen
-import ephyra.app.extension.model.Extension
-import ephyra.feature.browse.extension.details.ExtensionDetailsScreen
-import ephyra.app.ui.webview.WebViewScreen
+import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.ui.ExtensionReposScreenFactory
 import ephyra.presentation.core.util.system.isPackageInstalled
 import kotlinx.collections.immutable.persistentListOf
-import ephyra.i18n.MR
-import ephyra.presentation.core.i18n.stringResource
+import org.koin.compose.koinInject
 
 @Composable
 fun extensionsTab(
@@ -31,6 +32,7 @@ fun extensionsTab(
 ): TabContent {
     val navigator = LocalNavigator.currentOrThrow
     val context = LocalContext.current
+    val extensionReposFactory = koinInject<ExtensionReposScreenFactory>()
 
     val state by extensionsScreenModel.state.collectAsStateWithLifecycle()
     var privateExtensionToUninstall by remember { mutableStateOf<Extension?>(null) }
@@ -46,7 +48,7 @@ fun extensionsTab(
             ),
             AppBar.OverflowAction(
                 title = stringResource(MR.strings.label_extension_repos),
-                onClick = { navigator.push(ExtensionReposScreen()) },
+                onClick = { navigator.push(extensionReposFactory.create(null)) },
             ),
         ),
         content = { contentPadding, _ ->

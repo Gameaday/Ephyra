@@ -1,17 +1,16 @@
 package ephyra.feature.security
 
-import android.hardware.biometrics.BiometricPrompt
 import android.os.Bundle
 import androidx.biometric.BiometricPrompt
 import androidx.core.app.ActivityCompat.finishAffinity
 import androidx.fragment.app.FragmentActivity
-import ephyra.app.ui.base.activity.BaseActivity
-import ephyra.app.ui.base.delegate.SecureActivityDelegate
-import ephyra.app.util.system.AuthenticatorUtil
-import ephyra.app.util.system.AuthenticatorUtil.startAuthentication
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.system.logcat
 import ephyra.i18n.MR
+import ephyra.presentation.core.ui.activity.BaseActivity
+import ephyra.presentation.core.ui.delegate.SecureActivityDelegateState
+import ephyra.presentation.core.util.system.AuthenticatorUtil
+import ephyra.presentation.core.util.system.AuthenticatorUtil.startAuthentication
 import logcat.LogPriority
 
 /**
@@ -40,7 +39,7 @@ class UnlockActivity : BaseActivity() {
                     result: BiometricPrompt.AuthenticationResult,
                 ) {
                     super.onAuthenticationSucceeded(activity, result)
-                    SecureActivityDelegate.unlock()
+                    SecureActivityDelegateState.unlock()
                     finish()
                 }
             },

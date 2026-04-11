@@ -198,16 +198,19 @@ dependencies {
     implementation(projects.presentationWidget)
 
     // Feature modules
+    implementation(projects.feature.browse)
     implementation(projects.feature.category)
     implementation(projects.feature.download)
     implementation(projects.feature.history)
     implementation(projects.feature.library)
     implementation(projects.feature.manga)
+    implementation(projects.feature.migration)
     implementation(projects.feature.more)
     implementation(projects.feature.reader)
     implementation(projects.feature.security)
     implementation(projects.feature.settings)
     implementation(projects.feature.stats)
+    implementation(projects.feature.upcoming)
     implementation(projects.feature.updates)
     implementation(projects.feature.webview)
     implementation(projects.telemetry)
@@ -227,6 +230,8 @@ dependencies {
     implementation(androidx.paging.compose)
 
     implementation(libs.bundles.sqlite)
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
 
     implementation(kotlinx.reflect)
     implementation(kotlinx.immutables)
@@ -343,3 +348,6 @@ buildscript {
     }
 }
 
+koinCompiler {
+    compileSafety.set(false)
+}

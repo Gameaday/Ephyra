@@ -9,6 +9,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.domain.manga.model.Manga
 import ephyra.presentation.core.util.Screen
 import org.koin.core.parameter.parametersOf
+import ephyra.feature.manga.presentation.MangaNotesScreen as MangaNotesContent
 
 class MangaNotesScreen(
     private val manga: Manga,
@@ -20,7 +21,7 @@ class MangaNotesScreen(
         val screenModel = koinScreenModel<MangaNotesScreenModel> { parametersOf(manga) }
         val state by screenModel.state.collectAsStateWithLifecycle()
 
-        MangaNotesScreen(
+        MangaNotesContent(
             state = state,
             navigateUp = navigator::pop,
             onUpdate = screenModel::updateNotes,

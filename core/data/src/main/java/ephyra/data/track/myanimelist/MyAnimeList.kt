@@ -3,20 +3,21 @@ package ephyra.data.track.myanimelist
 import android.app.Application
 import dev.icerock.moko.resources.StringResource
 import ephyra.app.core.common.R
-import ephyra.data.database.models.Track as DbTrack
 import ephyra.data.track.BaseTracker
 import ephyra.data.track.DeletableTracker
 import ephyra.data.track.myanimelist.dto.MALOAuth
 import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.InsertTrack
-import ephyra.domain.track.service.TrackPreferences
-import ephyra.i18n.MR
-import eu.kanade.tachiyomi.network.NetworkHelper
-import kotlinx.serialization.json.Json
 import ephyra.domain.track.model.Track
 import ephyra.domain.track.model.TrackSearch
 import ephyra.domain.track.model.toDbTrack
 import ephyra.domain.track.model.toDomainTrack
+import ephyra.domain.track.service.TrackPreferences
+import ephyra.i18n.MR
+import eu.kanade.tachiyomi.network.NetworkHelper
+import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
+import ephyra.data.database.models.Track as DbTrack
 
 class MyAnimeList(
     id: Long,
@@ -43,7 +44,6 @@ class MyAnimeList(
         private val SCORE_LIST = IntRange(0, 10)
             .map(Int::toString)
     }
-
 
     private val interceptor by lazy { MyAnimeListInterceptor(this, json) }
     private val api by lazy { MyAnimeListApi(id, client, interceptor, json) }
@@ -169,9 +169,8 @@ class MyAnimeList(
         return trackPreferences.trackAuthExpired(this).get()
     }
 
-    @Suppress("DEPRECATION")
     fun getIfAuthExpiredSync(): Boolean {
-        return trackPreferences.trackAuthExpired(this).getSync()
+        return runBlocking { trackPreferences.trackAuthExpired(this@MyAnimeList).get() }
     }
 
     fun setAuthExpired() {
@@ -190,10 +189,9 @@ class MyAnimeList(
         }
     }
 
-    @Suppress("DEPRECATION")
     fun loadOAuthSync(): MALOAuth? {
         return try {
-            json.decodeFromString<MALOAuth>(trackPreferences.trackToken(this).getSync())
+            json.decodeFromString<MALOAuth>(runBlocking { trackPreferences.trackToken(this@MyAnimeList).get() })
         } catch (e: Exception) {
             null
         }

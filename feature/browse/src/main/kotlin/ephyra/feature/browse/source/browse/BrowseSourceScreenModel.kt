@@ -13,18 +13,31 @@ import androidx.paging.filter
 import androidx.paging.map
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import org.koin.core.annotation.Factory
-import org.koin.core.annotation.InjectedParam
-import ephyra.core.preference.asState
+import ephyra.core.common.preference.CheckboxState
+import ephyra.core.common.preference.mapAsCheckboxState
+import ephyra.core.common.util.lang.launchIO
+import ephyra.data.cache.CoverCache
+import ephyra.domain.category.interactor.GetCategories
+import ephyra.domain.category.interactor.SetMangaCategories
+import ephyra.domain.category.model.Category
+import ephyra.domain.chapter.interactor.SetMangaDefaultChapterFlags
+import ephyra.domain.library.service.LibraryPreferences
+import ephyra.domain.manga.interactor.GetDuplicateLibraryManga
+import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.interactor.UpdateManga
+import ephyra.domain.manga.model.Manga
+import ephyra.domain.manga.model.MangaWithChapterCount
+import ephyra.domain.manga.model.toMangaUpdate
 import ephyra.domain.source.interactor.GetIncognitoState
+import ephyra.domain.source.interactor.GetRemoteManga
+import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
 import ephyra.domain.track.interactor.AddTracks
+import ephyra.presentation.core.util.asState
 import ephyra.presentation.core.util.ioCoroutineScope
-import ephyra.data.cache.CoverCache
+import ephyra.presentation.core.util.manga.removeCovers
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.model.FilterList
-import ephyra.app.util.removeCovers
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.SharingStarted
@@ -35,21 +48,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import ephyra.core.common.preference.CheckboxState
-import ephyra.core.common.preference.mapAsCheckboxState
-import ephyra.core.common.util.lang.launchIO
-import ephyra.domain.category.interactor.GetCategories
-import ephyra.domain.category.interactor.SetMangaCategories
-import ephyra.domain.category.model.Category
-import ephyra.domain.chapter.interactor.SetMangaDefaultChapterFlags
-import ephyra.domain.library.service.LibraryPreferences
-import ephyra.domain.manga.interactor.GetDuplicateLibraryManga
-import ephyra.domain.manga.interactor.GetManga
-import ephyra.domain.manga.model.Manga
-import ephyra.domain.manga.model.MangaWithChapterCount
-import ephyra.domain.manga.model.toMangaUpdate
-import ephyra.domain.source.interactor.GetRemoteManga
-import ephyra.domain.source.service.SourceManager
+import kotlinx.coroutines.runBlocking
+import org.koin.core.annotation.Factory
+import org.koin.core.annotation.InjectedParam
 import java.time.Instant
 import eu.kanade.tachiyomi.source.model.Filter as SourceModelFilter
 
@@ -103,7 +104,7 @@ class BrowseSourceScreenModel(
     /**
      * Flow of Pager flow tied to [State.listing]
      */
-    private val hideInLibraryItems = sourcePreferences.hideInLibraryItems().get()
+    private val hideInLibraryItems = runBlocking { sourcePreferences.hideInLibraryItems().get() }
     val mangaPagerFlowFlow = state.map { it.listing }
         .distinctUntilChanged()
         .map { listing ->
@@ -123,11 +124,13 @@ class BrowseSourceScreenModel(
 
     fun getColumnsPreference(orientation: Int): GridCells {
         val isLandscape = orientation == Configuration.ORIENTATION_LANDSCAPE
-        val columns = if (isLandscape) {
-            libraryPreferences.landscapeColumns()
-        } else {
-            libraryPreferences.portraitColumns()
-        }.get()
+        val columns = runBlocking {
+            if (isLandscape) {
+                libraryPreferences.landscapeColumns()
+            } else {
+                libraryPreferences.portraitColumns()
+            }.get()
+        }
         return if (columns == 0) GridCells.Adaptive(128.dp) else GridCells.Fixed(columns)
     }
 
