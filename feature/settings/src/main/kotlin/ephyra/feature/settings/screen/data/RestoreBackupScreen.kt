@@ -11,7 +11,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -20,25 +19,30 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.core.net.toUri
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import ephyra.presentation.core.components.AppBar
-import ephyra.presentation.core.components.WarningBanner
-import ephyra.presentation.core.util.Screen
-import ephyra.app.data.backup.BackupFileValidator
-import ephyra.app.data.backup.restore.BackupRestoreJob
-import ephyra.app.data.backup.restore.RestoreOptions
 import ephyra.core.common.util.system.DeviceUtil
-import kotlinx.coroutines.flow.update
+import ephyra.data.backup.BackupFileValidator
+import ephyra.data.backup.restore.RestoreOptions
+import ephyra.domain.backup.service.RestoreScheduler
+import ephyra.domain.source.service.SourceManager
+import ephyra.domain.track.service.TrackerManager
 import ephyra.i18n.MR
+import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.LabeledCheckbox
 import ephyra.presentation.core.components.LazyColumnWithAction
 import ephyra.presentation.core.components.SectionCard
+import ephyra.presentation.core.components.WarningBanner
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.util.Screen
+import kotlinx.coroutines.flow.update
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 class RestoreBackupScreen(
     private val uri: String,
@@ -71,7 +75,7 @@ class RestoreBackupScreen(
             ) {
                 if (DeviceUtil.isMiui && DeviceUtil.isMiuiOptimizationDisabled()) {
                     item {
-                        WarningBanner(MR.strings.restore_miui_warning)
+                        WarningBanner(stringResource(MR.strings.restore_miui_warning))
                     }
                 }
 
@@ -167,7 +171,11 @@ class RestoreBackupScreen(
 private class RestoreBackupScreenModel(
     private val context: Context,
     private val uri: String,
-) : StateScreenModel<RestoreBackupScreenModel.State>(State()) {
+) : StateScreenModel<RestoreBackupScreenModel.State>(State()), KoinComponent {
+
+    private val restoreScheduler: RestoreScheduler by inject()
+    private val trackerManager: TrackerManager by inject()
+    private val sourceManager: SourceManager by inject()
 
     init {
         validate(uri.toUri())
@@ -182,16 +190,15 @@ private class RestoreBackupScreenModel(
     }
 
     fun startRestore() {
-        BackupRestoreJob.start(
-            context = context,
+        restoreScheduler.startRestoreNow(
             uri = uri.toUri(),
-            options = state.value.options,
+            optionsArray = state.value.options.asBooleanArray(),
         )
     }
 
     private fun validate(uri: Uri) {
         val results = try {
-            BackupFileValidator(context).validate(uri)
+            BackupFileValidator(context, trackerManager, sourceManager).validate(uri)
         } catch (e: Exception) {
             setError(
                 error = InvalidRestore(uri, e.message.toString()),
@@ -202,7 +209,11 @@ private class RestoreBackupScreenModel(
 
         if (results.missingSources.isNotEmpty() || results.missingTrackers.isNotEmpty()) {
             setError(
-                error = MissingRestoreComponents(uri, results.missingSources, results.missingTrackers),
+                error = MissingRestoreComponents(
+                    uri,
+                    results.missingSources.toList(),
+                    results.missingTrackers.toList(),
+                ),
                 canRestore = true,
             )
             return

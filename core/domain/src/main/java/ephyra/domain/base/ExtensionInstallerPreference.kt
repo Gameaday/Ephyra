@@ -8,6 +8,7 @@ import ephyra.core.common.util.system.hasMiuiPackageInstaller
 import ephyra.core.common.util.system.isShizukuInstalled
 import ephyra.domain.base.BasePreferences.ExtensionInstaller
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.runBlocking
 
 class ExtensionInstallerPreference(
     private val context: Context,
@@ -51,7 +52,7 @@ class ExtensionInstallerPreference(
     @Deprecated("Use suspend fun get() instead", ReplaceWith("get()"))
     override fun getSync(): ExtensionInstaller {
         @Suppress("DEPRECATION")
-        return check(basePref.getSync())
+        return check(runBlocking { basePref.get() })
     }
 
     override suspend fun get(): ExtensionInstaller {

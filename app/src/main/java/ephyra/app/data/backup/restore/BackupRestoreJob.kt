@@ -3,11 +3,16 @@ package ephyra.app.data.backup.restore
 import android.content.Context
 import android.net.Uri
 import androidx.work.CoroutineWorker
+import androidx.work.Data
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkerParameters
 import ephyra.app.data.backup.BackupNotifier
-import ephyra.data.backup.restore.BackupRestorer
+import ephyra.core.common.util.system.isRunning
 import ephyra.core.common.util.system.logcat
 import ephyra.core.common.util.system.setForegroundSafely
+import ephyra.core.common.util.system.workManager
+import ephyra.data.backup.restore.BackupRestorer
 import logcat.LogPriority
 
 class BackupRestoreJob(
@@ -38,6 +43,27 @@ class BackupRestoreJob(
     }
 
     companion object {
+        private const val TAG = "BackupRestore"
         const val LOCATION_EXTRA = "location"
+
+        fun start(context: Context, uri: Uri, optionsArray: BooleanArray? = null) {
+            val data = Data.Builder()
+                .putString(LOCATION_EXTRA, uri.toString())
+                .build()
+
+            val request = OneTimeWorkRequestBuilder<BackupRestoreJob>()
+                .addTag(TAG)
+                .setInputData(data)
+                .build()
+            context.workManager.enqueueUniqueWork(TAG, ExistingWorkPolicy.KEEP, request)
+        }
+
+        fun isRunning(context: Context): Boolean {
+            return context.workManager.isRunning(TAG)
+        }
+
+        fun stop(context: Context) {
+            context.workManager.cancelUniqueWork(TAG)
+        }
     }
 }

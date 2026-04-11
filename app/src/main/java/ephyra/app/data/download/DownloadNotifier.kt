@@ -5,19 +5,19 @@ import android.content.Context
 import android.graphics.BitmapFactory
 import androidx.core.app.NotificationCompat
 import ephyra.app.R
-import ephyra.core.common.core.security.SecurityPreferences
-import ephyra.domain.download.model.Download
-import ephyra.domain.download.service.DownloadNotifier as IDownloadNotifier
 import ephyra.app.data.notification.NotificationHandler
 import ephyra.app.data.notification.NotificationReceiver
-import ephyra.data.notification.Notifications
+import ephyra.core.common.core.security.SecurityPreferences
+import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.lang.chop
 import ephyra.core.common.util.system.cancelNotification
 import ephyra.core.common.util.system.notificationBuilder
 import ephyra.core.common.util.system.notify
-import ephyra.core.common.i18n.stringResource
+import ephyra.data.notification.Notifications
+import ephyra.domain.download.model.Download
 import ephyra.i18n.MR
 import java.util.regex.Pattern
+import ephyra.domain.download.service.DownloadNotifier as IDownloadNotifier
 
 /**
  * DownloadNotifier is used to show notifications when downloading one or multiple chapters.
@@ -80,12 +80,12 @@ class DownloadNotifier(
                 isDownloading = true
                 // Pause action
                 addAction(
-                    ephyra.app.core.common.R.drawable.ic_pause_24dp,
+                    R.drawable.ic_pause_24dp,
                     context.stringResource(MR.strings.action_pause),
                     NotificationReceiver.pauseDownloadsPendingBroadcast(context),
                 )
                 addAction(
-                    ephyra.app.core.common.R.drawable.ic_book_24dp,
+                    R.drawable.ic_book_24dp,
                     context.stringResource(MR.strings.action_show_manga),
                     NotificationReceiver.openEntryPendingActivity(context, download.manga.id),
                 )
@@ -125,7 +125,7 @@ class DownloadNotifier(
         with(progressNotificationBuilder) {
             setContentTitle(context.stringResource(MR.strings.chapter_paused))
             setContentText(context.stringResource(MR.strings.download_notifier_download_paused))
-            setSmallIcon(ephyra.app.core.common.R.drawable.ic_pause_24dp)
+            setSmallIcon(R.drawable.ic_pause_24dp)
             setProgress(0, 0, false)
             setOngoing(false)
             clearActions()
@@ -133,13 +133,13 @@ class DownloadNotifier(
             setContentIntent(NotificationHandler.openDownloadManagerPendingActivity(context))
             // Resume action
             addAction(
-                ephyra.app.core.common.R.drawable.ic_play_arrow_24dp,
+                R.drawable.ic_play_arrow_24dp,
                 context.stringResource(MR.strings.action_resume),
                 NotificationReceiver.resumeDownloadsPendingBroadcast(context),
             )
             // Clear action
             addAction(
-                ephyra.app.core.common.R.drawable.ic_close_24dp,
+                R.drawable.ic_close_24dp,
                 context.stringResource(MR.strings.action_cancel_all),
                 NotificationReceiver.clearDownloadsPendingBroadcast(context),
             )
@@ -173,13 +173,13 @@ class DownloadNotifier(
         with(errorNotificationBuilder) {
             setContentTitle(context.stringResource(MR.strings.download_notifier_downloader_title))
             setStyle(NotificationCompat.BigTextStyle().bigText(reason))
-            setSmallIcon(ephyra.app.core.common.R.drawable.ic_warning_white_24dp)
+            setSmallIcon(R.drawable.ic_warning_white_24dp)
             setAutoCancel(true)
             clearActions()
             setContentIntent(NotificationHandler.openDownloadManagerPendingActivity(context))
             if (mangaId != null) {
                 addAction(
-                    ephyra.app.core.common.R.drawable.ic_book_24dp,
+                    R.drawable.ic_book_24dp,
                     context.stringResource(MR.strings.action_show_manga),
                     NotificationReceiver.openEntryPendingActivity(context, mangaId),
                 )
@@ -210,12 +210,12 @@ class DownloadNotifier(
                 mangaTitle?.plus(": $chapter") ?: context.stringResource(MR.strings.download_notifier_downloader_title),
             )
             setContentText(error ?: context.stringResource(MR.strings.download_notifier_unknown_error))
-            setSmallIcon(ephyra.app.core.common.R.drawable.ic_warning_white_24dp)
+            setSmallIcon(R.drawable.ic_warning_white_24dp)
             clearActions()
             setContentIntent(NotificationHandler.openDownloadManagerPendingActivity(context))
             if (mangaId != null) {
                 addAction(
-                    ephyra.app.core.common.R.drawable.ic_book_24dp,
+                    R.drawable.ic_book_24dp,
                     context.stringResource(MR.strings.action_show_manga),
                     NotificationReceiver.openEntryPendingActivity(context, mangaId),
                 )

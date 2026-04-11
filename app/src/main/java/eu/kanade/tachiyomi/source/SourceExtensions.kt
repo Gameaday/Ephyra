@@ -3,10 +3,10 @@ package eu.kanade.tachiyomi.source
 import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.service.SourcePreferences
 import ephyra.source.local.isLocal
-
+import kotlinx.coroutines.runBlocking
 
 fun Source.getNameForMangaInfo(preferences: SourcePreferences): String {
-    val enabledLanguages = preferences.enabledLanguages().get()
+    val enabledLanguages = runBlocking { preferences.enabledLanguages().get() }
         .filterNot { it in listOf("all", "other") }
     val hasOneActiveLanguages = enabledLanguages.size == 1
     val isInEnabledLanguages = lang in enabledLanguages

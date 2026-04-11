@@ -1,8 +1,8 @@
 package ephyra.feature.library
 
-import eu.kanade.tachiyomi.source.getNameForMangaInfo
 import ephyra.domain.library.model.LibraryManga
 import ephyra.domain.source.service.SourceManager
+import ephyra.presentation.core.util.system.getNameForMangaInfo
 import ephyra.source.local.LocalSource
 
 data class LibraryItem(

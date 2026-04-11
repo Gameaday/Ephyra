@@ -1,8 +1,6 @@
 plugins {
     id("ephyra.library")
     id("ephyra.library.compose")
-
-    alias(libs.plugins.koin.compiler)
 }
 
 android {
@@ -21,6 +19,7 @@ dependencies {
     // Third-party libraries
     implementation(libs.logcat)
     api(libs.bundles.voyager)
+    api(androidx.biometricktx)
 
     // Dependency Injection (Koin 4.2.0)
     api(libs.koin.core)

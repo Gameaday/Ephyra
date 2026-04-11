@@ -1,6 +1,6 @@
-package ephyra.app.ui.manga.track
+package ephyra.feature.manga.track
 
-import ephyra.data.track.Tracker
 import ephyra.domain.track.model.Track
+import ephyra.domain.track.service.Tracker
 
 data class TrackItem(val track: Track?, val tracker: Tracker)

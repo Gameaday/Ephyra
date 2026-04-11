@@ -4,8 +4,8 @@ import android.graphics.Color
 import android.graphics.PointF
 import android.graphics.RectF
 import dev.icerock.moko.resources.StringResource
-import ephyra.feature.reader.setting.ReaderPreferences
-import ephyra.app.util.lang.invert
+import ephyra.domain.reader.service.ReaderPreferences
+import ephyra.domain.reader.util.invert
 import ephyra.i18n.MR
 
 abstract class ViewerNavigation {

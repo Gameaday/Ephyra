@@ -15,12 +15,12 @@ import androidx.compose.material.icons.outlined.Deselect
 import androidx.compose.material.icons.outlined.DragHandle
 import androidx.compose.material.icons.outlined.SelectAll
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SmallExtendedFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -41,15 +41,15 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import ephyra.app.ui.browse.migration.search.MigrateSearchScreen
-import ephyra.app.util.system.LocaleHelper
 import ephyra.core.common.util.lang.launchIO
+import ephyra.core.common.util.system.LocaleHelper
 import ephyra.domain.source.model.Source
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
+import ephyra.feature.browse.migration.search.MigrateSearchScreen
+import ephyra.feature.browse.presentation.components.SourceIcon
 import ephyra.feature.migration.list.MigrationListScreen
 import ephyra.i18n.MR
-import ephyra.presentation.browse.components.SourceIcon
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.FastScrollLazyColumn
@@ -58,11 +58,12 @@ import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.LoadingScreen
-import ephyra.presentation.core.util.shouldExpandFAB
 import ephyra.presentation.core.util.Screen
+import ephyra.presentation.core.util.shouldExpandFAB
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.runBlocking
 import sh.calvin.reorderable.ReorderableCollectionItemScope
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.ReorderableLazyListState
@@ -141,7 +142,7 @@ class MigrationConfigScreen(private val mangaIds: Collection<Long>) : Screen() {
                 )
             },
             floatingActionButton = {
-                SmallExtendedFloatingActionButton(
+                ExtendedFloatingActionButton(
                     text = { Text(text = stringResource(MR.strings.migrationConfigScreen_continueButtonText)) },
                     icon = { Icon(imageVector = Icons.AutoMirrored.Outlined.ArrowForward, contentDescription = null) },
                     onClick = {
@@ -308,7 +309,7 @@ class MigrationConfigScreen(private val mangaIds: Collection<Long>) : Screen() {
         )
     }
 
-    private class ScreenModel(
+    internal class ScreenModel(
         val sourcePreferences: SourcePreferences,
         private val sourceManager: SourceManager,
     ) : StateScreenModel<ScreenModel.State>(State()) {
@@ -338,7 +339,7 @@ class MigrationConfigScreen(private val mangaIds: Collection<Long>) : Screen() {
             saveSources()
         }
 
-        private fun initSources() {
+        private suspend fun initSources() {
             val languages = sourcePreferences.enabledLanguages().get()
             val pinnedSources = sourcePreferences.pinnedSources().get().mapNotNull { it.toLongOrNull() }
             val includedSources = sourcePreferences.migrationSources().get()
@@ -381,8 +382,10 @@ class MigrationConfigScreen(private val mangaIds: Collection<Long>) : Screen() {
         }
 
         fun toggleSelection(config: SelectionConfig) {
-            val pinnedSources = sourcePreferences.pinnedSources().get().mapNotNull { it.toLongOrNull() }
-            val disabledSources = sourcePreferences.disabledSources().get().mapNotNull { it.toLongOrNull() }
+            val pinnedSources = runBlocking { sourcePreferences.pinnedSources().get() }.mapNotNull { it.toLongOrNull() }
+            val disabledSources = runBlocking {
+                sourcePreferences.disabledSources().get()
+            }.mapNotNull { it.toLongOrNull() }
             val isSelected: (Long) -> Boolean = {
                 when (config) {
                     SelectionConfig.All -> true

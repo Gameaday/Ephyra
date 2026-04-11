@@ -3,7 +3,7 @@ package ephyra.feature.manga
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.model.Manga
-import ephyra.feature.manga.presentation.DownloadAction
+import ephyra.presentation.core.util.manga.DownloadAction
 
 sealed interface MangaScreenEvent {
     data class FetchAllFromSource(val manualFetch: Boolean = false) : MangaScreenEvent
@@ -42,6 +42,7 @@ sealed interface MangaScreenEvent {
 
     data class ToggleAllSelection(val selected: Boolean) : MangaScreenEvent
     data object InvertSelection : MangaScreenEvent
+    data object ClearSelection : MangaScreenEvent
     data object DismissDialog : MangaScreenEvent
     data class ShowDeleteChapterDialog(val chapters: List<Chapter>) : MangaScreenEvent
     data object ShowSettingsDialog : MangaScreenEvent

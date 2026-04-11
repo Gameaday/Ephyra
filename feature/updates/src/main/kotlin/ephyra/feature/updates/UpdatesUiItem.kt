@@ -32,21 +32,21 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import ephyra.core.download.model.Download
+import ephyra.domain.download.model.Download
 import ephyra.domain.updates.model.UpdatesWithRelations
+import ephyra.feature.manga.presentation.components.ChapterDownloadAction
+import ephyra.feature.manga.presentation.components.ChapterDownloadIndicator
+import ephyra.feature.manga.presentation.components.DotSeparatorText
+import ephyra.feature.manga.presentation.components.MangaCover
 import ephyra.i18n.MR
-import ephyra.presentation.core.components.relativeDateText
 import ephyra.presentation.core.components.ListGroupHeader
 import ephyra.presentation.core.components.material.DISABLED_ALPHA
 import ephyra.presentation.core.components.material.padding
+import ephyra.presentation.core.components.relativeDateText
 import ephyra.presentation.core.i18n.stringResource
-import ephyra.presentation.core.util.selectedBackground
-import ephyra.presentation.manga.components.ChapterDownloadAction
-import ephyra.presentation.manga.components.ChapterDownloadIndicator
-import ephyra.presentation.manga.components.DotSeparatorText
-import ephyra.presentation.manga.components.MangaCover
 import ephyra.presentation.core.util.animateItemFastScroll
 import ephyra.presentation.core.util.relativeTimeSpanString
+import ephyra.presentation.core.util.selectedBackground
 import kotlin.compareTo
 
 internal fun LazyListScope.updatesLastUpdatedItem(
@@ -103,7 +103,7 @@ internal fun LazyListScope.updatesUiItems(
                     update = updatesItem.update,
                     selected = updatesItem.selected,
                     readProgress = updatesItem.update.lastPageRead
-                        .takeIf { !updatesItem.update.read && it compareTo 0L }
+                        .takeIf { !updatesItem.update.read && it > 0L }
                         ?.let {
                             stringResource(
                                 MR.strings.chapter_progress,

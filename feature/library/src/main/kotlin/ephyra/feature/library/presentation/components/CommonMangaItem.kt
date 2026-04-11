@@ -37,7 +37,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import ephyra.presentation.manga.components.MangaCover
+import ephyra.feature.manga.presentation.components.MangaCover
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.BadgeGroup
 import ephyra.presentation.core.i18n.stringResource

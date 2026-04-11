@@ -69,7 +69,8 @@ import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
-import ephyra.data.track.model.TrackSearch
+import ephyra.domain.track.model.TrackSearch
+import ephyra.feature.manga.presentation.components.MangaCover
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.DropdownMenu
 import ephyra.presentation.core.components.ScrollbarLazyColumn
@@ -82,7 +83,6 @@ import ephyra.presentation.core.util.plus
 import ephyra.presentation.core.util.runOnEnterKeyPressed
 import ephyra.presentation.core.util.secondaryItemAlpha
 import ephyra.presentation.core.util.system.openInBrowser
-import ephyra.presentation.manga.components.MangaCover
 import ephyra.presentation.theme.TachiyomiPreviewTheme
 import kotlinx.coroutines.launch
 
@@ -214,7 +214,7 @@ fun TrackerSearch(
                     ) {
                         items(
                             items = availableTracks,
-                            key = { "tracker-${it.tracker_id}-${it.remote_id}" },
+                            key = { "tracker-${it.remote_id}" },
                         ) {
                             SearchResultItem(
                                 trackSearch = it,
@@ -328,22 +328,10 @@ private fun SearchResultItem(
                             text = type,
                         )
                     }
-                    if (trackSearch.start_date.isNotBlank()) {
-                        SearchResultItemDetails(
-                            title = stringResource(MR.strings.label_started),
-                            text = trackSearch.start_date,
-                        )
-                    }
                     if (status.isNotBlank()) {
                         SearchResultItemDetails(
                             title = stringResource(MR.strings.track_status),
                             text = status,
-                        )
-                    }
-                    if (trackSearch.score != -1.0) {
-                        SearchResultItemDetails(
-                            title = stringResource(MR.strings.score),
-                            text = trackSearch.score.toString(),
                         )
                     }
                 }

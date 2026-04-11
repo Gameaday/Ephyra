@@ -12,3 +12,13 @@ fun Source.icon(extensionManager: ExtensionManager): ImageBitmap? {
         ?.toBitmap()
         ?.asImageBitmap()
 }
+
+/** Returns an icon for a domain [Source] model using the given [ExtensionManager]. */
+fun ephyra.domain.source.model.Source.icon(extensionManager: ExtensionManager): ImageBitmap? {
+    return (extensionManager.getAppIconForSource(id) as? Drawable)
+        ?.toBitmap()
+        ?.asImageBitmap()
+}
+
+/** Returns a human-readable name suitable for display next to a manga info label. */
+fun Source.getNameForMangaInfo(): String = toString()

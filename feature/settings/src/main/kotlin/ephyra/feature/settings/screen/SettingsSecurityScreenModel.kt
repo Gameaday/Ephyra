@@ -1,8 +1,8 @@
 package ephyra.feature.settings.screen
 
 import cafe.adriel.voyager.core.model.ScreenModel
-import ephyra.domain.security.service.PrivacyPreferences
-import ephyra.domain.security.service.SecurityPreferences
+import ephyra.core.common.core.security.PrivacyPreferences
+import ephyra.core.common.core.security.SecurityPreferences
 
 class SettingsSecurityScreenModel(
     val securityPreferences: SecurityPreferences,

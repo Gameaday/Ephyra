@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -26,10 +26,10 @@ import ephyra.feature.settings.widget.SwitchPreferenceWidget
 import ephyra.feature.settings.widget.TextPreferenceWidget
 import ephyra.feature.settings.widget.TitleFontSize
 import ephyra.feature.settings.widget.TrackingPreferenceWidget
-import kotlinx.coroutines.launch
 import ephyra.presentation.core.components.BaseSliderItem
 import ephyra.presentation.core.theme.MotionTokens
 import ephyra.presentation.core.util.collectAsState
+import kotlinx.coroutines.launch
 
 val LocalPreferenceHighlighted = compositionLocalOf(structuralEqualityPolicy()) { false }
 val LocalPreferenceMinHeight = compositionLocalOf(structuralEqualityPolicy()) { 56.dp }
@@ -71,7 +71,7 @@ internal fun PreferenceItem(
     ) {
         when (item) {
             is Preference.PreferenceItem.SwitchPreference -> {
-                val value by item.preference.collectAsStateWithLifecycle()
+                val value by item.preference.collectAsState()
                 SwitchPreferenceWidget(
                     title = item.title,
                     subtitle = item.subtitle,
@@ -109,7 +109,7 @@ internal fun PreferenceItem(
             }
 
             is Preference.PreferenceItem.ListPreference<*> -> {
-                val value by item.preference.collectAsStateWithLifecycle()
+                val value by item.preference.collectAsState()
                 ListPreferenceWidget(
                     value = value,
                     title = item.title,
@@ -138,7 +138,7 @@ internal fun PreferenceItem(
             }
 
             is Preference.PreferenceItem.MultiSelectListPreference -> {
-                val values by item.preference.collectAsStateWithLifecycle()
+                val values by item.preference.collectAsState()
                 MultiSelectListPreferenceWidget(
                     preference = item,
                     values = values,
@@ -162,7 +162,7 @@ internal fun PreferenceItem(
             }
 
             is Preference.PreferenceItem.EditTextPreference -> {
-                val values by item.preference.collectAsStateWithLifecycle()
+                val values by item.preference.collectAsState()
                 EditTextPreferenceWidget(
                     title = item.title,
                     subtitle = item.subtitle,
@@ -177,9 +177,7 @@ internal fun PreferenceItem(
             }
 
             is Preference.PreferenceItem.TrackerPreference -> {
-                val isLoggedIn by item.tracker.let { tracker ->
-                    tracker.isLoggedInFlow.collectAsState(tracker.isLoggedIn)
-                }
+                val isLoggedIn by item.tracker.isLoggedInFlow.collectAsState(initial = false)
                 TrackingPreferenceWidget(
                     tracker = item.tracker,
                     checked = isLoggedIn,

@@ -11,6 +11,7 @@ import ephyra.domain.chapter.interactor.SyncChaptersWithSource
 import ephyra.domain.manga.interactor.GetFavoritesByCanonicalId
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.interactor.NetworkToLocalManga
+import ephyra.domain.manga.interactor.SmartSourceSearchEngine
 import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.toSManga
@@ -19,7 +20,6 @@ import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
 import ephyra.feature.migration.list.models.MigratingManga
 import ephyra.feature.migration.list.models.MigratingManga.SearchResult
-import ephyra.feature.migration.list.search.SmartSourceSearchEngine
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.getNameForMangaInfo
 import kotlinx.collections.immutable.ImmutableList
@@ -37,6 +37,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import logcat.LogPriority
@@ -60,8 +61,8 @@ class MigrationListScreenModel(
     val items
         inline get() = state.value.items
 
-    private val hideUnmatched = preferences.migrationHideUnmatched().get()
-    private val hideWithoutUpdates = preferences.migrationHideWithoutUpdates().get()
+    private val hideUnmatched = runBlocking { preferences.migrationHideUnmatched().get() }
+    private val hideWithoutUpdates = runBlocking { preferences.migrationHideWithoutUpdates().get() }
 
     private val navigateBackChannel = Channel<Unit>()
     val navigateBackEvent = navigateBackChannel.receiveAsFlow()

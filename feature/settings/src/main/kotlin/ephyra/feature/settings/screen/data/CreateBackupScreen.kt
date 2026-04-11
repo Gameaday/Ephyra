@@ -8,29 +8,31 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import ephyra.presentation.core.components.AppBar
-import ephyra.presentation.core.components.WarningBanner
-import ephyra.presentation.core.util.Screen
-import ephyra.app.data.backup.create.BackupCreateJob
-import ephyra.app.data.backup.create.BackupCreator
-import ephyra.app.data.backup.create.BackupOptions
 import ephyra.core.common.util.system.DeviceUtil
-import ephyra.presentation.core.util.system.toast
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.coroutines.flow.update
+import ephyra.data.backup.create.BackupCreator
+import ephyra.data.backup.create.BackupOptions
+import ephyra.domain.backup.service.BackupScheduler
 import ephyra.i18n.MR
+import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.LabeledCheckbox
 import ephyra.presentation.core.components.LazyColumnWithAction
 import ephyra.presentation.core.components.SectionCard
+import ephyra.presentation.core.components.WarningBanner
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.util.Screen
+import ephyra.presentation.core.util.system.toast
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.coroutines.flow.update
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 class CreateBackupScreen : Screen() {
 
@@ -50,7 +52,7 @@ class CreateBackupScreen : Screen() {
                     Intent.FLAG_GRANT_READ_URI_PERMISSION or
                         Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
                 )
-                model.createBackup(context, it)
+                model.createBackup(it)
                 navigator.pop()
             }
         }
@@ -69,7 +71,7 @@ class CreateBackupScreen : Screen() {
                 actionLabel = stringResource(MR.strings.action_create),
                 actionEnabled = state.options.canCreate(),
                 onClickAction = {
-                    if (!BackupCreateJob.isManualJobRunning(context)) {
+                    if (!model.isBackupRunning()) {
                         try {
                             chooseBackupDir.launch(BackupCreator.getFilename())
                         } catch (e: ActivityNotFoundException) {
@@ -82,7 +84,7 @@ class CreateBackupScreen : Screen() {
             ) {
                 if (DeviceUtil.isMiui && DeviceUtil.isMiuiOptimizationDisabled()) {
                     item {
-                        WarningBanner(MR.strings.restore_miui_warning)
+                        WarningBanner(stringResource(MR.strings.restore_miui_warning))
                     }
                 }
 
@@ -120,7 +122,11 @@ class CreateBackupScreen : Screen() {
     }
 }
 
-private class CreateBackupScreenModel : StateScreenModel<CreateBackupScreenModel.State>(State()) {
+private class CreateBackupScreenModel : StateScreenModel<CreateBackupScreenModel.State>(State()), KoinComponent {
+
+    private val backupScheduler: BackupScheduler by inject()
+
+    fun isBackupRunning(): Boolean = backupScheduler.isBackupRunning()
 
     fun toggle(setter: (BackupOptions, Boolean) -> BackupOptions, enabled: Boolean) {
         mutableState.update {
@@ -130,8 +136,8 @@ private class CreateBackupScreenModel : StateScreenModel<CreateBackupScreenModel
         }
     }
 
-    fun createBackup(context: Context, uri: Uri) {
-        BackupCreateJob.startNow(context, uri, state.value.options)
+    fun createBackup(uri: Uri) {
+        backupScheduler.startBackupNow(uri, state.value.options.asBooleanArray())
     }
 
     @Immutable

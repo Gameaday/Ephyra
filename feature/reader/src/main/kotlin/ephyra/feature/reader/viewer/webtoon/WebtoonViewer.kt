@@ -11,18 +11,19 @@ import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.WebtoonLayoutManager
+import ephyra.core.common.util.system.DeviceUtil
+import ephyra.core.common.util.system.logcat
 import ephyra.core.download.DownloadManager
+import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.feature.reader.ReaderActivity
 import ephyra.feature.reader.model.ChapterTransition
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.model.ViewerChapters
-import ephyra.feature.reader.setting.ReaderPreferences
 import ephyra.feature.reader.viewer.Viewer
 import ephyra.feature.reader.viewer.ViewerNavigation.NavigationRegion
-import ephyra.core.common.util.system.DeviceUtil
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
-import ephyra.core.common.util.system.logcat
+import kotlinx.coroutines.runBlocking
 import kotlin.math.max
 import kotlin.math.min
 
@@ -76,7 +77,7 @@ class WebtoonViewer(
     private val threshold: Int =
         readerPreferences
             .readerHideThreshold()
-            .get()
+            .let { runBlocking { it.get() } }
             .threshold
 
     init {
@@ -355,12 +356,12 @@ class WebtoonViewer(
             KeyEvent.KEYCODE_DPAD_LEFT,
             KeyEvent.KEYCODE_DPAD_UP,
             KeyEvent.KEYCODE_PAGE_UP,
-                -> if (isUp) scrollUp()
+            -> if (isUp) scrollUp()
 
             KeyEvent.KEYCODE_DPAD_RIGHT,
             KeyEvent.KEYCODE_DPAD_DOWN,
             KeyEvent.KEYCODE_PAGE_DOWN,
-                -> if (isUp) scrollDown()
+            -> if (isUp) scrollDown()
 
             else -> return false
         }

@@ -2,7 +2,7 @@ package ephyra.feature.settings.screen
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -12,18 +12,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.util.fastMap
 import androidx.core.content.ContextCompat
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import ephyra.presentation.category.visualName
-import ephyra.feature.settings.Preference
-import ephyra.feature.settings.widget.TriStateListDialog
-import ephyra.app.data.library.LibraryUpdateJob
-import ephyra.app.ui.category.CategoryScreen
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.persistentMapOf
-import kotlinx.collections.immutable.toImmutableMap
-import kotlinx.coroutines.launch
+import ephyra.core.common.util.system.ImageFormat
 import ephyra.domain.category.interactor.ResetCategoryFlags
 import ephyra.domain.category.model.Category
 import ephyra.domain.library.service.LibraryPreferences
@@ -36,10 +29,20 @@ import ephyra.domain.library.service.LibraryPreferences.Companion.MANGA_NON_READ
 import ephyra.domain.library.service.LibraryPreferences.Companion.MANGA_OUTSIDE_RELEASE_PERIOD
 import ephyra.domain.library.service.LibraryPreferences.Companion.MARK_DUPLICATE_CHAPTER_READ_EXISTING
 import ephyra.domain.library.service.LibraryPreferences.Companion.MARK_DUPLICATE_CHAPTER_READ_NEW
+import ephyra.domain.library.service.LibraryUpdateScheduler
+import ephyra.feature.category.CategoryScreen
+import ephyra.feature.category.presentation.visualName
+import ephyra.feature.settings.Preference
+import ephyra.feature.settings.widget.TriStateListDialog
 import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
-import cafe.adriel.voyager.koin.koinScreenModel
+import ephyra.presentation.core.util.collectAsState
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.persistentMapOf
+import kotlinx.collections.immutable.toImmutableMap
+import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 
 object SettingsLibraryScreen : SearchableSettings {
 
@@ -50,7 +53,7 @@ object SettingsLibraryScreen : SearchableSettings {
     @Composable
     override fun getPreferences(): List<Preference> {
         val screenModel = koinScreenModel<SettingsLibraryScreenModel>()
-        val allCategories by screenModel.getCategories().collectAsStateWithLifecycle(initialValue = emptyList())
+        val allCategories by screenModel.getCategories().collectAsState(emptyList())
 
         return listOf(
             getCategoriesGroup(
@@ -120,15 +123,16 @@ object SettingsLibraryScreen : SearchableSettings {
         libraryPreferences: LibraryPreferences,
     ): Preference.PreferenceGroup {
         val context = LocalContext.current
+        val scheduler: LibraryUpdateScheduler = koinInject()
 
         val autoUpdateIntervalPref = libraryPreferences.autoUpdateInterval()
         val autoUpdateCategoriesPref = libraryPreferences.updateCategories()
         val autoUpdateCategoriesExcludePref = libraryPreferences.updateCategoriesExclude()
 
-        val autoUpdateInterval by autoUpdateIntervalPref.collectAsStateWithLifecycle()
+        val autoUpdateInterval by autoUpdateIntervalPref.collectAsState()
 
-        val included by autoUpdateCategoriesPref.collectAsStateWithLifecycle()
-        val excluded by autoUpdateCategoriesExcludePref.collectAsStateWithLifecycle()
+        val included by autoUpdateCategoriesPref.collectAsState()
+        val excluded by autoUpdateCategoriesExcludePref.collectAsState()
         var showCategoriesDialog by rememberSaveable { mutableStateOf(false) }
         if (showCategoriesDialog) {
             val categoryById = remember(allCategories) { allCategories.associateBy { it.id.toString() } }
@@ -163,7 +167,7 @@ object SettingsLibraryScreen : SearchableSettings {
                     ),
                     title = stringResource(MR.strings.pref_library_update_interval),
                     onValueChanged = {
-                        LibraryUpdateJob.setupTask(context, libraryPreferences, it)
+                        scheduler.setupLibraryUpdateTask()
                         true
                     },
                 ),
@@ -180,7 +184,7 @@ object SettingsLibraryScreen : SearchableSettings {
                     onValueChanged = {
                         // Post to event looper to allow the preference to be updated.
                         ContextCompat.getMainExecutor(context)
-                            .execute { LibraryUpdateJob.setupTask(context, libraryPreferences) }
+                            .execute { scheduler.setupLibraryUpdateTask() }
                         true
                     },
                 ),
@@ -226,9 +230,9 @@ object SettingsLibraryScreen : SearchableSettings {
                 Preference.PreferenceItem.ListPreference(
                     preference = libraryPreferences.imageFormat(),
                     entries = persistentMapOf(
-                        LibraryPreferences.ImageFormat.WEBP to
+                        ImageFormat.WEBP to
                             stringResource(MR.strings.image_format_webp),
-                        LibraryPreferences.ImageFormat.PNG to
+                        ImageFormat.PNG to
                             stringResource(MR.strings.image_format_png),
                     ),
                     title = stringResource(MR.strings.pref_image_format),

@@ -7,42 +7,65 @@ import androidx.compose.runtime.Immutable
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import ephyra.domain.chapter.model.Chapter
-import ephyra.domain.chapter.model.toDbChapter
-import ephyra.domain.manga.interactor.SetMangaViewerFlags
-import ephyra.domain.manga.model.readerOrientation
-import ephyra.domain.manga.model.readingMode
-import ephyra.domain.source.interactor.GetIncognitoState
-import ephyra.domain.track.interactor.TrackChapter
-import ephyra.domain.track.service.TrackPreferences
+import ephyra.core.common.preference.toggle
+import ephyra.core.common.util.lang.byteSize
+import ephyra.core.common.util.lang.launchIO
+import ephyra.core.common.util.lang.launchNonCancellable
+import ephyra.core.common.util.lang.withIOContext
+import ephyra.core.common.util.lang.withUIContext
+import ephyra.core.common.util.storage.DiskUtil
+import ephyra.core.common.util.storage.cacheImageDir
+import ephyra.core.common.util.system.DeviceUtil
+import ephyra.core.common.util.system.ImageUtil
+import ephyra.core.common.util.system.logcat
+import ephyra.core.download.DownloadManager
+import ephyra.core.download.DownloadProvider
+import ephyra.core.download.util.filterDownloaded
+import ephyra.core.download.util.removeDuplicates
 import ephyra.data.cache.ChapterCache
 import ephyra.data.cache.CoverCache
 import ephyra.data.database.models.toDomainChapter
-import ephyra.core.download.DownloadManager
-import ephyra.core.download.DownloadProvider
-import ephyra.core.download.model.Download
 import ephyra.data.saver.Image
 import ephyra.data.saver.ImageSaver
 import ephyra.data.saver.Location
-import eu.kanade.tachiyomi.source.model.Page
-import eu.kanade.tachiyomi.source.online.HttpSource
+import ephyra.domain.chapter.interactor.GetChaptersByMangaId
+import ephyra.domain.chapter.interactor.UpdateChapter
+import ephyra.domain.chapter.model.Chapter
+import ephyra.domain.chapter.model.ChapterUpdate
+import ephyra.domain.chapter.model.toDbChapter
+import ephyra.domain.chapter.service.getChapterSort
+import ephyra.domain.download.model.Download
+import ephyra.domain.download.service.DownloadPreferences
+import ephyra.domain.history.interactor.GetNextChapters
+import ephyra.domain.history.interactor.UpsertHistory
+import ephyra.domain.history.model.HistoryUpdate
+import ephyra.domain.library.service.LibraryPreferences
+import ephyra.domain.manga.interactor.GetManga
+import ephyra.domain.manga.interactor.SetMangaViewerFlags
+import ephyra.domain.manga.interactor.UpdateManga
+import ephyra.domain.manga.model.ContentType
+import ephyra.domain.manga.model.Manga
+import ephyra.domain.manga.model.readerOrientation
+import ephyra.domain.manga.model.readingMode
+import ephyra.domain.reader.model.ReaderOrientation
+import ephyra.domain.reader.model.ReadingMode
+import ephyra.domain.reader.service.ReaderPreferences
+import ephyra.domain.source.interactor.GetIncognitoState
+import ephyra.domain.source.service.SourceManager
+import ephyra.domain.track.interactor.TrackChapter
+import ephyra.domain.track.service.TrackPreferences
 import ephyra.feature.reader.loader.ChapterLoader
 import ephyra.feature.reader.loader.DownloadPageLoader
 import ephyra.feature.reader.model.InsertPage
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.model.ViewerChapters
-import ephyra.domain.reader.model.ReaderOrientation
-import ephyra.feature.reader.setting.ReaderPreferences
-import ephyra.domain.reader.model.ReadingMode
 import ephyra.feature.reader.viewer.Viewer
-import ephyra.app.util.chapter.filterDownloaded
-import ephyra.app.util.chapter.removeDuplicates
 import ephyra.presentation.core.util.manga.editCover
-import ephyra.core.common.util.lang.byteSize
-import ephyra.core.common.util.storage.DiskUtil
-import ephyra.core.common.util.storage.cacheImageDir
-import ephyra.core.common.util.system.DeviceUtil
+import ephyra.source.local.image.LocalCoverManager
+import ephyra.source.local.isLocal
+import eu.kanade.tachiyomi.source.model.Page
+import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -56,31 +79,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.runBlocking
 import logcat.LogPriority
-import ephyra.core.common.preference.toggle
-import ephyra.core.common.util.lang.launchIO
-import ephyra.core.common.util.lang.launchNonCancellable
-import ephyra.core.common.util.lang.withIOContext
-import ephyra.core.common.util.lang.withUIContext
-import ephyra.core.common.util.system.ImageUtil
-import ephyra.core.common.util.system.logcat
-import ephyra.domain.chapter.interactor.GetChaptersByMangaId
-import ephyra.domain.chapter.interactor.UpdateChapter
-import ephyra.domain.chapter.model.ChapterUpdate
-import ephyra.domain.chapter.service.getChapterSort
-import ephyra.domain.download.service.DownloadPreferences
-import ephyra.domain.history.interactor.GetNextChapters
-import ephyra.domain.history.interactor.UpsertHistory
-import ephyra.domain.history.model.HistoryUpdate
-import ephyra.domain.library.service.LibraryPreferences
-import ephyra.domain.manga.interactor.GetManga
-import ephyra.domain.manga.interactor.UpdateManga
-import ephyra.domain.manga.model.ContentType
-import ephyra.domain.manga.model.Manga
-import ephyra.domain.source.service.SourceManager
-import ephyra.source.local.image.LocalCoverManager
-import ephyra.source.local.isLocal
-
 import java.io.InputStream
 import java.time.Instant
 import java.util.Date
@@ -116,7 +116,6 @@ class ReaderViewModel @JvmOverloads constructor(
     private companion object {
         const val FALLBACK_LAST_PAGE_INDEX = Int.MAX_VALUE
     }
-
 
     private val mutableState = MutableStateFlow(State())
     val state = mutableState.asStateFlow()
@@ -288,7 +287,7 @@ class ReaderViewModel @JvmOverloads constructor(
                     // value in sync with real progress via onPageSelected().
                     hasAppliedSavedPageIndex = true
                 } else if (!currentChapter.chapter.read) {
-                    currentChapter.requestedPage = currentChapter.chapter.lastPageRead.toInt()
+                    currentChapter.requestedPage = currentChapter.chapter.last_page_read.toInt()
                 }
                 chapterId = currentChapter.chapter.id!!
             }
@@ -945,9 +944,9 @@ class ReaderViewModel @JvmOverloads constructor(
     fun toggleCropBorders(): Boolean {
         val isPagerType = ReadingMode.isPagerType(getMangaReadingMode())
         return if (isPagerType) {
-            readerPreferences.cropBorders().toggle()
+            runBlocking { readerPreferences.cropBorders().toggle() }
         } else {
-            readerPreferences.cropBordersWebtoon().toggle()
+            runBlocking { readerPreferences.cropBordersWebtoon().toggle() }
         }
     }
 
@@ -1014,7 +1013,7 @@ class ReaderViewModel @JvmOverloads constructor(
         val filename = generateFilename(manga, page)
 
         // Pictures directory.
-        val relativePath = if (readerPreferences.folderPerManga().get()) {
+        val relativePath = if (runBlocking { readerPreferences.folderPerManga().get() }) {
             DiskUtil.buildValidFilename(
                 manga.title,
             )
@@ -1217,7 +1216,7 @@ class ReaderViewModel @JvmOverloads constructor(
      */
     private fun updateTrackChapterRead(readerChapter: ReaderChapter) {
         if (incognitoMode) return
-        if (!trackPreferences.autoUpdateTrack().get()) return
+        if (!runBlocking { trackPreferences.autoUpdateTrack().get() }) return
 
         val manga = manga ?: return
         viewModelScope.launchNonCancellable {

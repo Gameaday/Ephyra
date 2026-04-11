@@ -61,13 +61,11 @@ import ephyra.domain.manga.model.MangaWithChapterCount
 import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.service.SourceManager
 import ephyra.feature.manga.presentation.components.MangaCover
-import ephyra.feature.settings.LocalPreferenceMinHeight
-import ephyra.feature.settings.widget.TextPreferenceWidget
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.AdaptiveSheet
-import ephyra.presentation.core.components.TabbedDialogPaddings
 import ephyra.presentation.core.components.Badge
 import ephyra.presentation.core.components.BadgeGroup
+import ephyra.presentation.core.components.TabbedDialogPaddings
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
@@ -85,7 +83,7 @@ fun DuplicateMangaDialog(
     modifier: Modifier = Modifier,
 ) {
     val sourceManager = org.koin.compose.koinInject<SourceManager>()
-    val minHeight = LocalPreferenceMinHeight.current
+    val minHeight = 48.dp
     val horizontalPadding = PaddingValues(horizontal = TabbedDialogPaddings.Horizontal)
     val horizontalPaddingModifier = Modifier.padding(horizontalPadding)
 
@@ -136,15 +134,24 @@ fun DuplicateMangaDialog(
             Column(modifier = horizontalPaddingModifier) {
                 HorizontalDivider()
 
-                TextPreferenceWidget(
-                    title = stringResource(MR.strings.action_add_anyway),
-                    icon = Icons.Outlined.Add,
-                    onPreferenceClick = {
-                        onDismissRequest()
-                        onConfirm()
-                    },
-                    modifier = Modifier.clip(CircleShape),
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(CircleShape)
+                        .combinedClickable {
+                            onDismissRequest()
+                            onConfirm()
+                        }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(imageVector = Icons.Outlined.Add, contentDescription = null)
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Text(
+                        text = stringResource(MR.strings.action_add_anyway),
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                }
             }
 
             OutlinedButton(

@@ -31,15 +31,16 @@ import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.EASE_IN_OUT_QUAD
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.EASE_OUT_QUAD
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView.SCALE_TYPE_CENTER_INSIDE
-import ephyra.domain.base.BasePreferences
+import ephyra.core.common.util.system.ImageUtil
 import ephyra.data.coil.cropBorders
 import ephyra.data.coil.customDecoder
+import ephyra.domain.base.BasePreferences
 import ephyra.feature.reader.viewer.webtoon.WebtoonSubsamplingImageView
-import ephyra.app.util.system.animatorDurationScale
-import ephyra.app.util.view.isVisibleOnScreen
+import ephyra.presentation.core.util.system.animatorDurationScale
+import ephyra.presentation.core.util.view.isVisibleOnScreen
+import kotlinx.coroutines.runBlocking
 import okio.BufferedSource
-import ephyra.core.common.util.system.ImageUtil
-import org.koin.android.ext.android.getKoin
+import org.koin.core.context.GlobalContext
 
 /**
  * A wrapper view for showing page image.
@@ -57,7 +58,7 @@ open class ReaderPageImageView @JvmOverloads constructor(
 ) : FrameLayout(context, attrs, defStyleAttrs, defStyleRes) {
 
     private val alwaysDecodeLongStripWithSSIV by lazy {
-        context.getKoin().get<BasePreferences>().alwaysDecodeLongStripWithSSIV().get()
+        runBlocking { GlobalContext.get().get<BasePreferences>().alwaysDecodeLongStripWithSSIV().get() }
     }
 
     private var pageView: View? = null

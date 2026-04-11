@@ -12,22 +12,18 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
-import ephyra.presentation.core.components.TabbedDialog
-import ephyra.presentation.core.components.TabbedDialogPaddings
-import ephyra.feature.library.LibrarySettingsScreenModel
-import ephyra.app.util.system.isReleaseBuildType
-import kotlinx.collections.immutable.persistentListOf
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ephyra.core.common.preference.TriState
 import ephyra.domain.category.model.Category
 import ephyra.domain.library.model.LibraryDisplayMode
 import ephyra.domain.library.model.LibrarySort
 import ephyra.domain.library.model.sort
 import ephyra.domain.library.service.LibraryPreferences
+import ephyra.feature.library.LibrarySettingsScreenModel
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.BaseSortItem
 import ephyra.presentation.core.components.CheckboxItem
@@ -35,9 +31,14 @@ import ephyra.presentation.core.components.HeadingItem
 import ephyra.presentation.core.components.SettingsChipRow
 import ephyra.presentation.core.components.SliderItem
 import ephyra.presentation.core.components.SortItem
+import ephyra.presentation.core.components.TabbedDialog
+import ephyra.presentation.core.components.TabbedDialogPaddings
 import ephyra.presentation.core.components.TriStateItem
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.ui.AppInfo
 import ephyra.presentation.core.util.collectAsState
+import kotlinx.collections.immutable.persistentListOf
+import org.koin.compose.koinInject
 
 @Composable
 fun LibrarySettingsDialog(
@@ -80,10 +81,11 @@ fun LibrarySettingsDialog(
 private fun ColumnScope.FilterPage(
     screenModel: LibrarySettingsScreenModel,
 ) {
-    val filterDownloaded by screenModel.libraryPreferences.filterDownloaded().collectAsStateWithLifecycle()
-    val downloadedOnly by screenModel.preferences.downloadedOnly().collectAsStateWithLifecycle()
+    val appInfo: AppInfo = koinInject()
+    val filterDownloaded by screenModel.libraryPreferences.filterDownloaded().collectAsState()
+    val downloadedOnly by screenModel.preferences.downloadedOnly().collectAsState()
     val autoUpdateMangaRestrictions by screenModel.libraryPreferences.autoUpdateMangaRestrictions()
-        .collectAsStateWithLifecycle()
+        .collectAsState()
 
     TriStateItem(
         label = stringResource(MR.strings.label_downloaded),
@@ -95,45 +97,45 @@ private fun ColumnScope.FilterPage(
         enabled = !downloadedOnly,
         onClick = { screenModel.toggleFilter(LibraryPreferences::filterDownloaded) },
     )
-    val filterUnread by screenModel.libraryPreferences.filterUnread().collectAsStateWithLifecycle()
+    val filterUnread by screenModel.libraryPreferences.filterUnread().collectAsState()
     TriStateItem(
         label = stringResource(MR.strings.action_filter_unread),
         state = filterUnread,
         onClick = { screenModel.toggleFilter(LibraryPreferences::filterUnread) },
     )
-    val filterStarted by screenModel.libraryPreferences.filterStarted().collectAsStateWithLifecycle()
+    val filterStarted by screenModel.libraryPreferences.filterStarted().collectAsState()
     TriStateItem(
         label = stringResource(MR.strings.label_started),
         state = filterStarted,
         onClick = { screenModel.toggleFilter(LibraryPreferences::filterStarted) },
     )
-    val filterBookmarked by screenModel.libraryPreferences.filterBookmarked().collectAsStateWithLifecycle()
+    val filterBookmarked by screenModel.libraryPreferences.filterBookmarked().collectAsState()
     TriStateItem(
         label = stringResource(MR.strings.action_filter_bookmarked),
         state = filterBookmarked,
         onClick = { screenModel.toggleFilter(LibraryPreferences::filterBookmarked) },
     )
-    val filterCompleted by screenModel.libraryPreferences.filterCompleted().collectAsStateWithLifecycle()
+    val filterCompleted by screenModel.libraryPreferences.filterCompleted().collectAsState()
     TriStateItem(
         label = stringResource(MR.strings.completed),
         state = filterCompleted,
         onClick = { screenModel.toggleFilter(LibraryPreferences::filterCompleted) },
     )
-    val filterSourceHealthDead by screenModel.libraryPreferences.filterSourceHealthDead().collectAsStateWithLifecycle()
+    val filterSourceHealthDead by screenModel.libraryPreferences.filterSourceHealthDead().collectAsState()
     TriStateItem(
         label = stringResource(MR.strings.action_filter_source_health_dead),
         state = filterSourceHealthDead,
         onClick = { screenModel.toggleFilter(LibraryPreferences::filterSourceHealthDead) },
     )
-    val filterContentTypeManga by screenModel.libraryPreferences.filterContentTypeManga().collectAsStateWithLifecycle()
+    val filterContentTypeManga by screenModel.libraryPreferences.filterContentTypeManga().collectAsState()
     TriStateItem(
         label = stringResource(MR.strings.action_filter_content_type_manga),
         state = filterContentTypeManga,
         onClick = { screenModel.toggleFilter(LibraryPreferences::filterContentTypeManga) },
     )
     // TODO: re-enable when custom intervals are ready for stable
-    if ((!isReleaseBuildType) && LibraryPreferences.MANGA_OUTSIDE_RELEASE_PERIOD in autoUpdateMangaRestrictions) {
-        val filterIntervalCustom by screenModel.libraryPreferences.filterIntervalCustom().collectAsStateWithLifecycle()
+    if ((!appInfo.isRelease) && LibraryPreferences.MANGA_OUTSIDE_RELEASE_PERIOD in autoUpdateMangaRestrictions) {
+        val filterIntervalCustom by screenModel.libraryPreferences.filterIntervalCustom().collectAsState()
         TriStateItem(
             label = stringResource(MR.strings.action_filter_interval_custom),
             state = filterIntervalCustom,
@@ -150,7 +152,7 @@ private fun ColumnScope.FilterPage(
         1 -> {
             val service = trackers[0]
             val filterTracker by screenModel.libraryPreferences.filterTracking(service.id.toInt())
-                .collectAsStateWithLifecycle()
+                .collectAsState()
             TriStateItem(
                 label = stringResource(MR.strings.action_filter_tracked),
                 state = filterTracker,
@@ -162,7 +164,7 @@ private fun ColumnScope.FilterPage(
             HeadingItem(MR.strings.action_filter_tracked)
             trackers.map { service ->
                 val filterTracker by screenModel.libraryPreferences.filterTracking(service.id.toInt())
-                    .collectAsStateWithLifecycle()
+                    .collectAsState()
                 TriStateItem(
                     label = service.name,
                     state = filterTracker,
@@ -249,7 +251,7 @@ private val displayModes = listOf(
 private fun ColumnScope.DisplayPage(
     screenModel: LibrarySettingsScreenModel,
 ) {
-    val displayMode by screenModel.libraryPreferences.displayMode().collectAsStateWithLifecycle()
+    val displayMode by screenModel.libraryPreferences.displayMode().collectAsState()
     SettingsChipRow(MR.strings.action_display_mode) {
         displayModes.map { (titleRes, mode) ->
             FilterChip(
@@ -270,7 +272,7 @@ private fun ColumnScope.DisplayPage(
             }
         }
 
-        val columns by columnPreference.collectAsStateWithLifecycle()
+        val columns by columnPreference.collectAsState()
         SliderItem(
             value = columns,
             valueRange = 0..10,

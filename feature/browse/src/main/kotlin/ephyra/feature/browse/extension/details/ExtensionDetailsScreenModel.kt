@@ -4,18 +4,17 @@ import android.content.Context
 import androidx.compose.runtime.Immutable
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import org.koin.core.annotation.Factory
-import org.koin.core.annotation.InjectedParam
+import ephyra.core.common.util.system.LocaleHelper
+import ephyra.core.common.util.system.logcat
 import ephyra.domain.extension.interactor.ExtensionSourceItem
 import ephyra.domain.extension.interactor.GetExtensionSources
+import ephyra.domain.extension.model.Extension
+import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.source.interactor.ToggleIncognito
 import ephyra.domain.source.interactor.ToggleSource
 import ephyra.domain.source.service.SourcePreferences
-import ephyra.app.extension.ExtensionManager
-import ephyra.app.extension.model.Extension
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.source.online.HttpSource
-import ephyra.app.util.system.LocaleHelper
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -30,8 +29,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import okhttp3.HttpUrl.Companion.toHttpUrl
-import ephyra.core.common.util.system.logcat
-import ephyra.core.common.util.system.logcat
+import org.koin.core.annotation.Factory
+import org.koin.core.annotation.InjectedParam
 
 @Factory
 class ExtensionDetailsScreenModel(
@@ -125,17 +124,21 @@ class ExtensionDetailsScreenModel(
     }
 
     fun toggleSource(sourceId: Long) {
-        toggleSource.await(sourceId)
+        screenModelScope.launch {
+            toggleSource.await(sourceId)
+        }
     }
 
     fun toggleSources(enable: Boolean) {
-        state.value.extension?.sources
-            ?.map { it.id }
-            ?.let { toggleSource.await(it, enable) }
+        val sourceIds = state.value.extension?.sources?.map { it.id } ?: return
+        screenModelScope.launch {
+            toggleSource.await(sourceIds, enable)
+        }
     }
 
     fun toggleIncognito(enable: Boolean) {
-        state.value.extension?.pkgName?.let { packageName ->
+        val packageName = state.value.extension?.pkgName ?: return
+        screenModelScope.launch {
             toggleIncognito.await(packageName, enable)
         }
     }

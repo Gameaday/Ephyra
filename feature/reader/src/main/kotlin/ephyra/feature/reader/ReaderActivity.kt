@@ -1,6 +1,7 @@
 package ephyra.feature.reader
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.assist.AssistContent
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -35,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -65,9 +67,10 @@ import ephyra.feature.reader.viewer.ReaderProgressIndicator
 import ephyra.i18n.MR
 import ephyra.presentation.core.data.coil.TachiyomiImageDecoder
 import ephyra.presentation.core.ui.activity.BaseActivity
-import ephyra.presentation.core.util.Navigator
-import ephyra.presentation.core.util.ifSourcesLoaded
+import ephyra.presentation.core.util.AppNavigator
 import ephyra.presentation.core.util.collectAsState
+import ephyra.presentation.core.util.ifSourcesLoaded
+import ephyra.presentation.core.util.system.copyToClipboard
 import ephyra.presentation.core.util.system.isNightMode
 import ephyra.presentation.core.util.system.openInBrowser
 import ephyra.presentation.core.util.system.toShareIntent
@@ -91,10 +94,12 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import logcat.LogPriority
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import java.io.ByteArrayOutputStream
+import ephyra.presentation.core.R as CoreR
 
 @OptIn(FlowPreview::class)
 class ReaderActivity : BaseActivity() {
@@ -111,7 +116,7 @@ class ReaderActivity : BaseActivity() {
 
     private val readerPreferences: ReaderPreferences by inject()
     private val preferences: BasePreferences by inject()
-    private val navigator: Navigator by inject()
+    private val navigator: AppNavigator by inject()
     private val notificationManager: NotificationManager by inject()
 
     lateinit var binding: ReaderActivityBinding
@@ -137,7 +142,7 @@ class ReaderActivity : BaseActivity() {
 
     private var loadingIndicator: ReaderProgressIndicator? = null
 
-    private var isScrollingThroughPages = false
+    internal var isScrollingThroughPages = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         window.applyHighRefreshRate()
@@ -227,14 +232,16 @@ class ReaderActivity : BaseActivity() {
             if (currentChapter != null) {
                 val showPageNumber: Boolean by readerPreferences.showPageNumber().collectAsState()
                 if (showPageNumber) {
-                    ReaderPageIndicator(
-                        currentPage = state.currentPage,
-                        totalPages = state.totalPages,
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .navigationBarsPadding()
-                            .padding(bottom = 16.dp),
-                    )
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        ReaderPageIndicator(
+                            currentPage = state.currentPage,
+                            totalPages = state.totalPages,
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .navigationBarsPadding()
+                                .padding(bottom = 16.dp),
+                        )
+                    }
                 }
             }
 
@@ -328,8 +335,9 @@ class ReaderActivity : BaseActivity() {
         viewModel.onActivityFinish()
         super.finish()
         overrideTransitionCompat(
-            R.anim.shared_axis_x_pop_enter,
-            R.anim.shared_axis_x_pop_exit,
+            Activity.OVERRIDE_TRANSITION_CLOSE,
+            CoreR.anim.shared_axis_x_pop_enter,
+            CoreR.anim.shared_axis_x_pop_exit,
         )
     }
 
@@ -338,8 +346,7 @@ class ReaderActivity : BaseActivity() {
             onBackPressedDispatcher.onBackPressed()
             return true
         }
-        val handled = viewModel.state.value.viewer?.handleKeyUp(keyCode, event) ?: false
-        return handled || super.onKeyUp(keyCode, event)
+        return super.onKeyUp(keyCode, event)
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
@@ -414,7 +421,7 @@ class ReaderActivity : BaseActivity() {
             enabledPrevious = state.viewerChapters?.prevChapter != null,
             currentPage = state.currentPage,
             totalPages = state.totalPages,
-            onPageIndexChange = { viewModel.state.value.viewer?.moveToPage(it) },
+            onPageIndexChange = { moveToPageIndex(it) },
 
             readingMode = ReadingMode.fromPreference(viewModel.getMangaReadingMode()),
             onClickReadingMode = { viewModel.openReadingModeSelectDialog() },
@@ -461,7 +468,7 @@ class ReaderActivity : BaseActivity() {
 
     private fun shareChapter() {
         val url = viewModel.getChapterUrl() ?: return
-        startActivity(toShareIntent(url))
+        startActivity(url.toUri().toShareIntent(this, "text/plain"))
     }
 
     private fun showToast(stringRes: StringResource) {
@@ -490,14 +497,17 @@ class ReaderActivity : BaseActivity() {
                 }
             }
         } else {
-            loadingIndicator?.dismiss()
+            loadingIndicator?.hide()
             loadingIndicator = null
         }
     }
 
     private fun moveToPageIndex(index: Int) {
         val viewer = viewModel.state.value.viewer ?: return
-        viewer.moveToPage(index)
+        val pages = viewModel.state.value.viewerChapters?.currChapter?.pages
+            ?.filterNot { it.isHidden } ?: return
+        val page = pages.getOrNull(index) ?: return
+        viewer.moveToPage(page)
     }
 
     fun onPageSelected(page: ReaderPage) {
@@ -525,7 +535,7 @@ class ReaderActivity : BaseActivity() {
     }
 
     fun onShareImageResult(uri: Uri, page: ReaderPage) {
-        startActivity(toShareIntent(uri))
+        startActivity(uri.toShareIntent(this))
     }
 
     fun onCopyImageResult(uri: Uri) {
@@ -543,7 +553,7 @@ class ReaderActivity : BaseActivity() {
         when (result) {
             Success -> toast(MR.strings.cover_updated)
             AddToLibraryFirst -> toast(MR.strings.notification_first_add_to_library)
-            is Error -> toast(result.error.message)
+            Error -> toast(MR.strings.error_saving_cover)
         }
     }
 
@@ -558,7 +568,7 @@ class ReaderActivity : BaseActivity() {
     private fun updateViewerInset(all: Boolean, bottom: Boolean) {
         val viewer = viewModel.state.value.viewer ?: return
         val view = viewer.getView()
-        view.applyInsetsPadding(windowInsetsController.lastWindowInsets, all, bottom)
+        view.applyInsetsPadding(ViewCompat.getRootWindowInsets(window.decorView), all, bottom)
     }
 
     private fun View.applyInsetsPadding(insets: WindowInsetsCompat?, all: Boolean, bottom: Boolean) {
@@ -660,7 +670,15 @@ class ReaderActivity : BaseActivity() {
         }
 
         fun setDisplayProfile(data: String) {
-            TachiyomiImageDecoder.displayProfile = data
+            TachiyomiImageDecoder.displayProfile = if (data.isNotEmpty()) {
+                try {
+                    contentResolver.openInputStream(data.toUri())?.readBytes()
+                } catch (_: Exception) {
+                    null
+                }
+            } else {
+                null
+            }
             updateViewer()
         }
 
@@ -674,7 +692,7 @@ class ReaderActivity : BaseActivity() {
 
         fun setCustomBrightness(enabled: Boolean) {
             if (enabled) {
-                setCustomBrightnessValue(readerPreferences.customBrightnessValue().getSync())
+                setCustomBrightnessValue(runBlocking { readerPreferences.customBrightnessValue().get() })
             } else {
                 val layoutParams = window.attributes
                 layoutParams.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
@@ -683,7 +701,7 @@ class ReaderActivity : BaseActivity() {
         }
 
         fun setCustomBrightnessValue(value: Int) {
-            if (readerPreferences.customBrightness().getSync()) {
+            if (runBlocking { readerPreferences.customBrightness().get() }) {
                 val layoutParams = window.attributes
                 layoutParams.screenBrightness = value / 100f
                 window.attributes = layoutParams

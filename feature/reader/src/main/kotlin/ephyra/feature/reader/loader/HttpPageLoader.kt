@@ -1,13 +1,16 @@
 package ephyra.feature.reader.loader
 
+import ephyra.core.common.util.lang.launchIO
+import ephyra.core.common.util.lang.withIOContext
+import ephyra.core.common.util.system.DeviceUtil
+import ephyra.core.common.util.system.logcat
 import ephyra.data.cache.ChapterCache
 import ephyra.data.database.models.toDomainChapter
+import ephyra.feature.reader.model.ReaderChapter
+import ephyra.feature.reader.model.ReaderPage
 import eu.kanade.tachiyomi.network.HttpException
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.online.HttpSource
-import ephyra.feature.reader.model.ReaderChapter
-import ephyra.feature.reader.model.ReaderPage
-import ephyra.core.common.util.system.DeviceUtil
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -19,9 +22,6 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.suspendCancellableCoroutine
 import logcat.LogPriority
-import ephyra.core.common.util.lang.launchIO
-import ephyra.core.common.util.lang.withIOContext
-import ephyra.core.common.util.system.logcat
 import java.io.IOException
 import java.util.concurrent.PriorityBlockingQueue
 import kotlin.concurrent.atomics.AtomicBoolean
@@ -429,7 +429,18 @@ internal class HttpPageLoader(
                     chapterCache.fetchAndCacheImage(imageUrl) { source.getImage(page) }
                 }
 
-                page.stream = { chapterCache.getImageFile(imageUrl).inputStream() }
+                page.stream = {
+                    // getImageFile returns null if the entry was evicted from the disk cache
+                    // (e.g. LRU pressure during a rapid progress-bar seek). In that case, reset
+                    // the page so the loader re-downloads it, and throw IOException so the caller
+                    // (PagerPageHolder / WebtoonPageHolder) can distinguish this from a permanent
+                    // error and avoid showing an error UI.
+                    chapterCache.getImageFile(imageUrl)?.inputStream() ?: run {
+                        page.status = Page.State.Queue
+                        page.stream = null
+                        throw IOException("Image evicted from cache, page queued for re-download: $imageUrl")
+                    }
+                }
 
                 // Run pre-processor check on boundary pages. If the page matches a
                 // blocked hash, it is marked hidden and the viewer is notified to

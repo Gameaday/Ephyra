@@ -43,27 +43,25 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import ephyra.core.common.util.system.LocaleHelper
 import ephyra.domain.extension.interactor.ExtensionSourceItem
+import ephyra.domain.extension.model.Extension
+import ephyra.feature.browse.extension.details.ExtensionDetailsScreenModel
 import ephyra.feature.browse.presentation.components.ExtensionIcon
+import ephyra.i18n.MR
+import ephyra.presentation.core.R
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
-import ephyra.presentation.core.components.WarningBanner
-import ephyra.feature.settings.widget.TextPreferenceWidget
-import ephyra.feature.settings.widget.TrailingWidgetBuffer
-import ephyra.app.R
-import ephyra.app.extension.model.Extension
-import eu.kanade.tachiyomi.source.ConfigurableSource
-import ephyra.app.ui.browse.extension.details.ExtensionDetailsScreenModel
-import ephyra.app.util.system.LocaleHelper
-import ephyra.presentation.core.util.system.copyToClipboard
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.ScrollbarLazyColumn
+import ephyra.presentation.core.components.WarningBanner
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.EmptyScreen
+import ephyra.presentation.core.util.system.copyToClipboard
+import eu.kanade.tachiyomi.source.ConfigurableSource
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 
 @Composable
 fun ExtensionDetailsScreen(
@@ -172,7 +170,7 @@ private fun ExtensionDetails(
     ) {
         if (extension.isObsolete) {
             item {
-                WarningBanner(MR.strings.obsolete_extension_message)
+                WarningBanner(stringResource(MR.strings.obsolete_extension_message))
             }
         }
 
@@ -350,23 +348,35 @@ private fun DetailsHeader(
             }
         }
 
-        TextPreferenceWidget(
-            modifier = Modifier.padding(horizontal = MaterialTheme.padding.small),
-            title = stringResource(MR.strings.pref_incognito_mode),
-            subtitle = stringResource(MR.strings.pref_incognito_mode_extension_summary),
-            icon = ImageVector.vectorResource(R.drawable.ic_glasses_24dp),
-            widget = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Switch(
-                        checked = extIncognitoMode,
-                        onCheckedChange = onExtIncognitoChange,
-                        modifier = Modifier.padding(start = TrailingWidgetBuffer),
-                    )
-                }
-            },
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onExtIncognitoChange(!extIncognitoMode) }
+                .padding(horizontal = MaterialTheme.padding.small, vertical = MaterialTheme.padding.small),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = ImageVector.vectorResource(R.drawable.ic_glasses_24dp),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(end = MaterialTheme.padding.small),
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(MR.strings.pref_incognito_mode),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    text = stringResource(MR.strings.pref_incognito_mode_extension_summary),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            Switch(
+                checked = extIncognitoMode,
+                onCheckedChange = onExtIncognitoChange,
+                modifier = Modifier.padding(start = 16.dp),
+            )
+        }
 
         HorizontalDivider()
     }
@@ -422,36 +432,37 @@ private fun SourceSwitchPreference(
 ) {
     val context = LocalContext.current
 
-    TextPreferenceWidget(
-        modifier = modifier,
-        title = if (source.labelAsName) {
-            source.source.toString()
-        } else {
-            LocaleHelper.getSourceDisplayName(source.source.lang, context)
-        },
-        widget = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (source.source is ConfigurableSource) {
-                    IconButton(onClick = { onClickSourcePreferences(source.source.id) }) {
-                        Icon(
-                            imageVector = Icons.Outlined.Settings,
-                            contentDescription = stringResource(MR.strings.label_settings),
-                            tint = MaterialTheme.colorScheme.onSurface,
-                        )
-                    }
-                }
-
-                Switch(
-                    checked = source.enabled,
-                    onCheckedChange = null,
-                    modifier = Modifier.padding(start = TrailingWidgetBuffer),
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onClickSource(source.source.id) }
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = if (source.labelAsName) {
+                source.source.toString()
+            } else {
+                LocaleHelper.getSourceDisplayName(source.source.lang, context)
+            },
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyLarge,
+        )
+        if (source.source is ConfigurableSource) {
+            IconButton(onClick = { onClickSourcePreferences(source.source.id) }) {
+                Icon(
+                    imageVector = Icons.Outlined.Settings,
+                    contentDescription = stringResource(MR.strings.label_settings),
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
-        },
-        onPreferenceClick = { onClickSource(source.source.id) },
-    )
+        }
+        Switch(
+            checked = source.enabled,
+            onCheckedChange = null,
+            modifier = Modifier.padding(start = 16.dp),
+        )
+    }
 }
 
 @Composable

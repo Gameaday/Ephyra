@@ -1,4 +1,4 @@
-package ephyra.app.ui.manga.track
+package ephyra.feature.manga.track
 
 import android.app.Application
 import android.content.Context
@@ -38,42 +38,42 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.icerock.moko.resources.StringResource
-import ephyra.data.track.DeletableTracker
-import ephyra.data.track.EnhancedTracker
-import ephyra.data.track.Tracker
-import ephyra.data.track.TrackerManager
-import ephyra.data.track.model.TrackSearch
-import ephyra.app.util.lang.convertEpochMillisZone
-import ephyra.app.util.lang.toLocalDate
-import ephyra.presentation.core.util.system.toast
 import ephyra.core.common.i18n.stringResource
+import ephyra.core.common.util.lang.convertEpochMillisZone
 import ephyra.core.common.util.lang.launchNonCancellable
+import ephyra.core.common.util.lang.toLocalDate
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.lang.withUIContext
 import ephyra.core.common.util.system.logcat
+import ephyra.data.track.DeletableTracker
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.track.interactor.DeleteTrack
 import ephyra.domain.track.interactor.GetTracks
 import ephyra.domain.track.interactor.RefreshTracks
 import ephyra.domain.track.model.Track
-import ephyra.domain.track.model.toDbTrack
+import ephyra.domain.track.model.TrackSearch
+import ephyra.domain.track.service.EnhancedTracker
+import ephyra.domain.track.service.Tracker
+import ephyra.domain.track.service.TrackerManager
 import ephyra.domain.ui.UiPreferences
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.LabeledCheckbox
 import ephyra.presentation.core.components.material.AlertDialogContent
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.util.Screen
 import ephyra.presentation.core.util.system.copyToClipboard
 import ephyra.presentation.core.util.system.openInBrowser
-import ephyra.presentation.track.TrackChapterSelector
-import ephyra.presentation.track.TrackDateSelector
-import ephyra.presentation.track.TrackInfoDialogHome
-import ephyra.presentation.track.TrackScoreSelector
-import ephyra.presentation.track.TrackStatusSelector
-import ephyra.presentation.track.TrackerSearch
-import ephyra.presentation.core.util.Screen
+import ephyra.presentation.core.util.system.toast
+import ephyra.presentation.manga.track.TrackChapterSelector
+import ephyra.presentation.manga.track.TrackDateSelector
+import ephyra.presentation.manga.track.TrackInfoDialogHome
+import ephyra.presentation.manga.track.TrackScoreSelector
+import ephyra.presentation.manga.track.TrackStatusSelector
+import ephyra.presentation.manga.track.TrackerSearch
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -82,6 +82,7 @@ import kotlinx.coroutines.flow.forEach
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import logcat.LogPriority
 import org.koin.compose.koinInject
 import java.time.Instant
@@ -123,7 +124,7 @@ data class TrackInfoDialogHomeScreen(
         }
 
         val uiPreferences = koinInject<UiPreferences>()
-        val dateFormat = remember { UiPreferences.dateFormat(uiPreferences.dateFormat().get()) }
+        val dateFormat = remember { UiPreferences.dateFormat(runBlocking { uiPreferences.dateFormat().get() }) }
         val state by screenModel.state.collectAsStateWithLifecycle()
 
         TrackInfoDialogHome(
@@ -250,7 +251,23 @@ data class TrackInfoDialogHomeScreen(
                 val manga = getManga.await(mangaId) ?: return@launchNonCancellable
                 try {
                     val matchResult = item.tracker.match(manga) ?: throw Exception()
-                    item.tracker.register(matchResult, mangaId)
+                    val track = Track(
+                        id = 0L,
+                        mangaId = mangaId,
+                        trackerId = item.tracker.id,
+                        remoteId = matchResult.remote_id,
+                        libraryId = null,
+                        title = matchResult.title,
+                        lastChapterRead = 0.0,
+                        totalChapters = matchResult.total_chapters,
+                        status = item.tracker.getReadingStatus(),
+                        score = 0.0,
+                        remoteUrl = matchResult.tracking_url,
+                        startDate = 0L,
+                        finishDate = 0L,
+                        private = matchResult.private,
+                    )
+                    item.tracker.register(track, mangaId)
                 } catch (_: Exception) {
                     withUIContext { application.toast(MR.strings.error_no_match) }
                 }
@@ -280,16 +297,16 @@ data class TrackInfoDialogHomeScreen(
 
         fun togglePrivate(item: TrackItem) {
             screenModelScope.launchNonCancellable {
-                item.tracker.setRemotePrivate(item.track!!.toDbTrack(), !item.track.private)
+                item.tracker.setRemotePrivate(item.track!!, !item.track.private)
             }
         }
 
-        private fun List<Track>.mapToTrackItem(): List<TrackItem> {
+        private suspend fun List<Track>.mapToTrackItem(): List<TrackItem> {
             val loggedInTrackers = trackerManager.loggedInTrackers()
             val source = sourceManager.getOrStub(sourceId)
             // Include Jellyfin even when not logged in so users can discover it
-            val jellyfin = trackerManager.jellyfin
-            val visibleTrackers = if (jellyfin.isLoggedIn) {
+            val jellyfin = trackerManager.get(TrackerManager.JELLYFIN)
+            val visibleTrackers = if (jellyfin == null || jellyfin.isLoggedIn()) {
                 loggedInTrackers
             } else {
                 loggedInTrackers + jellyfin
@@ -351,7 +368,7 @@ private data class TrackStatusSelectorScreen(
 
         fun setStatus() {
             screenModelScope.launchNonCancellable {
-                tracker.setRemoteStatus(track.toDbTrack(), state.value.selection)
+                tracker.setRemoteStatus(track, state.value.selection)
             }
         }
 
@@ -411,7 +428,7 @@ private data class TrackChapterSelectorScreen(
 
         fun setChapter() {
             screenModelScope.launchNonCancellable {
-                tracker.setRemoteLastChapterRead(track.toDbTrack(), state.value.selection)
+                tracker.setRemoteLastChapterRead(track, state.value.selection)
             }
         }
 
@@ -442,7 +459,7 @@ private data class TrackScoreSelectorScreen(
         TrackScoreSelector(
             selection = state.selection,
             onSelectionChange = screenModel::setSelection,
-            selections = remember { screenModel.getSelections() },
+            selections = remember { screenModel.getSelections().toImmutableList() },
             onConfirm = {
                 screenModel.setScore()
                 navigator.pop()
@@ -456,7 +473,7 @@ private data class TrackScoreSelectorScreen(
         private val tracker: Tracker,
     ) : StateScreenModel<Model.State>(State(tracker.displayScore(track))) {
 
-        fun getSelections(): ImmutableList<String> {
+        fun getSelections(): List<String> {
             return tracker.getScoreList()
         }
 
@@ -466,7 +483,7 @@ private data class TrackScoreSelectorScreen(
 
         fun setScore() {
             screenModelScope.launchNonCancellable {
-                tracker.setRemoteScore(track.toDbTrack(), state.value.selection)
+                tracker.setRemoteScore(track, state.value.selection)
             }
         }
 
@@ -587,9 +604,9 @@ private data class TrackDateSelectorScreen(
             val localMillis = millis.convertEpochMillisZone(ZoneOffset.UTC, ZoneOffset.systemDefault())
             screenModelScope.launchNonCancellable {
                 if (start) {
-                    tracker.setRemoteStartDate(track.toDbTrack(), localMillis)
+                    tracker.setRemoteStartDate(track, localMillis)
                 } else {
-                    tracker.setRemoteFinishDate(track.toDbTrack(), localMillis)
+                    tracker.setRemoteFinishDate(track, localMillis)
                 }
             }
         }
@@ -677,9 +694,9 @@ private data class TrackDateRemoverScreen(
         fun removeDate() {
             screenModelScope.launchNonCancellable {
                 if (start) {
-                    tracker.setRemoteStartDate(track.toDbTrack(), 0)
+                    tracker.setRemoteStartDate(track, 0)
                 } else {
-                    tracker.setRemoteFinishDate(track.toDbTrack(), 0)
+                    tracker.setRemoteFinishDate(track, 0)
                 }
             }
         }
@@ -765,7 +782,25 @@ data class TrackerSearchScreen(
         }
 
         fun registerTracking(item: TrackSearch) {
-            screenModelScope.launchNonCancellable { tracker.register(item, mangaId) }
+            screenModelScope.launchNonCancellable {
+                val track = Track(
+                    id = 0L,
+                    mangaId = mangaId,
+                    trackerId = tracker.id,
+                    remoteId = item.remote_id,
+                    libraryId = null,
+                    title = item.title,
+                    lastChapterRead = 0.0,
+                    totalChapters = item.total_chapters,
+                    status = tracker.getReadingStatus(),
+                    score = 0.0,
+                    remoteUrl = item.tracking_url,
+                    startDate = 0L,
+                    finishDate = 0L,
+                    private = item.private,
+                )
+                tracker.register(track, mangaId)
+            }
         }
 
         fun updateSelection(selected: TrackSearch) {

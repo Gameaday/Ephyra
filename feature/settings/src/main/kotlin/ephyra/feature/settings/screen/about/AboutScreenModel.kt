@@ -4,17 +4,16 @@ import android.content.Context
 import androidx.compose.runtime.Immutable
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import ephyra.app.BuildConfig
-import ephyra.app.data.updater.AppUpdateChecker
-import ephyra.app.util.lang.toDateTimestampString
-import ephyra.app.util.system.isNightlyBuildType
-import ephyra.app.util.system.isPreviewBuildType
 import ephyra.core.common.util.lang.launchIO
+import ephyra.core.common.util.lang.toDateTimestampString
+import ephyra.data.updater.AppUpdateChecker
 import ephyra.domain.release.interactor.GetApplicationRelease
 import ephyra.domain.ui.UiPreferences
+import ephyra.presentation.core.ui.AppInfo
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.runBlocking
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -22,6 +21,7 @@ import java.time.ZoneId
 class AboutScreenModel(
     private val appUpdateChecker: AppUpdateChecker,
     private val uiPreferences: UiPreferences,
+    private val appInfo: AppInfo,
 ) : StateScreenModel<AboutScreenState>(AboutScreenState()) {
 
     private val _events: Channel<AboutEvent> = Channel(Int.MAX_VALUE)
@@ -49,8 +49,8 @@ class AboutScreenModel(
 
     fun getVersionName(withBuildDate: Boolean): String {
         return when {
-            BuildConfig.DEBUG -> {
-                "Debug ${BuildConfig.COMMIT_SHA}".let {
+            appInfo.isDebug -> {
+                "Debug ${appInfo.commitSha}".let {
                     if (withBuildDate) {
                         "$it (${getFormattedBuildTime()})"
                     } else {
@@ -59,28 +59,28 @@ class AboutScreenModel(
                 }
             }
 
-            isPreviewBuildType -> {
-                "Beta r${BuildConfig.COMMIT_COUNT}".let {
+            appInfo.isPreview -> {
+                "Beta r${appInfo.commitCount}".let {
                     if (withBuildDate) {
-                        "$it (${BuildConfig.COMMIT_SHA}, ${getFormattedBuildTime()})"
+                        "$it (${appInfo.commitSha}, ${getFormattedBuildTime()})"
                     } else {
-                        "$it (${BuildConfig.COMMIT_SHA})"
+                        "$it (${appInfo.commitSha})"
                     }
                 }
             }
 
-            isNightlyBuildType -> {
-                "Ephyra ${BuildConfig.VERSION_NAME}".let {
+            appInfo.isNightly -> {
+                "Ephyra ${appInfo.versionName}".let {
                     if (withBuildDate) {
-                        "$it (${BuildConfig.COMMIT_SHA}, ${getFormattedBuildTime()})"
+                        "$it (${appInfo.commitSha}, ${getFormattedBuildTime()})"
                     } else {
-                        "$it (${BuildConfig.COMMIT_SHA})"
+                        "$it (${appInfo.commitSha})"
                     }
                 }
             }
 
             else -> {
-                "Stable ${BuildConfig.VERSION_NAME}".let {
+                "Stable ${appInfo.versionName}".let {
                     if (withBuildDate) {
                         "$it (${getFormattedBuildTime()})"
                     } else {
@@ -94,16 +94,16 @@ class AboutScreenModel(
     private fun getFormattedBuildTime(): String {
         return try {
             LocalDateTime.ofInstant(
-                Instant.parse(BuildConfig.BUILD_TIME),
+                Instant.parse(appInfo.buildTime),
                 ZoneId.systemDefault(),
             )
                 .toDateTimestampString(
                     UiPreferences.dateFormat(
-                        uiPreferences.dateFormat().get(),
+                        runBlocking { uiPreferences.dateFormat().get() },
                     ),
                 )
         } catch (e: Exception) {
-            BuildConfig.BUILD_TIME
+            appInfo.buildTime
         }
     }
 }

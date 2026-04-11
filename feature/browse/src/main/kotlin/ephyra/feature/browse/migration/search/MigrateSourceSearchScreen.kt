@@ -2,45 +2,45 @@ package ephyra.feature.browse.migration.search
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FilterList
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.SmallExtendedFloatingActionButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.animateFloatingActionButton
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalUriHandler
-import cafe.adriel.voyager.core.model.rememberScreenModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import ephyra.core.util.ifSourcesLoaded
-import ephyra.feature.browse.presentation.BrowseSourceContent
-import ephyra.presentation.core.components.SearchToolbar
-import ephyra.presentation.core.util.Screen
-import eu.kanade.tachiyomi.source.online.HttpSource
-import ephyra.feature.browse.source.browse.BrowseSourceScreenModel
-import ephyra.feature.browse.source.browse.SourceFilterDialog
-import ephyra.app.ui.home.HomeScreen
-import ephyra.app.ui.manga.MangaScreen
-import ephyra.app.ui.webview.WebViewScreen
-import kotlinx.coroutines.launch
-import ephyra.feature.migration.dialog.MigrateMangaDialog
-import ephyra.feature.migration.list.MigrationListScreen
-import ephyra.presentation.core.util.collectAsLazyPagingItems
 import ephyra.core.common.Constants
 import ephyra.domain.manga.model.Manga
+import ephyra.feature.browse.presentation.BrowseSourceContent
+import ephyra.feature.browse.source.browse.BrowseSourceScreenModel
+import ephyra.feature.browse.source.browse.SourceFilterDialog
+import ephyra.feature.manga.MangaScreen
+import ephyra.feature.migration.dialog.MigrateMangaDialog
+import ephyra.feature.webview.WebViewScreen
 import ephyra.i18n.MR
+import ephyra.presentation.core.components.SearchToolbar
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.LoadingScreen
+import ephyra.presentation.core.ui.BottomNavController
+import ephyra.presentation.core.ui.MigrationListPresenter
+import ephyra.presentation.core.util.Screen
+import ephyra.presentation.core.util.collectAsLazyPagingItems
+import ephyra.presentation.core.util.ifSourcesLoaded
 import ephyra.source.local.LocalSource
+import eu.kanade.tachiyomi.source.online.HttpSource
+import kotlinx.coroutines.launch
+import org.koin.core.parameter.parametersOf
 
 data class MigrateSourceSearchScreen(
     private val currentManga: Manga,
@@ -59,7 +59,7 @@ data class MigrateSourceSearchScreen(
         val navigator = LocalNavigator.currentOrThrow
         val scope = rememberCoroutineScope()
 
-        val screenModel = rememberScreenModel { BrowseSourceScreenModel(sourceId, query) }
+        val screenModel = koinScreenModel<BrowseSourceScreenModel> { parametersOf(sourceId, query) }
         val state by screenModel.state.collectAsStateWithLifecycle()
 
         val snackbarHostState = remember { SnackbarHostState() }
@@ -75,28 +75,25 @@ data class MigrateSourceSearchScreen(
                 )
             },
             floatingActionButton = {
-                SmallExtendedFloatingActionButton(
+                ExtendedFloatingActionButton(
                     text = { Text(text = stringResource(MR.strings.action_filter)) },
                     icon = { Icon(Icons.Outlined.FilterList, contentDescription = null) },
                     onClick = screenModel::openFilterSheet,
-                    modifier = Modifier.animateFloatingActionButton(
-                        visible = state.filters.isNotEmpty(),
-                        alignment = Alignment.BottomEnd,
-                    ),
+                    modifier = Modifier.alpha(if (state.filters.isNotEmpty()) 1f else 0f),
                 )
             },
             snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         ) { paddingValues ->
             val openMigrateDialog: (Manga) -> Unit = {
                 val migrateListScreen = navigator.items
-                    .filterIsInstance<MigrationListScreen>()
+                    .filterIsInstance<MigrationListPresenter>()
                     .lastOrNull()
 
                 if (migrateListScreen == null) {
                     screenModel.setDialog(BrowseSourceScreenModel.Dialog.Migrate(target = it, current = currentManga))
                 } else {
                     migrateListScreen.addMatchOverride(current = currentManga.id, target = it.id)
-                    navigator.popUntil { screen -> screen is MigrationListScreen }
+                    navigator.popUntil { screen -> screen is MigrationListPresenter }
                 }
             }
             BrowseSourceContent(
@@ -145,7 +142,7 @@ data class MigrateSourceSearchScreen(
                     onComplete = {
                         scope.launch {
                             navigator.popUntilRoot()
-                            HomeScreen.openTab(HomeScreen.Tab.Browse())
+                            (navigator as? BottomNavController)?.showBottomNav(true)
                             navigator.push(MangaScreen(dialog.target.id))
                         }
                     },

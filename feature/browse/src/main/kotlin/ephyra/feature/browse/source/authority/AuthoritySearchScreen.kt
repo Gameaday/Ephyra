@@ -46,7 +46,6 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -60,27 +59,29 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import coil3.compose.AsyncImage
 import ephyra.domain.manga.interactor.FindContentSource
-import ephyra.domain.track.interactor.AddTracks
-import ephyra.presentation.core.components.AdaptiveSheet
-import ephyra.presentation.core.components.TabContent
-import ephyra.data.track.model.TrackSearch
-import ephyra.feature.browse.source.globalsearch.GlobalSearchScreen
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
 import ephyra.domain.manga.model.ContentType
 import ephyra.domain.manga.model.MangaWithChapterCount
+import ephyra.domain.track.interactor.AddTracks
+import ephyra.domain.track.model.TrackSearch
+import ephyra.feature.browse.source.globalsearch.GlobalSearchScreen
 import ephyra.i18n.MR
+import ephyra.presentation.core.components.AdaptiveSheet
 import ephyra.presentation.core.components.ScrollbarLazyColumn
+import ephyra.presentation.core.components.TabContent
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.theme.MotionTokens
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import cafe.adriel.voyager.core.screen.Screen as VoyagerScreen
 
 /**
  * Creates the Search sub-tab inside the top-level Discover tab.
@@ -92,7 +93,7 @@ import ephyra.presentation.core.theme.MotionTokens
  * alongside the search.
  */
 @Composable
-fun Screen.discoverTab(): TabContent {
+fun VoyagerScreen.discoverTab(): TabContent {
     val navigator = LocalNavigator.currentOrThrow
     val screenModel = koinScreenModel<AuthoritySearchScreenModel>()
     val state by screenModel.state.collectAsStateWithLifecycle()
@@ -140,7 +141,7 @@ fun Screen.discoverTab(): TabContent {
                     onSelectSource = { match ->
                         screenModel.dismissSourcePrompt()
                         navigator.push(
-                            ephyra.app.ui.browse.source.browse.BrowseSourceScreen(
+                            ephyra.feature.browse.source.browse.BrowseSourceScreen(
                                 match.sourceId,
                                 match.manga.title,
                             ),
@@ -172,8 +173,8 @@ fun Screen.discoverTab(): TabContent {
 @Composable
 private fun DiscoverContent(
     state: AuthoritySearchState,
-    trackersForFilter: (ContentType) -> ImmutableList<ephyra.app.data.track.Tracker>,
-    onSelectTracker: (ephyra.app.data.track.Tracker) -> Unit,
+    trackersForFilter: (ContentType) -> ImmutableList<ephyra.domain.track.service.Tracker>,
+    onSelectTracker: (ephyra.domain.track.service.Tracker) -> Unit,
     onSearch: (String) -> Unit,
     onRetrySearch: () -> Unit,
     onAddToLibrary: (TrackSearch) -> Unit,

@@ -1,8 +1,6 @@
 plugins {
     id("ephyra.library")
     id("ephyra.library.compose")
-    // ADD THIS: It tells Gradle this is an Android Kotlin module
-    alias(libs.plugins.koin.compiler)
 }
 
 android {
@@ -60,6 +58,7 @@ dependencies {
     api(androidx.lifecycle.runtime.compose)
     api(libs.image.decoder)
     api(libs.materialKolor)
+    api(libs.material)
     api(libs.compose.materialmotion)
     api(libs.reorderable)
 
@@ -77,5 +76,5 @@ dependencies {
 
     // Utilities
     api(libs.shizuku.api)
+    api(androidx.biometricktx)
 }
-

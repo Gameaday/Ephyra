@@ -19,7 +19,7 @@ private val options = mapOf(
 )
 
 @Composable
-internal fun AppThemeModePreferenceWidget(
+fun AppThemeModePreferenceWidget(
     value: ThemeMode,
     onItemClick: (ThemeMode) -> Unit,
 ) {

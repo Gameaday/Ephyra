@@ -20,14 +20,15 @@ import androidx.compose.ui.Modifier
 import ephyra.core.common.preference.getAndSet
 import ephyra.domain.updates.service.UpdatesPreferences
 import ephyra.i18n.MR
+import ephyra.presentation.core.components.SettingsItemsPaddings
 import ephyra.presentation.core.components.TabbedDialog
 import ephyra.presentation.core.components.TabbedDialogPaddings
-import ephyra.presentation.core.components.SettingsItemsPaddings
 import ephyra.presentation.core.components.TriStateItem
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.collectAsState
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.runBlocking
 
 @Composable
 fun UpdatesFilterDialog(
@@ -86,7 +87,9 @@ private fun ColumnScope.FilterSheet(
 
     val filterExcludedScanlators by screenModel.updatesPreferences.filterExcludedScanlators().collectAsState()
 
-    fun toggleScanlatorFilter() = screenModel.updatesPreferences.filterExcludedScanlators().getAndSet { !it }
+    fun toggleScanlatorFilter() = runBlocking {
+        screenModel.updatesPreferences.filterExcludedScanlators().getAndSet { !it }
+    }
 
     Row(
         modifier = Modifier

@@ -17,6 +17,11 @@ dependencies {
     api(projects.sourceApi)
     api(projects.i18n)
     api(projects.presentationCore)
+    // Screen navigation dependencies
+    implementation(projects.feature.manga)
+    implementation(projects.feature.reader)
+    implementation(projects.feature.category)
+    implementation(projects.feature.migration)
 
     // Jetpack Compose
     implementation(compose.material3.core)

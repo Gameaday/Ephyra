@@ -3,18 +3,19 @@ package ephyra.data.track.bangumi
 import android.app.Application
 import dev.icerock.moko.resources.StringResource
 import ephyra.app.core.common.R
-import ephyra.data.database.models.Track as DbTrack
 import ephyra.data.track.BaseTracker
 import ephyra.data.track.bangumi.dto.BGMOAuth
 import ephyra.data.track.model.TrackSearch
 import ephyra.data.track.model.toDomainTrackSearch
 import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.InsertTrack
+import ephyra.domain.track.model.Track
 import ephyra.domain.track.service.TrackPreferences
 import ephyra.i18n.MR
 import eu.kanade.tachiyomi.network.NetworkHelper
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
-import ephyra.domain.track.model.Track
+import ephyra.data.database.models.Track as DbTrack
 
 class Bangumi(
     id: Long,
@@ -25,7 +26,6 @@ class Bangumi(
     insertTrack: InsertTrack,
     private val json: Json,
 ) : BaseTracker(id, "Bangumi", context, trackPreferences, networkService, addTracks, insertTrack) {
-
 
     private val interceptor by lazy { BangumiInterceptor(this, json) }
 
@@ -58,7 +58,7 @@ class Bangumi(
     }
 
     override suspend fun bindInternal(track: DbTrack, hasReadChapters: Boolean): DbTrack {
-        val statusTrack = api.statusLibManga(track, getUsernameSync())
+        val statusTrack = api.statusLibManga(track, getUsername())
         return if (statusTrack != null) {
             track.copyPersonalFrom(statusTrack, copyRemotePrivate = false)
             track.library_id = statusTrack.library_id
@@ -129,10 +129,9 @@ class Bangumi(
         trackPreferences.trackToken(this).set(json.encodeToString(oauth))
     }
 
-    @Suppress("DEPRECATION")
     fun restoreToken(): BGMOAuth? {
         return try {
-            json.decodeFromString<BGMOAuth>(trackPreferences.trackToken(this).getSync())
+            json.decodeFromString<BGMOAuth>(runBlocking { trackPreferences.trackToken(this@Bangumi).get() })
         } catch (_: Exception) {
             null
         }

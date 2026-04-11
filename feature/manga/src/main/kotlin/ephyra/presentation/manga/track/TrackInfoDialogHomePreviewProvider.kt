@@ -2,9 +2,9 @@ package ephyra.presentation.manga.track
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
-import ephyra.app.ui.manga.track.TrackItem
 import ephyra.domain.track.model.Track
-import ephyra.test.DummyTracker
+import ephyra.feature.manga.track.TrackItem
+import ephyra.presentation.manga.preview.DummyTracker
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
@@ -72,7 +72,7 @@ internal class TrackInfoDialogHomePreviewProvider :
 
     private val noTrackers = @Composable {
         TrackInfoDialogHome(
-            trackItems = listOf(),
+            trackItems = listOf<TrackItem>(),
             dateFormat = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM),
             onStatusClick = {},
             onChapterClick = {},
