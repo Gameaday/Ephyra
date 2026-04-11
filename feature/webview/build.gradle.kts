@@ -4,9 +4,6 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
     alias(libs.plugins.koin.compiler)
 }
-koinCompiler {
-    compileSafety = false
-}
 
 android {
     namespace = "ephyra.feature.webview"
@@ -52,6 +49,3 @@ dependencies {
     testImplementation(libs.bundles.test)
 }
 
-koinCompiler {
-    compileSafety.set(false)
-}

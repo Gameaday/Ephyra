@@ -347,3 +347,7 @@ buildscript {
         classpath(kotlinx.gradle)
     }
 }
+
+koinCompiler {
+    compileSafety.set(false)
+}

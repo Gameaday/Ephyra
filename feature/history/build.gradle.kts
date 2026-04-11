@@ -37,6 +37,3 @@ dependencies {
     implementation(libs.koin.annotations)
 }
 
-koinCompiler {
-    compileSafety.set(false)
-}
