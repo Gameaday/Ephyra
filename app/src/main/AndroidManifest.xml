@@ -137,7 +137,7 @@
         </activity>
 
         <activity
-            android:name=".ui.reader.ReaderActivity"
+            android:name="ephyra.feature.reader.ReaderActivity"
             android:exported="false"
             android:launchMode="singleTask">
             <intent-filter>
@@ -150,12 +150,12 @@
         </activity>
 
         <activity
-            android:name=".ui.security.UnlockActivity"
+            android:name="ephyra.feature.security.UnlockActivity"
             android:exported="false"
             android:theme="@style/Theme.Tachiyomi" />
 
         <activity
-            android:name=".ui.webview.WebViewActivity"
+            android:name="ephyra.feature.webview.WebViewActivity"
             android:configChanges="uiMode|orientation|screenSize"
             android:exported="false" />
 
@@ -165,7 +165,7 @@
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
         <activity
-            android:name=".ui.setting.track.TrackLoginActivity"
+            android:name="ephyra.feature.settings.track.TrackLoginActivity"
             android:exported="true"
             android:label="@string/track_activity_name">
             <intent-filter>
