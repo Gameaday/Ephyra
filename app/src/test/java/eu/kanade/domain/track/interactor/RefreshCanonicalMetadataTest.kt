@@ -100,7 +100,8 @@ class RefreshCanonicalMetadataTest {
         every { muTracker.isLoggedIn } returns false
         every { trackerManager.get(7L) } returns muTracker
 
-        refreshCanonicalMetadata = RefreshCanonicalMetadata(mangaRepository, trackerManager, trackPreferences, coverCache)
+        refreshCanonicalMetadata =
+            RefreshCanonicalMetadata(mangaRepository, trackerManager, trackPreferences, coverCache)
     }
 
     @Test

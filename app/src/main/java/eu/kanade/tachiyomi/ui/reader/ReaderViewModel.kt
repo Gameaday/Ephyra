@@ -108,8 +108,6 @@ class ReaderViewModel @JvmOverloads constructor(
     private companion object {
         const val FALLBACK_LAST_PAGE_INDEX = Int.MAX_VALUE
     }
-
-
     private val mutableState = MutableStateFlow(State())
     val state = mutableState.asStateFlow()
 
