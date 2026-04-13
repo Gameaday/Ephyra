@@ -18,7 +18,7 @@ import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.SourceFactory
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.runBlocking
 import logcat.LogPriority
 import java.io.File
@@ -155,10 +155,18 @@ internal class ExtensionLoader(
 
         if (extPkgs.isEmpty()) return emptyList()
 
-        // Load each extension concurrently and wait for completion
-        return coroutineScope {
-            extPkgs.map {
-                async { loadExtension(context, it) }
+        // Load each extension concurrently and wait for completion.
+        // supervisorScope ensures a failure in one extension doesn't cancel the others.
+        return supervisorScope {
+            extPkgs.map { extInfo ->
+                async {
+                    try {
+                        loadExtension(context, extInfo)
+                    } catch (e: Throwable) {
+                        logcat(LogPriority.ERROR, e) { "Unexpected error loading extension ${extInfo.packageInfo.packageName}" }
+                        LoadResult.Error
+                    }
+                }
             }.awaitAll()
         }
     }
@@ -263,7 +271,13 @@ internal class ExtensionLoader(
             return LoadResult.Untrusted(extension)
         }
 
-        val isNsfw = appInfo.metaData.getInt(METADATA_NSFW) == 1
+        val metaData = appInfo.metaData
+        if (metaData == null) {
+            logcat(LogPriority.ERROR) { "Extension $pkgName has no meta-data" }
+            return LoadResult.Error
+        }
+
+        val isNsfw = metaData.getInt(METADATA_NSFW) == 1
         if (!loadNsfwSource && isNsfw) {
             logcat(LogPriority.WARN) { "NSFW extension $pkgName not allowed" }
             return LoadResult.Error
@@ -276,7 +290,13 @@ internal class ExtensionLoader(
             return LoadResult.Error
         }
 
-        val sources = appInfo.metaData.getString(METADATA_SOURCE_CLASS)!!
+        val sourceClassName = metaData.getString(METADATA_SOURCE_CLASS)
+        if (sourceClassName.isNullOrEmpty()) {
+            logcat(LogPriority.ERROR) { "Extension $pkgName missing required source class metadata" }
+            return LoadResult.Error
+        }
+
+        val sources = sourceClassName
             .split(";")
             .map {
                 val sourceClass = it.trim()
@@ -317,7 +337,7 @@ internal class ExtensionLoader(
             lang = lang,
             isNsfw = isNsfw,
             sources = sources,
-            pkgFactory = appInfo.metaData.getString(METADATA_SOURCE_FACTORY),
+            pkgFactory = metaData.getString(METADATA_SOURCE_FACTORY),
             icon = appInfo.loadIcon(pkgManager),
             isShared = extensionInfo.isShared,
         )

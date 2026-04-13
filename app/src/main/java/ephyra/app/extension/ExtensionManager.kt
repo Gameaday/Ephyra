@@ -99,10 +99,11 @@ internal class ExtensionManager(
     override fun getAppIconForSource(sourceId: Long): Drawable? {
         val pkgName = getExtensionPackage(sourceId) ?: return null
 
-        return iconMap.getOrPut(pkgName) {
-            extensionLoader.getExtensionPackageInfoFromPkgName(context, pkgName)!!.applicationInfo!!
-                .loadIcon(context.packageManager)
-        }
+        iconMap[pkgName]?.let { return it }
+
+        val appInfo = extensionLoader.getExtensionPackageInfoFromPkgName(context, pkgName)
+            ?.applicationInfo ?: return null
+        return appInfo.loadIcon(context.packageManager).also { iconMap[pkgName] = it }
     }
 
     override fun getExtensionIcon(pkgName: String, density: Int): Drawable? {
