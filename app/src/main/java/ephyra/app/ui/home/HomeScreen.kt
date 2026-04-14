@@ -66,7 +66,7 @@ object HomeScreen : Screen(), BottomNavController, SearchableScreen {
 
     private val librarySearchEvent = Channel<String>()
     private val openTabEvent = Channel<Tab>()
-    private val showBottomNavEvent = Channel<Boolean>()
+    private val showBottomNavEvent = Channel<Boolean>(Channel.CONFLATED)
 
     @Suppress("ConstPropertyName")
     private const val TabFadeDuration = MotionTokens.DURATION_MEDIUM

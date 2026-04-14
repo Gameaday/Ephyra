@@ -18,8 +18,8 @@ import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.SourceFactory
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.supervisorScope
 import logcat.LogPriority
 import java.io.File
 
@@ -163,7 +163,9 @@ internal class ExtensionLoader(
                     try {
                         loadExtension(context, extInfo)
                     } catch (e: Throwable) {
-                        logcat(LogPriority.ERROR, e) { "Unexpected error loading extension ${extInfo.packageInfo.packageName}" }
+                        logcat(LogPriority.ERROR, e) {
+                            "Unexpected error loading extension ${extInfo.packageInfo.packageName}"
+                        }
                         LoadResult.Error
                     }
                 }
