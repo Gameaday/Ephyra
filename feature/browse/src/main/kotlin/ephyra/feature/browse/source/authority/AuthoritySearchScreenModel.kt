@@ -24,8 +24,9 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import logcat.LogPriority
 import org.koin.core.annotation.Factory
 
@@ -44,13 +45,29 @@ class AuthoritySearchScreenModel(
      * All trackers available for authority search (regardless of content type).
      * Includes logged-in authoritative trackers AND trackers with public search APIs.
      * This allows discovery to work without login for trackers like MangaUpdates.
+     * Initialized asynchronously on IO to avoid blocking the main thread on DataStore reads.
      */
-    private val allTrackers: ImmutableList<Tracker> = trackerManager.getAll(AddTracks.TRACKER_CANONICAL_PREFIXES.keys)
-        .filter {
-            AddTracks.TRACKER_CANONICAL_PREFIXES.containsKey(it.id) &&
-                (runBlocking { it.isLoggedIn() } || it.id in AddTracks.TRACKERS_WITH_PUBLIC_SEARCH)
+    private val _allTrackers = MutableStateFlow<ImmutableList<Tracker>>(persistentListOf())
+    private val allTrackers get() = _allTrackers.value
+
+    init {
+        screenModelScope.launch {
+            val trackers = withIOContext {
+                trackerManager.getAll(AddTracks.TRACKER_CANONICAL_PREFIXES.keys)
+                    .filter {
+                        AddTracks.TRACKER_CANONICAL_PREFIXES.containsKey(it.id) &&
+                            (it.isLoggedIn() || it.id in AddTracks.TRACKERS_WITH_PUBLIC_SEARCH)
+                    }
+                    .toImmutableList()
+            }
+            _allTrackers.value = trackers
+            if (trackers.isNotEmpty()) {
+                mutableState.update { state ->
+                    state.copy(selectedTracker = state.selectedTracker ?: trackers.first())
+                }
+            }
         }
-        .toImmutableList()
+    }
 
     /**
      * Trackers filtered by the current content type selection.
@@ -64,14 +81,7 @@ class AuthoritySearchScreenModel(
         return allTrackers.filter { it.id in validIds }.toImmutableList()
     }
 
-    init {
-        if (allTrackers.isNotEmpty()) {
-            mutableState.value = mutableState.value.copy(selectedTracker = allTrackers.first())
-        }
-    }
-
-    fun selectTracker(tracker: Tracker) {
-        mutableState.value = mutableState.value.copy(
+    fun selectTracker(tracker: Tracker) {        mutableState.value = mutableState.value.copy(
             selectedTracker = tracker,
             results = persistentListOf(),
             query = "",
@@ -239,7 +249,7 @@ class AuthoritySearchScreenModel(
                     mergeAlternativeTitles(manga, result)
 
                     // Bind the tracker if logged in
-                    if (runBlocking { prompt.tracker.isLoggedIn() }) {
+                    if (prompt.tracker.isLoggedIn()) {
                         val track = Track(
                             id = 0L,
                             mangaId = manga.id,
@@ -338,7 +348,7 @@ class AuthoritySearchScreenModel(
         )
 
         // Bind the tracker only if user is logged in
-        if (runBlocking { tracker.isLoggedIn() }) {
+        if (tracker.isLoggedIn()) {
             val track = Track(
                 id = 0L,
                 mangaId = manga.id,

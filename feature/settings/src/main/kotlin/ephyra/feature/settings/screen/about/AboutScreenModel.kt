@@ -13,7 +13,6 @@ import ephyra.presentation.core.ui.AppInfo
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.runBlocking
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -99,7 +98,7 @@ class AboutScreenModel(
             )
                 .toDateTimestampString(
                     UiPreferences.dateFormat(
-                        runBlocking { uiPreferences.dateFormat().get() },
+                        uiPreferences.dateFormat().getSync(),
                     ),
                 )
         } catch (e: Exception) {

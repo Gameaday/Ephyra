@@ -1,11 +1,12 @@
 package ephyra.feature.updates
 
 import cafe.adriel.voyager.core.model.ScreenModel
+import cafe.adriel.voyager.core.model.screenModelScope
 import ephyra.core.common.preference.Preference
 import ephyra.core.common.preference.TriState
 import ephyra.core.common.preference.getAndSet
+import ephyra.core.common.util.lang.launchIO
 import ephyra.domain.updates.service.UpdatesPreferences
-import kotlinx.coroutines.runBlocking
 import org.koin.core.annotation.Factory
 
 @Factory
@@ -14,7 +15,7 @@ class UpdatesSettingsScreenModel(
 ) : ScreenModel {
 
     fun toggleFilter(preference: (UpdatesPreferences) -> Preference<TriState>) {
-        runBlocking {
+        screenModelScope.launchIO {
             preference(updatesPreferences).getAndSet {
                 it.next()
             }

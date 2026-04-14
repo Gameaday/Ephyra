@@ -394,7 +394,7 @@ object SettingsAdvancedScreen : SearchableSettings {
                 ),
                 Preference.PreferenceItem.TextPreference(
                     title = stringResource(MR.strings.pref_display_profile),
-                    subtitle = kotlinx.coroutines.runBlocking { basePreferences.displayProfile().get() },
+                    subtitle = basePreferences.displayProfile().getSync(),
                     onClick = {
                         chooseColorProfile.launch(arrayOf("*/*"))
                     },

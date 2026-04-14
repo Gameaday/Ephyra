@@ -79,7 +79,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.runBlocking
 import logcat.LogPriority
 import java.io.InputStream
 import java.time.Instant
@@ -943,11 +942,10 @@ class ReaderViewModel @JvmOverloads constructor(
 
     fun toggleCropBorders(): Boolean {
         val isPagerType = ReadingMode.isPagerType(getMangaReadingMode())
-        return if (isPagerType) {
-            runBlocking { readerPreferences.cropBorders().toggle() }
-        } else {
-            runBlocking { readerPreferences.cropBordersWebtoon().toggle() }
-        }
+        val pref = if (isPagerType) readerPreferences.cropBorders() else readerPreferences.cropBordersWebtoon()
+        val newValue = !pref.getSync()
+        pref.set(newValue)
+        return newValue
     }
 
     /**
@@ -1013,7 +1011,7 @@ class ReaderViewModel @JvmOverloads constructor(
         val filename = generateFilename(manga, page)
 
         // Pictures directory.
-        val relativePath = if (runBlocking { readerPreferences.folderPerManga().get() }) {
+        val relativePath = if (readerPreferences.folderPerManga().getSync()) {
             DiskUtil.buildValidFilename(
                 manga.title,
             )
@@ -1216,7 +1214,7 @@ class ReaderViewModel @JvmOverloads constructor(
      */
     private fun updateTrackChapterRead(readerChapter: ReaderChapter) {
         if (incognitoMode) return
-        if (!runBlocking { trackPreferences.autoUpdateTrack().get() }) return
+        if (!trackPreferences.autoUpdateTrack().getSync()) return
 
         val manga = manga ?: return
         viewModelScope.launchNonCancellable {
