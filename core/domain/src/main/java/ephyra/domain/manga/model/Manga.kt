@@ -10,7 +10,6 @@ import ephyra.domain.manga.service.CoverCache
 import ephyra.domain.reader.model.ReaderOrientation
 import ephyra.domain.reader.model.ReadingMode
 import eu.kanade.tachiyomi.source.model.SManga
-import kotlinx.coroutines.runBlocking
 
 // TODO: move these into the domain model
 val Manga.readingMode: Long
@@ -20,7 +19,7 @@ val Manga.readerOrientation: Long
     get() = viewerFlags and ReaderOrientation.MASK.toLong()
 
 fun Manga.downloadedFilter(basePreferences: BasePreferences): TriState {
-    if (runBlocking { basePreferences.downloadedOnly().get() }) return TriState.ENABLED_IS
+    if (basePreferences.downloadedOnly().getSync()) return TriState.ENABLED_IS
     return when (downloadedFilterRaw) {
         Manga.CHAPTER_SHOW_DOWNLOADED -> TriState.ENABLED_IS
         Manga.CHAPTER_SHOW_NOT_DOWNLOADED -> TriState.ENABLED_NOT

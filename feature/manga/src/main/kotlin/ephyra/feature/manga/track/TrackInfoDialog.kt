@@ -82,7 +82,6 @@ import kotlinx.coroutines.flow.forEach
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import logcat.LogPriority
 import org.koin.compose.koinInject
 import java.time.Instant
@@ -124,7 +123,7 @@ data class TrackInfoDialogHomeScreen(
         }
 
         val uiPreferences = koinInject<UiPreferences>()
-        val dateFormat = remember { UiPreferences.dateFormat(runBlocking { uiPreferences.dateFormat().get() }) }
+        val dateFormat = remember { UiPreferences.dateFormat(uiPreferences.dateFormat().getSync()) }
         val state by screenModel.state.collectAsStateWithLifecycle()
 
         TrackInfoDialogHome(
