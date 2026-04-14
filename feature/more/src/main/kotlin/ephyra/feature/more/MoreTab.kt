@@ -4,6 +4,7 @@ import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
 import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
@@ -26,6 +27,7 @@ import ephyra.feature.stats.StatsScreen
 import ephyra.i18n.MR
 import ephyra.presentation.core.R
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.ui.AppReadySignal
 import ephyra.presentation.core.util.Tab
 import ephyra.presentation.core.util.asState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,7 +57,7 @@ data object MoreTab : Tab {
 
     @Composable
     override fun Content() {
-        LocalContext.current
+        val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
         val screenModel = koinScreenModel<MoreScreenModel>()
         val downloadQueueState by screenModel.downloadQueueState.collectAsStateWithLifecycle()
@@ -72,6 +74,10 @@ data object MoreTab : Tab {
             onClickSettings = { navigator.push(SettingsScreen()) },
             onClickAbout = { navigator.push(SettingsScreen(SettingsScreen.Destination.About)) },
         )
+
+        LaunchedEffect(Unit) {
+            (context as? AppReadySignal)?.signalReady()
+        }
     }
 }
 

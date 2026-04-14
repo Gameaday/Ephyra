@@ -153,7 +153,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
 
                 val context = LocalContext.current
 
-                var incognito by remember { mutableStateOf(getIncognitoState.await(null)) }
+                var incognito by remember { mutableStateOf(false) }
                 val downloadOnly by preferences.downloadedOnly().collectAsState()
                 val indexing by downloadCache.isInitializing.collectAsStateWithLifecycle()
 
@@ -188,6 +188,10 @@ class MainActivity : BaseActivity(), AppReadySignal {
                             // Reset Incognito Mode on relaunch
                             preferences.incognitoMode().set(false)
                         }
+
+                        // Signal that the app is ready regardless of whether onboarding
+                        // will be pushed (signalReady is idempotent – tabs also call it).
+                        signalReady()
                     }
                     LaunchedEffect(navigator.lastItem) {
                         (navigator.lastItem as? BrowseSourceScreen)?.sourceId

@@ -95,9 +95,13 @@ val koinAppModule = module {
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onOpen(db: androidx.sqlite.db.SupportSQLiteDatabase) {
                     super.onOpen(db)
-                    db.query("PRAGMA foreign_keys = ON").close()
-                    db.query("PRAGMA journal_mode = WAL").close()
-                    db.query("PRAGMA synchronous = NORMAL").close()
+                    try {
+                        db.query("PRAGMA foreign_keys = ON").close()
+                        db.query("PRAGMA journal_mode = WAL").close()
+                        db.query("PRAGMA synchronous = NORMAL").close()
+                    } catch (_: Exception) {
+                        // PRAGMA configuration is best-effort; failures are non-fatal.
+                    }
                 }
             })
             .build()
