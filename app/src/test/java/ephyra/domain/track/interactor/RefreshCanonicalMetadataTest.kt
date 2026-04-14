@@ -1,13 +1,13 @@
 package ephyra.domain.track.interactor
 
-import ephyra.domain.manga.service.CoverCache
-import ephyra.domain.track.model.TrackSearch
-import ephyra.domain.track.service.Tracker
-import ephyra.domain.track.service.TrackerManager
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaUpdate
 import ephyra.domain.manga.repository.MangaRepository
+import ephyra.domain.manga.service.CoverCache
+import ephyra.domain.track.model.TrackSearch
 import ephyra.domain.track.service.TrackPreferences
+import ephyra.domain.track.service.Tracker
+import ephyra.domain.track.service.TrackerManager
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.coVerify

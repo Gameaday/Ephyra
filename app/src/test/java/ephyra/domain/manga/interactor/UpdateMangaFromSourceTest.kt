@@ -111,7 +111,15 @@ class UpdateMangaFromSourceTest {
 
         coEvery { mangaRepository.update(any()) } returns true
 
-        updateManga = UpdateManga(mangaRepository, fetchInterval, coverCache, libraryPreferences, downloadManager, trackPreferences)
+        updateManga =
+            UpdateManga(
+                mangaRepository,
+                fetchInterval,
+                coverCache,
+                libraryPreferences,
+                downloadManager,
+                trackPreferences,
+            )
     }
 
     @Test
