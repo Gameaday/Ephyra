@@ -7,7 +7,6 @@ import ephyra.core.common.util.lang.toRelativeString
 import ephyra.domain.ui.UiPreferences
 import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource
-import kotlinx.coroutines.runBlocking
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -33,9 +32,9 @@ fun relativeDateText(
 
     val preferences = ephyra.presentation.core.util.LocalUiPreferences.current
 
-    val relativeTime = remember { runBlocking { preferences.relativeTime().get() } }
+    val relativeTime = remember { preferences.relativeTime().getSync() }
 
-    val dateFormat = remember { UiPreferences.dateFormat(runBlocking { preferences.dateFormat().get() }) }
+    val dateFormat = remember { UiPreferences.dateFormat(preferences.dateFormat().getSync()) }
 
     return localDate?.toRelativeString(
         context = context,

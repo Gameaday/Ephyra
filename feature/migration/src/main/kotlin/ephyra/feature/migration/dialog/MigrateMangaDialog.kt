@@ -37,7 +37,6 @@ import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.LoadingScreen
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.runBlocking
 import kotlin.collections.toMutableSet
 
 private fun MigrationFlag.getLabel(): StringResource {
@@ -153,7 +152,7 @@ class MigrateDialogScreenModel(
                 if (applicable) add(it)
             }
         }
-        val selectedFlags = runBlocking { sourcePreference.migrationFlags().get() }
+        val selectedFlags = sourcePreference.migrationFlags().getSync()
         mutableState.update {
             State(
                 current = current,

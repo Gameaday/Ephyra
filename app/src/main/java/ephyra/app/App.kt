@@ -61,7 +61,7 @@ import eu.kanade.tachiyomi.network.NetworkPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 import logcat.AndroidLogcatLogger
 import logcat.LogPriority
 import logcat.LogcatLogger
@@ -149,14 +149,14 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
             .onEach { ImageUtil.hardwareBitmapThreshold = it }
             .launchIn(scope)
 
-        setAppCompatDelegateThemeMode(runBlocking { get<UiPreferences>().themeMode().get() })
+        setAppCompatDelegateThemeMode(get<UiPreferences>().themeMode().getSync())
 
         // Updates widget update
         WidgetManager(get(), get()).apply { init(scope) }
 
         if (!LogcatLogger.isInstalled) {
             val minLogPriority = when {
-                runBlocking { networkPreferences.verboseLogging().get() } -> LogPriority.VERBOSE
+                networkPreferences.verboseLogging().getSync() -> LogPriority.VERBOSE
                 BuildConfig.DEBUG -> LogPriority.DEBUG
                 else -> LogPriority.INFO
             }
@@ -170,16 +170,22 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
     private fun initializeMigrator() {
         val preferenceStore = get<PreferenceStore>()
         val preference = preferenceStore.getInt(Preference.appStateKey("last_version_code"), 0)
-        logcat { "Migration from ${runBlocking { preference.get() }} to ${BuildConfig.VERSION_CODE}" }
-        Migrator.initialize(
-            old = runBlocking { preference.get() },
-            new = BuildConfig.VERSION_CODE,
-            migrations = migrations,
-            onMigrationComplete = {
-                logcat { "Updating last version to ${BuildConfig.VERSION_CODE}" }
-                preference.set(BuildConfig.VERSION_CODE)
-            },
-        )
+        // Launch on IO so we await the first DataStore emission instead of reading a
+        // potentially empty in-memory snapshot, which could misidentify an upgrade as a
+        // fresh install and run only isAlways migrations instead of the versioned ones.
+        ProcessLifecycleOwner.get().lifecycleScope.launch(Dispatchers.IO) {
+            val old = preference.get()
+            logcat { "Migration from $old to ${BuildConfig.VERSION_CODE}" }
+            Migrator.initialize(
+                old = old,
+                new = BuildConfig.VERSION_CODE,
+                migrations = migrations,
+                onMigrationComplete = {
+                    logcat { "Updating last version to ${BuildConfig.VERSION_CODE}" }
+                    preference.set(BuildConfig.VERSION_CODE)
+                },
+            )
+        }
     }
 
     override fun newImageLoader(context: Context): ImageLoader {
@@ -212,7 +218,7 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
             // This eliminates the CPU→GPU upload on every render frame for covers and browse
             // images. getBitmapOrNull() handles the soft-copy needed for compress/notifications.
             if (!lowRam) bitmapConfig(Bitmap.Config.HARDWARE)
-            if (runBlocking { networkPreferences.verboseLogging().get() }) logger(DebugLogger())
+            if (networkPreferences.verboseLogging().getSync()) logger(DebugLogger())
 
             // Coil spawns a new thread for every image load by default
             fetcherCoroutineContext(Dispatchers.IO.limitedParallelism(8))

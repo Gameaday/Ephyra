@@ -18,7 +18,6 @@ import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.SourceFactory
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.supervisorScope
 import logcat.LogPriority
 import java.io.File
@@ -41,10 +40,6 @@ internal class ExtensionLoader(
     private val preferences: SourcePreferences,
     private val trustExtension: TrustExtension,
 ) {
-
-    private val loadNsfwSource by lazy {
-        runBlocking { preferences.showNsfwSource().get() }
-    }
 
     companion object {
         private const val EXTENSION_FEATURE = "tachiyomi.extension"
@@ -81,7 +76,7 @@ internal class ExtensionLoader(
                 return false
             }
 
-            if (!extensionSignatures.containsAll(getSignatures(currentExtension)!!)) {
+            if (!extensionSignatures.containsAll(getSignatures(currentExtension) ?: return false)) {
                 logcat(LogPriority.ERROR) { "Installed extension signature is not matched." }
                 return false
             }
@@ -115,6 +110,7 @@ internal class ExtensionLoader(
      */
     suspend fun loadExtensions(context: Context): List<LoadResult> {
         val pkgManager = context.packageManager
+        val loadNsfwSource = preferences.showNsfwSource().get()
 
         val installedPkgs =
             pkgManager.getInstalledPackages(PackageManager.PackageInfoFlags.of(packageFlags.toLong()))
@@ -136,6 +132,7 @@ internal class ExtensionLoader(
 
                 val path = it.absolutePath
                 pkgManager.getPackageArchiveInfo(path, packageFlags)
+                    ?.takeIf { pkg -> pkg.applicationInfo != null }
                     ?.apply { applicationInfo!!.fixBasePaths(path) }
             }
             ?.filter { isPackageAnExtension(it) }
@@ -161,7 +158,7 @@ internal class ExtensionLoader(
             extPkgs.map { extInfo ->
                 async {
                     try {
-                        loadExtension(context, extInfo)
+                        loadExtension(context, extInfo, loadNsfwSource)
                     } catch (e: Throwable) {
                         logcat(LogPriority.ERROR, e) {
                             "Unexpected error loading extension ${extInfo.packageInfo.packageName}"
@@ -183,7 +180,8 @@ internal class ExtensionLoader(
             logcat(LogPriority.ERROR) { "Extension package is not found ($pkgName)" }
             return LoadResult.Error
         }
-        return loadExtension(context, extensionPackage)
+        val loadNsfwSource = preferences.showNsfwSource().get()
+        return loadExtension(context, extensionPackage, loadNsfwSource)
     }
 
     fun getExtensionPackageInfoFromPkgName(context: Context, pkgName: String): PackageInfo? {
@@ -195,6 +193,7 @@ internal class ExtensionLoader(
         val privatePkg = if (privateExtensionFile.isFile) {
             context.packageManager.getPackageArchiveInfo(privateExtensionFile.absolutePath, packageFlags)
                 ?.takeIf { isPackageAnExtension(it) }
+                ?.takeIf { it.applicationInfo != null }
                 ?.let {
                     it.applicationInfo!!.fixBasePaths(privateExtensionFile.absolutePath)
                     ExtensionInfo(
@@ -231,10 +230,13 @@ internal class ExtensionLoader(
      * @param context The application context.
      * @param extensionInfo The extension to load.
      */
-    private suspend fun loadExtension(context: Context, extensionInfo: ExtensionInfo): LoadResult {
+    private suspend fun loadExtension(context: Context, extensionInfo: ExtensionInfo, loadNsfwSource: Boolean): LoadResult {
         val pkgManager = context.packageManager
         val pkgInfo = extensionInfo.packageInfo
-        val appInfo = pkgInfo.applicationInfo!!
+        val appInfo = pkgInfo.applicationInfo ?: run {
+            logcat(LogPriority.ERROR) { "Extension ${pkgInfo.packageName} has null applicationInfo" }
+            return LoadResult.Error
+        }
         val pkgName = pkgInfo.packageName
 
         val extName = pkgManager.getApplicationLabel(appInfo).toString().substringAfter("Tachiyomi: ")
@@ -384,7 +386,7 @@ internal class ExtensionLoader(
      * @return List SHA256 digest of the signatures
      */
     private fun getSignatures(pkgInfo: PackageInfo): List<String>? {
-        val signingInfo = pkgInfo.signingInfo!!
+        val signingInfo = pkgInfo.signingInfo ?: return null
         return if (signingInfo.hasMultipleSigners()) {
             signingInfo.apkContentsSigners
         } else {

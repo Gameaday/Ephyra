@@ -51,7 +51,6 @@ import ephyra.presentation.core.util.Screen
 import ephyra.presentation.core.util.system.copyToClipboard
 import ephyra.presentation.core.util.system.toast
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.runBlocking
 import logcat.LogPriority
 import org.koin.compose.koinInject
 
@@ -193,17 +192,15 @@ object AboutScreen : Screen() {
     fun getFormattedBuildTime(): String {
         val appInfo: AppInfo = koinInject()
         val uiPreferences: UiPreferences = koinInject()
-        return runBlocking {
-            try {
-                val fmt = uiPreferences.dateFormat().get()
-                val dt = java.time.LocalDateTime.ofInstant(
-                    java.time.Instant.parse(appInfo.buildTime),
-                    java.time.ZoneId.systemDefault(),
-                )
-                dt.toDateTimestampString(UiPreferences.dateFormat(fmt))
-            } catch (e: Exception) {
-                appInfo.buildTime
-            }
+        return try {
+            val fmt = uiPreferences.dateFormat().getSync()
+            val dt = java.time.LocalDateTime.ofInstant(
+                java.time.Instant.parse(appInfo.buildTime),
+                java.time.ZoneId.systemDefault(),
+            )
+            dt.toDateTimestampString(UiPreferences.dateFormat(fmt))
+        } catch (e: Exception) {
+            appInfo.buildTime
         }
     }
 }

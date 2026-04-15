@@ -37,7 +37,6 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import logcat.LogPriority
@@ -61,8 +60,8 @@ class MigrationListScreenModel(
     val items
         inline get() = state.value.items
 
-    private val hideUnmatched = runBlocking { preferences.migrationHideUnmatched().get() }
-    private val hideWithoutUpdates = runBlocking { preferences.migrationHideWithoutUpdates().get() }
+    private val hideUnmatched = preferences.migrationHideUnmatched().getSync()
+    private val hideWithoutUpdates = preferences.migrationHideWithoutUpdates().getSync()
 
     private val navigateBackChannel = Channel<Unit>()
     val navigateBackEvent = navigateBackChannel.receiveAsFlow()

@@ -63,7 +63,6 @@ import ephyra.presentation.core.util.shouldExpandFAB
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.runBlocking
 import sh.calvin.reorderable.ReorderableCollectionItemScope
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.ReorderableLazyListState
@@ -382,10 +381,8 @@ class MigrationConfigScreen(private val mangaIds: Collection<Long>) : Screen() {
         }
 
         fun toggleSelection(config: SelectionConfig) {
-            val pinnedSources = runBlocking { sourcePreferences.pinnedSources().get() }.mapNotNull { it.toLongOrNull() }
-            val disabledSources = runBlocking {
-                sourcePreferences.disabledSources().get()
-            }.mapNotNull { it.toLongOrNull() }
+            val pinnedSources = sourcePreferences.pinnedSources().getSync().mapNotNull { it.toLongOrNull() }
+            val disabledSources = sourcePreferences.disabledSources().getSync().mapNotNull { it.toLongOrNull() }
             val isSelected: (Long) -> Boolean = {
                 when (config) {
                     SelectionConfig.All -> true

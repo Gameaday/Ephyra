@@ -67,7 +67,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
-import kotlinx.coroutines.runBlocking
 import org.koin.core.annotation.Factory
 import kotlin.random.Random
 
@@ -93,7 +92,7 @@ class LibraryScreenModel(
 
     init {
         mutableState.update { state ->
-            state.copy(activeCategoryIndex = runBlocking { libraryPreferences.lastUsedCategory().get() })
+            state.copy(activeCategoryIndex = libraryPreferences.lastUsedCategory().getSync())
         }
         screenModelScope.launchIO {
             combine(
@@ -368,7 +367,7 @@ class LibraryScreenModel(
 
         return mapValues { (key, value) ->
             if (key.sort.type == LibrarySort.Type.Random) {
-                return@mapValues value.shuffled(Random(runBlocking { libraryPreferences.randomSortSeed().get() }))
+                return@mapValues value.shuffled(Random(libraryPreferences.randomSortSeed().getSync()))
             }
 
             val manga = value.mapNotNull { favoritesById[it] }

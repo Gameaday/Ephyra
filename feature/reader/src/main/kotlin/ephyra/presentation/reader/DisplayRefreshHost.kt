@@ -14,7 +14,6 @@ import androidx.compose.ui.graphics.Color
 import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.presentation.core.util.collectAsState
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import kotlin.time.Duration.Companion.milliseconds
 
 @Stable
@@ -30,7 +29,7 @@ class DisplayRefreshHost(
     internal val flashIntervalPref = readerPreferences.flashPageInterval()
 
     // Internal State for Flash
-    private var flashInterval = runBlocking { flashIntervalPref.get() }
+    private var flashInterval = flashIntervalPref.getSync()
     private var timesCalled = 0
 
     fun flash() {

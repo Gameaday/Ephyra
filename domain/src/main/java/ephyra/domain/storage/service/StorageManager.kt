@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.shareIn
-import kotlinx.coroutines.runBlocking
 
 class StorageManager(
     private val context: Context,
@@ -29,7 +28,7 @@ class StorageManager(
 
     private val scope = CoroutineScope(Dispatchers.IO)
 
-    private var baseDir: UniFile? = getBaseDir(runBlocking { storagePreferences.baseStorageDirectory().get() })
+    private var baseDir: UniFile? = getBaseDir(storagePreferences.baseStorageDirectory().getSync())
 
     private val _changes: Channel<Unit> = Channel(Channel.UNLIMITED)
     val changes = _changes.receiveAsFlow()

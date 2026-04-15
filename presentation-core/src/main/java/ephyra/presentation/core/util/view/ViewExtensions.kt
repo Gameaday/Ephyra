@@ -21,19 +21,31 @@ import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import ephyra.core.common.core.security.PrivacyPreferences
+import ephyra.domain.ui.UiPreferences
+import ephyra.presentation.core.util.LocalPrivacyPreferences
+import ephyra.presentation.core.util.LocalUiPreferences
 import ephyra.presentation.theme.TachiyomiTheme
+import org.koin.compose.koinInject
 
 inline fun ComponentActivity.setComposeContent(
     parent: CompositionContext? = null,
     crossinline content: @Composable () -> Unit,
 ) {
     setContent(parent) {
-        TachiyomiTheme {
-            CompositionLocalProvider(
-                LocalTextStyle provides MaterialTheme.typography.bodySmall,
-                LocalContentColor provides MaterialTheme.colorScheme.onBackground,
-            ) {
-                content()
+        val uiPreferences = koinInject<UiPreferences>()
+        val privacyPreferences = koinInject<PrivacyPreferences>()
+        CompositionLocalProvider(
+            LocalUiPreferences provides uiPreferences,
+            LocalPrivacyPreferences provides privacyPreferences,
+        ) {
+            TachiyomiTheme {
+                CompositionLocalProvider(
+                    LocalTextStyle provides MaterialTheme.typography.bodySmall,
+                    LocalContentColor provides MaterialTheme.colorScheme.onBackground,
+                ) {
+                    content()
+                }
             }
         }
     }
@@ -44,12 +56,19 @@ fun ComposeView.setComposeContent(
 ) {
     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
     setContent {
-        TachiyomiTheme {
-            CompositionLocalProvider(
-                LocalTextStyle provides MaterialTheme.typography.bodySmall,
-                LocalContentColor provides MaterialTheme.colorScheme.onBackground,
-            ) {
-                content()
+        val uiPreferences = koinInject<UiPreferences>()
+        val privacyPreferences = koinInject<PrivacyPreferences>()
+        CompositionLocalProvider(
+            LocalUiPreferences provides uiPreferences,
+            LocalPrivacyPreferences provides privacyPreferences,
+        ) {
+            TachiyomiTheme {
+                CompositionLocalProvider(
+                    LocalTextStyle provides MaterialTheme.typography.bodySmall,
+                    LocalContentColor provides MaterialTheme.colorScheme.onBackground,
+                ) {
+                    content()
+                }
             }
         }
     }

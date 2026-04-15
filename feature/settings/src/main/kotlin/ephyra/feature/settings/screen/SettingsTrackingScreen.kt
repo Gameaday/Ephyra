@@ -23,7 +23,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -67,7 +69,6 @@ import ephyra.presentation.core.util.system.toast
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toPersistentMap
-import kotlinx.coroutines.runBlocking
 
 object SettingsTrackingScreen : SearchableSettings {
 
@@ -195,8 +196,10 @@ object SettingsTrackingScreen : SearchableSettings {
         }
 
         val malName = trackerManager.get(TrackerManager.MYANIMELIST)!!.name
+        val isMalLoggedIn by trackerManager.get(TrackerManager.MYANIMELIST)!!.isLoggedInFlow
+            .collectAsState(initial = false)
         val importPreferences = buildList {
-            if (runBlocking { trackerManager.get(TrackerManager.MYANIMELIST)!!.isLoggedIn() }) {
+            if (isMalLoggedIn) {
                 add(
                     Preference.PreferenceItem.TextPreference(
                         title = if (importingFromMal) {
@@ -299,7 +302,7 @@ object SettingsTrackingScreen : SearchableSettings {
 
                 // --- Authority tracker order (reorderable) ---
                 val orderPref = trackPreferences.authorityTrackerOrder()
-                var currentOrder by remember { mutableStateOf(runBlocking { orderPref.get() }) }
+                var currentOrder by remember { mutableStateOf(orderPref.getSync()) }
 
                 // Build label map for all canonical trackers
                 val trackerLabels: Map<Long, String> = buildMap {
@@ -321,10 +324,22 @@ object SettingsTrackingScreen : SearchableSettings {
                     )
                 }
 
+                // Collect login states for trackers that require login (non-public-search ones)
+                val isAnilistLoggedIn by trackerManager.get(TrackerManager.ANILIST)!!.isLoggedInFlow
+                    .collectAsState(initial = false)
+                val isMalLoggedInForAuthority by trackerManager.get(TrackerManager.MYANIMELIST)!!.isLoggedInFlow
+                    .collectAsState(initial = false)
+                val isJellyfinLoggedIn by (trackerManager.get(TrackerManager.JELLYFIN) as ephyra.data.track.jellyfin.Jellyfin)
+                    .isLoggedInFlow.collectAsState(initial = false)
+                val trackerLoginState = mapOf(
+                    trackerManager.get(TrackerManager.ANILIST)!!.id to isAnilistLoggedIn,
+                    trackerManager.get(TrackerManager.MYANIMELIST)!!.id to isMalLoggedInForAuthority,
+                    (trackerManager.get(TrackerManager.JELLYFIN) as ephyra.data.track.jellyfin.Jellyfin).id to isJellyfinLoggedIn,
+                )
+
                 fun isAvailable(trackerId: Long): Boolean {
-                    val tracker = trackerManager.get(trackerId) ?: return false
                     if (trackerId in AddTracks.TRACKERS_WITH_PUBLIC_SEARCH) return true
-                    return runBlocking { tracker.isLoggedIn() }
+                    return trackerLoginState[trackerId] ?: false
                 }
 
                 val authorityItems = buildList {
@@ -438,7 +453,7 @@ object SettingsTrackingScreen : SearchableSettings {
                     addAll(importPreferences)
                     // --- Content source priority per field ---
                     val csPriorityPref = trackPreferences.contentSourcePriorityFields()
-                    var csPriorityMask by remember { mutableLongStateOf(runBlocking { csPriorityPref.get() }) }
+                    var csPriorityMask by remember { mutableLongStateOf(csPriorityPref.getSync()) }
 
                     add(
                         Preference.PreferenceItem.CustomPreference(
@@ -536,14 +551,7 @@ object SettingsTrackingScreen : SearchableSettings {
                         ),
                     )
                     // Show connection info & settings when Jellyfin is logged in
-                    if (runBlocking {
-                            (
-                                trackerManager.get(
-                                    TrackerManager.JELLYFIN,
-                                ) as ephyra.data.track.jellyfin.Jellyfin
-                                ).isLoggedIn()
-                        }
-                    ) {
+                    if (isJellyfinLoggedIn) {
                         var showUpdateServerUrlDialog by remember { mutableStateOf(false) }
                         if (showUpdateServerUrlDialog) {
                             JellyfinUpdateServerUrlDialog(
@@ -557,8 +565,8 @@ object SettingsTrackingScreen : SearchableSettings {
                         }
 
                         // Server info display
-                        val serverName = runBlocking { trackPreferences.jellyfinServerName().get() }
-                        val jellyfinUser = runBlocking { trackPreferences.jellyfinUsername().get() }
+                        val serverName = trackPreferences.jellyfinServerName().getSync()
+                        val jellyfinUser = trackPreferences.jellyfinUsername().getSync()
                         if (serverName.isNotBlank() || jellyfinUser.isNotBlank()) {
                             add(
                                 Preference.PreferenceItem.TextPreference(
@@ -581,7 +589,7 @@ object SettingsTrackingScreen : SearchableSettings {
 
                         // Jellyfin library selection
                         var jellyfinLibraryName by remember { mutableStateOf<String?>(null) }
-                        val currentLibraryId = runBlocking { libraryPreferences.jellyfinLibraryId().get() }
+                        val currentLibraryId = libraryPreferences.jellyfinLibraryId().getSync()
 
                         // Resolve library name on composition
                         if (currentLibraryId.isNotBlank()) {
@@ -766,10 +774,15 @@ object SettingsTrackingScreen : SearchableSettings {
         val context = LocalContext.current
         val scope = rememberCoroutineScope()
 
-        var username by remember { mutableStateOf(TextFieldValue(runBlocking { tracker.getUsername() })) }
-        var password by remember { mutableStateOf(TextFieldValue(runBlocking { tracker.getPassword() })) }
+        var username by remember { mutableStateOf(TextFieldValue("")) }
+        var password by remember { mutableStateOf(TextFieldValue("")) }
         var processing by remember { mutableStateOf(false) }
         var inputError by remember { mutableStateOf(false) }
+
+        LaunchedEffect(tracker) {
+            username = TextFieldValue(tracker.getUsername())
+            password = TextFieldValue(tracker.getPassword())
+        }
 
         AlertDialog(
             onDismissRequest = onDismissRequest,

@@ -14,7 +14,6 @@ import ephyra.domain.manga.model.Manga
 import ephyra.domain.storage.service.StorageManager
 import ephyra.i18n.MR
 import eu.kanade.tachiyomi.source.Source
-import kotlinx.coroutines.runBlocking
 import logcat.LogPriority
 import java.io.IOException
 import ephyra.domain.download.service.DownloadProvider as IDownloadProvider
@@ -139,7 +138,7 @@ class DownloadProvider(
         @Suppress("DEPRECATION")
         return DiskUtil.buildValidFilename(
             source.toString(),
-            disallowNonAscii = runBlocking { libraryPreferences.disallowNonAsciiFilenames().get() },
+            disallowNonAscii = libraryPreferences.disallowNonAsciiFilenames().getSync(),
         )
     }
 
@@ -152,7 +151,7 @@ class DownloadProvider(
         @Suppress("DEPRECATION")
         return DiskUtil.buildValidFilename(
             mangaTitle,
-            disallowNonAscii = runBlocking { libraryPreferences.disallowNonAsciiFilenames().get() },
+            disallowNonAscii = libraryPreferences.disallowNonAsciiFilenames().getSync(),
         )
     }
 
@@ -236,7 +235,7 @@ class DownloadProvider(
                 chapterName,
                 chapterScanlator,
                 chapterUrl,
-                !runBlocking { libraryPreferences.disallowNonAsciiFilenames().get() },
+                !libraryPreferences.disallowNonAsciiFilenames().getSync(),
             )
 
         return buildList(2) {
@@ -260,7 +259,7 @@ class DownloadProvider(
 
     override fun isChapterDirNameChanged(oldChapter: Chapter, newChapter: Chapter): Boolean {
         @Suppress("DEPRECATION")
-        val disallowNonAscii = runBlocking { libraryPreferences.disallowNonAsciiFilenames().get() }
+        val disallowNonAscii = libraryPreferences.disallowNonAsciiFilenames().getSync()
         return getChapterDirName(oldChapter.name, oldChapter.scanlator, oldChapter.url, disallowNonAscii) !=
             getChapterDirName(newChapter.name, newChapter.scanlator, newChapter.url, disallowNonAscii)
     }
@@ -276,7 +275,7 @@ class DownloadProvider(
         chapterUrl: String,
     ): List<String> {
         @Suppress("DEPRECATION")
-        val disallowNonAscii = runBlocking { libraryPreferences.disallowNonAsciiFilenames().get() }
+        val disallowNonAscii = libraryPreferences.disallowNonAsciiFilenames().getSync()
         val chapterDirName = getChapterDirName(chapterName, chapterScanlator, chapterUrl, disallowNonAscii)
         val legacyChapterDirNames = getLegacyChapterDirNames(chapterName, chapterScanlator, chapterUrl)
 

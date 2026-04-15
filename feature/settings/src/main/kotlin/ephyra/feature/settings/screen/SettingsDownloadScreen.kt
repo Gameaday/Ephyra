@@ -310,7 +310,7 @@ object SettingsDownloadScreen : SearchableSettings {
                     TextButton(
                         onClick = {
                             val pref = downloadPreferences.blockedPageHashes()
-                            val current = kotlinx.coroutines.runBlocking { pref.get() }.toMutableSet()
+                            val current = pref.getSync().toMutableSet()
                             current.remove(currentHashToRemove)
                             pref.set(current)
                             hashToRemove = null

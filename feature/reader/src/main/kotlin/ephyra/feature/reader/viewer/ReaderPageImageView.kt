@@ -38,7 +38,6 @@ import ephyra.domain.base.BasePreferences
 import ephyra.feature.reader.viewer.webtoon.WebtoonSubsamplingImageView
 import ephyra.presentation.core.util.system.animatorDurationScale
 import ephyra.presentation.core.util.view.isVisibleOnScreen
-import kotlinx.coroutines.runBlocking
 import okio.BufferedSource
 import org.koin.core.context.GlobalContext
 
@@ -58,7 +57,7 @@ open class ReaderPageImageView @JvmOverloads constructor(
 ) : FrameLayout(context, attrs, defStyleAttrs, defStyleRes) {
 
     private val alwaysDecodeLongStripWithSSIV by lazy {
-        runBlocking { GlobalContext.get().get<BasePreferences>().alwaysDecodeLongStripWithSSIV().get() }
+        GlobalContext.get().get<BasePreferences>().alwaysDecodeLongStripWithSSIV().getSync()
     }
 
     private var pageView: View? = null

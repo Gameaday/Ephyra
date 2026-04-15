@@ -13,7 +13,6 @@ import ephyra.domain.track.model.Track
 import ephyra.domain.track.service.TrackPreferences
 import ephyra.i18n.MR
 import eu.kanade.tachiyomi.network.NetworkHelper
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import ephyra.data.database.models.Track as DbTrack
 
@@ -131,7 +130,7 @@ class Bangumi(
 
     fun restoreToken(): BGMOAuth? {
         return try {
-            json.decodeFromString<BGMOAuth>(runBlocking { trackPreferences.trackToken(this@Bangumi).get() })
+            json.decodeFromString<BGMOAuth>(trackPreferences.trackToken(this@Bangumi).getSync())
         } catch (_: Exception) {
             null
         }
