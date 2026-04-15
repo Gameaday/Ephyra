@@ -17,7 +17,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import ephyra.core.common.preference.getAndSet
 import ephyra.domain.updates.service.UpdatesPreferences
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.SettingsItemsPaddings

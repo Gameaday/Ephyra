@@ -18,7 +18,6 @@ import ephyra.i18n.MR
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.interceptor.rateLimit
 import eu.kanade.tachiyomi.source.Source
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
@@ -199,7 +198,7 @@ class Jellyfin(
     // -- Authentication --
 
     fun getServerUrl(): String {
-        val stored = runBlocking { trackPreferences.jellyfinServerUrl().get() }
+        val stored = trackPreferences.jellyfinServerUrl().getSync()
         if (stored.isNotBlank()) return stored.trimEnd('/')
         // Legacy fallback: server URL was stored in the username field
         val legacy = getUsernameSync()

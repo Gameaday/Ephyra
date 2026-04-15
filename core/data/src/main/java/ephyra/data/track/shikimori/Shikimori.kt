@@ -14,7 +14,6 @@ import ephyra.domain.track.model.Track
 import ephyra.domain.track.service.TrackPreferences
 import ephyra.i18n.MR
 import eu.kanade.tachiyomi.network.NetworkHelper
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import ephyra.data.database.models.Track as DbTrack
 
@@ -147,7 +146,7 @@ class Shikimori(
 
     fun restoreToken(): SMOAuth? {
         return try {
-            json.decodeFromString<SMOAuth>(runBlocking { trackPreferences.trackToken(this@Shikimori).get() })
+            json.decodeFromString<SMOAuth>(trackPreferences.trackToken(this@Shikimori).getSync())
         } catch (e: Exception) {
             null
         }

@@ -69,7 +69,6 @@ import ephyra.presentation.core.util.system.toast
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toPersistentMap
-import kotlinx.coroutines.flow.collectLatest
 
 object SettingsTrackingScreen : SearchableSettings {
 

@@ -14,7 +14,6 @@ import ephyra.domain.track.model.toDomainTrack
 import ephyra.domain.track.service.TrackPreferences
 import ephyra.i18n.MR
 import eu.kanade.tachiyomi.network.NetworkHelper
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import ephyra.data.database.models.Track as DbTrack
 
@@ -71,7 +70,7 @@ class Anilist(
     override fun getCompletionStatus(): Long = COMPLETED
 
     override fun getScoreList(): List<String> {
-        return when (runBlocking { trackPreferences.anilistScoreType().get() }) {
+        return when (trackPreferences.anilistScoreType().getSync()) {
             POINT_10 -> IntRange(1, 10).map { it.toString() }
             POINT_10_DECIMAL -> IntRange(1, 100).map { (it / 10.0).toString() }
             POINT_5 -> listOf("★", "★★", "★★★", "★★★★", "★★★★★")
@@ -82,7 +81,7 @@ class Anilist(
     }
 
     override fun indexToScore(index: Int): Double {
-        return when (runBlocking { trackPreferences.anilistScoreType().get() }) {
+        return when (trackPreferences.anilistScoreType().getSync()) {
             POINT_10 -> (index + 1).toDouble()
             POINT_10_DECIMAL -> (index + 1) / 10.0
             POINT_5 -> (index + 1).toDouble()
@@ -95,7 +94,7 @@ class Anilist(
     override fun displayScore(track: Track): String {
         val score = track.score
         if (score <= 0) return ""
-        return when (runBlocking { trackPreferences.anilistScoreType().get() }) {
+        return when (trackPreferences.anilistScoreType().getSync()) {
             POINT_10_DECIMAL -> score.toString()
             POINT_10 -> score.toInt().toString()
             POINT_5 -> "★".repeat(score.toInt())
@@ -156,7 +155,7 @@ class Anilist(
 
     fun loadOAuth(): ALOAuth? {
         return try {
-            json.decodeFromString<ALOAuth>(runBlocking { trackPreferences.trackToken(this@Anilist).get() })
+            json.decodeFromString<ALOAuth>(trackPreferences.trackToken(this@Anilist).getSync())
         } catch (e: Exception) {
             null
         }

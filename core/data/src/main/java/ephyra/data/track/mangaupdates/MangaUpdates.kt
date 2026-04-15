@@ -17,7 +17,6 @@ import ephyra.domain.track.model.Track
 import ephyra.domain.track.service.TrackPreferences
 import ephyra.i18n.MR
 import eu.kanade.tachiyomi.network.NetworkHelper
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import ephyra.data.database.models.Track as DbTrack
 
@@ -138,6 +137,6 @@ class MangaUpdates(
     }
 
     fun restoreSession(): String? {
-        return runBlocking { trackPreferences.trackPassword(this@MangaUpdates).get() }.ifBlank { null }
+        return trackPreferences.trackPassword(this@MangaUpdates).getSync().ifBlank { null }
     }
 }

@@ -15,7 +15,6 @@ import ephyra.domain.track.model.toDomainTrack
 import ephyra.domain.track.service.TrackPreferences
 import ephyra.i18n.MR
 import eu.kanade.tachiyomi.network.NetworkHelper
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import ephyra.data.database.models.Track as DbTrack
 
@@ -170,7 +169,7 @@ class MyAnimeList(
     }
 
     fun getIfAuthExpiredSync(): Boolean {
-        return runBlocking { trackPreferences.trackAuthExpired(this@MyAnimeList).get() }
+        return trackPreferences.trackAuthExpired(this@MyAnimeList).getSync()
     }
 
     fun setAuthExpired() {
@@ -191,7 +190,7 @@ class MyAnimeList(
 
     fun loadOAuthSync(): MALOAuth? {
         return try {
-            json.decodeFromString<MALOAuth>(runBlocking { trackPreferences.trackToken(this@MyAnimeList).get() })
+            json.decodeFromString<MALOAuth>(trackPreferences.trackToken(this@MyAnimeList).getSync())
         } catch (e: Exception) {
             null
         }

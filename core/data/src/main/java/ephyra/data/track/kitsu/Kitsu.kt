@@ -14,7 +14,6 @@ import ephyra.domain.track.model.Track
 import ephyra.domain.track.service.TrackPreferences
 import ephyra.i18n.MR
 import eu.kanade.tachiyomi.network.NetworkHelper
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import java.text.DecimalFormat
 import ephyra.data.database.models.Track as DbTrack
@@ -159,7 +158,7 @@ class Kitsu(
 
     fun restoreToken(): KitsuOAuth? {
         return try {
-            json.decodeFromString<KitsuOAuth>(runBlocking { trackPreferences.trackToken(this@Kitsu).get() })
+            json.decodeFromString<KitsuOAuth>(trackPreferences.trackToken(this@Kitsu).getSync())
         } catch (_: Exception) {
             null
         }
