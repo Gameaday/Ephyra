@@ -160,7 +160,9 @@ internal class ExtensionLoader(
                     try {
                         loadExtension(context, extInfo, loadNsfwSource)
                     } catch (e: Throwable) {
-                        logcat(LogPriority.ERROR, e) { "Unexpected error loading extension ${extInfo.packageInfo.packageName}" }
+                        logcat(LogPriority.ERROR, e) {
+                            "Unexpected error loading extension ${extInfo.packageInfo.packageName}"
+                        }
                         LoadResult.Error
                     }
                 }

@@ -41,6 +41,7 @@ import ephyra.domain.manga.interactor.GetLibraryManga
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.Manga
+import ephyra.domain.manga.model.SourceStatus
 import ephyra.domain.manga.model.toSManga
 import ephyra.domain.source.model.SourceNotInstalledException
 import ephyra.domain.source.service.SourceManager
@@ -61,7 +62,6 @@ import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
-import ephyra.domain.manga.model.SourceStatus
 
 class LibraryUpdateJob(
     private val context: Context,

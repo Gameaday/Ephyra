@@ -1,15 +1,15 @@
 package ephyra.domain.track.interactor
 
 import ephyra.core.common.preference.Preference
-import ephyra.domain.track.model.TrackSearch
-import ephyra.domain.track.service.Tracker
-import ephyra.domain.track.service.TrackerManager
 import ephyra.domain.manga.model.ContentType
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaUpdate
 import ephyra.domain.manga.repository.MangaRepository
 import ephyra.domain.track.model.Track
+import ephyra.domain.track.model.TrackSearch
 import ephyra.domain.track.service.TrackPreferences
+import ephyra.domain.track.service.Tracker
+import ephyra.domain.track.service.TrackerManager
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.coEvery
