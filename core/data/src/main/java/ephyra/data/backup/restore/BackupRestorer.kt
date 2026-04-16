@@ -11,6 +11,8 @@ import ephyra.domain.backup.service.BackupNotifier
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.protobuf.ProtoBuf
 import java.util.Date
@@ -39,10 +41,8 @@ class BackupRestorer(
         val backup = try {
             BackupDecoder(context, ProtoBuf).decode(uri)
         } catch (e: Exception) {
-            val time = System.currentTimeMillis() - startTime
             errors.add(Pair(Date(), e.message ?: "Failed to decode backup"))
-            notifier.showRestoreComplete(time, errors.size, uri.path)
-            return
+            throw e
         }
 
         val effectiveOptions = options ?: RestoreOptions()
@@ -91,16 +91,19 @@ class BackupRestorer(
             restoreAmount = sortedMangas.size
 
             coroutineScope {
+                val semaphore = Semaphore(5)
                 sortedMangas.forEach { backupManga ->
                     launch {
-                        ensureActive()
-                        try {
-                            mangaRestorer.restore(backupManga, backup.backupCategories)
-                        } catch (e: Exception) {
-                            errors.add(Pair(Date(), "${backupManga.title}: ${e.message}"))
+                        semaphore.withPermit {
+                            ensureActive()
+                            try {
+                                mangaRestorer.restore(backupManga, backup.backupCategories)
+                            } catch (e: Exception) {
+                                errors.add(Pair(Date(), "${backupManga.title}: ${e.message}"))
+                            }
+                            val progress = restoreProgress.incrementAndGet()
+                            onProgress(progress, restoreAmount, backupManga.title)
                         }
-                        val progress = restoreProgress.incrementAndGet()
-                        onProgress(progress, restoreAmount, backupManga.title)
                     }
                 }
             }
