@@ -9,9 +9,7 @@ data class RestoreOptions(
     val categories: Boolean = true,
     val appSettings: Boolean = true,
     val extensionRepoSettings: Boolean = true,
-    // Source-settings restore is not yet implemented; kept in the model for
-    // serialisation compatibility but excluded from the UI options list.
-    val sourceSettings: Boolean = false,
+    val sourceSettings: Boolean = true,
 ) {
 
     fun asBooleanArray() = booleanArrayOf(
@@ -46,7 +44,11 @@ data class RestoreOptions(
                 getter = RestoreOptions::extensionRepoSettings,
                 setter = { options, enabled -> options.copy(extensionRepoSettings = enabled) },
             ),
-            // sourceSettings is intentionally omitted until restoreSource() is implemented.
+            Entry(
+                label = MR.strings.source_settings,
+                getter = RestoreOptions::sourceSettings,
+                setter = { options, enabled -> options.copy(sourceSettings = enabled) },
+            ),
         )
 
         fun fromBooleanArray(array: BooleanArray) = RestoreOptions(
