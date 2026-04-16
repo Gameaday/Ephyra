@@ -46,6 +46,7 @@ import ephyra.data.backup.restore.restorers.MangaRestorer
 import ephyra.data.backup.restore.restorers.PreferenceRestorer
 import ephyra.data.cache.ChapterCache
 import ephyra.data.cache.CoverCache
+import ephyra.data.coil.MangaCoverFetcher
 import ephyra.data.coil.MangaCoverKeyer
 import ephyra.data.coil.MangaKeyer
 import ephyra.data.room.EphyraDatabase
@@ -163,6 +164,8 @@ val koinAppModule = module {
     single<CoreThemingDelegate> { ThemingDelegateImpl(get()) }
     single<CoreSecureActivityDelegate> { SecureActivityDelegateImpl(get(), get()) }
     single { MangaCoverKeyer(get()) }
+    single { MangaCoverFetcher.MangaCoverFactory(lazy { get<NetworkHelper>().client }, get(), get()) }
+    single { MangaCoverFetcher.MangaFactory(lazy { get<NetworkHelper>().client }, get(), get()) }
 
     single { NetworkHelper(androidApplication(), get()) }
     single { JavaScriptEngine(androidApplication()) }
