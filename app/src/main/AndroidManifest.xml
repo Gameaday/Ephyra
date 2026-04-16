@@ -233,4 +233,21 @@
 
     </application>
 
+    <!-- Disable the default WorkManager startup initializer so that Koin's
+         workManagerFactory() can register KoinWorkerFactory as the worker
+         factory before WorkManager initialises. Without this, WorkManager
+         initialises via androidx.startup before Application.onCreate() runs,
+         causing workers with extra constructor parameters (e.g.
+         BackupCreateJob) to fail with NoSuchMethodException. -->
+    <provider
+        android:name="androidx.startup.InitializationProvider"
+        android:authorities="${applicationId}.androidx-startup"
+        android:exported="false"
+        tools:node="merge">
+        <meta-data
+            android:name="androidx.work.WorkManagerInitializer"
+            android:value="androidx.startup"
+            tools:node="remove" />
+    </provider>
+
 </manifest>
