@@ -8,6 +8,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -211,12 +212,6 @@ class NavigatorExtensionsTest {
         // In Kotlin, an interface method with a default body is compiled as a default
         // JVM interface method (JVM 8+). Checking it is NOT abstract confirms the default body.
         val javaMethod = method!!
-        assertFalse(java.lang.reflect.Modifier.isAbstract(javaMethod.modifiers)) {
-            "Tab.onReselect should have a default (non-abstract) implementation"
-        }
-    }
-
-    private fun assertFalse(condition: Boolean, message: () -> String) {
-        assertTrue(!condition, message)
+        assertFalse(java.lang.reflect.Modifier.isAbstract(javaMethod.modifiers), "Tab.onReselect should have a default (non-abstract) implementation")
     }
 }
