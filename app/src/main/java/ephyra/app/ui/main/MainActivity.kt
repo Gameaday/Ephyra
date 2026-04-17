@@ -50,8 +50,13 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.app.BuildConfig
 import ephyra.app.data.notification.NotificationReceiver
 import ephyra.app.extension.api.ExtensionApi
+import ephyra.app.startup.StartupDiagnosticOverlay
+import ephyra.app.startup.StartupTracker
 import ephyra.app.ui.deeplink.DeepLinkScreen
 import ephyra.app.ui.home.HomeScreen
+import ephyra.app.util.system.isDebugBuildType
+import ephyra.app.util.system.isNightlyBuildType
+import ephyra.app.util.system.isPreviewBuildType
 import ephyra.app.util.system.updaterEnabled
 import ephyra.core.common.Constants
 import ephyra.core.common.util.lang.launchIO
@@ -88,6 +93,7 @@ import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.core.util.system.isNavigationBarNeedsScrim
 import ephyra.presentation.core.util.system.openInBrowser
 import ephyra.presentation.core.util.view.setComposeContent
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -96,6 +102,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import logcat.LogPriority
 import org.koin.android.ext.android.inject
 
@@ -119,6 +126,10 @@ class MainActivity : BaseActivity(), AppReadySignal {
 
     override fun signalReady() {
         ready = true
+        // Mark the final startup phase. signalReady() is idempotent by contract, so
+        // StartupTracker.complete() is called here and also in handleIntentAction(),
+        // which can set ready=true via a direct intent (e.g. a shortcut tap).
+        StartupTracker.complete(StartupTracker.Phase.HOME_SCREEN_LOADED)
     }
 
     private var navigator: Navigator? = null
@@ -134,6 +145,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
         val splashScreen = if (isLaunch) installSplashScreen() else null
 
         super.onCreate(savedInstanceState)
+        StartupTracker.complete(StartupTracker.Phase.ACTIVITY_CREATED)
 
         // Do not let the launcher create a new activity http://stackoverflow.com/questions/16283079
         if (!isTaskRoot) {
@@ -142,13 +154,35 @@ class MainActivity : BaseActivity(), AppReadySignal {
         }
 
         setComposeContent {
+            StartupTracker.complete(StartupTracker.Phase.COMPOSE_STARTED)
             androidx.compose.runtime.CompositionLocalProvider(
                 ephyra.presentation.core.util.LocalUiPreferences provides uiPreferences,
                 ephyra.presentation.core.util.LocalPrivacyPreferences provides privacyPreferences,
             ) {
                 var didMigration by remember { mutableStateOf<Boolean?>(null) }
                 LaunchedEffect(Unit) {
-                    didMigration = Migrator.awaitAndRelease()
+                    try {
+                        val result = withTimeoutOrNull(MIGRATION_TIMEOUT_MS) {
+                            Migrator.awaitAndRelease()
+                        }
+                        if (result == null) {
+                            // Timeout: awaitAndRelease() was cancelled before release() ran,
+                            // so manually release to avoid holding the deferred reference.
+                            Migrator.release()
+                            logcat(LogPriority.WARN) { "Migrator.awaitAndRelease() timed out after ${MIGRATION_TIMEOUT_MS}ms – continuing startup" }
+                        }
+                        didMigration = result ?: false
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        // An unexpected exception from the migration deferred itself:
+                        // record it for the diagnostic overlay and continue startup.
+                        logcat(LogPriority.ERROR, e) { "Migrator.awaitAndRelease() threw unexpectedly – continuing startup" }
+                        StartupTracker.recordError(StartupTracker.Phase.MIGRATOR_COMPLETE, e)
+                        Migrator.release()
+                        didMigration = false
+                    }
+                    StartupTracker.complete(StartupTracker.Phase.MIGRATOR_COMPLETE)
                 }
 
                 val context = LocalContext.current
@@ -180,6 +214,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
                 ) { navigator ->
                     LaunchedEffect(navigator) {
                         this@MainActivity.navigator = navigator
+                        StartupTracker.complete(StartupTracker.Phase.NAVIGATOR_CREATED)
 
                         if (isLaunch) {
                             // Set start screen
@@ -274,6 +309,13 @@ class MainActivity : BaseActivity(), AppReadySignal {
                         },
                     )
                 }
+
+                // Overlaid on top of all content; only visible on debug/nightly/preview builds
+                // when the app has not become ready within the diagnostic timeout window.
+                // Excluded from release, foss, and benchmark builds.
+                StartupDiagnosticOverlay(
+                    isReleaseBuild = !(isDebugBuildType || isNightlyBuildType || isPreviewBuildType),
+                )
             }
         }
 
@@ -444,6 +486,9 @@ class MainActivity : BaseActivity(), AppReadySignal {
         }
 
         ready = true
+        // This path (intent-driven launch) also counts as ready; complete the phase
+        // idempotently in case signalReady() has not been called yet.
+        StartupTracker.complete(StartupTracker.Phase.HOME_SCREEN_LOADED)
         return true
     }
 
@@ -455,5 +500,10 @@ class MainActivity : BaseActivity(), AppReadySignal {
         // Splash screen
         private const val SPLASH_MIN_DURATION = 500 // ms
         private const val SPLASH_MAX_DURATION = 5000 // ms
+
+        // Maximum time to wait for the Migrator before proceeding with startup.
+        // This prevents an unexpected exception in App.initializeMigrator() from
+        // leaving the initGate permanently incomplete and blocking this coroutine.
+        private const val MIGRATION_TIMEOUT_MS = 30_000L // ms
     }
 }
