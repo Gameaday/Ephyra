@@ -19,6 +19,6 @@ class StoragePreferences(
      */
     fun baseStorageDirectory() = preferenceStore.getString(Preference.appStateKey("storage_dir"), "")
 
-    /** The platform-default storage directory path used when no explicit choice has been made. */
-    fun defaultStoragePath(): String = folderProvider.path()
+    /** The platform-default storage directory URI string used when no explicit choice has been made. */
+    fun defaultStorageDirectoryUri(): String = folderProvider.path()
 }
