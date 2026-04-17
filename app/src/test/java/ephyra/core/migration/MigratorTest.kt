@@ -4,7 +4,9 @@ import io.kotest.assertions.nondeterministic.eventually
 import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.verify
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -13,6 +15,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertInstanceOf
@@ -34,6 +37,12 @@ class MigratorTest {
         migrationJobFactory = spyk(MigrationJobFactory(migrationContext, CoroutineScope(Dispatchers.Main + Job())))
         migrationCompletedListener = spyk<MigrationCompletedListener>(block = {})
         migrationStrategyFactory = spyk(MigrationStrategyFactory(migrationJobFactory, migrationCompletedListener))
+    }
+
+    @AfterEach
+    fun resetMigrator() {
+        // Ensure the Migrator singleton is clean before/after each test that touches it.
+        Migrator.resetForTest()
     }
 
     @Test
@@ -139,6 +148,28 @@ class MigratorTest {
         verify { migrationJobFactory.create(capture(migrations)) }
         assertEquals(2, migrations.captured.size)
         eventually(2.seconds) { verify { migrationCompletedListener() } }
+    }
+
+    /**
+     * Verifies the fix for the startup deadlock: when the migration strategy throws
+     * an unexpected exception during [Migrator.initializeWithStrategy], the
+     * [Migrator.await] call must still complete (returning `false`) rather than
+     * suspending indefinitely on the init gate.
+     */
+    @Test
+    fun initializeWithThrowingStrategy_awaitReturnsFalse() = runBlocking {
+        val throwingStrategy = object : MigrationStrategy {
+            override fun invoke(migrations: List<Migration>): Deferred<Boolean> {
+                throw RuntimeException("Simulated migration strategy failure")
+            }
+        }
+
+        // initializeWithStrategy must not propagate the exception to the caller.
+        Migrator.initializeWithStrategy(throwingStrategy, emptyList())
+
+        // await() must complete with false rather than hanging forever.
+        val result = Migrator.awaitAndRelease()
+        assertFalse(result)
     }
 
     companion object {

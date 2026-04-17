@@ -54,7 +54,9 @@ import ephyra.app.startup.StartupDiagnosticOverlay
 import ephyra.app.startup.StartupTracker
 import ephyra.app.ui.deeplink.DeepLinkScreen
 import ephyra.app.ui.home.HomeScreen
-import ephyra.app.util.system.isReleaseBuildType
+import ephyra.app.util.system.isDebugBuildType
+import ephyra.app.util.system.isNightlyBuildType
+import ephyra.app.util.system.isPreviewBuildType
 import ephyra.app.util.system.updaterEnabled
 import ephyra.core.common.Constants
 import ephyra.core.common.util.lang.launchIO
@@ -91,6 +93,7 @@ import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.core.util.system.isNavigationBarNeedsScrim
 import ephyra.presentation.core.util.system.openInBrowser
 import ephyra.presentation.core.util.view.setComposeContent
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -158,17 +161,27 @@ class MainActivity : BaseActivity(), AppReadySignal {
             ) {
                 var didMigration by remember { mutableStateOf<Boolean?>(null) }
                 LaunchedEffect(Unit) {
-                    // Guard against the initGate never completing (e.g., an exception thrown
-                    // before Migrator.initialize() is reached in App.initializeMigrator()).
-                    // After MIGRATION_TIMEOUT_MS we treat migration as "did not run" and
-                    // proceed so the rest of the startup sequence is not permanently blocked.
-                    val result = withTimeoutOrNull(MIGRATION_TIMEOUT_MS) {
-                        Migrator.awaitAndRelease()
+                    try {
+                        val result = withTimeoutOrNull(MIGRATION_TIMEOUT_MS) {
+                            Migrator.awaitAndRelease()
+                        }
+                        if (result == null) {
+                            // Timeout: awaitAndRelease() was cancelled before release() ran,
+                            // so manually release to avoid holding the deferred reference.
+                            Migrator.release()
+                            logcat(LogPriority.WARN) { "Migrator.awaitAndRelease() timed out after ${MIGRATION_TIMEOUT_MS}ms – continuing startup" }
+                        }
+                        didMigration = result ?: false
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        // An unexpected exception from the migration deferred itself:
+                        // record it for the diagnostic overlay and continue startup.
+                        logcat(LogPriority.ERROR, e) { "Migrator.awaitAndRelease() threw unexpectedly – continuing startup" }
+                        StartupTracker.recordError(StartupTracker.Phase.MIGRATOR_COMPLETE, e)
+                        Migrator.release()
+                        didMigration = false
                     }
-                    if (result == null) {
-                        logcat(LogPriority.WARN) { "Migrator.awaitAndRelease() timed out after ${MIGRATION_TIMEOUT_MS}ms – continuing startup" }
-                    }
-                    didMigration = result ?: false
                     StartupTracker.complete(StartupTracker.Phase.MIGRATOR_COMPLETE)
                 }
 
@@ -297,10 +310,11 @@ class MainActivity : BaseActivity(), AppReadySignal {
                     )
                 }
 
-                // Overlaid on top of all content; only visible on non-release builds when
-                // the app has not become ready within the diagnostic timeout window.
+                // Overlaid on top of all content; only visible on debug/nightly/preview builds
+                // when the app has not become ready within the diagnostic timeout window.
+                // Excluded from release, foss, and benchmark builds.
                 StartupDiagnosticOverlay(
-                    isReleaseBuild = isReleaseBuildType,
+                    isReleaseBuild = !(isDebugBuildType || isNightlyBuildType || isPreviewBuildType),
                 )
             }
         }

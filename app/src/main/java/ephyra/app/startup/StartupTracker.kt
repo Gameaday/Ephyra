@@ -1,7 +1,8 @@
 package ephyra.app.startup
 
 import ephyra.core.common.util.system.logcat
-import java.util.concurrent.CopyOnWriteArrayList
+import logcat.LogPriority
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Thread-safe singleton that records each startup phase with a wall-clock timestamp.
@@ -23,7 +24,7 @@ object StartupTracker {
         KOIN_INITIALIZED("Koin DI ready"),
         MIGRATOR_STARTED("Migrator launched"),
         ACTIVITY_CREATED("Main activity created"),
-        COMPOSE_STARTED("Compose content initialised"),
+        COMPOSE_STARTED("Compose content initialized"),
         MIGRATOR_COMPLETE("Migrations complete"),
         NAVIGATOR_CREATED("Navigator ready"),
         HOME_SCREEN_LOADED("App ready"),
@@ -31,11 +32,14 @@ object StartupTracker {
 
     data class PhaseEntry(val phase: Phase, val timestampMs: Long)
 
-    private val _entries: MutableList<PhaseEntry> = CopyOnWriteArrayList()
+    // ConcurrentHashMap makes complete() truly idempotent under concurrency:
+    // putIfAbsent is atomic, eliminating the check-then-act race that a
+    // CopyOnWriteArrayList had.
+    private val _phases = ConcurrentHashMap<Phase, PhaseEntry>()
 
-    /** Immutable snapshot of all completed phases in completion order. */
+    /** Immutable snapshot of all completed phases sorted by completion time. */
     val completedPhases: List<PhaseEntry>
-        get() = _entries.toList()
+        get() = _phases.values.sortedBy { it.timestampMs }
 
     /** Wall-clock time at which the tracker was first loaded (proxy for process start). */
     val processStartMs: Long = System.currentTimeMillis()
@@ -48,25 +52,32 @@ object StartupTracker {
     /**
      * Marks [phase] as completed and logs the event.
      *
-     * Idempotent: duplicate completions are ignored so callers do not need to guard against
-     * multiple invocations (e.g., tabs calling [signalReady] more than once).
+     * Idempotent: concurrent or duplicate completions are safely ignored via
+     * [ConcurrentHashMap.putIfAbsent].
+     *
+     * Logged at [LogPriority.INFO] so the message is visible in nightly and
+     * preview builds where the minimum log priority is INFO.
      */
     fun complete(phase: Phase) {
-        if (_entries.any { it.phase == phase }) return
         val entry = PhaseEntry(phase, System.currentTimeMillis())
-        _entries.add(entry)
+        if (_phases.putIfAbsent(phase, entry) != null) return // already completed
         val elapsed = entry.timestampMs - processStartMs
-        logcat { "[Startup] ✓ ${phase.displayName} (+${elapsed}ms)" }
+        logcat(LogPriority.INFO) { "[Startup] ✓ ${phase.displayName} (+${elapsed}ms)" }
     }
 
-    /** Records an error that occurred during a startup phase. */
+    /**
+     * Records an error that occurred during a startup phase.
+     *
+     * Logged at [LogPriority.ERROR] with the full stack trace so it appears in
+     * all build types and is easy to spot in logcat.
+     */
     fun recordError(phase: Phase, error: Throwable) {
         lastError = error
-        logcat { "[Startup] ✗ ${phase.displayName} — ${error.javaClass.simpleName}: ${error.message}" }
+        logcat(LogPriority.ERROR, error) { "[Startup] ✗ ${phase.displayName}" }
     }
 
-    fun isComplete(phase: Phase): Boolean = _entries.any { it.phase == phase }
+    fun isComplete(phase: Phase): Boolean = _phases.containsKey(phase)
 
-    /** Returns elapsed milliseconds since the first phase was recorded (or since process start). */
+    /** Returns elapsed milliseconds since the tracker was first loaded (proxy for process start). */
     fun elapsedMs(): Long = System.currentTimeMillis() - processStartMs
 }
