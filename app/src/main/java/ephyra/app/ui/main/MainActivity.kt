@@ -50,8 +50,11 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.app.BuildConfig
 import ephyra.app.data.notification.NotificationReceiver
 import ephyra.app.extension.api.ExtensionApi
+import ephyra.app.startup.StartupDiagnosticOverlay
+import ephyra.app.startup.StartupTracker
 import ephyra.app.ui.deeplink.DeepLinkScreen
 import ephyra.app.ui.home.HomeScreen
+import ephyra.app.util.system.isReleaseBuildType
 import ephyra.app.util.system.updaterEnabled
 import ephyra.core.common.Constants
 import ephyra.core.common.util.lang.launchIO
@@ -96,6 +99,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import logcat.LogPriority
 import org.koin.android.ext.android.inject
 
@@ -119,6 +123,10 @@ class MainActivity : BaseActivity(), AppReadySignal {
 
     override fun signalReady() {
         ready = true
+        // Mark the final startup phase. signalReady() is idempotent by contract, so
+        // StartupTracker.complete() is called here and also in handleIntentAction(),
+        // which can set ready=true via a direct intent (e.g. a shortcut tap).
+        StartupTracker.complete(StartupTracker.Phase.HOME_SCREEN_LOADED)
     }
 
     private var navigator: Navigator? = null
@@ -134,6 +142,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
         val splashScreen = if (isLaunch) installSplashScreen() else null
 
         super.onCreate(savedInstanceState)
+        StartupTracker.complete(StartupTracker.Phase.ACTIVITY_CREATED)
 
         // Do not let the launcher create a new activity http://stackoverflow.com/questions/16283079
         if (!isTaskRoot) {
@@ -142,13 +151,25 @@ class MainActivity : BaseActivity(), AppReadySignal {
         }
 
         setComposeContent {
+            StartupTracker.complete(StartupTracker.Phase.COMPOSE_STARTED)
             androidx.compose.runtime.CompositionLocalProvider(
                 ephyra.presentation.core.util.LocalUiPreferences provides uiPreferences,
                 ephyra.presentation.core.util.LocalPrivacyPreferences provides privacyPreferences,
             ) {
                 var didMigration by remember { mutableStateOf<Boolean?>(null) }
                 LaunchedEffect(Unit) {
-                    didMigration = Migrator.awaitAndRelease()
+                    // Guard against the initGate never completing (e.g., an exception thrown
+                    // before Migrator.initialize() is reached in App.initializeMigrator()).
+                    // After MIGRATION_TIMEOUT_MS we treat migration as "did not run" and
+                    // proceed so the rest of the startup sequence is not permanently blocked.
+                    val result = withTimeoutOrNull(MIGRATION_TIMEOUT_MS) {
+                        Migrator.awaitAndRelease()
+                    }
+                    if (result == null) {
+                        logcat(LogPriority.WARN) { "Migrator.awaitAndRelease() timed out after ${MIGRATION_TIMEOUT_MS}ms – continuing startup" }
+                    }
+                    didMigration = result ?: false
+                    StartupTracker.complete(StartupTracker.Phase.MIGRATOR_COMPLETE)
                 }
 
                 val context = LocalContext.current
@@ -180,6 +201,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
                 ) { navigator ->
                     LaunchedEffect(navigator) {
                         this@MainActivity.navigator = navigator
+                        StartupTracker.complete(StartupTracker.Phase.NAVIGATOR_CREATED)
 
                         if (isLaunch) {
                             // Set start screen
@@ -274,6 +296,12 @@ class MainActivity : BaseActivity(), AppReadySignal {
                         },
                     )
                 }
+
+                // Overlaid on top of all content; only visible on non-release builds when
+                // the app has not become ready within the diagnostic timeout window.
+                StartupDiagnosticOverlay(
+                    isReleaseBuild = isReleaseBuildType,
+                )
             }
         }
 
@@ -444,6 +472,9 @@ class MainActivity : BaseActivity(), AppReadySignal {
         }
 
         ready = true
+        // This path (intent-driven launch) also counts as ready; complete the phase
+        // idempotently in case signalReady() has not been called yet.
+        StartupTracker.complete(StartupTracker.Phase.HOME_SCREEN_LOADED)
         return true
     }
 
@@ -455,5 +486,10 @@ class MainActivity : BaseActivity(), AppReadySignal {
         // Splash screen
         private const val SPLASH_MIN_DURATION = 500 // ms
         private const val SPLASH_MAX_DURATION = 5000 // ms
+
+        // Maximum time to wait for the Migrator before proceeding with startup.
+        // This prevents an unexpected exception in App.initializeMigrator() from
+        // leaving the initGate permanently incomplete and blocking this coroutine.
+        private const val MIGRATION_TIMEOUT_MS = 30_000L // ms
     }
 }

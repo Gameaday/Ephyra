@@ -1,10 +1,12 @@
 package ephyra.core.migration
 
+import ephyra.core.common.util.system.logcat
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import logcat.LogPriority
 
 object Migrator {
 
@@ -26,12 +28,20 @@ object Migrator {
         dryrun: Boolean = false,
         onMigrationComplete: () -> Unit,
     ) {
-        val migrationContext = MigrationContext(dryrun)
-        val migrationJobFactory = MigrationJobFactory(migrationContext, scope)
-        val migrationStrategyFactory = MigrationStrategyFactory(migrationJobFactory, onMigrationComplete)
-        val strategy = migrationStrategyFactory.create(old, new)
-        result = strategy(migrations)
-        initGate.complete(Unit)
+        try {
+            val migrationContext = MigrationContext(dryrun)
+            val migrationJobFactory = MigrationJobFactory(migrationContext, scope)
+            val migrationStrategyFactory = MigrationStrategyFactory(migrationJobFactory, onMigrationComplete)
+            val strategy = migrationStrategyFactory.create(old, new)
+            result = strategy(migrations)
+        } catch (e: Exception) {
+            logcat(LogPriority.ERROR, e) { "Migrator.initialize failed; completing initGate with error result" }
+            result = CompletableDeferred(false)
+        } finally {
+            // Always complete the gate so that awaitAndRelease() never suspends forever,
+            // even when an unexpected exception occurs during initialization.
+            initGate.complete(Unit)
+        }
     }
 
     suspend fun await(): Boolean {

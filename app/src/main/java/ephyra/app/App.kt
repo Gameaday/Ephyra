@@ -28,6 +28,7 @@ import coil3.util.DebugLogger
 import ephyra.app.crash.CrashActivity
 import ephyra.app.crash.GlobalExceptionHandler
 import ephyra.app.di.koinAppModule
+import ephyra.app.startup.StartupTracker
 import ephyra.app.di.koinAppModule_UI
 import ephyra.app.di.koinPreferenceModule
 import ephyra.core.common.core.security.PrivacyPreferences
@@ -96,6 +97,7 @@ class App : Application(), Configuration.Provider, DefaultLifecycleObserver, Sin
     @SuppressLint("LaunchActivityFromNotification")
     override fun onCreate() {
         super<Application>.onCreate()
+        StartupTracker.complete(StartupTracker.Phase.APP_CREATED)
         TelemetryConfig.init(applicationContext)
 
         GlobalExceptionHandler.initialize(applicationContext, CrashActivity::class.java)
@@ -109,6 +111,7 @@ class App : Application(), Configuration.Provider, DefaultLifecycleObserver, Sin
             workManagerFactory()
             modules(koinAppModule, koinDomainModule, koinPreferenceModule, koinAppModule_UI)
         }
+        StartupTracker.complete(StartupTracker.Phase.KOIN_INITIALIZED)
 
         setupNotificationChannels()
 
@@ -190,6 +193,7 @@ class App : Application(), Configuration.Provider, DefaultLifecycleObserver, Sin
         ProcessLifecycleOwner.get().lifecycleScope.launch(Dispatchers.IO) {
             val old = preference.get()
             logcat { "Migration from $old to ${BuildConfig.VERSION_CODE}" }
+            StartupTracker.complete(StartupTracker.Phase.MIGRATOR_STARTED)
             Migrator.initialize(
                 old = old,
                 new = BuildConfig.VERSION_CODE,
