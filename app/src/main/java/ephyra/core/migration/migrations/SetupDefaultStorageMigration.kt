@@ -1,6 +1,5 @@
 package ephyra.core.migration.migrations
 
-import ephyra.core.common.storage.AndroidStorageFolderProvider
 import ephyra.core.migration.Migration
 import ephyra.core.migration.MigrationContext
 import ephyra.domain.storage.service.StoragePreferences
@@ -23,10 +22,9 @@ class SetupDefaultStorageMigration : Migration {
 
     override suspend fun invoke(migrationContext: MigrationContext): Boolean {
         val storagePreferences = migrationContext.get<StoragePreferences>() ?: return false
-        val folderProvider = migrationContext.get<AndroidStorageFolderProvider>() ?: return false
         val pref = storagePreferences.baseStorageDirectory()
         if (!pref.isSet()) {
-            pref.set(folderProvider.path())
+            pref.set(storagePreferences.defaultStoragePath())
         }
         return true
     }
