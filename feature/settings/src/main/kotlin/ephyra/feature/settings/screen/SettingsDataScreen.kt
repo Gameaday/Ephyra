@@ -49,7 +49,7 @@ import ephyra.core.common.util.lang.launchNonCancellable
 import ephyra.core.common.util.lang.withUIContext
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.logcat
-import ephyra.data.cache.ChapterCache
+import ephyra.domain.chapter.service.ChapterCache
 import ephyra.data.export.LibraryExporter
 import ephyra.data.export.LibraryExporter.ExportOptions
 import ephyra.domain.backup.service.BackupPreferences

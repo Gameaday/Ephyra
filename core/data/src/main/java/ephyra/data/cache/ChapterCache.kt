@@ -79,7 +79,7 @@ class ChapterCache(
     /**
      * Returns real size of directory in human readable format.
      */
-    suspend fun getReadableSize(): String = withContext(Dispatchers.IO) {
+    override suspend fun getReadableSize(): String = withContext(Dispatchers.IO) {
         val size = DiskUtil.getDirectorySize(cacheDir)
         Formatter.formatFileSize(context, size)
     }
@@ -237,7 +237,7 @@ class ChapterCache(
         }
     }
 
-    fun clear(): Int {
+    override fun clear(): Int {
         // Count data files before clearing so we can report how many entries were removed.
         val count = cacheDir.listFiles()
             ?.count { it.isFile && !it.name.startsWith("journal") }

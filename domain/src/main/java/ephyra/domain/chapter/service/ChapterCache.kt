@@ -16,4 +16,8 @@ interface ChapterCache {
     suspend fun fetchAndCacheImage(imageUrl: String, fetchImage: suspend () -> Response)
 
     fun getImageFile(imageUrl: String): File?
+
+    suspend fun getReadableSize(): String
+
+    fun clear(): Int
 }

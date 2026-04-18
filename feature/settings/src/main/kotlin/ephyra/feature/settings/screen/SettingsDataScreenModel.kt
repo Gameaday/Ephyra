@@ -1,7 +1,7 @@
 package ephyra.feature.settings.screen
 
 import cafe.adriel.voyager.core.model.ScreenModel
-import ephyra.data.cache.ChapterCache
+import ephyra.domain.chapter.service.ChapterCache
 import ephyra.domain.backup.service.BackupPreferences
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.interactor.GetFavorites
