@@ -131,17 +131,34 @@ class BrowseSourceScreenModel(
         return if (columns == 0) GridCells.Adaptive(128.dp) else GridCells.Fixed(columns)
     }
 
-    fun resetFilters() {
+    // ── UDF entry-point ──────────────────────────────────────────────────────
+    fun onEvent(event: BrowseSourceScreenEvent) {
+        when (event) {
+            is BrowseSourceScreenEvent.ResetFilters -> resetFilters()
+            is BrowseSourceScreenEvent.SetListing -> setListing(event.listing)
+            is BrowseSourceScreenEvent.SetFilters -> setFilters(event.filters)
+            is BrowseSourceScreenEvent.Search -> search(event.query, event.filters)
+            is BrowseSourceScreenEvent.SearchGenre -> searchGenre(event.genreName)
+            is BrowseSourceScreenEvent.ChangeMangaFavorite -> changeMangaFavorite(event.manga)
+            is BrowseSourceScreenEvent.AddFavorite -> addFavorite(event.manga)
+            is BrowseSourceScreenEvent.MoveMangaToCategories -> moveMangaToCategories(event.manga, event.categoryIds)
+            is BrowseSourceScreenEvent.OpenFilterSheet -> openFilterSheet()
+            is BrowseSourceScreenEvent.SetDialog -> setDialog(event.dialog)
+            is BrowseSourceScreenEvent.SetToolbarQuery -> setToolbarQuery(event.query)
+        }
+    }
+
+    private fun resetFilters() {
         if (source !is CatalogueSource) return
 
         mutableState.update { it.copy(filters = source.getFilterList()) }
     }
 
-    fun setListing(listing: Listing) {
+    private fun setListing(listing: Listing) {
         mutableState.update { it.copy(listing = listing, toolbarQuery = null) }
     }
 
-    fun setFilters(filters: FilterList) {
+    private fun setFilters(filters: FilterList) {
         if (source !is CatalogueSource) return
 
         mutableState.update {
@@ -151,7 +168,7 @@ class BrowseSourceScreenModel(
         }
     }
 
-    fun search(query: String? = null, filters: FilterList? = null) {
+    private fun search(query: String? = null, filters: FilterList? = null) {
         if (source !is CatalogueSource) return
 
         val input = state.value.listing as? Listing.Search
@@ -168,7 +185,7 @@ class BrowseSourceScreenModel(
         }
     }
 
-    fun searchGenre(genreName: String) {
+    private fun searchGenre(genreName: String) {
         if (source !is CatalogueSource) return
 
         val defaultFilters = source.getFilterList()
@@ -217,7 +234,7 @@ class BrowseSourceScreenModel(
      *
      * @param manga the manga to update.
      */
-    fun changeMangaFavorite(manga: Manga) {
+    private fun changeMangaFavorite(manga: Manga) {
         screenModelScope.launch {
             var new = manga.copy(
                 favorite = !manga.favorite,
@@ -238,7 +255,7 @@ class BrowseSourceScreenModel(
         }
     }
 
-    fun addFavorite(manga: Manga) {
+    private fun addFavorite(manga: Manga) {
         screenModelScope.launch {
             val categories = getCategories()
             val defaultCategoryId = libraryPreferences.defaultCategory().get()
@@ -293,7 +310,7 @@ class BrowseSourceScreenModel(
         moveMangaToCategories(manga, categories.mapNotNull { if (it.id != 0L) it.id else null })
     }
 
-    fun moveMangaToCategories(manga: Manga, categoryIds: List<Long>) {
+    private fun moveMangaToCategories(manga: Manga, categoryIds: List<Long>) {
         screenModelScope.launchIO {
             setMangaCategories.await(
                 mangaId = manga.id,
@@ -302,15 +319,15 @@ class BrowseSourceScreenModel(
         }
     }
 
-    fun openFilterSheet() {
+    private fun openFilterSheet() {
         setDialog(Dialog.Filter)
     }
 
-    fun setDialog(dialog: Dialog?) {
+    private fun setDialog(dialog: Dialog?) {
         mutableState.update { it.copy(dialog = dialog) }
     }
 
-    fun setToolbarQuery(query: String?) {
+    private fun setToolbarQuery(query: String?) {
         mutableState.update { it.copy(toolbarQuery = query) }
     }
 
