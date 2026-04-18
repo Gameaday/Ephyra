@@ -1,4 +1,4 @@
-package ephyra.domain.track.service
+package ephyra.app.track
 
 import android.content.Context
 import androidx.work.BackoffPolicy
@@ -13,7 +13,7 @@ import ephyra.core.common.util.system.logcat
 import ephyra.core.common.util.system.workManager
 import ephyra.domain.track.interactor.GetTracks
 import ephyra.domain.track.interactor.TrackChapter
-import ephyra.domain.track.store.DelayedTrackingStore
+import ephyra.domain.track.store.TrackingQueueStore
 import kotlinx.coroutines.delay
 import logcat.LogPriority
 import java.util.concurrent.TimeUnit
@@ -23,7 +23,7 @@ class DelayedTrackingUpdateJob(
     workerParams: WorkerParameters,
     private val getTracks: GetTracks,
     private val trackChapter: TrackChapter,
-    private val delayedTrackingStore: DelayedTrackingStore,
+    private val trackingQueue: TrackingQueueStore,
 ) : CoroutineWorker(context, workerParams) {
 
     override suspend fun doWork(): Result {
@@ -32,11 +32,11 @@ class DelayedTrackingUpdateJob(
         }
 
         withIOContext {
-            val items = delayedTrackingStore.getItems()
+            val items = trackingQueue.getItems()
                 .mapNotNull {
                     val track = getTracks.awaitOne(it.trackId)
                     if (track == null) {
-                        delayedTrackingStore.remove(it.trackId)
+                        trackingQueue.remove(it.trackId)
                     }
                     track?.copy(lastChapterRead = it.lastChapterRead.toDouble())
                 }
@@ -45,7 +45,7 @@ class DelayedTrackingUpdateJob(
                 logcat(LogPriority.DEBUG) {
                     "Updating delayed track item: ${track.mangaId}, last chapter read: ${track.lastChapterRead}"
                 }
-                trackChapter.await(context, track.mangaId, track.lastChapterRead, setupJobOnFailure = false)
+                trackChapter.await(track.mangaId, track.lastChapterRead, setupJobOnFailure = false)
                 // Stagger updates to reduce burst load on tracker servers
                 if (index < items.lastIndex) {
                     delay(STAGGER_DELAY_MS)
@@ -53,7 +53,7 @@ class DelayedTrackingUpdateJob(
             }
         }
 
-        return if (delayedTrackingStore.getItems().isEmpty()) Result.success() else Result.retry()
+        return if (trackingQueue.getItems().isEmpty()) Result.success() else Result.retry()
     }
 
     companion object {

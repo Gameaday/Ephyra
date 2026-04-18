@@ -156,7 +156,7 @@ val koinDomainModule = module {
     factory { GetApplicationRelease(get(), get()) }
 
     single<TrackRepository> { TrackRepositoryImpl(get()) }
-    factory { TrackChapter(get(), get(), get(), get()) }
+    factory { TrackChapter(get(), get(), get(), get(), get()) }
     factory { AddTracks(get(), get(), get(), get(), get(), get()) }
     factory { RefreshTracks(get(), get(), get(), get()) }
     factory { DeleteTrack(get()) }

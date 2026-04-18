@@ -1,6 +1,5 @@
 package ephyra.feature.manga.interactor
 
-import android.content.Context
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.GetTracks
@@ -50,8 +49,8 @@ class MangaTrackInteractor(
         addTracks.bindEnhancedTrackers(manga, source)
     }
 
-    suspend fun trackChapter(context: Context, mangaId: Long, maxChapterNumber: Double) {
-        trackChapter.await(context, mangaId, maxChapterNumber)
+    suspend fun trackChapter(mangaId: Long, maxChapterNumber: Double) {
+        trackChapter.await(mangaId, maxChapterNumber)
     }
 
     suspend fun isAutoTrackStateAlways(): Boolean =

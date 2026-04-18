@@ -52,11 +52,12 @@ import ephyra.data.room.EphyraDatabase
 import ephyra.data.saver.ImageSaver
 import ephyra.data.track.TrackerManagerImpl
 import ephyra.data.updater.AppUpdateChecker
+import ephyra.app.track.DelayedTrackingStore
+import ephyra.app.track.DelayedTrackingUpdateJob
+import ephyra.app.track.TrackingJobSchedulerImpl
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.storage.service.StorageManager
-import ephyra.domain.track.service.DelayedTrackingUpdateJob
 import ephyra.domain.track.service.TrackerManager
-import ephyra.domain.track.store.DelayedTrackingStore
 import ephyra.feature.browse.source.globalsearch.GlobalSearchScreen
 import ephyra.feature.migration.config.MigrationConfigScreen
 import ephyra.feature.more.NewUpdateScreen
@@ -194,7 +195,8 @@ val koinAppModule = module {
     single { DownloadNotifier(androidApplication(), get()) }
 
     single<TrackerManager> { TrackerManagerImpl(androidApplication(), get(), get(), get(), get(), get(), get(), get()) }
-    single { DelayedTrackingStore(androidApplication()) }
+    single<ephyra.domain.track.store.TrackingQueueStore> { DelayedTrackingStore(androidApplication()) }
+    single<ephyra.domain.track.service.TrackingJobScheduler> { TrackingJobSchedulerImpl(androidApplication()) }
 
     single { BackupDecoder(androidApplication(), get()) }
     single { BackupFileValidator(androidApplication(), get(), get()) }

@@ -1,18 +1,19 @@
-package ephyra.domain.track.store
+package ephyra.app.track
 
 import android.content.Context
 import androidx.core.content.edit
 import ephyra.core.common.util.system.logcat
+import ephyra.domain.track.store.TrackingQueueStore
 import logcat.LogPriority
 
-class DelayedTrackingStore(context: Context) {
+class DelayedTrackingStore(context: Context) : TrackingQueueStore {
 
     /**
      * Preference file where queued tracking updates are stored.
      */
     private val preferences = context.getSharedPreferences("tracking_queue", Context.MODE_PRIVATE)
 
-    fun add(trackId: Long, lastChapterRead: Double) {
+    override fun add(trackId: Long, lastChapterRead: Double) {
         val previousLastChapterRead = preferences.getFloat(trackId.toString(), 0f)
         if (lastChapterRead > previousLastChapterRead) {
             logcat(LogPriority.DEBUG) { "Queuing track item: $trackId, last chapter read: $lastChapterRead" }
@@ -22,23 +23,18 @@ class DelayedTrackingStore(context: Context) {
         }
     }
 
-    fun remove(trackId: Long) {
+    override fun remove(trackId: Long) {
         preferences.edit {
             remove(trackId.toString())
         }
     }
 
-    fun getItems(): List<DelayedTrackingItem> {
+    override fun getItems(): List<TrackingQueueStore.TrackingQueueItem> {
         return preferences.all.mapNotNull {
-            DelayedTrackingItem(
+            TrackingQueueStore.TrackingQueueItem(
                 trackId = it.key.toLong(),
                 lastChapterRead = it.value.toString().toFloat(),
             )
         }
     }
-
-    data class DelayedTrackingItem(
-        val trackId: Long,
-        val lastChapterRead: Float,
-    )
 }

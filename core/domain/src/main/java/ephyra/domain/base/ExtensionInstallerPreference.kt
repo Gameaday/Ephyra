@@ -1,16 +1,13 @@
 package ephyra.domain.base
 
-import android.content.Context
 import ephyra.core.common.preference.Preference
 import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.common.preference.getEnum
-import ephyra.core.common.util.system.hasMiuiPackageInstaller
-import ephyra.core.common.util.system.isShizukuInstalled
 import ephyra.domain.base.BasePreferences.ExtensionInstaller
 import kotlinx.coroutines.CoroutineScope
 
 class ExtensionInstallerPreference(
-    private val context: Context,
+    private val capabilityProvider: InstallerCapabilityProvider,
     preferenceStore: PreferenceStore,
 ) : Preference<ExtensionInstaller> {
 
@@ -20,14 +17,14 @@ class ExtensionInstallerPreference(
 
     val entries
         get() = ExtensionInstaller.entries.run {
-            if (context.hasMiuiPackageInstaller) {
+            if (!capabilityProvider.isAvailable(ExtensionInstaller.PACKAGEINSTALLER)) {
                 filter { it != ExtensionInstaller.PACKAGEINSTALLER }
             } else {
                 toList()
             }
         }
 
-    override fun defaultValue() = if (context.hasMiuiPackageInstaller) {
+    override fun defaultValue() = if (!capabilityProvider.isAvailable(ExtensionInstaller.PACKAGEINSTALLER)) {
         ExtensionInstaller.LEGACY
     } else {
         ExtensionInstaller.PACKAGEINSTALLER
@@ -36,11 +33,11 @@ class ExtensionInstallerPreference(
     private fun check(value: ExtensionInstaller): ExtensionInstaller {
         when (value) {
             ExtensionInstaller.PACKAGEINSTALLER -> {
-                if (context.hasMiuiPackageInstaller) return ExtensionInstaller.LEGACY
+                if (!capabilityProvider.isAvailable(ExtensionInstaller.PACKAGEINSTALLER)) return ExtensionInstaller.LEGACY
             }
 
             ExtensionInstaller.SHIZUKU -> {
-                if (!context.isShizukuInstalled) return defaultValue()
+                if (!capabilityProvider.isAvailable(ExtensionInstaller.SHIZUKU)) return defaultValue()
             }
 
             else -> {}

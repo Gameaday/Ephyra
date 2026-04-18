@@ -1,10 +1,10 @@
 package ephyra.domain.track.interactor
 
-import android.content.Context
 import ephyra.core.common.util.lang.withNonCancellableContext
 import ephyra.core.common.util.system.logcat
+import ephyra.domain.track.service.TrackingJobScheduler
 import ephyra.domain.track.service.TrackerManager
-import ephyra.domain.track.store.DelayedTrackingStore
+import ephyra.domain.track.store.TrackingQueueStore
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
@@ -14,10 +14,11 @@ class TrackChapter(
     private val getTracks: GetTracks,
     private val trackerManager: TrackerManager,
     private val insertTrack: InsertTrack,
-    private val delayedTrackingStore: DelayedTrackingStore,
+    private val trackingQueue: TrackingQueueStore,
+    private val trackingJobScheduler: TrackingJobScheduler,
 ) {
 
-    suspend fun await(context: Context, mangaId: Long, chapterNumber: Double, setupJobOnFailure: Boolean = true) {
+    suspend fun await(mangaId: Long, chapterNumber: Double, setupJobOnFailure: Boolean = true) {
         withNonCancellableContext {
             val tracks = getTracks.await(mangaId)
             if (tracks.isEmpty()) return@withNonCancellableContext
@@ -41,14 +42,14 @@ class TrackChapter(
                                 .copy(lastChapterRead = chapterNumber)
                             service.update(updatedTrack, true)
                             insertTrack.await(updatedTrack)
-                            delayedTrackingStore.remove(track.id)
+                            trackingQueue.remove(track.id)
                         } catch (e: Exception) {
                             logcat(LogPriority.WARN, e) {
                                 "Failed to update ${service.name} for manga $mangaId, queuing for retry"
                             }
-                            delayedTrackingStore.add(track.id, chapterNumber)
+                            trackingQueue.add(track.id, chapterNumber)
                             if (setupJobOnFailure) {
-                                ephyra.domain.track.service.DelayedTrackingUpdateJob.setupTask(context)
+                                trackingJobScheduler.scheduleDelayedSync()
                             }
                             throw e
                         }

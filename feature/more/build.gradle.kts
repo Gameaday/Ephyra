@@ -39,5 +39,7 @@ dependencies {
 }
 
 koinCompiler {
+    // TODO: Enable when Koin Annotations supports @ExternalDefinitions (expected in Koin 1.4+)
+    // https://github.com/InsertKoinIO/koin-annotations/issues/XXX
     compileSafety.set(false)
 }

@@ -1,6 +1,5 @@
 package ephyra.domain.base
 
-import android.content.Context
 import dev.icerock.moko.resources.StringResource
 import ephyra.core.common.preference.Preference
 import ephyra.core.common.preference.PreferenceStore
@@ -8,7 +7,7 @@ import ephyra.core.common.util.system.GLUtil
 import ephyra.i18n.MR
 
 class BasePreferences(
-    val context: Context,
+    private val capabilityProvider: InstallerCapabilityProvider,
     private val preferenceStore: PreferenceStore,
 ) {
 
@@ -19,7 +18,7 @@ class BasePreferences(
 
     fun incognitoMode() = preferenceStore.getBoolean(Preference.appStateKey("incognito_mode"), false)
 
-    fun extensionInstaller() = ExtensionInstallerPreference(context, preferenceStore)
+    fun extensionInstaller() = ExtensionInstallerPreference(capabilityProvider, preferenceStore)
 
     fun shownOnboardingFlow() = preferenceStore.getBoolean(Preference.appStateKey("onboarding_complete"), false)
 

@@ -1217,7 +1217,7 @@ class ReaderViewModel @JvmOverloads constructor(
 
         val manga = manga ?: return
         viewModelScope.launchNonCancellable {
-            trackChapter.await(app, manga.id, readerChapter.chapter.chapterNumber)
+            trackChapter.await(manga.id, readerChapter.chapter.chapterNumber)
         }
     }
 
