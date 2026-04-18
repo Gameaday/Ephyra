@@ -67,23 +67,25 @@ data object HistoryTab : Tab {
         HistoryScreen(
             state = state,
             snackbarHostState = snackbarHostState,
-            onSearchQueryChange = screenModel::updateSearchQuery,
+            onSearchQueryChange = { screenModel.onEvent(HistoryScreenEvent.UpdateSearchQuery(it)) },
             onClickCover = { navigator.push(MangaScreen(it)) },
-            onClickResume = screenModel::getNextChapterForManga,
-            onDialogChange = screenModel::setDialog,
-            onClickFavorite = screenModel::addFavorite,
+            onClickResume = { mangaId, chapterId ->
+                screenModel.onEvent(HistoryScreenEvent.GetNextChapterForManga(mangaId, chapterId))
+            },
+            onDialogChange = { screenModel.onEvent(HistoryScreenEvent.SetDialog(it)) },
+            onClickFavorite = { screenModel.onEvent(HistoryScreenEvent.AddFavoriteById(it)) },
         )
 
-        val onDismissRequest = { screenModel.setDialog(null) }
+        val onDismissRequest = { screenModel.onEvent(HistoryScreenEvent.SetDialog(null)) }
         when (val dialog = state.dialog) {
             is HistoryScreenModel.Dialog.Delete -> {
                 HistoryDeleteDialog(
                     onDismissRequest = onDismissRequest,
                     onDelete = { all ->
                         if (all) {
-                            screenModel.removeAllFromHistory(dialog.history.mangaId)
+                            screenModel.onEvent(HistoryScreenEvent.RemoveAllForManga(dialog.history.mangaId))
                         } else {
-                            screenModel.removeFromHistory(dialog.history)
+                            screenModel.onEvent(HistoryScreenEvent.RemoveFromHistory(dialog.history))
                         }
                     },
                 )
@@ -92,7 +94,7 @@ data object HistoryTab : Tab {
             is HistoryScreenModel.Dialog.DeleteAll -> {
                 HistoryDeleteAllDialog(
                     onDismissRequest = onDismissRequest,
-                    onDelete = screenModel::removeAllHistory,
+                    onDelete = { screenModel.onEvent(HistoryScreenEvent.RemoveAllHistory) },
                 )
             }
 
@@ -100,9 +102,9 @@ data object HistoryTab : Tab {
                 DuplicateMangaDialog(
                     duplicates = dialog.duplicates,
                     onDismissRequest = onDismissRequest,
-                    onConfirm = { screenModel.addFavorite(dialog.manga) },
+                    onConfirm = { screenModel.onEvent(HistoryScreenEvent.AddFavorite(dialog.manga)) },
                     onOpenManga = { navigator.push(MangaScreen(it.id)) },
-                    onMigrate = { screenModel.showMigrateDialog(dialog.manga, it) },
+                    onMigrate = { screenModel.onEvent(HistoryScreenEvent.ShowMigrateDialog(dialog.manga, it)) },
                 )
             }
 
@@ -112,7 +114,9 @@ data object HistoryTab : Tab {
                     onDismissRequest = onDismissRequest,
                     onEditCategories = { navigator.push(CategoryScreen()) },
                     onConfirm = { include, _ ->
-                        screenModel.moveMangaToCategoriesAndAddToLibrary(dialog.manga, include)
+                        screenModel.onEvent(
+                            HistoryScreenEvent.MoveMangaToCategoriesAndAddToLibrary(dialog.manga, include),
+                        )
                     },
                 )
             }

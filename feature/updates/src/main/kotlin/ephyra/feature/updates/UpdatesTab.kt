@@ -60,29 +60,39 @@ data object UpdatesTab : Tab {
             snackbarHostState = screenModel.snackbarHostState,
             lastUpdated = screenModel.lastUpdated,
             onClickCover = { item -> navigator.push(MangaScreen(item.update.mangaId)) },
-            onSelectAll = screenModel::toggleAllSelection,
-            onInvertSelection = screenModel::invertSelection,
-            onUpdateLibrary = screenModel::updateLibrary,
-            onDownloadChapter = screenModel::downloadChapters,
-            onMultiBookmarkClicked = screenModel::bookmarkUpdates,
-            onMultiMarkAsReadClicked = screenModel::markUpdatesRead,
-            onMultiDeleteClicked = screenModel::showConfirmDeleteChapters,
-            onUpdateSelected = screenModel::toggleSelection,
+            onSelectAll = { screenModel.onEvent(UpdatesScreenEvent.ToggleAllSelection(it)) },
+            onInvertSelection = { screenModel.onEvent(UpdatesScreenEvent.InvertSelection) },
+            onUpdateLibrary = { screenModel.onEvent(UpdatesScreenEvent.UpdateLibrary) },
+            onDownloadChapter = { items, action ->
+                screenModel.onEvent(UpdatesScreenEvent.DownloadChapters(items, action))
+            },
+            onMultiBookmarkClicked = { items, bookmark ->
+                screenModel.onEvent(UpdatesScreenEvent.BookmarkUpdates(items, bookmark))
+            },
+            onMultiMarkAsReadClicked = { items, read ->
+                screenModel.onEvent(UpdatesScreenEvent.MarkUpdatesRead(items, read))
+            },
+            onMultiDeleteClicked = { items ->
+                screenModel.onEvent(UpdatesScreenEvent.ShowConfirmDeleteChapters(items))
+            },
+            onUpdateSelected = { item, selected, fromLongPress ->
+                screenModel.onEvent(UpdatesScreenEvent.ToggleSelection(item, selected, fromLongPress))
+            },
             onOpenChapter = {
                 val intent = ReaderActivity.newIntent(context, it.update.mangaId, it.update.chapterId)
                 context.startActivity(intent)
             },
             onCalendarClicked = { navigator.push(UpcomingScreen()) },
-            onFilterClicked = screenModel::showFilterDialog,
+            onFilterClicked = { screenModel.onEvent(UpdatesScreenEvent.ShowFilterDialog) },
             hasActiveFilters = state.hasActiveFilters,
         )
 
-        val onDismissDialog = { screenModel.setDialog(null) }
+        val onDismissDialog = { screenModel.onEvent(UpdatesScreenEvent.SetDialog(null)) }
         when (val dialog = state.dialog) {
             is UpdatesScreenModel.Dialog.DeleteConfirmation -> {
                 UpdatesDeleteConfirmationDialog(
                     onDismissRequest = onDismissDialog,
-                    onConfirm = { screenModel.deleteChapters(dialog.toDelete) },
+                    onConfirm = { screenModel.onEvent(UpdatesScreenEvent.DeleteChapters(dialog.toDelete)) },
                 )
             }
 
@@ -125,10 +135,10 @@ data object UpdatesTab : Tab {
             }
         }
         DisposableEffect(Unit) {
-            screenModel.resetNewUpdatesCount()
+            screenModel.onEvent(UpdatesScreenEvent.ResetNewUpdatesCount)
 
             onDispose {
-                screenModel.resetNewUpdatesCount()
+                screenModel.onEvent(UpdatesScreenEvent.ResetNewUpdatesCount)
             }
         }
     }

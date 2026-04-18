@@ -53,7 +53,7 @@ fun UpdateScreen(
     onSelectAll: (Boolean) -> Unit,
     onInvertSelection: () -> Unit,
     onCalendarClicked: () -> Unit,
-    onUpdateLibrary: () -> Boolean,
+    onUpdateLibrary: () -> Unit,
     onDownloadChapter: (List<UpdatesItem>, ChapterDownloadAction) -> Unit,
     onMultiBookmarkClicked: (List<UpdatesItem>, bookmark: Boolean) -> Unit,
     onMultiMarkAsReadClicked: (List<UpdatesItem>, read: Boolean) -> Unit,
@@ -105,8 +105,7 @@ fun UpdateScreen(
                 PullRefresh(
                     refreshing = isRefreshing,
                     onRefresh = {
-                        val started = onUpdateLibrary()
-                        if (!started) return@PullRefresh
+                        onUpdateLibrary()
                         scope.launch {
                             // Fake refresh status but hide it after a second as it's a long running task
                             isRefreshing = true

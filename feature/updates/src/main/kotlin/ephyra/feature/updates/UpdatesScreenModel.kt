@@ -183,7 +183,33 @@ class UpdatesScreenModel(
             }
     }
 
-    fun updateLibrary(): Boolean {
+    // ─────────────────────────────────────────────────────────────────────────
+    // UDF entry-point: all UI interactions are routed through this single method
+    // ─────────────────────────────────────────────────────────────────────────
+
+    fun onEvent(event: UpdatesScreenEvent) {
+        when (event) {
+            is UpdatesScreenEvent.UpdateLibrary -> updateLibrary()
+            is UpdatesScreenEvent.DownloadChapters -> downloadChapters(event.items, event.action)
+            is UpdatesScreenEvent.MarkUpdatesRead -> markUpdatesRead(event.updates, event.read)
+            is UpdatesScreenEvent.BookmarkUpdates -> bookmarkUpdates(event.updates, event.bookmark)
+            is UpdatesScreenEvent.DeleteChapters -> deleteChapters(event.items)
+            is UpdatesScreenEvent.ShowConfirmDeleteChapters -> showConfirmDeleteChapters(event.items)
+            is UpdatesScreenEvent.ToggleSelection ->
+                toggleSelection(event.item, event.selected, event.fromLongPress)
+            is UpdatesScreenEvent.ToggleAllSelection -> toggleAllSelection(event.selected)
+            is UpdatesScreenEvent.InvertSelection -> invertSelection()
+            is UpdatesScreenEvent.SetDialog -> setDialog(event.dialog)
+            is UpdatesScreenEvent.ResetNewUpdatesCount -> resetNewUpdatesCount()
+            is UpdatesScreenEvent.ShowFilterDialog -> showFilterDialog()
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Private business logic — not part of the public API
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private fun updateLibrary(): Boolean {
         val started = libraryUpdateScheduler.startNow()
         screenModelScope.launch {
             _events.send(Event.LibraryUpdateTriggered(started))
@@ -212,7 +238,7 @@ class UpdatesScreenModel(
         }
     }
 
-    fun downloadChapters(items: List<UpdatesItem>, action: ChapterDownloadAction) {
+    private fun downloadChapters(items: List<UpdatesItem>, action: ChapterDownloadAction) {
         if (items.isEmpty()) return
         screenModelScope.launch {
             when (action) {
@@ -256,7 +282,7 @@ class UpdatesScreenModel(
      * @param updates the list of selected updates.
      * @param read whether to mark chapters as read or unread.
      */
-    fun markUpdatesRead(updates: List<UpdatesItem>, read: Boolean) {
+    private fun markUpdatesRead(updates: List<UpdatesItem>, read: Boolean) {
         screenModelScope.launchIO {
             setReadStatus.await(
                 read = read,
@@ -272,7 +298,7 @@ class UpdatesScreenModel(
      * Bookmarks the given list of chapters.
      * @param updates the list of chapters to bookmark.
      */
-    fun bookmarkUpdates(updates: List<UpdatesItem>, bookmark: Boolean) {
+    private fun bookmarkUpdates(updates: List<UpdatesItem>, bookmark: Boolean) {
         screenModelScope.launchIO {
             updates
                 .filterNot { it.update.bookmark == bookmark }
@@ -305,7 +331,7 @@ class UpdatesScreenModel(
      *
      * @param updatesItem list of chapters
      */
-    fun deleteChapters(updatesItem: List<UpdatesItem>) {
+    private fun deleteChapters(updatesItem: List<UpdatesItem>) {
         screenModelScope.launchNonCancellable {
             updatesItem
                 .groupBy { it.update.mangaId }
@@ -320,11 +346,11 @@ class UpdatesScreenModel(
         toggleAllSelection(false)
     }
 
-    fun showConfirmDeleteChapters(updatesItem: List<UpdatesItem>) {
+    private fun showConfirmDeleteChapters(updatesItem: List<UpdatesItem>) {
         setDialog(Dialog.DeleteConfirmation(updatesItem))
     }
 
-    fun toggleSelection(
+    private fun toggleSelection(
         item: UpdatesItem,
         selected: Boolean,
         fromLongPress: Boolean = false,
@@ -387,7 +413,7 @@ class UpdatesScreenModel(
         }
     }
 
-    fun toggleAllSelection(selected: Boolean) {
+    private fun toggleAllSelection(selected: Boolean) {
         mutableState.update { state ->
             val newItems = state.items.map {
                 selectedChapterIds.addOrRemove(it.update.chapterId, selected)
@@ -400,7 +426,7 @@ class UpdatesScreenModel(
         selectedPositions[1] = -1
     }
 
-    fun invertSelection() {
+    private fun invertSelection() {
         mutableState.update { state ->
             val newItems = state.items.map {
                 selectedChapterIds.addOrRemove(it.update.chapterId, !it.selected)
@@ -412,11 +438,11 @@ class UpdatesScreenModel(
         selectedPositions[1] = -1
     }
 
-    fun setDialog(dialog: Dialog?) {
+    private fun setDialog(dialog: Dialog?) {
         mutableState.update { it.copy(dialog = dialog) }
     }
 
-    fun resetNewUpdatesCount() {
+    private fun resetNewUpdatesCount() {
         libraryPreferences.newUpdatesCount().set(0)
     }
 
@@ -438,7 +464,7 @@ class UpdatesScreenModel(
         }
     }
 
-    fun showFilterDialog() {
+    private fun showFilterDialog() {
         mutableState.update { it.copy(dialog = Dialog.FilterSheet) }
     }
 

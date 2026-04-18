@@ -94,11 +94,41 @@ class HistoryScreenModel(
             }
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // UDF entry-point: all UI interactions are routed through this single method
+    // ─────────────────────────────────────────────────────────────────────────
+
+    fun onEvent(event: HistoryScreenEvent) {
+        when (event) {
+            is HistoryScreenEvent.UpdateSearchQuery -> updateSearchQuery(event.query)
+            is HistoryScreenEvent.GetNextChapterForManga -> getNextChapterForManga(event.mangaId, event.chapterId)
+            is HistoryScreenEvent.AddFavoriteById -> addFavorite(event.mangaId)
+            is HistoryScreenEvent.AddFavorite -> addFavorite(event.manga)
+            is HistoryScreenEvent.MoveMangaToCategoriesAndAddToLibrary ->
+                moveMangaToCategoriesAndAddToLibrary(event.manga, event.categories)
+            is HistoryScreenEvent.RemoveFromHistory -> removeFromHistory(event.history)
+            is HistoryScreenEvent.RemoveAllForManga -> removeAllFromHistory(event.mangaId)
+            is HistoryScreenEvent.RemoveAllHistory -> removeAllHistory()
+            is HistoryScreenEvent.ShowMigrateDialog -> showMigrateDialog(event.target, event.current)
+            is HistoryScreenEvent.ShowChangeCategoryDialog -> showChangeCategoryDialog(event.manga)
+            is HistoryScreenEvent.SetDialog -> setDialog(event.dialog)
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Suspend accessor — returns a value so cannot be modelled as a fire-and-
+    // forget event; callers (HistoryTab) invoke this directly in a LaunchedEffect.
+    // ─────────────────────────────────────────────────────────────────────────
+
     suspend fun getNextChapter(): Chapter? {
         return withIOContext { getNextChapters.await(onlyUnread = false).firstOrNull() }
     }
 
-    fun getNextChapterForManga(mangaId: Long, chapterId: Long) {
+    // ─────────────────────────────────────────────────────────────────────────
+    // Private business logic — not part of the public API
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private fun getNextChapterForManga(mangaId: Long, chapterId: Long) {
         screenModelScope.launchIO {
             sendNextChapterEvent(getNextChapters.await(mangaId, chapterId, onlyUnread = false))
         }
@@ -109,19 +139,19 @@ class HistoryScreenModel(
         _events.send(Event.OpenChapter(chapter))
     }
 
-    fun removeFromHistory(history: HistoryWithRelations) {
+    private fun removeFromHistory(history: HistoryWithRelations) {
         screenModelScope.launchIO {
             removeHistory.await(history)
         }
     }
 
-    fun removeAllFromHistory(mangaId: Long) {
+    private fun removeAllFromHistory(mangaId: Long) {
         screenModelScope.launchIO {
             removeHistory.await(mangaId)
         }
     }
 
-    fun removeAllHistory() {
+    private fun removeAllHistory() {
         screenModelScope.launchIO {
             val result = removeHistory.awaitAll()
             if (!result) return@launchIO
@@ -129,11 +159,11 @@ class HistoryScreenModel(
         }
     }
 
-    fun updateSearchQuery(query: String?) {
+    private fun updateSearchQuery(query: String?) {
         mutableState.update { it.copy(searchQuery = query) }
     }
 
-    fun setDialog(dialog: Dialog?) {
+    private fun setDialog(dialog: Dialog?) {
         mutableState.update { it.copy(dialog = dialog) }
     }
 
@@ -142,7 +172,7 @@ class HistoryScreenModel(
      *
      * @return List of categories, not including the default category
      */
-    suspend fun getCategories(): List<Category> {
+    private suspend fun getCategories(): List<Category> {
         return getCategories.await().filterNot { it.isSystemCategory }
     }
 
@@ -157,7 +187,7 @@ class HistoryScreenModel(
         }
     }
 
-    fun moveMangaToCategoriesAndAddToLibrary(manga: Manga, categories: List<Long>) {
+    private fun moveMangaToCategoriesAndAddToLibrary(manga: Manga, categories: List<Long>) {
         moveMangaToCategory(manga.id, categories)
         if (manga.favorite) return
 
@@ -171,7 +201,7 @@ class HistoryScreenModel(
             .map { it.id }
     }
 
-    fun addFavorite(mangaId: Long) {
+    private fun addFavorite(mangaId: Long) {
         screenModelScope.launchIO {
             val manga = getManga.await(mangaId) ?: return@launchIO
 
@@ -185,7 +215,7 @@ class HistoryScreenModel(
         }
     }
 
-    fun addFavorite(manga: Manga) {
+    private fun addFavorite(manga: Manga) {
         screenModelScope.launchIO {
             // Move to default category if applicable
             val categories = getCategories()
@@ -216,13 +246,13 @@ class HistoryScreenModel(
         }
     }
 
-    fun showMigrateDialog(target: Manga, current: Manga) {
+    private fun showMigrateDialog(target: Manga, current: Manga) {
         mutableState.update { currentState ->
             currentState.copy(dialog = Dialog.Migrate(target = target, current = current))
         }
     }
 
-    fun showChangeCategoryDialog(manga: Manga) {
+    private fun showChangeCategoryDialog(manga: Manga) {
         screenModelScope.launch {
             val categories = getCategories()
             val selection = getMangaCategoryIds(manga)

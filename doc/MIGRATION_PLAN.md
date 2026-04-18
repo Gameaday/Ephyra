@@ -48,28 +48,50 @@ Replace blocking `SharedPreferences` operations with Flow-based `DataStore`.
 ## Phase 4: Business Logic Isolation (The Interactor Mandate)
 
 Move data access and business logic out of `ScreenModel`s into single-purpose Interactors.
+Also enforce the domain purity boundary — `core/domain` must not import `ephyra.data.*`.
 
-- [ ] Audit massive "God Object" Repositories and `ScreenModel`s.
-- [ ] Break down Repositories into focused, single-purpose Domain Interactors (e.g., `GetManga`,
-  `UpdateReadStatus`).
-- [ ] Refactor `ScreenModel`s to rely exclusively on Interactors for data mutations and retrievals.
+- [x] Audit massive "God Object" Repositories and `ScreenModel`s.
+- [x] Extract `ExcludedScanlatorRepository` interface to `:domain`; implement in `:data`.
+- [x] Move `toDbTrack()` / `toDomainTrack()` mappers from `core/domain` → `core/data`.
+- [x] Remove dead `toDbChapter()` from `core/domain` (duplicate existed in `:data` mappers).
+- [x] Move `ChapterSanitizer` from `data/src` → `domain/src/chapter/service/`.
+- [x] Add CI fitness gate: zero `ephyra.data.*` imports in `core/domain` (except `DomainModule.kt`).
+- [ ] Audit remaining `ScreenModel`s that inject a `Repository` directly instead of an `Interactor`.
+- [ ] Break down remaining `MangaRepository` / `HistoryRepository` direct call-sites into focused
+  Interactors.
+- [ ] Port `backup/restore` handlers off `DatabaseHandler` → Interactors backed by Room DAOs.
+- [ ] Lower the `feature → ephyra.data.*` ratchet baseline from 38 → 0 (eliminate all remaining
+  direct feature→data imports).
 
 ## Phase 5: UI Architecture Stabilization (UDF)
 
-Ensure all screens adhere to Unidirectional Data Flow.
+Ensure all screens adhere to Unidirectional Data Flow:
+every `ScreenModel` exposes exactly one `ViewState` and a single `onEvent(event)` entry-point.
 
-- [ ] Ensure every `ScreenModel` exposes exactly one immutable `ViewState`.
-- [ ] Ensure all UI actions map to a single `onEvent(event)` intent method.
+- [x] `MangaScreenModel` — `MangaScreenEvent` sealed interface + `onEvent()` ✅
+- [x] `HistoryScreenModel` — `HistoryScreenEvent` sealed interface + `onEvent()` ✅
+- [x] `UpdatesScreenModel` — `UpdatesScreenEvent` sealed interface + `onEvent()` ✅
+- [ ] `LibraryScreenModel` (937 lines) — create `LibraryScreenEvent` + `onEvent()`.
+- [ ] `BrowseSourceScreenModel` (357 lines) — create `BrowseSourceScreenEvent` + `onEvent()`.
+- [ ] `ReaderViewModel` (1 292 lines) — create `ReaderEvent` + `onEvent()`.
+- [ ] Audit all remaining `ScreenModel`s for raw `fun onXxx()` public mutations.
 - [ ] Remove side-effects directly modifying UI state outside of the `ViewState` pipeline.
 
 ## Phase 6: Database Engine (SQLDelight to Room)
 
 Replace the legacy SQL-first engine with Entity-DAO Room paradigm.
 
-- [ ] Design the Room `Entity` schema mimicking existing SQLDelight tables.
-- [ ] Implement `DAO`s with `Flow` and `Paging 3` integration.
-- [ ] Implement robust migration paths from the existing SQLite db to the new Room setup.
-- [ ] Remove SQLDelight dependency and manual SQL queries where applicable.
+- [x] Design the Room `Entity` schema mimicking existing SQLDelight tables.
+- [x] Implement Room `DAO`s with `Flow` and `Paging 3` integration.
+- [x] Add `ExcludedScanlatorDao` and wire into `EphyraDatabase`.
+- [ ] Implement `MangaRepositoryImpl` backed by Room DAO (remove SQLDelight path).
+- [ ] Implement `ChapterRepositoryImpl` backed by Room DAO.
+- [ ] Implement `HistoryRepositoryImpl` backed by Room DAO.
+- [ ] Implement `TrackRepositoryImpl` backed by Room DAO.
+- [ ] Implement `CategoryRepositoryImpl` backed by Room DAO.
+- [ ] Implement robust migration strategy from existing SQLite schema → Room.
+- [ ] Add Room migration unit tests.
+- [ ] Retire `AndroidDatabaseHandler` and remove SQLDelight dependency once all paths ported.
 
 ## Phase 7: Host-Extension API Verification ✅
 
