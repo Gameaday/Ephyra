@@ -154,7 +154,9 @@ class MainActivity : BaseActivity(), AppReadySignal {
         }
 
         setComposeContent {
-            StartupTracker.complete(StartupTracker.Phase.COMPOSE_STARTED)
+            LaunchedEffect(Unit) {
+                StartupTracker.complete(StartupTracker.Phase.COMPOSE_STARTED)
+            }
             androidx.compose.runtime.CompositionLocalProvider(
                 ephyra.presentation.core.util.LocalUiPreferences provides uiPreferences,
                 ephyra.presentation.core.util.LocalPrivacyPreferences provides privacyPreferences,
@@ -224,9 +226,12 @@ class MainActivity : BaseActivity(), AppReadySignal {
                             preferences.incognitoMode().set(false)
                         }
 
-                        // Signal that the app is ready regardless of whether onboarding
-                        // will be pushed (signalReady is idempotent – tabs also call it).
-                        signalReady()
+                        // signalReady() is intentionally NOT called here.
+                        // HOME_SCREEN_LOADED must only be completed when actual content is
+                        // visible: tabs call it when their data finishes loading, and
+                        // OnboardingScreen calls it when it is first shown.  Completing the
+                        // phase here (at Navigator-creation time) would cause
+                        // StartupDiagnosticOverlay to never show, defeating its purpose.
                     }
                     LaunchedEffect(navigator.lastItem) {
                         (navigator.lastItem as? BrowseSourceScreen)?.sourceId
