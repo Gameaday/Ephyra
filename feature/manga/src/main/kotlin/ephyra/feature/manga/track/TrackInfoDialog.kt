@@ -21,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,7 +44,6 @@ import ephyra.core.common.util.lang.convertEpochMillisZone
 import ephyra.core.common.util.lang.launchNonCancellable
 import ephyra.core.common.util.lang.toLocalDate
 import ephyra.core.common.util.lang.withIOContext
-import ephyra.core.common.util.lang.withUIContext
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.track.service.DeletableTracker
 import ephyra.domain.manga.interactor.GetManga
@@ -74,12 +74,14 @@ import ephyra.presentation.manga.track.TrackStatusSelector
 import ephyra.presentation.manga.track.TrackerSearch
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.forEach
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
@@ -125,6 +127,14 @@ data class TrackInfoDialogHomeScreen(
         val uiPreferences = koinInject<UiPreferences>()
         val dateFormat = remember { UiPreferences.dateFormat(uiPreferences.dateFormat().getSync()) }
         val state by screenModel.state.collectAsStateWithLifecycle()
+
+        LaunchedEffect(screenModel) {
+            screenModel.effectFlow.collect { effect ->
+                when (effect) {
+                    is Model.Effect.ShowToast -> context.toast(effect.message)
+                }
+            }
+        }
 
         TrackInfoDialogHome(
             trackItems = state.trackItems,
@@ -230,6 +240,9 @@ data class TrackInfoDialogHomeScreen(
         private val deleteTrack: DeleteTrack,
     ) : StateScreenModel<Model.State>(State()) {
 
+        private val effectChannel = Channel<Effect>(Channel.BUFFERED)
+        val effectFlow = effectChannel.receiveAsFlow()
+
         init {
             screenModelScope.launch {
                 refreshTrackers()
@@ -269,29 +282,27 @@ data class TrackInfoDialogHomeScreen(
                     item.tracker.register(track, mangaId)
                 } catch (e: Exception) {
                     logcat(LogPriority.ERROR, e) { "Failed to register track for tracker '${item.tracker.name}'; manga id=$mangaId" }
-                    withUIContext { application.toast(MR.strings.error_no_match) }
+                    effectChannel.send(Effect.ShowToast(application.stringResource(MR.strings.error_no_match)))
                 }
             }
         }
 
         private suspend fun refreshTrackers() {
-            val context = application
-
             refreshTracks.await(mangaId)
                 .filter { it.first != null }
                 .forEach { (track, e) ->
                     logcat(LogPriority.ERROR, e) {
                         "Failed to refresh track data mangaId=$mangaId for service ${track!!.id}"
                     }
-                    withUIContext {
-                        context.toast(
-                            context.stringResource(
+                    effectChannel.send(
+                        Effect.ShowToast(
+                            application.stringResource(
                                 MR.strings.track_error,
                                 track!!.name,
                                 e.message ?: "",
                             ),
-                        )
-                    }
+                        ),
+                    )
                 }
         }
 
@@ -322,6 +333,10 @@ data class TrackInfoDialogHomeScreen(
         data class State(
             val trackItems: List<TrackItem> = emptyList(),
         )
+
+        sealed interface Effect {
+            data class ShowToast(val message: String) : Effect
+        }
     }
 }
 
