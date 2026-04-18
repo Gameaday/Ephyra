@@ -71,11 +71,11 @@ every `ScreenModel` exposes exactly one `ViewState` and a single `onEvent(event)
 - [x] `MangaScreenModel` — `MangaScreenEvent` sealed interface + `onEvent()` ✅
 - [x] `HistoryScreenModel` — `HistoryScreenEvent` sealed interface + `onEvent()` ✅
 - [x] `UpdatesScreenModel` — `UpdatesScreenEvent` sealed interface + `onEvent()` ✅
-- [ ] `LibraryScreenModel` (937 lines) — create `LibraryScreenEvent` + `onEvent()`.
-- [ ] `BrowseSourceScreenModel` (357 lines) — create `BrowseSourceScreenEvent` + `onEvent()`.
+- [x] `LibraryScreenModel` — `LibraryScreenEvent` sealed interface + `onEvent()` ✅
+- [x] `BrowseSourceScreenModel` — `BrowseSourceScreenEvent` sealed interface + `onEvent()`; `MigrateSourceSearchScreen` updated ✅
+- [x] `MigrationListScreenModel` — `MigrationListScreenEvent` sealed interface + `onEvent()`; `onMissingChapters` callback converted to `missingChaptersEvent` output channel ✅
 - [ ] `ReaderViewModel` (1 292 lines) — create `ReaderEvent` + `onEvent()`.
 - [ ] Audit all remaining `ScreenModel`s for raw `fun onXxx()` public mutations.
-- [ ] Remove side-effects directly modifying UI state outside of the `ViewState` pipeline.
 
 ## Phase 6: Database Engine (SQLDelight to Room)
 
