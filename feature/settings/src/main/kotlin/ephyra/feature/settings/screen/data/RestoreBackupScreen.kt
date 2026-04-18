@@ -25,11 +25,9 @@ import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.core.common.util.system.DeviceUtil
-import ephyra.data.backup.BackupFileValidator
-import ephyra.data.backup.restore.RestoreOptions
+import ephyra.domain.backup.model.RestoreOptions
+import ephyra.domain.backup.service.BackupFileValidator
 import ephyra.domain.backup.service.RestoreScheduler
-import ephyra.domain.source.service.SourceManager
-import ephyra.domain.track.service.TrackerManager
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.LabeledCheckbox
@@ -52,7 +50,7 @@ class RestoreBackupScreen(
     override fun Content() {
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
-        val model = rememberScreenModel { RestoreBackupScreenModel(context, uri) }
+        val model = rememberScreenModel { RestoreBackupScreenModel(uri) }
         val state by model.state.collectAsStateWithLifecycle()
 
         Scaffold(
@@ -169,16 +167,14 @@ class RestoreBackupScreen(
 }
 
 private class RestoreBackupScreenModel(
-    private val context: Context,
     private val uri: String,
 ) : StateScreenModel<RestoreBackupScreenModel.State>(State()), KoinComponent {
 
     private val restoreScheduler: RestoreScheduler by inject()
-    private val trackerManager: TrackerManager by inject()
-    private val sourceManager: SourceManager by inject()
+    private val backupFileValidator: BackupFileValidator by inject()
 
     init {
-        validate(uri.toUri())
+        validate(uri)
     }
 
     fun toggle(setter: (RestoreOptions, Boolean) -> RestoreOptions, enabled: Boolean) {
@@ -196,12 +192,12 @@ private class RestoreBackupScreenModel(
         )
     }
 
-    private fun validate(uri: Uri) {
+    private fun validate(uriString: String) {
         val results = try {
-            BackupFileValidator(context, trackerManager, sourceManager).validate(uri)
+            backupFileValidator.validate(uriString)
         } catch (e: Exception) {
             setError(
-                error = InvalidRestore(uri, e.message.toString()),
+                error = InvalidRestore(uriString.toUri(), e.message.toString()),
                 canRestore = false,
             )
             return
@@ -210,7 +206,7 @@ private class RestoreBackupScreenModel(
         if (results.missingSources.isNotEmpty() || results.missingTrackers.isNotEmpty()) {
             setError(
                 error = MissingRestoreComponents(
-                    uri,
+                    uriString.toUri(),
                     results.missingSources.toList(),
                     results.missingTrackers.toList(),
                 ),

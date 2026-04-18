@@ -14,7 +14,7 @@ import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.system.cancelNotification
 import ephyra.core.common.util.system.notificationBuilder
 import ephyra.core.common.util.system.notify
-import ephyra.data.notification.Notifications
+import ephyra.core.common.notification.NotificationIds
 import ephyra.i18n.MR
 import ephyra.presentation.core.R
 import ephyra.presentation.core.util.system.getBitmapOrNull
@@ -25,8 +25,8 @@ import ephyra.presentation.core.util.system.toShareIntent
  */
 class SaveImageNotifier(private val context: Context) {
 
-    private val notificationBuilder = context.notificationBuilder(Notifications.CHANNEL_COMMON)
-    private val notificationId: Int = Notifications.ID_DOWNLOAD_IMAGE
+    private val notificationBuilder = context.notificationBuilder(NotificationIds.CHANNEL_COMMON)
+    private val notificationId: Int = NotificationIds.ID_DOWNLOAD_IMAGE
 
     /**
      * Called when image download/copy is complete.

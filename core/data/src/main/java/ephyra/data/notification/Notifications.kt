@@ -6,84 +6,91 @@ import androidx.core.app.NotificationManagerCompat.IMPORTANCE_DEFAULT
 import androidx.core.app.NotificationManagerCompat.IMPORTANCE_HIGH
 import androidx.core.app.NotificationManagerCompat.IMPORTANCE_LOW
 import ephyra.core.common.i18n.stringResource
+import ephyra.core.common.notification.NotificationIds
 import ephyra.core.common.util.system.buildNotificationChannel
 import ephyra.core.common.util.system.buildNotificationChannelGroup
 import ephyra.i18n.MR
 
 /**
- * Class to manage the basic information of all the notifications used in the app.
+ * Notification channel and ID constants for the app.
+ *
+ * All public constants are now delegates to [NotificationIds] (in `core/common`) so that
+ * modules that cannot depend on `data` can still reference the same values.
+ *
+ * This object retains the `createChannels()` method and the private GROUP_* strings because
+ * channel creation requires Android [Context] and belongs in the data layer.
  */
 object Notifications {
 
     /**
      * Common notification channel and ids used anywhere.
      */
-    const val CHANNEL_COMMON = "common_channel"
-    const val ID_DOWNLOAD_IMAGE = 2
+    const val CHANNEL_COMMON = NotificationIds.CHANNEL_COMMON
+    const val ID_DOWNLOAD_IMAGE = NotificationIds.ID_DOWNLOAD_IMAGE
 
     /**
      * Notification channel and ids used by the library updater.
      */
     private const val GROUP_LIBRARY = "group_library"
-    const val CHANNEL_LIBRARY_PROGRESS = "library_progress_channel"
-    const val ID_LIBRARY_PROGRESS = -101
-    const val ID_LIBRARY_SIZE_WARNING = -103
-    const val CHANNEL_LIBRARY_ERROR = "library_errors_channel"
-    const val ID_LIBRARY_ERROR = -102
-    const val ID_LIBRARY_DEAD_SOURCES = -104
-    const val ID_LIBRARY_MIGRATION_SUGGESTION = -105
+    const val CHANNEL_LIBRARY_PROGRESS = NotificationIds.CHANNEL_LIBRARY_PROGRESS
+    const val ID_LIBRARY_PROGRESS = NotificationIds.ID_LIBRARY_PROGRESS
+    const val ID_LIBRARY_SIZE_WARNING = NotificationIds.ID_LIBRARY_SIZE_WARNING
+    const val CHANNEL_LIBRARY_ERROR = NotificationIds.CHANNEL_LIBRARY_ERROR
+    const val ID_LIBRARY_ERROR = NotificationIds.ID_LIBRARY_ERROR
+    const val ID_LIBRARY_DEAD_SOURCES = NotificationIds.ID_LIBRARY_DEAD_SOURCES
+    const val ID_LIBRARY_MIGRATION_SUGGESTION = NotificationIds.ID_LIBRARY_MIGRATION_SUGGESTION
 
     /**
      * Notification channel and ids used by the authority matching job.
      */
-    const val CHANNEL_MATCH_PROGRESS = "match_progress_channel"
-    const val ID_MATCH_PROGRESS = -601
-    const val ID_MATCH_COMPLETE = -602
+    const val CHANNEL_MATCH_PROGRESS = NotificationIds.CHANNEL_MATCH_PROGRESS
+    const val ID_MATCH_PROGRESS = NotificationIds.ID_MATCH_PROGRESS
+    const val ID_MATCH_COMPLETE = NotificationIds.ID_MATCH_COMPLETE
 
     /**
      * Notification channel and ids used by the downloader.
      */
     private const val GROUP_DOWNLOADER = "group_downloader"
-    const val CHANNEL_DOWNLOADER_PROGRESS = "downloader_progress_channel"
-    const val ID_DOWNLOAD_CHAPTER_PROGRESS = -201
-    const val CHANNEL_DOWNLOADER_ERROR = "downloader_error_channel"
-    const val ID_DOWNLOAD_CHAPTER_ERROR = -202
+    const val CHANNEL_DOWNLOADER_PROGRESS = NotificationIds.CHANNEL_DOWNLOADER_PROGRESS
+    const val ID_DOWNLOAD_CHAPTER_PROGRESS = NotificationIds.ID_DOWNLOAD_CHAPTER_PROGRESS
+    const val CHANNEL_DOWNLOADER_ERROR = NotificationIds.CHANNEL_DOWNLOADER_ERROR
+    const val ID_DOWNLOAD_CHAPTER_ERROR = NotificationIds.ID_DOWNLOAD_CHAPTER_ERROR
 
     /**
      * Notification channel and ids used by the library updater.
      */
-    const val CHANNEL_NEW_CHAPTERS = "new_chapters_channel"
-    const val ID_NEW_CHAPTERS = -301
-    const val GROUP_NEW_CHAPTERS = "ephyra.app.NEW_CHAPTERS"
+    const val CHANNEL_NEW_CHAPTERS = NotificationIds.CHANNEL_NEW_CHAPTERS
+    const val ID_NEW_CHAPTERS = NotificationIds.ID_NEW_CHAPTERS
+    const val GROUP_NEW_CHAPTERS = NotificationIds.GROUP_NEW_CHAPTERS
 
     /**
      * Notification channel and ids used by the backup/restore system.
      */
     private const val GROUP_BACKUP_RESTORE = "group_backup_restore"
-    const val CHANNEL_BACKUP_RESTORE_PROGRESS = "backup_restore_progress_channel"
-    const val ID_BACKUP_PROGRESS = -501
-    const val ID_RESTORE_PROGRESS = -503
-    const val CHANNEL_BACKUP_RESTORE_COMPLETE = "backup_restore_complete_channel_v2"
-    const val ID_BACKUP_COMPLETE = -502
-    const val ID_RESTORE_COMPLETE = -504
+    const val CHANNEL_BACKUP_RESTORE_PROGRESS = NotificationIds.CHANNEL_BACKUP_RESTORE_PROGRESS
+    const val ID_BACKUP_PROGRESS = NotificationIds.ID_BACKUP_PROGRESS
+    const val ID_RESTORE_PROGRESS = NotificationIds.ID_RESTORE_PROGRESS
+    const val CHANNEL_BACKUP_RESTORE_COMPLETE = NotificationIds.CHANNEL_BACKUP_RESTORE_COMPLETE
+    const val ID_BACKUP_COMPLETE = NotificationIds.ID_BACKUP_COMPLETE
+    const val ID_RESTORE_COMPLETE = NotificationIds.ID_RESTORE_COMPLETE
 
     /**
      * Notification channel used for Incognito Mode
      */
-    const val CHANNEL_INCOGNITO_MODE = "incognito_mode_channel"
-    const val ID_INCOGNITO_MODE = -701
+    const val CHANNEL_INCOGNITO_MODE = NotificationIds.CHANNEL_INCOGNITO_MODE
+    const val ID_INCOGNITO_MODE = NotificationIds.ID_INCOGNITO_MODE
 
     /**
      * Notification channel and ids used for app and extension updates.
      */
     private const val GROUP_APK_UPDATES = "group_apk_updates"
-    const val CHANNEL_APP_UPDATE = "app_apk_update_channel"
-    const val ID_APP_UPDATER = 1
-    const val ID_APP_UPDATE_PROMPT = 2
-    const val ID_APP_UPDATE_ERROR = 3
-    const val CHANNEL_EXTENSIONS_UPDATE = "ext_apk_update_channel"
-    const val ID_UPDATES_TO_EXTS = -401
-    const val ID_EXTENSION_INSTALLER = -402
+    const val CHANNEL_APP_UPDATE = NotificationIds.CHANNEL_APP_UPDATE
+    const val ID_APP_UPDATER = NotificationIds.ID_APP_UPDATER
+    const val ID_APP_UPDATE_PROMPT = NotificationIds.ID_APP_UPDATE_PROMPT
+    const val ID_APP_UPDATE_ERROR = NotificationIds.ID_APP_UPDATE_ERROR
+    const val CHANNEL_EXTENSIONS_UPDATE = NotificationIds.CHANNEL_EXTENSIONS_UPDATE
+    const val ID_UPDATES_TO_EXTS = NotificationIds.ID_UPDATES_TO_EXTS
+    const val ID_EXTENSION_INSTALLER = NotificationIds.ID_EXTENSION_INSTALLER
 
     private val deprecatedChannels = listOf(
         "downloader_channel",

@@ -22,9 +22,9 @@ import ephyra.core.download.util.filterDownloaded
 import ephyra.core.download.util.removeDuplicates
 import ephyra.domain.chapter.service.ChapterCache
 import ephyra.domain.manga.service.CoverCache
-import ephyra.data.saver.Image
-import ephyra.data.saver.ImageSaver
-import ephyra.data.saver.Location
+import ephyra.core.common.saver.Image
+import ephyra.core.common.saver.ImageSaver
+import ephyra.core.common.saver.Location
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
 import ephyra.domain.chapter.interactor.UpdateChapter
 import ephyra.domain.chapter.model.Chapter

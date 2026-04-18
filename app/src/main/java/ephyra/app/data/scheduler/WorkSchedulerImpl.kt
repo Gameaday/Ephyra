@@ -31,6 +31,10 @@ class WorkSchedulerImpl(private val context: Context) :
         return BackupCreateJob.isManualJobRunning(context)
     }
 
+    override fun getBackupFilename(): String {
+        return BackupCreateJob.getFilename()
+    }
+
     // ── RestoreScheduler ───────────────────────────────────────────────────
     override fun startRestoreNow(uriString: String, optionsArray: BooleanArray?) {
         BackupRestoreJob.start(context, uriString.toUri(), optionsArray)

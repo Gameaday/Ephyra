@@ -2,7 +2,6 @@ package ephyra.data.saver
 
 import android.content.ContentUris
 import android.content.Context
-import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
@@ -10,6 +9,9 @@ import android.webkit.MimeTypeMap
 import androidx.core.content.contentValuesOf
 import androidx.core.net.toUri
 import ephyra.core.common.i18n.stringResource
+import ephyra.core.common.saver.Image
+import ephyra.core.common.saver.ImageSaver
+import ephyra.core.common.saver.Location
 import ephyra.core.common.util.storage.DiskUtil
 import ephyra.core.common.util.storage.cacheImageDir
 import ephyra.core.common.util.storage.getUriCompat
@@ -17,17 +19,23 @@ import ephyra.core.common.util.system.ImageUtil
 import ephyra.core.common.util.system.logcat
 import ephyra.i18n.MR
 import logcat.LogPriority
-import okio.Buffer
 import okio.IOException
 import java.io.File
 import java.io.InputStream
 import java.time.Instant
 
-class ImageSaver(
-    val context: Context,
-) {
+/**
+ * Concrete implementation of [ImageSaver].
+ *
+ * This class lives in `:data` because it depends on Android MediaStore APIs and Context.
+ * Feature modules receive [ImageSaver] (the interface from `:core/common`) via constructor
+ * injection, keeping them free of `:data` imports.
+ */
+class ImageSaverImpl(
+    private val context: Context,
+) : ImageSaver {
 
-    fun save(image: Image): Uri {
+    override fun save(image: Image): Uri {
         val data = image.data
 
         val type = ImageUtil.findImageType(data) ?: throw IllegalArgumentException("Not an image")
@@ -140,69 +148,22 @@ class ImageSaver(
     }
 }
 
-sealed class Image(
-    open val name: String,
-    open val location: Location,
-) {
-    data class Cover(
-        val bitmap: Bitmap,
-        override val name: String,
-        override val location: Location,
-        val encoder: (Bitmap, java.io.OutputStream) -> Unit = { bmp, os ->
-            bmp.compress(Bitmap.CompressFormat.PNG, 100, os)
-        },
-    ) : Image(name, location)
+// ---------------------------------------------------------------------------
+// Private Android helpers — not part of the public ImageSaver interface.
+// ---------------------------------------------------------------------------
 
-    data class Page(
-        val inputStream: () -> InputStream,
-        override val name: String,
-        override val location: Location,
-    ) : Image(name, location)
-
-    val data: () -> InputStream
-        get() {
-            return when (this) {
-                is Cover -> {
-                    {
-                        val buffer = Buffer()
-                        encoder(bitmap, buffer.outputStream())
-                        buffer.inputStream()
-                    }
-                }
-
-                is Page -> inputStream
-            }
-        }
-}
-
-sealed interface Location {
-    @ConsistentCopyVisibility
-    data class Pictures private constructor(val relativePath: String) : Location {
-        companion object {
-            fun create(relativePath: String = ""): Pictures {
-                return Pictures(relativePath)
-            }
-        }
-    }
-
-    data object Cache : Location
-
-    fun directory(context: Context): File {
-        return when (this) {
-            Cache -> context.cacheImageDir
-            is Pictures -> {
-                val file = File(
-                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
-                    context.stringResource(MR.strings.app_name),
-                )
-                if (relativePath.isNotEmpty()) {
-                    return File(
-                        file,
-                        relativePath,
-                    )
-                }
-                file
-            }
-        }
+/**
+ * Resolves this [Location] to a concrete [File] using the provided [Context].
+ * Only used by [ImageSaverImpl]; callers that hold a [Location] reference from
+ * `core/common` do not need (and cannot access) this extension.
+ */
+private fun Location.directory(context: Context): File = when (this) {
+    is Location.Cache -> context.cacheImageDir
+    is Location.Pictures -> {
+        val base = File(
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
+            context.stringResource(MR.strings.app_name),
+        )
+        if (relativePath.isNotEmpty()) File(base, relativePath) else base
     }
 }

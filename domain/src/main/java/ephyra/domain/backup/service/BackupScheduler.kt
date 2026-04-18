@@ -9,11 +9,19 @@ interface BackupScheduler {
      * @param uriString  Destination file URI string chosen by the user (null → automatic backup
      *   directory).  The Android Uri is represented as a String at the domain boundary so that
      *   this interface remains free of `android.*` imports and is JVM-testable.
-     * @param optionsArray  Serialised [ephyra.data.backup.create.BackupOptions.asBooleanArray]
+     * @param optionsArray  Serialised [ephyra.domain.backup.model.BackupOptions.asBooleanArray]
      *   controlling which data is included.  Null uses all-default options.
      */
     fun startBackupNow(uriString: String?, optionsArray: BooleanArray?)
 
     /** Returns `true` if a manual backup job is currently running. */
     fun isBackupRunning(): Boolean
+
+    /**
+     * Returns the suggested filename for a new backup file (e.g. `ephyra_2026-04-18_20-00.tachibk`).
+     *
+     * Defined here so that feature modules can obtain the filename without importing the
+     * `data` layer's [ephyra.data.backup.create.BackupCreator].
+     */
+    fun getBackupFilename(): String
 }

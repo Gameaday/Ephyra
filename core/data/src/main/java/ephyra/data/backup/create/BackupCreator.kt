@@ -6,7 +6,6 @@ import com.hippo.unifile.UniFile
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.system.logcat
 import ephyra.core.data.BuildConfig
-import ephyra.data.backup.BackupFileValidator
 import ephyra.data.backup.create.creators.CategoriesBackupCreator
 import ephyra.data.backup.create.creators.ExtensionRepoBackupCreator
 import ephyra.data.backup.create.creators.MangaBackupCreator

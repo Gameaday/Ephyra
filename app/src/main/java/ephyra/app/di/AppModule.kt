@@ -31,7 +31,8 @@ import ephyra.core.download.DownloadProvider
 import ephyra.core.download.DownloadStore
 import ephyra.core.download.Downloader
 import ephyra.data.backup.BackupDecoder
-import ephyra.data.backup.BackupFileValidator
+import ephyra.data.backup.BackupFileValidatorImpl
+import ephyra.domain.backup.service.BackupFileValidator
 import ephyra.data.backup.create.BackupCreator
 import ephyra.data.backup.create.creators.CategoriesBackupCreator
 import ephyra.data.backup.create.creators.ExtensionRepoBackupCreator
@@ -48,8 +49,11 @@ import ephyra.data.cache.CoverCache
 import ephyra.data.coil.MangaCoverFetcher
 import ephyra.data.coil.MangaCoverKeyer
 import ephyra.data.coil.MangaKeyer
+import ephyra.data.export.LibraryExporterImpl
 import ephyra.data.room.EphyraDatabase
-import ephyra.data.saver.ImageSaver
+import ephyra.core.common.saver.ImageSaver
+import ephyra.data.saver.ImageSaverImpl
+import ephyra.domain.export.LibraryExporter
 import ephyra.data.track.TrackerManagerImpl
 import ephyra.data.updater.AppUpdateChecker
 import ephyra.app.track.DelayedTrackingStore
@@ -201,7 +205,7 @@ val koinAppModule = module {
     single<ephyra.domain.track.service.TrackingJobScheduler> { TrackingJobSchedulerImpl(androidApplication()) }
 
     single { BackupDecoder(androidApplication(), get()) }
-    single { BackupFileValidator(androidApplication(), get(), get()) }
+    single<BackupFileValidator> { BackupFileValidatorImpl(androidApplication(), get(), get()) }
 
     single { CategoriesBackupCreator(get()) }
     single { MangaBackupCreator(get(), get(), get()) }
@@ -234,7 +238,8 @@ val koinAppModule = module {
     single<ephyra.domain.release.service.AppUpdateNotifier> { get<AppUpdateNotifier>() }
     single<ephyra.domain.release.service.AppUpdateDownloader> { AppUpdateDownloaderImpl(androidApplication()) }
 
-    single { ImageSaver(androidApplication()) }
+    single<ImageSaver> { ImageSaverImpl(androidApplication()) }
+    single<LibraryExporter> { LibraryExporterImpl(androidApplication()) }
     single<GlobalSearchScreenFactory> { GlobalSearchScreenFactory { query -> GlobalSearchScreen(query) } }
     single<MigrationConfigScreenFactory> {
         MigrationConfigScreenFactory { mangaIds -> MigrationConfigScreen(mangaIds) }

@@ -14,9 +14,9 @@ import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.manga.service.CoverCache
-import ephyra.data.saver.Image
-import ephyra.data.saver.ImageSaver
-import ephyra.data.saver.Location
+import ephyra.core.common.saver.Image
+import ephyra.core.common.saver.ImageSaver
+import ephyra.core.common.saver.Location
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.interactor.UpdateManga

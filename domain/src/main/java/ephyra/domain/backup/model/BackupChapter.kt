@@ -1,4 +1,4 @@
-package ephyra.data.backup.models
+package ephyra.domain.backup.model
 
 import ephyra.domain.chapter.model.Chapter
 import kotlinx.serialization.Serializable

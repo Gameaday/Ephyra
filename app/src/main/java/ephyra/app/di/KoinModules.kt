@@ -130,7 +130,7 @@ val koinAppModule_UI = module {
 
     factory { AboutScreenModel(get(), get(), get()) }
     factory { SettingsDownloadScreenModel(get(), get(), get(), get(), get()) }
-    factory { SettingsDataScreenModel(get(), get(), get(), get(), get()) }
+    factory { SettingsDataScreenModel(get(), get(), get(), get(), get(), get()) }
     factory { SettingsBrowseScreenModel(get(), get()) }
     factory { SettingsLibraryScreenModel(get(), get(), get()) }
     factory { SettingsTrackingScreenModel(get(), get(), get(), get(), get(), get()) }
