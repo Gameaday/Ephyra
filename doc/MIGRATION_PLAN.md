@@ -2,10 +2,13 @@
 
 This document outlines the phased approach to fully modernize the Ephyra codebase.
 
-> **Current Status (as of modernization sprint `copilot/resolve-build-issues`):**
-> Phases 1–3 are **complete**. The full `:app:compileDebugKotlin` build passes successfully.
-> Spotless lint is clean across all modules. Koin is at **4.2.1**. Legacy extension API
-> compatibility is preserved. Phases 4–6 are the active next steps.
+> **Current Status (as of modernization sprint `copilot/refactor-codebase-architecture`):**
+> Phases 1–3 are **complete**. Phase 4 domain-purity CI gate is in place. Phase 5 (UDF) is
+> **complete** — all 20 ScreenModels and `ReaderViewModel` have a single `onEvent()` entry-point;
+> no Android framework types (`Context`, `Activity`, `View`) appear in any event sealed class;
+> one-shot UI effects flow via `Channel<Effect>` (`WebViewEffect`, `MangaCoverEffect`).
+> Phase 4 repository-to-interactor decomposition and Phase 6 Room migration are the active next
+> steps. Build is green. Koin is at **4.2.1**. Legacy extension API compatibility is preserved.
 
 ## Phase 1: Foundation and Discovery ✅
 
@@ -60,22 +63,105 @@ Also enforce the domain purity boundary — `core/domain` must not import `ephyr
 - [ ] Break down remaining `MangaRepository` / `HistoryRepository` direct call-sites into focused
   Interactors.
 - [ ] Port `backup/restore` handlers off `DatabaseHandler` → Interactors backed by Room DAOs.
-- [ ] Lower the `feature → ephyra.data.*` ratchet baseline from 38 → 0 (eliminate all remaining
-  direct feature→data imports).
+- [ ] Lower the `feature → ephyra.data.*` ratchet baseline from 17 → 0.
+  See **Known Violations** section below for the full tracked list.
 
-## Phase 5: UI Architecture Stabilization (UDF)
+### Known Violations — feature/presentation → data layer (tracked, not yet fixed)
 
-Ensure all screens adhere to Unidirectional Data Flow:
-every `ScreenModel` exposes exactly one `ViewState` and a single `onEvent(event)` entry-point.
+These are confirmed architectural violations where feature or presentation-core modules import
+directly from `ephyra.data.*` instead of going through a domain interface or presentation-core
+re-export. Each item must be addressed before Phase 4 can be considered fully complete.
+
+#### `feature/browse` (1 violation)
+| File | Violation | Fix |
+|------|-----------|-----|
+| `SourcePreferencesScreen.kt` | `import ephyra.data.preference.SharedPreferencesDataStore` | Move `SharedPreferencesDataStore` to `presentation-core`; it is a pure Android UI adapter (`extends PreferenceDataStore`) with no data-layer logic |
+
+#### `feature/manga` (3 violations — same root cause)
+| File | Violation | Fix |
+|------|-----------|-----|
+| `MangaCoverScreenModel.kt` | `import ephyra.data.saver.{Image,ImageSaver,Location}` | Extract `ImageSaver` interface + `Image`/`Location` value types to `core/domain`; keep `ImageSaverImpl` in `:data` |
+
+#### `feature/reader` (5 violations across 3 files)
+| File | Violation | Fix |
+|------|-----------|-----|
+| `ReaderViewModel.kt` | `import ephyra.data.saver.{Image,ImageSaver,Location}` | Same fix as `MangaCoverScreenModel` above — promote to `core/domain` |
+| `SaveImageNotifier.kt` | `import ephyra.data.notification.Notifications` | Move `Notifications` channel IDs to `core/domain` (they are app-level constants, not data-impl details) |
+| `ReaderPageImageView.kt` | `import ephyra.data.coil.{cropBorders,customDecoder}` | Re-export the `ImageRequest.Builder` extension funs from `presentation-core/coil`; keep `Options.*` accessors in `:data` (used internally by Coil fetchers) |
+
+#### `feature/settings` (6 violations across 3 files)
+| File | Violation | Fix |
+|------|-----------|-----|
+| `SettingsDataScreen.kt` | `import ephyra.data.export.{LibraryExporter,ExportOptions}` | Define `LibraryExporter` interface in `core/domain`; implement in `:data` |
+| `CreateBackupScreen.kt` | `import ephyra.data.backup.create.{BackupCreator,BackupOptions}` | Define `BackupCreator` interface + `BackupOptions` in `core/domain` |
+| `RestoreBackupScreen.kt` | `import ephyra.data.backup.{BackupFileValidator,restore.RestoreOptions}` | Define `BackupFileValidator` interface + `RestoreOptions` in `core/domain` |
+| `BackupSchemaScreen.kt` | `import ephyra.data.backup.models.Backup` | Move `Backup` model to `core/domain` (it is a pure data model, not an impl detail) |
+
+#### `presentation-core` (1 violation)
+| File | Violation | Fix |
+|------|-----------|-----|
+| `ExceptionFormatter.kt` | `import ephyra.data.source.NoResultsException` | Move `NoResultsException` from `data/source/SourcePagingSource.kt` to `core/domain`; it is a domain-level exception with no data-layer dependency |
+
+### Known Violations — non-atomic state mutations (tracked, not yet fixed)
+
+Per the [Android UI Layer guidelines](https://developer.android.com/topic/architecture/ui-layer),
+state mutations must be atomic. Using `mutableState.value = mutableState.value.copy(…)` creates
+a read-modify-write race condition; all mutations should use `mutableState.update { … }`.
+
+| File | Violations |
+|------|-----------|
+| `MatchResultsScreenModel.kt` | 9 `mutableState.value =` assignments — replace all with `mutableState.update { … }` |
+| `AuthoritySearchScreenModel.kt` | ~12 `mutableState.value =` assignments — replace all with `mutableState.update { … }` |
+
+### Known Violations — `withUIContext` inside ViewModel (tracked, not yet fixed)
+
+`withUIContext` (i.e. `withContext(Dispatchers.Main)`) inside a `ViewModel`/`ScreenModel` breaks
+the UI Layer principle that ViewModels should be UI-thread-agnostic. State updates go through
+`MutableStateFlow.update {}` (which is thread-safe); side-effects should be emitted as `Effect`
+channel events and handled by the UI layer.
+
+| File | Line | Context | Fix |
+|------|------|---------|-----|
+| `ReaderViewModel.kt` | ~417 | `withUIContext { mutableState.update { … } }` around viewer chapter swap | Remove `withUIContext` wrapper — `MutableStateFlow.update` is already thread-safe |
+| `ReaderViewModel.kt` | ~1067 | `withUIContext { notifier.onComplete(uri); eventChannel.send(…) }` | `eventChannel.send` is suspend-safe from any dispatcher; `SaveImageNotifier.onComplete` needs UI thread — emit an `Effect.ShowSaveImageNotification(uri)` and handle in `ReaderActivity` |
+
+## Phase 5: UI Architecture Stabilization (UDF) ✅
+
+Ensure all screens adhere to Unidirectional Data Flow per the
+[Android UI Layer guidelines](https://developer.android.com/topic/architecture/ui-layer):
+every `ScreenModel`/`ViewModel` exposes exactly one `ViewState` and a single `onEvent(event)`
+entry-point. Events must carry **no** Android framework types (`Context`, `Activity`, `View`).
+One-shot UI side-effects (anything requiring Activity context) must flow **down** via a
+`Channel<Effect>`, collected in the composable with `LaunchedEffect`.
 
 - [x] `MangaScreenModel` — `MangaScreenEvent` sealed interface + `onEvent()` ✅
 - [x] `HistoryScreenModel` — `HistoryScreenEvent` sealed interface + `onEvent()` ✅
 - [x] `UpdatesScreenModel` — `UpdatesScreenEvent` sealed interface + `onEvent()` ✅
 - [x] `LibraryScreenModel` — `LibraryScreenEvent` sealed interface + `onEvent()` ✅
-- [x] `BrowseSourceScreenModel` — `BrowseSourceScreenEvent` sealed interface + `onEvent()`; `MigrateSourceSearchScreen` updated ✅
-- [x] `MigrationListScreenModel` — `MigrationListScreenEvent` sealed interface + `onEvent()`; `onMissingChapters` callback converted to `missingChaptersEvent` output channel ✅
-- [ ] `ReaderViewModel` (1 292 lines) — create `ReaderEvent` + `onEvent()`.
-- [ ] Audit all remaining `ScreenModel`s for raw `fun onXxx()` public mutations.
+- [x] `BrowseSourceScreenModel` — `BrowseSourceScreenEvent` + `onEvent()`; screens updated ✅
+- [x] `MigrationListScreenModel` — `MigrationListScreenEvent` + `onEvent()`; `onMissingChapters`
+  callback → `missingChaptersEvent` output channel ✅
+- [x] **Batch A** (tiny — 1–2 public methods): `UpcomingScreenModel`, `UpdatesSettingsScreenModel`,
+  `CoverSearchScreenModel`, `MigrateSourceScreenModel`, `MigrateMangaScreenModel`,
+  `SourcesFilterScreenModel` ✅
+- [x] **Batch B** (small — 3–6 methods): `SourcesScreenModel`, `WebViewScreenModel`,
+  `ExtensionReposScreenModel`, `CategoryScreenModel`, `LibrarySettingsScreenModel`,
+  `DownloadQueueScreenModel`, `ExtensionDetailsScreenModel`, `MangaCoverScreenModel` ✅
+- [x] **Batch C** (medium): `SearchScreenModel` (abstract base — mutations `protected`),
+  `AuthoritySearchScreenModel` ✅
+- [x] **Batch D** (large — 26 methods): `ReaderViewModel` — `ReaderEvent` sealed interface (22
+  events); all 26 public mutations privatized; `ReaderActivity` fully migrated to
+  `viewModel.onEvent(…)` ✅
+- [x] **Android UI Layer compliance** — `Context` removed from all event sealed classes:
+  - `WebViewScreenEvent`: no `Context`; `WebViewEffect` channel (`ShareWebpage`,
+    `OpenInBrowser`); `WebViewScreen` collects effects via `LaunchedEffect` ✅
+  - `MangaCoverScreenEvent`: no `Context` on any of 5 events; `MangaCoverEffect.StartShare`
+    channel; model uses injected `Application` throughout; `MangaScreen` collects effect ✅
+
+**Remaining sub-items tracked in Phase 4 "Known Violations" section above:**
+- `mutableState.value =` race conditions in `MatchResultsScreenModel` and
+  `AuthoritySearchScreenModel` (replace with `mutableState.update {}`)
+- `withUIContext` inside `ReaderViewModel` (lines ~417 and ~1067)
 
 ## Phase 6: Database Engine (SQLDelight to Room)
 
