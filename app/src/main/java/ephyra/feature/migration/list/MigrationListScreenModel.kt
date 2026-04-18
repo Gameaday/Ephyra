@@ -4,7 +4,6 @@ import androidx.annotation.FloatRange
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import ephyra.core.common.util.lang.launchIO
-import ephyra.core.common.util.lang.withUIContext
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
 import ephyra.domain.chapter.interactor.SyncChaptersWithSource
@@ -65,6 +64,10 @@ class MigrationListScreenModel(
 
     private val navigateBackChannel = Channel<Unit>()
     val navigateBackEvent = navigateBackChannel.receiveAsFlow()
+
+    /** Emitted when a migration target has no chapters — the UI should show a toast. */
+    private val missingChaptersChannel = Channel<Unit>()
+    val missingChaptersEvent = missingChaptersChannel.receiveAsFlow()
 
     private var migrateJob: Job? = null
 
@@ -261,10 +264,25 @@ class MigrationListScreenModel(
         }
     }
 
+    // ── UDF entry-point ──────────────────────────────────────────────────────
+    fun onEvent(event: MigrationListScreenEvent) {
+        when (event) {
+            is MigrationListScreenEvent.UseMangaForMigration -> useMangaForMigration(event.current, event.target)
+            is MigrationListScreenEvent.MigrateMangas -> migrateMangas()
+            is MigrationListScreenEvent.CopyMangas -> copyMangas()
+            is MigrationListScreenEvent.CancelMigrate -> cancelMigrate()
+            is MigrationListScreenEvent.MigrateNow -> migrateNow(event.mangaId, event.replace)
+            is MigrationListScreenEvent.RemoveManga -> removeManga(event.mangaId)
+            is MigrationListScreenEvent.ShowMigrateDialog -> showMigrateDialog(event.copy)
+            is MigrationListScreenEvent.ShowExitDialog -> showExitDialog()
+            is MigrationListScreenEvent.DismissDialog -> dismissDialog()
+        }
+    }
+
     private fun migrationComplete() = items.all { it.searchResult.value != SearchResult.Searching } &&
         items.any { it.searchResult.value is SearchResult.Success }
 
-    fun useMangaForMigration(current: Long, target: Long, onMissingChapters: () -> Unit) {
+    private fun useMangaForMigration(current: Long, target: Long) {
         val migratingManga = items.find { it.manga.id == current } ?: return
         migratingManga.searchResult.value = SearchResult.Searching
         screenModelScope.launchIO {
@@ -286,7 +304,7 @@ class MigrationListScreenModel(
 
             if (result == null) {
                 migratingManga.searchResult.value = SearchResult.NotFound
-                withUIContext { onMissingChapters() }
+                missingChaptersChannel.send(Unit)
                 return@launchIO
             }
 
@@ -303,11 +321,11 @@ class MigrationListScreenModel(
         }
     }
 
-    fun migrateMangas() {
+    private fun migrateMangas() {
         migrateMangas(replace = true)
     }
 
-    fun copyMangas() {
+    private fun copyMangas() {
         migrateMangas(replace = false)
     }
 
@@ -346,7 +364,7 @@ class MigrationListScreenModel(
         }
     }
 
-    fun cancelMigrate() {
+    private fun cancelMigrate() {
         migrateJob?.cancel()
         migrateJob = null
     }
@@ -355,7 +373,7 @@ class MigrationListScreenModel(
         navigateBackChannel.send(Unit)
     }
 
-    fun migrateNow(mangaId: Long, replace: Boolean) {
+    private fun migrateNow(mangaId: Long, replace: Boolean) {
         screenModelScope.launchIO {
             val manga = items.find { it.manga.id == mangaId } ?: return@launchIO
             val target = (manga.searchResult.value as? SearchResult.Success)?.manga ?: return@launchIO
@@ -365,7 +383,7 @@ class MigrationListScreenModel(
         }
     }
 
-    fun removeManga(mangaId: Long) {
+    private fun removeManga(mangaId: Long) {
         screenModelScope.launchIO {
             val item = items.find { it.manga.id == mangaId } ?: return@launchIO
             removeManga(item)
@@ -385,7 +403,7 @@ class MigrationListScreenModel(
         }
     }
 
-    fun showMigrateDialog(copy: Boolean) {
+    private fun showMigrateDialog(copy: Boolean) {
         mutableState.update { state ->
             state.copy(
                 dialog = Dialog.Migrate(
@@ -397,13 +415,13 @@ class MigrationListScreenModel(
         }
     }
 
-    fun showExitDialog() {
+    private fun showExitDialog() {
         mutableState.update {
             it.copy(dialog = Dialog.Exit)
         }
     }
 
-    fun dismissDialog() {
+    private fun dismissDialog() {
         mutableState.update { it.copy(dialog = null) }
     }
 
