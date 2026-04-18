@@ -301,11 +301,36 @@ class ReaderViewModel @JvmOverloads constructor(
         }
     }
 
+    // ── UDF entry-point ──────────────────────────────────────────────────────
+    fun onEvent(event: ReaderEvent) {
+        when (event) {
+            is ReaderEvent.ActivityFinish -> onActivityFinish()
+            is ReaderEvent.ViewerLoaded -> onViewerLoaded(event.viewer)
+            is ReaderEvent.PageSelected -> onPageSelected(event.page)
+            is ReaderEvent.RestartReadTimer -> restartReadTimer()
+            is ReaderEvent.SetMangaReadingMode -> setMangaReadingMode(event.readingMode)
+            is ReaderEvent.SetMangaOrientationType -> setMangaOrientationType(event.orientation)
+            is ReaderEvent.ShowMenus -> showMenus(event.visible)
+            is ReaderEvent.ShowLoadingDialog -> showLoadingDialog()
+            is ReaderEvent.OpenReadingModeSelectDialog -> openReadingModeSelectDialog()
+            is ReaderEvent.OpenOrientationModeSelectDialog -> openOrientationModeSelectDialog()
+            is ReaderEvent.OpenPageDialog -> openPageDialog(event.page)
+            is ReaderEvent.OpenSettingsDialog -> openSettingsDialog()
+            is ReaderEvent.CloseDialog -> closeDialog()
+            is ReaderEvent.SetBrightnessOverlayValue -> setBrightnessOverlayValue(event.value)
+            is ReaderEvent.SaveImage -> saveImage()
+            is ReaderEvent.ShareImage -> shareImage(event.copyToClipboard)
+            is ReaderEvent.SetAsCover -> setAsCover()
+            is ReaderEvent.BlockPage -> blockPage()
+            is ReaderEvent.UnblockPage -> unblockPage(event.hex)
+        }
+    }
+
     /**
      * Called when the user pressed the back button and is going to leave the reader. Used to
      * trigger deletion of the downloaded chapters.
      */
-    fun onActivityFinish() {
+    private fun onActivityFinish() {
         deletePendingChapters()
     }
 
@@ -540,7 +565,7 @@ class ReaderViewModel @JvmOverloads constructor(
         eventChannel.trySend(Event.ReloadViewerChapters)
     }
 
-    fun onViewerLoaded(viewer: Viewer?) {
+    private fun onViewerLoaded(viewer: Viewer?) {
         mutableState.update {
             it.copy(viewer = viewer)
         }
@@ -551,7 +576,7 @@ class ReaderViewModel @JvmOverloads constructor(
      * read, update tracking services, enqueue downloaded chapter deletion, and updating the active chapter if this
      * [page]'s chapter is different from the currently active.
      */
-    fun onPageSelected(page: ReaderPage) {
+    private fun onPageSelected(page: ReaderPage) {
         // InsertPage doesn't change page progress
         if (page is InsertPage) {
             return
@@ -759,7 +784,7 @@ class ReaderViewModel @JvmOverloads constructor(
         updateChapter.awaitAll(duplicateUnreadChapters)
     }
 
-    fun restartReadTimer() {
+    private fun restartReadTimer() {
         chapterReadStartTime = Instant.now().toEpochMilli()
     }
 
@@ -879,7 +904,7 @@ class ReaderViewModel @JvmOverloads constructor(
     /**
      * Updates the viewer position for the open manga.
      */
-    fun setMangaReadingMode(readingMode: ReadingMode) {
+    private fun setMangaReadingMode(readingMode: ReadingMode) {
         val manga = manga ?: return
         viewModelScope.launchIO {
             setMangaViewerFlags.awaitSetReadingMode(manga.id, readingMode.flagValue.toLong())
@@ -915,7 +940,7 @@ class ReaderViewModel @JvmOverloads constructor(
     /**
      * Updates the orientation type for the open manga.
      */
-    fun setMangaOrientationType(orientation: ReaderOrientation) {
+    private fun setMangaOrientationType(orientation: ReaderOrientation) {
         val manga = manga ?: return
         viewModelScope.launchIO {
             setMangaViewerFlags.awaitSetOrientation(manga.id, orientation.flagValue.toLong())
@@ -960,35 +985,35 @@ class ReaderViewModel @JvmOverloads constructor(
         ) + filenameSuffix
     }
 
-    fun showMenus(visible: Boolean) {
+    private fun showMenus(visible: Boolean) {
         mutableState.update { it.copy(menuVisible = visible) }
     }
 
-    fun showLoadingDialog() {
+    private fun showLoadingDialog() {
         mutableState.update { it.copy(dialog = Dialog.Loading) }
     }
 
-    fun openReadingModeSelectDialog() {
+    private fun openReadingModeSelectDialog() {
         mutableState.update { it.copy(dialog = Dialog.ReadingModeSelect) }
     }
 
-    fun openOrientationModeSelectDialog() {
+    private fun openOrientationModeSelectDialog() {
         mutableState.update { it.copy(dialog = Dialog.OrientationModeSelect) }
     }
 
-    fun openPageDialog(page: ReaderPage) {
+    private fun openPageDialog(page: ReaderPage) {
         mutableState.update { it.copy(dialog = Dialog.PageActions(page)) }
     }
 
-    fun openSettingsDialog() {
+    private fun openSettingsDialog() {
         mutableState.update { it.copy(dialog = Dialog.Settings) }
     }
 
-    fun closeDialog() {
+    private fun closeDialog() {
         mutableState.update { it.copy(dialog = null) }
     }
 
-    fun setBrightnessOverlayValue(value: Int) {
+    private fun setBrightnessOverlayValue(value: Int) {
         mutableState.update { it.copy(brightnessOverlayValue = value) }
     }
 
@@ -996,7 +1021,7 @@ class ReaderViewModel @JvmOverloads constructor(
      * Saves the image of the selected page on the pictures directory and notifies the UI of the result.
      * There's also a notification to allow sharing the image somewhere else or deleting it.
      */
-    fun saveImage() {
+    private fun saveImage() {
         val page = (state.value.dialog as? Dialog.PageActions)?.page
         if (page?.status != Page.State.Ready) return
         val manga = manga ?: return
@@ -1055,7 +1080,7 @@ class ReaderViewModel @JvmOverloads constructor(
      * get a path to the file and it has to be decompressed somewhere first. Only the last shared
      * image will be kept so it won't be taking lots of internal disk space.
      */
-    fun shareImage(copyToClipboard: Boolean) {
+    private fun shareImage(copyToClipboard: Boolean) {
         val page = (state.value.dialog as? Dialog.PageActions)?.page
         if (page?.status != Page.State.Ready) return
         val manga = manga ?: return
@@ -1093,7 +1118,7 @@ class ReaderViewModel @JvmOverloads constructor(
     /**
      * Sets the image of the selected page as cover and notifies the UI of the result.
      */
-    fun setAsCover() {
+    private fun setAsCover() {
         val page = (state.value.dialog as? Dialog.PageActions)?.page
         if (page?.status != Page.State.Ready) return
         val manga = manga ?: return
@@ -1121,7 +1146,7 @@ class ReaderViewModel @JvmOverloads constructor(
      *
      * The result includes the hex hash so the caller can offer an "Undo" action.
      */
-    fun blockPage() {
+    private fun blockPage() {
         val page = (state.value.dialog as? Dialog.PageActions)?.page
         if (page?.status != Page.State.Ready) return
 
@@ -1149,7 +1174,7 @@ class ReaderViewModel @JvmOverloads constructor(
      * Removes a specific dHash hex string from the blocked-pages preference set.
      * Used to undo an accidental block or to selectively unblock a page.
      */
-    fun unblockPage(hex: String) {
+    private fun unblockPage(hex: String) {
         viewModelScope.launchNonCancellable {
             withIOContext {
                 val pref = downloadPreferences.blockedPageHashes()
