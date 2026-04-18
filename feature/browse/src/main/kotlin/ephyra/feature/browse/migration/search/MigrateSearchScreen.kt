@@ -7,6 +7,7 @@ import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.feature.browse.presentation.MigrateSearchScreen
+import ephyra.feature.browse.source.globalsearch.SearchScreenEvent
 import ephyra.feature.browse.source.globalsearch.SearchScreenModel
 import ephyra.feature.manga.MangaScreen
 import ephyra.feature.migration.dialog.MigrateMangaDialog
@@ -27,11 +28,11 @@ class MigrateSearchScreen(private val mangaId: Long) : Screen() {
             state = state,
             fromSourceId = state.from?.source,
             navigateUp = navigator::pop,
-            onChangeSearchQuery = screenModel::updateSearchQuery,
-            onSearch = { screenModel.search() },
+            onChangeSearchQuery = { screenModel.onEvent(SearchScreenEvent.UpdateSearchQuery(it)) },
+            onSearch = { screenModel.onEvent(SearchScreenEvent.Search) },
             getManga = { screenModel.getManga(it) },
-            onChangeSearchFilter = screenModel::setSourceFilter,
-            onToggleResults = screenModel::toggleFilterResults,
+            onChangeSearchFilter = { screenModel.onEvent(SearchScreenEvent.SetSourceFilter(it)) },
+            onToggleResults = { screenModel.onEvent(SearchScreenEvent.ToggleFilterResults) },
             onClickSource = { navigator.push(MigrateSourceSearchScreen(state.from!!, it.id, state.searchQuery)) },
             onClickItem = {
                 val migrateListScreen = navigator.items
@@ -39,7 +40,7 @@ class MigrateSearchScreen(private val mangaId: Long) : Screen() {
                     .lastOrNull()
 
                 if (migrateListScreen == null) {
-                    screenModel.setMigrateDialog(mangaId, it)
+                    screenModel.onEvent(SearchScreenEvent.SetMigrateDialog(mangaId, it))
                 } else {
                     migrateListScreen.addMatchOverride(current = mangaId, target = it.id)
                     navigator.popUntil { screen -> screen is MigrationListPresenter }
@@ -55,7 +56,7 @@ class MigrateSearchScreen(private val mangaId: Long) : Screen() {
                     target = dialog.target,
                     // Initiated from the context of [dialog.current] so we show [dialog.target].
                     onClickTitle = { navigator.push(MangaScreen(dialog.target.id, true)) },
-                    onDismissRequest = { screenModel.clearDialog() },
+                    onDismissRequest = { screenModel.onEvent(SearchScreenEvent.ClearDialog) },
                     onComplete = {
                         if (navigator.lastItem is MangaScreen) {
                             val lastItem = navigator.lastItem

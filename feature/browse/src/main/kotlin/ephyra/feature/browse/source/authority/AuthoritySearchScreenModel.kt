@@ -80,7 +80,24 @@ class AuthoritySearchScreenModel(
         return available.filter { it.id in validIds }.toImmutableList()
     }
 
-    fun selectTracker(tracker: Tracker) {
+    // ── UDF entry-point ──────────────────────────────────────────────────────
+    fun onEvent(event: AuthoritySearchScreenEvent) {
+        when (event) {
+            is AuthoritySearchScreenEvent.SelectTracker -> selectTracker(event.tracker)
+            is AuthoritySearchScreenEvent.SetContentTypeFilter -> setContentTypeFilter(event.contentType)
+            is AuthoritySearchScreenEvent.Search -> search(event.query)
+            is AuthoritySearchScreenEvent.AddToLibrary -> addToLibrary(event.result)
+            is AuthoritySearchScreenEvent.MergeWithExisting -> mergeWithExisting(event.candidate)
+            is AuthoritySearchScreenEvent.SkipMerge -> skipMerge()
+            is AuthoritySearchScreenEvent.DismissMergePrompt -> dismissMergePrompt()
+            is AuthoritySearchScreenEvent.DismissSourcePrompt -> dismissSourcePrompt()
+            is AuthoritySearchScreenEvent.SelectResult -> selectResult(event.result)
+            is AuthoritySearchScreenEvent.DismissDetail -> dismissDetail()
+            is AuthoritySearchScreenEvent.RetrySearch -> retrySearch()
+        }
+    }
+
+    private fun selectTracker(tracker: Tracker) {
         mutableState.value = mutableState.value.copy(
             selectedTracker = tracker,
             results = persistentListOf(),
@@ -97,7 +114,7 @@ class AuthoritySearchScreenModel(
      * the new type, auto-selects the first tracker that does.
      * [ContentType.UNKNOWN] means "All types" (no filtering).
      */
-    fun setContentTypeFilter(contentType: ContentType) {
+    private fun setContentTypeFilter(contentType: ContentType) {
         val filteredTrackers = trackersForFilter(contentType)
         val currentTracker = mutableState.value.selectedTracker
 
@@ -116,7 +133,7 @@ class AuthoritySearchScreenModel(
         )
     }
 
-    fun search(query: String) {
+    private fun search(query: String) {
         val tracker = mutableState.value.selectedTracker ?: return
         searchJob?.cancel()
         mutableState.value = mutableState.value.copy(
@@ -151,7 +168,7 @@ class AuthoritySearchScreenModel(
      * that match by title. If found, prompts the user to merge instead.
      * If the tracker is logged in, also creates a tracker binding.
      */
-    fun addToLibrary(result: TrackSearch) {
+    private fun addToLibrary(result: TrackSearch) {
         val tracker = mutableState.value.selectedTracker ?: return
         val prefix = AddTracks.TRACKER_CANONICAL_PREFIXES[tracker.id] ?: return
         val canonicalId = "$prefix:${result.remote_id}"
@@ -212,7 +229,7 @@ class AuthoritySearchScreenModel(
      * metadata (description, author, cover, alt titles) from the tracker result,
      * only filling fields that are currently missing.
      */
-    fun mergeWithExisting(candidate: MangaWithChapterCount) {
+    private fun mergeWithExisting(candidate: MangaWithChapterCount) {
         val prompt = mutableState.value.mergePrompt ?: return
         screenModelScope.launch {
             try {
@@ -285,7 +302,7 @@ class AuthoritySearchScreenModel(
      * User declined to merge — create a new authority entry instead and proceed
      * to the find-source prompt.
      */
-    fun skipMerge() {
+    private fun skipMerge() {
         val prompt = mutableState.value.mergePrompt ?: return
         mutableState.value = mutableState.value.copy(mergePrompt = null)
         screenModelScope.launch {
@@ -300,7 +317,7 @@ class AuthoritySearchScreenModel(
     }
 
     /** Dismiss the merge prompt without doing anything. */
-    fun dismissMergePrompt() {
+    private fun dismissMergePrompt() {
         mutableState.value = mutableState.value.copy(mergePrompt = null)
     }
 
@@ -422,22 +439,22 @@ class AuthoritySearchScreenModel(
     }
 
     /** Dismiss the source prompt dialog. */
-    fun dismissSourcePrompt() {
+    private fun dismissSourcePrompt() {
         mutableState.value = mutableState.value.copy(sourcePromptManga = null)
     }
 
     /** User tapped a result card to view full details. */
-    fun selectResult(result: TrackSearch) {
+    private fun selectResult(result: TrackSearch) {
         mutableState.value = mutableState.value.copy(selectedResult = result)
     }
 
     /** Dismiss the detail view. */
-    fun dismissDetail() {
+    private fun dismissDetail() {
         mutableState.value = mutableState.value.copy(selectedResult = null)
     }
 
     /** Retry the last failed search. */
-    fun retrySearch() {
+    private fun retrySearch() {
         val query = mutableState.value.query
         if (query.isNotBlank()) search(query)
     }
