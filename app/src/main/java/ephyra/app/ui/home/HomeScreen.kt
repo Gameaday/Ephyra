@@ -64,8 +64,11 @@ import soup.compose.material.motion.animation.materialFadeThroughOut
 
 object HomeScreen : Screen(), BottomNavController, SearchableScreen {
 
-    private val librarySearchEvent = Channel<String>()
-    private val openTabEvent = Channel<Tab>()
+    // CONFLATED: only the most recent event is kept; stale navigation intents are
+    // silently dropped rather than accumulating across configuration changes or
+    // rapid back-stack push/pop cycles on an object-scoped singleton screen.
+    private val librarySearchEvent = Channel<String>(Channel.CONFLATED)
+    private val openTabEvent = Channel<Tab>(Channel.CONFLATED)
     private val showBottomNavEvent = Channel<Boolean>(Channel.CONFLATED)
 
     @Suppress("ConstPropertyName")
