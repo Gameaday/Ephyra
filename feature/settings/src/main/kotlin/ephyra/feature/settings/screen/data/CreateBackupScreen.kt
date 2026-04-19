@@ -16,8 +16,7 @@ import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.core.common.util.system.DeviceUtil
-import ephyra.data.backup.create.BackupCreator
-import ephyra.data.backup.create.BackupOptions
+import ephyra.domain.backup.model.BackupOptions
 import ephyra.domain.backup.service.BackupScheduler
 import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
@@ -73,7 +72,7 @@ class CreateBackupScreen : Screen() {
                 onClickAction = {
                     if (!model.isBackupRunning()) {
                         try {
-                            chooseBackupDir.launch(BackupCreator.getFilename())
+                            chooseBackupDir.launch(model.getBackupFilename())
                         } catch (e: ActivityNotFoundException) {
                             context.toast(MR.strings.file_picker_error)
                         }
@@ -128,6 +127,8 @@ private class CreateBackupScreenModel : StateScreenModel<CreateBackupScreenModel
 
     fun isBackupRunning(): Boolean = backupScheduler.isBackupRunning()
 
+    fun getBackupFilename(): String = backupScheduler.getBackupFilename()
+
     fun toggle(setter: (BackupOptions, Boolean) -> BackupOptions, enabled: Boolean) {
         mutableState.update {
             it.copy(
@@ -137,7 +138,7 @@ private class CreateBackupScreenModel : StateScreenModel<CreateBackupScreenModel
     }
 
     fun createBackup(uri: Uri) {
-        backupScheduler.startBackupNow(uri, state.value.options.asBooleanArray())
+        backupScheduler.startBackupNow(uri.toString(), state.value.options.asBooleanArray())
     }
 
     @Immutable

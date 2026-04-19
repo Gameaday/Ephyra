@@ -3,6 +3,7 @@ package ephyra.domain
 import ephyra.data.category.CategoryRepositoryImpl
 import ephyra.data.chapter.ChapterRepositoryImpl
 import ephyra.data.history.HistoryRepositoryImpl
+import ephyra.data.manga.ExcludedScanlatorRepositoryImpl
 import ephyra.data.manga.MangaRepositoryImpl
 import ephyra.data.release.ReleaseServiceImpl
 import ephyra.data.repository.ExtensionRepoRepositoryImpl
@@ -14,6 +15,7 @@ import ephyra.domain.category.repository.CategoryRepository
 import ephyra.domain.chapter.repository.ChapterRepository
 import ephyra.domain.extensionrepo.repository.ExtensionRepoRepository
 import ephyra.domain.history.repository.HistoryRepository
+import ephyra.domain.manga.repository.ExcludedScanlatorRepository
 import ephyra.domain.manga.repository.MangaRepository
 import ephyra.domain.release.service.ReleaseService
 import ephyra.domain.source.repository.SourceRepository
@@ -77,6 +79,26 @@ class DomainModuleImplementationContractTest {
     fun `ChapterRepositoryImpl implements ChapterRepository`() {
         assertTrue(ChapterRepository::class.java.isAssignableFrom(ChapterRepositoryImpl::class.java)) {
             "ephyra.data.chapter.ChapterRepositoryImpl must implement ephyra.domain.chapter.repository.ChapterRepository"
+        }
+    }
+
+    // ── ExcludedScanlatorRepository ───────────────────────────────────────────
+
+    /**
+     * [koinDomainModule] binds [ExcludedScanlatorRepositoryImpl] as [ExcludedScanlatorRepository].
+     * Verifies the data implementation still satisfies the domain interface so that any
+     * screen or interactor that injects [ExcludedScanlatorRepository] does not crash with
+     * [org.koin.core.error.NoBeanDefFoundException] at runtime.
+     */
+    @Test
+    fun `ExcludedScanlatorRepositoryImpl implements ExcludedScanlatorRepository`() {
+        assertTrue(
+            ExcludedScanlatorRepository::class.java.isAssignableFrom(
+                ExcludedScanlatorRepositoryImpl::class.java,
+            ),
+        ) {
+            "ephyra.data.manga.ExcludedScanlatorRepositoryImpl must implement " +
+                "ephyra.domain.manga.repository.ExcludedScanlatorRepository"
         }
     }
 

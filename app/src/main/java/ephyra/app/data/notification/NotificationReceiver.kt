@@ -15,11 +15,11 @@ import ephyra.core.common.Constants
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.withUIContext
 import ephyra.core.common.util.system.cancelNotification
-import ephyra.core.download.DownloadManager
 import ephyra.domain.chapter.interactor.GetChapter
 import ephyra.domain.chapter.interactor.UpdateChapter
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.model.toChapterUpdate
+import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.download.service.DownloadPreferences
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.model.Manga
@@ -29,20 +29,29 @@ import ephyra.i18n.MR
 import ephyra.presentation.core.util.system.getParcelableExtraCompat
 import ephyra.presentation.core.util.system.toShareIntent
 import ephyra.presentation.core.util.system.toast
-import org.koin.core.context.GlobalContext
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import ephyra.app.BuildConfig.APPLICATION_ID as ID
 
 /**
  * Global [BroadcastReceiver] that runs on UI thread
  * Pending Broadcasts should be made from here.
  * NOTE: Use local broadcasts if possible.
+ *
+ * Implements [KoinComponent] so that dependencies are resolved through Koin's
+ * standard injection mechanism rather than accessing [GlobalContext] directly.
+ * The `by inject()` delegates are lazy, meaning Koin is only queried when
+ * [onReceive] is actually invoked — well after [App.onCreate] has called
+ * [startKoin], so the container is always available.
  */
-class NotificationReceiver : BroadcastReceiver() {
+class NotificationReceiver : BroadcastReceiver(), KoinComponent {
 
-    private val getManga: GetManga by lazy { GlobalContext.get().get() }
-    private val getChapter: GetChapter by lazy { GlobalContext.get().get() }
-    private val updateChapter: UpdateChapter by lazy { GlobalContext.get().get() }
-    private val downloadManager: DownloadManager by lazy { GlobalContext.get().get() }
+    private val getManga: GetManga by inject()
+    private val getChapter: GetChapter by inject()
+    private val updateChapter: UpdateChapter by inject()
+    private val downloadManager: DownloadManager by inject()
+    private val downloadPreferences: DownloadPreferences by inject()
+    private val sourceManager: SourceManager by inject()
 
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
@@ -211,9 +220,6 @@ class NotificationReceiver : BroadcastReceiver() {
      * @param mangaId id of manga
      */
     private fun markAsRead(chapterUrls: Array<String>, mangaId: Long) {
-        val downloadPreferences: DownloadPreferences by lazy { GlobalContext.get().get() }
-        val sourceManager: SourceManager by lazy { GlobalContext.get().get() }
-
         launchIO {
             val toUpdate = chapterUrls.mapNotNull { getChapter.await(it, mangaId) }
                 .map {

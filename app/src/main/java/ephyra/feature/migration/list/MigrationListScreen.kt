@@ -41,21 +41,20 @@ class MigrationListScreen(
 
         LaunchedEffect(matchOverride) {
             val (current, target) = matchOverride ?: return@LaunchedEffect
-            screenModel.useMangaForMigration(
-                current = current,
-                target = target,
-                onMissingChapters = {
-                    context.toast(MR.strings.migrationListScreen_matchWithoutChapterToast, Toast.LENGTH_LONG)
-                },
-            )
+            screenModel.onEvent(MigrationListScreenEvent.UseMangaForMigration(current, target))
             matchOverride = null
         }
 
         LaunchedEffect(screenModel) {
-            screenModel.navigateBackEvent.collect {
-                navigator.pop()
+            screenModel.navigateBackEvent.collect { navigator.pop() }
+        }
+
+        LaunchedEffect(screenModel) {
+            screenModel.missingChaptersEvent.collect {
+                context.toast(MR.strings.migrationListScreen_matchWithoutChapterToast, Toast.LENGTH_LONG)
             }
         }
+
         MigrationListScreenContent(
             items = state.items,
             migrationComplete = state.migrationComplete,
@@ -66,24 +65,24 @@ class MigrationListScreen(
             onSearchManually = { migrationItem ->
                 navigator push MigrateSearchScreen(migrationItem.manga.id)
             },
-            onSkip = { screenModel.removeManga(it) },
-            onMigrate = { screenModel.migrateNow(mangaId = it, replace = true) },
-            onCopy = { screenModel.migrateNow(mangaId = it, replace = false) },
-            openMigrationDialog = screenModel::showMigrateDialog,
+            onSkip = { screenModel.onEvent(MigrationListScreenEvent.RemoveManga(it)) },
+            onMigrate = { screenModel.onEvent(MigrationListScreenEvent.MigrateNow(it, replace = true)) },
+            onCopy = { screenModel.onEvent(MigrationListScreenEvent.MigrateNow(it, replace = false)) },
+            openMigrationDialog = { copy -> screenModel.onEvent(MigrationListScreenEvent.ShowMigrateDialog(copy)) },
         )
 
         when (val dialog = state.dialog) {
             is MigrationListScreenModel.Dialog.Migrate -> {
                 MigrationMangaDialog(
-                    onDismissRequest = screenModel::dismissDialog,
+                    onDismissRequest = { screenModel.onEvent(MigrationListScreenEvent.DismissDialog) },
                     copy = dialog.copy,
                     totalCount = dialog.totalCount,
                     skippedCount = dialog.skippedCount,
                     onMigrate = {
                         if (dialog.copy) {
-                            screenModel.copyMangas()
+                            screenModel.onEvent(MigrationListScreenEvent.CopyMangas)
                         } else {
-                            screenModel.migrateMangas()
+                            screenModel.onEvent(MigrationListScreenEvent.MigrateMangas)
                         }
                     },
                 )
@@ -91,12 +90,12 @@ class MigrationListScreen(
             is MigrationListScreenModel.Dialog.Progress -> {
                 MigrationProgressDialog(
                     progress = dialog.progress,
-                    exitMigration = screenModel::cancelMigrate,
+                    exitMigration = { screenModel.onEvent(MigrationListScreenEvent.CancelMigrate) },
                 )
             }
             MigrationListScreenModel.Dialog.Exit -> {
                 MigrationExitDialog(
-                    onDismissRequest = screenModel::dismissDialog,
+                    onDismissRequest = { screenModel.onEvent(MigrationListScreenEvent.DismissDialog) },
                     exitMigration = navigator::pop,
                 )
             }
@@ -104,7 +103,7 @@ class MigrationListScreen(
         }
 
         BackHandler(true) {
-            screenModel.showExitDialog()
+            screenModel.onEvent(MigrationListScreenEvent.ShowExitDialog)
         }
     }
 }

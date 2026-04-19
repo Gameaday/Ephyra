@@ -3,6 +3,7 @@ package ephyra.feature.manga
 import androidx.compose.runtime.Immutable
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import ephyra.core.common.util.system.logcat
 import ephyra.domain.source.service.SourceManager
 import ephyra.feature.manga.CoverSearchScreenModel.Companion.MAX_CACHE_ENTRIES
 import eu.kanade.tachiyomi.source.online.HttpSource
@@ -13,6 +14,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import logcat.LogPriority
 import org.koin.core.annotation.Factory
 import org.koin.core.annotation.InjectedParam
 
@@ -32,12 +34,19 @@ class CoverSearchScreenModel(
     private val coroutineDispatcher = Dispatchers.IO.limitedParallelism(3)
     private var searchJob: Job? = null
 
+    fun onEvent(event: CoverSearchScreenEvent) {
+        when (event) {
+            CoverSearchScreenEvent.Search -> search()
+            CoverSearchScreenEvent.Refresh -> refresh()
+        }
+    }
+
     /**
      * Search across all enabled catalogue sources for covers matching the manga title.
      * Returns cached results if available to avoid redundant API calls.
      * Only fetches the first page and extracts thumbnail URLs to minimize network calls.
      */
-    fun search() {
+    private fun search() {
         val query = mangaTitle
         if (query.isBlank()) return
 
@@ -60,7 +69,7 @@ class CoverSearchScreenModel(
     /**
      * Force a fresh search, bypassing the in-memory cache.
      */
-    fun refresh() {
+    private fun refresh() {
         val query = mangaTitle
         if (query.isBlank()) return
         coverResultsCache.remove(query)
@@ -152,7 +161,8 @@ class CoverSearchScreenModel(
                                 state.copy(progress = state.progress + 1)
                             }
                         }
-                    } catch (_: Exception) {
+                    } catch (e: Exception) {
+                        logcat(LogPriority.WARN, e) { "Cover search failed for source '${source.name}'; skipping" }
                         if (isActive) {
                             mutableState.update { state ->
                                 state.copy(progress = state.progress + 1)

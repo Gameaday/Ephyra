@@ -105,12 +105,12 @@ fun VoyagerScreen.discoverTab(): TabContent {
             DiscoverContent(
                 state = state,
                 trackersForFilter = screenModel::trackersForFilter,
-                onSelectTracker = screenModel::selectTracker,
-                onSearch = screenModel::search,
-                onRetrySearch = screenModel::retrySearch,
-                onAddToLibrary = screenModel::addToLibrary,
-                onSelectResult = screenModel::selectResult,
-                onSetContentTypeFilter = screenModel::setContentTypeFilter,
+                onSelectTracker = { screenModel.onEvent(AuthoritySearchScreenEvent.SelectTracker(it)) },
+                onSearch = { screenModel.onEvent(AuthoritySearchScreenEvent.Search(it)) },
+                onRetrySearch = { screenModel.onEvent(AuthoritySearchScreenEvent.RetrySearch) },
+                onAddToLibrary = { screenModel.onEvent(AuthoritySearchScreenEvent.AddToLibrary(it)) },
+                onSelectResult = { screenModel.onEvent(AuthoritySearchScreenEvent.SelectResult(it)) },
+                onSetContentTypeFilter = { screenModel.onEvent(AuthoritySearchScreenEvent.SetContentTypeFilter(it)) },
                 contentPadding = contentPadding,
             )
 
@@ -124,10 +124,10 @@ fun VoyagerScreen.discoverTab(): TabContent {
                     result = selectedResult,
                     isAdded = isAdded,
                     onAdd = {
-                        screenModel.addToLibrary(selectedResult)
-                        screenModel.dismissDetail()
+                        screenModel.onEvent(AuthoritySearchScreenEvent.AddToLibrary(selectedResult))
+                        screenModel.onEvent(AuthoritySearchScreenEvent.DismissDetail)
                     },
-                    onDismiss = screenModel::dismissDetail,
+                    onDismiss = { screenModel.onEvent(AuthoritySearchScreenEvent.DismissDetail) },
                 )
             }
 
@@ -139,7 +139,7 @@ fun VoyagerScreen.discoverTab(): TabContent {
                     sourceMatches = sourcePrompt.sourceMatches,
                     isSearching = sourcePrompt.isSearching,
                     onSelectSource = { match ->
-                        screenModel.dismissSourcePrompt()
+                        screenModel.onEvent(AuthoritySearchScreenEvent.DismissSourcePrompt)
                         navigator.push(
                             ephyra.feature.browse.source.browse.BrowseSourceScreen(
                                 match.sourceId,
@@ -148,10 +148,10 @@ fun VoyagerScreen.discoverTab(): TabContent {
                         )
                     },
                     onManualSearch = {
-                        screenModel.dismissSourcePrompt()
+                        screenModel.onEvent(AuthoritySearchScreenEvent.DismissSourcePrompt)
                         navigator.push(GlobalSearchScreen(sourcePrompt.title))
                     },
-                    onDismiss = screenModel::dismissSourcePrompt,
+                    onDismiss = { screenModel.onEvent(AuthoritySearchScreenEvent.DismissSourcePrompt) },
                 )
             }
 
@@ -161,9 +161,9 @@ fun VoyagerScreen.discoverTab(): TabContent {
                 MergeWithExistingDialog(
                     resultTitle = mergePrompt.result.title,
                     candidates = mergePrompt.candidates,
-                    onMerge = screenModel::mergeWithExisting,
-                    onSkip = screenModel::skipMerge,
-                    onDismiss = screenModel::dismissMergePrompt,
+                    onMerge = { screenModel.onEvent(AuthoritySearchScreenEvent.MergeWithExisting(it)) },
+                    onSkip = { screenModel.onEvent(AuthoritySearchScreenEvent.SkipMerge) },
+                    onDismiss = { screenModel.onEvent(AuthoritySearchScreenEvent.DismissMergePrompt) },
                 )
             }
         },

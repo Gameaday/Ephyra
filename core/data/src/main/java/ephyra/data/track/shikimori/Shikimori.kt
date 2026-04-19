@@ -4,7 +4,7 @@ import android.app.Application
 import dev.icerock.moko.resources.StringResource
 import ephyra.app.core.common.R
 import ephyra.data.track.BaseTracker
-import ephyra.data.track.DeletableTracker
+import ephyra.domain.track.service.DeletableTracker
 import ephyra.data.track.model.TrackSearch
 import ephyra.data.track.model.toDomainTrackSearch
 import ephyra.data.track.shikimori.dto.SMOAuth
@@ -42,6 +42,8 @@ class Shikimori(
     private val interceptor by lazy { ShikimoriInterceptor(this, json) }
 
     private val api by lazy { ShikimoriApi(id, client, interceptor, json) }
+
+    override val oauthUrl: String get() = ShikimoriApi.authUrl().toString()
 
     override fun getScoreList(): List<String> = SCORE_LIST
 

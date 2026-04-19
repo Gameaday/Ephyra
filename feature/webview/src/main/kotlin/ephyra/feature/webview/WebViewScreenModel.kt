@@ -1,15 +1,12 @@
 package ephyra.feature.webview
 
-import android.content.Context
-import androidx.core.net.toUri
 import cafe.adriel.voyager.core.model.ScreenModel
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.source.service.SourceManager
-import ephyra.presentation.core.util.system.openInBrowser
-import ephyra.presentation.core.util.system.toShareIntent
-import ephyra.presentation.core.util.system.toast
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.source.online.HttpSource
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
 import logcat.LogPriority
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import org.koin.core.annotation.Factory
@@ -24,6 +21,11 @@ class WebViewScreenModel(
 
     var headers = emptyMap<String, String>()
 
+    private val effectChannel = Channel<WebViewEffect>(Channel.BUFFERED)
+
+    /** One-shot UI side-effects to be collected by the composable. */
+    val effectFlow = effectChannel.receiveAsFlow()
+
     init {
         sourceId?.let { sourceManager.get(it) as? HttpSource }?.let { source ->
             try {
@@ -34,22 +36,27 @@ class WebViewScreenModel(
         }
     }
 
-    fun shareWebpage(context: Context, url: String) {
-        try {
-            context.startActivity(url.toUri().toShareIntent(context, type = "text/plain"))
-        } catch (e: Exception) {
-            context.toast(e.message)
+    fun onEvent(event: WebViewScreenEvent) {
+        when (event) {
+            is WebViewScreenEvent.ShareWebpage -> shareWebpage(event.url)
+            is WebViewScreenEvent.OpenInBrowser -> openInBrowser(event.url)
+            is WebViewScreenEvent.ClearCookies -> clearCookies(event.url)
         }
     }
 
-    fun openInBrowser(context: Context, url: String) {
-        context.openInBrowser(url, forceDefaultBrowser = true)
+    private fun shareWebpage(url: String) {
+        effectChannel.trySend(WebViewEffect.ShareWebpage(url))
     }
 
-    fun clearCookies(url: String) {
+    private fun openInBrowser(url: String) {
+        effectChannel.trySend(WebViewEffect.OpenInBrowser(url))
+    }
+
+    private fun clearCookies(url: String) {
         url.toHttpUrlOrNull()?.let {
             val cleared = network.cookieJar.remove(it)
             logcat { "Cleared $cleared cookies for: $url" }
         }
     }
 }
+

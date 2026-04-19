@@ -25,7 +25,7 @@ import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.logcat
-import ephyra.data.cache.CoverCache
+import ephyra.domain.manga.service.CoverCache
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.manga.model.Manga
@@ -308,9 +308,20 @@ class MangaScreen(
                 val sm = koinScreenModel<MangaCoverScreenModel> { parametersOf(successState.manga.id) }
                 val manga by sm.state.collectAsStateWithLifecycle()
                 if (manga != null) {
+                    // Collect one-shot effects that require Activity context
+                    LaunchedEffect(sm) {
+                        sm.effectFlow.collect { effect ->
+                            when (effect) {
+                                is MangaCoverEffect.StartShare ->
+                                    context.startActivity(
+                                        effect.uri.toShareIntent(context),
+                                    )
+                            }
+                        }
+                    }
                     val getContent = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {
                         if (it == null) return@rememberLauncherForActivityResult
-                        sm.editCover(context, it)
+                        sm.onEvent(MangaCoverScreenEvent.EditCover(it))
                     }
                     var showCoverSearch by remember { mutableStateOf(false) }
                     if (showCoverSearch) {
@@ -318,18 +329,18 @@ class MangaScreen(
                             parametersOf(manga!!.title, successState.source.id)
                         }
                         val coverSearchState by coverSearchSm.state.collectAsStateWithLifecycle()
-                        LaunchedEffect(Unit) { coverSearchSm.search() }
+                        LaunchedEffect(Unit) { coverSearchSm.onEvent(CoverSearchScreenEvent.Search) }
                         CoverSearchDialog(
                             state = coverSearchState,
                             onCoverSelected = { cover ->
-                                sm.setCoverFromUrl(context, cover.thumbnailUrl, cover.sourceId)
+                            sm.onEvent(MangaCoverScreenEvent.SetCoverFromUrl(cover.thumbnailUrl, cover.sourceId))
                                 showCoverSearch = false
                             },
                             onSetAsMetadataSource = { cover ->
                                 screenModel.onEvent(MangaScreenEvent.SetMetadataSource(cover.sourceId, cover.mangaUrl))
                                 showCoverSearch = false
                             },
-                            onRefresh = { coverSearchSm.refresh() },
+                            onRefresh = { coverSearchSm.onEvent(CoverSearchScreenEvent.Refresh) },
                             onDismissRequest = { showCoverSearch = false },
                         )
                     } else {
@@ -337,12 +348,12 @@ class MangaScreen(
                             manga = manga!!,
                             snackbarHostState = sm.snackbarHostState,
                             isCustomCover = remember(manga) { manga!!.hasCustomCover(coverCache) },
-                            onShareClick = { sm.shareCover(context) },
-                            onSaveClick = { sm.saveCover(context) },
+                            onShareClick = { sm.onEvent(MangaCoverScreenEvent.ShareCover) },
+                            onSaveClick = { sm.onEvent(MangaCoverScreenEvent.SaveCover) },
                             onEditClick = {
                                 when (it) {
                                     EditCoverAction.EDIT -> getContent.launch("image/*")
-                                    EditCoverAction.DELETE -> sm.deleteCustomCover(context)
+                                    EditCoverAction.DELETE -> sm.onEvent(MangaCoverScreenEvent.DeleteCustomCover)
                                     EditCoverAction.SEARCH -> {
                                         showCoverSearch = true
                                     }

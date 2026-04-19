@@ -142,7 +142,23 @@ class AppModuleImplementationContractTest {
         }
     }
 
-    // ── TrackerManager ────────────────────────────────────────────────────────
+    /**
+     * [koinAppModule] registers [CoreDownloadManager] only under the domain [DomainDownloadManager]
+     * interface.  [ephyra.app.data.notification.NotificationReceiver] must therefore inject the
+     * domain interface, not the concrete class.
+     *
+     * This test acts as a compile-time guard: if [NotificationReceiver] is changed to inject
+     * [CoreDownloadManager] directly, Koin will throw [org.koin.core.error.NoBeanDefFoundException]
+     * at runtime (any download notification tap will crash).
+     */
+    @Test
+    fun `core DownloadManager implements domain DownloadManager — required for NotificationReceiver injection`() {
+        assertTrue(DomainDownloadManager::class.java.isAssignableFrom(CoreDownloadManager::class.java)) {
+            "ephyra.core.download.DownloadManager must implement ephyra.domain.download.service.DownloadManager. " +
+                "NotificationReceiver injects DomainDownloadManager; if CoreDownloadManager stops implementing " +
+                "this interface the Koin binding will break."
+        }
+    }
 
     /**
      * [koinAppModule] binds [TrackerManagerImpl] as [TrackerManager].
@@ -152,6 +168,49 @@ class AppModuleImplementationContractTest {
     fun `TrackerManagerImpl implements TrackerManager`() {
         assertTrue(TrackerManager::class.java.isAssignableFrom(TrackerManagerImpl::class.java)) {
             "ephyra.data.track.TrackerManagerImpl must implement ephyra.domain.track.service.TrackerManager"
+        }
+    }
+
+    // ── CoverCache ────────────────────────────────────────────────────────────
+
+    /**
+     * [koinAppModule] binds [ephyra.data.cache.CoverCache] with an additional
+     * [ephyra.domain.manga.service.CoverCache] interface binding.
+     * Multiple ScreenModels ([LibraryScreenModel], [BrowseSourceScreenModel],
+     * [MangaCoverScreenModel], [MigrateDialogScreenModel]) inject the domain interface,
+     * so this binding is required for them to resolve at runtime.
+     */
+    @Test
+    fun `data CoverCache implements domain CoverCache`() {
+        assertTrue(
+            ephyra.domain.manga.service.CoverCache::class.java.isAssignableFrom(
+                ephyra.data.cache.CoverCache::class.java,
+            ),
+        ) {
+            "ephyra.data.cache.CoverCache must implement ephyra.domain.manga.service.CoverCache " +
+                "so the Koin `bind ICoverCache::class` binding in koinAppModule remains valid"
+        }
+    }
+
+    /**
+     * [koinAppModule] binds [ephyra.data.cache.ChapterCache] with an additional
+     * [ephyra.domain.chapter.service.ChapterCache] interface binding.
+     * Verifies the concrete implementation still satisfies the domain interface
+     * so the `bind IChapterCache::class` in the module remains valid.
+     *
+     * Without this binding [ReaderViewModel] would crash at runtime with
+     * NoBeanDefFoundException because it injects the domain interface, not the
+     * concrete data-layer class.
+     */
+    @Test
+    fun `data ChapterCache implements domain ChapterCache`() {
+        assertTrue(
+            ephyra.domain.chapter.service.ChapterCache::class.java.isAssignableFrom(
+                ephyra.data.cache.ChapterCache::class.java,
+            ),
+        ) {
+            "ephyra.data.cache.ChapterCache must implement ephyra.domain.chapter.service.ChapterCache " +
+                "so the Koin `bind IChapterCache::class` binding in koinAppModule remains valid"
         }
     }
 }

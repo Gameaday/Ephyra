@@ -10,6 +10,7 @@ import ephyra.data.cache.ChapterCache.Companion.CACHE_SIZE_HIGH
 import ephyra.data.cache.ChapterCache.Companion.CACHE_SIZE_LOW
 import ephyra.data.cache.ChapterCache.Companion.CACHE_SIZE_MEDIUM
 import ephyra.domain.chapter.model.Chapter
+import ephyra.domain.chapter.service.ChapterCache as IChapterCache
 import eu.kanade.tachiyomi.source.model.Page
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -33,7 +34,7 @@ import java.io.IOException
 class ChapterCache(
     private val context: Context,
     private val json: Json,
-) {
+) : IChapterCache {
 
     companion object {
         /** Cache size for low-RAM devices (< 2 GB total RAM): 100 MB. */
@@ -78,7 +79,7 @@ class ChapterCache(
     /**
      * Returns real size of directory in human readable format.
      */
-    suspend fun getReadableSize(): String = withContext(Dispatchers.IO) {
+    override suspend fun getReadableSize(): String = withContext(Dispatchers.IO) {
         val size = DiskUtil.getDirectorySize(cacheDir)
         Formatter.formatFileSize(context, size)
     }
@@ -89,7 +90,7 @@ class ChapterCache(
      * @param chapter the chapter.
      * @return the list of pages.
      */
-    fun getPageListFromCache(chapter: Chapter): List<Page> {
+    override fun getPageListFromCache(chapter: Chapter): List<Page> {
         // Get the key for the chapter.
         val key = DiskUtil.hashKeyForDisk(getKey(chapter))
 
@@ -108,7 +109,7 @@ class ChapterCache(
      * @param chapter the chapter.
      * @param pages list of pages.
      */
-    fun putPageListToCache(chapter: Chapter, pages: List<Page>) {
+    override fun putPageListToCache(chapter: Chapter, pages: List<Page>) {
         // Convert list of pages to json string.
         val cachedValue = json.encodeToString(pages)
         val key = DiskUtil.hashKeyForDisk(getKey(chapter))
@@ -122,7 +123,8 @@ class ChapterCache(
             } catch (e: Exception) {
                 try {
                     editor.abort()
-                } catch (_: Exception) {
+                } catch (abortEx: Exception) {
+                    logcat(LogPriority.DEBUG, abortEx) { "Failed to abort disk-cache editor after page-list write failure" }
                 }
                 throw e
             }
@@ -138,10 +140,11 @@ class ChapterCache(
      * @param imageUrl url of image.
      * @return true if in cache otherwise false.
      */
-    fun isImageInCache(imageUrl: String): Boolean {
+    override fun isImageInCache(imageUrl: String): Boolean {
         return try {
             diskCache.openSnapshot(DiskUtil.hashKeyForDisk(imageUrl))?.use { true } ?: false
-        } catch (_: IOException) {
+        } catch (e: IOException) {
+            logcat(LogPriority.DEBUG, e) { "Failed to check chapter cache for URL '$imageUrl'; treating as not cached" }
             false
         }
     }
@@ -163,7 +166,7 @@ class ChapterCache(
      * @param imageUrl url of image.
      * @return path of image, or `null` if the entry is no longer cached.
      */
-    fun getImageFile(imageUrl: String): File? {
+    override fun getImageFile(imageUrl: String): File? {
         val key = DiskUtil.hashKeyForDisk(imageUrl)
         return diskCache.openSnapshot(key)?.use { File(it.data.toString()) }
     }
@@ -188,7 +191,8 @@ class ChapterCache(
             } catch (e: Exception) {
                 try {
                     editor.abort()
-                } catch (_: Exception) {
+                } catch (abortEx: Exception) {
+                    logcat(LogPriority.DEBUG, abortEx) { "Failed to abort disk-cache editor after image write failure" }
                 }
                 throw e
             }
@@ -208,7 +212,7 @@ class ChapterCache(
      * @throws IOException on network or disk error.
      */
     @Throws(IOException::class)
-    suspend fun fetchAndCacheImage(imageUrl: String, fetchImage: suspend () -> Response) {
+    override suspend fun fetchAndCacheImage(imageUrl: String, fetchImage: suspend () -> Response) {
         val key = DiskUtil.hashKeyForDisk(imageUrl)
         // openEditor() returns null if another edit is already in progress for this key, which
         // prevents duplicate network requests for the same image.
@@ -226,13 +230,14 @@ class ChapterCache(
         } catch (e: Exception) {
             try {
                 editor.abort()
-            } catch (_: Exception) {
+            } catch (abortEx: Exception) {
+                logcat(LogPriority.DEBUG, abortEx) { "Failed to abort disk-cache editor after fetch-and-cache failure" }
             }
             throw e
         }
     }
 
-    fun clear(): Int {
+    override fun clear(): Int {
         // Count data files before clearing so we can report how many entries were removed.
         val count = cacheDir.listFiles()
             ?.count { it.isFile && !it.name.startsWith("journal") }

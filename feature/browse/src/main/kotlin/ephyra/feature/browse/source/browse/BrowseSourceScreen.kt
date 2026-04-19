@@ -90,7 +90,8 @@ data class BrowseSourceScreen(
         val navigator = LocalNavigator.currentOrThrow
         val navigateUp: () -> Unit = {
             when {
-                !state.isUserQuery && state.toolbarQuery != null -> screenModel.setToolbarQuery(null)
+                !state.isUserQuery && state.toolbarQuery != null ->
+                    screenModel.onEvent(BrowseSourceScreenEvent.SetToolbarQuery(null))
                 else -> navigator.pop()
             }
         }
@@ -133,7 +134,7 @@ data class BrowseSourceScreen(
                 ) {
                     BrowseSourceToolbar(
                         searchQuery = state.toolbarQuery,
-                        onSearchQueryChange = screenModel::setToolbarQuery,
+                        onSearchQueryChange = { screenModel.onEvent(BrowseSourceScreenEvent.SetToolbarQuery(it)) },
                         source = screenModel.source,
                         displayMode = screenModel.displayMode,
                         onDisplayModeChange = { screenModel.displayMode = it },
@@ -141,7 +142,7 @@ data class BrowseSourceScreen(
                         onWebViewClick = onWebViewClick,
                         onHelpClick = onHelpClick,
                         onSettingsClick = { navigator.push(SourcePreferencesScreen(sourceId)) },
-                        onSearch = screenModel::search,
+                        onSearch = { screenModel.onEvent(BrowseSourceScreenEvent.Search(it)) },
                     )
 
                     Row(
@@ -153,8 +154,8 @@ data class BrowseSourceScreen(
                         FilterChip(
                             selected = state.listing == Listing.Popular,
                             onClick = {
-                                screenModel.resetFilters()
-                                screenModel.setListing(Listing.Popular)
+                                screenModel.onEvent(BrowseSourceScreenEvent.ResetFilters)
+                                screenModel.onEvent(BrowseSourceScreenEvent.SetListing(Listing.Popular))
                             },
                             leadingIcon = {
                                 Icon(
@@ -172,8 +173,8 @@ data class BrowseSourceScreen(
                             FilterChip(
                                 selected = state.listing == Listing.Latest,
                                 onClick = {
-                                    screenModel.resetFilters()
-                                    screenModel.setListing(Listing.Latest)
+                                    screenModel.onEvent(BrowseSourceScreenEvent.ResetFilters)
+                                    screenModel.onEvent(BrowseSourceScreenEvent.SetListing(Listing.Latest))
                                 },
                                 leadingIcon = {
                                     Icon(
@@ -191,7 +192,7 @@ data class BrowseSourceScreen(
                         if (state.filters.isNotEmpty()) {
                             FilterChip(
                                 selected = state.listing is Listing.Search,
-                                onClick = screenModel::openFilterSheet,
+                                onClick = { screenModel.onEvent(BrowseSourceScreenEvent.OpenFilterSheet) },
                                 leadingIcon = {
                                     Icon(
                                         imageVector = Icons.Outlined.FilterList,
@@ -227,12 +228,15 @@ data class BrowseSourceScreen(
                     scope.launchIO {
                         val duplicates = screenModel.getDuplicateLibraryManga(manga)
                         when {
-                            manga.favorite -> screenModel.setDialog(BrowseSourceScreenModel.Dialog.RemoveManga(manga))
-                            duplicates.isNotEmpty() -> screenModel.setDialog(
-                                BrowseSourceScreenModel.Dialog.AddDuplicateManga(manga, duplicates),
-                            )
-
-                            else -> screenModel.addFavorite(manga)
+                            manga.favorite ->
+                                screenModel.onEvent(BrowseSourceScreenEvent.SetDialog(BrowseSourceScreenModel.Dialog.RemoveManga(manga)))
+                            duplicates.isNotEmpty() ->
+                                screenModel.onEvent(
+                                    BrowseSourceScreenEvent.SetDialog(
+                                        BrowseSourceScreenModel.Dialog.AddDuplicateManga(manga, duplicates),
+                                    ),
+                                )
+                            else -> screenModel.onEvent(BrowseSourceScreenEvent.AddFavorite(manga))
                         }
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     }
@@ -240,15 +244,15 @@ data class BrowseSourceScreen(
             )
         }
 
-        val onDismissRequest = { screenModel.setDialog(null) }
+        val onDismissRequest = { screenModel.onEvent(BrowseSourceScreenEvent.SetDialog(null)) }
         when (val dialog = state.dialog) {
             is BrowseSourceScreenModel.Dialog.Filter -> {
                 SourceFilterDialog(
                     onDismissRequest = onDismissRequest,
                     filters = state.filters,
-                    onReset = screenModel::resetFilters,
-                    onFilter = { screenModel.search(filters = state.filters) },
-                    onUpdate = screenModel::setFilters,
+                    onReset = { screenModel.onEvent(BrowseSourceScreenEvent.ResetFilters) },
+                    onFilter = { screenModel.onEvent(BrowseSourceScreenEvent.Search(filters = state.filters)) },
+                    onUpdate = { screenModel.onEvent(BrowseSourceScreenEvent.SetFilters(it)) },
                 )
             }
 
@@ -256,9 +260,13 @@ data class BrowseSourceScreen(
                 DuplicateMangaDialog(
                     duplicates = dialog.duplicates,
                     onDismissRequest = onDismissRequest,
-                    onConfirm = { screenModel.addFavorite(dialog.manga) },
+                    onConfirm = { screenModel.onEvent(BrowseSourceScreenEvent.AddFavorite(dialog.manga)) },
                     onOpenManga = { navigator.push(MangaScreen(it.id)) },
-                    onMigrate = { screenModel.setDialog(BrowseSourceScreenModel.Dialog.Migrate(dialog.manga, it)) },
+                    onMigrate = {
+                        screenModel.onEvent(
+                            BrowseSourceScreenEvent.SetDialog(BrowseSourceScreenModel.Dialog.Migrate(dialog.manga, it)),
+                        )
+                    },
                 )
             }
 
@@ -276,7 +284,7 @@ data class BrowseSourceScreen(
                 RemoveMangaDialog(
                     onDismissRequest = onDismissRequest,
                     onConfirm = {
-                        screenModel.changeMangaFavorite(dialog.manga)
+                        screenModel.onEvent(BrowseSourceScreenEvent.ChangeMangaFavorite(dialog.manga))
                     },
                     mangaToRemove = dialog.manga,
                 )
@@ -288,8 +296,8 @@ data class BrowseSourceScreen(
                     onDismissRequest = onDismissRequest,
                     onEditCategories = { navigator.push(CategoryScreen()) },
                     onConfirm = { include, _ ->
-                        screenModel.changeMangaFavorite(dialog.manga)
-                        screenModel.moveMangaToCategories(dialog.manga, include)
+                        screenModel.onEvent(BrowseSourceScreenEvent.ChangeMangaFavorite(dialog.manga))
+                        screenModel.onEvent(BrowseSourceScreenEvent.MoveMangaToCategories(dialog.manga, include))
                     },
                 )
             }
@@ -301,8 +309,8 @@ data class BrowseSourceScreen(
             queryEvent.receiveAsFlow()
                 .collectLatest {
                     when (it) {
-                        is SearchType.Genre -> screenModel.searchGenre(it.txt)
-                        is SearchType.Text -> screenModel.search(it.txt)
+                        is SearchType.Genre -> screenModel.onEvent(BrowseSourceScreenEvent.SearchGenre(it.txt))
+                        is SearchType.Text -> screenModel.onEvent(BrowseSourceScreenEvent.Search(it.txt))
                     }
                 }
         }

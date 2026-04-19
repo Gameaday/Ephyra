@@ -25,6 +25,7 @@ import coil3.request.allowRgb565
 import coil3.request.bitmapConfig
 import coil3.request.crossfade
 import coil3.util.DebugLogger
+import ephyra.app.R
 import ephyra.app.crash.CrashActivity
 import ephyra.app.crash.GlobalExceptionHandler
 import ephyra.app.di.koinAppModule
@@ -52,6 +53,7 @@ import ephyra.data.notification.Notifications
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.koinDomainModule
 import ephyra.domain.ui.UiPreferences
+import ephyra.domain.ui.model.ThemeMode
 import ephyra.domain.ui.model.setAppCompatDelegateThemeMode
 import ephyra.i18n.MR
 import ephyra.presentation.core.data.coil.TachiyomiImageDecoder
@@ -61,6 +63,7 @@ import ephyra.presentation.widget.WidgetManager
 import ephyra.telemetry.TelemetryConfig
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.NetworkPreferences
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -90,9 +93,15 @@ class App : Application(), Configuration.Provider, DefaultLifecycleObserver, Sin
      * that, the [WorkerFactory] bean is always available here.
      */
     override val workManagerConfiguration: Configuration
-        get() = Configuration.Builder()
-            .setWorkerFactory(get<WorkerFactory>())
-            .build()
+        get() {
+            val config = Configuration.Builder()
+                .setWorkerFactory(get<WorkerFactory>())
+                .build()
+            // Mark WorkManager as configured; recorded the first time WorkManager requests
+            // the Configuration (lazy initialisation by WorkManager itself).
+            StartupTracker.complete(StartupTracker.Phase.WORKMANAGER_CONFIGURED)
+            return config
+        }
 
     @SuppressLint("LaunchActivityFromNotification")
     override fun onCreate() {
@@ -106,10 +115,20 @@ class App : Application(), Configuration.Provider, DefaultLifecycleObserver, Sin
         val process = getProcessName()
         if (packageName != process) WebView.setDataDirectorySuffix(process)
 
-        startKoin {
-            androidContext(this@App)
-            workManagerFactory()
-            modules(koinAppModule, koinDomainModule, koinPreferenceModule, koinAppModule_UI)
+        try {
+            startKoin {
+                androidContext(this@App)
+                workManagerFactory()
+                // koinPreferenceModule is placed before koinDomainModule so that all
+                // preference bindings are registered before any domain single{} block
+                // could (in future) reference them during construction.
+                modules(koinAppModule, koinPreferenceModule, koinDomainModule, koinAppModule_UI)
+            }
+        } catch (e: Exception) {
+            // Record the failure so the StartupDiagnosticOverlay can surface it,
+            // then re-throw so the GlobalExceptionHandler opens CrashActivity.
+            StartupTracker.recordError(StartupTracker.Phase.KOIN_INITIALIZED, e)
+            throw e
         }
         StartupTracker.complete(StartupTracker.Phase.KOIN_INITIALIZED)
 
@@ -166,16 +185,32 @@ class App : Application(), Configuration.Provider, DefaultLifecycleObserver, Sin
             .onEach { ImageUtil.hardwareBitmapThreshold = it }
             .launchIn(scope)
 
-        setAppCompatDelegateThemeMode(get<UiPreferences>().themeMode().getSync())
+        setAppCompatDelegateThemeMode(
+            try {
+                get<UiPreferences>().themeMode().getSync()
+            } catch (e: Exception) {
+                // DataStore snapshot may not have emitted yet on the first coroutine frame.
+                // Fall back to the system default; the theme will be corrected once the
+                // Flow emits (see MainActivity's collectAsState-based theming).
+                logcat(LogPriority.WARN, e) { "Failed to read theme mode; defaulting to SYSTEM" }
+                ThemeMode.SYSTEM
+            },
+        )
 
         // Updates widget update
         WidgetManager(get(), get()).apply { init(scope) }
 
         if (!LogcatLogger.isInstalled) {
-            val minLogPriority = when {
-                networkPreferences.verboseLogging().getSync() -> LogPriority.VERBOSE
-                BuildConfig.DEBUG -> LogPriority.DEBUG
-                else -> LogPriority.INFO
+            val minLogPriority = try {
+                when {
+                    networkPreferences.verboseLogging().getSync() -> LogPriority.VERBOSE
+                    BuildConfig.DEBUG -> LogPriority.DEBUG
+                    else -> LogPriority.INFO
+                }
+            } catch (e: Exception) {
+                // Preference snapshot unavailable; choose a safe default.
+                logcat(LogPriority.WARN, e) { "Failed to read verboseLogging; defaulting log priority" }
+                if (BuildConfig.DEBUG) LogPriority.DEBUG else LogPriority.INFO
             }
             LogcatLogger.install()
             LogcatLogger.loggers += AndroidLogcatLogger(minLogPriority)
@@ -191,18 +226,35 @@ class App : Application(), Configuration.Provider, DefaultLifecycleObserver, Sin
         // potentially empty in-memory snapshot, which could misidentify an upgrade as a
         // fresh install and run only isAlways migrations instead of the versioned ones.
         ProcessLifecycleOwner.get().lifecycleScope.launch(Dispatchers.IO) {
-            val old = preference.get()
-            logcat { "Migration from $old to ${BuildConfig.VERSION_CODE}" }
-            StartupTracker.complete(StartupTracker.Phase.MIGRATOR_STARTED)
-            Migrator.initialize(
-                old = old,
-                new = BuildConfig.VERSION_CODE,
-                migrations = migrations,
-                onMigrationComplete = {
-                    logcat { "Updating last version to ${BuildConfig.VERSION_CODE}" }
-                    preference.set(BuildConfig.VERSION_CODE)
-                },
-            )
+            try {
+                val old = preference.get()
+                logcat { "Migration from $old to ${BuildConfig.VERSION_CODE}" }
+                StartupTracker.complete(StartupTracker.Phase.MIGRATOR_STARTED)
+                Migrator.initialize(
+                    old = old,
+                    new = BuildConfig.VERSION_CODE,
+                    migrations = migrations,
+                    onMigrationComplete = {
+                        logcat { "Updating last version to ${BuildConfig.VERSION_CODE}" }
+                        preference.set(BuildConfig.VERSION_CODE)
+                    },
+                )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // Record the failure on MIGRATOR_STARTED so the diagnostic overlay surfaces
+                // it, then mark the phase complete so the overlay does not show it as pending.
+                // Calling Migrator.initialize with old=0 ensures initGate is completed and
+                // MainActivity's awaitAndRelease() is not blocked indefinitely.
+                StartupTracker.recordError(StartupTracker.Phase.MIGRATOR_STARTED, e)
+                StartupTracker.complete(StartupTracker.Phase.MIGRATOR_STARTED)
+                Migrator.initialize(
+                    old = 0,
+                    new = BuildConfig.VERSION_CODE,
+                    migrations = migrations,
+                    onMigrationComplete = {},
+                )
+            }
         }
     }
 
@@ -283,7 +335,8 @@ class App : Application(), Configuration.Provider, DefaultLifecycleObserver, Sin
             }
 
             if (isChromiumCall) return WebViewUtil.spoofedPackageName(applicationContext)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            logcat(LogPriority.WARN, e) { "Failed to inspect stack trace for Chromium spoofing" }
         }
 
         return super.getPackageName()

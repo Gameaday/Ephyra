@@ -1,5 +1,6 @@
 package ephyra.app.di
 
+import ephyra.app.installer.AndroidInstallerCapabilityProvider
 import ephyra.app.util.system.isDebugBuildType
 import ephyra.core.common.core.security.PrivacyPreferences
 import ephyra.core.common.core.security.SecurityPreferences
@@ -67,7 +68,10 @@ val koinPreferenceModule = module {
     single {
         UiPreferences(get())
     }
+    single<ephyra.domain.base.InstallerCapabilityProvider> {
+        AndroidInstallerCapabilityProvider(androidApplication())
+    }
     single {
-        BasePreferences(androidApplication(), get())
+        BasePreferences(get(), get())
     }
 }

@@ -12,7 +12,6 @@ import ephyra.core.common.util.lang.byteSize
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.launchNonCancellable
 import ephyra.core.common.util.lang.withIOContext
-import ephyra.core.common.util.lang.withUIContext
 import ephyra.core.common.util.storage.DiskUtil
 import ephyra.core.common.util.storage.cacheImageDir
 import ephyra.core.common.util.system.DeviceUtil
@@ -21,17 +20,16 @@ import ephyra.core.common.util.system.logcat
 import ephyra.core.download.DownloadProvider
 import ephyra.core.download.util.filterDownloaded
 import ephyra.core.download.util.removeDuplicates
-import ephyra.data.cache.ChapterCache
-import ephyra.data.cache.CoverCache
-import ephyra.data.database.models.toDomainChapter
-import ephyra.data.saver.Image
-import ephyra.data.saver.ImageSaver
-import ephyra.data.saver.Location
+import ephyra.domain.chapter.service.ChapterCache
+import ephyra.domain.manga.service.CoverCache
+import ephyra.core.common.saver.Image
+import ephyra.core.common.saver.ImageSaver
+import ephyra.core.common.saver.Location
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
 import ephyra.domain.chapter.interactor.UpdateChapter
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.model.ChapterUpdate
-import ephyra.domain.chapter.model.toDbChapter
+import ephyra.domain.chapter.model.toSChapter
 import ephyra.domain.chapter.service.getChapterSort
 import ephyra.domain.download.model.Download
 import ephyra.domain.download.service.DownloadManager
@@ -264,7 +262,6 @@ class ReaderViewModel @JvmOverloads constructor(
                     this
                 }
             }
-            .map { it.toDbChapter() }
             .map(::ReaderChapter)
         chapterListCache = result
         return result
@@ -286,9 +283,9 @@ class ReaderViewModel @JvmOverloads constructor(
                     // value in sync with real progress via onPageSelected().
                     hasAppliedSavedPageIndex = true
                 } else if (!currentChapter.chapter.read) {
-                    currentChapter.requestedPage = currentChapter.chapter.last_page_read.toInt()
+                    currentChapter.requestedPage = currentChapter.chapter.lastPageRead.toInt()
                 }
-                chapterId = currentChapter.chapter.id!!
+                chapterId = currentChapter.chapter.id
             }
             .launchIn(viewModelScope)
     }
@@ -303,11 +300,38 @@ class ReaderViewModel @JvmOverloads constructor(
         }
     }
 
+    // ── UDF entry-point ──────────────────────────────────────────────────────
+    fun onEvent(event: ReaderEvent) {
+        when (event) {
+            is ReaderEvent.ActivityFinish -> onActivityFinish()
+            is ReaderEvent.ViewerLoaded -> onViewerLoaded(event.viewer)
+            is ReaderEvent.PageSelected -> onPageSelected(event.page)
+            is ReaderEvent.RestartReadTimer -> restartReadTimer()
+            is ReaderEvent.ToggleChapterBookmark -> toggleChapterBookmark()
+            is ReaderEvent.SetMangaReadingMode -> setMangaReadingMode(event.readingMode)
+            is ReaderEvent.SetMangaOrientationType -> setMangaOrientationType(event.orientation)
+            is ReaderEvent.ToggleCropBorders -> toggleCropBorders()
+            is ReaderEvent.ShowMenus -> showMenus(event.visible)
+            is ReaderEvent.ShowLoadingDialog -> showLoadingDialog()
+            is ReaderEvent.OpenReadingModeSelectDialog -> openReadingModeSelectDialog()
+            is ReaderEvent.OpenOrientationModeSelectDialog -> openOrientationModeSelectDialog()
+            is ReaderEvent.OpenPageDialog -> openPageDialog(event.page)
+            is ReaderEvent.OpenSettingsDialog -> openSettingsDialog()
+            is ReaderEvent.CloseDialog -> closeDialog()
+            is ReaderEvent.SetBrightnessOverlayValue -> setBrightnessOverlayValue(event.value)
+            is ReaderEvent.SaveImage -> saveImage()
+            is ReaderEvent.ShareImage -> shareImage(event.copyToClipboard)
+            is ReaderEvent.SetAsCover -> setAsCover()
+            is ReaderEvent.BlockPage -> blockPage()
+            is ReaderEvent.UnblockPage -> unblockPage(event.hex)
+        }
+    }
+
     /**
      * Called when the user pressed the back button and is going to leave the reader. Used to
      * trigger deletion of the downloaded chapters.
      */
-    fun onActivityFinish() {
+    private fun onActivityFinish() {
         deletePendingChapters()
     }
 
@@ -389,18 +413,17 @@ class ReaderViewModel @JvmOverloads constructor(
             chapterList.getOrNull(chapterPos + 1),
         )
 
-        withUIContext {
-            mutableState.update {
-                // Add new references first to avoid unnecessary recycling
-                newChapters.ref()
-                it.viewerChapters?.unref()
+        // MutableStateFlow.update is thread-safe — no UI-thread dispatch needed.
+        mutableState.update {
+            // Add new references first to avoid unnecessary recycling
+            newChapters.ref()
+            it.viewerChapters?.unref()
 
-                chapterToDownload = cancelQueuedDownloads(newChapters.currChapter)
-                it.copy(
-                    viewerChapters = newChapters,
-                    bookmarked = newChapters.currChapter.chapter.bookmark,
-                )
-            }
+            chapterToDownload = cancelQueuedDownloads(newChapters.currChapter)
+            it.copy(
+                viewerChapters = newChapters,
+                bookmarked = newChapters.currChapter.chapter.bookmark,
+            )
         }
         return newChapters
     }
@@ -542,7 +565,7 @@ class ReaderViewModel @JvmOverloads constructor(
         eventChannel.trySend(Event.ReloadViewerChapters)
     }
 
-    fun onViewerLoaded(viewer: Viewer?) {
+    private fun onViewerLoaded(viewer: Viewer?) {
         mutableState.update {
             it.copy(viewer = viewer)
         }
@@ -553,7 +576,7 @@ class ReaderViewModel @JvmOverloads constructor(
      * read, update tracking services, enqueue downloaded chapter deletion, and updating the active chapter if this
      * [page]'s chapter is different from the currently active.
      */
-    fun onPageSelected(page: ReaderPage) {
+    private fun onPageSelected(page: ReaderPage) {
         // InsertPage doesn't change page progress
         if (page is InsertPage) {
             return
@@ -635,9 +658,9 @@ class ReaderViewModel @JvmOverloads constructor(
             )
             if (!isNextChapterDownloaded) return@launchIO
 
-            val chaptersToDownload = getNextChapters.await(manga.id, nextChapter.id!!).run {
+            val chaptersToDownload = getNextChapters.await(manga.id, nextChapter.id).run {
                 if (readerPreferences.skipDupe().get()) {
-                    removeDuplicates(nextChapter.toDomainChapter()!!)
+                    removeDuplicates(nextChapter)
                 } else {
                     this
                 }
@@ -655,7 +678,7 @@ class ReaderViewModel @JvmOverloads constructor(
      * if setting is enabled and [currentChapter] is queued for download
      */
     private fun cancelQueuedDownloads(currentChapter: ReaderChapter): Download? {
-        return downloadManager.getQueuedDownloadOrNull(currentChapter.chapter.id!!)?.also {
+        return downloadManager.getQueuedDownloadOrNull(currentChapter.chapter.id)?.also {
             downloadManager.cancelQueuedDownloads(listOf(it))
         }
     }
@@ -706,10 +729,10 @@ class ReaderViewModel @JvmOverloads constructor(
         chapterPageIndex = pageIndex
 
         if (!incognitoMode && page.status !is Page.State.Error) {
-            val prevLastPageRead = readerChapter.chapter.last_page_read
+            val prevLastPageRead = readerChapter.chapter.lastPageRead
             val prevRead = readerChapter.chapter.read
 
-            readerChapter.chapter.last_page_read = pageIndex
+            readerChapter.chapter = readerChapter.chapter.copy(lastPageRead = pageIndex.toLong())
 
             // A page is the effective last page when it literally is the last page in the
             // chapter's page list, OR when all subsequent pages are hidden (absorbed stubs
@@ -723,14 +746,14 @@ class ReaderViewModel @JvmOverloads constructor(
 
             // Skip the DB write when neither lastPageRead nor read changed — a memory
             // equality check is cheaper than a SQL UPDATE and avoids unnecessary I/O.
-            if (readerChapter.chapter.last_page_read != prevLastPageRead ||
+            if (readerChapter.chapter.lastPageRead != prevLastPageRead ||
                 readerChapter.chapter.read != prevRead
             ) {
                 updateChapter.await(
                     ChapterUpdate(
-                        id = readerChapter.chapter.id!!,
+                        id = readerChapter.chapter.id,
                         read = readerChapter.chapter.read,
-                        lastPageRead = readerChapter.chapter.last_page_read.toLong(),
+                        lastPageRead = readerChapter.chapter.lastPageRead,
                     ),
                 )
             }
@@ -738,7 +761,7 @@ class ReaderViewModel @JvmOverloads constructor(
     }
 
     private suspend fun updateChapterProgressOnComplete(readerChapter: ReaderChapter) {
-        readerChapter.chapter.read = true
+        readerChapter.chapter = readerChapter.chapter.copy(read = true)
         updateTrackChapterRead(readerChapter)
         deleteChapterIfNeeded(readerChapter)
 
@@ -751,7 +774,7 @@ class ReaderViewModel @JvmOverloads constructor(
                 if (
                     !chapter.read &&
                     chapter.isRecognizedNumber &&
-                    chapter.chapterNumber == readerChapter.chapter.chapter_number.toDouble()
+                    chapter.chapterNumber == readerChapter.chapter.chapterNumber
                 ) {
                     ChapterUpdate(id = chapter.id, read = true)
                 } else {
@@ -761,7 +784,7 @@ class ReaderViewModel @JvmOverloads constructor(
         updateChapter.awaitAll(duplicateUnreadChapters)
     }
 
-    fun restartReadTimer() {
+    private fun restartReadTimer() {
         chapterReadStartTime = Instant.now().toEpochMilli()
     }
 
@@ -772,7 +795,7 @@ class ReaderViewModel @JvmOverloads constructor(
         getCurrentChapter()?.let { readerChapter ->
             if (incognitoMode) return@let
 
-            val chapterId = readerChapter.chapter.id!!
+            val chapterId = readerChapter.chapter.id
             val endTime = Date()
             val sessionReadDuration = chapterReadStartTime?.let { endTime.time - it } ?: 0
 
@@ -817,11 +840,11 @@ class ReaderViewModel @JvmOverloads constructor(
     fun getSource() = manga?.source?.let { sourceManager.getOrStub(it) } as? HttpSource
 
     fun getChapterUrl(): String? {
-        val sChapter = getCurrentChapter()?.chapter ?: return null
+        val chapter = getCurrentChapter()?.chapter ?: return null
         val source = getSource() ?: return null
 
         return try {
-            source.getChapterUrl(sChapter)
+            source.getChapterUrl(chapter.toSChapter())
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e)
             null
@@ -831,15 +854,14 @@ class ReaderViewModel @JvmOverloads constructor(
     /**
      * Bookmarks the currently active chapter.
      */
-    fun toggleChapterBookmark() {
+    private fun toggleChapterBookmark() {
         val chapter = getCurrentChapter()?.chapter ?: return
         val bookmarked = !chapter.bookmark
-        chapter.bookmark = bookmarked
 
         viewModelScope.launchNonCancellable {
             updateChapter.await(
                 ChapterUpdate(
-                    id = chapter.id!!,
+                    id = chapter.id,
                     bookmark = bookmarked,
                 ),
             )
@@ -882,7 +904,7 @@ class ReaderViewModel @JvmOverloads constructor(
     /**
      * Updates the viewer position for the open manga.
      */
-    fun setMangaReadingMode(readingMode: ReadingMode) {
+    private fun setMangaReadingMode(readingMode: ReadingMode) {
         val manga = manga ?: return
         viewModelScope.launchIO {
             setMangaViewerFlags.awaitSetReadingMode(manga.id, readingMode.flagValue.toLong())
@@ -890,7 +912,7 @@ class ReaderViewModel @JvmOverloads constructor(
             if (currChapters != null) {
                 // Save current page
                 val currChapter = currChapters.currChapter
-                currChapter.requestedPage = currChapter.chapter.last_page_read
+                currChapter.requestedPage = currChapter.chapter.lastPageRead.toInt()
 
                 mutableState.update {
                     it.copy(
@@ -918,7 +940,7 @@ class ReaderViewModel @JvmOverloads constructor(
     /**
      * Updates the orientation type for the open manga.
      */
-    fun setMangaOrientationType(orientation: ReaderOrientation) {
+    private fun setMangaOrientationType(orientation: ReaderOrientation) {
         val manga = manga ?: return
         viewModelScope.launchIO {
             setMangaViewerFlags.awaitSetOrientation(manga.id, orientation.flagValue.toLong())
@@ -926,7 +948,7 @@ class ReaderViewModel @JvmOverloads constructor(
             if (currChapters != null) {
                 // Save current page
                 val currChapter = currChapters.currChapter
-                currChapter.requestedPage = currChapter.chapter.last_page_read
+                currChapter.requestedPage = currChapter.chapter.lastPageRead.toInt()
 
                 mutableState.update {
                     it.copy(
@@ -940,7 +962,7 @@ class ReaderViewModel @JvmOverloads constructor(
         }
     }
 
-    fun toggleCropBorders(): Boolean {
+    private fun toggleCropBorders(): Boolean {
         val isPagerType = ReadingMode.isPagerType(getMangaReadingMode())
         val pref = if (isPagerType) readerPreferences.cropBorders() else readerPreferences.cropBordersWebtoon()
         val newValue = !pref.getSync()
@@ -963,35 +985,35 @@ class ReaderViewModel @JvmOverloads constructor(
         ) + filenameSuffix
     }
 
-    fun showMenus(visible: Boolean) {
+    private fun showMenus(visible: Boolean) {
         mutableState.update { it.copy(menuVisible = visible) }
     }
 
-    fun showLoadingDialog() {
+    private fun showLoadingDialog() {
         mutableState.update { it.copy(dialog = Dialog.Loading) }
     }
 
-    fun openReadingModeSelectDialog() {
+    private fun openReadingModeSelectDialog() {
         mutableState.update { it.copy(dialog = Dialog.ReadingModeSelect) }
     }
 
-    fun openOrientationModeSelectDialog() {
+    private fun openOrientationModeSelectDialog() {
         mutableState.update { it.copy(dialog = Dialog.OrientationModeSelect) }
     }
 
-    fun openPageDialog(page: ReaderPage) {
+    private fun openPageDialog(page: ReaderPage) {
         mutableState.update { it.copy(dialog = Dialog.PageActions(page)) }
     }
 
-    fun openSettingsDialog() {
+    private fun openSettingsDialog() {
         mutableState.update { it.copy(dialog = Dialog.Settings) }
     }
 
-    fun closeDialog() {
+    private fun closeDialog() {
         mutableState.update { it.copy(dialog = null) }
     }
 
-    fun setBrightnessOverlayValue(value: Int) {
+    private fun setBrightnessOverlayValue(value: Int) {
         mutableState.update { it.copy(brightnessOverlayValue = value) }
     }
 
@@ -999,7 +1021,7 @@ class ReaderViewModel @JvmOverloads constructor(
      * Saves the image of the selected page on the pictures directory and notifies the UI of the result.
      * There's also a notification to allow sharing the image somewhere else or deleting it.
      */
-    fun saveImage() {
+    private fun saveImage() {
         val page = (state.value.dialog as? Dialog.PageActions)?.page
         if (page?.status != Page.State.Ready) return
         val manga = manga ?: return
@@ -1040,10 +1062,9 @@ class ReaderViewModel @JvmOverloads constructor(
                         location = Location.Pictures.create(relativePath),
                     ),
                 )
-                withUIContext {
-                    notifier.onComplete(uri)
-                    eventChannel.send(Event.SavedImage(SaveImageResult.Success(uri)))
-                }
+                // Emit the saved URI so the Activity can show the notification and toast
+                // from its own Context — keeping the ViewModel free of UI concerns.
+                eventChannel.send(Event.SavedImage(SaveImageResult.Success(uri)))
             } catch (e: Throwable) {
                 notifier.onError(e.message)
                 eventChannel.send(Event.SavedImage(SaveImageResult.Error(e)))
@@ -1058,7 +1079,7 @@ class ReaderViewModel @JvmOverloads constructor(
      * get a path to the file and it has to be decompressed somewhere first. Only the last shared
      * image will be kept so it won't be taking lots of internal disk space.
      */
-    fun shareImage(copyToClipboard: Boolean) {
+    private fun shareImage(copyToClipboard: Boolean) {
         val page = (state.value.dialog as? Dialog.PageActions)?.page
         if (page?.status != Page.State.Ready) return
         val manga = manga ?: return
@@ -1096,7 +1117,7 @@ class ReaderViewModel @JvmOverloads constructor(
     /**
      * Sets the image of the selected page as cover and notifies the UI of the result.
      */
-    fun setAsCover() {
+    private fun setAsCover() {
         val page = (state.value.dialog as? Dialog.PageActions)?.page
         if (page?.status != Page.State.Ready) return
         val manga = manga ?: return
@@ -1124,7 +1145,7 @@ class ReaderViewModel @JvmOverloads constructor(
      *
      * The result includes the hex hash so the caller can offer an "Undo" action.
      */
-    fun blockPage() {
+    private fun blockPage() {
         val page = (state.value.dialog as? Dialog.PageActions)?.page
         if (page?.status != Page.State.Ready) return
 
@@ -1152,7 +1173,7 @@ class ReaderViewModel @JvmOverloads constructor(
      * Removes a specific dHash hex string from the blocked-pages preference set.
      * Used to undo an accidental block or to selectively unblock a page.
      */
-    fun unblockPage(hex: String) {
+    private fun unblockPage(hex: String) {
         viewModelScope.launchNonCancellable {
             withIOContext {
                 val pref = downloadPreferences.blockedPageHashes()
@@ -1183,11 +1204,13 @@ class ReaderViewModel @JvmOverloads constructor(
                 try {
                     val blocked = ImageUtil.hexToDHash(hexStr)
                     ImageUtil.dHashDistance(hash, blocked) <= threshold
-                } catch (_: Exception) {
+                } catch (e: Exception) {
+                    logcat(LogPriority.DEBUG, e) { "Skipping malformed blocked-page hash entry during check: '$hexStr'" }
                     false
                 }
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            logcat(LogPriority.DEBUG, e) { "Failed to check blocked-page hash for current page; treating as unblocked" }
             null
         }
     }
@@ -1218,7 +1241,7 @@ class ReaderViewModel @JvmOverloads constructor(
 
         val manga = manga ?: return
         viewModelScope.launchNonCancellable {
-            trackChapter.await(app, manga.id, readerChapter.chapter.chapter_number.toDouble())
+            trackChapter.await(manga.id, readerChapter.chapter.chapterNumber)
         }
     }
 
@@ -1231,7 +1254,7 @@ class ReaderViewModel @JvmOverloads constructor(
         val manga = manga ?: return
 
         viewModelScope.launchNonCancellable {
-            downloadManager.enqueueChaptersToDelete(listOf(chapter.chapter.toDomainChapter()!!), manga)
+            downloadManager.enqueueChaptersToDelete(listOf(chapter.chapter), manga)
         }
     }
 

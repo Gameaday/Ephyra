@@ -42,7 +42,7 @@ class BackupCreateJob(
         return try {
             notifier.showBackupProgress()
             val resultUri = backupCreator.createBackup(uri, options)
-            notifier.showBackupComplete(resultUri)
+            notifier.showBackupComplete(resultUri.toString())
             Result.success()
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e)
@@ -92,5 +92,13 @@ class BackupCreateJob(
         fun isManualJobRunning(context: Context): Boolean {
             return context.workManager.isRunning(TAG)
         }
+
+        /**
+         * Returns the suggested filename for a new backup file, delegating to
+         * [BackupCreator.getFilename].  Exposed here so that [WorkSchedulerImpl]
+         * can fulfil [BackupScheduler.getBackupFilename] without requiring feature
+         * modules to depend on `data`.
+         */
+        fun getFilename(): String = BackupCreator.getFilename()
     }
 }

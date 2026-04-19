@@ -29,8 +29,9 @@ dependencies {
     implementation(kotlinx.bundles.serialization)
 
     implementation(libs.unifile)
-
-    api(libs.sqldelight.android.paging)
+    implementation(kotlinx.immutables)
+    // PagingSource<Long, Manga> is used by SourceRepository / GetRemoteManga.
+    compileOnly(libs.paging.common)
 
     compileOnly(platform(compose.compose.bom))
     compileOnly(compose.runtime.annotation)

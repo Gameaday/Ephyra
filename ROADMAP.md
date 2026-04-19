@@ -24,15 +24,45 @@ The following foundational work has been completed and merged:
 - **Full build success**: `:app:compileDebugKotlin` **BUILD SUCCESSFUL** ✅
 - **Spotless lint clean**: All modules pass `spotlessCheck` with no violations.
 
+## ✅ Completed — Startup Hardening & Architectural Fitness
+
+- **Koin startup hardened**: `startKoin {}` is wrapped in try/catch; failures are recorded via
+  `StartupTracker.recordError()` and re-thrown to surface in `CrashActivity` rather than silently
+  degrading.
+- **Module order corrected**: `koinPreferenceModule` now loads before `koinDomainModule`,
+  ensuring preference bindings are always registered before domain singletons can reference them.
+- **`initializeMigrator()` crash-safe**: The coroutine body is wrapped in try/catch; exceptions
+  call `StartupTracker.recordError()`, complete `MIGRATOR_STARTED`, and fall back to
+  `Migrator.initialize(old=0)` to unblock `Migrator.await()` in `MainActivity`.
+- **Defensive `.getSync()` reads**: Theme and log-level preference reads at startup are guarded
+  with try/catch and safe defaults, preventing a DataStore race condition from surfacing as a
+  crash rather than a harmless visual default.
+- **`HomeScreen` channel strategies fixed**: `librarySearchEvent` and `openTabEvent` now use
+  `Channel.CONFLATED`, preventing stale navigation intents from accumulating on the singleton
+  screen across configuration changes or rapid back-stack cycles.
+- **Explicit `R` import in `App.kt`**: `import ephyra.app.R` added explicitly to remove
+  ambiguity around R-class resolution in multi-module configurations.
+- **Architectural fitness functions in CI**: Two new steps in `build.yml` fail the build if
+  (a) `android.*` imports appear in domain module source trees, or (b) `Injekt.get()` appears
+  anywhere outside the legacy shim. These run in milliseconds and prevent regressions silently
+  creeping back in.
+- **Design Principles document**: `doc/DESIGN_PRINCIPLES.md` created as the authoritative,
+  verbalisable law of the codebase — eight principles with canonical anti-patterns and a guiding
+  code-review question.
+
 ## Core Documentation
 
-1. **[Architecture Principles](doc/ARCHITECTURE.md)**: Details the philosophies, design patterns,
-   and architectural rules governing the modernized state of Ephyra (e.g., Koin Dependency
-   Injection, Room Database, UDF, Domain Interactors).
-2. **[Migration Plan](doc/MIGRATION_PLAN.md)**: A structured roadmap outlining the phased
+1. **[Design Principles](doc/DESIGN_PRINCIPLES.md)**: The authoritative law of the codebase.
+   Eight concrete principles — with canonical anti-patterns and a guiding code-review question —
+   that every developer must read before contributing. This document supersedes any informal
+   conventions previously used in the codebase.
+2. **[Architecture Principles](doc/ARCHITECTURE.md)**: Technical details of the design patterns
+   and architectural rules governing the modernized state of Ephyra (Koin, Room, UDF, Domain
+   Interactors).
+3. **[Migration Plan](doc/MIGRATION_PLAN.md)**: A structured roadmap outlining the phased
    transition. Use this document to track progress and identify the current active phase of
    modernization.
-3. **[Validation Criteria (Definition of Done)](doc/VALIDATION_CRITERIA.md)**: Establishing the
+4. **[Validation Criteria (Definition of Done)](doc/VALIDATION_CRITERIA.md)**: Establishing the
    testable metrics for when a modernization phase or architectural pattern is considered completely
    migrated.
 

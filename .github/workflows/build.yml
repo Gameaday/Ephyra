@@ -50,6 +50,74 @@ jobs:
       - name: Check code format
         run: ./gradlew spotlessCheck
 
+      - name: Architecture fitness – no android.* imports in domain modules
+        run: |
+          # The :core:domain and :domain modules must remain pure Kotlin with zero
+          # Android imports so that business logic can be tested on the JVM without
+          # an Android runtime. Any android.* import in those source trees is an
+          # architectural violation that must be resolved before merging.
+          VIOLATIONS=$(grep -rn --include="*.kt" "^\s*import android\." \
+            core/domain/src domain/src 2>/dev/null || true)
+          if [ -n "$VIOLATIONS" ]; then
+            echo "::error::android.* imports found in domain modules (architectural violation):"
+            echo "$VIOLATIONS"
+            exit 1
+          fi
+
+      - name: Architecture fitness – no Injekt.get() outside legacy shim
+        run: |
+          # Injekt.get() is preserved only in the legacy compatibility shim
+          # (core/common/src/main/kotlin/uy/kohesive/injekt/Injekt.kt).
+          # Any other usage is a regression to the old service-locator pattern
+          # and must be replaced with Koin constructor injection.
+          SHIM="core/common/src/main/kotlin/uy/kohesive/injekt/Injekt.kt"
+          # Use grep -H to ensure consistent "path:line" output, then exclude the shim
+          # by matching its full relative path component (without leading ./).
+          VIOLATIONS=$(grep -rHn --include="*.kt" "Injekt\.get(" . \
+            | grep -v "${SHIM}:" || true)
+          if [ -n "$VIOLATIONS" ]; then
+            echo "::error::Injekt.get() found outside the legacy shim (use Koin constructor injection instead):"
+            echo "$VIOLATIONS"
+            exit 1
+          fi
+
+      - name: Architecture fitness – no ephyra.data.* imports in core domain module
+        run: |
+          # The :core:domain module contains domain interactors and must not import
+          # concrete :data implementations.  Interactors must depend only on repository
+          # interfaces defined in :domain.  Any ephyra.data.* import in core/domain/src
+          # is a Dependency Rule violation (domain must not know about the data layer).
+          #
+          # DomainModule.kt (the Koin wiring file) is explicitly excluded because it is
+          # the single authorised place where interfaces are bound to implementations.
+          VIOLATIONS=$(grep -rn --include="*.kt" "^\s*import ephyra\.data\." \
+            core/domain/src 2>/dev/null \
+            | grep -v "core/domain/src/main/java/ephyra/domain/DomainModule.kt:" || true)
+          if [ -n "$VIOLATIONS" ]; then
+            echo "::error::ephyra.data.* imports found in core/domain (architectural violation):"
+            echo "$VIOLATIONS"
+            exit 1
+          fi
+
+      - name: Architecture fitness – data-boundary ratchet (feature modules must not import ephyra.data.*)
+        run: |
+          # Feature modules must not import concrete :data implementations directly.
+          # They should reference only domain interfaces and types.
+          #
+          # All 38 previously-tracked violations have been resolved (data-layer types are now
+          # accessed exclusively through domain interfaces injected by Koin).  BASELINE is set
+          # to 0 so that any new direct data import in a feature module fails CI immediately.
+          BASELINE=0
+          VIOLATION_COUNT=$(grep -rn --include="*.kt" "^\s*import ephyra\.data\." \
+            feature/*/src 2>/dev/null | wc -l || echo 0)
+          echo "ephyra.data.* imports in feature modules: ${VIOLATION_COUNT} (baseline: ${BASELINE})"
+          if [ "${VIOLATION_COUNT}" -gt "${BASELINE}" ]; then
+            echo "::error::ephyra.data.* import count (${VIOLATION_COUNT}) exceeds baseline (${BASELINE})."
+            echo "::error::Fix the new violations before merging, then lower BASELINE in build.yml."
+            grep -rn --include="*.kt" "^\s*import ephyra\.data\." feature/*/src 2>/dev/null || true
+            exit 1
+          fi
+
       - name: Build app
         run: |
           FLAGS="-Penable-updater"

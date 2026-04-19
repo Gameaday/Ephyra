@@ -31,7 +31,8 @@ import ephyra.core.download.DownloadProvider
 import ephyra.core.download.DownloadStore
 import ephyra.core.download.Downloader
 import ephyra.data.backup.BackupDecoder
-import ephyra.data.backup.BackupFileValidator
+import ephyra.data.backup.BackupFileValidatorImpl
+import ephyra.domain.backup.service.BackupFileValidator
 import ephyra.data.backup.create.BackupCreator
 import ephyra.data.backup.create.creators.CategoriesBackupCreator
 import ephyra.data.backup.create.creators.ExtensionRepoBackupCreator
@@ -45,18 +46,25 @@ import ephyra.data.backup.restore.restorers.MangaRestorer
 import ephyra.data.backup.restore.restorers.PreferenceRestorer
 import ephyra.data.cache.ChapterCache
 import ephyra.data.cache.CoverCache
+import ephyra.domain.chapter.service.ChapterCache as IChapterCache
+import ephyra.domain.manga.service.CoverCache as ICoverCache
 import ephyra.data.coil.MangaCoverFetcher
 import ephyra.data.coil.MangaCoverKeyer
 import ephyra.data.coil.MangaKeyer
+import ephyra.data.export.LibraryExporterImpl
 import ephyra.data.room.EphyraDatabase
-import ephyra.data.saver.ImageSaver
+import ephyra.core.common.saver.ImageSaver
+import ephyra.data.saver.ImageSaverImpl
+import ephyra.domain.export.LibraryExporter
 import ephyra.data.track.TrackerManagerImpl
 import ephyra.data.updater.AppUpdateChecker
+import ephyra.app.track.DelayedTrackingStore
+import ephyra.app.track.DelayedTrackingUpdateJob
+import ephyra.app.data.storage.StorageManagerImpl
+import ephyra.app.track.TrackingJobSchedulerImpl
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.storage.service.StorageManager
-import ephyra.domain.track.service.DelayedTrackingUpdateJob
 import ephyra.domain.track.service.TrackerManager
-import ephyra.domain.track.store.DelayedTrackingStore
 import ephyra.feature.browse.source.globalsearch.GlobalSearchScreen
 import ephyra.feature.migration.config.MigrationConfigScreen
 import ephyra.feature.more.NewUpdateScreen
@@ -84,6 +92,7 @@ import nl.adaptivity.xmlutil.serialization.XML
 import org.koin.android.ext.koin.androidApplication
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.workmanager.dsl.worker
+import org.koin.dsl.bind
 import org.koin.dsl.module
 import ephyra.app.BuildConfig as AppBuildConfig
 import ephyra.presentation.core.ui.delegate.SecureActivityDelegate as CoreSecureActivityDelegate
@@ -96,6 +105,11 @@ val koinAppModule = module {
             klass = EphyraDatabase::class.java,
             name = "tachiyomi.db",
         )
+            // Safety net while the schema is still in active development (Phase 6).
+            // Prevents a hard boot crash when the Room identity hash changes between
+            // builds.  This is intentionally destructive — a proper versioned migration
+            // path (with addMigrations()) will replace this once the schema is stable.
+            .fallbackToDestructiveMigration(dropAllTables = true)
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onOpen(db: androidx.sqlite.db.SupportSQLiteDatabase) {
                     super.onOpen(db)
@@ -119,6 +133,7 @@ val koinAppModule = module {
     single { get<EphyraDatabase>().updateDao() }
     single { get<EphyraDatabase>().extensionRepoDao() }
     single { get<EphyraDatabase>().sourceDao() }
+    single { get<EphyraDatabase>().excludedScanlatorDao() }
 
     single {
         Json {
@@ -152,10 +167,12 @@ val koinAppModule = module {
             override val buildTime: String get() = AppBuildConfig.BUILD_TIME
             override val telemetryIncluded: Boolean get() = AppBuildConfig.TELEMETRY_INCLUDED
             override val updaterEnabled: Boolean get() = AppBuildConfig.UPDATER_ENABLED
+            override val githubRepo: String
+                get() = if (isPreview) "Gameaday/Ephyra-preview" else "Gameaday/Ephyra"
         }
     }
-    single { ChapterCache(androidApplication(), get()) }
-    single { CoverCache(androidApplication()) }
+    single { ChapterCache(androidApplication(), get()) } bind IChapterCache::class
+    single { CoverCache(androidApplication()) } bind ICoverCache::class
     single { MangaKeyer(get()) }
     single<ephyra.presentation.core.util.AppNavigator> { ephyra.app.util.NavigatorImpl() }
     single<ephyra.core.common.notification.NotificationManager> {
@@ -192,13 +209,14 @@ val koinAppModule = module {
     single { DownloadNotifier(androidApplication(), get()) }
 
     single<TrackerManager> { TrackerManagerImpl(androidApplication(), get(), get(), get(), get(), get(), get(), get()) }
-    single { DelayedTrackingStore(androidApplication()) }
+    single<ephyra.domain.track.store.TrackingQueueStore> { DelayedTrackingStore(androidApplication()) }
+    single<ephyra.domain.track.service.TrackingJobScheduler> { TrackingJobSchedulerImpl(androidApplication()) }
 
     single { BackupDecoder(androidApplication(), get()) }
-    single { BackupFileValidator(androidApplication(), get(), get()) }
+    single<BackupFileValidator> { BackupFileValidatorImpl(androidApplication(), get(), get()) }
 
     single { CategoriesBackupCreator(get()) }
-    single { MangaBackupCreator(get(), get(), get()) }
+    single { MangaBackupCreator(get(), get(), get(), get(), get()) }
     single { PreferenceBackupCreator(get(), get()) }
     single { ExtensionRepoBackupCreator(get()) }
     single { SourcesBackupCreator(get()) }
@@ -216,7 +234,7 @@ val koinAppModule = module {
     single<ephyra.domain.library.service.MetadataUpdateScheduler> { get<WorkSchedulerImpl>() }
 
     single { PreferenceRestorer(androidApplication(), get(), get(), get(), get(), get(), get()) }
-    single { MangaRestorer(get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { MangaRestorer(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 
     single { LibraryUpdateNotifier(androidApplication(), get(), get()) }
     single<ephyra.domain.library.service.LibraryUpdateNotifier> { get<LibraryUpdateNotifier>() }
@@ -228,7 +246,8 @@ val koinAppModule = module {
     single<ephyra.domain.release.service.AppUpdateNotifier> { get<AppUpdateNotifier>() }
     single<ephyra.domain.release.service.AppUpdateDownloader> { AppUpdateDownloaderImpl(androidApplication()) }
 
-    single { ImageSaver(androidApplication()) }
+    single<ImageSaver> { ImageSaverImpl(androidApplication()) }
+    single<LibraryExporter> { LibraryExporterImpl(androidApplication()) }
     single<GlobalSearchScreenFactory> { GlobalSearchScreenFactory { query -> GlobalSearchScreen(query) } }
     single<MigrationConfigScreenFactory> {
         MigrationConfigScreenFactory { mangaIds -> MigrationConfigScreen(mangaIds) }
@@ -246,7 +265,7 @@ val koinAppModule = module {
     single { AndroidStorageFolderProvider(androidApplication()) }
     single { LocalSourceFileSystem(get()) }
     single { LocalCoverManager(androidApplication(), get()) }
-    single { StorageManager(androidApplication(), get()) }
+    single<StorageManager> { StorageManagerImpl(androidApplication(), get()) }
     single { MatchUnlinkedNotifier(get()) }
     worker { AppUpdateDownloadJob(get(), get(), get()) }
     worker { BackupCreateJob(get(), get(), get()) }

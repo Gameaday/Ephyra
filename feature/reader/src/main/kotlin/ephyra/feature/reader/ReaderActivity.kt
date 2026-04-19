@@ -57,6 +57,7 @@ import ephyra.feature.reader.R
 import ephyra.feature.reader.ReaderViewModel.SetAsCoverResult.AddToLibraryFirst
 import ephyra.feature.reader.ReaderViewModel.SetAsCoverResult.Error
 import ephyra.feature.reader.ReaderViewModel.SetAsCoverResult.Success
+import ephyra.feature.reader.SaveImageNotifier
 import ephyra.feature.reader.databinding.ReaderActivityBinding
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
@@ -249,24 +250,24 @@ class ReaderActivity : BaseActivity() {
                     is ReaderViewModel.Dialog.Loading -> { /* Handled by successState logic maybe? */ }
                     is ReaderViewModel.Dialog.Settings -> {
                         ReaderSettingsDialog(
-                            onDismissRequest = viewModel::closeDialog,
-                            onShowMenus = { viewModel.showMenus(true) },
-                            onHideMenus = { viewModel.showMenus(false) },
+                            onDismissRequest = { viewModel.onEvent(ReaderEvent.CloseDialog) },
+                            onShowMenus = { viewModel.onEvent(ReaderEvent.ShowMenus(true)) },
+                            onHideMenus = { viewModel.onEvent(ReaderEvent.ShowMenus(false)) },
                             screenModel = ReaderSettingsScreenModel(
                                 readerState = viewModel.state,
-                                onChangeReadingMode = viewModel::setMangaReadingMode,
-                                onChangeOrientation = viewModel::setMangaOrientationType,
+                                onChangeReadingMode = { viewModel.onEvent(ReaderEvent.SetMangaReadingMode(it)) },
+                                onChangeOrientation = { viewModel.onEvent(ReaderEvent.SetMangaOrientationType(it)) },
                                 preferences = readerPreferences,
                             ),
                         )
                     }
                     is ReaderViewModel.Dialog.ReadingModeSelect -> {
                         ReadingModeSelectDialog(
-                            onDismissRequest = viewModel::closeDialog,
+                            onDismissRequest = { viewModel.onEvent(ReaderEvent.CloseDialog) },
                             screenModel = ReaderSettingsScreenModel(
                                 readerState = viewModel.state,
-                                onChangeReadingMode = viewModel::setMangaReadingMode,
-                                onChangeOrientation = viewModel::setMangaOrientationType,
+                                onChangeReadingMode = { viewModel.onEvent(ReaderEvent.SetMangaReadingMode(it)) },
+                                onChangeOrientation = { viewModel.onEvent(ReaderEvent.SetMangaOrientationType(it)) },
                                 preferences = readerPreferences,
                             ),
                             onChange = { showToast(it) },
@@ -274,11 +275,11 @@ class ReaderActivity : BaseActivity() {
                     }
                     is ReaderViewModel.Dialog.OrientationModeSelect -> {
                         OrientationSelectDialog(
-                            onDismissRequest = viewModel::closeDialog,
+                            onDismissRequest = { viewModel.onEvent(ReaderEvent.CloseDialog) },
                             screenModel = ReaderSettingsScreenModel(
                                 readerState = viewModel.state,
-                                onChangeReadingMode = viewModel::setMangaReadingMode,
-                                onChangeOrientation = viewModel::setMangaOrientationType,
+                                onChangeReadingMode = { viewModel.onEvent(ReaderEvent.SetMangaReadingMode(it)) },
+                                onChangeOrientation = { viewModel.onEvent(ReaderEvent.SetMangaOrientationType(it)) },
                                 preferences = readerPreferences,
                             ),
                             onChange = { showToast(it) },
@@ -286,12 +287,12 @@ class ReaderActivity : BaseActivity() {
                     }
                     is ReaderViewModel.Dialog.PageActions -> {
                         ReaderPageActionsDialog(
-                            onDismissRequest = viewModel::closeDialog,
-                            onSetAsCover = viewModel::setAsCover,
-                            onShare = { viewModel.shareImage(it) },
-                            onSave = viewModel::saveImage,
-                            onBlockPage = viewModel::blockPage,
-                            onUnblockPage = viewModel::unblockPage,
+                            onDismissRequest = { viewModel.onEvent(ReaderEvent.CloseDialog) },
+                            onSetAsCover = { viewModel.onEvent(ReaderEvent.SetAsCover) },
+                            onShare = { viewModel.onEvent(ReaderEvent.ShareImage(it)) },
+                            onSave = { viewModel.onEvent(ReaderEvent.SaveImage) },
+                            onBlockPage = { viewModel.onEvent(ReaderEvent.BlockPage) },
+                            onUnblockPage = { viewModel.onEvent(ReaderEvent.UnblockPage(it)) },
                             findMatchingBlockedHash = viewModel::findMatchingBlockedHash,
                         )
                     }
@@ -308,7 +309,7 @@ class ReaderActivity : BaseActivity() {
     }
 
     override fun onPause() {
-        viewModel.onActivityFinish()
+        viewModel.onEvent(ReaderEvent.ActivityFinish)
         super.onPause()
     }
 
@@ -330,7 +331,7 @@ class ReaderActivity : BaseActivity() {
     }
 
     override fun finish() {
-        viewModel.onActivityFinish()
+        viewModel.onEvent(ReaderEvent.ActivityFinish)
         super.finish()
         overrideTransitionCompat(
             Activity.OVERRIDE_TRANSITION_CLOSE,
@@ -407,7 +408,7 @@ class ReaderActivity : BaseActivity() {
             navigateUp = onBackPressedDispatcher::onBackPressed,
             onClickTopAppBar = ::openMangaScreen,
             bookmarked = state.bookmarked,
-            onToggleBookmarked = viewModel::toggleChapterBookmark,
+            onToggleBookmarked = { viewModel.onEvent(ReaderEvent.ToggleChapterBookmark) },
             onOpenInWebView = ::openChapterInWebView.takeIf { isHttpSource },
             onOpenInBrowser = ::openChapterInBrowser.takeIf { isHttpSource },
             onShare = ::shareChapter.takeIf { isHttpSource },
@@ -422,17 +423,17 @@ class ReaderActivity : BaseActivity() {
             onPageIndexChange = { moveToPageIndex(it) },
 
             readingMode = ReadingMode.fromPreference(viewModel.getMangaReadingMode()),
-            onClickReadingMode = { viewModel.openReadingModeSelectDialog() },
+            onClickReadingMode = { viewModel.onEvent(ReaderEvent.OpenReadingModeSelectDialog) },
             orientation = ReaderOrientation.fromPreference(viewModel.getMangaOrientation()),
-            onClickOrientation = { viewModel.openOrientationModeSelectDialog() },
+            onClickOrientation = { viewModel.onEvent(ReaderEvent.OpenOrientationModeSelectDialog) },
             cropEnabled = cropEnabled,
-            onClickCropBorder = { viewModel.toggleCropBorders() },
-            onClickSettings = { viewModel.openSettingsDialog() },
+            onClickCropBorder = { viewModel.onEvent(ReaderEvent.ToggleCropBorders) },
+            onClickSettings = { viewModel.onEvent(ReaderEvent.OpenSettingsDialog) },
         )
     }
 
     private fun setMenuVisibility(visible: Boolean) {
-        viewModel.showMenus(visible)
+        viewModel.onEvent(ReaderEvent.ShowMenus(visible))
         if (visible) {
             windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
         } else {
@@ -509,11 +510,11 @@ class ReaderActivity : BaseActivity() {
     }
 
     fun onPageSelected(page: ReaderPage) {
-        viewModel.onPageSelected(page)
+        viewModel.onEvent(ReaderEvent.PageSelected(page))
     }
 
     fun onPageLongTap(page: ReaderPage) {
-        viewModel.openPageDialog(page)
+        viewModel.onEvent(ReaderEvent.OpenPageDialog(page))
     }
 
     fun requestPreloadChapter(chapter: ReaderChapter) {
@@ -542,7 +543,12 @@ class ReaderActivity : BaseActivity() {
 
     fun onSaveImageResult(result: ReaderViewModel.SaveImageResult) {
         when (result) {
-            is ReaderViewModel.SaveImageResult.Success -> toast(MR.strings.picture_saved)
+            is ReaderViewModel.SaveImageResult.Success -> {
+                // Show the BigPicture notification here (Activity Context) — the ViewModel
+                // no longer holds a notifier reference, keeping it UI-framework-agnostic.
+                SaveImageNotifier(this).onComplete(result.uri)
+                toast(MR.strings.picture_saved)
+            }
             is ReaderViewModel.SaveImageResult.Error -> toast(result.error.message)
         }
     }
@@ -674,7 +680,8 @@ class ReaderActivity : BaseActivity() {
             TachiyomiImageDecoder.displayProfile = if (data.isNotEmpty()) {
                 try {
                     contentResolver.openInputStream(data.toUri())?.readBytes()
-                } catch (_: Exception) {
+                } catch (e: Exception) {
+                    logcat(LogPriority.WARN, e) { "Failed to read display ICC profile from URI; disabling colour management" }
                     null
                 }
             } else {

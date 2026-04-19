@@ -6,12 +6,16 @@ import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.chapter.interactor.GenerateAuthorityChapters
 import ephyra.domain.manga.interactor.FindContentSource
+import ephyra.domain.manga.interactor.GetDuplicateLibraryManga
+import ephyra.domain.manga.interactor.GetFavoritesByCanonicalId
+import ephyra.domain.manga.interactor.GetMangaByUrlAndSourceId
+import ephyra.domain.manga.interactor.NetworkToLocalManga
+import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.ContentType
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaUpdate
 import ephyra.domain.manga.model.MangaWithChapterCount
 import ephyra.domain.manga.model.mergedAlternativeTitles
-import ephyra.domain.manga.repository.MangaRepository
 import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.interactor.TrackerListImporter
@@ -24,7 +28,6 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
@@ -33,21 +36,17 @@ import org.koin.core.annotation.Factory
 @Factory
 class AuthoritySearchScreenModel(
     private val trackerManager: TrackerManager,
-    private val mangaRepository: MangaRepository,
+    private val getFavoritesByCanonicalId: GetFavoritesByCanonicalId,
+    private val getDuplicateLibraryManga: GetDuplicateLibraryManga,
+    private val getMangaByUrlAndSourceId: GetMangaByUrlAndSourceId,
+    private val networkToLocalManga: NetworkToLocalManga,
+    private val updateManga: UpdateManga,
     private val insertTrack: InsertTrack,
     private val generateAuthorityChapters: GenerateAuthorityChapters,
     private val findContentSource: FindContentSource,
 ) : StateScreenModel<AuthoritySearchState>(AuthoritySearchState()) {
 
     private var searchJob: Job? = null
-
-    /**
-     * All trackers available for authority search (regardless of content type).
-     * Includes logged-in authoritative trackers AND trackers with public search APIs.
-     * This allows discovery to work without login for trackers like MangaUpdates.
-     * Initialized asynchronously on IO to avoid blocking the main thread on DataStore reads.
-     */
-    private val allTrackers = MutableStateFlow<ImmutableList<Tracker>>(persistentListOf())
 
     init {
         screenModelScope.launch {
@@ -59,11 +58,11 @@ class AuthoritySearchScreenModel(
                     }
                     .toImmutableList()
             }
-            allTrackers.value = trackers
-            if (trackers.isNotEmpty()) {
-                mutableState.update { state ->
-                    state.copy(selectedTracker = state.selectedTracker ?: trackers.first())
-                }
+            mutableState.update { state ->
+                state.copy(
+                    availableTrackers = trackers,
+                    selectedTracker = state.selectedTracker ?: trackers.firstOrNull(),
+                )
             }
         }
     }
@@ -75,17 +74,37 @@ class AuthoritySearchScreenModel(
      * for that type — saving API calls by not querying irrelevant services.
      */
     fun trackersForFilter(contentType: ContentType): ImmutableList<Tracker> {
-        if (contentType == ContentType.UNKNOWN) return allTrackers.value
+        val available = mutableState.value.availableTrackers
+        if (contentType == ContentType.UNKNOWN) return available
         val validIds = AddTracks.trackersForContentType(contentType)
-        return allTrackers.value.filter { it.id in validIds }.toImmutableList()
+        return available.filter { it.id in validIds }.toImmutableList()
     }
 
-    fun selectTracker(tracker: Tracker) {
-        mutableState.value = mutableState.value.copy(
-            selectedTracker = tracker,
-            results = persistentListOf(),
-            query = "",
-        )
+    // ── UDF entry-point ──────────────────────────────────────────────────────
+    fun onEvent(event: AuthoritySearchScreenEvent) {
+        when (event) {
+            is AuthoritySearchScreenEvent.SelectTracker -> selectTracker(event.tracker)
+            is AuthoritySearchScreenEvent.SetContentTypeFilter -> setContentTypeFilter(event.contentType)
+            is AuthoritySearchScreenEvent.Search -> search(event.query)
+            is AuthoritySearchScreenEvent.AddToLibrary -> addToLibrary(event.result)
+            is AuthoritySearchScreenEvent.MergeWithExisting -> mergeWithExisting(event.candidate)
+            is AuthoritySearchScreenEvent.SkipMerge -> skipMerge()
+            is AuthoritySearchScreenEvent.DismissMergePrompt -> dismissMergePrompt()
+            is AuthoritySearchScreenEvent.DismissSourcePrompt -> dismissSourcePrompt()
+            is AuthoritySearchScreenEvent.SelectResult -> selectResult(event.result)
+            is AuthoritySearchScreenEvent.DismissDetail -> dismissDetail()
+            is AuthoritySearchScreenEvent.RetrySearch -> retrySearch()
+        }
+    }
+
+    private fun selectTracker(tracker: Tracker) {
+        mutableState.update {
+            it.copy(
+                selectedTracker = tracker,
+                results = persistentListOf(),
+                query = "",
+            )
+        }
     }
 
     /**
@@ -97,7 +116,7 @@ class AuthoritySearchScreenModel(
      * the new type, auto-selects the first tracker that does.
      * [ContentType.UNKNOWN] means "All types" (no filtering).
      */
-    fun setContentTypeFilter(contentType: ContentType) {
+    private fun setContentTypeFilter(contentType: ContentType) {
         val filteredTrackers = trackersForFilter(contentType)
         val currentTracker = mutableState.value.selectedTracker
 
@@ -108,39 +127,47 @@ class AuthoritySearchScreenModel(
             filteredTrackers.firstOrNull()
         }
 
-        mutableState.value = mutableState.value.copy(
-            contentTypeFilter = contentType,
-            selectedTracker = newTracker,
-            // Clear results when switching type — old results may not be relevant
-            results = persistentListOf(),
-        )
+        mutableState.update {
+            it.copy(
+                contentTypeFilter = contentType,
+                selectedTracker = newTracker,
+                // Clear results when switching type — old results may not be relevant
+                results = persistentListOf(),
+            )
+        }
     }
 
-    fun search(query: String) {
+    private fun search(query: String) {
         val tracker = mutableState.value.selectedTracker ?: return
         searchJob?.cancel()
-        mutableState.value = mutableState.value.copy(
-            query = query,
-            isSearching = true,
-            results = persistentListOf(),
-            searchError = null,
-        )
+        mutableState.update {
+            it.copy(
+                query = query,
+                isSearching = true,
+                results = persistentListOf(),
+                searchError = null,
+            )
+        }
         searchJob = screenModelScope.launch {
             try {
                 val results = withIOContext { tracker.search(query) }
-                mutableState.value = mutableState.value.copy(
-                    results = results.toImmutableList(),
-                    isSearching = false,
-                )
+                mutableState.update {
+                    it.copy(
+                        results = results.toImmutableList(),
+                        isSearching = false,
+                    )
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e) { "Authority search failed: query=$query" }
-                mutableState.value = mutableState.value.copy(
-                    isSearching = false,
-                    results = persistentListOf(),
-                    searchError = e.message ?: e.javaClass.simpleName,
-                )
+                mutableState.update {
+                    it.copy(
+                        isSearching = false,
+                        results = persistentListOf(),
+                        searchError = e.message ?: e.javaClass.simpleName,
+                    )
+                }
             }
         }
     }
@@ -151,44 +178,46 @@ class AuthoritySearchScreenModel(
      * that match by title. If found, prompts the user to merge instead.
      * If the tracker is logged in, also creates a tracker binding.
      */
-    fun addToLibrary(result: TrackSearch) {
+    private fun addToLibrary(result: TrackSearch) {
         val tracker = mutableState.value.selectedTracker ?: return
         val prefix = AddTracks.TRACKER_CANONICAL_PREFIXES[tracker.id] ?: return
         val canonicalId = "$prefix:${result.remote_id}"
 
         // Track loading state for this specific result
-        mutableState.value = mutableState.value.copy(
-            addingCanonicalIds = mutableState.value.addingCanonicalIds + canonicalId,
-        )
+        mutableState.update { it.copy(addingCanonicalIds = it.addingCanonicalIds + canonicalId) }
 
         screenModelScope.launch {
             try {
                 withIOContext {
                     // Reuse the same dedup logic as TrackerListImporter
-                    val existingByCanonical = mangaRepository.getFavoritesByCanonicalId(canonicalId, -1L)
+                    val existingByCanonical = getFavoritesByCanonicalId.await(canonicalId, -1L)
                     if (existingByCanonical.isNotEmpty()) {
                         // Already in library — just mark as added in UI
-                        mutableState.value = mutableState.value.copy(
-                            addedCanonicalIds = mutableState.value.addedCanonicalIds + canonicalId,
-                            addingCanonicalIds = mutableState.value.addingCanonicalIds - canonicalId,
-                        )
+                        mutableState.update { state ->
+                            state.copy(
+                                addedCanonicalIds = state.addedCanonicalIds + canonicalId,
+                                addingCanonicalIds = state.addingCanonicalIds - canonicalId,
+                            )
+                        }
                         return@withIOContext
                     }
 
                     // Check for unpaired library manga (no canonical ID) that match by title.
                     // If found, prompt the user to merge with existing content first.
-                    val unpairedMatches = mangaRepository.getDuplicateLibraryManga(-1L, result.title.lowercase())
+                    val unpairedMatches = getDuplicateLibraryManga.invoke(result.title)
                         .filter { it.manga.canonicalId == null }
                     if (unpairedMatches.isNotEmpty()) {
-                        mutableState.value = mutableState.value.copy(
-                            mergePrompt = MergePromptInfo(
-                                result = result,
-                                canonicalId = canonicalId,
-                                tracker = tracker,
-                                candidates = unpairedMatches.toImmutableList(),
-                            ),
-                            addingCanonicalIds = mutableState.value.addingCanonicalIds - canonicalId,
-                        )
+                        mutableState.update { state ->
+                            state.copy(
+                                mergePrompt = MergePromptInfo(
+                                    result = result,
+                                    canonicalId = canonicalId,
+                                    tracker = tracker,
+                                    candidates = unpairedMatches.toImmutableList(),
+                                ),
+                                addingCanonicalIds = state.addingCanonicalIds - canonicalId,
+                            )
+                        }
                         return@withIOContext
                     }
 
@@ -199,9 +228,7 @@ class AuthoritySearchScreenModel(
                 logcat(LogPriority.ERROR, e) { "Failed to add authority manga: canonical_id=$canonicalId" }
             } finally {
                 // Ensure loading state is cleared even on error
-                mutableState.value = mutableState.value.copy(
-                    addingCanonicalIds = mutableState.value.addingCanonicalIds - canonicalId,
-                )
+                mutableState.update { it.copy(addingCanonicalIds = it.addingCanonicalIds - canonicalId) }
             }
         }
     }
@@ -212,7 +239,7 @@ class AuthoritySearchScreenModel(
      * metadata (description, author, cover, alt titles) from the tracker result,
      * only filling fields that are currently missing.
      */
-    fun mergeWithExisting(candidate: MangaWithChapterCount) {
+    private fun mergeWithExisting(candidate: MangaWithChapterCount) {
         val prompt = mutableState.value.mergePrompt ?: return
         screenModelScope.launch {
             try {
@@ -220,7 +247,7 @@ class AuthoritySearchScreenModel(
                     // Assign canonical ID and enrich missing metadata from the authoritative result
                     val result = prompt.result
                     val manga = candidate.manga
-                    mangaRepository.update(
+                    updateManga.await(
                         MangaUpdate(
                             id = manga.id,
                             canonicalId = prompt.canonicalId,
@@ -269,14 +296,16 @@ class AuthoritySearchScreenModel(
                         insertTrack.await(track)
                     }
 
-                    mutableState.value = mutableState.value.copy(
-                        addedCanonicalIds = mutableState.value.addedCanonicalIds + prompt.canonicalId,
-                        mergePrompt = null,
-                    )
+                    mutableState.update { state ->
+                        state.copy(
+                            addedCanonicalIds = state.addedCanonicalIds + prompt.canonicalId,
+                            mergePrompt = null,
+                        )
+                    }
                 }
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e) { "Failed to merge with existing manga" }
-                mutableState.value = mutableState.value.copy(mergePrompt = null)
+                mutableState.update { it.copy(mergePrompt = null) }
             }
         }
     }
@@ -285,9 +314,9 @@ class AuthoritySearchScreenModel(
      * User declined to merge — create a new authority entry instead and proceed
      * to the find-source prompt.
      */
-    fun skipMerge() {
+    private fun skipMerge() {
         val prompt = mutableState.value.mergePrompt ?: return
-        mutableState.value = mutableState.value.copy(mergePrompt = null)
+        mutableState.update { it.copy(mergePrompt = null) }
         screenModelScope.launch {
             try {
                 withIOContext {
@@ -300,8 +329,8 @@ class AuthoritySearchScreenModel(
     }
 
     /** Dismiss the merge prompt without doing anything. */
-    fun dismissMergePrompt() {
-        mutableState.value = mutableState.value.copy(mergePrompt = null)
+    private fun dismissMergePrompt() {
+        mutableState.update { it.copy(mergePrompt = null) }
     }
 
     /**
@@ -313,7 +342,7 @@ class AuthoritySearchScreenModel(
         tracker: Tracker,
         canonicalId: String,
     ) {
-        val existingByUrl = mangaRepository.getMangaByUrlAndSourceId(
+        val existingByUrl = getMangaByUrlAndSourceId.await(
             canonicalId,
             TrackerListImporter.AUTHORITY_SOURCE_ID,
         )
@@ -331,13 +360,13 @@ class AuthoritySearchScreenModel(
                 description = result.summary.ifBlank { null },
                 initialized = true,
             )
-            val inserted = mangaRepository.insertNetworkManga(listOf(newManga))
+            val inserted = networkToLocalManga(listOf(newManga))
             inserted.firstOrNull() ?: return
         }
 
         // Mark as favourite and set content type from publishing_type
         val inferredType = ContentType.fromPublishingType(result.publishing_type)
-        mangaRepository.update(
+        updateManga.await(
             MangaUpdate(
                 id = manga.id,
                 favorite = true,
@@ -377,14 +406,16 @@ class AuthoritySearchScreenModel(
             )
         }
 
-        mutableState.value = mutableState.value.copy(
-            addedCanonicalIds = mutableState.value.addedCanonicalIds + canonicalId,
-            sourcePromptManga = SourcePromptInfo(
-                title = result.title,
-                mangaId = manga.id,
-                isSearching = true,
-            ),
-        )
+        mutableState.update { state ->
+            state.copy(
+                addedCanonicalIds = state.addedCanonicalIds + canonicalId,
+                sourcePromptManga = SourcePromptInfo(
+                    title = result.title,
+                    mangaId = manga.id,
+                    isSearching = true,
+                ),
+            )
+        }
 
         // Automatically search for content sources in the background
         autoSearchForSources(manga)
@@ -402,42 +433,44 @@ class AuthoritySearchScreenModel(
                 }
                 val currentPrompt = mutableState.value.sourcePromptManga ?: return@launch
                 if (currentPrompt.mangaId == manga.id) {
-                    mutableState.value = mutableState.value.copy(
-                        sourcePromptManga = currentPrompt.copy(
-                            sourceMatches = matches.toImmutableList(),
-                            isSearching = false,
-                        ),
-                    )
+                    mutableState.update {
+                        it.copy(
+                            sourcePromptManga = currentPrompt.copy(
+                                sourceMatches = matches.toImmutableList(),
+                                isSearching = false,
+                            ),
+                        )
+                    }
                 }
             } catch (e: Exception) {
                 logcat(LogPriority.WARN, e) { "Auto-search for sources failed" }
                 val currentPrompt = mutableState.value.sourcePromptManga ?: return@launch
                 if (currentPrompt.mangaId == manga.id) {
-                    mutableState.value = mutableState.value.copy(
-                        sourcePromptManga = currentPrompt.copy(isSearching = false),
-                    )
+                    mutableState.update {
+                        it.copy(sourcePromptManga = currentPrompt.copy(isSearching = false))
+                    }
                 }
             }
         }
     }
 
     /** Dismiss the source prompt dialog. */
-    fun dismissSourcePrompt() {
-        mutableState.value = mutableState.value.copy(sourcePromptManga = null)
+    private fun dismissSourcePrompt() {
+        mutableState.update { it.copy(sourcePromptManga = null) }
     }
 
     /** User tapped a result card to view full details. */
-    fun selectResult(result: TrackSearch) {
-        mutableState.value = mutableState.value.copy(selectedResult = result)
+    private fun selectResult(result: TrackSearch) {
+        mutableState.update { it.copy(selectedResult = result) }
     }
 
     /** Dismiss the detail view. */
-    fun dismissDetail() {
-        mutableState.value = mutableState.value.copy(selectedResult = null)
+    private fun dismissDetail() {
+        mutableState.update { it.copy(selectedResult = null) }
     }
 
     /** Retry the last failed search. */
-    fun retrySearch() {
+    private fun retrySearch() {
         val query = mutableState.value.query
         if (query.isNotBlank()) search(query)
     }
@@ -452,7 +485,7 @@ class AuthoritySearchScreenModel(
             addAll(result.alternative_titles)
         }
         val merged = manga.mergedAlternativeTitles(newTitles) ?: return
-        mangaRepository.update(
+        updateManga.await(
             MangaUpdate(id = manga.id, alternativeTitles = merged),
         )
     }
@@ -460,6 +493,8 @@ class AuthoritySearchScreenModel(
 
 data class AuthoritySearchState(
     val selectedTracker: Tracker? = null,
+    /** All trackers available for authority search, populated asynchronously on IO. */
+    val availableTrackers: ImmutableList<Tracker> = persistentListOf(),
     val query: String = "",
     val isSearching: Boolean = false,
     val results: ImmutableList<TrackSearch> = persistentListOf(),

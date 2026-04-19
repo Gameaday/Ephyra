@@ -122,20 +122,32 @@ abstract class SearchScreenModel(
         return result
     }
 
-    fun updateSearchQuery(query: String?) {
+    // ── UDF entry-point ──────────────────────────────────────────────────────
+    fun onEvent(event: SearchScreenEvent) {
+        when (event) {
+            is SearchScreenEvent.UpdateSearchQuery -> updateSearchQuery(event.query)
+            is SearchScreenEvent.SetSourceFilter -> setSourceFilter(event.filter)
+            is SearchScreenEvent.ToggleFilterResults -> toggleFilterResults()
+            is SearchScreenEvent.Search -> search()
+            is SearchScreenEvent.SetMigrateDialog -> setMigrateDialog(event.currentId, event.target)
+            is SearchScreenEvent.ClearDialog -> clearDialog()
+        }
+    }
+
+    protected fun updateSearchQuery(query: String?) {
         mutableState.update { it.copy(searchQuery = query) }
     }
 
-    fun setSourceFilter(filter: SourceFilter) {
+    protected fun setSourceFilter(filter: SourceFilter) {
         mutableState.update { it.copy(sourceFilter = filter) }
         search()
     }
 
-    fun toggleFilterResults() {
+    protected fun toggleFilterResults() {
         screenModelScope.launch { sourcePreferences.globalSearchFilterState().toggle() }
     }
 
-    fun search() {
+    protected fun search() {
         val query = state.value.searchQuery
         val sourceFilter = state.value.sourceFilter
 
@@ -216,14 +228,14 @@ abstract class SearchScreenModel(
         updateItems(newItems)
     }
 
-    fun setMigrateDialog(currentId: Long, target: Manga) {
+    protected fun setMigrateDialog(currentId: Long, target: Manga) {
         screenModelScope.launchIO {
             val current = getManga.await(currentId) ?: return@launchIO
             mutableState.update { it.copy(dialog = Dialog.Migrate(target, current)) }
         }
     }
 
-    fun clearDialog() {
+    protected fun clearDialog() {
         mutableState.update { it.copy(dialog = null) }
     }
 

@@ -46,12 +46,10 @@ import com.hippo.unifile.UniFile
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.storage.displayablePath
 import ephyra.core.common.util.lang.launchNonCancellable
-import ephyra.core.common.util.lang.withUIContext
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.logcat
-import ephyra.data.cache.ChapterCache
-import ephyra.data.export.LibraryExporter
-import ephyra.data.export.LibraryExporter.ExportOptions
+import ephyra.domain.chapter.service.ChapterCache
+import ephyra.domain.export.LibraryExporter
 import ephyra.domain.backup.service.BackupPreferences
 import ephyra.domain.backup.service.BackupScheduler
 import ephyra.domain.backup.service.RestoreScheduler
@@ -75,6 +73,7 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import logcat.LogPriority
 import org.koin.compose.koinInject
 
@@ -111,7 +110,7 @@ object SettingsDataScreen : SearchableSettings {
                 libraryPreferences = screenModel.libraryPreferences,
                 chapterCache = screenModel.chapterCache,
             ),
-            getExportGroup(getFavorites = screenModel.getFavorites),
+            getExportGroup(getFavorites = screenModel.getFavorites, libraryExporter = screenModel.libraryExporter),
         )
     }
 
@@ -317,13 +316,13 @@ object SettingsDataScreen : SearchableSettings {
                         scope.launchNonCancellable {
                             try {
                                 val deletedFiles = chapterCache.clear()
-                                withUIContext {
+                                withContext(Dispatchers.Main) {
                                     context.toast(context.stringResource(MR.strings.cache_deleted, deletedFiles))
                                     cacheReadableSizeSema++
                                 }
                             } catch (e: Throwable) {
                                 logcat(LogPriority.ERROR, e)
-                                withUIContext { context.toast(MR.strings.cache_delete_error) }
+                                withContext(Dispatchers.Main) { context.toast(MR.strings.cache_delete_error) }
                             }
                         }
                     },
@@ -337,11 +336,11 @@ object SettingsDataScreen : SearchableSettings {
     }
 
     @Composable
-    private fun getExportGroup(getFavorites: GetFavorites): Preference.PreferenceGroup {
+    private fun getExportGroup(getFavorites: GetFavorites, libraryExporter: LibraryExporter): Preference.PreferenceGroup {
         var showDialog by remember { mutableStateOf(false) }
         var exportOptions by remember {
             mutableStateOf(
-                ExportOptions(
+                LibraryExporter.ExportOptions(
                     includeTitle = true,
                     includeAuthor = true,
                     includeArtist = true,
@@ -361,9 +360,8 @@ object SettingsDataScreen : SearchableSettings {
         ) { uri ->
             uri?.let {
                 scope.launch {
-                    LibraryExporter.exportToCsv(
-                        context = context,
-                        uri = it,
+                    libraryExporter.exportToCsv(
+                        uriString = it.toString(),
                         favorites = favorites,
                         options = exportOptions,
                         onExportComplete = {
@@ -400,8 +398,8 @@ object SettingsDataScreen : SearchableSettings {
 
     @Composable
     private fun ColumnSelectionDialog(
-        options: ExportOptions,
-        onConfirm: (ExportOptions) -> Unit,
+        options: LibraryExporter.ExportOptions,
+        onConfirm: (LibraryExporter.ExportOptions) -> Unit,
         onDismissRequest: () -> Unit,
     ) {
         var titleSelected by remember { mutableStateOf(options.includeTitle) }
@@ -452,7 +450,7 @@ object SettingsDataScreen : SearchableSettings {
                 TextButton(
                     onClick = {
                         onConfirm(
-                            ExportOptions(
+                            LibraryExporter.ExportOptions(
                                 includeTitle = titleSelected,
                                 includeAuthor = authorSelected,
                                 includeArtist = artistSelected,
