@@ -142,7 +142,23 @@ class AppModuleImplementationContractTest {
         }
     }
 
-    // ── TrackerManager ────────────────────────────────────────────────────────
+    /**
+     * [koinAppModule] registers [CoreDownloadManager] only under the domain [DomainDownloadManager]
+     * interface.  [ephyra.app.data.notification.NotificationReceiver] must therefore inject the
+     * domain interface, not the concrete class.
+     *
+     * This test acts as a compile-time guard: if [NotificationReceiver] is changed to inject
+     * [CoreDownloadManager] directly, Koin will throw [org.koin.core.error.NoBeanDefFoundException]
+     * at runtime (any download notification tap will crash).
+     */
+    @Test
+    fun `core DownloadManager implements domain DownloadManager — required for NotificationReceiver injection`() {
+        assertTrue(DomainDownloadManager::class.java.isAssignableFrom(CoreDownloadManager::class.java)) {
+            "ephyra.core.download.DownloadManager must implement ephyra.domain.download.service.DownloadManager. " +
+                "NotificationReceiver injects DomainDownloadManager; if CoreDownloadManager stops implementing " +
+                "this interface the Koin binding will break."
+        }
+    }
 
     /**
      * [koinAppModule] binds [TrackerManagerImpl] as [TrackerManager].

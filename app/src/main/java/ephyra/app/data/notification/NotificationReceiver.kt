@@ -15,11 +15,11 @@ import ephyra.core.common.Constants
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.withUIContext
 import ephyra.core.common.util.system.cancelNotification
-import ephyra.core.download.DownloadManager
 import ephyra.domain.chapter.interactor.GetChapter
 import ephyra.domain.chapter.interactor.UpdateChapter
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.model.toChapterUpdate
+import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.download.service.DownloadPreferences
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.model.Manga
