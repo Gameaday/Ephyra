@@ -46,6 +46,8 @@ import ephyra.data.backup.restore.restorers.MangaRestorer
 import ephyra.data.backup.restore.restorers.PreferenceRestorer
 import ephyra.data.cache.ChapterCache
 import ephyra.data.cache.CoverCache
+import ephyra.domain.chapter.service.ChapterCache as IChapterCache
+import ephyra.domain.manga.service.CoverCache as ICoverCache
 import ephyra.data.coil.MangaCoverFetcher
 import ephyra.data.coil.MangaCoverKeyer
 import ephyra.data.coil.MangaKeyer
@@ -90,6 +92,7 @@ import nl.adaptivity.xmlutil.serialization.XML
 import org.koin.android.ext.koin.androidApplication
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.workmanager.dsl.worker
+import org.koin.dsl.bind
 import org.koin.dsl.module
 import ephyra.app.BuildConfig as AppBuildConfig
 import ephyra.presentation.core.ui.delegate.SecureActivityDelegate as CoreSecureActivityDelegate
@@ -168,8 +171,8 @@ val koinAppModule = module {
                 get() = if (isPreview) "Gameaday/Ephyra-preview" else "Gameaday/Ephyra"
         }
     }
-    single { ChapterCache(androidApplication(), get()) }
-    single { CoverCache(androidApplication()) }
+    single { ChapterCache(androidApplication(), get()) } bind IChapterCache::class
+    single { CoverCache(androidApplication()) } bind ICoverCache::class
     single { MangaKeyer(get()) }
     single<ephyra.presentation.core.util.AppNavigator> { ephyra.app.util.NavigatorImpl() }
     single<ephyra.core.common.notification.NotificationManager> {
