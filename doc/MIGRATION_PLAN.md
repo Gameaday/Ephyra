@@ -243,3 +243,47 @@ formally accepted and documented) before this PR is considered merge-ready:
   domain interactors for the missing query paths (e.g. `GetChaptersByMangaId` with
   `applyScanlatorFilter`, excluded-scanlators, `GetMangaSourceAndUrl`, backup track mapper)
   before the handler can be removed.  Blocking dependency for full SQLDelight retirement.
+
+---
+
+## Phase 9: Boot-Safety Round 2 — GlobalContext Audit
+
+Audit and eliminate all remaining `GlobalContext.get()` call-sites in app/non-extension source.
+
+### Resolved in this phase
+
+- [x] **`presentation-core/TachiyomiTextInputEditText`** — `scope!!` force-unwrap eliminated
+  (local val `newScope` mirrors the `app/` pattern).  `GlobalContext.get().get<BasePreferences>()`
+  replaced with `KoinComponent + by inject()`.  The now-redundant single-argument
+  `setIncognito(viewScope)` companion overload that hid a `GlobalContext` call was removed;
+  the only remaining overload is the explicit `setIncognito(viewScope, preferences)` form.
+- [x] **`app/TachiyomiTextInputEditText`** — same pattern; `GlobalContext.get().get()` replaced
+  with `KoinComponent + by inject()`.
+- [x] **`SourcePreferencesFragment`** — call-site of the now-removed single-arg `setIncognito`
+  updated to the 2-arg form; `BasePreferences` injected into the fragment via `by inject()`.
+- [x] **`DownloadCache.UniFileAsStringSerializer`** — the `object` serializer that called
+  `GlobalContext.get().get<Application>()` in its `deserialize` path has been replaced with a
+  proper design: `DownloadCache`'s constructor now takes `Application` (was `Context`; Koin
+  already passed `androidApplication()`), a `private val proto: ProtoBuf` field is
+  constructed with a `SerializersModule` that registers `UniFileSerializer(context)`, and the
+  three `@Serializable(with = UniFileAsStringSerializer::class)` field annotations are replaced
+  with `@Contextual`.  `GlobalContext` import removed from `DownloadCache.kt`.
+
+### Accepted / out-of-scope GlobalContext usages
+
+The following `GlobalContext` usages remain and are intentionally out of scope for this PR:
+
+| File | Reason accepted |
+|---|---|
+| `source-api/HttpSource.kt` | Extension-facing public API; changing it would break all existing extensions. Extension API stability is a hard constraint. |
+| `source-api/ConfigurableSource.kt` | Same as above. |
+| `source-local/LocalSource.kt` | Tightly coupled to source-api extension contract; both `json` and `xml` are lazy and only accessed after Koin starts. |
+| `Injekt.kt` | Legacy shim for extensions that still use the Injekt service locator. Delegates to Koin's `GlobalContext`. Safe: only called from extension code after startup. |
+| `MigrationContext.kt` | Uses `GlobalContext.getOrNull()` — explicitly tolerates "Koin not started" by returning null. This is the correct pattern for migration code. |
+
+### Remaining merge-blocking items
+
+1. **Room versioned migrations** — replace `fallbackToDestructiveMigration` with explicit
+   `Migration` objects before any production schema change.
+2. **SQLDelight backup retirement** — backup restorer/creator classes still depend on
+   `DatabaseHandler`.  Requires domain interactor coverage first.

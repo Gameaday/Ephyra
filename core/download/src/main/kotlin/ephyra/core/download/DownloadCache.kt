@@ -1,7 +1,6 @@
 package ephyra.core.download
 
 import android.app.Application
-import android.content.Context
 import androidx.core.net.toUri
 import com.hippo.unifile.UniFile
 import ephyra.core.common.storage.extension
@@ -41,6 +40,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -51,9 +51,10 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encodeToByteArray
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.contextual
 import kotlinx.serialization.protobuf.ProtoBuf
 import logcat.LogPriority
-import org.koin.core.context.GlobalContext
 import java.io.File
 import kotlin.time.Duration.Companion.hours
 
@@ -64,7 +65,7 @@ import kotlin.time.Duration.Companion.hours
  * delete the folders at any time without the app noticing.
  */
 class DownloadCache(
-    private val context: Context,
+    private val context: Application,
     private val provider: DownloadProvider,
     private val sourceManager: SourceManager,
     private val storageManager: StorageManager,
@@ -99,6 +100,19 @@ class DownloadCache(
     private val diskCacheFile: File
         get() = File(context.cacheDir, "dl_index_cache_v3")
 
+    /**
+     * A ProtoBuf instance configured with a [SerializersModule] that provides a
+     * context-aware [UniFileSerializer] for [UniFile].  This avoids any dependency on
+     * [GlobalContext] inside the serializer; the [Application] reference is captured
+     * once at DownloadCache construction time.
+     */
+    @OptIn(ExperimentalSerializationApi::class)
+    private val proto = ProtoBuf {
+        serializersModule = SerializersModule {
+            contextual(UniFile::class, UniFileSerializer(context))
+        }
+    }
+
     private val rootDownloadsDirMutex = Mutex()
     private var rootDownloadsDir = RootDirectory(storageManager.getDownloadsDirectory())
 
@@ -120,7 +134,7 @@ class DownloadCache(
                     if (diskCacheFile.exists()) {
                         @OptIn(ExperimentalSerializationApi::class)
                         val diskCache = diskCacheFile.inputStream().use {
-                            ProtoBuf.decodeFromByteArray<RootDirectory>(it.readBytes())
+                            proto.decodeFromByteArray<RootDirectory>(it.readBytes())
                         }
                         rootDownloadsDir = diskCache
                     }
@@ -473,7 +487,7 @@ class DownloadCache(
             delay(1000)
             ensureActive()
             @OptIn(ExperimentalSerializationApi::class)
-            val bytes = ProtoBuf.encodeToByteArray(rootDownloadsDir)
+            val bytes = proto.encodeToByteArray(rootDownloadsDir)
             ensureActive()
             try {
                 diskCacheFile.writeBytes(bytes)
@@ -493,7 +507,7 @@ class DownloadCache(
  */
 @Serializable
 private class RootDirectory(
-    @Serializable(with = UniFileAsStringSerializer::class)
+    @Contextual
     val dir: UniFile?,
     var sourceDirs: Map<Long, SourceDirectory> = mapOf(),
 )
@@ -503,7 +517,7 @@ private class RootDirectory(
  */
 @Serializable
 private class SourceDirectory(
-    @Serializable(with = UniFileAsStringSerializer::class)
+    @Contextual
     val dir: UniFile?,
     var mangaDirs: Map<String, MangaDirectory> = mapOf(),
 )
@@ -513,27 +527,29 @@ private class SourceDirectory(
  */
 @Serializable
 private class MangaDirectory(
-    @Serializable(with = UniFileAsStringSerializer::class)
+    @Contextual
     val dir: UniFile?,
     var chapterDirs: MutableSet<String> = mutableSetOf(),
 )
 
-private object UniFileAsStringSerializer : KSerializer<UniFile?> {
+/**
+ * Serializes a [UniFile] to/from its URI string form.  The [context] is captured at
+ * [DownloadCache] construction time, eliminating any dependency on [GlobalContext].
+ *
+ * NOTE: Only the non-null form of [UniFile] is handled here.  Field-level nullability
+ * (`UniFile?`) is managed by the serialization framework via [Contextual] + the nullable
+ * wrapper that kotlinx.serialization applies automatically.
+ */
+private class UniFileSerializer(private val context: Application) : KSerializer<UniFile> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("UniFile", PrimitiveKind.STRING)
 
-    override fun serialize(encoder: Encoder, value: UniFile?) {
-        return if (value == null) {
-            encoder.encodeNull()
-        } else {
-            encoder.encodeString(value.uri.toString())
-        }
+    override fun serialize(encoder: Encoder, value: UniFile) {
+        encoder.encodeString(value.uri.toString())
     }
 
-    override fun deserialize(decoder: Decoder): UniFile? {
-        return if (decoder.decodeNotNullMark()) {
-            UniFile.fromUri(GlobalContext.get().get<Application>(), decoder.decodeString().toUri())
-        } else {
-            decoder.decodeNull()
+    override fun deserialize(decoder: Decoder): UniFile {
+        return requireNotNull(UniFile.fromUri(context, decoder.decodeString().toUri())) {
+            "Failed to resolve a UniFile from the stored URI — the download cache will be rebuilt."
         }
     }
 }

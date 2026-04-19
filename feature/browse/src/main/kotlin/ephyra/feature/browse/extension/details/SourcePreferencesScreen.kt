@@ -31,6 +31,7 @@ import androidx.preference.forEach
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.presentation.core.preference.SharedPreferencesDataStore
+import ephyra.domain.base.BasePreferences
 import ephyra.domain.source.service.SourceManager
 import ephyra.core.common.util.system.logcat
 import logcat.LogPriority
@@ -121,6 +122,7 @@ class SourcePreferencesScreen(val sourceId: Long) : Screen() {
 
 class SourcePreferencesFragment : PreferenceFragmentCompat() {
     private val sourceManager: SourceManager by inject()
+    private val basePreferences: BasePreferences by inject()
 
     override fun getContext(): Context? {
         val superCtx = super.getContext() ?: return null
@@ -163,7 +165,7 @@ class SourcePreferencesFragment : PreferenceFragmentCompat() {
                     }
                     pref.setOnBindEditTextListener {
                         setListener?.onBindEditText(it)
-                        it.setIncognito(lifecycleScope)
+                        it.setIncognito(lifecycleScope, basePreferences)
                     }
                 }
             }
