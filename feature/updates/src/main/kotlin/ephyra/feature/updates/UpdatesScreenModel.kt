@@ -35,6 +35,7 @@ import kotlinx.collections.immutable.mutate
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
@@ -51,6 +52,7 @@ import kotlinx.coroutines.launch
 import logcat.LogPriority
 import org.koin.core.annotation.Factory
 import java.time.ZonedDateTime
+import kotlin.time.Duration.Companion.seconds
 
 @Factory
 class UpdatesScreenModel(
@@ -211,6 +213,13 @@ class UpdatesScreenModel(
 
     private fun updateLibrary(): Boolean {
         val started = libraryUpdateScheduler.startNow()
+        if (started) {
+            mutableState.update { it.copy(isLibraryUpdating = true) }
+            screenModelScope.launch {
+                delay(1.seconds)
+                mutableState.update { it.copy(isLibraryUpdating = false) }
+            }
+        }
         screenModelScope.launch {
             _events.send(Event.LibraryUpdateTriggered(started))
         }
@@ -481,6 +490,7 @@ class UpdatesScreenModel(
     data class State(
         val isLoading: Boolean = true,
         val hasActiveFilters: Boolean = false,
+        val isLibraryUpdating: Boolean = false,
         val items: PersistentList<UpdatesItem> = persistentListOf(),
         val dialog: Dialog? = null,
     ) {

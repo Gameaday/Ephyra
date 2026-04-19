@@ -59,6 +59,7 @@ data object UpdatesTab : Tab {
             state = state,
             snackbarHostState = screenModel.snackbarHostState,
             lastUpdated = screenModel.lastUpdated,
+            isRefreshing = state.isLibraryUpdating,
             onClickCover = { item -> navigator.push(MangaScreen(item.update.mangaId)) },
             onSelectAll = { screenModel.onEvent(UpdatesScreenEvent.ToggleAllSelection(it)) },
             onInvertSelection = { screenModel.onEvent(UpdatesScreenEvent.InvertSelection) },

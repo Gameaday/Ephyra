@@ -29,7 +29,7 @@ enum class ReaderOrientation(
         0x00000008,
     ),
     PORTRAIT(
-        flag = 4, // ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+        flag = 7, // ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
         MR.strings.rotation_portrait,
         0x00000010,
     ),

@@ -16,10 +16,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
@@ -37,18 +33,16 @@ import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.theme.active
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import java.time.LocalDate
 import kotlin.collections.isNotEmpty
 import kotlin.compareTo
-import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun UpdateScreen(
     state: UpdatesScreenModel.State,
     snackbarHostState: SnackbarHostState,
     lastUpdated: Long,
+    isRefreshing: Boolean,
     onClickCover: (UpdatesItem) -> Unit,
     onSelectAll: (Boolean) -> Unit,
     onInvertSelection: () -> Unit,
@@ -99,20 +93,9 @@ fun UpdateScreen(
                 modifier = Modifier.padding(contentPadding),
             )
             else -> {
-                val scope = rememberCoroutineScope()
-                var isRefreshing by remember { mutableStateOf(false) }
-
                 PullRefresh(
                     refreshing = isRefreshing,
-                    onRefresh = {
-                        onUpdateLibrary()
-                        scope.launch {
-                            // Fake refresh status but hide it after a second as it's a long running task
-                            isRefreshing = true
-                            delay(1.seconds)
-                            isRefreshing = false
-                        }
-                    },
+                    onRefresh = { onUpdateLibrary() },
                     enabled = !state.selectionMode,
                     indicatorPadding = contentPadding,
                 ) {

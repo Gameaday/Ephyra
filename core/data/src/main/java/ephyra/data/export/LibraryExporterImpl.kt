@@ -27,8 +27,10 @@ class LibraryExporterImpl(private val context: Context) : LibraryExporter {
                 val csvData = generateCsvData(favorites, options)
                 outputStream.write(csvData.toByteArray())
             }
-            onExportComplete()
         }
+        // Invoke the callback on the caller's dispatcher (outside IO), so any UI updates
+        // made inside this callback run on the correct thread.
+        onExportComplete()
     }
 
     private val escapeRequired = listOf("\r", "\n", "\"", ",")
