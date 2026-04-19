@@ -3,7 +3,7 @@ package ephyra.core.common.notification
 /**
  * Notification channel IDs and notification IDs used by the application.
  *
- * Lives in `core/common` so that any module (including `feature/*`) can reference
+ * Lives in `core/common` so that any module (including feature modules) can reference
  * these constants without taking a dependency on the `data` layer.
  *
  * The [ephyra.data.notification.Notifications] object in `:data` handles channel
