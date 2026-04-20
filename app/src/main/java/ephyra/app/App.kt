@@ -278,12 +278,12 @@ class App : Application(), Configuration.Provider, DefaultLifecycleObserver, Sin
         ProcessLifecycleOwner.get().lifecycleScope.launch(Dispatchers.IO) {
             try {
                 // Apply a bounded timeout so that a stuck or slow DataStore (e.g. locked
-                // storage, first-launch SharedPreferences migration) cannot keep initGate
-                // pending forever.  Without this, Migrator.awaitAndRelease() in MainActivity
-                // would wait for the full MIGRATION_TIMEOUT_MS (30 s) before the UI renders,
-                // leaving users on a blank screen.  If the read times out we default to 0
-                // (fresh-install path) which runs only Migration.ALWAYS migrations — the
-                // safest conservative fallback.
+                // storage) cannot keep initGate pending forever.  Without this,
+                // Migrator.awaitAndRelease() in MainActivity would wait for the full
+                // MIGRATION_TIMEOUT_MS (30 s) before the UI renders, leaving users on a
+                // blank screen.  If the read times out we default to 0 (fresh-install path)
+                // which runs only Migration.ALWAYS migrations — the safest conservative
+                // fallback.
                 val old = withTimeoutOrNull(PREFERENCE_READ_TIMEOUT_MS) { preference.get() }
                     ?: run {
                         logcat(LogPriority.WARN) {
