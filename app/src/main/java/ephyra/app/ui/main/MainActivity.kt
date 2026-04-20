@@ -83,8 +83,8 @@ import ephyra.presentation.core.components.DownloadedOnlyBannerBackgroundColor
 import ephyra.presentation.core.components.IncognitoModeBannerBackgroundColor
 import ephyra.presentation.core.components.IndexingBannerBackgroundColor
 import ephyra.presentation.core.components.material.Scaffold
-import ephyra.presentation.core.ui.AppInfo
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.ui.AppInfo
 import ephyra.presentation.core.ui.AppReadySignal
 import ephyra.presentation.core.ui.activity.BaseActivity
 import ephyra.presentation.core.util.AssistContentScreen
@@ -150,6 +150,10 @@ class MainActivity : BaseActivity(), AppReadySignal {
 
         // Do not let the launcher create a new activity http://stackoverflow.com/questions/16283079
         if (!isTaskRoot) {
+            // Dismiss the splash immediately – setKeepOnScreenCondition is never reached in this
+            // early-exit path, so without this the compat library may leave the splash visible
+            // until the window is destroyed (potentially causing a brief frozen-splash flash).
+            splashScreen?.setKeepOnScreenCondition { false }
             finish()
             return
         }
@@ -172,7 +176,9 @@ class MainActivity : BaseActivity(), AppReadySignal {
                             // Timeout: awaitAndRelease() was cancelled before release() ran,
                             // so manually release to avoid holding the deferred reference.
                             Migrator.release()
-                            logcat(LogPriority.WARN) { "Migrator.awaitAndRelease() timed out after ${MIGRATION_TIMEOUT_MS}ms – continuing startup" }
+                            logcat(LogPriority.WARN) {
+                                "Migrator.awaitAndRelease() timed out after ${MIGRATION_TIMEOUT_MS}ms – continuing startup"
+                            }
                         }
                         didMigration = result ?: false
                     } catch (e: CancellationException) {
@@ -180,7 +186,9 @@ class MainActivity : BaseActivity(), AppReadySignal {
                     } catch (e: Exception) {
                         // An unexpected exception from the migration deferred itself:
                         // record it for the diagnostic overlay and continue startup.
-                        logcat(LogPriority.ERROR, e) { "Migrator.awaitAndRelease() threw unexpectedly – continuing startup" }
+                        logcat(LogPriority.ERROR, e) {
+                            "Migrator.awaitAndRelease() threw unexpectedly – continuing startup"
+                        }
                         StartupTracker.recordError(StartupTracker.Phase.MIGRATOR_COMPLETE, e)
                         Migrator.release()
                         didMigration = false
@@ -505,7 +513,11 @@ class MainActivity : BaseActivity(), AppReadySignal {
 
         // Splash screen
         private const val SPLASH_MIN_DURATION = 500 // ms
-        private const val SPLASH_MAX_DURATION = 5000 // ms
+
+        // Maximum time the splash can be held waiting for signalReady().  A fresh empty app
+        // should become ready in well under 1 s; 3 s gives plenty of margin for slow I/O on
+        // first install while avoiding a 5 s frozen-looking experience.
+        private const val SPLASH_MAX_DURATION = 3000 // ms
 
         // Maximum time to wait for the Migrator before proceeding with startup.
         // This prevents an unexpected exception in App.initializeMigrator() from
