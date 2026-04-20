@@ -110,6 +110,17 @@ class App : Application(), Configuration.Provider, DefaultLifecycleObserver, Sin
         super<Application>.onCreate()
         StartupTracker.complete(StartupTracker.Phase.APP_CREATED)
 
+        // Install the logger as early as possible so every subsequent logcat() call —
+        // including those inside startKoin(), StartupTracker, and any catch blocks — is
+        // captured rather than silently dropped.  Without this, the entire window from
+        // APP_CREATED through KOIN_INITIALIZED is a "log blackout", making cold-start and
+        // boot-failure diagnosis blind.  We pick the right minimum priority immediately
+        // (no Koin needed) and upgrade to VERBOSE after Koin if the user opted in.
+        if (!LogcatLogger.isInstalled) {
+            LogcatLogger.install()
+            LogcatLogger.loggers += AndroidLogcatLogger(if (BuildConfig.DEBUG) LogPriority.DEBUG else LogPriority.INFO)
+        }
+
         // Install the crash handler first so any subsequent failure in onCreate is
         // captured and surfaced via CrashActivity instead of dying silently.
         GlobalExceptionHandler.initialize(applicationContext, CrashActivity::class.java)
@@ -250,20 +261,19 @@ class App : Application(), Configuration.Provider, DefaultLifecycleObserver, Sin
         // Updates widget update
         WidgetManager(get(), get()).apply { init(scope) }
 
-        if (!LogcatLogger.isInstalled) {
-            val minLogPriority = try {
-                when {
-                    networkPreferences.verboseLogging().getSync() -> LogPriority.VERBOSE
-                    BuildConfig.DEBUG -> LogPriority.DEBUG
-                    else -> LogPriority.INFO
-                }
-            } catch (e: Exception) {
-                // Preference snapshot unavailable; choose a safe default.
-                logcat(LogPriority.WARN, e) { "Failed to read verboseLogging; defaulting log priority" }
-                if (BuildConfig.DEBUG) LogPriority.DEBUG else LogPriority.INFO
+        // LogcatLogger was installed at the top of onCreate() with a base priority.
+        // Upgrade to VERBOSE now if the user has enabled verbose logging — Koin is ready
+        // so networkPreferences is available.  We add alongside the existing logger rather
+        // than replacing it: replacing requires clear()+add() which creates a brief empty-
+        // list window where concurrent log calls could be dropped.  In verbose mode the
+        // DEBUG/INFO/WARN/ERROR messages will appear via both loggers, which is acceptable
+        // for this developer-only setting.
+        try {
+            if (networkPreferences.verboseLogging().getSync()) {
+                LogcatLogger.loggers += AndroidLogcatLogger(LogPriority.VERBOSE)
             }
-            LogcatLogger.install()
-            LogcatLogger.loggers += AndroidLogcatLogger(minLogPriority)
+        } catch (e: Exception) {
+            logcat(LogPriority.WARN, e) { "Failed to read verboseLogging; keeping default log priority" }
         }
 
         initializeMigrator()
@@ -438,7 +448,7 @@ class App : Application(), Configuration.Provider, DefaultLifecycleObserver, Sin
     }
 
     companion object {
-        private const val ACTION_DISABLE_INCOGNITO_MODE = "tachi.action.DISABLE_INCOGNITO_MODE"
+        private const val ACTION_DISABLE_INCOGNITO_MODE = "ephyra.app.DISABLE_INCOGNITO_MODE"
 
         /**
          * Maximum time to wait for the DataStore preference read in [initializeMigrator].
