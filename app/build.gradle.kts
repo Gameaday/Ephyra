@@ -353,6 +353,7 @@ buildscript {
 }
 
 koinCompiler {
-    // TODO: Enable when Koin Annotations supports @ExternalDefinitions (expected in Koin 1.4+)
-    compileSafety.set(false)
+    compileSafety.set(true)
+    // Link feature-module @Factory/@Single annotations against core DSL definitions
+    callSiteValidation.set(true)
 }

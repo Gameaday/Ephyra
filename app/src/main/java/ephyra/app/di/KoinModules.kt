@@ -1,10 +1,7 @@
 package ephyra.app.di
 
 import ephyra.app.ui.deeplink.DeepLinkScreenModel
-import ephyra.feature.category.CategoryScreenModel
 import ephyra.feature.download.DownloadQueueScreenModel
-import ephyra.feature.manga.CoverSearchScreenModel
-import ephyra.feature.manga.MangaCoverScreenModel
 import ephyra.feature.migration.config.MigrationConfigScreen
 import ephyra.feature.migration.dialog.MigrateDialogScreenModel
 import ephyra.feature.migration.list.MigrationListScreenModel
@@ -29,6 +26,7 @@ import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
 val koinAppModule_UI = module {
+    // Parametrized factories: @InjectedParam-style lambdas cannot be replaced with :: references
     factory { (mangaIds: Collection<Long>, extraSearchQuery: String?) ->
         MigrationListScreenModel(
             mangaIds = mangaIds,
@@ -45,16 +43,10 @@ val koinAppModule_UI = module {
         )
     }
 
-    factory {
-        CategoryScreenModel(
-            getCategories = get(),
-            createCategoryWithName = get(),
-            deleteCategory = get(),
-            reorderCategory = get(),
-            renameCategory = get(),
-        )
-    }
+    // CategoryScreenModel is registered via @Factory in :feature:category — removed here.
 
+    // ReaderViewModel requires a platform-provided SavedStateHandle (not from the DI graph)
+    // and the Android Application reference, so the explicit lambda is retained.
     viewModel {
         ReaderViewModel(
             savedState = get(),
@@ -82,24 +74,11 @@ val koinAppModule_UI = module {
             chapterCache = get(),
         )
     }
-    factory {
-        ExtensionReposScreenModel(
-            getExtensionRepo = get(),
-            createExtensionRepo = get(),
-            deleteExtensionRepo = get(),
-            replaceExtensionRepo = get(),
-            updateExtensionRepo = get(),
-            extensionManager = get(),
-        )
-    }
 
-    factory {
-        ClearDatabaseScreenModel(
-            getSourcesWithNonLibraryManga = get(),
-            deleteNonLibraryManga = get(),
-            removeResettedHistory = get(),
-        )
-    }
+    factory(::ExtensionReposScreenModel)
+    factory(::ClearDatabaseScreenModel)
+
+    // Parametrized factory: query is an @InjectedParam, keep explicit lambda.
     factory { (query: String) ->
         DeepLinkScreenModel(
             query = query,
@@ -110,32 +89,25 @@ val koinAppModule_UI = module {
         )
     }
 
-    factory { DownloadQueueScreenModel(get()) }
-    factory { (mangaId: Long) ->
-        MangaCoverScreenModel(mangaId, get(), get(), get(), get(), get(), get(), get(), get(), get())
-    }
-    factory { (title: String, sourceId: Long) -> CoverSearchScreenModel(title, sourceId, get()) }
-    factory { MigrationConfigScreen.ScreenModel(get(), get()) }
-    factory { UpcomingScreenModel(get()) }
+    factory(::DownloadQueueScreenModel)
+
+    // MangaCoverScreenModel and CoverSearchScreenModel are registered via @Factory + @InjectedParam
+    // in :feature:manga — removed here.
+
+    factory(MigrationConfigScreen::ScreenModel)
+    factory(::UpcomingScreenModel)
     factory { WorkerInfoScreen.Model(androidContext(), get()) }
 
-    factory {
-        MigrateDialogScreenModel(
-            sourcePreference = get(),
-            coverCache = get(),
-            downloadManager = get(),
-            migrateManga = get(),
-        )
-    }
-
-    factory { AboutScreenModel(get(), get(), get()) }
-    factory { SettingsDownloadScreenModel(get(), get(), get(), get(), get()) }
-    factory { SettingsDataScreenModel(get(), get(), get(), get(), get(), get()) }
-    factory { SettingsBrowseScreenModel(get(), get()) }
-    factory { SettingsLibraryScreenModel(get(), get(), get()) }
-    factory { SettingsTrackingScreenModel(get(), get(), get(), get(), get(), get()) }
-    factory { SettingsAppearanceScreenModel(get()) }
-    factory { SettingsReaderScreenModel(get()) }
-    factory { SettingsSecurityScreenModel(get(), get()) }
-    factory { SettingsAdvancedScreenModel(get(), get(), get(), get(), get(), get(), get(), get()) }
+    factory(::MigrateDialogScreenModel)
+    factory(::AboutScreenModel)
+    factory(::SettingsDownloadScreenModel)
+    factory(::SettingsDataScreenModel)
+    factory(::SettingsBrowseScreenModel)
+    factory(::SettingsLibraryScreenModel)
+    factory(::SettingsTrackingScreenModel)
+    factory(::SettingsAppearanceScreenModel)
+    factory(::SettingsReaderScreenModel)
+    factory(::SettingsSecurityScreenModel)
+    factory(::SettingsAdvancedScreenModel)
 }
+

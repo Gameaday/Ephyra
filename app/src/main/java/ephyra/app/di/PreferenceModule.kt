@@ -32,46 +32,24 @@ val koinPreferenceModule = module {
             verboseLogging = isDebugBuildType,
         )
     }
-    single {
-        SourcePreferences(get())
-    }
-    single {
-        SecurityPreferences(get())
-    }
-    single {
-        PrivacyPreferences(get())
-    }
-    single {
-        LibraryPreferences(get())
-    }
-    single {
-        UpdatesPreferences(get())
-    }
-    single {
-        ReaderPreferences(get())
-    }
-    single {
-        TrackPreferences(get())
-    }
-    single {
-        DownloadPreferences(get())
-    }
-    single {
-        BackupPreferences(get())
-    }
+    single(::SourcePreferences)
+    single(::SecurityPreferences)
+    single(::PrivacyPreferences)
+    single(::LibraryPreferences)
+    single(::UpdatesPreferences)
+    single(::ReaderPreferences)
+    single(::TrackPreferences)
+    single(::DownloadPreferences)
+    single(::BackupPreferences)
     single {
         StoragePreferences(
             folderProvider = get<AndroidStorageFolderProvider>(),
             preferenceStore = get(),
         )
     }
-    single {
-        UiPreferences(get())
-    }
+    single(::UiPreferences)
     single<ephyra.domain.base.InstallerCapabilityProvider> {
         AndroidInstallerCapabilityProvider(androidApplication())
     }
-    single {
-        BasePreferences(get(), get())
-    }
+    single(::BasePreferences)
 }
