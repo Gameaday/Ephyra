@@ -20,8 +20,8 @@ import ephyra.domain.ui.UiPreferences
 import ephyra.domain.updates.service.UpdatesPreferences
 import eu.kanade.tachiyomi.network.NetworkPreferences
 import org.koin.android.ext.koin.androidApplication
+import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
-import org.koin.dsl.singleOf
 
 val koinPreferenceModule = module {
     single<PreferenceStore> {

@@ -23,7 +23,7 @@ import ephyra.feature.upcoming.UpcomingScreenModel
 import org.koin.android.ext.koin.androidApplication
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
-import org.koin.dsl.factoryOf
+import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module
 
 val koinAppModule_UI = module {
