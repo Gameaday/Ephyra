@@ -354,6 +354,5 @@ buildscript {
 
 koinCompiler {
     compileSafety.set(true)
-    // Link feature-module @Factory/@Single annotations against core DSL definitions
-    callSiteValidation.set(true)
+    unsafeDslChecks.set(true)
 }

@@ -21,6 +21,7 @@ import ephyra.domain.updates.service.UpdatesPreferences
 import eu.kanade.tachiyomi.network.NetworkPreferences
 import org.koin.android.ext.koin.androidApplication
 import org.koin.dsl.module
+import org.koin.dsl.singleOf
 
 val koinPreferenceModule = module {
     single<PreferenceStore> {
@@ -32,24 +33,24 @@ val koinPreferenceModule = module {
             verboseLogging = isDebugBuildType,
         )
     }
-    single(::SourcePreferences)
-    single(::SecurityPreferences)
-    single(::PrivacyPreferences)
-    single(::LibraryPreferences)
-    single(::UpdatesPreferences)
-    single(::ReaderPreferences)
-    single(::TrackPreferences)
-    single(::DownloadPreferences)
-    single(::BackupPreferences)
+    singleOf(::SourcePreferences)
+    singleOf(::SecurityPreferences)
+    singleOf(::PrivacyPreferences)
+    singleOf(::LibraryPreferences)
+    singleOf(::UpdatesPreferences)
+    singleOf(::ReaderPreferences)
+    singleOf(::TrackPreferences)
+    singleOf(::DownloadPreferences)
+    singleOf(::BackupPreferences)
     single {
         StoragePreferences(
             folderProvider = get<AndroidStorageFolderProvider>(),
             preferenceStore = get(),
         )
     }
-    single(::UiPreferences)
+    singleOf(::UiPreferences)
     single<ephyra.domain.base.InstallerCapabilityProvider> {
         AndroidInstallerCapabilityProvider(androidApplication())
     }
-    single(::BasePreferences)
+    singleOf(::BasePreferences)
 }

@@ -23,10 +23,11 @@ import ephyra.feature.upcoming.UpcomingScreenModel
 import org.koin.android.ext.koin.androidApplication
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
+import org.koin.dsl.factoryOf
 import org.koin.dsl.module
 
 val koinAppModule_UI = module {
-    // Parametrized factories: @InjectedParam-style lambdas cannot be replaced with :: references
+    // Parameterized factories: @InjectedParam-style lambdas cannot be replaced with :: references
     factory { (mangaIds: Collection<Long>, extraSearchQuery: String?) ->
         MigrationListScreenModel(
             mangaIds = mangaIds,
@@ -75,10 +76,10 @@ val koinAppModule_UI = module {
         )
     }
 
-    factory(::ExtensionReposScreenModel)
-    factory(::ClearDatabaseScreenModel)
+    factoryOf(::ExtensionReposScreenModel)
+    factoryOf(::ClearDatabaseScreenModel)
 
-    // Parametrized factory: query is an @InjectedParam, keep explicit lambda.
+    // Parameterized factory: query is an @InjectedParam, keep explicit lambda.
     factory { (query: String) ->
         DeepLinkScreenModel(
             query = query,
@@ -89,25 +90,26 @@ val koinAppModule_UI = module {
         )
     }
 
-    factory(::DownloadQueueScreenModel)
+    factoryOf(::DownloadQueueScreenModel)
 
     // MangaCoverScreenModel and CoverSearchScreenModel are registered via @Factory + @InjectedParam
     // in :feature:manga — removed here.
 
-    factory(MigrationConfigScreen::ScreenModel)
-    factory(::UpcomingScreenModel)
+    // MigrationConfigScreen.ScreenModel is an internal nested class; use explicit lambda.
+    factory { MigrationConfigScreen.ScreenModel(get(), get()) }
+    factoryOf(::UpcomingScreenModel)
     factory { WorkerInfoScreen.Model(androidContext(), get()) }
 
-    factory(::MigrateDialogScreenModel)
-    factory(::AboutScreenModel)
-    factory(::SettingsDownloadScreenModel)
-    factory(::SettingsDataScreenModel)
-    factory(::SettingsBrowseScreenModel)
-    factory(::SettingsLibraryScreenModel)
-    factory(::SettingsTrackingScreenModel)
-    factory(::SettingsAppearanceScreenModel)
-    factory(::SettingsReaderScreenModel)
-    factory(::SettingsSecurityScreenModel)
-    factory(::SettingsAdvancedScreenModel)
+    factoryOf(::MigrateDialogScreenModel)
+    factoryOf(::AboutScreenModel)
+    factoryOf(::SettingsDownloadScreenModel)
+    factoryOf(::SettingsDataScreenModel)
+    factoryOf(::SettingsBrowseScreenModel)
+    factoryOf(::SettingsLibraryScreenModel)
+    factoryOf(::SettingsTrackingScreenModel)
+    factoryOf(::SettingsAppearanceScreenModel)
+    factoryOf(::SettingsReaderScreenModel)
+    factoryOf(::SettingsSecurityScreenModel)
+    factoryOf(::SettingsAdvancedScreenModel)
 }
 

@@ -33,5 +33,5 @@ dependencies {
 
 koinCompiler {
     compileSafety.set(true)
-    generateExternalDefinitions.set(true)
+    unsafeDslChecks.set(true)
 }
