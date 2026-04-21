@@ -447,7 +447,7 @@ class App : Application(), Configuration.Provider, DefaultLifecycleObserver, Sin
     }
 
     companion object {
-        private const val ACTION_DISABLE_INCOGNITO_MODE = "ephyra.app.DISABLE_INCOGNITO_MODE"
+        private val ACTION_DISABLE_INCOGNITO_MODE = "${BuildConfig.APPLICATION_ID}.DISABLE_INCOGNITO_MODE"
 
         /**
          * Maximum time to wait for the DataStore preference read in [initializeMigrator].
