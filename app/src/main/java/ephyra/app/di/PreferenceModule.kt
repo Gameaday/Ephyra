@@ -6,17 +6,13 @@ import ephyra.core.common.core.security.PrivacyPreferences
 import ephyra.core.common.core.security.SecurityPreferences
 import ephyra.core.common.preference.DataStorePreferenceStore
 import ephyra.core.common.preference.PreferenceStore
-import ephyra.core.common.storage.AndroidStorageFolderProvider
 import ephyra.domain.backup.service.BackupPreferences
-import ephyra.domain.base.BasePreferences
 import ephyra.domain.download.service.DownloadPreferences
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.reader.model.*
 import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.domain.source.service.SourcePreferences
-import ephyra.domain.storage.service.StoragePreferences
 import ephyra.domain.track.service.TrackPreferences
-import ephyra.domain.ui.UiPreferences
 import ephyra.domain.updates.service.UpdatesPreferences
 import eu.kanade.tachiyomi.network.NetworkPreferences
 import org.koin.android.ext.koin.androidApplication
@@ -42,15 +38,7 @@ val koinPreferenceModule = module {
     singleOf(::TrackPreferences)
     singleOf(::DownloadPreferences)
     singleOf(::BackupPreferences)
-    single {
-        StoragePreferences(
-            folderProvider = get<AndroidStorageFolderProvider>(),
-            preferenceStore = get(),
-        )
-    }
-    singleOf(::UiPreferences)
     single<ephyra.domain.base.InstallerCapabilityProvider> {
         AndroidInstallerCapabilityProvider(androidApplication())
     }
-    singleOf(::BasePreferences)
 }

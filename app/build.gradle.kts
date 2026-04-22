@@ -272,6 +272,7 @@ dependencies {
 
     // Dependency injection
     implementation(libs.bundles.koin)
+    implementation(libs.koin.annotations)
 
     // Image loading
     implementation(platform(libs.coil.bom))
