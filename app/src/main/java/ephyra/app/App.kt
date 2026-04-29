@@ -25,6 +25,7 @@ import coil3.request.allowRgb565
 import coil3.request.bitmapConfig
 import coil3.request.crossfade
 import coil3.util.DebugLogger
+import dagger.hilt.android.HiltAndroidApp
 import ephyra.app.R
 import ephyra.app.crash.CrashActivity
 import ephyra.app.crash.GlobalExceptionHandler
@@ -79,6 +80,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.workmanager.koin.workManagerFactory
 import org.koin.core.context.startKoin
 
+@HiltAndroidApp
 class App : Application(), Configuration.Provider, DefaultLifecycleObserver, SingletonImageLoader.Factory {
 
     private val basePreferences: BasePreferences by inject()

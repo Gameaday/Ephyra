@@ -9,6 +9,8 @@ plugins {
     id("ephyra.android.application.compose")
     kotlin("plugin.serialization")
     alias(libs.plugins.koin.compiler)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.ksp)
     alias(libs.plugins.aboutLibraries)
 }
 
@@ -272,6 +274,10 @@ dependencies {
 
     // Dependency injection
     implementation(libs.bundles.koin)
+
+    // Hilt — compile-time DI (Phase A bootstrap; replaces Koin in Phase F)
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
 
     // Image loading
     implementation(platform(libs.coil.bom))

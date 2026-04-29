@@ -6,6 +6,9 @@ plugins {
     alias(libs.plugins.moko) apply false
     alias(libs.plugins.sqldelight) apply false
     alias(libs.plugins.ksp) apply false
+    // Hilt plugin declared here so Gradle resolves it from the version catalog;
+    // applied per-module in app/build.gradle.kts (Phase A of COMPILE_SAFETY_PLAN.md).
+    alias(libs.plugins.hilt) apply false
 }
 
 tasks.register<Delete>("clean") {

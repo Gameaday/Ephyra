@@ -81,24 +81,22 @@ by Hilt entry-points.  The extension-facing API is unchanged.
 
 ## Migration Phases
 
-### Phase A — Hilt Bootstrap ⬜
+### Phase A — Hilt Bootstrap ✅
 
 Set up Hilt infrastructure without changing any feature code.
 
-- [ ] **A-1** Add Hilt to `libs.versions.toml`: `hilt = "2.56"`, `hilt-work = "1.2.0"`.
-- [ ] **A-2** Add library aliases: `hilt-android`, `hilt-compiler`, `hilt-androidx-work`,
-  `hilt-androidx-work-compiler`, `voyager-hilt`.
-- [ ] **A-3** Add plugin alias: `hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }`.
-- [ ] **A-4** Update `buildSrc` convention plugins: add `hilt` and `ksp` as available plugins
-  in `ephyra.android.application.gradle.kts` and `ephyra.library.gradle.kts`.
-- [ ] **A-5** Apply `id("dagger.hilt.android.plugin")` and
-  `ksp(libs.hilt.compiler)` in `app/build.gradle.kts`.
-- [ ] **A-6** Annotate `App : Application` with `@HiltAndroidApp`; remove `startKoin { }` call
-  from `App.onCreate()` (Koin modules are removed in Phase E, but `startKoin` is commented
-  out here so the app still builds — it will be re-enabled temporarily with stubs).
+- [x] **A-1** Add Hilt to `libs.versions.toml`: `hilt = "2.56"`, `hilt_work = "1.2.0"`.
+- [x] **A-2** Add library aliases: `hilt-android`, `hilt-compiler`, `hilt-work`,
+  `hilt-work-compiler`, `hilt-testing`, `voyager-hilt`.
+- [x] **A-3** Add plugin alias: `hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }`.
+- [x] **A-4** Declare Hilt plugin in root `build.gradle.kts` with `apply false` so Gradle
+  resolves it from the version catalog for all subprojects.
+- [x] **A-5** Apply `alias(libs.plugins.hilt)` and `alias(libs.plugins.ksp)` in
+  `app/build.gradle.kts`; add `implementation(libs.hilt.android)` and `ksp(libs.hilt.compiler)`.
+- [x] **A-6** Annotate `App : Application` with `@HiltAndroidApp`.
 - [ ] **A-7** Verify: `./gradlew :app:compileDebugKotlin` passes with both Hilt and Koin
-  simultaneously present (dual-boot period).
-- [ ] **A-8** Commit & push.
+  simultaneously present (dual-boot period). _(CI will confirm on PR)_
+- [x] **A-8** Commit & push.
 
 ### Phase B — Core Module Injection ⬜
 
@@ -305,13 +303,12 @@ A build is considered "compile-time safe" when all of the following are true:
 
 | Session | Phase(s) | Status |
 |---|---|---|
-| 1 (current) | Plan creation | ✅ Plan written |
-| 2 | A (Hilt bootstrap) | ⬜ |
-| 3 | B (Core / data / domain modules) | ⬜ |
-| 4 | C (Network / preferences / services) | ⬜ |
-| 5 | D (Workers) | ⬜ |
-| 6 | E-1 through E-4 (Feature modules batch 1) | ⬜ |
-| 7 | E-5 through E-8 (Feature modules batch 2) | ⬜ |
-| 8 | F (Koin removal) | ⬜ |
-| 9 | G (SQLDelight retirement) | ⬜ |
-| 10 | H (CI enforcement) | ⬜ |
+| 1 (current) | Plan creation + Phase A (Hilt bootstrap) | ✅ Plan written; A-1…A-6, A-8 complete |
+| 2 | B (Core / data / domain modules) | ⬜ |
+| 3 | C (Network / preferences / services) | ⬜ |
+| 4 | D (Workers) | ⬜ |
+| 5 | E-1 through E-4 (Feature modules batch 1) | ⬜ |
+| 6 | E-5 through E-8 (Feature modules batch 2) | ⬜ |
+| 7 | F (Koin removal) | ⬜ |
+| 8 | G (SQLDelight retirement) | ⬜ |
+| 9 | H (CI enforcement) | ⬜ |

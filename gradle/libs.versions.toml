@@ -17,9 +17,16 @@ junit = "6.0.3"
 materialKolor = "5.0.0-alpha07"
 
 # Koin 4.2.0 Ecosystem (Native Plugin path)
+# NOTE: These are preserved for the dual-boot transition period (Phase A of
+# COMPILE_SAFETY_PLAN.md). They will be removed once all modules are fully
+# migrated to Hilt (Phase F).
 koin = "4.2.1"
 koin_annotations = "4.2.1"
 koin_compiler_plugin = "0.6.2"
+
+# Hilt — compile-time validated DI (replaces Koin; see doc/COMPILE_SAFETY_PLAN.md)
+hilt = "2.56"
+hilt_work = "1.2.0"
 
 # Compiler Tools
 ksp = "2.3.6"
@@ -97,6 +104,13 @@ room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 room-paging = { module = "androidx.room:room-paging", version.ref = "room" }
 
+# Hilt — compile-time DI (see doc/COMPILE_SAFETY_PLAN.md Phase A)
+hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
+hilt-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt" }
+hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "hilt_work" }
+hilt-work-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "hilt_work" }
+hilt-testing = { module = "com.google.dagger:hilt-android-testing", version.ref = "hilt" }
+
 paging-runtime = { module = "androidx.paging:paging-runtime", version.ref = "paging" }
 paging-compose = { module = "androidx.paging:paging-compose", version.ref = "paging" }
 paging-common = { module = "androidx.paging:paging-common", version.ref = "paging" }
@@ -111,6 +125,8 @@ voyager-screenmodel = { module = "cafe.adriel.voyager:voyager-screenmodel", vers
 voyager-tab-navigator = { module = "cafe.adriel.voyager:voyager-tab-navigator", version.ref = "voyager" }
 voyager-transitions = { module = "cafe.adriel.voyager:voyager-transitions", version.ref = "voyager" }
 voyager-koin = { module = "cafe.adriel.voyager:voyager-koin", version.ref = "voyager" }
+# voyager-hilt replaces voyager-koin after Phase E of COMPILE_SAFETY_PLAN.md
+voyager-hilt = { module = "cafe.adriel.voyager:voyager-hilt", version.ref = "voyager" }
 
 spotless-gradle = { group = "com.diffplug.spotless", name = "spotless-plugin-gradle", version.ref = "spotless" }
 ktlint-core = { module = "com.pinterest.ktlint:ktlint-cli", version.ref = "ktlint-core" }
@@ -137,7 +153,11 @@ ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 
 # THE KEY: Modern Koin Native Compiler Plugin
+# NOTE: Preserved for dual-boot period; removed in Phase F of COMPILE_SAFETY_PLAN.md
 koin-compiler = { id = "io.insert-koin.compiler.plugin", version.ref = "koin_compiler_plugin" }
+
+# Hilt — compile-time DI plugin (see doc/COMPILE_SAFETY_PLAN.md Phase A)
+hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 
 [bundles]
 okhttp = ["okhttp-core", "okhttp-logging", "okhttp-brotli", "okhttp-dnsoverhttps"]
