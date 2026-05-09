@@ -272,7 +272,6 @@ dependencies {
 
     // Dependency injection
     implementation(libs.bundles.koin)
-    implementation(libs.koin.annotations)
 
     // Image loading
     implementation(platform(libs.coil.bom))
@@ -354,6 +353,6 @@ buildscript {
 }
 
 koinCompiler {
-    compileSafety.set(true)
-    unsafeDslChecks.set(true)
+    // TODO: Enable when Koin Annotations supports @ExternalDefinitions (expected in Koin 1.4+)
+    compileSafety.set(false)
 }

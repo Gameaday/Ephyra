@@ -2,7 +2,6 @@
 .gradle/
 .kotlin/
 build/
-build_output.txt
 *.pyc
 
 # IDE - IntelliJ / Android Studio
