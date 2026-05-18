@@ -69,9 +69,8 @@ dependencies {
 
     // Navigation & DI
     api(libs.bundles.voyager)
-    api(libs.koin.android)
-    api(libs.koin.androidx.compose)
-    api(libs.koin.annotations) // Added this so features can use DI annotations
+    api(libs.hilt.android)
+    api(libs.hilt.navigation.compose)
 
     // Utilities
     api(libs.shizuku.api)
