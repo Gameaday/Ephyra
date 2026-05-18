@@ -7,11 +7,11 @@ import ephyra.domain.track.service.TrackerManager
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.ui.activity.BaseActivity
 import ephyra.presentation.core.util.view.setComposeContent
-import org.koin.android.ext.android.inject
+import ephyra.core.common.di.CoreContainer
 
 abstract class BaseOAuthLoginActivity : BaseActivity() {
 
-    internal val trackerManager: TrackerManager by inject()
+    internal val trackerManager: TrackerManager = CoreContainer.get()
 
     abstract fun handleResult(uri: Uri)
 

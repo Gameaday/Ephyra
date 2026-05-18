@@ -42,9 +42,8 @@ import ephyra.presentation.core.util.ifSourcesLoaded
 import ephyra.presentation.core.widget.TachiyomiTextInputEditText.Companion.setIncognito
 import eu.kanade.tachiyomi.source.ConfigurableSource
 import eu.kanade.tachiyomi.source.sourcePreferences
+import ephyra.core.common.di.CoreContainer
 import logcat.LogPriority
-import org.koin.android.ext.android.inject
-import org.koin.compose.getKoin
 
 class SourcePreferencesScreen(val sourceId: Long) : Screen() {
 
@@ -60,7 +59,7 @@ class SourcePreferencesScreen(val sourceId: Long) : Screen() {
 
         Scaffold(
             topBar = {
-                val sourceManager = getKoin().get<SourceManager>()
+                val sourceManager = CoreContainer.get<SourceManager>()
                 AppBar(
                     title = sourceManager.getOrStub(sourceId).toString(),
                     navigateUp = navigator::pop,
@@ -121,8 +120,8 @@ class SourcePreferencesScreen(val sourceId: Long) : Screen() {
 }
 
 class SourcePreferencesFragment : PreferenceFragmentCompat() {
-    private val sourceManager: SourceManager by inject()
-    private val basePreferences: BasePreferences by inject()
+    private val sourceManager: SourceManager = CoreContainer.get()
+    private val basePreferences: BasePreferences = CoreContainer.get()
 
     override fun getContext(): Context? {
         val superCtx = super.getContext() ?: return null

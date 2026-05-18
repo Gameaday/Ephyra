@@ -22,7 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.core.net.toUri
-import cafe.adriel.voyager.koin.koinScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.core.common.util.lang.launchNonCancellable
@@ -80,7 +80,7 @@ object SettingsAdvancedScreen : SearchableSettings {
 
     @Composable
     override fun getPreferences(): List<Preference> {
-        val screenModel = koinScreenModel<SettingsAdvancedScreenModel>()
+        val screenModel = hiltViewModel<SettingsAdvancedScreenModel>()
         val scope = rememberCoroutineScope()
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow

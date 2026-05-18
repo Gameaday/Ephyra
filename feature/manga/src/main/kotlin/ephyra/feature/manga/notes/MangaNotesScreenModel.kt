@@ -1,30 +1,44 @@
 package ephyra.feature.manga.notes
 
 import androidx.compose.runtime.Immutable
-import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import ephyra.core.common.util.lang.launchNonCancellable
 import ephyra.domain.manga.interactor.UpdateMangaNotes
 import ephyra.domain.manga.model.Manga
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import org.koin.core.annotation.Factory
-import org.koin.core.annotation.InjectedParam
 
-@Factory
-class MangaNotesScreenModel(
-    @InjectedParam private val manga: Manga,
+@HiltViewModel
+class MangaNotesScreenModel @Inject constructor(
     private val updateMangaNotes: UpdateMangaNotes,
-) : StateScreenModel<MangaNotesState>(MangaNotesState(manga, manga.notes)) {
+) : ViewModel() {
+
+    private val _state = MutableStateFlow<MangaNotesState?>(null)
+    val state: StateFlow<MangaNotesState?> = _state.asStateFlow()
+
+    private var isInitialized = false
+
+    fun init(manga: Manga) {
+        if (isInitialized) return
+        isInitialized = true
+        _state.value = MangaNotesState(manga, manga.notes)
+    }
 
     fun updateNotes(content: String) {
-        if (content == state.value.notes) return
+        val currentState = state.value ?: return
+        if (content == currentState.notes) return
 
-        mutableState.update {
-            it.copy(notes = content)
+        _state.update {
+            it?.copy(notes = content)
         }
 
-        screenModelScope.launchNonCancellable {
-            updateMangaNotes(manga.id, content)
+        viewModelScope.launchNonCancellable {
+            updateMangaNotes(currentState.manga.id, content)
         }
     }
 }

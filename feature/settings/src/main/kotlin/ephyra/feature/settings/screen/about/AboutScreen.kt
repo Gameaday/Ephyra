@@ -22,7 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
-import cafe.adriel.voyager.koin.koinScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.core.common.util.lang.launchUI
@@ -56,7 +56,7 @@ object AboutScreen : Screen() {
 
     @Composable
     override fun Content() {
-        val screenModel = koinScreenModel<AboutScreenModel>()
+        val screenModel = hiltViewModel<AboutScreenModel>()
         val state by screenModel.state.collectAsState()
         val appInfo: AppInfo = koinInject()
         val newUpdateScreenFactory: NewUpdateScreenFactory = koinInject()
@@ -182,7 +182,7 @@ object AboutScreen : Screen() {
 
     @Composable
     fun getVersionName(withBuildDate: Boolean): String {
-        val screenModel = koinScreenModel<AboutScreenModel>()
+        val screenModel = hiltViewModel<AboutScreenModel>()
         return screenModel.getVersionName(withBuildDate)
     }
 

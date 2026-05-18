@@ -45,7 +45,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import cafe.adriel.voyager.koin.koinScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.system.logcat
@@ -95,7 +95,7 @@ object SettingsTrackingScreen : SearchableSettings {
     @Composable
     override fun getPreferences(): List<Preference> {
         val context = LocalContext.current
-        val screenModel = koinScreenModel<SettingsTrackingScreenModel>()
+        val screenModel = hiltViewModel<SettingsTrackingScreenModel>()
 
         val trackPreferences = screenModel.trackPreferences
         val trackerManager = screenModel.trackerManager

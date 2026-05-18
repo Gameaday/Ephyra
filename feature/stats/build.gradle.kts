@@ -2,6 +2,7 @@ plugins {
     id("mihon.library")
     id("mihon.library.compose")
 
+    alias(libs.plugins.hilt)
     id("com.google.devtools.ksp")
 }
 
@@ -15,4 +16,6 @@ dependencies {
     api(projects.data)
     api(projects.sourceApi)
     api(projects.presentationCore)
+
+    ksp(libs.hilt.compiler)
 }

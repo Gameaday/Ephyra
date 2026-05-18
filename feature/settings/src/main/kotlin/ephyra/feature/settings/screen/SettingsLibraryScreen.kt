@@ -12,7 +12,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.util.fastMap
 import androidx.core.content.ContextCompat
-import cafe.adriel.voyager.koin.koinScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -51,7 +51,7 @@ object SettingsLibraryScreen : SearchableSettings {
 
     @Composable
     override fun getPreferences(): List<Preference> {
-        val screenModel = koinScreenModel<SettingsLibraryScreenModel>()
+        val screenModel = hiltViewModel<SettingsLibraryScreenModel>()
         val allCategories by screenModel.getCategories().collectAsState(emptyList())
 
         return listOf(

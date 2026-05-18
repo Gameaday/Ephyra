@@ -45,8 +45,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.domain.download.model.Download
@@ -69,7 +69,7 @@ object DownloadQueueScreen : Screen() {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val screenModel = koinScreenModel<DownloadQueueScreenModel>()
+        val screenModel = hiltViewModel<DownloadQueueScreenModel>()
         val downloadList by screenModel.state.collectAsStateWithLifecycle()
         val downloadCount by remember { derivedStateOf { downloadList.size } }
 

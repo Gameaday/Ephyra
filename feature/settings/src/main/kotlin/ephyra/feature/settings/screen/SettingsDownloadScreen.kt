@@ -37,7 +37,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastMap
 import androidx.core.net.toUri
-import cafe.adriel.voyager.koin.koinScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.hippo.unifile.UniFile
 import ephyra.core.common.storage.displayablePath
 import ephyra.core.common.util.system.logcat
@@ -69,7 +69,7 @@ object SettingsDownloadScreen : SearchableSettings {
 
     @Composable
     override fun getPreferences(): List<Preference> {
-        val screenModel = koinScreenModel<SettingsDownloadScreenModel>()
+        val screenModel = hiltViewModel<SettingsDownloadScreenModel>()
         val allCategories by screenModel.getCategories.subscribe().collectAsState(initial = emptyList())
 
         val downloadPreferences = screenModel.downloadPreferences

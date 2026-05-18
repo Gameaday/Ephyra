@@ -1,8 +1,10 @@
 package ephyra.feature.browse.source
 
 import androidx.compose.runtime.Immutable
-import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.source.interactor.GetEnabledSources
@@ -15,27 +17,32 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
-import org.koin.core.annotation.Factory
 import java.util.TreeMap
 
-@Factory
-class SourcesScreenModel(
+@HiltViewModel
+class SourcesScreenModel @Inject constructor(
     private val getEnabledSources: GetEnabledSources,
     private val toggleSource: ToggleSource,
     private val toggleSourcePin: ToggleSourcePin,
-) : StateScreenModel<SourcesScreenModel.State>(State()) {
+) : ViewModel() {
+
+    private val _state = MutableStateFlow<State>(State())
+    val state: StateFlow<State> = _state.asStateFlow()
 
     private val _events = Channel<Event>(Int.MAX_VALUE)
     val events = _events.receiveAsFlow()
 
     init {
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             getEnabledSources.subscribe()
                 .catch {
                     logcat(LogPriority.ERROR, it)
@@ -46,7 +53,7 @@ class SourcesScreenModel(
     }
 
     private fun collectLatestSources(sources: List<Source>) {
-        mutableState.update { state ->
+        _state.update { state ->
             val map = TreeMap<String, MutableList<Source>> { d1, d2 ->
                 // Sources without a lang defined will be placed at the end
                 when {
@@ -89,19 +96,19 @@ class SourcesScreenModel(
     }
 
     private fun toggleSource(source: Source) {
-        screenModelScope.launch { toggleSource.await(source) }
+        viewModelScope.launch { toggleSource.await(source) }
     }
 
     private fun togglePin(source: Source) {
-        screenModelScope.launch { toggleSourcePin.await(source) }
+        viewModelScope.launch { toggleSourcePin.await(source) }
     }
 
     private fun showSourceDialog(source: Source) {
-        mutableState.update { it.copy(dialog = Dialog(source)) }
+        _state.update { it.copy(dialog = Dialog(source)) }
     }
 
     private fun closeDialog() {
-        mutableState.update { it.copy(dialog = null) }
+        _state.update { it.copy(dialog = null) }
     }
 
     sealed interface Event {

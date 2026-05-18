@@ -3,16 +3,16 @@ package ephyra.feature.browse.source.browse
 import android.content.res.Configuration
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.cachedIn
 import androidx.paging.filter
 import androidx.paging.map
-import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import ephyra.core.common.preference.CheckboxState
 import ephyra.core.common.preference.mapAsCheckboxState
 import ephyra.core.common.util.lang.launchIO
@@ -34,12 +34,14 @@ import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
 import ephyra.domain.track.interactor.AddTracks
 import ephyra.presentation.core.util.asState
-import ephyra.presentation.core.util.ioCoroutineScope
 import ephyra.presentation.core.util.manga.removeCovers
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.model.FilterList
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
@@ -48,15 +50,11 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.koin.core.annotation.Factory
-import org.koin.core.annotation.InjectedParam
 import java.time.Instant
 import eu.kanade.tachiyomi.source.model.Filter as SourceModelFilter
 
-@Factory
-class BrowseSourceScreenModel(
-    @InjectedParam private val sourceId: Long,
-    @InjectedParam listingQuery: String?,
+@HiltViewModel
+class BrowseSourceScreenModel @Inject constructor(
     private val sourceManager: SourceManager,
     private val sourcePreferences: SourcePreferences,
     private val libraryPreferences: LibraryPreferences,
@@ -70,56 +68,71 @@ class BrowseSourceScreenModel(
     private val updateManga: UpdateManga,
     private val addTracks: AddTracks,
     private val getIncognitoState: GetIncognitoState,
-) : StateScreenModel<BrowseSourceScreenModel.State>(State(Listing.valueOf(listingQuery))) {
+) : ViewModel() {
 
-    var displayMode by sourcePreferences.sourceDisplayMode().asState(screenModelScope)
+    var displayMode by sourcePreferences.sourceDisplayMode().asState(viewModelScope)
 
-    val source = sourceManager.getOrStub(sourceId)
+    private val _state = MutableStateFlow<State>(State(Listing.Popular))
+    val state: StateFlow<State> = _state.asStateFlow()
 
-    init {
-        if (source is CatalogueSource) {
-            mutableState.update {
+    var sourceId: Long = -1L
+        private set
+
+    var source: eu.kanade.tachiyomi.source.Source? = null
+        private set
+
+    private var isInitialized = false
+
+    fun init(sourceId: Long, listingQuery: String?) {
+        if (isInitialized) return
+        isInitialized = true
+        this.sourceId = sourceId
+        val src = sourceManager.getOrStub(sourceId)
+        this.source = src
+
+        _state.value = State(Listing.valueOf(listingQuery))
+
+        if (src is CatalogueSource) {
+            _state.update {
                 var query: String? = null
                 var listing = it.listing
 
                 if (listing is Listing.Search) {
                     query = listing.query
-                    listing = Listing.Search(query, source.getFilterList())
+                    listing = Listing.Search(query, src.getFilterList())
                 }
 
                 it.copy(
                     listing = listing,
-                    filters = source.getFilterList(),
+                    filters = src.getFilterList(),
                     toolbarQuery = query,
                 )
             }
         }
 
-        if (!getIncognitoState.await(source.id)) {
-            sourcePreferences.lastUsedSource().set(source.id)
+        if (!getIncognitoState.await(src.id)) {
+            sourcePreferences.lastUsedSource().set(src.id)
         }
     }
 
-    /**
-     * Flow of Pager flow tied to [State.listing]
-     */
     private val hideInLibraryItems = sourcePreferences.hideInLibraryItems().getSync()
     val mangaPagerFlowFlow = state.map { it.listing }
         .distinctUntilChanged()
         .map { listing ->
+            if (sourceId == -1L) return@map emptyFlow()
             Pager(PagingConfig(pageSize = 25, prefetchDistance = 15)) {
                 getRemoteManga(sourceId, listing.query ?: "", listing.filters)
             }.flow.map { pagingData ->
                 pagingData.map { manga ->
                     getManga.subscribe(manga.url, manga.source)
                         .map { it ?: manga }
-                        .stateIn(ioCoroutineScope)
+                        .stateIn(viewModelScope)
                 }
                     .let { pd -> if (hideInLibraryItems) pd.filter { !it.value.favorite } else pd }
             }
-                .cachedIn(ioCoroutineScope)
+                .cachedIn(viewModelScope)
         }
-        .stateIn(ioCoroutineScope, SharingStarted.Lazily, emptyFlow())
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyFlow())
 
     fun getColumnsPreference(orientation: Int): GridCells {
         val isLandscape = orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -131,7 +144,6 @@ class BrowseSourceScreenModel(
         return if (columns == 0) GridCells.Adaptive(128.dp) else GridCells.Fixed(columns)
     }
 
-    // ── UDF entry-point ──────────────────────────────────────────────────────
     fun onEvent(event: BrowseSourceScreenEvent) {
         when (event) {
             is BrowseSourceScreenEvent.ResetFilters -> resetFilters()
@@ -149,32 +161,29 @@ class BrowseSourceScreenModel(
     }
 
     private fun resetFilters() {
-        if (source !is CatalogueSource) return
-
-        mutableState.update { it.copy(filters = source.getFilterList()) }
+        val src = source ?: return
+        if (src !is CatalogueSource) return
+        _state.update { it.copy(filters = src.getFilterList()) }
     }
 
     private fun setListing(listing: Listing) {
-        mutableState.update { it.copy(listing = listing, toolbarQuery = null) }
+        _state.update { it.copy(listing = listing, toolbarQuery = null) }
     }
 
     private fun setFilters(filters: FilterList) {
-        if (source !is CatalogueSource) return
-
-        mutableState.update {
-            it.copy(
-                filters = filters,
-            )
-        }
+        val src = source ?: return
+        if (src !is CatalogueSource) return
+        _state.update { it.copy(filters = filters) }
     }
 
     private fun search(query: String? = null, filters: FilterList? = null) {
-        if (source !is CatalogueSource) return
+        val src = source ?: return
+        if (src !is CatalogueSource) return
 
         val input = state.value.listing as? Listing.Search
-            ?: Listing.Search(query = null, filters = source.getFilterList())
+            ?: Listing.Search(query = null, filters = src.getFilterList())
 
-        mutableState.update {
+        _state.update {
             it.copy(
                 listing = input.copy(
                     query = query ?: input.query,
@@ -186,9 +195,10 @@ class BrowseSourceScreenModel(
     }
 
     private fun searchGenre(genreName: String) {
-        if (source !is CatalogueSource) return
+        val src = source ?: return
+        if (src !is CatalogueSource) return
 
-        val defaultFilters = source.getFilterList()
+        val defaultFilters = src.getFilterList()
         var genreExists = false
 
         filter@ for (sourceFilter in defaultFilters) {
@@ -215,7 +225,7 @@ class BrowseSourceScreenModel(
             }
         }
 
-        mutableState.update {
+        _state.update {
             val listing = if (genreExists) {
                 Listing.Search(query = null, filters = defaultFilters)
             } else {
@@ -229,13 +239,9 @@ class BrowseSourceScreenModel(
         }
     }
 
-    /**
-     * Adds or removes a manga from the library.
-     *
-     * @param manga the manga to update.
-     */
     private fun changeMangaFavorite(manga: Manga) {
-        screenModelScope.launch {
+        val src = source ?: return
+        viewModelScope.launch {
             var new = manga.copy(
                 favorite = !manga.favorite,
                 dateAdded = when (manga.favorite) {
@@ -248,7 +254,7 @@ class BrowseSourceScreenModel(
                 new = new.removeCovers(coverCache)
             } else {
                 setMangaDefaultChapterFlags.await(manga)
-                addTracks.bindEnhancedTrackers(manga, source)
+                addTracks.bindEnhancedTrackers(manga, src)
             }
 
             updateManga.await(new.toMangaUpdate())
@@ -256,27 +262,20 @@ class BrowseSourceScreenModel(
     }
 
     private fun addFavorite(manga: Manga) {
-        screenModelScope.launch {
+        viewModelScope.launch {
             val categories = getCategories()
             val defaultCategoryId = libraryPreferences.defaultCategory().get()
             val defaultCategory = categories.find { it.id == defaultCategoryId.toLong() }
 
             when {
-                // Default category set
                 defaultCategory != null -> {
                     moveMangaToCategories(manga, defaultCategory)
-
                     changeMangaFavorite(manga)
                 }
-
-                // Automatic 'Default' or no categories
                 defaultCategoryId == 0 || categories.isEmpty() -> {
                     moveMangaToCategories(manga)
-
                     changeMangaFavorite(manga)
                 }
-
-                // Choose a category
                 else -> {
                     val preselectedIds = getCategories.await(manga.id).mapTo(HashSet()) { it.id }
                     setDialog(
@@ -290,11 +289,6 @@ class BrowseSourceScreenModel(
         }
     }
 
-    /**
-     * Get user categories.
-     *
-     * @return List of categories, not including the default category
-     */
     suspend fun getCategories(): List<Category> {
         return getCategories.subscribe()
             .firstOrNull()
@@ -311,7 +305,7 @@ class BrowseSourceScreenModel(
     }
 
     private fun moveMangaToCategories(manga: Manga, categoryIds: List<Long>) {
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             setMangaCategories.await(
                 mangaId = manga.id,
                 categoryIds = categoryIds,
@@ -324,11 +318,11 @@ class BrowseSourceScreenModel(
     }
 
     private fun setDialog(dialog: Dialog?) {
-        mutableState.update { it.copy(dialog = dialog) }
+        _state.update { it.copy(dialog = dialog) }
     }
 
     private fun setToolbarQuery(query: String?) {
-        mutableState.update { it.copy(toolbarQuery = query) }
+        _state.update { it.copy(toolbarQuery = query) }
     }
 
     sealed class Listing(open val query: String?, open val filters: FilterList) {
@@ -344,7 +338,7 @@ class BrowseSourceScreenModel(
                 return when (query) {
                     GetRemoteManga.QUERY_POPULAR -> Popular
                     GetRemoteManga.QUERY_LATEST -> Latest
-                    else -> Search(query = query, filters = FilterList()) // filters are filled in later
+                    else -> Search(query = query, filters = FilterList())
                 }
             }
         }
@@ -358,7 +352,6 @@ class BrowseSourceScreenModel(
             val manga: Manga,
             val initialSelection: ImmutableList<CheckboxState.State<Category>>,
         ) : Dialog
-
         data class Migrate(val target: Manga, val current: Manga) : Dialog
     }
 

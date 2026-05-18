@@ -30,9 +30,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
-import cafe.adriel.voyager.koin.koinScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.core.common.util.lang.launchIO
@@ -59,9 +64,6 @@ import ephyra.presentation.core.util.system.toast
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
-import org.koin.androidx.compose.koinViewModel
-import org.koin.compose.koinInject
-import org.koin.core.parameter.parametersOf
 
 class ClearDatabaseScreen : Screen() {
 
@@ -69,7 +71,7 @@ class ClearDatabaseScreen : Screen() {
     override fun Content() {
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
-        val model = koinScreenModel<ClearDatabaseScreenModel>()
+        val model = hiltViewModel<ClearDatabaseScreenModel>()
         val state by model.state.collectAsStateWithLifecycle()
         val scope = rememberCoroutineScope()
 
@@ -222,17 +224,21 @@ class ClearDatabaseScreen : Screen() {
     }
 }
 
-class ClearDatabaseScreenModel(
+@HiltViewModel
+class ClearDatabaseScreenModel @Inject constructor(
     private val getSourcesWithNonLibraryManga: GetSourcesWithNonLibraryManga,
     private val deleteNonLibraryManga: DeleteNonLibraryManga,
     private val removeResettedHistory: RemoveResettedHistory,
-) : StateScreenModel<ClearDatabaseScreenModel.State>(State.Loading) {
+) : ViewModel() {
+
+    private val _state = MutableStateFlow<State>(State.Loading)
+    val state: StateFlow<State> = _state.asStateFlow()
 
     init {
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             getSourcesWithNonLibraryManga.subscribe()
                 .collectLatest { list ->
-                    mutableState.update { old ->
+                    _state.update { old ->
                         val items = list.sortedBy { it.name }
                         when (old) {
                             State.Loading -> State.Ready(items)
@@ -249,7 +255,7 @@ class ClearDatabaseScreenModel(
         removeResettedHistory.await()
     }
 
-    fun toggleSelection(source: Source) = mutableState.update { state ->
+    fun toggleSelection(source: Source) = _state.update { state ->
         if (state !is State.Ready) return@update state
         val mutableList = state.selection.toMutableList()
         if (mutableList.contains(source.id)) {
@@ -260,17 +266,17 @@ class ClearDatabaseScreenModel(
         state.copy(selection = mutableList)
     }
 
-    fun clearSelection() = mutableState.update { state ->
+    fun clearSelection() = _state.update { state ->
         if (state !is State.Ready) return@update state
         state.copy(selection = emptyList())
     }
 
-    fun selectAll() = mutableState.update { state ->
+    fun selectAll() = _state.update { state ->
         if (state !is State.Ready) return@update state
         state.copy(selection = state.items.fastMap { it.id })
     }
 
-    fun invertSelection() = mutableState.update { state ->
+    fun invertSelection() = _state.update { state ->
         if (state !is State.Ready) return@update state
         state.copy(
             selection = state.items
@@ -279,12 +285,12 @@ class ClearDatabaseScreenModel(
         )
     }
 
-    fun showConfirmation() = mutableState.update { state ->
+    fun showConfirmation() = _state.update { state ->
         if (state !is State.Ready) return@update state
         state.copy(showConfirmation = true)
     }
 
-    fun hideConfirmation() = mutableState.update { state ->
+    fun hideConfirmation() = _state.update { state ->
         if (state !is State.Ready) return@update state
         state.copy(showConfirmation = false)
     }

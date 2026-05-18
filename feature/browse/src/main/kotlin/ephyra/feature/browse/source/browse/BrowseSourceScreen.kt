@@ -32,7 +32,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.koin.koinScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.core.common.Constants
@@ -65,7 +65,6 @@ import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
-import org.koin.core.parameter.parametersOf
 
 data class BrowseSourceScreen(
     val sourceId: Long,
@@ -83,7 +82,17 @@ data class BrowseSourceScreen(
             return
         }
 
-        val screenModel = koinScreenModel<BrowseSourceScreenModel> { parametersOf(sourceId, listingQuery) }
+        val screenModel = hiltViewModel<BrowseSourceScreenModel>()
+        LaunchedEffect(sourceId, listingQuery) {
+            screenModel.init(sourceId, listingQuery)
+        }
+
+        val source = screenModel.source
+        if (source == null) {
+            LoadingScreen()
+            return
+        }
+
         val state by screenModel.state.collectAsStateWithLifecycle()
 
         val navigator = LocalNavigator.currentOrThrow
@@ -95,9 +104,9 @@ data class BrowseSourceScreen(
             }
         }
 
-        if (screenModel.source is StubSource) {
+        if (source is StubSource) {
             MissingSourceScreen(
-                source = screenModel.source,
+                source = source,
                 navigateUp = navigateUp,
             )
             return
@@ -110,18 +119,18 @@ data class BrowseSourceScreen(
 
         val onHelpClick = { uriHandler.openUri(LocalSource.HELP_URL) }
         val onWebViewClick = f@{
-            val source = screenModel.source as? HttpSource ?: return@f
+            val httpSource = source as? HttpSource ?: return@f
             navigator.push(
                 WebViewScreen(
-                    url = source.baseUrl,
-                    initialTitle = source.name,
-                    sourceId = source.id,
+                    url = httpSource.baseUrl,
+                    initialTitle = httpSource.name,
+                    sourceId = httpSource.id,
                 ),
             )
         }
 
-        LaunchedEffect(screenModel.source) {
-            assistUrl = (screenModel.source as? HttpSource)?.baseUrl
+        LaunchedEffect(source) {
+            assistUrl = (source as? HttpSource)?.baseUrl
         }
 
         Scaffold(
@@ -134,7 +143,7 @@ data class BrowseSourceScreen(
                     BrowseSourceToolbar(
                         searchQuery = state.toolbarQuery,
                         onSearchQueryChange = { screenModel.onEvent(BrowseSourceScreenEvent.SetToolbarQuery(it)) },
-                        source = screenModel.source,
+                        source = source,
                         displayMode = screenModel.displayMode,
                         onDisplayModeChange = { screenModel.displayMode = it },
                         navigateUp = navigateUp,
@@ -168,7 +177,7 @@ data class BrowseSourceScreen(
                                 Text(text = stringResource(ephyra.app.core.common.R.string.popular))
                             },
                         )
-                        if ((screenModel.source as CatalogueSource).supportsLatest) {
+                        if ((source as CatalogueSource).supportsLatest) {
                             FilterChip(
                                 selected = state.listing == Listing.Latest,
                                 onClick = {
@@ -213,7 +222,7 @@ data class BrowseSourceScreen(
             snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         ) { paddingValues ->
             BrowseSourceContent(
-                source = screenModel.source,
+                source = source,
                 mangaList = screenModel.mangaPagerFlowFlow.collectAsLazyPagingItems(),
                 columns = screenModel.getColumnsPreference(LocalConfiguration.current.orientation),
                 displayMode = screenModel.displayMode,
@@ -277,7 +286,6 @@ data class BrowseSourceScreen(
                 MigrateMangaDialog(
                     current = dialog.current,
                     target = dialog.target,
-                    // Initiated from the context of [dialog.target] so we show [dialog.current].
                     onClickTitle = { navigator.push(MangaScreen(dialog.current.id)) },
                     onDismissRequest = onDismissRequest,
                 )

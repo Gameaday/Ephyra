@@ -2,6 +2,8 @@ plugins {
     id("ephyra.library")
     id("ephyra.library.compose")
     id("org.jetbrains.kotlin.plugin.compose")
+    alias(libs.plugins.hilt)
+    id("com.google.devtools.ksp")
 }
 
 android {
@@ -27,7 +29,8 @@ dependencies {
     implementation(libs.compose.grid)
     api(libs.bundles.voyager)
 
-    // Dependency Injection (Koin)
+    // Dependency Injection (Hilt & Koin)
     api(libs.koin.core)
     implementation(libs.koin.annotations)
+    ksp(libs.hilt.compiler)
 }

@@ -7,16 +7,18 @@ import ephyra.app.extension.ExtensionManager
 import ephyra.core.common.util.system.hasMiuiPackageInstaller
 import ephyra.domain.extension.model.InstallStep
 import ephyra.presentation.core.util.system.toast
-import org.koin.android.ext.android.inject
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 
 /**
  * Activity used to install extensions, because we can only receive the result of the installation
  * with [startActivityForResult], which we need to update the UI.
  */
+@AndroidEntryPoint
 class ExtensionInstallActivity : Activity() {
 
-    private val extensionManager: ExtensionManager by inject()
+    @Inject lateinit var extensionManager: ExtensionManager
 
     // MIUI package installer bug workaround
     private var ignoreUntil = 0L

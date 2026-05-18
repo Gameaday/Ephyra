@@ -61,6 +61,12 @@ interface ScreenEntryPoint {
     fun storagePreferences(): ephyra.domain.storage.service.StoragePreferences
     fun uiPreferences(): ephyra.domain.ui.UiPreferences
     fun preferenceStore(): ephyra.core.common.preference.PreferenceStore
+    fun securityPreferences(): ephyra.core.common.core.security.SecurityPreferences
+    fun backupScheduler(): ephyra.domain.backup.service.BackupScheduler
+    fun restoreScheduler(): ephyra.domain.backup.service.RestoreScheduler
+    fun backupFileValidator(): ephyra.app.data.backup.BackupFileValidator
+    fun secureActivityDelegate(): ephyra.presentation.core.ui.delegate.SecureActivityDelegate
+    fun themingDelegate(): ephyra.presentation.core.ui.delegate.ThemingDelegate
     
     // Extension repos
     fun getExtensionRepoCount(): ephyra.domain.extensionrepo.interactor.GetExtensionRepoCount
@@ -127,6 +133,12 @@ object CoreContainer {
             ephyra.domain.storage.service.StoragePreferences::class.java -> entryPoint.storagePreferences()
             ephyra.domain.ui.UiPreferences::class.java -> entryPoint.uiPreferences()
             ephyra.core.common.preference.PreferenceStore::class.java -> entryPoint.preferenceStore()
+            ephyra.core.common.core.security.SecurityPreferences::class.java -> entryPoint.securityPreferences()
+            ephyra.domain.backup.service.BackupScheduler::class.java -> entryPoint.backupScheduler()
+            ephyra.domain.backup.service.RestoreScheduler::class.java -> entryPoint.restoreScheduler()
+            ephyra.app.data.backup.BackupFileValidator::class.java -> entryPoint.backupFileValidator()
+            ephyra.presentation.core.ui.delegate.SecureActivityDelegate::class.java -> entryPoint.secureActivityDelegate()
+            ephyra.presentation.core.ui.delegate.ThemingDelegate::class.java -> entryPoint.themingDelegate()
             
             // Extension repos
             ephyra.domain.extensionrepo.interactor.GetExtensionRepoCount::class.java -> entryPoint.getExtensionRepoCount()

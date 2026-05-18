@@ -93,11 +93,13 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import logcat.LogPriority
-import org.koin.android.ext.android.inject
-import org.koin.androidx.viewmodel.ext.android.viewModel
+import dagger.hilt.android.AndroidEntryPoint
+import androidx.activity.viewModels
+import javax.inject.Inject
 import java.io.ByteArrayOutputStream
 import ephyra.presentation.core.R as CoreR
 
+@AndroidEntryPoint
 @OptIn(FlowPreview::class)
 class ReaderActivity : BaseActivity() {
 
@@ -111,14 +113,14 @@ class ReaderActivity : BaseActivity() {
         }
     }
 
-    private val readerPreferences: ReaderPreferences by inject()
-    private val preferences: BasePreferences by inject()
-    private val navigator: AppNavigator by inject()
-    private val notificationManager: NotificationManager by inject()
+    @Inject lateinit var readerPreferences: ReaderPreferences
+    @Inject lateinit var preferences: BasePreferences
+    @Inject lateinit var navigator: AppNavigator
+    @Inject lateinit var notificationManager: NotificationManager
 
     lateinit var binding: ReaderActivityBinding
 
-    val viewModel by viewModel<ReaderViewModel>()
+    val viewModel: ReaderViewModel by viewModels()
     private var assistUrl: String? = null
 
     /**

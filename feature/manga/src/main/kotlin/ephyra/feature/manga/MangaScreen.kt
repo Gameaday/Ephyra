@@ -18,8 +18,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.core.model.rememberScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import ephyra.core.common.di.CoreContainer
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
@@ -89,14 +88,13 @@ class MangaScreen(
         val context = LocalContext.current
         val haptic = LocalHapticFeedback.current
         val scope = rememberCoroutineScope()
-        val lifecycleOwner = LocalLifecycleOwner.current
 
         val basePreferences = remember { CoreContainer.get<BasePreferences>() }
         val coverCache = remember { CoreContainer.get<CoverCache>() }
 
-        val screenModel = rememberScreenModel {
-            CoreContainer.get<MangaScreenModelFactory>()
-                .create(lifecycleOwner.lifecycle, mangaId, fromSource)
+        val screenModel = hiltViewModel<MangaScreenModel>()
+        LaunchedEffect(mangaId, fromSource) {
+            screenModel.init(mangaId, fromSource)
         }
 
         val state by screenModel.state.collectAsStateWithLifecycle()
@@ -224,7 +222,6 @@ class MangaScreen(
                 MigrateMangaDialog(
                     current = dialog.current,
                     target = dialog.target,
-                    // Initiated from the context of [dialog.target] so we show [dialog.current].
                     onClickTitle = { navigator.push(MangaScreen(dialog.current.id)) },
                     onDismissRequest = onDismissRequest,
                 )
@@ -256,34 +253,48 @@ class MangaScreen(
                 )
             }
             MangaScreenModel.Dialog.FullCover -> {
-                val sm = rememberScreenModel { MangaCoverScreenModel(successState.manga.id) }
+                val sm = hiltViewModel<MangaCoverScreenModel>()
+                LaunchedEffect(successState.manga.id) {
+                    sm.init(successState.manga.id)
+                }
+                LaunchedEffect(sm) {
+                    sm.effectFlow.collect { effect ->
+                        when (effect) {
+                            is MangaCoverEffect.StartShare -> {
+                                val intent = effect.uri.toShareIntent(context, type = "image/*")
+                                context.startActivity(intent)
+                            }
+                        }
+                    }
+                }
                 val manga by sm.state.collectAsStateWithLifecycle()
                 if (manga != null) {
                     val getContent = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {
                         if (it == null) return@rememberLauncherForActivityResult
-                        sm.editCover(context, it)
+                        sm.onEvent(MangaCoverScreenEvent.EditCover(it))
                     }
                     var showCoverSearch by remember { mutableStateOf(false) }
                     if (showCoverSearch) {
-                        val coverSearchSm = rememberScreenModel {
-                            CoverSearchScreenModel(
+                        val coverSearchSm = hiltViewModel<CoverSearchScreenModel>()
+                        LaunchedEffect(manga!!.title, successState.source.id) {
+                            coverSearchSm.init(
                                 mangaTitle = manga!!.title,
                                 currentSourceId = successState.source.id,
                             )
+                            coverSearchSm.search()
                         }
                         val coverSearchState by coverSearchSm.state.collectAsStateWithLifecycle()
-                        LaunchedEffect(Unit) { coverSearchSm.search() }
                         CoverSearchDialog(
                             state = coverSearchState,
                             onCoverSelected = { cover ->
-                                sm.setCoverFromUrl(context, cover.thumbnailUrl, cover.sourceId)
+                                sm.onEvent(MangaCoverScreenEvent.SetCoverFromUrl(cover.thumbnailUrl, cover.sourceId))
                                 showCoverSearch = false
                             },
                             onSetAsMetadataSource = { cover ->
                                 screenModel.onEvent(MangaScreenEvent.SetMetadataSource(cover.sourceId, cover.mangaUrl))
                                 showCoverSearch = false
                             },
-                            onRefresh = { coverSearchSm.refresh() },
+                            onRefresh = { coverSearchSm.onEvent(CoverSearchScreenEvent.Refresh) },
                             onDismissRequest = { showCoverSearch = false },
                         )
                     } else {
@@ -291,12 +302,12 @@ class MangaScreen(
                             manga = manga!!,
                             snackbarHostState = sm.snackbarHostState,
                             isCustomCover = remember(manga) { manga!!.hasCustomCover(coverCache) },
-                            onShareClick = { sm.shareCover(context) },
-                            onSaveClick = { sm.saveCover(context) },
+                            onShareClick = { sm.onEvent(MangaCoverScreenEvent.ShareCover) },
+                            onSaveClick = { sm.onEvent(MangaCoverScreenEvent.SaveCover) },
                             onEditClick = {
                                 when (it) {
                                     EditCoverAction.EDIT -> getContent.launch("image/*")
-                                    EditCoverAction.DELETE -> sm.deleteCustomCover(context)
+                                    EditCoverAction.DELETE -> sm.onEvent(MangaCoverScreenEvent.DeleteCustomCover)
                                     EditCoverAction.SEARCH -> {
                                         showCoverSearch = true
                                     }
@@ -417,11 +428,6 @@ class MangaScreen(
         }
     }
 
-    /**
-     * Perform a search using the provided query.
-     *
-     * @param query the search query to the parent controller
-     */
     private suspend fun performSearch(navigator: Navigator, query: String, global: Boolean) {
         if (global) {
             navigator.push(GlobalSearchScreen(query))
@@ -444,11 +450,6 @@ class MangaScreen(
         }
     }
 
-    /**
-     * Performs a genre search using the provided genre name.
-     *
-     * @param genreName the search genre to the parent controller
-     */
     private suspend fun performGenreSearch(navigator: Navigator, genreName: String, source: Source) {
         if (navigator.size < 2) {
             return
@@ -463,9 +464,6 @@ class MangaScreen(
         }
     }
 
-    /**
-     * Copy Manga URL to Clipboard
-     */
     private fun copyMangaUrl(context: Context, manga_: Manga?, source_: Source?) {
         val manga = manga_ ?: return
         val source = source_ as? HttpSource ?: return

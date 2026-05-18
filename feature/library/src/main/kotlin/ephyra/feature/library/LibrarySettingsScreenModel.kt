@@ -1,7 +1,9 @@
 package ephyra.feature.library
 
-import cafe.adriel.voyager.core.model.ScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import ephyra.core.common.preference.Preference
 import ephyra.core.common.preference.TriState
 import ephyra.core.common.preference.getAndSet
@@ -17,21 +19,20 @@ import ephyra.domain.track.service.TrackerManager
 import ephyra.source.local.isLocal
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
-import org.koin.core.annotation.Factory
 import kotlin.time.Duration.Companion.seconds
 
-@Factory
-class LibrarySettingsScreenModel(
+@HiltViewModel
+class LibrarySettingsScreenModel @Inject constructor(
     val preferences: BasePreferences,
     val libraryPreferences: LibraryPreferences,
     private val setDisplayMode: SetDisplayMode,
     private val setSortModeForCategory: SetSortModeForCategory,
     trackerManager: TrackerManager,
-) : ScreenModel {
+) : ViewModel() {
 
     val trackersFlow = trackerManager.loggedInTrackersFlow()
         .stateIn(
-            scope = screenModelScope,
+            scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5.seconds.inWholeMilliseconds),
             initialValue = emptyList(),
         )
@@ -46,7 +47,7 @@ class LibrarySettingsScreenModel(
     }
 
     private fun toggleFilter(preference: (LibraryPreferences) -> Preference<TriState>) {
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             preference(libraryPreferences).getAndSet {
                 it.next()
             }
@@ -62,7 +63,7 @@ class LibrarySettingsScreenModel(
     }
 
     private fun setSort(category: Category?, mode: LibrarySort.Type, direction: LibrarySort.Direction) {
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             setSortModeForCategory.await(category, mode, direction)
         }
     }

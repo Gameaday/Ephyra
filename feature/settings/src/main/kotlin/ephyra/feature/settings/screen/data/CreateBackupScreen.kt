@@ -10,9 +10,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.rememberScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.core.common.util.system.DeviceUtil
@@ -29,8 +33,6 @@ import ephyra.presentation.core.util.Screen
 import ephyra.presentation.core.util.system.toast
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.flow.update
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 class CreateBackupScreen : Screen() {
 
@@ -38,7 +40,7 @@ class CreateBackupScreen : Screen() {
     override fun Content() {
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
-        val model = rememberScreenModel { CreateBackupScreenModel() }
+        val model = hiltViewModel<CreateBackupViewModel>()
         val state by model.state.collectAsStateWithLifecycle()
 
         val chooseBackupDir = rememberLauncherForActivityResult(
@@ -104,8 +106,8 @@ class CreateBackupScreen : Screen() {
     @Composable
     private fun Options(
         options: ImmutableList<BackupOptions.Entry>,
-        state: CreateBackupScreenModel.State,
-        model: CreateBackupScreenModel,
+        state: CreateBackupViewModel.State,
+        model: CreateBackupViewModel,
     ) {
         options.forEach { option ->
             LabeledCheckbox(
@@ -120,16 +122,20 @@ class CreateBackupScreen : Screen() {
     }
 }
 
-private class CreateBackupScreenModel : StateScreenModel<CreateBackupScreenModel.State>(State()), KoinComponent {
+@HiltViewModel
+class CreateBackupViewModel @Inject constructor(
+    private val backupScheduler: BackupScheduler,
+) : ViewModel() {
 
-    private val backupScheduler: BackupScheduler by inject()
+    private val _state = MutableStateFlow(State())
+    val state: StateFlow<State> = _state.asStateFlow()
 
     fun isBackupRunning(): Boolean = backupScheduler.isBackupRunning()
 
     fun getBackupFilename(): String = backupScheduler.getBackupFilename()
 
     fun toggle(setter: (BackupOptions, Boolean) -> BackupOptions, enabled: Boolean) {
-        mutableState.update {
+        _state.update {
             it.copy(
                 options = setter(it.options, enabled),
             )

@@ -1,8 +1,11 @@
 package ephyra.feature.settings.screen
 
-import cafe.adriel.voyager.core.model.ScreenModel
+import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.domain.ui.UiPreferences
+import javax.inject.Inject
 
-class SettingsAppearanceScreenModel(
+@HiltViewModel
+class SettingsAppearanceScreenModel @Inject constructor(
     val uiPreferences: UiPreferences,
-) : ScreenModel
+) : ViewModel()

@@ -2,8 +2,13 @@ package ephyra.feature.upcoming
 
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMapIndexedNotNull
-import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import ephyra.core.common.util.insertSeparatorsReversed
 import ephyra.core.common.util.lang.toLocalDate
 import ephyra.domain.manga.model.Manga
@@ -20,14 +25,18 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
 
-class UpcomingScreenModel(
+@HiltViewModel
+class UpcomingScreenModel @Inject constructor(
     private val getUpcomingManga: GetUpcomingManga,
-) : StateScreenModel<UpcomingScreenModel.State>(State()) {
+) : ViewModel() {
+
+    private val _state = MutableStateFlow(State())
+    val state: StateFlow<State> = _state.asStateFlow()
 
     init {
-        screenModelScope.launch {
+        viewModelScope.launch {
             getUpcomingManga.subscribe().collectLatest {
-                mutableState.update { state ->
+                _state.update { state ->
                     val upcomingItems = it.toUpcomingUIModels()
                     state.copy(
                         items = upcomingItems,
@@ -82,7 +91,7 @@ class UpcomingScreenModel(
     }
 
     private fun setSelectedYearMonth(yearMonth: YearMonth) {
-        mutableState.update { it.copy(selectedYearMonth = yearMonth) }
+        _state.update { it.copy(selectedYearMonth = yearMonth) }
     }
 
     data class State(

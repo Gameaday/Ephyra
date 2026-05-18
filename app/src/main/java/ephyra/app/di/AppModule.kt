@@ -180,7 +180,7 @@ import ephyra.feature.manga.interactor.MangaTrackInteractor
 import ephyra.feature.reader.setting.ReaderPreferences
 import ephyra.presentation.core.ui.delegate.SecureActivityDelegate
 import ephyra.presentation.core.ui.delegate.ThemingDelegate
-import ephyra.presentation.core.util.Navigator
+import ephyra.presentation.core.util.AppNavigator
 import ephyra.source.local.image.LocalCoverManager
 import ephyra.source.local.io.LocalSourceFileSystem
 import eu.kanade.tachiyomi.network.JavaScriptEngine
@@ -584,7 +584,7 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideNavigator(): Navigator = NavigatorImpl()
+    fun provideNavigator(): AppNavigator = NavigatorImpl()
 
     @Provides
     @Singleton
@@ -1179,4 +1179,26 @@ object AppModule {
         mangaTrackInteractor,
         syncJellyfin
     )
+
+    @Provides
+    @Singleton
+    fun provideWorkScheduler(@ApplicationContext context: Context): ephyra.app.data.scheduler.WorkSchedulerImpl {
+        return ephyra.app.data.scheduler.WorkSchedulerImpl(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideBackupScheduler(workScheduler: ephyra.app.data.scheduler.WorkSchedulerImpl): ephyra.domain.backup.service.BackupScheduler = workScheduler
+
+    @Provides
+    @Singleton
+    fun provideRestoreScheduler(workScheduler: ephyra.app.data.scheduler.WorkSchedulerImpl): ephyra.domain.backup.service.RestoreScheduler = workScheduler
+
+    @Provides
+    @Singleton
+    fun provideLibraryUpdateScheduler(workScheduler: ephyra.app.data.scheduler.WorkSchedulerImpl): ephyra.domain.library.service.LibraryUpdateScheduler = workScheduler
+
+    @Provides
+    @Singleton
+    fun provideMetadataUpdateScheduler(workScheduler: ephyra.app.data.scheduler.WorkSchedulerImpl): ephyra.domain.library.service.MetadataUpdateScheduler = workScheduler
 }

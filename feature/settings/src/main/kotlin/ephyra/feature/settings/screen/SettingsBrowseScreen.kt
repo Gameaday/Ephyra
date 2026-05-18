@@ -7,7 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.fragment.app.FragmentActivity
-import cafe.adriel.voyager.koin.koinScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.core.common.i18n.stringResource
@@ -31,7 +31,7 @@ object SettingsBrowseScreen : SearchableSettings {
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
 
-        val screenModel = koinScreenModel<SettingsBrowseScreenModel>()
+        val screenModel = hiltViewModel<SettingsBrowseScreenModel>()
         val reposCount by screenModel.getExtensionRepoCount().collectAsState(0)
 
         return listOf(

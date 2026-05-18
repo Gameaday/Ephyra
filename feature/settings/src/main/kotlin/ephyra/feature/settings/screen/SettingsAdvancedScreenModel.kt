@@ -1,6 +1,7 @@
 package ephyra.feature.settings.screen
 
-import cafe.adriel.voyager.core.model.ScreenModel
+import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.download.DownloadCache
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.extension.interactor.TrustExtension
@@ -9,8 +10,10 @@ import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.interactor.ResetViewerFlags
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.NetworkPreferences
+import javax.inject.Inject
 
-class SettingsAdvancedScreenModel(
+@HiltViewModel
+class SettingsAdvancedScreenModel @Inject constructor(
     val basePreferences: BasePreferences,
     val networkPreferences: NetworkPreferences,
     val libraryPreferences: LibraryPreferences,
@@ -19,4 +22,4 @@ class SettingsAdvancedScreenModel(
     val resetViewerFlags: ResetViewerFlags,
     val trustExtension: TrustExtension,
     val extensionManager: ExtensionManager,
-) : ScreenModel
+) : ViewModel()

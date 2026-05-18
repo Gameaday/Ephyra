@@ -1,38 +1,46 @@
 package ephyra.feature.manga
 
 import androidx.compose.runtime.Immutable
-import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.source.service.SourceManager
-import ephyra.feature.manga.CoverSearchScreenModel.Companion.MAX_CACHE_ENTRIES
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import logcat.LogPriority
-import org.koin.core.annotation.Factory
-import org.koin.core.annotation.InjectedParam
 
-/**
- * Screen model for searching cover images across sources.
- * Uses limited parallelism to be respectful of source server resources.
- * Caches results in memory so reopening the search for the same manga
- * does not trigger additional API calls.
- */
-@Factory
-class CoverSearchScreenModel(
-    @InjectedParam private val mangaTitle: String,
-    @InjectedParam private val currentSourceId: Long,
+@HiltViewModel
+class CoverSearchScreenModel @Inject constructor(
     private val sourceManager: SourceManager,
-) : StateScreenModel<CoverSearchScreenModel.State>(State()) {
+) : ViewModel() {
+
+    private val _state = MutableStateFlow<State>(State())
+    val state: StateFlow<State> = _state.asStateFlow()
 
     private val coroutineDispatcher = Dispatchers.IO.limitedParallelism(3)
     private var searchJob: Job? = null
+
+    private var mangaTitle: String = ""
+    private var currentSourceId: Long = -1L
+    private var isInitialized = false
+
+    fun init(mangaTitle: String, currentSourceId: Long) {
+        if (isInitialized) return
+        isInitialized = true
+        this.mangaTitle = mangaTitle
+        this.currentSourceId = currentSourceId
+    }
 
     fun onEvent(event: CoverSearchScreenEvent) {
         when (event) {
@@ -41,19 +49,14 @@ class CoverSearchScreenModel(
         }
     }
 
-    /**
-     * Search across all enabled catalogue sources for covers matching the manga title.
-     * Returns cached results if available to avoid redundant API calls.
-     * Only fetches the first page and extracts thumbnail URLs to minimize network calls.
-     */
-    private fun search() {
+    fun search() {
         val query = mangaTitle
         if (query.isBlank()) return
 
         // Return cached results if available
         val cached = coverResultsCache[query]
         if (cached != null) {
-            mutableState.update {
+            _state.update {
                 it.copy(
                     isLoading = false,
                     results = cached,
@@ -66,21 +69,13 @@ class CoverSearchScreenModel(
         fetchFromSources(query)
     }
 
-    /**
-     * Force a fresh search, bypassing the in-memory cache.
-     */
-    private fun refresh() {
+    fun refresh() {
         val query = mangaTitle
         if (query.isBlank()) return
         coverResultsCache.remove(query)
         fetchFromSources(query)
     }
 
-    /**
-     * Deduplicate cover results by thumbnail URL.
-     * When multiple sources return the same URL, keeps the first occurrence
-     * and merges the source names from subsequent duplicates.
-     */
     private fun deduplicateResults(results: List<CoverResult>): List<CoverResult> {
         val seen = linkedMapOf<String, CoverResult>()
         for (result in results) {
@@ -107,7 +102,7 @@ class CoverSearchScreenModel(
             .filterIsInstance<HttpSource>()
             .sortedBy { if (it.id == currentSourceId) 0 else 1 }
 
-        mutableState.update {
+        _state.update {
             it.copy(
                 isLoading = true,
                 results = emptyList(),
@@ -117,7 +112,7 @@ class CoverSearchScreenModel(
             )
         }
 
-        searchJob = screenModelScope.launch {
+        searchJob = viewModelScope.launch {
             sources.map { source ->
                 async(coroutineDispatcher) {
                     try {
@@ -136,9 +131,6 @@ class CoverSearchScreenModel(
                                 }
                             }
 
-                        // Take the best match (first result) per source.
-                        // Only include additional results from the same source if they
-                        // represent the same series (matching title) with a different cover.
                         val bestMatch = covers.firstOrNull()
                         val seriesCovers = if (bestMatch != null) {
                             val normalizedTitle = bestMatch.mangaTitle.lowercase().trim()
@@ -150,21 +142,21 @@ class CoverSearchScreenModel(
                         }
 
                         if (isActive && seriesCovers.isNotEmpty()) {
-                            mutableState.update { state ->
+                            _state.update { state ->
                                 state.copy(
                                     results = deduplicateResults(state.results + seriesCovers),
                                     progress = state.progress + 1,
                                 )
                             }
                         } else if (isActive) {
-                            mutableState.update { state ->
+                            _state.update { state ->
                                 state.copy(progress = state.progress + 1)
                             }
                         }
                     } catch (e: Exception) {
                         logcat(LogPriority.WARN, e) { "Cover search failed for source '${source.name}'; skipping" }
                         if (isActive) {
-                            mutableState.update { state ->
+                            _state.update { state ->
                                 state.copy(progress = state.progress + 1)
                             }
                         }
@@ -178,12 +170,12 @@ class CoverSearchScreenModel(
                 coverResultsCache[query] = results
             }
 
-            mutableState.update { it.copy(isLoading = false) }
+            _state.update { it.copy(isLoading = false) }
         }
     }
 
-    override fun onDispose() {
-        super.onDispose()
+    override fun onCleared() {
+        super.onCleared()
         searchJob?.cancel()
     }
 
@@ -199,12 +191,6 @@ class CoverSearchScreenModel(
     companion object {
         private const val MAX_CACHE_ENTRIES = 20
 
-        /**
-         * In-memory LRU cache of cover search results keyed by manga title.
-         * Persists across screen model instances within the same app session,
-         * so reopening the cover search for the same manga is instant and free.
-         * Bounded to [MAX_CACHE_ENTRIES] to prevent unbounded memory growth.
-         */
         private val coverResultsCache = object : LinkedHashMap<String, List<CoverResult>>(
             MAX_CACHE_ENTRIES + 1,
             0.75f,

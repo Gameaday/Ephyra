@@ -17,11 +17,13 @@ import ephyra.data.notification.Notifications
 import ephyra.domain.base.BasePreferences
 import ephyra.presentation.core.util.system.getSerializableExtraCompat
 import logcat.LogPriority
-import org.koin.android.ext.android.inject
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class ExtensionInstallService : Service() {
 
-    private val extensionManager: ephyra.app.extension.ExtensionManager by inject()
+    @Inject lateinit var extensionManager: ephyra.app.extension.ExtensionManager
     private var installer: Installer? = null
 
     override fun onCreate() {

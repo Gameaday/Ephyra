@@ -20,8 +20,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.util.fastAll
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -87,9 +87,9 @@ data object LibraryTab : Tab {
         val scope = rememberCoroutineScope()
         val haptic = LocalHapticFeedback.current
 
-        val screenModel = koinScreenModel<LibraryScreenModel>()
+        val screenModel = hiltViewModel<LibraryScreenModel>()
         val updateScheduler = koinInject<LibraryUpdateScheduler>()
-        val settingsScreenModel = koinScreenModel<LibrarySettingsScreenModel>()
+        val settingsScreenModel = hiltViewModel<LibrarySettingsScreenModel>()
         val migrationConfigScreenFactory = koinInject<MigrationConfigScreenFactory>()
         val state by screenModel.state.collectAsStateWithLifecycle()
 

@@ -6,7 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.fragment.app.FragmentActivity
-import cafe.adriel.voyager.koin.koinScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import ephyra.core.common.core.security.PrivacyPreferences
 import ephyra.core.common.core.security.SecurityPreferences
 import ephyra.core.common.i18n.stringResource
@@ -29,7 +29,7 @@ object SettingsSecurityScreen : SearchableSettings {
 
     @Composable
     override fun getPreferences(): List<Preference> {
-        val screenModel = koinScreenModel<SettingsSecurityScreenModel>()
+        val screenModel = hiltViewModel<SettingsSecurityScreenModel>()
         val securityPreferences = screenModel.securityPreferences
         val privacyPreferences = screenModel.privacyPreferences
         val appInfo: AppInfo = koinInject()

@@ -3,8 +3,10 @@ package ephyra.feature.manga
 import android.app.Application
 import android.net.Uri
 import androidx.compose.material3.SnackbarHostState
-import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import coil3.asDrawable
 import coil3.imageLoader
 import coil3.request.ImageRequest
@@ -30,17 +32,17 @@ import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.await
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import okhttp3.Request
-import org.koin.core.annotation.Factory
-import org.koin.core.annotation.InjectedParam
 
-@Factory
-class MangaCoverScreenModel(
-    @InjectedParam private val mangaId: Long,
+@HiltViewModel
+class MangaCoverScreenModel @Inject constructor(
     private val getManga: GetManga,
     private val imageSaver: ImageSaver,
     private val coverCache: CoverCache,
@@ -51,17 +53,25 @@ class MangaCoverScreenModel(
     private val application: Application,
     private val localCoverManager: LocalCoverManager,
     val snackbarHostState: SnackbarHostState = SnackbarHostState(),
-) : StateScreenModel<Manga?>(null) {
+) : ViewModel() {
+
+    private val _state = MutableStateFlow<Manga?>(null)
+    val state: StateFlow<Manga?> = _state.asStateFlow()
 
     private val effectChannel = Channel<MangaCoverEffect>(Channel.BUFFERED)
 
     /** One-shot UI side-effects to be collected by the composable. */
     val effectFlow = effectChannel.receiveAsFlow()
 
-    init {
-        screenModelScope.launchIO {
+    private var isInitialized = false
+
+    fun init(mangaId: Long) {
+        if (isInitialized) return
+        isInitialized = true
+
+        viewModelScope.launchIO {
             getManga.subscribe(mangaId)
-                .collect { newManga -> mutableState.update { newManga } }
+                .collect { newManga -> _state.update { newManga } }
         }
     }
 
@@ -76,7 +86,7 @@ class MangaCoverScreenModel(
     }
 
     private fun saveCover() {
-        screenModelScope.launch {
+        viewModelScope.launch {
             try {
                 saveCoverInternal(temp = false)
                 snackbarHostState.showSnackbar(
@@ -94,7 +104,7 @@ class MangaCoverScreenModel(
     }
 
     private fun shareCover() {
-        screenModelScope.launch {
+        viewModelScope.launch {
             try {
                 val uri = saveCoverInternal(temp = true) ?: return@launch
                 // Emit effect — the UI layer handles startActivity with Activity context
@@ -109,15 +119,6 @@ class MangaCoverScreenModel(
         }
     }
 
-    /**
-     * Save manga cover Bitmap to picture or temporary share directory.
-     *
-     * When sharing (temp = true), always uses PNG for universal compatibility.
-     * When saving to Pictures, uses the user's preferred [LibraryPreferences.ImageFormat]
-     * (WebP lossless by default) for efficient storage.
-     *
-     * @return the uri to saved file
-     */
     private suspend fun saveCoverInternal(temp: Boolean): Uri? {
         val manga = state.value ?: return null
         val req = ImageRequest.Builder(application)
@@ -126,8 +127,8 @@ class MangaCoverScreenModel(
             .build()
 
         // Shares always use PNG for compatibility; internal saves use user's preferred format
-        val encoder: (android.graphics.Bitmap, java.io.OutputStream) -> Unit = if (temp) {
-            { bmp, os -> bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, os) }
+        val encoder = if (temp) {
+            { bmp: android.graphics.Bitmap, os: java.io.OutputStream -> bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, os); Unit }
         } else {
             libraryPreferences.imageFormat().get().encoder()
         }
@@ -148,14 +149,9 @@ class MangaCoverScreenModel(
         }
     }
 
-    /**
-     * Update cover with local file.
-     *
-     * @param data uri of the cover resource.
-     */
     private fun editCover(data: Uri) {
         val manga = state.value ?: return
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             application.contentResolver.openInputStream(data)?.use {
                 try {
                     manga.editCover(localCoverManager, it, updateManga, coverCache)
@@ -169,7 +165,7 @@ class MangaCoverScreenModel(
 
     private fun deleteCustomCover() {
         val id = state.value?.id ?: return
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             try {
                 coverCache.deleteCustomCover(id)
                 updateManga.awaitUpdateCoverLastModified(id)
@@ -180,21 +176,9 @@ class MangaCoverScreenModel(
         }
     }
 
-    /**
-     * Set cover from a URL by downloading the image and saving it as a custom cover.
-     * The raw bytes from the source are always streamed directly to preserve the original
-     * format. The [ImageFormat] preference only affects *derived* images (splits, merges,
-     * save/share); custom covers are stored as received to maintain byte-for-byte fidelity.
-     *
-     * Uses [sourceId] to look up the [HttpSource] and apply its headers/client so that
-     * sources requiring Referer/User-Agent/cookies work correctly.
-     *
-     * @param coverUrl URL of the cover image to download.
-     * @param sourceId ID of the source that owns this cover URL.
-     */
     private fun setCoverFromUrl(coverUrl: String, sourceId: Long) {
         val manga = state.value ?: return
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             try {
                 val source = sourceManager.get(sourceId)
                 val httpSource = source as? HttpSource
@@ -220,7 +204,7 @@ class MangaCoverScreenModel(
     }
 
     private fun notifyCoverUpdated() {
-        screenModelScope.launch {
+        viewModelScope.launch {
             snackbarHostState.showSnackbar(
                 application.stringResource(ephyra.app.core.common.R.string.cover_updated),
                 withDismissAction = true,
@@ -229,7 +213,7 @@ class MangaCoverScreenModel(
     }
 
     private fun notifyFailedCoverUpdate(e: Throwable) {
-        screenModelScope.launch {
+        viewModelScope.launch {
             snackbarHostState.showSnackbar(
                 application.stringResource(ephyra.app.core.common.R.string.notification_cover_update_failed),
                 withDismissAction = true,

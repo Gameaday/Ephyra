@@ -39,7 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.core.net.toUri
-import cafe.adriel.voyager.koin.koinScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.hippo.unifile.UniFile
@@ -98,7 +98,7 @@ object SettingsDataScreen : SearchableSettings {
 
     @Composable
     override fun getPreferences(): List<Preference> {
-        val screenModel = koinScreenModel<SettingsDataScreenModel>()
+        val screenModel = hiltViewModel<SettingsDataScreenModel>()
 
         return persistentListOf(
             getStorageLocationPref(storagePreferences = screenModel.storagePreferences),

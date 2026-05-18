@@ -7,8 +7,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.hilt.navigation.compose.hiltViewModel
 import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.feature.browse.presentation.SourceOptionsDialog
@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun Screen.sourcesTab(): TabContent {
     val navigator = LocalNavigator.currentOrThrow
-    val screenModel = koinScreenModel<SourcesScreenModel>()
+    val screenModel = hiltViewModel<SourcesScreenModel>()
     val state by screenModel.state.collectAsStateWithLifecycle()
 
     return TabContent(

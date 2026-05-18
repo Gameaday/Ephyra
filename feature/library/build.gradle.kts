@@ -2,6 +2,7 @@ plugins {
     id("mihon.library")
     id("mihon.library.compose")
 
+    alias(libs.plugins.hilt)
     id("com.google.devtools.ksp")
 }
 
@@ -20,6 +21,7 @@ dependencies {
     implementation(libs.logcat)
     implementation(libs.bundles.voyager)
 
+    ksp(libs.hilt.compiler)
     testImplementation(libs.bundles.test)
 }
 

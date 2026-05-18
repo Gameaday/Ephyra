@@ -1,6 +1,8 @@
 package ephyra.feature.webview
 
-import cafe.adriel.voyager.core.model.ScreenModel
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.source.service.SourceManager
 import eu.kanade.tachiyomi.network.NetworkHelper
@@ -9,15 +11,16 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 import logcat.LogPriority
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
-import org.koin.core.annotation.Factory
-import org.koin.core.annotation.InjectedParam
+import javax.inject.Inject
 
-@Factory
-class WebViewScreenModel(
-    @InjectedParam val sourceId: Long?,
+@HiltViewModel
+class WebViewScreenModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
     private val sourceManager: SourceManager,
     private val network: NetworkHelper,
-) : ScreenModel {
+) : ViewModel() {
+
+    private var sourceId: Long? = savedStateHandle.get<Long>("source_key")
 
     var headers = emptyMap<String, String>()
 
@@ -27,7 +30,18 @@ class WebViewScreenModel(
     val effectFlow = effectChannel.receiveAsFlow()
 
     init {
-        sourceId?.let { sourceManager.get(it) as? HttpSource }?.let { source ->
+        sourceId?.let { initHeaders(it) }
+    }
+
+    fun initialize(sourceId: Long?) {
+        if (this.sourceId == null && sourceId != null) {
+            this.sourceId = sourceId
+            initHeaders(sourceId)
+        }
+    }
+
+    private fun initHeaders(id: Long) {
+        (sourceManager.get(id) as? HttpSource)?.let { source ->
             try {
                 headers = source.headers.toMultimap().mapValues { it.value.getOrNull(0) ?: "" }
             } catch (e: Exception) {

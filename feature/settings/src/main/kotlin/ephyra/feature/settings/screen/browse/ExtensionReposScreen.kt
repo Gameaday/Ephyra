@@ -5,7 +5,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.koin.koinScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.feature.settings.screen.browse.components.ExtensionRepoConfirmDialog
@@ -29,7 +29,7 @@ class ExtensionReposScreen(
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
 
-        val screenModel = koinScreenModel<ExtensionReposScreenModel>()
+        val screenModel = hiltViewModel<ExtensionReposScreenModel>()
         val state by screenModel.state.collectAsStateWithLifecycle()
 
         LaunchedEffect(url) {

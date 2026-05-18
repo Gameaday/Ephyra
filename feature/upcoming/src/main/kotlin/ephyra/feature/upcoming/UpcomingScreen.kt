@@ -3,7 +3,7 @@ package ephyra.feature.upcoming
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.koin.koinScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.feature.manga.MangaScreen
@@ -15,7 +15,7 @@ class UpcomingScreen : Screen() {
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
 
-        val screenModel = koinScreenModel<UpcomingScreenModel>()
+        val screenModel = hiltViewModel<UpcomingScreenModel>()
         val state by screenModel.state.collectAsStateWithLifecycle()
 
         UpcomingScreenContent(

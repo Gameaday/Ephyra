@@ -2,8 +2,13 @@ package ephyra.feature.stats
 
 import androidx.compose.ui.util.fastDistinctBy
 import androidx.compose.ui.util.fastFilter
-import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import ephyra.core.common.util.fastCountNot
 import ephyra.core.common.util.lang.launchIO
 import ephyra.domain.download.service.DownloadManager
@@ -22,20 +27,22 @@ import ephyra.feature.stats.data.StatsData
 import ephyra.source.local.isLocal
 import eu.kanade.tachiyomi.source.model.SManga
 import kotlinx.coroutines.flow.update
-import org.koin.core.annotation.Factory
 
-@Factory
-class StatsScreenModel(
+@HiltViewModel
+class StatsScreenModel @Inject constructor(
     private val downloadManager: DownloadManager,
     private val getLibraryManga: GetLibraryManga,
     private val getTotalReadDuration: GetTotalReadDuration,
     private val getTracks: GetTracks,
     private val preferences: LibraryPreferences,
     private val trackerManager: TrackerManager,
-) : StateScreenModel<StatsScreenState>(StatsScreenState.Loading) {
+) : ViewModel() {
+
+    private val _state = MutableStateFlow<StatsScreenState>(StatsScreenState.Loading)
+    val state: StateFlow<StatsScreenState> = _state.asStateFlow()
 
     init {
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             val loggedInTrackers = trackerManager.loggedInTrackers()
             val libraryManga = getLibraryManga.await()
 
@@ -72,7 +79,7 @@ class StatsScreenModel(
                 trackerCount = loggedInTrackers.size,
             )
 
-            mutableState.update {
+            _state.update {
                 StatsScreenState.Success(
                     overview = overviewStatData,
                     titles = titlesStatData,

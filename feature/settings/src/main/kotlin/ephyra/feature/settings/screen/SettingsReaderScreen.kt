@@ -5,7 +5,7 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalView
-import cafe.adriel.voyager.koin.koinScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import ephyra.domain.reader.model.ReaderOrientation
 import ephyra.domain.reader.model.ReadingMode
 import ephyra.domain.reader.service.ReaderPreferences
@@ -27,7 +27,7 @@ object SettingsReaderScreen : SearchableSettings {
 
     @Composable
     override fun getPreferences(): List<Preference> {
-        val screenModel = koinScreenModel<SettingsReaderScreenModel>()
+        val screenModel = hiltViewModel<SettingsReaderScreenModel>()
         val readerPref = screenModel.readerPreferences
 
         return listOf(

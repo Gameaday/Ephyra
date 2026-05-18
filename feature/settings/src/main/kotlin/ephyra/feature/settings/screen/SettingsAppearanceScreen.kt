@@ -8,7 +8,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
-import cafe.adriel.voyager.koin.koinScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.domain.ui.UiPreferences
@@ -34,7 +34,7 @@ object SettingsAppearanceScreen : SearchableSettings {
 
     @Composable
     override fun getPreferences(): List<Preference> {
-        val screenModel = koinScreenModel<SettingsAppearanceScreenModel>()
+        val screenModel = hiltViewModel<SettingsAppearanceScreenModel>()
         val uiPreferences = screenModel.uiPreferences
 
         return listOf(
