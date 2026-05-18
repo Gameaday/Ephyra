@@ -14,7 +14,7 @@ class AndroidStorageFolderProvider(
     override fun directory(): File {
         return File(
             Environment.getExternalStorageDirectory().absolutePath + File.separator +
-                context.stringResource(MR.strings.app_name),
+                context.stringResource(ephyra.i18n.R.string.app_name),
         )
     }
 

@@ -103,7 +103,7 @@ object DownloadQueueScreen : Screen() {
                     titleContent = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = stringResource(MR.strings.label_download_queue),
+                                text = stringResource(ephyra.i18n.R.string.label_download_queue),
                                 maxLines = 1,
                                 modifier = Modifier.weight(1f, false),
                                 overflow = TextOverflow.Ellipsis,
@@ -130,10 +130,10 @@ object DownloadQueueScreen : Screen() {
                                 onDismissRequest = onDismissRequest,
                             ) {
                                 NestedMenuItem(
-                                    text = { Text(text = stringResource(MR.strings.action_order_by_upload_date)) },
+                                    text = { Text(text = stringResource(ephyra.i18n.R.string.action_order_by_upload_date)) },
                                     children = { closeMenu ->
                                         DropdownMenuItem(
-                                            text = { Text(text = stringResource(MR.strings.action_newest)) },
+                                            text = { Text(text = stringResource(ephyra.i18n.R.string.action_newest)) },
                                             onClick = {
                                                 screenModel.reorderQueue(
                                                     { it.chapter.dateUpload },
@@ -143,7 +143,7 @@ object DownloadQueueScreen : Screen() {
                                             },
                                         )
                                         DropdownMenuItem(
-                                            text = { Text(text = stringResource(MR.strings.action_oldest)) },
+                                            text = { Text(text = stringResource(ephyra.i18n.R.string.action_oldest)) },
                                             onClick = {
                                                 screenModel.reorderQueue(
                                                     { it.chapter.dateUpload },
@@ -155,10 +155,10 @@ object DownloadQueueScreen : Screen() {
                                     },
                                 )
                                 NestedMenuItem(
-                                    text = { Text(text = stringResource(MR.strings.action_order_by_chapter_number)) },
+                                    text = { Text(text = stringResource(ephyra.i18n.R.string.action_order_by_chapter_number)) },
                                     children = { closeMenu ->
                                         DropdownMenuItem(
-                                            text = { Text(text = stringResource(MR.strings.action_asc)) },
+                                            text = { Text(text = stringResource(ephyra.i18n.R.string.action_asc)) },
                                             onClick = {
                                                 screenModel.reorderQueue(
                                                     { it.chapter.chapterNumber },
@@ -168,7 +168,7 @@ object DownloadQueueScreen : Screen() {
                                             },
                                         )
                                         DropdownMenuItem(
-                                            text = { Text(text = stringResource(MR.strings.action_desc)) },
+                                            text = { Text(text = stringResource(ephyra.i18n.R.string.action_desc)) },
                                             onClick = {
                                                 screenModel.reorderQueue(
                                                     { it.chapter.chapterNumber },
@@ -184,12 +184,12 @@ object DownloadQueueScreen : Screen() {
                             AppBarActions(
                                 persistentListOf(
                                     AppBar.Action(
-                                        title = stringResource(MR.strings.action_sort),
+                                        title = stringResource(ephyra.i18n.R.string.action_sort),
                                         icon = Icons.AutoMirrored.Outlined.Sort,
                                         onClick = { sortExpanded = true },
                                     ),
                                     AppBar.OverflowAction(
-                                        title = stringResource(MR.strings.action_cancel_all),
+                                        title = stringResource(ephyra.i18n.R.string.action_cancel_all),
                                         onClick = { screenModel.onEvent(DownloadQueueScreenEvent.ClearQueue) },
                                     ),
                                 ),
@@ -203,7 +203,7 @@ object DownloadQueueScreen : Screen() {
                 val isRunning by screenModel.isDownloaderRunning.collectAsStateWithLifecycle()
                 ExtendedFloatingActionButton(
                     text = {
-                        val id = if (isRunning) MR.strings.action_pause else MR.strings.action_resume
+                        val id = if (isRunning) ephyra.i18n.R.string.action_pause else ephyra.i18n.R.string.action_resume
                         Text(text = stringResource(id))
                     },
                     icon = {
@@ -224,7 +224,7 @@ object DownloadQueueScreen : Screen() {
         ) { contentPadding ->
             if (downloadList.isEmpty()) {
                 EmptyScreen(
-                    stringRes = MR.strings.information_no_downloads,
+                    stringRes = ephyra.i18n.R.string.information_no_downloads,
                     modifier = Modifier.padding(contentPadding),
                 )
                 return@Scaffold
@@ -441,42 +441,42 @@ private fun DownloadQueueItem(
                 onDismissRequest = { menuExpanded = false },
             ) {
                 DropdownMenuItem(
-                    text = { Text(stringResource(MR.strings.action_move_to_top)) },
+                    text = { Text(stringResource(ephyra.i18n.R.string.action_move_to_top)) },
                     onClick = {
                         onMoveToTop()
                         menuExpanded = false
                     },
                 )
                 DropdownMenuItem(
-                    text = { Text(stringResource(MR.strings.action_move_to_top_all_for_series)) },
+                    text = { Text(stringResource(ephyra.i18n.R.string.action_move_to_top_all_for_series)) },
                     onClick = {
                         onMoveSeriesTop()
                         menuExpanded = false
                     },
                 )
                 DropdownMenuItem(
-                    text = { Text(stringResource(MR.strings.action_move_to_bottom)) },
+                    text = { Text(stringResource(ephyra.i18n.R.string.action_move_to_bottom)) },
                     onClick = {
                         onMoveToBottom()
                         menuExpanded = false
                     },
                 )
                 DropdownMenuItem(
-                    text = { Text(stringResource(MR.strings.action_move_to_bottom_all_for_series)) },
+                    text = { Text(stringResource(ephyra.i18n.R.string.action_move_to_bottom_all_for_series)) },
                     onClick = {
                         onMoveSeriesBottom()
                         menuExpanded = false
                     },
                 )
                 DropdownMenuItem(
-                    text = { Text(stringResource(MR.strings.action_cancel)) },
+                    text = { Text(stringResource(ephyra.i18n.R.string.action_cancel)) },
                     onClick = {
                         onCancel()
                         menuExpanded = false
                     },
                 )
                 DropdownMenuItem(
-                    text = { Text(stringResource(MR.strings.cancel_all_for_series)) },
+                    text = { Text(stringResource(ephyra.i18n.R.string.cancel_all_for_series)) },
                     onClick = {
                         onCancelSeries()
                         menuExpanded = false

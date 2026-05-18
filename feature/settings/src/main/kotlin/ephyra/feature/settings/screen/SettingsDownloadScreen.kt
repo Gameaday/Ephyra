@@ -66,7 +66,7 @@ object SettingsDownloadScreen : SearchableSettings {
 
     @ReadOnlyComposable
     @Composable
-    override fun getTitleRes() = MR.strings.pref_category_downloads
+    override fun getTitleRes() = ephyra.i18n.R.string.pref_category_downloads
 
     @Composable
     override fun getPreferences(): List<Preference> {
@@ -80,28 +80,28 @@ object SettingsDownloadScreen : SearchableSettings {
         return listOf(
             Preference.PreferenceItem.SwitchPreference(
                 preference = downloadPreferences.downloadOnlyOverWifi(),
-                title = stringResource(MR.strings.connected_to_wifi),
+                title = stringResource(ephyra.i18n.R.string.connected_to_wifi),
             ),
             Preference.PreferenceItem.SwitchPreference(
                 preference = downloadPreferences.saveChaptersAsCBZ(),
-                title = stringResource(MR.strings.save_chapter_as_cbz),
+                title = stringResource(ephyra.i18n.R.string.save_chapter_as_cbz),
             ),
             Preference.PreferenceItem.SwitchPreference(
                 preference = downloadPreferences.splitTallImages(),
-                title = stringResource(MR.strings.split_tall_images),
-                subtitle = stringResource(MR.strings.split_tall_images_summary),
+                title = stringResource(ephyra.i18n.R.string.split_tall_images),
+                subtitle = stringResource(ephyra.i18n.R.string.split_tall_images_summary),
             ),
             Preference.PreferenceItem.SliderPreference(
                 value = parallelSourceLimit,
                 valueRange = 1..10,
-                title = stringResource(MR.strings.pref_download_concurrent_sources),
+                title = stringResource(ephyra.i18n.R.string.pref_download_concurrent_sources),
                 onValueChanged = { downloadPreferences.parallelSourceLimit().set(it) },
             ),
             Preference.PreferenceItem.SliderPreference(
                 value = parallelPageLimit,
                 valueRange = 1..15,
-                title = stringResource(MR.strings.pref_download_concurrent_pages),
-                subtitle = stringResource(MR.strings.pref_download_concurrent_pages_summary),
+                title = stringResource(ephyra.i18n.R.string.pref_download_concurrent_pages),
+                subtitle = stringResource(ephyra.i18n.R.string.pref_download_concurrent_pages_summary),
                 onValueChanged = { downloadPreferences.parallelPageLimit().set(it) },
             ),
             getDeleteChaptersGroup(
@@ -129,27 +129,27 @@ object SettingsDownloadScreen : SearchableSettings {
         categories: List<Category>,
     ): Preference.PreferenceGroup {
         return Preference.PreferenceGroup(
-            title = stringResource(MR.strings.pref_category_delete_chapters),
+            title = stringResource(ephyra.i18n.R.string.pref_category_delete_chapters),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.SwitchPreference(
                     preference = downloadPreferences.removeAfterMarkedAsRead(),
-                    title = stringResource(MR.strings.pref_remove_after_marked_as_read),
+                    title = stringResource(ephyra.i18n.R.string.pref_remove_after_marked_as_read),
                 ),
                 Preference.PreferenceItem.ListPreference(
                     preference = downloadPreferences.removeAfterReadSlots(),
                     entries = persistentMapOf(
-                        -1 to stringResource(MR.strings.disabled),
-                        0 to stringResource(MR.strings.last_read_chapter),
-                        1 to stringResource(MR.strings.second_to_last),
-                        2 to stringResource(MR.strings.third_to_last),
-                        3 to stringResource(MR.strings.fourth_to_last),
-                        4 to stringResource(MR.strings.fifth_to_last),
+                        -1 to stringResource(ephyra.i18n.R.string.disabled),
+                        0 to stringResource(ephyra.i18n.R.string.last_read_chapter),
+                        1 to stringResource(ephyra.i18n.R.string.second_to_last),
+                        2 to stringResource(ephyra.i18n.R.string.third_to_last),
+                        3 to stringResource(ephyra.i18n.R.string.fourth_to_last),
+                        4 to stringResource(ephyra.i18n.R.string.fifth_to_last),
                     ),
-                    title = stringResource(MR.strings.pref_remove_after_read),
+                    title = stringResource(ephyra.i18n.R.string.pref_remove_after_read),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = downloadPreferences.removeBookmarkedChapters(),
-                    title = stringResource(MR.strings.pref_remove_bookmarked_chapters),
+                    title = stringResource(ephyra.i18n.R.string.pref_remove_bookmarked_chapters),
                 ),
                 getExcludedCategoriesPreference(
                     downloadPreferences = downloadPreferences,
@@ -169,7 +169,7 @@ object SettingsDownloadScreen : SearchableSettings {
             entries = categories()
                 .associate { it.id.toString() to it.visualName }
                 .toImmutableMap(),
-            title = stringResource(MR.strings.pref_remove_exclude_categories),
+            title = stringResource(ephyra.i18n.R.string.pref_remove_exclude_categories),
         )
     }
 
@@ -191,8 +191,8 @@ object SettingsDownloadScreen : SearchableSettings {
         if (showDialog) {
             val categoryById = remember(allCategories) { allCategories.associateBy { it.id.toString() } }
             TriStateListDialog(
-                title = stringResource(MR.strings.categories),
-                message = stringResource(MR.strings.pref_download_new_categories_details),
+                title = stringResource(ephyra.i18n.R.string.categories),
+                message = stringResource(ephyra.i18n.R.string.pref_download_new_categories_details),
                 items = allCategories,
                 initialChecked = included.mapNotNull { categoryById[it] },
                 initialInversed = excluded.mapNotNull { categoryById[it] },
@@ -207,19 +207,19 @@ object SettingsDownloadScreen : SearchableSettings {
         }
 
         return Preference.PreferenceGroup(
-            title = stringResource(MR.strings.pref_category_auto_download),
+            title = stringResource(ephyra.i18n.R.string.pref_category_auto_download),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.SwitchPreference(
                     preference = downloadNewChaptersPref,
-                    title = stringResource(MR.strings.pref_download_new),
+                    title = stringResource(ephyra.i18n.R.string.pref_download_new),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = downloadNewUnreadChaptersOnlyPref,
-                    title = stringResource(MR.strings.pref_download_new_unread_chapters_only),
+                    title = stringResource(ephyra.i18n.R.string.pref_download_new_unread_chapters_only),
                     enabled = downloadNewChapters,
                 ),
                 Preference.PreferenceItem.TextPreference(
-                    title = stringResource(MR.strings.categories),
+                    title = stringResource(ephyra.i18n.R.string.categories),
                     subtitle = getCategoriesLabel(
                         allCategories = allCategories,
                         included = included,
@@ -237,22 +237,22 @@ object SettingsDownloadScreen : SearchableSettings {
         downloadPreferences: DownloadPreferences,
     ): Preference.PreferenceGroup {
         return Preference.PreferenceGroup(
-            title = stringResource(MR.strings.download_ahead),
+            title = stringResource(ephyra.i18n.R.string.download_ahead),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.ListPreference(
                     preference = downloadPreferences.autoDownloadWhileReading(),
                     entries = listOf(0, 2, 3, 5, 10)
                         .associateWith {
                             if (it == 0) {
-                                stringResource(MR.strings.disabled)
+                                stringResource(ephyra.i18n.R.string.disabled)
                             } else {
-                                pluralStringResource(MR.plurals.next_unread_chapters, count = it, it)
+                                pluralStringResource(ephyra.i18n.R.plurals.next_unread_chapters, count = it, it)
                             }
                         }
                         .toImmutableMap(),
-                    title = stringResource(MR.strings.auto_download_while_reading),
+                    title = stringResource(ephyra.i18n.R.string.auto_download_while_reading),
                 ),
-                Preference.PreferenceItem.InfoPreference(stringResource(MR.strings.download_ahead_info)),
+                Preference.PreferenceItem.InfoPreference(stringResource(ephyra.i18n.R.string.download_ahead_info)),
             ),
         )
     }
@@ -272,25 +272,25 @@ object SettingsDownloadScreen : SearchableSettings {
             AlertDialog(
                 onDismissRequest = { showClearDialog = false },
                 title = {
-                    Text(stringResource(MR.strings.pref_clear_blocked_pages))
+                    Text(stringResource(ephyra.i18n.R.string.pref_clear_blocked_pages))
                 },
                 text = {
-                    Text(stringResource(MR.strings.pref_clear_blocked_pages_confirm, count))
+                    Text(stringResource(ephyra.i18n.R.string.pref_clear_blocked_pages_confirm, count))
                 },
                 confirmButton = {
                     TextButton(
                         onClick = {
                             downloadPreferences.blockedPageHashes().set(emptySet())
                             showClearDialog = false
-                            context.toast(MR.strings.blocked_pages_cleared)
+                            context.toast(ephyra.i18n.R.string.blocked_pages_cleared)
                         },
                     ) {
-                        Text(stringResource(MR.strings.action_ok))
+                        Text(stringResource(ephyra.i18n.R.string.action_ok))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showClearDialog = false }) {
-                        Text(stringResource(MR.strings.action_cancel))
+                        Text(stringResource(ephyra.i18n.R.string.action_cancel))
                     }
                 },
             )
@@ -301,10 +301,10 @@ object SettingsDownloadScreen : SearchableSettings {
             AlertDialog(
                 onDismissRequest = { hashToRemove = null },
                 title = {
-                    Text(stringResource(MR.strings.action_remove))
+                    Text(stringResource(ephyra.i18n.R.string.action_remove))
                 },
                 text = {
-                    Text(stringResource(MR.strings.pref_remove_blocked_page_confirm))
+                    Text(stringResource(ephyra.i18n.R.string.pref_remove_blocked_page_confirm))
                 },
                 confirmButton = {
                     TextButton(
@@ -314,15 +314,15 @@ object SettingsDownloadScreen : SearchableSettings {
                             current.remove(currentHashToRemove)
                             pref.set(current)
                             hashToRemove = null
-                            context.toast(MR.strings.page_unblocked)
+                            context.toast(ephyra.i18n.R.string.page_unblocked)
                         },
                     ) {
-                        Text(stringResource(MR.strings.action_ok))
+                        Text(stringResource(ephyra.i18n.R.string.action_ok))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { hashToRemove = null }) {
-                        Text(stringResource(MR.strings.action_cancel))
+                        Text(stringResource(ephyra.i18n.R.string.action_cancel))
                     }
                 },
             )
@@ -337,27 +337,27 @@ object SettingsDownloadScreen : SearchableSettings {
         }
 
         return Preference.PreferenceGroup(
-            title = stringResource(MR.strings.pref_page_filter_group),
+            title = stringResource(ephyra.i18n.R.string.pref_page_filter_group),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.InfoPreference(
                     if (count > 0) {
-                        stringResource(MR.strings.pref_blocked_pages_summary, count)
+                        stringResource(ephyra.i18n.R.string.pref_blocked_pages_summary, count)
                     } else {
-                        stringResource(MR.strings.pref_blocked_pages_empty)
+                        stringResource(ephyra.i18n.R.string.pref_blocked_pages_empty)
                     },
                 ),
                 Preference.PreferenceItem.TextPreference(
-                    title = stringResource(MR.strings.pref_manage_blocked_pages),
+                    title = stringResource(ephyra.i18n.R.string.pref_manage_blocked_pages),
                     enabled = count > 0,
                     subtitle = if (count > 0) {
-                        stringResource(MR.strings.pref_manage_blocked_pages_subtitle)
+                        stringResource(ephyra.i18n.R.string.pref_manage_blocked_pages_subtitle)
                     } else {
                         null
                     },
                     onClick = { showManageDialog = true },
                 ),
                 Preference.PreferenceItem.TextPreference(
-                    title = stringResource(MR.strings.pref_clear_blocked_pages),
+                    title = stringResource(ephyra.i18n.R.string.pref_clear_blocked_pages),
                     enabled = count > 0,
                     onClick = { showClearDialog = true },
                 ),
@@ -375,7 +375,7 @@ object SettingsDownloadScreen : SearchableSettings {
         AlertDialog(
             onDismissRequest = onDismiss,
             title = {
-                Text(stringResource(MR.strings.pref_manage_blocked_pages))
+                Text(stringResource(ephyra.i18n.R.string.pref_manage_blocked_pages))
             },
             text = {
                 Box {
@@ -401,7 +401,7 @@ object SettingsDownloadScreen : SearchableSettings {
                                 ) {
                                     Icon(
                                         imageVector = Icons.Outlined.Delete,
-                                        contentDescription = stringResource(MR.strings.action_delete),
+                                        contentDescription = stringResource(ephyra.i18n.R.string.action_delete),
                                         tint = MaterialTheme.colorScheme.error,
                                     )
                                 }
@@ -418,7 +418,7 @@ object SettingsDownloadScreen : SearchableSettings {
             },
             confirmButton = {
                 TextButton(onClick = onDismiss) {
-                    Text(stringResource(MR.strings.action_ok))
+                    Text(stringResource(ephyra.i18n.R.string.action_ok))
                 }
             },
         )
@@ -449,7 +449,7 @@ object SettingsDownloadScreen : SearchableSettings {
                     context.contentResolver.takePersistableUriPermission(uri, flags)
                 } catch (e: SecurityException) {
                     logcat(LogPriority.ERROR, e)
-                    context.toast(MR.strings.file_picker_uri_permission_unsupported)
+                    context.toast(ephyra.i18n.R.string.file_picker_uri_permission_unsupported)
                 }
                 UniFile.fromUri(context, uri)?.let {
                     jellyfinFolderPref.set(it.uri.toString())
@@ -458,7 +458,7 @@ object SettingsDownloadScreen : SearchableSettings {
         }
 
         val jellyfinFolderSubtitle = if (jellyfinFolder.isBlank()) {
-            stringResource(MR.strings.pref_jellyfin_library_folder_not_set)
+            stringResource(ephyra.i18n.R.string.pref_jellyfin_library_folder_not_set)
         } else {
             remember(jellyfinFolder) {
                 UniFile.fromUri(context, jellyfinFolder.toUri())?.displayablePath
@@ -469,7 +469,7 @@ object SettingsDownloadScreen : SearchableSettings {
             if (!isLoggedIn) {
                 add(
                     Preference.PreferenceItem.InfoPreference(
-                        stringResource(MR.strings.pref_jellyfin_not_logged_in),
+                        stringResource(ephyra.i18n.R.string.pref_jellyfin_not_logged_in),
                     ),
                 )
             }
@@ -477,8 +477,8 @@ object SettingsDownloadScreen : SearchableSettings {
             add(
                 Preference.PreferenceItem.SwitchPreference(
                     preference = downloadPreferences.autoSyncToJellyfin(),
-                    title = stringResource(MR.strings.pref_auto_sync_to_jellyfin),
-                    subtitle = stringResource(MR.strings.pref_auto_sync_to_jellyfin_summary),
+                    title = stringResource(ephyra.i18n.R.string.pref_auto_sync_to_jellyfin),
+                    subtitle = stringResource(ephyra.i18n.R.string.pref_auto_sync_to_jellyfin_summary),
                     enabled = isLoggedIn,
                 ),
             )
@@ -486,22 +486,22 @@ object SettingsDownloadScreen : SearchableSettings {
             add(
                 Preference.PreferenceItem.SwitchPreference(
                     preference = libraryPreferences.jellyfinCompatibleNaming(),
-                    title = stringResource(MR.strings.pref_jellyfin_compatible_naming),
-                    subtitle = stringResource(MR.strings.pref_jellyfin_compatible_naming_summary),
+                    title = stringResource(ephyra.i18n.R.string.pref_jellyfin_compatible_naming),
+                    subtitle = stringResource(ephyra.i18n.R.string.pref_jellyfin_compatible_naming_summary),
                     enabled = isLoggedIn && autoSync,
                 ),
             )
 
             add(
                 Preference.PreferenceItem.TextPreference(
-                    title = stringResource(MR.strings.pref_jellyfin_library_folder),
+                    title = stringResource(ephyra.i18n.R.string.pref_jellyfin_library_folder),
                     subtitle = jellyfinFolderSubtitle,
                     enabled = isLoggedIn && autoSync,
                     onClick = {
                         try {
                             pickJellyfinFolder.launch(null)
                         } catch (e: ActivityNotFoundException) {
-                            context.toast(MR.strings.file_picker_error)
+                            context.toast(ephyra.i18n.R.string.file_picker_error)
                         }
                     },
                 ),
@@ -510,7 +510,7 @@ object SettingsDownloadScreen : SearchableSettings {
             if (jellyfinFolder.isNotBlank() && isLoggedIn && autoSync) {
                 add(
                     Preference.PreferenceItem.TextPreference(
-                        title = stringResource(MR.strings.pref_jellyfin_library_folder_clear),
+                        title = stringResource(ephyra.i18n.R.string.pref_jellyfin_library_folder_clear),
                         subtitle = null,
                         enabled = true,
                         onClick = { jellyfinFolderPref.set("") },
@@ -521,7 +521,7 @@ object SettingsDownloadScreen : SearchableSettings {
             if (jellyfinFolder.isBlank() && isLoggedIn && autoSync) {
                 add(
                     Preference.PreferenceItem.InfoPreference(
-                        stringResource(MR.strings.pref_jellyfin_library_folder_hint),
+                        stringResource(ephyra.i18n.R.string.pref_jellyfin_library_folder_hint),
                     ),
                 )
             }
@@ -530,12 +530,12 @@ object SettingsDownloadScreen : SearchableSettings {
                 Preference.PreferenceItem.ListPreference(
                     preference = downloadPreferences.jellyfinUploadScope(),
                     entries = persistentMapOf(
-                        0 to stringResource(MR.strings.jellyfin_scope_all),
-                        1 to stringResource(MR.strings.jellyfin_scope_read),
-                        2 to stringResource(MR.strings.jellyfin_scope_downloaded),
+                        0 to stringResource(ephyra.i18n.R.string.jellyfin_scope_all),
+                        1 to stringResource(ephyra.i18n.R.string.jellyfin_scope_read),
+                        2 to stringResource(ephyra.i18n.R.string.jellyfin_scope_downloaded),
                     ),
-                    title = stringResource(MR.strings.pref_jellyfin_upload_scope),
-                    subtitle = stringResource(MR.strings.pref_jellyfin_upload_scope_summary),
+                    title = stringResource(ephyra.i18n.R.string.pref_jellyfin_upload_scope),
+                    subtitle = stringResource(ephyra.i18n.R.string.pref_jellyfin_upload_scope_summary),
                     enabled = isLoggedIn && autoSync,
                 ),
             )
@@ -543,11 +543,11 @@ object SettingsDownloadScreen : SearchableSettings {
             add(
                 Preference.PreferenceItem.SwitchPreference(
                     preference = downloadPreferences.jellyfinScanAfterSync(),
-                    title = stringResource(MR.strings.pref_jellyfin_scan_after_sync),
+                    title = stringResource(ephyra.i18n.R.string.pref_jellyfin_scan_after_sync),
                     subtitle = if (!isAdmin && isLoggedIn) {
-                        stringResource(MR.strings.pref_jellyfin_not_admin_hint)
+                        stringResource(ephyra.i18n.R.string.pref_jellyfin_not_admin_hint)
                     } else {
-                        stringResource(MR.strings.pref_jellyfin_scan_after_sync_summary)
+                        stringResource(ephyra.i18n.R.string.pref_jellyfin_scan_after_sync_summary)
                     },
                     enabled = isLoggedIn && autoSync && isAdmin,
                 ),
@@ -555,7 +555,7 @@ object SettingsDownloadScreen : SearchableSettings {
         }
 
         return Preference.PreferenceGroup(
-            title = stringResource(MR.strings.pref_category_jellyfin_sync),
+            title = stringResource(ephyra.i18n.R.string.pref_category_jellyfin_sync),
             preferenceItems = items.toImmutableList(),
         )
     }

@@ -58,7 +58,7 @@ class AppLanguageScreen : Screen() {
         Scaffold(
             topBar = { scrollBehavior ->
                 AppBar(
-                    title = stringResource(MR.strings.pref_app_language),
+                    title = stringResource(ephyra.i18n.R.string.pref_app_language),
                     navigateUp = navigator::pop,
                     scrollBehavior = scrollBehavior,
                 )
@@ -115,7 +115,7 @@ class AppLanguageScreen : Screen() {
         }
 
         langs.sortBy { it.displayName }
-        langs.add(0, Language("", context.stringResource(MR.strings.label_default), null))
+        langs.add(0, Language("", context.stringResource(ephyra.i18n.R.string.label_default), null))
 
         return langs.toImmutableList()
     }

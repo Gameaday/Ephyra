@@ -56,7 +56,7 @@ class RestoreBackupScreen(
         Scaffold(
             topBar = {
                 AppBar(
-                    title = stringResource(MR.strings.pref_restore_backup),
+                    title = stringResource(ephyra.i18n.R.string.pref_restore_backup),
                     navigateUp = navigator::pop,
                     scrollBehavior = it,
                 )
@@ -64,7 +64,7 @@ class RestoreBackupScreen(
         ) { contentPadding ->
             LazyColumnWithAction(
                 contentPadding = contentPadding,
-                actionLabel = stringResource(MR.strings.action_restore),
+                actionLabel = stringResource(ephyra.i18n.R.string.action_restore),
                 actionEnabled = state.canRestore && state.options.canRestore(),
                 onClickAction = {
                     model.startRestore()
@@ -73,7 +73,7 @@ class RestoreBackupScreen(
             ) {
                 if (DeviceUtil.isMiui && DeviceUtil.isMiuiOptimizationDisabled()) {
                     item {
-                        WarningBanner(stringResource(MR.strings.restore_miui_warning))
+                        WarningBanner(stringResource(ephyra.i18n.R.string.restore_miui_warning))
                     }
                 }
 
@@ -112,11 +112,11 @@ class RestoreBackupScreen(
                     val msg = buildAnnotatedString {
                         when (error) {
                             is MissingRestoreComponents -> {
-                                appendLine(stringResource(MR.strings.backup_restore_content_full))
+                                appendLine(stringResource(ephyra.i18n.R.string.backup_restore_content_full))
                                 if (error.sources.isNotEmpty()) {
                                     appendLine()
                                     withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
-                                        appendLine(stringResource(MR.strings.backup_restore_missing_sources))
+                                        appendLine(stringResource(ephyra.i18n.R.string.backup_restore_missing_sources))
                                     }
                                     error.sources.joinTo(
                                         this,
@@ -127,7 +127,7 @@ class RestoreBackupScreen(
                                 if (error.trackers.isNotEmpty()) {
                                     appendLine()
                                     withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
-                                        appendLine(stringResource(MR.strings.backup_restore_missing_trackers))
+                                        appendLine(stringResource(ephyra.i18n.R.string.backup_restore_missing_trackers))
                                     }
                                     error.trackers.joinTo(
                                         this,
@@ -139,14 +139,14 @@ class RestoreBackupScreen(
 
                             is InvalidRestore -> {
                                 withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
-                                    appendLine(stringResource(MR.strings.invalid_backup_file))
+                                    appendLine(stringResource(ephyra.i18n.R.string.invalid_backup_file))
                                 }
                                 appendLine(error.uri.toString())
 
                                 appendLine()
 
                                 withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
-                                    appendLine(stringResource(MR.strings.invalid_backup_file_error))
+                                    appendLine(stringResource(ephyra.i18n.R.string.invalid_backup_file_error))
                                 }
                                 appendLine(error.message)
                             }

@@ -1,33 +1,32 @@
 package ephyra.presentation.core.i18n
 
+import androidx.annotation.PluralsRes
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
-import androidx.compose.ui.platform.LocalContext
-import dev.icerock.moko.resources.PluralsResource
-import dev.icerock.moko.resources.StringResource
-import ephyra.core.common.i18n.pluralStringResource
-import ephyra.core.common.i18n.stringResource
+import androidx.compose.ui.res.pluralStringResource as composePluralStringResource
+import androidx.compose.ui.res.stringResource as composeStringResource
 
 @Composable
 @ReadOnlyComposable
-fun stringResource(resource: StringResource): String {
-    return LocalContext.current.stringResource(resource)
+fun stringResource(@StringRes resource: Int): String {
+    return composeStringResource(resource)
 }
 
 @Composable
 @ReadOnlyComposable
-fun stringResource(resource: StringResource, vararg args: Any): String {
-    return LocalContext.current.stringResource(resource, *args)
+fun stringResource(@StringRes resource: Int, vararg args: Any): String {
+    return composeStringResource(resource, *args)
 }
 
 @Composable
 @ReadOnlyComposable
-fun pluralStringResource(resource: PluralsResource, count: Int): String {
-    return LocalContext.current.pluralStringResource(resource, count)
+fun pluralStringResource(@PluralsRes resource: Int, count: Int): String {
+    return composePluralStringResource(resource, count, count)
 }
 
 @Composable
 @ReadOnlyComposable
-fun pluralStringResource(resource: PluralsResource, count: Int, vararg args: Any): String {
-    return LocalContext.current.pluralStringResource(resource, count, *args)
+fun pluralStringResource(@PluralsRes resource: Int, count: Int, vararg args: Any): String {
+    return composePluralStringResource(resource, count, *args)
 }

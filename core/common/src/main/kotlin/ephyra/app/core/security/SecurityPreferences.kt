@@ -28,8 +28,8 @@ class SecurityPreferences(
     )
 
     enum class SecureScreenMode(val titleRes: StringResource) {
-        ALWAYS(MR.strings.lock_always),
-        INCOGNITO(MR.strings.pref_incognito_mode),
-        NEVER(MR.strings.lock_never),
+        ALWAYS(ephyra.i18n.R.string.lock_always),
+        INCOGNITO(ephyra.i18n.R.string.pref_incognito_mode),
+        NEVER(ephyra.i18n.R.string.lock_never),
     }
 }

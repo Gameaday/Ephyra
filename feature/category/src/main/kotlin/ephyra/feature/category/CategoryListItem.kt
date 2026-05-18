@@ -55,13 +55,13 @@ fun ReorderableCollectionItemScope.CategoryListItem(
             IconButton(onClick = onRename) {
                 Icon(
                     imageVector = Icons.Outlined.Edit,
-                    contentDescription = stringResource(MR.strings.action_rename_category),
+                    contentDescription = stringResource(ephyra.i18n.R.string.action_rename_category),
                 )
             }
             IconButton(onClick = onDelete) {
                 Icon(
                     imageVector = Icons.Outlined.Delete,
-                    contentDescription = stringResource(MR.strings.action_delete),
+                    contentDescription = stringResource(ephyra.i18n.R.string.action_delete),
                 )
             }
         }

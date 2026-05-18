@@ -24,7 +24,7 @@ class OpenSourceLicensesScreen : Screen() {
         Scaffold(
             topBar = { scrollBehavior ->
                 AppBar(
-                    title = stringResource(MR.strings.licenses),
+                    title = stringResource(ephyra.i18n.R.string.licenses),
                     navigateUp = navigator::pop,
                     scrollBehavior = scrollBehavior,
                 )

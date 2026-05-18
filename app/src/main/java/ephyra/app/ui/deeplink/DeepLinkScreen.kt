@@ -34,7 +34,7 @@ class DeepLinkScreen(
         Scaffold(
             topBar = { scrollBehavior ->
                 AppBar(
-                    title = stringResource(MR.strings.action_search_hint),
+                    title = stringResource(ephyra.i18n.R.string.action_search_hint),
                     navigateUp = navigator::pop,
                     scrollBehavior = scrollBehavior,
                 )

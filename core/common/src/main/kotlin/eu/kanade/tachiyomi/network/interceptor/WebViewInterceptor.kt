@@ -61,7 +61,7 @@ abstract class WebViewInterceptor(
 
         if (!WebViewUtil.supportsWebView(context)) {
             launchUI {
-                context.toast(MR.strings.information_webview_required, Toast.LENGTH_LONG)
+                context.toast(ephyra.i18n.R.string.information_webview_required, Toast.LENGTH_LONG)
             }
             return response
         }

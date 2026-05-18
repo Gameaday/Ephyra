@@ -112,7 +112,7 @@ fun MangaBottomActionMenu(
             ) {
                 if (onBookmarkClicked != null) {
                     Button(
-                        title = stringResource(MR.strings.action_bookmark),
+                        title = stringResource(ephyra.i18n.R.string.action_bookmark),
                         icon = Icons.Outlined.BookmarkAdd,
                         toConfirm = confirm[0],
                         onLongClick = { onLongClickItem(0) },
@@ -121,7 +121,7 @@ fun MangaBottomActionMenu(
                 }
                 if (onRemoveBookmarkClicked != null) {
                     Button(
-                        title = stringResource(MR.strings.action_remove_bookmark),
+                        title = stringResource(ephyra.i18n.R.string.action_remove_bookmark),
                         icon = Icons.Outlined.BookmarkRemove,
                         toConfirm = confirm[1],
                         onLongClick = { onLongClickItem(1) },
@@ -130,7 +130,7 @@ fun MangaBottomActionMenu(
                 }
                 if (onMarkAsReadClicked != null) {
                     Button(
-                        title = stringResource(MR.strings.action_mark_as_read),
+                        title = stringResource(ephyra.i18n.R.string.action_mark_as_read),
                         icon = Icons.Outlined.DoneAll,
                         toConfirm = confirm[2],
                         onLongClick = { onLongClickItem(2) },
@@ -139,7 +139,7 @@ fun MangaBottomActionMenu(
                 }
                 if (onMarkAsUnreadClicked != null) {
                     Button(
-                        title = stringResource(MR.strings.action_mark_as_unread),
+                        title = stringResource(ephyra.i18n.R.string.action_mark_as_unread),
                         icon = Icons.Outlined.RemoveDone,
                         toConfirm = confirm[3],
                         onLongClick = { onLongClickItem(3) },
@@ -148,7 +148,7 @@ fun MangaBottomActionMenu(
                 }
                 if (onMarkPreviousAsReadClicked != null) {
                     Button(
-                        title = stringResource(MR.strings.action_mark_previous_as_read),
+                        title = stringResource(ephyra.i18n.R.string.action_mark_previous_as_read),
                         icon = ImageVector.vectorResource(R.drawable.ic_done_prev_24dp),
                         toConfirm = confirm[4],
                         onLongClick = { onLongClickItem(4) },
@@ -157,7 +157,7 @@ fun MangaBottomActionMenu(
                 }
                 if (onDownloadClicked != null) {
                     Button(
-                        title = stringResource(MR.strings.action_download),
+                        title = stringResource(ephyra.i18n.R.string.action_download),
                         icon = Icons.Outlined.Download,
                         toConfirm = confirm[5],
                         onLongClick = { onLongClickItem(5) },
@@ -166,7 +166,7 @@ fun MangaBottomActionMenu(
                 }
                 if (onDeleteClicked != null) {
                     Button(
-                        title = stringResource(MR.strings.action_delete),
+                        title = stringResource(ephyra.i18n.R.string.action_delete),
                         icon = Icons.Outlined.Delete,
                         toConfirm = confirm[6],
                         onLongClick = { onLongClickItem(6) },
@@ -272,21 +272,21 @@ fun LibraryBottomActionMenu(
                     .padding(horizontal = 8.dp, vertical = 12.dp),
             ) {
                 Button(
-                    title = stringResource(MR.strings.action_move_category),
+                    title = stringResource(ephyra.i18n.R.string.action_move_category),
                     icon = Icons.AutoMirrored.Outlined.Label,
                     toConfirm = confirm[0],
                     onLongClick = { onLongClickItem(0) },
                     onClick = onChangeCategoryClicked,
                 )
                 Button(
-                    title = stringResource(MR.strings.action_mark_as_read),
+                    title = stringResource(ephyra.i18n.R.string.action_mark_as_read),
                     icon = Icons.Outlined.DoneAll,
                     toConfirm = confirm[1],
                     onLongClick = { onLongClickItem(1) },
                     onClick = onMarkAsReadClicked,
                 )
                 Button(
-                    title = stringResource(MR.strings.action_mark_as_unread),
+                    title = stringResource(ephyra.i18n.R.string.action_mark_as_unread),
                     icon = Icons.Outlined.RemoveDone,
                     toConfirm = confirm[2],
                     onLongClick = { onLongClickItem(2) },
@@ -295,7 +295,7 @@ fun LibraryBottomActionMenu(
                 if (onDownloadClicked != null) {
                     var downloadExpanded by remember { mutableStateOf(false) }
                     Button(
-                        title = stringResource(MR.strings.action_download),
+                        title = stringResource(ephyra.i18n.R.string.action_download),
                         icon = Icons.Outlined.Download,
                         toConfirm = confirm[3],
                         onLongClick = { onLongClickItem(3) },
@@ -311,14 +311,14 @@ fun LibraryBottomActionMenu(
                 }
                 if (!itemOverflow) {
                     Button(
-                        title = stringResource(MR.strings.migrate),
+                        title = stringResource(ephyra.i18n.R.string.migrate),
                         icon = Icons.Outlined.SwapCalls,
                         toConfirm = confirm[4],
                         onLongClick = { onLongClickItem(4) },
                         onClick = onMigrateClicked,
                     )
                     Button(
-                        title = stringResource(MR.strings.action_delete),
+                        title = stringResource(ephyra.i18n.R.string.action_delete),
                         icon = Icons.Outlined.Delete,
                         toConfirm = confirm[5],
                         onLongClick = { onLongClickItem(5) },
@@ -327,7 +327,7 @@ fun LibraryBottomActionMenu(
                 } else {
                     var overflowMenuOpen by remember { mutableStateOf(false) }
                     Button(
-                        title = stringResource(MR.strings.label_more),
+                        title = stringResource(ephyra.i18n.R.string.label_more),
                         icon = Icons.Outlined.MoreVert,
                         toConfirm = false,
                         onLongClick = {},
@@ -339,11 +339,11 @@ fun LibraryBottomActionMenu(
                             offset = BottomBarMenuDpOffset,
                         ) {
                             DropdownMenuItem(
-                                text = { Text(stringResource(MR.strings.migrate)) },
+                                text = { Text(stringResource(ephyra.i18n.R.string.migrate)) },
                                 onClick = onMigrateClicked,
                             )
                             DropdownMenuItem(
-                                text = { Text(stringResource(MR.strings.action_delete)) },
+                                text = { Text(stringResource(ephyra.i18n.R.string.action_delete)) },
                                 onClick = onDeleteClicked,
                             )
                         }

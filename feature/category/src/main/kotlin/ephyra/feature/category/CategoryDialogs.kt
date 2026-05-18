@@ -58,16 +58,16 @@ fun CategoryCreateDialog(
                     onDismissRequest()
                 },
             ) {
-                Text(text = stringResource(MR.strings.action_add))
+                Text(text = stringResource(ephyra.i18n.R.string.action_add))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(MR.strings.action_cancel))
+                Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
             }
         },
         title = {
-            Text(text = stringResource(MR.strings.action_add_category))
+            Text(text = stringResource(ephyra.i18n.R.string.action_add_category))
         },
         text = {
             OutlinedTextField(
@@ -76,13 +76,13 @@ fun CategoryCreateDialog(
                 value = name,
                 onValueChange = { name = it },
                 label = {
-                    Text(text = stringResource(MR.strings.name))
+                    Text(text = stringResource(ephyra.i18n.R.string.name))
                 },
                 supportingText = {
                     val msgRes = if (name.isNotEmpty() && nameAlreadyExists) {
-                        MR.strings.error_category_exists
+                        ephyra.i18n.R.string.error_category_exists
                     } else {
-                        MR.strings.information_required_plain
+                        ephyra.i18n.R.string.information_required_plain
                     }
                     Text(text = stringResource(msgRes))
                 },
@@ -122,16 +122,16 @@ fun CategoryRenameDialog(
                     onDismissRequest()
                 },
             ) {
-                Text(text = stringResource(MR.strings.action_ok))
+                Text(text = stringResource(ephyra.i18n.R.string.action_ok))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(MR.strings.action_cancel))
+                Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
             }
         },
         title = {
-            Text(text = stringResource(MR.strings.action_rename_category))
+            Text(text = stringResource(ephyra.i18n.R.string.action_rename_category))
         },
         text = {
             OutlinedTextField(
@@ -141,12 +141,12 @@ fun CategoryRenameDialog(
                     valueHasChanged = name != it
                     name = it
                 },
-                label = { Text(text = stringResource(MR.strings.name)) },
+                label = { Text(text = stringResource(ephyra.i18n.R.string.name)) },
                 supportingText = {
                     val msgRes = if (valueHasChanged && nameAlreadyExists) {
-                        MR.strings.error_category_exists
+                        ephyra.i18n.R.string.error_category_exists
                     } else {
-                        MR.strings.information_required_plain
+                        ephyra.i18n.R.string.information_required_plain
                     }
                     Text(text = stringResource(msgRes))
                 },
@@ -176,19 +176,19 @@ fun CategoryDeleteDialog(
                 onDelete()
                 onDismissRequest()
             }) {
-                Text(text = stringResource(MR.strings.action_ok))
+                Text(text = stringResource(ephyra.i18n.R.string.action_ok))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(MR.strings.action_cancel))
+                Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
             }
         },
         title = {
-            Text(text = stringResource(MR.strings.delete_category))
+            Text(text = stringResource(ephyra.i18n.R.string.delete_category))
         },
         text = {
-            Text(text = stringResource(MR.strings.delete_category_confirmation, category))
+            Text(text = stringResource(ephyra.i18n.R.string.delete_category_confirmation, category))
         },
     )
 }
@@ -210,14 +210,14 @@ fun ChangeCategoryDialog(
                         onEditCategories()
                     },
                 ) {
-                    Text(text = stringResource(MR.strings.action_edit_categories))
+                    Text(text = stringResource(ephyra.i18n.R.string.action_edit_categories))
                 }
             },
             title = {
-                Text(text = stringResource(MR.strings.action_move_category))
+                Text(text = stringResource(ephyra.i18n.R.string.action_move_category))
             },
             text = {
-                Text(text = stringResource(MR.strings.information_empty_category_dialog))
+                Text(text = stringResource(ephyra.i18n.R.string.information_empty_category_dialog))
             },
         )
         return
@@ -231,11 +231,11 @@ fun ChangeCategoryDialog(
                     onDismissRequest()
                     onEditCategories()
                 }) {
-                    Text(text = stringResource(MR.strings.action_edit))
+                    Text(text = stringResource(ephyra.i18n.R.string.action_edit))
                 }
                 Spacer(modifier = Modifier.weight(1f))
                 ephyra.presentation.core.components.material.TextButton(onClick = onDismissRequest) {
-                    Text(text = stringResource(MR.strings.action_cancel))
+                    Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
                 }
                 ephyra.presentation.core.components.material.TextButton(
                     onClick = {
@@ -250,12 +250,12 @@ fun ChangeCategoryDialog(
                         )
                     },
                 ) {
-                    Text(text = stringResource(MR.strings.action_ok))
+                    Text(text = stringResource(ephyra.i18n.R.string.action_ok))
                 }
             }
         },
         title = {
-            Text(text = stringResource(MR.strings.action_move_category))
+            Text(text = stringResource(ephyra.i18n.R.string.action_move_category))
         },
         text = {
             Column(

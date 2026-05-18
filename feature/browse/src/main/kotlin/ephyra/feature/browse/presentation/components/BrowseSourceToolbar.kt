@@ -58,7 +58,7 @@ fun BrowseSourceToolbar(
                     .apply {
                         add(
                             AppBar.Action(
-                                title = stringResource(MR.strings.action_display_mode),
+                                title = stringResource(ephyra.i18n.R.string.action_display_mode),
                                 icon = if (displayMode == LibraryDisplayMode.List) {
                                     Icons.AutoMirrored.Filled.ViewList
                                 } else {
@@ -70,14 +70,14 @@ fun BrowseSourceToolbar(
                         if (isLocalSource) {
                             add(
                                 AppBar.OverflowAction(
-                                    title = stringResource(MR.strings.label_help),
+                                    title = stringResource(ephyra.i18n.R.string.label_help),
                                     onClick = onHelpClick,
                                 ),
                             )
                         } else {
                             add(
                                 AppBar.OverflowAction(
-                                    title = stringResource(MR.strings.action_open_in_web_view),
+                                    title = stringResource(ephyra.i18n.R.string.action_open_in_web_view),
                                     onClick = onWebViewClick,
                                 ),
                             )
@@ -85,7 +85,7 @@ fun BrowseSourceToolbar(
                         if (isConfigurableSource) {
                             add(
                                 AppBar.OverflowAction(
-                                    title = stringResource(MR.strings.action_settings),
+                                    title = stringResource(ephyra.i18n.R.string.action_settings),
                                     onClick = onSettingsClick,
                                 ),
                             )
@@ -99,21 +99,21 @@ fun BrowseSourceToolbar(
                 onDismissRequest = { selectingDisplayMode = false },
             ) {
                 RadioMenuItem(
-                    text = { Text(text = stringResource(MR.strings.action_display_comfortable_grid)) },
+                    text = { Text(text = stringResource(ephyra.i18n.R.string.action_display_comfortable_grid)) },
                     isChecked = displayMode == LibraryDisplayMode.ComfortableGrid,
                 ) {
                     selectingDisplayMode = false
                     onDisplayModeChange(LibraryDisplayMode.ComfortableGrid)
                 }
                 RadioMenuItem(
-                    text = { Text(text = stringResource(MR.strings.action_display_grid)) },
+                    text = { Text(text = stringResource(ephyra.i18n.R.string.action_display_grid)) },
                     isChecked = displayMode == LibraryDisplayMode.CompactGrid,
                 ) {
                     selectingDisplayMode = false
                     onDisplayModeChange(LibraryDisplayMode.CompactGrid)
                 }
                 RadioMenuItem(
-                    text = { Text(text = stringResource(MR.strings.action_display_list)) },
+                    text = { Text(text = stringResource(ephyra.i18n.R.string.action_display_list)) },
                     isChecked = displayMode == LibraryDisplayMode.List,
                 ) {
                     selectingDisplayMode = false

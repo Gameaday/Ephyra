@@ -6,8 +6,8 @@ import ephyra.i18n.MR
 import eu.kanade.tachiyomi.source.model.Filter
 
 sealed class OrderBy(context: Context, selection: Selection) : Filter.Sort(
-    context.stringResource(MR.strings.local_filter_order_by),
-    arrayOf(context.stringResource(MR.strings.title), context.stringResource(MR.strings.date)),
+    context.stringResource(ephyra.i18n.R.string.local_filter_order_by),
+    arrayOf(context.stringResource(ephyra.i18n.R.string.title), context.stringResource(ephyra.i18n.R.string.date)),
     selection,
 ) {
     class Popular(context: Context) : OrderBy(context, Selection(0, true))

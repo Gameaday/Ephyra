@@ -41,11 +41,11 @@ import kotlin.collections.toMutableSet
 
 private fun MigrationFlag.getLabel(): StringResource {
     return when (this) {
-        MigrationFlag.CHAPTER -> MR.strings.chapters
-        MigrationFlag.CATEGORY -> MR.strings.categories
-        MigrationFlag.CUSTOM_COVER -> MR.strings.custom_cover
-        MigrationFlag.NOTES -> MR.strings.action_notes
-        MigrationFlag.REMOVE_DOWNLOAD -> MR.strings.delete_downloaded
+        MigrationFlag.CHAPTER -> ephyra.i18n.R.string.chapters
+        MigrationFlag.CATEGORY -> ephyra.i18n.R.string.categories
+        MigrationFlag.CUSTOM_COVER -> ephyra.i18n.R.string.custom_cover
+        MigrationFlag.NOTES -> ephyra.i18n.R.string.action_notes
+        MigrationFlag.REMOVE_DOWNLOAD -> ephyra.i18n.R.string.delete_downloaded
     }
 }
 
@@ -77,7 +77,7 @@ fun Screen.MigrateMangaDialog(
     AlertDialog(
         onDismissRequest = onDismissRequest,
         title = {
-            Text(text = stringResource(MR.strings.migration_dialog_what_to_include))
+            Text(text = stringResource(ephyra.i18n.R.string.migration_dialog_what_to_include))
         },
         text = {
             Column(
@@ -102,7 +102,7 @@ fun Screen.MigrateMangaDialog(
                         onClickTitle()
                     },
                 ) {
-                    Text(text = stringResource(MR.strings.action_show_manga))
+                    Text(text = stringResource(ephyra.i18n.R.string.action_show_manga))
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
@@ -115,7 +115,7 @@ fun Screen.MigrateMangaDialog(
                         }
                     },
                 ) {
-                    Text(text = stringResource(MR.strings.copy))
+                    Text(text = stringResource(ephyra.i18n.R.string.copy))
                 }
                 TextButton(
                     onClick = {
@@ -125,7 +125,7 @@ fun Screen.MigrateMangaDialog(
                         }
                     },
                 ) {
-                    Text(text = stringResource(MR.strings.migrate))
+                    Text(text = stringResource(ephyra.i18n.R.string.migrate))
                 }
             }
         },

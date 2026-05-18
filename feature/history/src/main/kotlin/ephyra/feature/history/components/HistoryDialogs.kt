@@ -27,16 +27,16 @@ fun HistoryDeleteDialog(
 
     AlertDialog(
         title = {
-            Text(text = stringResource(MR.strings.action_remove))
+            Text(text = stringResource(ephyra.i18n.R.string.action_remove))
         },
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
             ) {
-                Text(text = stringResource(MR.strings.dialog_with_checkbox_remove_description))
+                Text(text = stringResource(ephyra.i18n.R.string.dialog_with_checkbox_remove_description))
 
                 LabeledCheckbox(
-                    label = stringResource(MR.strings.dialog_with_checkbox_reset),
+                    label = stringResource(ephyra.i18n.R.string.dialog_with_checkbox_reset),
                     checked = removeEverything,
                     onCheckedChange = { removeEverything = it },
                 )
@@ -48,12 +48,12 @@ fun HistoryDeleteDialog(
                 onDelete(removeEverything)
                 onDismissRequest()
             }) {
-                Text(text = stringResource(MR.strings.action_remove))
+                Text(text = stringResource(ephyra.i18n.R.string.action_remove))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(MR.strings.action_cancel))
+                Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
             }
         },
     )
@@ -66,10 +66,10 @@ fun HistoryDeleteAllDialog(
 ) {
     AlertDialog(
         title = {
-            Text(text = stringResource(MR.strings.action_remove_everything))
+            Text(text = stringResource(ephyra.i18n.R.string.action_remove_everything))
         },
         text = {
-            Text(text = stringResource(MR.strings.clear_history_confirmation))
+            Text(text = stringResource(ephyra.i18n.R.string.clear_history_confirmation))
         },
         onDismissRequest = onDismissRequest,
         confirmButton = {
@@ -77,12 +77,12 @@ fun HistoryDeleteAllDialog(
                 onDelete()
                 onDismissRequest()
             }) {
-                Text(text = stringResource(MR.strings.action_ok))
+                Text(text = stringResource(ephyra.i18n.R.string.action_ok))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(MR.strings.action_cancel))
+                Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
             }
         },
     )

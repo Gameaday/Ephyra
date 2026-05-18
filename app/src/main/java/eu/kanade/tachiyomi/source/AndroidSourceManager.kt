@@ -90,7 +90,7 @@ internal class AndroidSourceManager(
             val authorityStub = StubSource(
                 id = sourceKey,
                 lang = "all",
-                name = context.stringResource(ephyra.i18n.MR.strings.authority_source_name),
+                name = context.stringResource(ephyra.i18n.ephyra.i18n.R.string.authority_source_name),
             )
             stubSourcesMap[sourceKey] = authorityStub
             return authorityStub

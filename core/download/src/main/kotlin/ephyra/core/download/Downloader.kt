@@ -329,7 +329,7 @@ class Downloader(
         if (availSpace != -1L && availSpace < MIN_DISK_SPACE) {
             download.status = Download.State.ERROR
             notifier.onError(
-                context.stringResource(MR.strings.download_insufficient_space),
+                context.stringResource(ephyra.i18n.R.string.download_insufficient_space),
                 download.chapter.name,
                 download.manga.title,
                 download.manga.id,
@@ -364,7 +364,7 @@ class Downloader(
                 val pages = download.source.getPageList(download.chapter.toSChapter())
 
                 if (pages.isEmpty()) {
-                    throw Exception(context.stringResource(MR.strings.page_list_empty_error))
+                    throw Exception(context.stringResource(ephyra.i18n.R.string.page_list_empty_error))
                 }
                 // Don't trust index from source
                 val reIndexedPages = pages.mapIndexed { index, page -> Page(index, page.url, page.imageUrl, page.uri) }
@@ -595,7 +595,7 @@ class Downloader(
         try {
             val filenamePrefix = "%03d".format(Locale.ENGLISH, page.number)
             val imageFile = tmpDir.listFiles()?.firstOrNull { it.name.orEmpty().startsWith(filenamePrefix) }
-                ?: error(context.stringResource(MR.strings.download_notifier_split_page_not_found, page.number))
+                ?: error(context.stringResource(ephyra.i18n.R.string.download_notifier_split_page_not_found, page.number))
 
             // If the original page was previously split, then skip
             if (imageFile.name.orEmpty().startsWith("${filenamePrefix}__")) return

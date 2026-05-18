@@ -31,7 +31,7 @@ object SettingsAppearanceScreen : SearchableSettings {
 
     @ReadOnlyComposable
     @Composable
-    override fun getTitleRes() = MR.strings.pref_category_appearance
+    override fun getTitleRes() = ephyra.i18n.R.string.pref_category_appearance
 
     @Composable
     override fun getPreferences(): List<Preference> {
@@ -60,10 +60,10 @@ object SettingsAppearanceScreen : SearchableSettings {
         val amoled by amoledPref.collectAsState()
 
         return Preference.PreferenceGroup(
-            title = stringResource(MR.strings.pref_category_theme),
+            title = stringResource(ephyra.i18n.R.string.pref_category_theme),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.CustomPreference(
-                    title = stringResource(MR.strings.pref_app_theme),
+                    title = stringResource(ephyra.i18n.R.string.pref_app_theme),
                 ) {
                     Column {
                         AppThemeModePreferenceWidget(
@@ -83,7 +83,7 @@ object SettingsAppearanceScreen : SearchableSettings {
                 },
                 Preference.PreferenceItem.SwitchPreference(
                     preference = amoledPref,
-                    title = stringResource(MR.strings.pref_dark_theme_pure_black),
+                    title = stringResource(ephyra.i18n.R.string.pref_dark_theme_pure_black),
                     enabled = themeMode != ThemeMode.LIGHT,
                     onValueChanged = {
                         (context as? Activity)?.let { ActivityCompat.recreate(it) }
@@ -109,10 +109,10 @@ object SettingsAppearanceScreen : SearchableSettings {
         }
 
         return Preference.PreferenceGroup(
-            title = stringResource(MR.strings.pref_category_display),
+            title = stringResource(ephyra.i18n.R.string.pref_category_display),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.TextPreference(
-                    title = stringResource(MR.strings.pref_app_language),
+                    title = stringResource(ephyra.i18n.R.string.pref_app_language),
                     onClick = { navigator.push(AppLanguageScreen()) },
                 ),
                 Preference.PreferenceItem.ListPreference(
@@ -120,9 +120,9 @@ object SettingsAppearanceScreen : SearchableSettings {
                     entries = TabletUiMode.entries
                         .associateWith { stringResource(it.titleRes) }
                         .toImmutableMap(),
-                    title = stringResource(MR.strings.pref_tablet_ui_mode),
+                    title = stringResource(ephyra.i18n.R.string.pref_tablet_ui_mode),
                     onValueChanged = {
-                        context.toast(MR.strings.requires_app_restart)
+                        context.toast(ephyra.i18n.R.string.requires_app_restart)
                         true
                     },
                 ),
@@ -131,23 +131,23 @@ object SettingsAppearanceScreen : SearchableSettings {
                     entries = DateFormats
                         .associateWith {
                             val formattedDate = UiPreferences.dateFormat(it).format(now)
-                            "${it.ifEmpty { stringResource(MR.strings.label_default) }} ($formattedDate)"
+                            "${it.ifEmpty { stringResource(ephyra.i18n.R.string.label_default) }} ($formattedDate)"
                         }
                         .toImmutableMap(),
-                    title = stringResource(MR.strings.pref_date_format),
+                    title = stringResource(ephyra.i18n.R.string.pref_date_format),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = uiPreferences.relativeTime(),
-                    title = stringResource(MR.strings.pref_relative_format),
+                    title = stringResource(ephyra.i18n.R.string.pref_relative_format),
                     subtitle = stringResource(
-                        MR.strings.pref_relative_format_summary,
-                        stringResource(MR.strings.relative_time_today),
+                        ephyra.i18n.R.string.pref_relative_format_summary,
+                        stringResource(ephyra.i18n.R.string.relative_time_today),
                         formattedNow,
                     ),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = uiPreferences.imagesInDescription(),
-                    title = stringResource(MR.strings.pref_display_images_description),
+                    title = stringResource(ephyra.i18n.R.string.pref_display_images_description),
                 ),
             ),
         )

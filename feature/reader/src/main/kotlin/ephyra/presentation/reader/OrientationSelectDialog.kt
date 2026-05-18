@@ -63,7 +63,7 @@ private fun DialogContent(
         }.takeIf { orientation != ReaderOrientation.DEFAULT },
         onApply = { onChangeOrientation(selected) },
     ) {
-        SettingsIconGrid(MR.strings.rotation_type) {
+        SettingsIconGrid(ephyra.i18n.R.string.rotation_type) {
             items(ReaderOrientationsWithoutDefault) { mode ->
                 IconToggleButton(
                     checked = mode == selected,

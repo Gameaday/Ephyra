@@ -94,7 +94,7 @@ internal class ShizukuInstaller(
         if (ready) return
         if (!Shizuku.pingBinder()) {
             logcat(LogPriority.ERROR) { "Shizuku is not ready to use" }
-            service.toast(MR.strings.ext_installer_shizuku_stopped)
+            service.toast(ephyra.i18n.R.string.ext_installer_shizuku_stopped)
             service.stopSelf()
             return
         }

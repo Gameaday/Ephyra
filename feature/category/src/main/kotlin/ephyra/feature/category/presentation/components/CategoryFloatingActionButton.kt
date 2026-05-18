@@ -19,7 +19,7 @@ fun CategoryFloatingActionButton(
     modifier: Modifier = Modifier,
 ) {
     ExtendedFloatingActionButton(
-        text = { Text(text = stringResource(MR.strings.action_add)) },
+        text = { Text(text = stringResource(ephyra.i18n.R.string.action_add)) },
         icon = { Icon(imageVector = Icons.Outlined.Add, contentDescription = null) },
         onClick = onCreate,
         expanded = lazyListState.shouldExpandFAB(),

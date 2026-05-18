@@ -41,7 +41,7 @@ class ExtensionFilterScreen : Screen() {
             screenModel.events.collectLatest {
                 when (it) {
                     ExtensionFilterEvent.FailedFetchingLanguages -> {
-                        context.stringResource(MR.strings.internal_error)
+                        context.stringResource(ephyra.i18n.R.string.internal_error)
                     }
                 }
             }

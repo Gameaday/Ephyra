@@ -85,9 +85,9 @@ class Jellyfin(
     override fun getStatusList(): List<Long> = listOf(UNREAD, READING, COMPLETED)
 
     override fun getStatus(status: Long): StringResource? = when (status) {
-        UNREAD -> MR.strings.unread
-        READING -> MR.strings.reading
-        COMPLETED -> MR.strings.completed
+        UNREAD -> ephyra.i18n.R.string.unread
+        READING -> ephyra.i18n.R.string.reading
+        COMPLETED -> ephyra.i18n.R.string.completed
         else -> null
     }
 

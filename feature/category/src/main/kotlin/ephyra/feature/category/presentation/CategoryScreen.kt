@@ -44,7 +44,7 @@ fun CategoryScreen(
     Scaffold(
         topBar = { scrollBehavior ->
             AppBar(
-                title = stringResource(MR.strings.action_edit_categories),
+                title = stringResource(ephyra.i18n.R.string.action_edit_categories),
                 navigateUp = navigateUp,
                 scrollBehavior = scrollBehavior,
             )
@@ -58,7 +58,7 @@ fun CategoryScreen(
     ) { paddingValues ->
         if (state.isEmpty) {
             EmptyScreen(
-                stringRes = MR.strings.information_empty_category,
+                stringRes = ephyra.i18n.R.string.information_empty_category,
                 modifier = Modifier.padding(paddingValues),
             )
             return@Scaffold

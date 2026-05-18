@@ -45,20 +45,20 @@ fun ExtensionRepoCreateDialog(
                     onDismissRequest()
                 },
             ) {
-                Text(text = stringResource(MR.strings.action_add))
+                Text(text = stringResource(ephyra.i18n.R.string.action_add))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(MR.strings.action_cancel))
+                Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
             }
         },
         title = {
-            Text(text = stringResource(MR.strings.action_add_repo))
+            Text(text = stringResource(ephyra.i18n.R.string.action_add_repo))
         },
         text = {
             Column {
-                Text(text = stringResource(MR.strings.action_add_repo_message, stringResource(MR.strings.app_name)))
+                Text(text = stringResource(ephyra.i18n.R.string.action_add_repo_message, stringResource(ephyra.i18n.R.string.app_name)))
 
                 OutlinedTextField(
                     modifier = Modifier
@@ -67,13 +67,13 @@ fun ExtensionRepoCreateDialog(
                     value = name,
                     onValueChange = { name = it },
                     label = {
-                        Text(text = stringResource(MR.strings.label_add_repo_input))
+                        Text(text = stringResource(ephyra.i18n.R.string.label_add_repo_input))
                     },
                     supportingText = {
                         val msgRes = if (name.isNotEmpty() && nameAlreadyExists) {
-                            MR.strings.error_repo_exists
+                            ephyra.i18n.R.string.error_repo_exists
                         } else {
-                            MR.strings.information_required_plain
+                            ephyra.i18n.R.string.information_required_plain
                         }
                         Text(text = stringResource(msgRes))
                     },
@@ -107,19 +107,19 @@ fun ExtensionRepoDeleteDialog(
                     onDismissRequest()
                 },
             ) {
-                Text(text = stringResource(MR.strings.action_ok))
+                Text(text = stringResource(ephyra.i18n.R.string.action_ok))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(MR.strings.action_cancel))
+                Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
             }
         },
         title = {
-            Text(text = stringResource(MR.strings.action_delete_repo))
+            Text(text = stringResource(ephyra.i18n.R.string.action_delete_repo))
         },
         text = {
-            Text(text = stringResource(MR.strings.delete_repo_confirmation, repo))
+            Text(text = stringResource(ephyra.i18n.R.string.delete_repo_confirmation, repo))
         },
     )
 }
@@ -140,19 +140,19 @@ fun ExtensionRepoConflictDialog(
                     onDismissRequest()
                 },
             ) {
-                Text(text = stringResource(MR.strings.action_replace_repo))
+                Text(text = stringResource(ephyra.i18n.R.string.action_replace_repo))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(MR.strings.action_cancel))
+                Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
             }
         },
         title = {
-            Text(text = stringResource(MR.strings.action_replace_repo_title))
+            Text(text = stringResource(ephyra.i18n.R.string.action_replace_repo_title))
         },
         text = {
-            Text(text = stringResource(MR.strings.action_replace_repo_message, newRepo.name, oldRepo.name))
+            Text(text = stringResource(ephyra.i18n.R.string.action_replace_repo_message, newRepo.name, oldRepo.name))
         },
     )
 }
@@ -166,10 +166,10 @@ fun ExtensionRepoConfirmDialog(
     AlertDialog(
         onDismissRequest = onDismissRequest,
         title = {
-            Text(text = stringResource(MR.strings.action_add_repo))
+            Text(text = stringResource(ephyra.i18n.R.string.action_add_repo))
         },
         text = {
-            Text(text = stringResource(MR.strings.add_repo_confirmation, repo))
+            Text(text = stringResource(ephyra.i18n.R.string.add_repo_confirmation, repo))
         },
         confirmButton = {
             TextButton(
@@ -178,12 +178,12 @@ fun ExtensionRepoConfirmDialog(
                     onDismissRequest()
                 },
             ) {
-                Text(text = stringResource(MR.strings.action_add))
+                Text(text = stringResource(ephyra.i18n.R.string.action_add))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(MR.strings.action_cancel))
+                Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
             }
         },
     )

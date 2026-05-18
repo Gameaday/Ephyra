@@ -22,7 +22,7 @@ class ExtensionUpdateNotifier(
         ) {
             setContentTitle(
                 context.pluralStringResource(
-                    MR.plurals.update_check_notification_ext_updates,
+                    ephyra.i18n.R.plurals.update_check_notification_ext_updates,
                     names.size,
                     names.size,
                 ),

@@ -18,7 +18,7 @@ fun RemoveMangaDialog(
         onDismissRequest = onDismissRequest,
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(MR.strings.action_cancel))
+                Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
             }
         },
         confirmButton = {
@@ -28,14 +28,14 @@ fun RemoveMangaDialog(
                     onConfirm()
                 },
             ) {
-                Text(text = stringResource(MR.strings.action_remove))
+                Text(text = stringResource(ephyra.i18n.R.string.action_remove))
             }
         },
         title = {
-            Text(text = stringResource(MR.strings.are_you_sure))
+            Text(text = stringResource(ephyra.i18n.R.string.are_you_sure))
         },
         text = {
-            Text(text = stringResource(MR.strings.remove_manga, mangaToRemove.title))
+            Text(text = stringResource(ephyra.i18n.R.string.remove_manga, mangaToRemove.title))
         },
     )
 }

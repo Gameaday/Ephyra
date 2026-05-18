@@ -33,11 +33,11 @@ fun NewUpdateScreen(
 ) {
     InfoScreen(
         icon = Icons.Outlined.NewReleases,
-        headingText = stringResource(MR.strings.update_check_notification_update_available),
+        headingText = stringResource(ephyra.i18n.R.string.update_check_notification_update_available),
         subtitleText = versionName,
-        acceptText = stringResource(MR.strings.update_check_confirm),
+        acceptText = stringResource(ephyra.i18n.R.string.update_check_confirm),
         onAcceptClick = onAcceptUpdate,
-        rejectText = stringResource(MR.strings.action_not_now),
+        rejectText = stringResource(ephyra.i18n.R.string.action_not_now),
         onRejectClick = onRejectUpdate,
     ) {
         Column(
@@ -54,7 +54,7 @@ fun NewUpdateScreen(
                 onClick = onOpenInBrowser,
                 modifier = Modifier.padding(top = MaterialTheme.padding.small),
             ) {
-                Text(text = stringResource(MR.strings.update_check_open))
+                Text(text = stringResource(ephyra.i18n.R.string.update_check_open))
                 Spacer(modifier = Modifier.width(MaterialTheme.padding.extraSmall))
                 Icon(imageVector = Icons.AutoMirrored.Outlined.OpenInNew, contentDescription = null)
             }

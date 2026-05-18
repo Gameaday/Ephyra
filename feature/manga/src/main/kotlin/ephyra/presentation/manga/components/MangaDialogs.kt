@@ -41,7 +41,7 @@ fun DeleteChaptersDialog(
         onDismissRequest = onDismissRequest,
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(MR.strings.action_cancel))
+                Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
             }
         },
         confirmButton = {
@@ -51,14 +51,14 @@ fun DeleteChaptersDialog(
                     onConfirm()
                 },
             ) {
-                Text(text = stringResource(MR.strings.action_ok))
+                Text(text = stringResource(ephyra.i18n.R.string.action_ok))
             }
         },
         title = {
-            Text(text = stringResource(MR.strings.are_you_sure))
+            Text(text = stringResource(ephyra.i18n.R.string.are_you_sure))
         },
         text = {
-            Text(text = stringResource(MR.strings.confirm_delete_chapters))
+            Text(text = stringResource(ephyra.i18n.R.string.confirm_delete_chapters))
         },
     )
 }
@@ -84,20 +84,20 @@ fun SetIntervalDialog(
 
     AlertDialog(
         onDismissRequest = onDismissRequest,
-        title = { Text(stringResource(MR.strings.pref_library_update_smart_update)) },
+        title = { Text(stringResource(ephyra.i18n.R.string.pref_library_update_smart_update)) },
         text = {
             Column {
                 if (nextUpdateDays != null && nextUpdateDays >= 0 && interval >= 0) {
                     Text(
                         stringResource(
-                            MR.strings.manga_interval_expected_update,
+                            ephyra.i18n.R.string.manga_interval_expected_update,
                             pluralStringResource(
-                                MR.plurals.day,
+                                ephyra.i18n.R.plurals.day,
                                 count = nextUpdateDays,
                                 nextUpdateDays,
                             ),
                             pluralStringResource(
-                                MR.plurals.day,
+                                ephyra.i18n.R.plurals.day,
                                 count = interval.absoluteValue,
                                 interval.absoluteValue,
                             ),
@@ -105,13 +105,13 @@ fun SetIntervalDialog(
                     )
                 } else {
                     Text(
-                        stringResource(MR.strings.manga_interval_expected_update_null),
+                        stringResource(ephyra.i18n.R.string.manga_interval_expected_update_null),
                     )
                 }
                 Spacer(Modifier.height(MaterialTheme.padding.small))
 
                 if (onValueChanged != null && (!appInfo.isRelease)) {
-                    Text(stringResource(MR.strings.manga_interval_custom_amount))
+                    Text(stringResource(ephyra.i18n.R.string.manga_interval_custom_amount))
 
                     BoxWithConstraints(
                         modifier = Modifier.fillMaxWidth(),
@@ -121,7 +121,7 @@ fun SetIntervalDialog(
                         val items = (0..FetchInterval.MAX_INTERVAL)
                             .map {
                                 if (it == 0) {
-                                    stringResource(MR.strings.label_default)
+                                    stringResource(ephyra.i18n.R.string.label_default)
                                 } else {
                                     it.toString()
                                 }
@@ -139,7 +139,7 @@ fun SetIntervalDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(MR.strings.action_cancel))
+                Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
             }
         },
         confirmButton = {
@@ -149,7 +149,7 @@ fun SetIntervalDialog(
                     onDismissRequest()
                 },
             ) {
-                Text(text = stringResource(MR.strings.action_ok))
+                Text(text = stringResource(ephyra.i18n.R.string.action_ok))
             }
         },
     )

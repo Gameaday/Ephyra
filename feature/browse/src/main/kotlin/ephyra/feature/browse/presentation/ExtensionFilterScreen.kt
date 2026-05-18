@@ -31,7 +31,7 @@ fun ExtensionFilterScreen(
     Scaffold(
         topBar = { scrollBehavior ->
             AppBar(
-                title = stringResource(MR.strings.label_extensions),
+                title = stringResource(ephyra.i18n.R.string.label_extensions),
                 navigateUp = navigateUp,
                 scrollBehavior = scrollBehavior,
             )
@@ -39,7 +39,7 @@ fun ExtensionFilterScreen(
     ) { contentPadding ->
         if (state.isEmpty) {
             EmptyScreen(
-                stringRes = MR.strings.empty_screen,
+                stringRes = ephyra.i18n.R.string.empty_screen,
                 modifier = Modifier.padding(contentPadding),
             )
             return@Scaffold

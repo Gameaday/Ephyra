@@ -284,7 +284,7 @@ data class TrackInfoDialogHomeScreen(
                     logcat(LogPriority.ERROR, e) {
                         "Failed to register track for tracker '${item.tracker.name}'; manga id=$mangaId"
                     }
-                    effectChannel.send(Effect.ShowToast(application.stringResource(MR.strings.error_no_match)))
+                    effectChannel.send(Effect.ShowToast(application.stringResource(ephyra.i18n.R.string.error_no_match)))
                 }
             }
         }
@@ -299,7 +299,7 @@ data class TrackInfoDialogHomeScreen(
                     effectChannel.send(
                         Effect.ShowToast(
                             application.stringResource(
-                                MR.strings.track_error,
+                                ephyra.i18n.R.string.track_error,
                                 track!!.name,
                                 e.message ?: "",
                             ),
@@ -585,9 +585,9 @@ private data class TrackDateSelectorScreen(
         }
         TrackDateSelector(
             title = if (start) {
-                stringResource(MR.strings.track_started_reading_date)
+                stringResource(ephyra.i18n.R.string.track_started_reading_date)
             } else {
-                stringResource(MR.strings.track_finished_reading_date)
+                stringResource(ephyra.i18n.R.string.track_finished_reading_date)
             },
             initialSelectedDateMillis = screenModel.initialSelection,
             selectableDates = selectableDates,
@@ -661,7 +661,7 @@ private data class TrackDateRemoverScreen(
             },
             title = {
                 Text(
-                    text = stringResource(MR.strings.track_remove_date_conf_title),
+                    text = stringResource(ephyra.i18n.R.string.track_remove_date_conf_title),
                     textAlign = TextAlign.Center,
                 )
             },
@@ -669,9 +669,9 @@ private data class TrackDateRemoverScreen(
                 val serviceName = screenModel.getServiceName()
                 Text(
                     text = if (start) {
-                        stringResource(MR.strings.track_remove_start_date_conf_text, serviceName)
+                        stringResource(ephyra.i18n.R.string.track_remove_start_date_conf_text, serviceName)
                     } else {
-                        stringResource(MR.strings.track_remove_finish_date_conf_text, serviceName)
+                        stringResource(ephyra.i18n.R.string.track_remove_finish_date_conf_text, serviceName)
                     },
                 )
             },
@@ -681,7 +681,7 @@ private data class TrackDateRemoverScreen(
                     horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small, Alignment.End),
                 ) {
                     TextButton(onClick = navigator::pop) {
-                        Text(text = stringResource(MR.strings.action_cancel))
+                        Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
                     }
                     FilledTonalButton(
                         onClick = {
@@ -693,7 +693,7 @@ private data class TrackDateRemoverScreen(
                             contentColor = MaterialTheme.colorScheme.onErrorContainer,
                         ),
                     ) {
-                        Text(text = stringResource(MR.strings.action_remove))
+                        Text(text = stringResource(ephyra.i18n.R.string.action_remove))
                     }
                 }
             },
@@ -863,7 +863,7 @@ private data class TrackerRemoveScreen(
             },
             title = {
                 Text(
-                    text = stringResource(MR.strings.track_delete_title, serviceName),
+                    text = stringResource(ephyra.i18n.R.string.track_delete_title, serviceName),
                     textAlign = TextAlign.Center,
                 )
             },
@@ -872,12 +872,12 @@ private data class TrackerRemoveScreen(
                     verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
                 ) {
                     Text(
-                        text = stringResource(MR.strings.track_delete_text, serviceName),
+                        text = stringResource(ephyra.i18n.R.string.track_delete_text, serviceName),
                     )
 
                     if (screenModel.isDeletable()) {
                         LabeledCheckbox(
-                            label = stringResource(MR.strings.track_delete_remote_text, serviceName),
+                            label = stringResource(ephyra.i18n.R.string.track_delete_remote_text, serviceName),
                             checked = removeRemoteTrack,
                             onCheckedChange = { removeRemoteTrack = it },
                         )
@@ -893,7 +893,7 @@ private data class TrackerRemoveScreen(
                     ),
                 ) {
                     TextButton(onClick = navigator::pop) {
-                        Text(text = stringResource(MR.strings.action_cancel))
+                        Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
                     }
                     FilledTonalButton(
                         onClick = {
@@ -906,7 +906,7 @@ private data class TrackerRemoveScreen(
                             contentColor = MaterialTheme.colorScheme.onErrorContainer,
                         ),
                     ) {
-                        Text(text = stringResource(MR.strings.action_ok))
+                        Text(text = stringResource(ephyra.i18n.R.string.action_ok))
                     }
                 }
             },

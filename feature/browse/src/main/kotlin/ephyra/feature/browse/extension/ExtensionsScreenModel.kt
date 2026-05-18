@@ -62,13 +62,13 @@ class ExtensionsScreenModel(
                 buildMap {
                     val updates = _updates.mapNotNull { if (predicate(it)) mapper(it) else null }
                     if (updates.isNotEmpty()) {
-                        put(ExtensionUiModel.Header.Resource(MR.strings.ext_updates_pending), updates)
+                        put(ExtensionUiModel.Header.Resource(ephyra.i18n.R.string.ext_updates_pending), updates)
                     }
 
                     val installed = _installed.mapNotNull { if (predicate(it)) mapper(it) else null }
                     val untrusted = _untrusted.mapNotNull { if (predicate(it)) mapper(it) else null }
                     if (installed.isNotEmpty() || untrusted.isNotEmpty()) {
-                        put(ExtensionUiModel.Header.Resource(MR.strings.ext_installed), installed + untrusted)
+                        put(ExtensionUiModel.Header.Resource(ephyra.i18n.R.string.ext_installed), installed + untrusted)
                     }
 
                     val langGroups = TreeMap<String, MutableList<Extension.Available>>(LocaleHelper.comparator)

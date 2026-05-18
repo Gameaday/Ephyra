@@ -24,7 +24,7 @@ fun MangaNotesScreen(
             AppBar(
                 titleContent = {
                     AppBarTitle(
-                        title = stringResource(MR.strings.action_edit_notes),
+                        title = stringResource(ephyra.i18n.R.string.action_edit_notes),
                         subtitle = state.manga.title,
                     )
                 },

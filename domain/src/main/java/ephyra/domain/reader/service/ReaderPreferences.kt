@@ -156,10 +156,10 @@ class ReaderPreferences(
         val shouldInvertHorizontal: Boolean = false,
         val shouldInvertVertical: Boolean = false,
     ) {
-        NONE(MR.strings.tapping_inverted_none),
-        HORIZONTAL(MR.strings.tapping_inverted_horizontal, shouldInvertHorizontal = true),
-        VERTICAL(MR.strings.tapping_inverted_vertical, shouldInvertVertical = true),
-        BOTH(MR.strings.tapping_inverted_both, shouldInvertHorizontal = true, shouldInvertVertical = true),
+        NONE(ephyra.i18n.R.string.tapping_inverted_none),
+        HORIZONTAL(ephyra.i18n.R.string.tapping_inverted_horizontal, shouldInvertHorizontal = true),
+        VERTICAL(ephyra.i18n.R.string.tapping_inverted_vertical, shouldInvertVertical = true),
+        BOTH(ephyra.i18n.R.string.tapping_inverted_both, shouldInvertHorizontal = true, shouldInvertVertical = true),
     }
 
     enum class ReaderHideThreshold(val threshold: Int) {
@@ -182,37 +182,37 @@ class ReaderPreferences(
         const val SLIDER_NAV_SMOOTH = 1
 
         val TapZones = listOf(
-            MR.strings.label_default,
-            MR.strings.l_nav,
-            MR.strings.kindlish_nav,
-            MR.strings.edge_nav,
-            MR.strings.right_and_left_nav,
-            MR.strings.disabled_nav,
+            ephyra.i18n.R.string.label_default,
+            ephyra.i18n.R.string.l_nav,
+            ephyra.i18n.R.string.kindlish_nav,
+            ephyra.i18n.R.string.edge_nav,
+            ephyra.i18n.R.string.right_and_left_nav,
+            ephyra.i18n.R.string.disabled_nav,
         )
 
         val ImageScaleType = listOf(
-            MR.strings.scale_type_fit_screen,
-            MR.strings.scale_type_stretch,
-            MR.strings.scale_type_fit_width,
-            MR.strings.scale_type_fit_height,
-            MR.strings.scale_type_original_size,
-            MR.strings.scale_type_smart_fit,
+            ephyra.i18n.R.string.scale_type_fit_screen,
+            ephyra.i18n.R.string.scale_type_stretch,
+            ephyra.i18n.R.string.scale_type_fit_width,
+            ephyra.i18n.R.string.scale_type_fit_height,
+            ephyra.i18n.R.string.scale_type_original_size,
+            ephyra.i18n.R.string.scale_type_smart_fit,
         )
 
         val ZoomStart = listOf(
-            MR.strings.zoom_start_automatic,
-            MR.strings.zoom_start_left,
-            MR.strings.zoom_start_right,
-            MR.strings.zoom_start_center,
+            ephyra.i18n.R.string.zoom_start_automatic,
+            ephyra.i18n.R.string.zoom_start_left,
+            ephyra.i18n.R.string.zoom_start_right,
+            ephyra.i18n.R.string.zoom_start_center,
         )
 
         val ColorFilterMode = listOf(
-            Pair(MR.strings.label_default, 0),
-            Pair(MR.strings.filter_mode_multiply, 1),
-            Pair(MR.strings.filter_mode_screen, 2),
-            Pair(MR.strings.filter_mode_overlay, 3),
-            Pair(MR.strings.filter_mode_lighten, 4),
-            Pair(MR.strings.filter_mode_darken, 5),
+            Pair(ephyra.i18n.R.string.label_default, 0),
+            Pair(ephyra.i18n.R.string.filter_mode_multiply, 1),
+            Pair(ephyra.i18n.R.string.filter_mode_screen, 2),
+            Pair(ephyra.i18n.R.string.filter_mode_overlay, 3),
+            Pair(ephyra.i18n.R.string.filter_mode_lighten, 4),
+            Pair(ephyra.i18n.R.string.filter_mode_darken, 5),
         )
     }
 }

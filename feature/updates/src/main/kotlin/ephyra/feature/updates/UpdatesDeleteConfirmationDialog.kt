@@ -14,7 +14,7 @@ fun UpdatesDeleteConfirmationDialog(
 ) {
     AlertDialog(
         text = {
-            Text(text = stringResource(MR.strings.confirm_delete_chapters))
+            Text(text = stringResource(ephyra.i18n.R.string.confirm_delete_chapters))
         },
         onDismissRequest = onDismissRequest,
         confirmButton = {
@@ -22,12 +22,12 @@ fun UpdatesDeleteConfirmationDialog(
                 onConfirm()
                 onDismissRequest()
             }) {
-                Text(text = stringResource(MR.strings.action_ok))
+                Text(text = stringResource(ephyra.i18n.R.string.action_ok))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(MR.strings.action_cancel))
+                Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
             }
         },
     )

@@ -33,7 +33,7 @@ fun Context.copyToClipboard(label: String, content: String) {
         // Android 13+ shows a visual confirmation of copied contents natively
     } catch (e: Throwable) {
         logcat(LogPriority.ERROR, e)
-        toast(MR.strings.clipboard_copy_error)
+        toast(ephyra.i18n.R.string.clipboard_copy_error)
     }
 }
 

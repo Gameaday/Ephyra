@@ -4,8 +4,8 @@ import dev.icerock.moko.resources.StringResource
 import ephyra.i18n.MR
 
 enum class TabletUiMode(val titleRes: StringResource) {
-    AUTOMATIC(MR.strings.automatic_background),
-    ALWAYS(MR.strings.lock_always),
-    LANDSCAPE(MR.strings.landscape),
-    NEVER(MR.strings.lock_never),
+    AUTOMATIC(ephyra.i18n.R.string.automatic_background),
+    ALWAYS(ephyra.i18n.R.string.lock_always),
+    LANDSCAPE(ephyra.i18n.R.string.landscape),
+    NEVER(ephyra.i18n.R.string.lock_never),
 }

@@ -89,7 +89,7 @@ fun UpdateScreen(
         when {
             state.isLoading -> LoadingScreen(Modifier.padding(contentPadding))
             state.items.isEmpty() -> EmptyScreen(
-                stringRes = MR.strings.information_no_recent,
+                stringRes = ephyra.i18n.R.string.information_no_recent,
                 modifier = Modifier.padding(contentPadding),
             )
             else -> {
@@ -135,23 +135,23 @@ private fun UpdatesAppBar(
 ) {
     AppBar(
         modifier = modifier,
-        title = stringResource(MR.strings.label_recent_updates),
+        title = stringResource(ephyra.i18n.R.string.label_recent_updates),
         actions = {
             AppBarActions(
                 persistentListOf(
                     AppBar.Action(
-                        title = stringResource(MR.strings.action_filter),
+                        title = stringResource(ephyra.i18n.R.string.action_filter),
                         icon = Icons.Outlined.FilterList,
                         iconTint = if (hasFilters) MaterialTheme.colorScheme.active else LocalContentColor.current,
                         onClick = onFilterClicked,
                     ),
                     AppBar.Action(
-                        title = stringResource(MR.strings.action_view_upcoming),
+                        title = stringResource(ephyra.i18n.R.string.action_view_upcoming),
                         icon = Icons.Outlined.CalendarMonth,
                         onClick = onCalendarClicked,
                     ),
                     AppBar.Action(
-                        title = stringResource(MR.strings.action_update_library),
+                        title = stringResource(ephyra.i18n.R.string.action_update_library),
                         icon = Icons.Outlined.Refresh,
                         onClick = onUpdateLibrary,
                     ),
@@ -164,12 +164,12 @@ private fun UpdatesAppBar(
             AppBarActions(
                 persistentListOf(
                     AppBar.Action(
-                        title = stringResource(MR.strings.action_select_all),
+                        title = stringResource(ephyra.i18n.R.string.action_select_all),
                         icon = Icons.Outlined.SelectAll,
                         onClick = onSelectAll,
                     ),
                     AppBar.Action(
-                        title = stringResource(MR.strings.action_select_inverse),
+                        title = stringResource(ephyra.i18n.R.string.action_select_inverse),
                         icon = Icons.Outlined.FlipToBack,
                         onClick = onInvertSelection,
                     ),

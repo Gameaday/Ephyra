@@ -19,7 +19,7 @@ internal fun GlobalSearchItem(
         onClick = onClick,
     ) {
         Text(
-            text = stringResource(MR.strings.action_global_search_query, searchQuery),
+            text = stringResource(ephyra.i18n.R.string.action_global_search_query, searchQuery),
             modifier = Modifier.zIndex(99f),
         )
     }

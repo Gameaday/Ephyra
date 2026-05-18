@@ -51,8 +51,8 @@ fun MoreScreen(
             }
             item {
                 SwitchPreferenceWidget(
-                    title = stringResource(MR.strings.label_downloaded_only),
-                    subtitle = stringResource(MR.strings.downloaded_only_summary),
+                    title = stringResource(ephyra.i18n.R.string.label_downloaded_only),
+                    subtitle = stringResource(ephyra.i18n.R.string.downloaded_only_summary),
                     icon = Icons.Outlined.CloudOff,
                     checked = downloadedOnly,
                     onCheckedChanged = onDownloadedOnlyChange,
@@ -60,8 +60,8 @@ fun MoreScreen(
             }
             item {
                 SwitchPreferenceWidget(
-                    title = stringResource(MR.strings.pref_incognito_mode),
-                    subtitle = stringResource(MR.strings.pref_incognito_mode_summary),
+                    title = stringResource(ephyra.i18n.R.string.pref_incognito_mode),
+                    subtitle = stringResource(ephyra.i18n.R.string.pref_incognito_mode_summary),
                     icon = ImageVector.vectorResource(R.drawable.ic_glasses_24dp),
                     checked = incognitoMode,
                     onCheckedChanged = onIncognitoModeChange,
@@ -73,17 +73,17 @@ fun MoreScreen(
             item {
                 val downloadQueueState = downloadQueueStateProvider()
                 TextPreferenceWidget(
-                    title = stringResource(MR.strings.label_download_queue),
+                    title = stringResource(ephyra.i18n.R.string.label_download_queue),
                     subtitle = when (downloadQueueState) {
                         DownloadQueueState.Stopped -> null
                         is DownloadQueueState.Paused -> {
                             val pending = downloadQueueState.pending
                             if (pending == 0) {
-                                stringResource(MR.strings.paused)
+                                stringResource(ephyra.i18n.R.string.paused)
                             } else {
-                                "${stringResource(MR.strings.paused)} • ${
+                                "${stringResource(ephyra.i18n.R.string.paused)} • ${
                                     pluralStringResource(
-                                        MR.plurals.download_queue_summary,
+                                        ephyra.i18n.R.plurals.download_queue_summary,
                                         count = pending,
                                         pending,
                                     )
@@ -92,7 +92,7 @@ fun MoreScreen(
                         }
                         is DownloadQueueState.Downloading -> {
                             val pending = downloadQueueState.pending
-                            pluralStringResource(MR.plurals.download_queue_summary, count = pending, pending)
+                            pluralStringResource(ephyra.i18n.R.plurals.download_queue_summary, count = pending, pending)
                         }
                     },
                     icon = Icons.Outlined.GetApp,
@@ -101,21 +101,21 @@ fun MoreScreen(
             }
             item {
                 TextPreferenceWidget(
-                    title = stringResource(MR.strings.categories),
+                    title = stringResource(ephyra.i18n.R.string.categories),
                     icon = Icons.AutoMirrored.Outlined.Label,
                     onPreferenceClick = onClickCategories,
                 )
             }
             item {
                 TextPreferenceWidget(
-                    title = stringResource(MR.strings.label_stats),
+                    title = stringResource(ephyra.i18n.R.string.label_stats),
                     icon = Icons.Outlined.QueryStats,
                     onPreferenceClick = onClickStats,
                 )
             }
             item {
                 TextPreferenceWidget(
-                    title = stringResource(MR.strings.label_data_storage),
+                    title = stringResource(ephyra.i18n.R.string.label_data_storage),
                     icon = Icons.Outlined.Storage,
                     onPreferenceClick = onClickDataAndStorage,
                 )
@@ -125,21 +125,21 @@ fun MoreScreen(
 
             item {
                 TextPreferenceWidget(
-                    title = stringResource(MR.strings.label_settings),
+                    title = stringResource(ephyra.i18n.R.string.label_settings),
                     icon = Icons.Outlined.Settings,
                     onPreferenceClick = onClickSettings,
                 )
             }
             item {
                 TextPreferenceWidget(
-                    title = stringResource(MR.strings.pref_category_about),
+                    title = stringResource(ephyra.i18n.R.string.pref_category_about),
                     icon = Icons.Outlined.Info,
                     onPreferenceClick = onClickAbout,
                 )
             }
             item {
                 TextPreferenceWidget(
-                    title = stringResource(MR.strings.label_help),
+                    title = stringResource(ephyra.i18n.R.string.label_help),
                     icon = Icons.AutoMirrored.Outlined.HelpOutline,
                     onPreferenceClick = { uriHandler.openUri(Constants.URL_HELP) },
                 )

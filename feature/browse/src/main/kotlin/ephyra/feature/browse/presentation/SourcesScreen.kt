@@ -49,7 +49,7 @@ fun SourcesScreen(
     when {
         state.isLoading -> LoadingScreen(Modifier.padding(contentPadding))
         state.isEmpty -> EmptyScreen(
-            stringRes = MR.strings.source_empty_screen,
+            stringRes = ephyra.i18n.R.string.source_empty_screen,
             modifier = Modifier.padding(contentPadding),
         )
 
@@ -125,7 +125,7 @@ private fun SourceItem(
             if (source.supportsLatest) {
                 TextButton(onClick = { onClickItem(source, Listing.Latest) }) {
                     Text(
-                        text = stringResource(MR.strings.latest),
+                        text = stringResource(ephyra.i18n.R.string.latest),
                         style = LocalTextStyle.current.copy(
                             color = MaterialTheme.colorScheme.primary,
                         ),
@@ -153,7 +153,7 @@ private fun SourcePinButton(
             alpha = SECONDARY_ALPHA,
         )
     }
-    val description = if (isPinned) MR.strings.action_unpin else MR.strings.action_pin
+    val description = if (isPinned) ephyra.i18n.R.string.action_unpin else ephyra.i18n.R.string.action_pin
     IconButton(onClick = onClick) {
         Icon(
             imageVector = icon,
@@ -176,7 +176,7 @@ fun SourceOptionsDialog(
         },
         text = {
             Column {
-                val textId = if (Pin.Pinned in source.pin) MR.strings.action_unpin else MR.strings.action_pin
+                val textId = if (Pin.Pinned in source.pin) ephyra.i18n.R.string.action_unpin else ephyra.i18n.R.string.action_pin
                 Text(
                     text = stringResource(textId),
                     modifier = Modifier
@@ -186,7 +186,7 @@ fun SourceOptionsDialog(
                 )
                 if (!source.isLocal()) {
                     Text(
-                        text = stringResource(MR.strings.action_disable),
+                        text = stringResource(ephyra.i18n.R.string.action_disable),
                         modifier = Modifier
                             .clickable(onClick = onClickDisable)
                             .fillMaxWidth()

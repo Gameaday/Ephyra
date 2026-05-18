@@ -81,20 +81,20 @@ class ClearDatabaseScreen : Screen() {
                     var keepReadManga by remember { mutableStateOf(true) }
                     AlertDialog(
                         title = {
-                            Text(text = stringResource(MR.strings.are_you_sure))
+                            Text(text = stringResource(ephyra.i18n.R.string.are_you_sure))
                         },
                         text = {
                             Column(
                                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
                             ) {
-                                Text(text = stringResource(MR.strings.clear_database_text))
+                                Text(text = stringResource(ephyra.i18n.R.string.clear_database_text))
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.extraSmall),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     Text(
-                                        text = stringResource(MR.strings.clear_db_exclude_read),
+                                        text = stringResource(ephyra.i18n.R.string.clear_db_exclude_read),
                                         modifier = Modifier.weight(1f),
                                     )
                                     Switch(
@@ -104,7 +104,7 @@ class ClearDatabaseScreen : Screen() {
                                 }
                                 if (!keepReadManga) {
                                     Text(
-                                        text = stringResource(MR.strings.clear_database_history_warning),
+                                        text = stringResource(ephyra.i18n.R.string.clear_database_history_warning),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.error,
                                     )
@@ -119,16 +119,16 @@ class ClearDatabaseScreen : Screen() {
                                         model.removeMangaBySourceId(keepReadManga)
                                         model.clearSelection()
                                         model.hideConfirmation()
-                                        context.toast(MR.strings.clear_database_completed)
+                                        context.toast(ephyra.i18n.R.string.clear_database_completed)
                                     }
                                 },
                             ) {
-                                Text(text = stringResource(MR.strings.action_ok))
+                                Text(text = stringResource(ephyra.i18n.R.string.action_ok))
                             }
                         },
                         dismissButton = {
                             TextButton(onClick = model::hideConfirmation) {
-                                Text(text = stringResource(MR.strings.action_cancel))
+                                Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
                             }
                         },
                     )
@@ -137,19 +137,19 @@ class ClearDatabaseScreen : Screen() {
                 Scaffold(
                     topBar = { scrollBehavior ->
                         AppBar(
-                            title = stringResource(MR.strings.pref_clear_database),
+                            title = stringResource(ephyra.i18n.R.string.pref_clear_database),
                             navigateUp = navigator::pop,
                             actions = {
                                 if (s.items.isNotEmpty()) {
                                     AppBarActions(
                                         actions = persistentListOf(
                                             AppBar.Action(
-                                                title = stringResource(MR.strings.action_select_all),
+                                                title = stringResource(ephyra.i18n.R.string.action_select_all),
                                                 icon = Icons.Outlined.SelectAll,
                                                 onClick = model::selectAll,
                                             ),
                                             AppBar.Action(
-                                                title = stringResource(MR.strings.action_select_inverse),
+                                                title = stringResource(ephyra.i18n.R.string.action_select_inverse),
                                                 icon = Icons.Outlined.FlipToBack,
                                                 onClick = model::invertSelection,
                                             ),
@@ -163,13 +163,13 @@ class ClearDatabaseScreen : Screen() {
                 ) { contentPadding ->
                     if (s.items.isEmpty()) {
                         EmptyScreen(
-                            message = stringResource(MR.strings.database_clean),
+                            message = stringResource(ephyra.i18n.R.string.database_clean),
                             modifier = Modifier.padding(contentPadding),
                         )
                     } else {
                         LazyColumnWithAction(
                             contentPadding = contentPadding,
-                            actionLabel = stringResource(MR.strings.action_delete),
+                            actionLabel = stringResource(ephyra.i18n.R.string.action_delete),
                             actionEnabled = s.selection.isNotEmpty(),
                             onClickAction = model::showConfirmation,
                         ) {
@@ -213,7 +213,7 @@ class ClearDatabaseScreen : Screen() {
                     text = source.visualName,
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                Text(text = stringResource(MR.strings.clear_database_source_item_count, count))
+                Text(text = stringResource(ephyra.i18n.R.string.clear_database_source_item_count, count))
             }
             Checkbox(
                 checked = isSelected,

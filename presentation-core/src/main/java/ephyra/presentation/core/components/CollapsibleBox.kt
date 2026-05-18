@@ -54,7 +54,7 @@ fun CollapsibleBox(
             Icon(
                 imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                 contentDescription = stringResource(
-                    if (expanded) MR.strings.manga_info_collapse else MR.strings.manga_info_expand,
+                    if (expanded) ephyra.i18n.R.string.manga_info_collapse else ephyra.i18n.R.string.manga_info_expand,
                 ),
             )
         }

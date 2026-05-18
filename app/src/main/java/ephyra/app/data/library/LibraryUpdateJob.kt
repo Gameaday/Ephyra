@@ -161,24 +161,24 @@ class LibraryUpdateJob(
         val skippedUpdates = mutableListOf<Pair<Manga, String?>>()
         val (_, fetchWindowUpperBound) = fetchInterval.getWindow(ZonedDateTime.now())
 
-        val skipReasonNotAlwaysUpdate = context.stringResource(MR.strings.skipped_reason_not_always_update)
+        val skipReasonNotAlwaysUpdate = context.stringResource(ephyra.i18n.R.string.skipped_reason_not_always_update)
         val skipReasonCompleted = if (MANGA_NON_COMPLETED in restrictions) {
-            context.stringResource(MR.strings.skipped_reason_completed)
+            context.stringResource(ephyra.i18n.R.string.skipped_reason_completed)
         } else {
             null
         }
         val skipReasonNotCaughtUp = if (MANGA_HAS_UNREAD in restrictions) {
-            context.stringResource(MR.strings.skipped_reason_not_caught_up)
+            context.stringResource(ephyra.i18n.R.string.skipped_reason_not_caught_up)
         } else {
             null
         }
         val skipReasonNotStarted = if (MANGA_NON_READ in restrictions) {
-            context.stringResource(MR.strings.skipped_reason_not_started)
+            context.stringResource(ephyra.i18n.R.string.skipped_reason_not_started)
         } else {
             null
         }
         val skipReasonOutsideReleasePeriod = if (MANGA_OUTSIDE_RELEASE_PERIOD in restrictions) {
-            context.stringResource(MR.strings.skipped_reason_not_in_release_period)
+            context.stringResource(ephyra.i18n.R.string.skipped_reason_not_in_release_period)
         } else {
             null
         }
@@ -267,10 +267,10 @@ class LibraryUpdateJob(
                                     } catch (e: Throwable) {
                                         val errorMessage = when (e) {
                                             is NoChaptersException -> context.stringResource(
-                                                MR.strings.no_chapters_error,
+                                                ephyra.i18n.R.string.no_chapters_error,
                                             )
                                             is SourceNotInstalledException -> context.stringResource(
-                                                MR.strings.loader_not_implemented_error,
+                                                ephyra.i18n.R.string.loader_not_implemented_error,
                                             )
 
                                             else -> e.message

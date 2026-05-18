@@ -20,37 +20,37 @@ enum class ReaderOrientation(
 ) {
     DEFAULT(
         flag = -1, // ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-        MR.strings.label_default,
+        ephyra.i18n.R.string.label_default,
         0x00000000,
     ),
     FREE(
         flag = -1, // ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-        MR.strings.rotation_free,
+        ephyra.i18n.R.string.rotation_free,
         0x00000008,
     ),
     PORTRAIT(
         flag = 7, // ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
-        MR.strings.rotation_portrait,
+        ephyra.i18n.R.string.rotation_portrait,
         0x00000010,
     ),
     LANDSCAPE(
         flag = 6, // ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-        MR.strings.rotation_landscape,
+        ephyra.i18n.R.string.rotation_landscape,
         0x00000018,
     ),
     LOCKED_PORTRAIT(
         flag = 1, // ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        MR.strings.rotation_force_portrait,
+        ephyra.i18n.R.string.rotation_force_portrait,
         0x00000020,
     ),
     LOCKED_LANDSCAPE(
         flag = 0, // ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-        MR.strings.rotation_force_landscape,
+        ephyra.i18n.R.string.rotation_force_landscape,
         0x00000028,
     ),
     REVERSE_PORTRAIT(
         flag = 9, // ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
-        MR.strings.rotation_reverse_portrait,
+        ephyra.i18n.R.string.rotation_reverse_portrait,
         0x00000030,
     ),
     ;

@@ -22,7 +22,7 @@ class BackupNotifier(private val context: Context) : DomainBackupNotifier {
             Notifications.ID_BACKUP_PROGRESS,
             Notifications.CHANNEL_BACKUP_RESTORE_PROGRESS,
         ) {
-            setContentTitle(context.stringResource(MR.strings.creating_backup))
+            setContentTitle(context.stringResource(ephyra.i18n.R.string.creating_backup))
             setSmallIcon(ephyra.app.core.common.R.drawable.ic_refresh_24dp)
             setLargeIcon(notificationBitmap)
             setOngoing(true)
@@ -36,7 +36,7 @@ class BackupNotifier(private val context: Context) : DomainBackupNotifier {
             Notifications.ID_BACKUP_COMPLETE,
             Notifications.CHANNEL_BACKUP_RESTORE_COMPLETE,
         ) {
-            setContentTitle(context.stringResource(MR.strings.backup_created))
+            setContentTitle(context.stringResource(ephyra.i18n.R.string.backup_created))
             setContentText(android.net.Uri.parse(uriString).path)
             setSmallIcon(ephyra.app.core.common.R.drawable.ic_ephyra)
             setLargeIcon(notificationBitmap)
@@ -51,7 +51,7 @@ class BackupNotifier(private val context: Context) : DomainBackupNotifier {
             Notifications.ID_BACKUP_COMPLETE,
             Notifications.CHANNEL_BACKUP_RESTORE_COMPLETE,
         ) {
-            setContentTitle(context.stringResource(MR.strings.creating_backup_error))
+            setContentTitle(context.stringResource(ephyra.i18n.R.string.creating_backup_error))
             setContentText(error)
             setSmallIcon(ephyra.app.core.common.R.drawable.ic_ephyra)
             setLargeIcon(notificationBitmap)
@@ -64,7 +64,7 @@ class BackupNotifier(private val context: Context) : DomainBackupNotifier {
             Notifications.ID_RESTORE_PROGRESS,
             Notifications.CHANNEL_BACKUP_RESTORE_PROGRESS,
         ) {
-            setContentTitle(context.stringResource(MR.strings.restoring_backup))
+            setContentTitle(context.stringResource(ephyra.i18n.R.string.restoring_backup))
             setContentText(title)
             setProgress(total, progress, false)
             setSmallIcon(ephyra.app.core.common.R.drawable.ic_refresh_24dp)
@@ -80,7 +80,7 @@ class BackupNotifier(private val context: Context) : DomainBackupNotifier {
             Notifications.ID_RESTORE_COMPLETE,
             Notifications.CHANNEL_BACKUP_RESTORE_COMPLETE,
         ) {
-            setContentTitle(context.stringResource(MR.strings.restore_completed))
+            setContentTitle(context.stringResource(ephyra.i18n.R.string.restore_completed))
             setContentText(path)
             setSmallIcon(ephyra.app.core.common.R.drawable.ic_ephyra)
             setLargeIcon(notificationBitmap)
@@ -95,7 +95,7 @@ class BackupNotifier(private val context: Context) : DomainBackupNotifier {
             Notifications.ID_RESTORE_COMPLETE,
             Notifications.CHANNEL_BACKUP_RESTORE_COMPLETE,
         ) {
-            setContentTitle(context.stringResource(MR.strings.restoring_backup_error))
+            setContentTitle(context.stringResource(ephyra.i18n.R.string.restoring_backup_error))
             setContentText(error)
             setSmallIcon(ephyra.app.core.common.R.drawable.ic_ephyra)
             setLargeIcon(notificationBitmap)

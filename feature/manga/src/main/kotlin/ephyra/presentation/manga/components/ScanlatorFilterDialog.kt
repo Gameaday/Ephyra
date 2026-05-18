@@ -45,10 +45,10 @@ fun ScanlatorFilterDialog(
     val mutableExcludedScanlators = remember(excludedScanlators) { excludedScanlators.toMutableStateList() }
     AlertDialog(
         onDismissRequest = onDismissRequest,
-        title = { Text(text = stringResource(MR.strings.exclude_scanlators)) },
+        title = { Text(text = stringResource(ephyra.i18n.R.string.exclude_scanlators)) },
         text = textFunc@{
             if (sortedAvailableScanlators.isEmpty()) {
-                Text(text = stringResource(MR.strings.no_scanlators_found))
+                Text(text = stringResource(ephyra.i18n.R.string.no_scanlators_found))
                 return@textFunc
             }
             Box {
@@ -104,22 +104,22 @@ fun ScanlatorFilterDialog(
         confirmButton = {
             if (sortedAvailableScanlators.isEmpty()) {
                 TextButton(onClick = onDismissRequest) {
-                    Text(text = stringResource(MR.strings.action_cancel))
+                    Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
                 }
             } else {
                 FlowRow {
                     if (mutableExcludedScanlators.isEmpty()) {
                         TextButton(onClick = { mutableExcludedScanlators.addAll(availableScanlators) }) {
-                            Text(text = stringResource(MR.strings.action_select_all))
+                            Text(text = stringResource(ephyra.i18n.R.string.action_select_all))
                         }
                     } else {
                         TextButton(onClick = mutableExcludedScanlators::clear) {
-                            Text(text = stringResource(MR.strings.action_reset))
+                            Text(text = stringResource(ephyra.i18n.R.string.action_reset))
                         }
                     }
                     Spacer(modifier = Modifier.weight(1f))
                     TextButton(onClick = onDismissRequest) {
-                        Text(text = stringResource(MR.strings.action_cancel))
+                        Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
                     }
                     TextButton(
                         onClick = {
@@ -127,7 +127,7 @@ fun ScanlatorFilterDialog(
                             onDismissRequest()
                         },
                     ) {
-                        Text(text = stringResource(MR.strings.action_ok))
+                        Text(text = stringResource(ephyra.i18n.R.string.action_ok))
                     }
                 }
             }

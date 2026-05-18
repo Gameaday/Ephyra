@@ -105,7 +105,7 @@ class PagerTransitionHolder(
 
         val textView = AppCompatTextView(context).apply {
             wrapContent()
-            text = context.stringResource(MR.strings.transition_pages_loading)
+            text = context.stringResource(ephyra.i18n.R.string.transition_pages_loading)
         }
 
         pagesContainer.addView(progress)
@@ -118,13 +118,13 @@ class PagerTransitionHolder(
     private fun setError(error: Throwable) {
         val textView = AppCompatTextView(context).apply {
             wrapContent()
-            text = context.stringResource(MR.strings.transition_pages_error, error.message ?: "")
+            text = context.stringResource(ephyra.i18n.R.string.transition_pages_error, error.message ?: "")
         }
 
         val retryBtn = ReaderButton(context).apply {
             viewer = this@PagerTransitionHolder.viewer
             wrapContent()
-            text = context.stringResource(MR.strings.action_retry)
+            text = context.stringResource(ephyra.i18n.R.string.action_retry)
             setOnClickListener {
                 val toChapter = transition.to
                 if (toChapter != null) {

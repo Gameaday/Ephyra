@@ -34,7 +34,7 @@ fun LockedWidget(
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = stringResource(MR.strings.appwidget_unavailable_locked),
+            text = stringResource(ephyra.i18n.R.string.appwidget_unavailable_locked),
             style = TextStyle(
                 color = foreground,
                 fontSize = 12.sp,

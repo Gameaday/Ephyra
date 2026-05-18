@@ -95,7 +95,7 @@ private fun MoreMenu(
         IconButton(onClick = { expanded = true }) {
             Icon(
                 imageVector = Icons.Default.MoreVert,
-                contentDescription = stringResource(MR.strings.label_more),
+                contentDescription = stringResource(ephyra.i18n.R.string.label_more),
             )
         }
         DropdownMenu(

@@ -63,11 +63,11 @@ class MangaUpdates(
     }
 
     override fun getStatus(status: Long): StringResource? = when (status) {
-        READING_LIST -> MR.strings.reading_list
-        WISH_LIST -> MR.strings.wish_list
-        COMPLETE_LIST -> MR.strings.complete_list
-        ON_HOLD_LIST -> MR.strings.on_hold_list
-        UNFINISHED_LIST -> MR.strings.unfinished_list
+        READING_LIST -> ephyra.i18n.R.string.reading_list
+        WISH_LIST -> ephyra.i18n.R.string.wish_list
+        COMPLETE_LIST -> ephyra.i18n.R.string.complete_list
+        ON_HOLD_LIST -> ephyra.i18n.R.string.on_hold_list
+        UNFINISHED_LIST -> ephyra.i18n.R.string.unfinished_list
         else -> null
     }
 

@@ -72,7 +72,7 @@ data object LibraryTab : Tab {
             val image = AnimatedImageVector.animatedVectorResource(R.drawable.anim_library_enter)
             return TabOptions(
                 index = 0u,
-                title = stringResource(MR.strings.label_library),
+                title = stringResource(ephyra.i18n.R.string.label_library),
                 icon = rememberAnimatedVectorPainter(image, isSelected),
             )
         }
@@ -100,9 +100,9 @@ data object LibraryTab : Tab {
             val started = updateScheduler.startNow(category)
             scope.launch {
                 val msgRes = when {
-                    !started -> MR.strings.update_already_running
-                    category != null -> MR.strings.updating_category
-                    else -> MR.strings.updating_library
+                    !started -> ephyra.i18n.R.string.update_already_running
+                    category != null -> ephyra.i18n.R.string.updating_category
+                    else -> ephyra.i18n.R.string.updating_library
                 }
                 snackbarHostState.showSnackbar(context.stringResource(msgRes))
             }
@@ -112,8 +112,8 @@ data object LibraryTab : Tab {
         Scaffold(
             topBar = { scrollBehavior ->
                 val title = state.getToolbarTitle(
-                    defaultTitle = stringResource(MR.strings.label_library),
-                    defaultCategoryTitle = stringResource(MR.strings.label_default),
+                    defaultTitle = stringResource(ephyra.i18n.R.string.label_library),
+                    defaultCategoryTitle = stringResource(ephyra.i18n.R.string.label_default),
                     page = state.coercedActiveCategoryIndex,
                 )
                 LibraryToolbar(
@@ -133,7 +133,7 @@ data object LibraryTab : Tab {
                                 navigator.push(MangaScreen(randomItem.libraryManga.manga.id))
                             } else {
                                 snackbarHostState.showSnackbar(
-                                    context.stringResource(MR.strings.information_no_entries_found),
+                                    context.stringResource(ephyra.i18n.R.string.information_no_entries_found),
                                 )
                             }
                         }
@@ -171,11 +171,11 @@ data object LibraryTab : Tab {
                 state.searchQuery.isNullOrEmpty() && !state.hasActiveFilters && state.isLibraryEmpty -> {
                     val handler = LocalUriHandler.current
                     EmptyScreen(
-                        stringRes = MR.strings.information_empty_library,
+                        stringRes = ephyra.i18n.R.string.information_empty_library,
                         modifier = Modifier.padding(contentPadding),
                         actions = persistentListOf(
                             EmptyScreenAction(
-                                stringRes = MR.strings.getting_started_guide,
+                                stringRes = ephyra.i18n.R.string.getting_started_guide,
                                 icon = Icons.AutoMirrored.Outlined.HelpOutline,
                                 onClick = { handler.openUri("https://ephyra.app/docs/guides/getting-started") },
                             ),
@@ -206,7 +206,7 @@ data object LibraryTab : Tab {
                                             ReaderActivity.newIntent(context, chapter.mangaId, chapter.id),
                                         )
                                     } else {
-                                        snackbarHostState.showSnackbar(context.stringResource(MR.strings.no_next_chapter))
+                                        snackbarHostState.showSnackbar(context.stringResource(ephyra.i18n.R.string.no_next_chapter))
                                     }
                                 }
                             }

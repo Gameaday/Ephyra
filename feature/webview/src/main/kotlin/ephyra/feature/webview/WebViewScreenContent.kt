@@ -199,7 +199,7 @@ fun WebViewScreenContent(
                             AppBarActions(
                                 persistentListOf(
                                     AppBar.Action(
-                                        title = stringResource(MR.strings.action_webview_back),
+                                        title = stringResource(ephyra.i18n.R.string.action_webview_back),
                                         icon = Icons.AutoMirrored.Outlined.ArrowBack,
                                         onClick = {
                                             if (navigator.canGoBack) {
@@ -209,7 +209,7 @@ fun WebViewScreenContent(
                                         enabled = navigator.canGoBack,
                                     ),
                                     AppBar.Action(
-                                        title = stringResource(MR.strings.action_webview_forward),
+                                        title = stringResource(ephyra.i18n.R.string.action_webview_forward),
                                         icon = Icons.AutoMirrored.Outlined.ArrowForward,
                                         onClick = {
                                             if (navigator.canGoForward) {
@@ -219,19 +219,19 @@ fun WebViewScreenContent(
                                         enabled = navigator.canGoForward,
                                     ),
                                     AppBar.OverflowAction(
-                                        title = stringResource(MR.strings.action_webview_refresh),
+                                        title = stringResource(ephyra.i18n.R.string.action_webview_refresh),
                                         onClick = { navigator.reload() },
                                     ),
                                     AppBar.OverflowAction(
-                                        title = stringResource(MR.strings.action_share),
+                                        title = stringResource(ephyra.i18n.R.string.action_share),
                                         onClick = { onShare(currentUrl) },
                                     ),
                                     AppBar.OverflowAction(
-                                        title = stringResource(MR.strings.action_open_in_browser),
+                                        title = stringResource(ephyra.i18n.R.string.action_open_in_browser),
                                         onClick = { onOpenInBrowser(currentUrl) },
                                     ),
                                     AppBar.OverflowAction(
-                                        title = stringResource(MR.strings.pref_clear_cookies),
+                                        title = stringResource(ephyra.i18n.R.string.pref_clear_cookies),
                                         onClick = { onClearCookies(currentUrl) },
                                     ),
                                 ).builder().apply {
@@ -240,7 +240,7 @@ fun WebViewScreenContent(
                                         add(
                                             0,
                                             AppBar.Action(
-                                                title = stringResource(MR.strings.action_webview_close_tab),
+                                                title = stringResource(ephyra.i18n.R.string.action_webview_close_tab),
                                                 icon = ImageVector.vectorResource(R.drawable.ic_tab_close_24px),
                                                 onClick = popState,
                                             ),
@@ -257,7 +257,7 @@ fun WebViewScreenContent(
                         ) {
                             // 🟢 FIX: Update to 'text' and passed the string directly instead of using textRes
                             WarningBanner(
-                                text = stringResource(MR.strings.information_cloudflare_help),
+                                text = stringResource(ephyra.i18n.R.string.information_cloudflare_help),
                                 modifier = Modifier
                                     .clip(MaterialTheme.shapes.small)
                                     .clickable {

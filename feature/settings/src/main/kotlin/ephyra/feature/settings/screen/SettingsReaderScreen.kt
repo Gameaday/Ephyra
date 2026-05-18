@@ -24,7 +24,7 @@ object SettingsReaderScreen : SearchableSettings {
 
     @ReadOnlyComposable
     @Composable
-    override fun getTitleRes() = MR.strings.pref_category_reader
+    override fun getTitleRes() = ephyra.i18n.R.string.pref_category_reader
 
     @Composable
     override fun getPreferences(): List<Preference> {
@@ -37,39 +37,39 @@ object SettingsReaderScreen : SearchableSettings {
                 entries = ReadingMode.entries.drop(1)
                     .associate { it.flagValue to stringResource(it.stringRes) }
                     .toImmutableMap(),
-                title = stringResource(MR.strings.pref_viewer_type),
+                title = stringResource(ephyra.i18n.R.string.pref_viewer_type),
             ),
             Preference.PreferenceItem.ListPreference(
                 preference = readerPref.doubleTapAnimSpeed(),
                 entries = persistentMapOf(
-                    1 to stringResource(MR.strings.double_tap_anim_speed_0),
-                    500 to stringResource(MR.strings.double_tap_anim_speed_normal),
-                    250 to stringResource(MR.strings.double_tap_anim_speed_fast),
+                    1 to stringResource(ephyra.i18n.R.string.double_tap_anim_speed_0),
+                    500 to stringResource(ephyra.i18n.R.string.double_tap_anim_speed_normal),
+                    250 to stringResource(ephyra.i18n.R.string.double_tap_anim_speed_fast),
                 ),
-                title = stringResource(MR.strings.pref_double_tap_anim_speed),
+                title = stringResource(ephyra.i18n.R.string.pref_double_tap_anim_speed),
             ),
             Preference.PreferenceItem.SwitchPreference(
                 preference = readerPref.showReadingMode(),
-                title = stringResource(MR.strings.pref_show_reading_mode),
-                subtitle = stringResource(MR.strings.pref_show_reading_mode_summary),
+                title = stringResource(ephyra.i18n.R.string.pref_show_reading_mode),
+                subtitle = stringResource(ephyra.i18n.R.string.pref_show_reading_mode_summary),
             ),
             Preference.PreferenceItem.SwitchPreference(
                 preference = readerPref.showNavigationOverlayOnStart(),
-                title = stringResource(MR.strings.pref_show_navigation_mode),
-                subtitle = stringResource(MR.strings.pref_show_navigation_mode_summary),
+                title = stringResource(ephyra.i18n.R.string.pref_show_navigation_mode),
+                subtitle = stringResource(ephyra.i18n.R.string.pref_show_navigation_mode_summary),
             ),
             Preference.PreferenceItem.SwitchPreference(
                 preference = readerPref.pageTransitions(),
-                title = stringResource(MR.strings.pref_page_transitions),
+                title = stringResource(ephyra.i18n.R.string.pref_page_transitions),
             ),
             Preference.PreferenceItem.ListPreference(
                 preference = readerPref.sliderNavMode(),
                 entries = persistentMapOf(
-                    ReaderPreferences.SLIDER_NAV_INSTANT to stringResource(MR.strings.slider_nav_instant),
-                    ReaderPreferences.SLIDER_NAV_SMOOTH to stringResource(MR.strings.slider_nav_smooth),
+                    ReaderPreferences.SLIDER_NAV_INSTANT to stringResource(ephyra.i18n.R.string.slider_nav_instant),
+                    ReaderPreferences.SLIDER_NAV_SMOOTH to stringResource(ephyra.i18n.R.string.slider_nav_smooth),
                 ),
-                title = stringResource(MR.strings.pref_slider_nav_mode),
-                subtitle = stringResource(MR.strings.pref_slider_nav_mode_subtitle),
+                title = stringResource(ephyra.i18n.R.string.pref_slider_nav_mode),
+                subtitle = stringResource(ephyra.i18n.R.string.pref_slider_nav_mode_subtitle),
             ),
             getDisplayGroup(readerPreferences = readerPref),
             getEInkGroup(readerPreferences = readerPref),
@@ -86,41 +86,41 @@ object SettingsReaderScreen : SearchableSettings {
         val fullscreenPref = readerPreferences.fullscreen()
         val fullscreen by fullscreenPref.collectAsState()
         return Preference.PreferenceGroup(
-            title = stringResource(MR.strings.pref_category_display),
+            title = stringResource(ephyra.i18n.R.string.pref_category_display),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.ListPreference(
                     preference = readerPreferences.defaultOrientationType(),
                     entries = ReaderOrientation.entries.drop(1)
                         .associate { it.flagValue to stringResource(it.stringRes) }
                         .toImmutableMap(),
-                    title = stringResource(MR.strings.pref_rotation_type),
+                    title = stringResource(ephyra.i18n.R.string.pref_rotation_type),
                 ),
                 Preference.PreferenceItem.ListPreference(
                     preference = readerPreferences.readerTheme(),
                     entries = persistentMapOf(
-                        1 to stringResource(MR.strings.black_background),
-                        2 to stringResource(MR.strings.gray_background),
-                        0 to stringResource(MR.strings.white_background),
-                        3 to stringResource(MR.strings.automatic_background),
+                        1 to stringResource(ephyra.i18n.R.string.black_background),
+                        2 to stringResource(ephyra.i18n.R.string.gray_background),
+                        0 to stringResource(ephyra.i18n.R.string.white_background),
+                        3 to stringResource(ephyra.i18n.R.string.automatic_background),
                     ),
-                    title = stringResource(MR.strings.pref_reader_theme),
+                    title = stringResource(ephyra.i18n.R.string.pref_reader_theme),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = fullscreenPref,
-                    title = stringResource(MR.strings.pref_fullscreen),
+                    title = stringResource(ephyra.i18n.R.string.pref_fullscreen),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = readerPreferences.drawUnderCutout(),
-                    title = stringResource(MR.strings.pref_cutout_short),
+                    title = stringResource(ephyra.i18n.R.string.pref_cutout_short),
                     enabled = LocalView.current.hasDisplayCutout() && fullscreen,
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = readerPreferences.keepScreenOn(),
-                    title = stringResource(MR.strings.pref_keep_screen_on),
+                    title = stringResource(ephyra.i18n.R.string.pref_keep_screen_on),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = readerPreferences.showPageNumber(),
-                    title = stringResource(MR.strings.pref_show_page_number),
+                    title = stringResource(ephyra.i18n.R.string.pref_show_page_number),
                 ),
             ),
         )
@@ -143,34 +143,34 @@ object SettingsReaderScreen : SearchableSettings {
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.SwitchPreference(
                     preference = readerPreferences.flashOnPageChange(),
-                    title = stringResource(MR.strings.pref_flash_page),
-                    subtitle = stringResource(MR.strings.pref_flash_page_summ),
+                    title = stringResource(ephyra.i18n.R.string.pref_flash_page),
+                    subtitle = stringResource(ephyra.i18n.R.string.pref_flash_page_summ),
                 ),
                 Preference.PreferenceItem.SliderPreference(
                     value = flashMillis / ReaderPreferences.MILLI_CONVERSION,
                     valueRange = 1..15,
-                    title = stringResource(MR.strings.pref_flash_duration),
-                    valueString = stringResource(MR.strings.pref_flash_duration_summary, flashMillis),
+                    title = stringResource(ephyra.i18n.R.string.pref_flash_duration),
+                    valueString = stringResource(ephyra.i18n.R.string.pref_flash_duration_summary, flashMillis),
                     enabled = flashPageState,
                     onValueChanged = { flashMillisPref.set(it * ReaderPreferences.MILLI_CONVERSION) },
                 ),
                 Preference.PreferenceItem.SliderPreference(
                     value = flashInterval,
                     valueRange = 1..10,
-                    title = stringResource(MR.strings.pref_flash_page_interval),
-                    valueString = pluralStringResource(MR.plurals.pref_pages, flashInterval, flashInterval),
+                    title = stringResource(ephyra.i18n.R.string.pref_flash_page_interval),
+                    valueString = pluralStringResource(ephyra.i18n.R.plurals.pref_pages, flashInterval, flashInterval),
                     enabled = flashPageState,
                     onValueChanged = { flashIntervalPref.set(it) },
                 ),
                 Preference.PreferenceItem.ListPreference(
                     preference = flashColorPref,
                     entries = persistentMapOf(
-                        ReaderPreferences.FlashColor.BLACK to stringResource(MR.strings.pref_flash_style_black),
-                        ReaderPreferences.FlashColor.WHITE to stringResource(MR.strings.pref_flash_style_white),
+                        ReaderPreferences.FlashColor.BLACK to stringResource(ephyra.i18n.R.string.pref_flash_style_black),
+                        ReaderPreferences.FlashColor.WHITE to stringResource(ephyra.i18n.R.string.pref_flash_style_white),
                         ReaderPreferences.FlashColor.WHITE_BLACK
-                            to stringResource(MR.strings.pref_flash_style_white_black),
+                            to stringResource(ephyra.i18n.R.string.pref_flash_style_white_black),
                     ),
-                    title = stringResource(MR.strings.pref_flash_with),
+                    title = stringResource(ephyra.i18n.R.string.pref_flash_with),
                     enabled = flashPageState,
                 ),
             ),
@@ -180,23 +180,23 @@ object SettingsReaderScreen : SearchableSettings {
     @Composable
     private fun getReadingGroup(readerPreferences: ReaderPreferences): Preference.PreferenceGroup {
         return Preference.PreferenceGroup(
-            title = stringResource(MR.strings.pref_category_reading),
+            title = stringResource(ephyra.i18n.R.string.pref_category_reading),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.SwitchPreference(
                     preference = readerPreferences.skipRead(),
-                    title = stringResource(MR.strings.pref_skip_read_chapters),
+                    title = stringResource(ephyra.i18n.R.string.pref_skip_read_chapters),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = readerPreferences.skipFiltered(),
-                    title = stringResource(MR.strings.pref_skip_filtered_chapters),
+                    title = stringResource(ephyra.i18n.R.string.pref_skip_filtered_chapters),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = readerPreferences.skipDupe(),
-                    title = stringResource(MR.strings.pref_skip_dupe_chapters),
+                    title = stringResource(ephyra.i18n.R.string.pref_skip_dupe_chapters),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = readerPreferences.alwaysShowChapterTransition(),
-                    title = stringResource(MR.strings.pref_always_show_chapter_transition),
+                    title = stringResource(ephyra.i18n.R.string.pref_always_show_chapter_transition),
                 ),
             ),
         )
@@ -215,7 +215,7 @@ object SettingsReaderScreen : SearchableSettings {
         val rotateToFit by rotateToFitPref.collectAsState()
 
         return Preference.PreferenceGroup(
-            title = stringResource(MR.strings.pager_viewer),
+            title = stringResource(ephyra.i18n.R.string.pager_viewer),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.ListPreference(
                     preference = navModePref,
@@ -223,7 +223,7 @@ object SettingsReaderScreen : SearchableSettings {
                         .mapIndexed { index, it -> index to stringResource(it) }
                         .toMap()
                         .toImmutableMap(),
-                    title = stringResource(MR.strings.pref_viewer_nav),
+                    title = stringResource(ephyra.i18n.R.string.pref_viewer_nav),
                 ),
                 Preference.PreferenceItem.ListPreference(
                     preference = readerPreferences.pagerNavInverted(),
@@ -235,7 +235,7 @@ object SettingsReaderScreen : SearchableSettings {
                     )
                         .associateWith { stringResource(it.titleRes) }
                         .toImmutableMap(),
-                    title = stringResource(MR.strings.pref_read_with_tapping_inverted),
+                    title = stringResource(ephyra.i18n.R.string.pref_read_with_tapping_inverted),
                     enabled = navMode != 5,
                 ),
                 Preference.PreferenceItem.ListPreference(
@@ -244,7 +244,7 @@ object SettingsReaderScreen : SearchableSettings {
                         .mapIndexed { index, it -> index + 1 to stringResource(it) }
                         .toMap()
                         .toImmutableMap(),
-                    title = stringResource(MR.strings.pref_image_scale_type),
+                    title = stringResource(ephyra.i18n.R.string.pref_image_scale_type),
                 ),
                 Preference.PreferenceItem.ListPreference(
                     preference = readerPreferences.zoomStart(),
@@ -252,25 +252,25 @@ object SettingsReaderScreen : SearchableSettings {
                         .mapIndexed { index, it -> index + 1 to stringResource(it) }
                         .toMap()
                         .toImmutableMap(),
-                    title = stringResource(MR.strings.pref_zoom_start),
+                    title = stringResource(ephyra.i18n.R.string.pref_zoom_start),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = readerPreferences.cropBorders(),
-                    title = stringResource(MR.strings.pref_crop_borders),
+                    title = stringResource(ephyra.i18n.R.string.pref_crop_borders),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = readerPreferences.landscapeZoom(),
-                    title = stringResource(MR.strings.pref_landscape_zoom),
+                    title = stringResource(ephyra.i18n.R.string.pref_landscape_zoom),
                     enabled = imageScaleType == 1,
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = readerPreferences.navigateToPan(),
-                    title = stringResource(MR.strings.pref_navigate_pan),
+                    title = stringResource(ephyra.i18n.R.string.pref_navigate_pan),
                     enabled = navMode != 5,
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = dualPageSplitPref,
-                    title = stringResource(MR.strings.pref_dual_page_split),
+                    title = stringResource(ephyra.i18n.R.string.pref_dual_page_split),
                     onValueChanged = {
                         rotateToFitPref.set(false)
                         true
@@ -278,13 +278,13 @@ object SettingsReaderScreen : SearchableSettings {
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = readerPreferences.dualPageInvertPaged(),
-                    title = stringResource(MR.strings.pref_dual_page_invert),
-                    subtitle = stringResource(MR.strings.pref_dual_page_invert_summary),
+                    title = stringResource(ephyra.i18n.R.string.pref_dual_page_invert),
+                    subtitle = stringResource(ephyra.i18n.R.string.pref_dual_page_invert_summary),
                     enabled = dualPageSplit,
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = rotateToFitPref,
-                    title = stringResource(MR.strings.pref_page_rotate),
+                    title = stringResource(ephyra.i18n.R.string.pref_page_rotate),
                     onValueChanged = {
                         dualPageSplitPref.set(false)
                         true
@@ -292,7 +292,7 @@ object SettingsReaderScreen : SearchableSettings {
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = readerPreferences.dualPageRotateToFitInvert(),
-                    title = stringResource(MR.strings.pref_page_rotate_invert),
+                    title = stringResource(ephyra.i18n.R.string.pref_page_rotate_invert),
                     enabled = rotateToFit,
                 ),
             ),
@@ -314,7 +314,7 @@ object SettingsReaderScreen : SearchableSettings {
         val webtoonSidePadding by webtoonSidePaddingPref.collectAsState()
 
         return Preference.PreferenceGroup(
-            title = stringResource(MR.strings.webtoon_viewer),
+            title = stringResource(ephyra.i18n.R.string.webtoon_viewer),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.ListPreference(
                     preference = navModePref,
@@ -322,7 +322,7 @@ object SettingsReaderScreen : SearchableSettings {
                         .mapIndexed { index, it -> index to stringResource(it) }
                         .toMap()
                         .toImmutableMap(),
-                    title = stringResource(MR.strings.pref_viewer_nav),
+                    title = stringResource(ephyra.i18n.R.string.pref_viewer_nav),
                 ),
                 Preference.PreferenceItem.ListPreference(
                     preference = readerPreferences.webtoonNavInverted(),
@@ -334,7 +334,7 @@ object SettingsReaderScreen : SearchableSettings {
                     )
                         .associateWith { stringResource(it.titleRes) }
                         .toImmutableMap(),
-                    title = stringResource(MR.strings.pref_read_with_tapping_inverted),
+                    title = stringResource(ephyra.i18n.R.string.pref_read_with_tapping_inverted),
                     enabled = navMode != 5,
                 ),
                 Preference.PreferenceItem.SliderPreference(
@@ -342,27 +342,27 @@ object SettingsReaderScreen : SearchableSettings {
                     valueRange = ReaderPreferences.let {
                         it.WEBTOON_PADDING_MIN..it.WEBTOON_PADDING_MAX
                     },
-                    title = stringResource(MR.strings.pref_webtoon_side_padding),
+                    title = stringResource(ephyra.i18n.R.string.pref_webtoon_side_padding),
                     valueString = numberFormat.format(webtoonSidePadding / 100f),
                     onValueChanged = { webtoonSidePaddingPref.set(it) },
                 ),
                 Preference.PreferenceItem.ListPreference(
                     preference = readerPreferences.readerHideThreshold(),
                     entries = persistentMapOf(
-                        ReaderPreferences.ReaderHideThreshold.HIGHEST to stringResource(MR.strings.pref_highest),
-                        ReaderPreferences.ReaderHideThreshold.HIGH to stringResource(MR.strings.pref_high),
-                        ReaderPreferences.ReaderHideThreshold.LOW to stringResource(MR.strings.pref_low),
-                        ReaderPreferences.ReaderHideThreshold.LOWEST to stringResource(MR.strings.pref_lowest),
+                        ReaderPreferences.ReaderHideThreshold.HIGHEST to stringResource(ephyra.i18n.R.string.pref_highest),
+                        ReaderPreferences.ReaderHideThreshold.HIGH to stringResource(ephyra.i18n.R.string.pref_high),
+                        ReaderPreferences.ReaderHideThreshold.LOW to stringResource(ephyra.i18n.R.string.pref_low),
+                        ReaderPreferences.ReaderHideThreshold.LOWEST to stringResource(ephyra.i18n.R.string.pref_lowest),
                     ),
-                    title = stringResource(MR.strings.pref_hide_threshold),
+                    title = stringResource(ephyra.i18n.R.string.pref_hide_threshold),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = readerPreferences.cropBordersWebtoon(),
-                    title = stringResource(MR.strings.pref_crop_borders),
+                    title = stringResource(ephyra.i18n.R.string.pref_crop_borders),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = dualPageSplitPref,
-                    title = stringResource(MR.strings.pref_dual_page_split),
+                    title = stringResource(ephyra.i18n.R.string.pref_dual_page_split),
                     onValueChanged = {
                         rotateToFitPref.set(false)
                         true
@@ -370,13 +370,13 @@ object SettingsReaderScreen : SearchableSettings {
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = readerPreferences.dualPageInvertWebtoon(),
-                    title = stringResource(MR.strings.pref_dual_page_invert),
-                    subtitle = stringResource(MR.strings.pref_dual_page_invert_summary),
+                    title = stringResource(ephyra.i18n.R.string.pref_dual_page_invert),
+                    subtitle = stringResource(ephyra.i18n.R.string.pref_dual_page_invert_summary),
                     enabled = dualPageSplit,
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = rotateToFitPref,
-                    title = stringResource(MR.strings.pref_page_rotate),
+                    title = stringResource(ephyra.i18n.R.string.pref_page_rotate),
                     onValueChanged = {
                         dualPageSplitPref.set(false)
                         true
@@ -384,16 +384,16 @@ object SettingsReaderScreen : SearchableSettings {
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = readerPreferences.dualPageRotateToFitInvertWebtoon(),
-                    title = stringResource(MR.strings.pref_page_rotate_invert),
+                    title = stringResource(ephyra.i18n.R.string.pref_page_rotate_invert),
                     enabled = rotateToFit,
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = readerPreferences.webtoonDoubleTapZoomEnabled(),
-                    title = stringResource(MR.strings.pref_double_tap_zoom),
+                    title = stringResource(ephyra.i18n.R.string.pref_double_tap_zoom),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = readerPreferences.webtoonDisableZoomOut(),
-                    title = stringResource(MR.strings.pref_webtoon_disable_zoom_out),
+                    title = stringResource(ephyra.i18n.R.string.pref_webtoon_disable_zoom_out),
                 ),
             ),
         )
@@ -404,15 +404,15 @@ object SettingsReaderScreen : SearchableSettings {
         val readWithVolumeKeysPref = readerPreferences.readWithVolumeKeys()
         val readWithVolumeKeys by readWithVolumeKeysPref.collectAsState()
         return Preference.PreferenceGroup(
-            title = stringResource(MR.strings.pref_reader_navigation),
+            title = stringResource(ephyra.i18n.R.string.pref_reader_navigation),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.SwitchPreference(
                     preference = readWithVolumeKeysPref,
-                    title = stringResource(MR.strings.pref_read_with_volume_keys),
+                    title = stringResource(ephyra.i18n.R.string.pref_read_with_volume_keys),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = readerPreferences.readWithVolumeKeysInverted(),
-                    title = stringResource(MR.strings.pref_read_with_volume_keys_inverted),
+                    title = stringResource(ephyra.i18n.R.string.pref_read_with_volume_keys_inverted),
                     enabled = readWithVolumeKeys,
                 ),
             ),
@@ -422,16 +422,16 @@ object SettingsReaderScreen : SearchableSettings {
     @Composable
     private fun getActionsGroup(readerPreferences: ReaderPreferences): Preference.PreferenceGroup {
         return Preference.PreferenceGroup(
-            title = stringResource(MR.strings.pref_reader_actions),
+            title = stringResource(ephyra.i18n.R.string.pref_reader_actions),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.SwitchPreference(
                     preference = readerPreferences.readWithLongTap(),
-                    title = stringResource(MR.strings.pref_read_with_long_tap),
+                    title = stringResource(ephyra.i18n.R.string.pref_read_with_long_tap),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = readerPreferences.folderPerManga(),
-                    title = stringResource(MR.strings.pref_create_folder_per_manga),
-                    subtitle = stringResource(MR.strings.pref_create_folder_per_manga_summary),
+                    title = stringResource(ephyra.i18n.R.string.pref_create_folder_per_manga),
+                    subtitle = stringResource(ephyra.i18n.R.string.pref_create_folder_per_manga_summary),
                 ),
             ),
         )

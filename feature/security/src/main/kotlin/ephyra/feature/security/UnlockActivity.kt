@@ -21,7 +21,7 @@ class UnlockActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         startAuthentication(
-            stringResource(MR.strings.unlock_app_title, stringResource(MR.strings.app_name)),
+            stringResource(ephyra.i18n.R.string.unlock_app_title, stringResource(ephyra.i18n.R.string.app_name)),
             confirmationRequired = false,
             callback = object : AuthenticatorUtil.AuthenticationCallback() {
                 override fun onAuthenticationError(

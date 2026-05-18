@@ -62,7 +62,7 @@ actual class LocalSource(
     @Suppress("PrivatePropertyName")
     private val LatestFilters = FilterList(OrderBy.Latest(context))
 
-    override val name: String = context.stringResource(MR.strings.local_source)
+    override val name: String = context.stringResource(ephyra.i18n.R.string.local_source)
 
     override val id: Long = ID
 
@@ -342,9 +342,9 @@ actual class LocalSource(
                 ?.findFile(mangaDirName)
                 ?.findFile(chapterName)
                 ?.let(Format.Companion::valueOf)
-                ?: throw Exception(context.stringResource(MR.strings.chapter_not_found))
+                ?: throw Exception(context.stringResource(ephyra.i18n.R.string.chapter_not_found))
         } catch (e: Format.UnknownFormatException) {
-            throw Exception(context.stringResource(MR.strings.local_invalid_format))
+            throw Exception(context.stringResource(ephyra.i18n.R.string.local_invalid_format))
         } catch (e: Exception) {
             throw e
         }

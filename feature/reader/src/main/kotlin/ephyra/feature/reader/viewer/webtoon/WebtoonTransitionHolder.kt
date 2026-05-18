@@ -107,7 +107,7 @@ class WebtoonTransitionHolder(
 
         val textView = AppCompatTextView(context).apply {
             wrapContent()
-            text = context.stringResource(MR.strings.transition_pages_loading)
+            text = context.stringResource(ephyra.i18n.R.string.transition_pages_loading)
         }
 
         pagesContainer.addView(progress)
@@ -120,12 +120,12 @@ class WebtoonTransitionHolder(
     private fun setError(error: Throwable, transition: ChapterTransition) {
         val textView = AppCompatTextView(context).apply {
             wrapContent()
-            text = context.stringResource(MR.strings.transition_pages_error, error.message ?: "")
+            text = context.stringResource(ephyra.i18n.R.string.transition_pages_error, error.message ?: "")
         }
 
         val retryBtn = AppCompatButton(context).apply {
             wrapContent()
-            text = context.stringResource(MR.strings.action_retry)
+            text = context.stringResource(ephyra.i18n.R.string.action_retry)
             setOnClickListener {
                 val toChapter = transition.to
                 if (toChapter != null) {

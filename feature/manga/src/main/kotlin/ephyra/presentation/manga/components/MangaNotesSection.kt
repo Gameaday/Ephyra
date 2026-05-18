@@ -65,7 +65,7 @@ fun MangaNotesSection(
                             .size(16.dp),
                     )
                     Text(
-                        stringResource(MR.strings.action_edit_notes),
+                        stringResource(ephyra.i18n.R.string.action_edit_notes),
                     )
                 }
             }

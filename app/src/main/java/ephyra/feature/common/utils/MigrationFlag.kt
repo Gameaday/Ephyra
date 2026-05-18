@@ -6,10 +6,10 @@ import ephyra.i18n.MR
 
 fun MigrationFlag.getLabel(): StringResource {
     return when (this) {
-        MigrationFlag.CHAPTER -> MR.strings.chapters
-        MigrationFlag.CATEGORY -> MR.strings.categories
-        MigrationFlag.CUSTOM_COVER -> MR.strings.custom_cover
-        MigrationFlag.NOTES -> MR.strings.action_notes
-        MigrationFlag.REMOVE_DOWNLOAD -> MR.strings.delete_downloaded
+        MigrationFlag.CHAPTER -> ephyra.i18n.R.string.chapters
+        MigrationFlag.CATEGORY -> ephyra.i18n.R.string.categories
+        MigrationFlag.CUSTOM_COVER -> ephyra.i18n.R.string.custom_cover
+        MigrationFlag.NOTES -> ephyra.i18n.R.string.action_notes
+        MigrationFlag.REMOVE_DOWNLOAD -> ephyra.i18n.R.string.delete_downloaded
     }
 }

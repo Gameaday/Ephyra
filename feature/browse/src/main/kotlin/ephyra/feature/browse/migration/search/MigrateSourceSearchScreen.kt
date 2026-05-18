@@ -77,7 +77,7 @@ data class MigrateSourceSearchScreen(
             },
             floatingActionButton = {
                 ExtendedFloatingActionButton(
-                    text = { Text(text = stringResource(MR.strings.action_filter)) },
+                    text = { Text(text = stringResource(ephyra.i18n.R.string.action_filter)) },
                     icon = { Icon(Icons.Outlined.FilterList, contentDescription = null) },
                     onClick = { screenModel.onEvent(BrowseSourceScreenEvent.OpenFilterSheet) },
                     modifier = Modifier.alpha(if (state.filters.isNotEmpty()) 1f else 0f),

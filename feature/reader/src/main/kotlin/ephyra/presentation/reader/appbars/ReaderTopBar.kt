@@ -38,9 +38,9 @@ fun ReaderTopBar(
                             AppBar.Action(
                                 title = stringResource(
                                     if (bookmarked) {
-                                        MR.strings.action_remove_bookmark
+                                        ephyra.i18n.R.string.action_remove_bookmark
                                     } else {
-                                        MR.strings.action_bookmark
+                                        ephyra.i18n.R.string.action_bookmark
                                     },
                                 ),
                                 icon = if (bookmarked) {
@@ -54,7 +54,7 @@ fun ReaderTopBar(
                         onOpenInWebView?.let {
                             add(
                                 AppBar.OverflowAction(
-                                    title = stringResource(MR.strings.action_open_in_web_view),
+                                    title = stringResource(ephyra.i18n.R.string.action_open_in_web_view),
                                     onClick = it,
                                 ),
                             )
@@ -62,7 +62,7 @@ fun ReaderTopBar(
                         onOpenInBrowser?.let {
                             add(
                                 AppBar.OverflowAction(
-                                    title = stringResource(MR.strings.action_open_in_browser),
+                                    title = stringResource(ephyra.i18n.R.string.action_open_in_browser),
                                     onClick = it,
                                 ),
                             )
@@ -70,7 +70,7 @@ fun ReaderTopBar(
                         onShare?.let {
                             add(
                                 AppBar.OverflowAction(
-                                    title = stringResource(MR.strings.action_share),
+                                    title = stringResource(ephyra.i18n.R.string.action_share),
                                     onClick = it,
                                 ),
                             )

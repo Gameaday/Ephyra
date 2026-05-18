@@ -15,7 +15,7 @@ import java.time.Instant
 @ReadOnlyComposable
 fun relativeDateText(date: Long): String {
     if (date <= 0L) {
-        return stringResource(MR.strings.not_applicable)
+        return stringResource(ephyra.i18n.R.string.not_applicable)
     }
 
     val context = LocalContext.current

@@ -116,7 +116,7 @@ sealed class Preference {
                             .joinToString()
                             .takeUnless { it.isBlank() }
                     }
-                        ?: stringResource(MR.strings.none)
+                        ?: stringResource(ephyra.i18n.R.string.none)
                     subtitle?.format(combined)
                 },
             override val icon: ImageVector? = null,

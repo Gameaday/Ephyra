@@ -344,7 +344,7 @@ private fun MangaScreenSmallImpl(
                         state.chapters.fastAny { it.read }
                     }
                     Text(
-                        text = stringResource(if (isReading) MR.strings.action_resume else MR.strings.action_start),
+                        text = stringResource(if (isReading) ephyra.i18n.R.string.action_resume else ephyra.i18n.R.string.action_start),
                     )
                 },
                 icon = { Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = null) },
@@ -605,7 +605,7 @@ fun MangaScreenLargeImpl(
                     }
                     Text(
                         text = stringResource(
-                            if (isReading) MR.strings.action_resume else MR.strings.action_start,
+                            if (isReading) ephyra.i18n.R.string.action_resume else ephyra.i18n.R.string.action_start,
                         ),
                     )
                 },
@@ -804,7 +804,7 @@ private fun LazyListScope.sharedChapterItems(
                 MangaChapterListItem(
                     title = if (manga.displayMode == Manga.CHAPTER_DISPLAY_NUMBER) {
                         stringResource(
-                            MR.strings.display_mode_chapter,
+                            ephyra.i18n.R.string.display_mode_chapter,
                             formatChapterNumber(item.chapter.chapterNumber),
                         )
                     } else {
@@ -815,7 +815,7 @@ private fun LazyListScope.sharedChapterItems(
                         .takeIf { !item.chapter.read && it > 0L }
                         ?.let {
                             stringResource(
-                                MR.strings.chapter_progress,
+                                ephyra.i18n.R.string.chapter_progress,
                                 it + 1,
                             )
                         },

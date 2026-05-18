@@ -49,8 +49,8 @@ internal class StorageStep : OnboardingStep {
         ) {
             Text(
                 stringResource(
-                    MR.strings.onboarding_storage_info,
-                    stringResource(MR.strings.app_name),
+                    ephyra.i18n.R.string.onboarding_storage_info,
+                    stringResource(ephyra.i18n.R.string.app_name),
                     SettingsDataScreen.storageLocationText(storagePref),
                 ),
             )
@@ -61,11 +61,11 @@ internal class StorageStep : OnboardingStep {
                     try {
                         pickStorageLocation.launch(null)
                     } catch (e: ActivityNotFoundException) {
-                        context.toast(MR.strings.file_picker_error)
+                        context.toast(ephyra.i18n.R.string.file_picker_error)
                     }
                 },
             ) {
-                Text(stringResource(MR.strings.onboarding_storage_action_select))
+                Text(stringResource(ephyra.i18n.R.string.onboarding_storage_action_select))
             }
 
             HorizontalDivider(
@@ -73,12 +73,12 @@ internal class StorageStep : OnboardingStep {
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
 
-            Text(stringResource(MR.strings.onboarding_storage_help_info, stringResource(MR.strings.app_name)))
+            Text(stringResource(ephyra.i18n.R.string.onboarding_storage_help_info, stringResource(ephyra.i18n.R.string.app_name)))
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = { handler.openUri(SettingsDataScreen.HELP_URL) },
             ) {
-                Text(stringResource(MR.strings.onboarding_storage_help_action))
+                Text(stringResource(ephyra.i18n.R.string.onboarding_storage_help_action))
             }
         }
 

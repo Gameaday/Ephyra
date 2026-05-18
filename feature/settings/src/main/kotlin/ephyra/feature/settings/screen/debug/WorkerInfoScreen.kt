@@ -70,7 +70,7 @@ class WorkerInfoScreen : Screen() {
                         AppBarActions(
                             persistentListOf(
                                 AppBar.Action(
-                                    title = stringResource(MR.strings.action_copy_to_clipboard),
+                                    title = stringResource(ephyra.i18n.R.string.action_copy_to_clipboard),
                                     icon = Icons.Default.ContentCopy,
                                     onClick = {
                                         context.copyToClipboard(TITLE, enqueued + finished + running)

@@ -70,20 +70,20 @@ fun ChapterSettingsDialog(
     TabbedDialog(
         onDismissRequest = onDismissRequest,
         tabTitles = persistentListOf(
-            stringResource(MR.strings.action_filter),
-            stringResource(MR.strings.action_sort),
-            stringResource(MR.strings.action_display),
+            stringResource(ephyra.i18n.R.string.action_filter),
+            stringResource(ephyra.i18n.R.string.action_sort),
+            stringResource(ephyra.i18n.R.string.action_display),
         ),
         tabOverflowMenuContent = { closeMenu ->
             DropdownMenuItem(
-                text = { Text(stringResource(MR.strings.set_chapter_settings_as_default)) },
+                text = { Text(stringResource(ephyra.i18n.R.string.set_chapter_settings_as_default)) },
                 onClick = {
                     showSetAsDefaultDialog = true
                     closeMenu()
                 },
             )
             DropdownMenuItem(
-                text = { Text(stringResource(MR.strings.action_reset)) },
+                text = { Text(stringResource(ephyra.i18n.R.string.action_reset)) },
                 onClick = {
                     onResetToDefault()
                     closeMenu()
@@ -142,17 +142,17 @@ private fun ColumnScope.FilterPage(
     onScanlatorFilterClicked: (() -> Unit),
 ) {
     TriStateItem(
-        label = stringResource(MR.strings.label_downloaded),
+        label = stringResource(ephyra.i18n.R.string.label_downloaded),
         state = downloadFilter,
         onClick = onDownloadFilterChanged,
     )
     TriStateItem(
-        label = stringResource(MR.strings.action_filter_unread),
+        label = stringResource(ephyra.i18n.R.string.action_filter_unread),
         state = unreadFilter,
         onClick = onUnreadFilterChanged,
     )
     TriStateItem(
-        label = stringResource(MR.strings.action_filter_bookmarked),
+        label = stringResource(ephyra.i18n.R.string.action_filter_bookmarked),
         state = bookmarkedFilter,
         onClick = onBookmarkedFilterChanged,
     )
@@ -185,7 +185,7 @@ fun ScanlatorFilterItem(
             },
         )
         Text(
-            text = stringResource(MR.strings.scanlator),
+            text = stringResource(ephyra.i18n.R.string.scanlator),
             style = MaterialTheme.typography.bodyMedium,
         )
     }
@@ -198,10 +198,10 @@ private fun ColumnScope.SortPage(
     onItemSelected: (Long) -> Unit,
 ) {
     listOf(
-        MR.strings.sort_by_source to Manga.CHAPTER_SORTING_SOURCE,
-        MR.strings.sort_by_number to Manga.CHAPTER_SORTING_NUMBER,
-        MR.strings.sort_by_upload_date to Manga.CHAPTER_SORTING_UPLOAD_DATE,
-        MR.strings.action_sort_alpha to Manga.CHAPTER_SORTING_ALPHABET,
+        ephyra.i18n.R.string.sort_by_source to Manga.CHAPTER_SORTING_SOURCE,
+        ephyra.i18n.R.string.sort_by_number to Manga.CHAPTER_SORTING_NUMBER,
+        ephyra.i18n.R.string.sort_by_upload_date to Manga.CHAPTER_SORTING_UPLOAD_DATE,
+        ephyra.i18n.R.string.action_sort_alpha to Manga.CHAPTER_SORTING_ALPHABET,
     ).map { (titleRes, mode) ->
         SortItem(
             label = stringResource(titleRes),
@@ -217,8 +217,8 @@ private fun ColumnScope.DisplayPage(
     onItemSelected: (Long) -> Unit,
 ) {
     listOf(
-        MR.strings.show_title to Manga.CHAPTER_DISPLAY_NAME,
-        MR.strings.show_chapter_number to Manga.CHAPTER_DISPLAY_NUMBER,
+        ephyra.i18n.R.string.show_title to Manga.CHAPTER_DISPLAY_NAME,
+        ephyra.i18n.R.string.show_chapter_number to Manga.CHAPTER_DISPLAY_NUMBER,
     ).map { (titleRes, mode) ->
         RadioItem(
             label = stringResource(titleRes),
@@ -237,15 +237,15 @@ private fun SetAsDefaultDialog(
 
     AlertDialog(
         onDismissRequest = onDismissRequest,
-        title = { Text(text = stringResource(MR.strings.chapter_settings)) },
+        title = { Text(text = stringResource(ephyra.i18n.R.string.chapter_settings)) },
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text(text = stringResource(MR.strings.confirm_set_chapter_settings))
+                Text(text = stringResource(ephyra.i18n.R.string.confirm_set_chapter_settings))
 
                 LabeledCheckbox(
-                    label = stringResource(MR.strings.also_set_chapter_settings_for_library),
+                    label = stringResource(ephyra.i18n.R.string.also_set_chapter_settings_for_library),
                     checked = optionalChecked,
                     onCheckedChange = { optionalChecked = it },
                 )
@@ -253,7 +253,7 @@ private fun SetAsDefaultDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(MR.strings.action_cancel))
+                Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
             }
         },
         confirmButton = {
@@ -263,7 +263,7 @@ private fun SetAsDefaultDialog(
                     onDismissRequest()
                 },
             ) {
-                Text(text = stringResource(MR.strings.action_ok))
+                Text(text = stringResource(ephyra.i18n.R.string.action_ok))
             }
         },
     )

@@ -56,13 +56,13 @@ fun LocalDate.toRelativeString(
     return when {
         difference < -7 -> dateFormat.format(this)
         difference < 0 -> context.pluralStringResource(
-            MR.plurals.upcoming_relative_time,
+            ephyra.i18n.R.plurals.upcoming_relative_time,
             difference.toInt().absoluteValue,
             difference.toInt().absoluteValue,
         )
-        difference < 1 -> context.stringResource(MR.strings.relative_time_today)
+        difference < 1 -> context.stringResource(ephyra.i18n.R.string.relative_time_today)
         difference < 7 -> context.pluralStringResource(
-            MR.plurals.relative_time,
+            ephyra.i18n.R.plurals.relative_time,
             difference.toInt(),
             difference.toInt(),
         )

@@ -22,9 +22,9 @@ fun MigrationMangaDialog(
             Text(
                 text = pluralStringResource(
                     resource = if (copy) {
-                        MR.plurals.migrationListScreen_migrateDialog_copyTitle
+                        ephyra.i18n.R.plurals.migrationListScreen_migrateDialog_copyTitle
                     } else {
-                        MR.plurals.migrationListScreen_migrateDialog_migrateTitle
+                        ephyra.i18n.R.plurals.migrationListScreen_migrateDialog_migrateTitle
                     },
                     count = totalCount,
                     totalCount,
@@ -35,7 +35,7 @@ fun MigrationMangaDialog(
             if (skippedCount > 0) {
                 Text(
                     text = pluralStringResource(
-                        resource = MR.plurals.migrationListScreen_migrateDialog_skipText,
+                        resource = ephyra.i18n.R.plurals.migrationListScreen_migrateDialog_skipText,
                         count = skippedCount,
                         skippedCount,
                     ),
@@ -47,9 +47,9 @@ fun MigrationMangaDialog(
                 Text(
                     text = stringResource(
                         resource = if (copy) {
-                            MR.strings.migrationListScreen_migrateDialog_copyLabel
+                            ephyra.i18n.R.string.migrationListScreen_migrateDialog_copyLabel
                         } else {
-                            MR.strings.migrationListScreen_migrateDialog_migrateLabel
+                            ephyra.i18n.R.string.migrationListScreen_migrateDialog_migrateLabel
                         },
                     ),
                 )
@@ -57,7 +57,7 @@ fun MigrationMangaDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(MR.strings.migrationListScreen_migrateDialog_cancelLabel))
+                Text(text = stringResource(ephyra.i18n.R.string.migrationListScreen_migrateDialog_cancelLabel))
             }
         },
     )

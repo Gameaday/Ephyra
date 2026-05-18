@@ -31,27 +31,27 @@ data class RestoreOptions(
     companion object {
         val options = persistentListOf(
             Entry(
-                label = MR.strings.label_library,
+                label = ephyra.i18n.R.string.label_library,
                 getter = RestoreOptions::libraryEntries,
                 setter = { options, enabled -> options.copy(libraryEntries = enabled) },
             ),
             Entry(
-                label = MR.strings.categories,
+                label = ephyra.i18n.R.string.categories,
                 getter = RestoreOptions::categories,
                 setter = { options, enabled -> options.copy(categories = enabled) },
             ),
             Entry(
-                label = MR.strings.app_settings,
+                label = ephyra.i18n.R.string.app_settings,
                 getter = RestoreOptions::appSettings,
                 setter = { options, enabled -> options.copy(appSettings = enabled) },
             ),
             Entry(
-                label = MR.strings.extensionRepo_settings,
+                label = ephyra.i18n.R.string.extensionRepo_settings,
                 getter = RestoreOptions::extensionRepoSettings,
                 setter = { options, enabled -> options.copy(extensionRepoSettings = enabled) },
             ),
             Entry(
-                label = MR.strings.source_settings,
+                label = ephyra.i18n.R.string.source_settings,
                 getter = RestoreOptions::sourceSettings,
                 setter = { options, enabled -> options.copy(sourceSettings = enabled) },
             ),

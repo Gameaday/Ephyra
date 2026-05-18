@@ -64,13 +64,13 @@ fun RadioMenuItem(
             if (isChecked) {
                 Icon(
                     imageVector = Icons.Outlined.RadioButtonChecked,
-                    contentDescription = stringResource(MR.strings.selected),
+                    contentDescription = stringResource(ephyra.i18n.R.string.selected),
                     tint = MaterialTheme.colorScheme.primary,
                 )
             } else {
                 Icon(
                     imageVector = Icons.Outlined.RadioButtonUnchecked,
-                    contentDescription = stringResource(MR.strings.not_selected),
+                    contentDescription = stringResource(ephyra.i18n.R.string.not_selected),
                 )
             }
         },

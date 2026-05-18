@@ -13,9 +13,9 @@ import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource
 
 private val options = mapOf(
-    ThemeMode.SYSTEM to MR.strings.theme_system,
-    ThemeMode.LIGHT to MR.strings.theme_light,
-    ThemeMode.DARK to MR.strings.theme_dark,
+    ThemeMode.SYSTEM to ephyra.i18n.R.string.theme_system,
+    ThemeMode.LIGHT to ephyra.i18n.R.string.theme_light,
+    ThemeMode.DARK to ephyra.i18n.R.string.theme_dark,
 )
 
 @Composable

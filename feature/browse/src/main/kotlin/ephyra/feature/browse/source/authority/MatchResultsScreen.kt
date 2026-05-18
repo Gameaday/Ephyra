@@ -70,7 +70,7 @@ class MatchResultsScreen : Screen() {
         Scaffold(
             topBar = { scrollBehavior ->
                 AppBar(
-                    title = stringResource(MR.strings.match_results_title),
+                    title = stringResource(ephyra.i18n.R.string.match_results_title),
                     navigateUp = navigator::pop,
                     scrollBehavior = scrollBehavior,
                 )
@@ -140,7 +140,7 @@ private fun MatchResultsContent(
                             )
                             Text(
                                 text = stringResource(
-                                    MR.strings.tracker_match_all_running_progress,
+                                    ephyra.i18n.R.string.tracker_match_all_running_progress,
                                     progress.first,
                                     progress.second,
                                 ),
@@ -165,7 +165,7 @@ private fun MatchResultsContent(
                                 modifier = Modifier.size(18.dp),
                             )
                             Spacer(modifier = Modifier.width(MaterialTheme.padding.small))
-                            Text(text = stringResource(MR.strings.match_results_retry_all))
+                            Text(text = stringResource(ephyra.i18n.R.string.match_results_retry_all))
                         }
                     }
                 }
@@ -174,7 +174,7 @@ private fun MatchResultsContent(
             // Unlinked header
             item(key = "unlinked_header") {
                 SectionHeader(
-                    text = stringResource(MR.strings.match_results_unlinked_header),
+                    text = stringResource(ephyra.i18n.R.string.match_results_unlinked_header),
                     count = state.unlinkedManga.size,
                 )
             }
@@ -197,7 +197,7 @@ private fun MatchResultsContent(
             item(key = "linked_header") {
                 Spacer(modifier = Modifier.height(MaterialTheme.padding.small))
                 SectionHeader(
-                    text = stringResource(MR.strings.match_results_linked_header),
+                    text = stringResource(ephyra.i18n.R.string.match_results_linked_header),
                     count = state.recentlyLinked.size,
                 )
             }
@@ -229,7 +229,7 @@ private fun MatchResultsContent(
                         )
                         Spacer(modifier = Modifier.height(MaterialTheme.padding.medium))
                         Text(
-                            text = stringResource(MR.strings.match_results_all_linked),
+                            text = stringResource(ephyra.i18n.R.string.match_results_all_linked),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
@@ -266,7 +266,7 @@ private fun SummaryCard(
                     tint = MaterialTheme.colorScheme.primary,
                 )
                 Text(
-                    text = stringResource(MR.strings.match_results_summary, totalLinked, totalFavorites),
+                    text = stringResource(ephyra.i18n.R.string.match_results_summary, totalLinked, totalFavorites),
                     style = MaterialTheme.typography.titleMedium,
                 )
             }
@@ -285,10 +285,10 @@ private fun SummaryCard(
             if (mangaCount > 0 || novelCount > 0) {
                 Spacer(modifier = Modifier.height(MaterialTheme.padding.extraSmall))
                 val parts = mutableListOf<String>()
-                if (mangaCount > 0) parts.add(stringResource(MR.strings.match_results_count_manga, mangaCount))
-                if (novelCount > 0) parts.add(stringResource(MR.strings.match_results_count_novels, novelCount))
+                if (mangaCount > 0) parts.add(stringResource(ephyra.i18n.R.string.match_results_count_manga, mangaCount))
+                if (novelCount > 0) parts.add(stringResource(ephyra.i18n.R.string.match_results_count_novels, novelCount))
                 val otherCount = totalFavorites - mangaCount - novelCount
-                if (otherCount > 0) parts.add(stringResource(MR.strings.match_results_count_other, otherCount))
+                if (otherCount > 0) parts.add(stringResource(ephyra.i18n.R.string.match_results_count_other, otherCount))
                 Text(
                     text = parts.joinToString(" • "),
                     style = MaterialTheme.typography.labelMedium,
@@ -298,7 +298,7 @@ private fun SummaryCard(
             if (unlinkedCount > 0) {
                 Spacer(modifier = Modifier.height(MaterialTheme.padding.extraSmall))
                 Text(
-                    text = stringResource(MR.strings.match_results_unlinked_count, unlinkedCount),
+                    text = stringResource(ephyra.i18n.R.string.match_results_unlinked_count, unlinkedCount),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.error,
                 )
@@ -356,9 +356,9 @@ private fun UnlinkedMangaItem(
                 )
                 // Show content type when known
                 val contentTypeLabel = when (manga.contentType) {
-                    ephyra.domain.manga.model.ContentType.MANGA -> stringResource(MR.strings.content_type_manga)
-                    ephyra.domain.manga.model.ContentType.NOVEL -> stringResource(MR.strings.content_type_novel)
-                    ephyra.domain.manga.model.ContentType.BOOK -> stringResource(MR.strings.content_type_book)
+                    ephyra.domain.manga.model.ContentType.MANGA -> stringResource(ephyra.i18n.R.string.content_type_manga)
+                    ephyra.domain.manga.model.ContentType.NOVEL -> stringResource(ephyra.i18n.R.string.content_type_novel)
+                    ephyra.domain.manga.model.ContentType.BOOK -> stringResource(ephyra.i18n.R.string.content_type_book)
                     else -> null
                 }
                 if (contentTypeLabel != null && !hasFailed && !isMatching) {
@@ -375,19 +375,19 @@ private fun UnlinkedMangaItem(
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.ErrorOutline,
-                            contentDescription = stringResource(MR.strings.match_results_no_match),
+                            contentDescription = stringResource(ephyra.i18n.R.string.match_results_no_match),
                             modifier = Modifier.size(14.dp),
                             tint = MaterialTheme.colorScheme.error,
                         )
                         Text(
-                            text = stringResource(MR.strings.match_results_no_match),
+                            text = stringResource(ephyra.i18n.R.string.match_results_no_match),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error,
                         )
                     }
                 } else if (isMatching) {
                     Text(
-                        text = stringResource(MR.strings.match_results_matching),
+                        text = stringResource(ephyra.i18n.R.string.match_results_matching),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -405,7 +405,7 @@ private fun UnlinkedMangaItem(
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Refresh,
-                        contentDescription = stringResource(MR.strings.match_results_retry_single),
+                        contentDescription = stringResource(ephyra.i18n.R.string.match_results_retry_single),
                         tint = if (isRetryEnabled) {
                             MaterialTheme.colorScheme.primary
                         } else {

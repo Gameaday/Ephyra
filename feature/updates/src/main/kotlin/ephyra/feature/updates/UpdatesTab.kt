@@ -38,7 +38,7 @@ data object UpdatesTab : Tab {
             val image = AnimatedImageVector.animatedVectorResource(R.drawable.anim_updates_enter)
             return TabOptions(
                 index = 1u,
-                title = stringResource(MR.strings.label_recent_updates),
+                title = stringResource(ephyra.i18n.R.string.label_recent_updates),
                 icon = rememberAnimatedVectorPainter(image, isSelected),
             )
         }
@@ -111,14 +111,14 @@ data object UpdatesTab : Tab {
             screenModel.events.collectLatest { event ->
                 when (event) {
                     Event.InternalError -> screenModel.snackbarHostState.showSnackbar(
-                        context.stringResource(MR.strings.internal_error),
+                        context.stringResource(ephyra.i18n.R.string.internal_error),
                     )
 
                     is Event.LibraryUpdateTriggered -> {
                         val msg = if (event.started) {
-                            MR.strings.updating_library
+                            ephyra.i18n.R.string.updating_library
                         } else {
-                            MR.strings.update_already_running
+                            ephyra.i18n.R.string.update_already_running
                         }
                         screenModel.snackbarHostState.showSnackbar(context.stringResource(msg))
                     }

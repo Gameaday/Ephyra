@@ -86,7 +86,7 @@ fun MangaCoverDialog(
                         IconButton(onClick = onDismissRequest) {
                             Icon(
                                 imageVector = Icons.Outlined.Close,
-                                contentDescription = stringResource(MR.strings.action_close),
+                                contentDescription = stringResource(ephyra.i18n.R.string.action_close),
                             )
                         }
                     }
@@ -95,12 +95,12 @@ fun MangaCoverDialog(
                         AppBarActions(
                             actions = persistentListOf(
                                 AppBar.Action(
-                                    title = stringResource(MR.strings.action_share),
+                                    title = stringResource(ephyra.i18n.R.string.action_share),
                                     icon = Icons.Outlined.Share,
                                     onClick = onShareClick,
                                 ),
                                 AppBar.Action(
-                                    title = stringResource(MR.strings.action_save),
+                                    title = stringResource(ephyra.i18n.R.string.action_save),
                                     icon = Icons.Outlined.Save,
                                     onClick = onSaveClick,
                                 ),
@@ -114,7 +114,7 @@ fun MangaCoverDialog(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Outlined.Edit,
-                                        contentDescription = stringResource(MR.strings.action_edit_cover),
+                                        contentDescription = stringResource(ephyra.i18n.R.string.action_edit_cover),
                                     )
                                 }
                                 DropdownMenu(
@@ -123,14 +123,14 @@ fun MangaCoverDialog(
                                     offset = DpOffset(8.dp, 0.dp),
                                 ) {
                                     DropdownMenuItem(
-                                        text = { Text(text = stringResource(MR.strings.action_edit)) },
+                                        text = { Text(text = stringResource(ephyra.i18n.R.string.action_edit)) },
                                         onClick = {
                                             onEditClick(EditCoverAction.EDIT)
                                             expanded = false
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text(text = stringResource(MR.strings.action_search_cover)) },
+                                        text = { Text(text = stringResource(ephyra.i18n.R.string.action_search_cover)) },
                                         onClick = {
                                             onEditClick(EditCoverAction.SEARCH)
                                             expanded = false
@@ -138,7 +138,7 @@ fun MangaCoverDialog(
                                     )
                                     if (isCustomCover) {
                                         DropdownMenuItem(
-                                            text = { Text(text = stringResource(MR.strings.action_delete)) },
+                                            text = { Text(text = stringResource(ephyra.i18n.R.string.action_delete)) },
                                             onClick = {
                                                 onEditClick(EditCoverAction.DELETE)
                                                 expanded = false

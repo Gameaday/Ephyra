@@ -416,7 +416,7 @@ private fun ContinueReadingButton(
         ) {
             Icon(
                 imageVector = Icons.Filled.PlayArrow,
-                contentDescription = stringResource(MR.strings.action_resume),
+                contentDescription = stringResource(ephyra.i18n.R.string.action_resume),
                 modifier = Modifier.size(iconSize),
             )
         }

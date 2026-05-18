@@ -55,13 +55,13 @@ fun ReaderPageActionsDialog(
         ) {
             ActionButton(
                 modifier = Modifier.weight(1f),
-                title = stringResource(MR.strings.set_as_cover),
+                title = stringResource(ephyra.i18n.R.string.set_as_cover),
                 icon = Icons.Outlined.Photo,
                 onClick = { showSetCoverDialog = true },
             )
             ActionButton(
                 modifier = Modifier.weight(1f),
-                title = stringResource(MR.strings.action_copy_to_clipboard),
+                title = stringResource(ephyra.i18n.R.string.action_copy_to_clipboard),
                 icon = Icons.Outlined.ContentCopy,
                 onClick = {
                     onShare(true)
@@ -70,7 +70,7 @@ fun ReaderPageActionsDialog(
             )
             ActionButton(
                 modifier = Modifier.weight(1f),
-                title = stringResource(MR.strings.action_share),
+                title = stringResource(ephyra.i18n.R.string.action_share),
                 icon = Icons.Outlined.Share,
                 onClick = {
                     onShare(false)
@@ -79,7 +79,7 @@ fun ReaderPageActionsDialog(
             )
             ActionButton(
                 modifier = Modifier.weight(1f),
-                title = stringResource(MR.strings.action_save),
+                title = stringResource(ephyra.i18n.R.string.action_save),
                 icon = Icons.Outlined.Save,
                 onClick = {
                     onSave()
@@ -89,14 +89,14 @@ fun ReaderPageActionsDialog(
             if (checkComplete && matchingHash != null) {
                 ActionButton(
                     modifier = Modifier.weight(1f),
-                    title = stringResource(MR.strings.action_unblock_page),
+                    title = stringResource(ephyra.i18n.R.string.action_unblock_page),
                     icon = Icons.Outlined.CheckCircleOutline,
                     onClick = { showUnblockPageDialog = true },
                 )
             } else {
                 ActionButton(
                     modifier = Modifier.weight(1f),
-                    title = stringResource(MR.strings.action_block_page),
+                    title = stringResource(ephyra.i18n.R.string.action_block_page),
                     icon = Icons.Outlined.Block,
                     onClick = { showBlockPageDialog = true },
                 )
@@ -144,16 +144,16 @@ private fun SetCoverDialog(
 ) {
     AlertDialog(
         text = {
-            Text(stringResource(MR.strings.confirm_set_image_as_cover))
+            Text(stringResource(ephyra.i18n.R.string.confirm_set_image_as_cover))
         },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text(stringResource(MR.strings.action_ok))
+                Text(stringResource(ephyra.i18n.R.string.action_ok))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(MR.strings.action_cancel))
+                Text(stringResource(ephyra.i18n.R.string.action_cancel))
             }
         },
         onDismissRequest = onDismiss,
@@ -168,19 +168,19 @@ private fun BlockPageDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text(stringResource(MR.strings.action_block_page))
+            Text(stringResource(ephyra.i18n.R.string.action_block_page))
         },
         text = {
-            Text(stringResource(MR.strings.confirm_block_page))
+            Text(stringResource(ephyra.i18n.R.string.confirm_block_page))
         },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text(stringResource(MR.strings.action_ok))
+                Text(stringResource(ephyra.i18n.R.string.action_ok))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(MR.strings.action_cancel))
+                Text(stringResource(ephyra.i18n.R.string.action_cancel))
             }
         },
     )
@@ -194,19 +194,19 @@ private fun UnblockPageDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text(stringResource(MR.strings.action_unblock_page))
+            Text(stringResource(ephyra.i18n.R.string.action_unblock_page))
         },
         text = {
-            Text(stringResource(MR.strings.confirm_unblock_page))
+            Text(stringResource(ephyra.i18n.R.string.confirm_unblock_page))
         },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text(stringResource(MR.strings.action_ok))
+                Text(stringResource(ephyra.i18n.R.string.action_ok))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(MR.strings.action_cancel))
+                Text(stringResource(ephyra.i18n.R.string.action_cancel))
             }
         },
     )

@@ -61,13 +61,13 @@ fun CoverSearchDialog(
             Column {
                 TopAppBar(
                     title = {
-                        Text(text = stringResource(MR.strings.action_search_cover))
+                        Text(text = stringResource(ephyra.i18n.R.string.action_search_cover))
                     },
                     navigationIcon = {
                         IconButton(onClick = onDismissRequest) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                                contentDescription = stringResource(MR.strings.action_close),
+                                contentDescription = stringResource(ephyra.i18n.R.string.action_close),
                             )
                         }
                     },
@@ -78,7 +78,7 @@ fun CoverSearchDialog(
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Refresh,
-                                contentDescription = stringResource(MR.strings.action_webview_refresh),
+                                contentDescription = stringResource(ephyra.i18n.R.string.action_webview_refresh),
                             )
                         }
                     },
@@ -100,7 +100,7 @@ fun CoverSearchDialog(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = stringResource(MR.strings.no_results_found),
+                    text = stringResource(ephyra.i18n.R.string.no_results_found),
                     style = MaterialTheme.typography.bodyLarge,
                 )
             }
@@ -165,7 +165,7 @@ private fun CoverSearchItem(
             )
             Text(
                 text = if (cover.sourceCount > 1) {
-                    stringResource(MR.strings.cover_search_source_count, cover.sourceName, cover.sourceCount - 1)
+                    stringResource(ephyra.i18n.R.string.cover_search_source_count, cover.sourceName, cover.sourceCount - 1)
                 } else {
                     cover.sourceName
                 },
@@ -194,14 +194,14 @@ private fun CoverSearchItem(
                 onDismissRequest = { showMenu = false },
             ) {
                 DropdownMenuItem(
-                    text = { Text(text = stringResource(MR.strings.action_set_as_cover)) },
+                    text = { Text(text = stringResource(ephyra.i18n.R.string.action_set_as_cover)) },
                     onClick = {
                         showMenu = false
                         onClick()
                     },
                 )
                 DropdownMenuItem(
-                    text = { Text(text = stringResource(MR.strings.action_set_metadata_source)) },
+                    text = { Text(text = stringResource(ephyra.i18n.R.string.action_set_metadata_source)) },
                     onClick = {
                         showMenu = false
                         onLongClick()

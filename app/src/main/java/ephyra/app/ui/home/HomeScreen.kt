@@ -266,7 +266,7 @@ object HomeScreen : Screen(), BottomNavController, SearchableScreen {
                         if (count > 0) {
                             Badge {
                                 val desc = pluralStringResource(
-                                    MR.plurals.notification_chapters_generic,
+                                    ephyra.i18n.R.plurals.notification_chapters_generic,
                                     count = count,
                                     count,
                                 )
@@ -286,7 +286,7 @@ object HomeScreen : Screen(), BottomNavController, SearchableScreen {
                         if (count > 0) {
                             Badge {
                                 val desc = pluralStringResource(
-                                    MR.plurals.update_check_notification_ext_updates,
+                                    ephyra.i18n.R.plurals.update_check_notification_ext_updates,
                                     count = count,
                                     count,
                                 )

@@ -98,11 +98,11 @@ class Bangumi(
     }
 
     override fun getStatus(status: Long): StringResource? = when (status) {
-        READING -> MR.strings.reading
-        PLAN_TO_READ -> MR.strings.plan_to_read
-        COMPLETED -> MR.strings.completed
-        ON_HOLD -> MR.strings.on_hold
-        DROPPED -> MR.strings.dropped
+        READING -> ephyra.i18n.R.string.reading
+        PLAN_TO_READ -> ephyra.i18n.R.string.plan_to_read
+        COMPLETED -> ephyra.i18n.R.string.completed
+        ON_HOLD -> ephyra.i18n.R.string.on_hold
+        DROPPED -> ephyra.i18n.R.string.dropped
         else -> null
     }
 

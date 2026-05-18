@@ -87,7 +87,7 @@ fun GlobalSearchToolbar(
                         )
                     },
                     label = {
-                        Text(text = stringResource(MR.strings.pinned_sources))
+                        Text(text = stringResource(ephyra.i18n.R.string.pinned_sources))
                     },
                 )
                 FilterChip(
@@ -102,7 +102,7 @@ fun GlobalSearchToolbar(
                         )
                     },
                     label = {
-                        Text(text = stringResource(MR.strings.all))
+                        Text(text = stringResource(ephyra.i18n.R.string.all))
                     },
                 )
 
@@ -121,7 +121,7 @@ fun GlobalSearchToolbar(
                     )
                 },
                 label = {
-                    Text(text = stringResource(MR.strings.has_results))
+                    Text(text = stringResource(ephyra.i18n.R.string.has_results))
                 },
             )
         }

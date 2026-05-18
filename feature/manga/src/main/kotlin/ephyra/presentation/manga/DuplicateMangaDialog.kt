@@ -99,7 +99,7 @@ fun DuplicateMangaDialog(
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.medium),
         ) {
             Text(
-                text = stringResource(MR.strings.possible_duplicates_title),
+                text = stringResource(ephyra.i18n.R.string.possible_duplicates_title),
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier
                     .then(horizontalPaddingModifier)
@@ -107,7 +107,7 @@ fun DuplicateMangaDialog(
             )
 
             Text(
-                text = stringResource(MR.strings.possible_duplicates_summary),
+                text = stringResource(ephyra.i18n.R.string.possible_duplicates_summary),
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.then(horizontalPaddingModifier),
             )
@@ -148,7 +148,7 @@ fun DuplicateMangaDialog(
                     Icon(imageVector = Icons.Outlined.Add, contentDescription = null)
                     Spacer(modifier = Modifier.width(16.dp))
                     Text(
-                        text = stringResource(MR.strings.action_add_anyway),
+                        text = stringResource(ephyra.i18n.R.string.action_add_anyway),
                         style = MaterialTheme.typography.bodyLarge,
                     )
                 }
@@ -164,7 +164,7 @@ fun DuplicateMangaDialog(
             ) {
                 Text(
                     modifier = Modifier.padding(vertical = MaterialTheme.padding.extraSmall),
-                    text = stringResource(MR.strings.action_cancel),
+                    text = stringResource(ephyra.i18n.R.string.action_cancel),
                     color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.bodyLarge,
                 )
@@ -214,7 +214,7 @@ private fun DuplicateMangaListItem(
                     color = MaterialTheme.colorScheme.secondary,
                     textColor = MaterialTheme.colorScheme.onSecondary,
                     text = pluralStringResource(
-                        MR.plurals.manga_num_chapters,
+                        ephyra.i18n.R.plurals.manga_num_chapters,
                         duplicate.chapterCount.toInt(),
                         duplicate.chapterCount,
                     ),
@@ -251,13 +251,13 @@ private fun DuplicateMangaListItem(
 
         MangaDetailRow(
             text = when (manga.status) {
-                SManga.ONGOING.toLong() -> stringResource(MR.strings.ongoing)
-                SManga.COMPLETED.toLong() -> stringResource(MR.strings.completed)
-                SManga.LICENSED.toLong() -> stringResource(MR.strings.licensed)
-                SManga.PUBLISHING_FINISHED.toLong() -> stringResource(MR.strings.publishing_finished)
-                SManga.CANCELLED.toLong() -> stringResource(MR.strings.cancelled)
-                SManga.ON_HIATUS.toLong() -> stringResource(MR.strings.on_hiatus)
-                else -> stringResource(MR.strings.unknown)
+                SManga.ONGOING.toLong() -> stringResource(ephyra.i18n.R.string.ongoing)
+                SManga.COMPLETED.toLong() -> stringResource(ephyra.i18n.R.string.completed)
+                SManga.LICENSED.toLong() -> stringResource(ephyra.i18n.R.string.licensed)
+                SManga.PUBLISHING_FINISHED.toLong() -> stringResource(ephyra.i18n.R.string.publishing_finished)
+                SManga.CANCELLED.toLong() -> stringResource(ephyra.i18n.R.string.cancelled)
+                SManga.ON_HIATUS.toLong() -> stringResource(ephyra.i18n.R.string.on_hiatus)
+                else -> stringResource(ephyra.i18n.R.string.unknown)
             },
             iconImageVector = when (manga.status) {
                 SManga.ONGOING.toLong() -> Icons.Outlined.Schedule

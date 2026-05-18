@@ -106,7 +106,7 @@ fun EditMetadataDialog(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(text = stringResource(MR.strings.edit_metadata_title))
+                Text(text = stringResource(ephyra.i18n.R.string.edit_metadata_title))
                 if (onIdentify != null) {
                     FilledTonalButton(onClick = onIdentify) {
                         Icon(
@@ -116,18 +116,18 @@ fun EditMetadataDialog(
                                 Icons.Outlined.Search
                             },
                             contentDescription = if (hasAuthority) {
-                                stringResource(MR.strings.edit_metadata_refresh)
+                                stringResource(ephyra.i18n.R.string.edit_metadata_refresh)
                             } else {
-                                stringResource(MR.strings.edit_metadata_identify)
+                                stringResource(ephyra.i18n.R.string.edit_metadata_identify)
                             },
                             modifier = Modifier.size(18.dp),
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = if (hasAuthority) {
-                                stringResource(MR.strings.edit_metadata_refresh)
+                                stringResource(ephyra.i18n.R.string.edit_metadata_refresh)
                             } else {
-                                stringResource(MR.strings.edit_metadata_identify)
+                                stringResource(ephyra.i18n.R.string.edit_metadata_identify)
                             },
                             style = MaterialTheme.typography.labelLarge,
                         )
@@ -154,13 +154,13 @@ fun EditMetadataDialog(
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Verified,
-                                contentDescription = stringResource(MR.strings.authority_badge_description),
+                                contentDescription = stringResource(ephyra.i18n.R.string.authority_badge_description),
                                 modifier = Modifier.size(18.dp),
                                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
                             )
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
-                                text = stringResource(MR.strings.edit_metadata_linked_to, authorityLabel),
+                                text = stringResource(ephyra.i18n.R.string.edit_metadata_linked_to, authorityLabel),
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                                 modifier = Modifier.weight(1f),
@@ -172,12 +172,12 @@ fun EditMetadataDialog(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Outlined.LinkOff,
-                                        contentDescription = stringResource(MR.strings.edit_metadata_unlink),
+                                        contentDescription = stringResource(ephyra.i18n.R.string.edit_metadata_unlink),
                                         modifier = Modifier.size(16.dp),
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
-                                        text = stringResource(MR.strings.edit_metadata_unlink),
+                                        text = stringResource(ephyra.i18n.R.string.edit_metadata_unlink),
                                         style = MaterialTheme.typography.labelMedium,
                                     )
                                 }
@@ -188,7 +188,7 @@ fun EditMetadataDialog(
                 }
 
                 Text(
-                    text = stringResource(MR.strings.edit_metadata_subtitle),
+                    text = stringResource(ephyra.i18n.R.string.edit_metadata_subtitle),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -204,20 +204,20 @@ fun EditMetadataDialog(
                         TextButton(onClick = { onSetAllLocks(LockedField.ALL) }) {
                             Icon(
                                 imageVector = Icons.Outlined.Lock,
-                                contentDescription = stringResource(MR.strings.metadata_locks_lock_all),
+                                contentDescription = stringResource(ephyra.i18n.R.string.metadata_locks_lock_all),
                                 modifier = Modifier.size(16.dp),
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = stringResource(MR.strings.metadata_locks_lock_all))
+                            Text(text = stringResource(ephyra.i18n.R.string.metadata_locks_lock_all))
                         }
                         TextButton(onClick = { onSetAllLocks(LockedField.NONE) }) {
                             Icon(
                                 imageVector = Icons.Outlined.LockOpen,
-                                contentDescription = stringResource(MR.strings.metadata_locks_unlock_all),
+                                contentDescription = stringResource(ephyra.i18n.R.string.metadata_locks_unlock_all),
                                 modifier = Modifier.size(16.dp),
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = stringResource(MR.strings.metadata_locks_unlock_all))
+                            Text(text = stringResource(ephyra.i18n.R.string.metadata_locks_unlock_all))
                         }
                     }
                 }
@@ -225,11 +225,11 @@ fun EditMetadataDialog(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 // -- Basic info section header --
-                SectionHeader(text = stringResource(MR.strings.edit_metadata_section_basic))
+                SectionHeader(text = stringResource(ephyra.i18n.R.string.edit_metadata_section_basic))
 
                 // Title
                 MetadataTextField(
-                    label = stringResource(MR.strings.locked_field_title),
+                    label = stringResource(ephyra.i18n.R.string.locked_field_title),
                     value = editTitle,
                     onValueChange = { editTitle = it },
                     isLocked = LockedField.isLocked(lockedFields, LockedField.TITLE),
@@ -245,7 +245,7 @@ fun EditMetadataDialog(
 
                 // Author
                 MetadataTextField(
-                    label = stringResource(MR.strings.locked_field_author),
+                    label = stringResource(ephyra.i18n.R.string.locked_field_author),
                     value = editAuthor,
                     onValueChange = { editAuthor = it },
                     isLocked = LockedField.isLocked(lockedFields, LockedField.AUTHOR),
@@ -261,7 +261,7 @@ fun EditMetadataDialog(
 
                 // Artist
                 MetadataTextField(
-                    label = stringResource(MR.strings.locked_field_artist),
+                    label = stringResource(ephyra.i18n.R.string.locked_field_artist),
                     value = editArtist,
                     onValueChange = { editArtist = it },
                     isLocked = LockedField.isLocked(lockedFields, LockedField.ARTIST),
@@ -277,7 +277,7 @@ fun EditMetadataDialog(
 
                 // Description
                 MetadataTextField(
-                    label = stringResource(MR.strings.locked_field_description),
+                    label = stringResource(ephyra.i18n.R.string.locked_field_description),
                     value = editDescription,
                     onValueChange = { editDescription = it },
                     isLocked = LockedField.isLocked(lockedFields, LockedField.DESCRIPTION),
@@ -294,7 +294,7 @@ fun EditMetadataDialog(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // -- Details section header --
-                SectionHeader(text = stringResource(MR.strings.edit_metadata_section_details))
+                SectionHeader(text = stringResource(ephyra.i18n.R.string.edit_metadata_section_details))
 
                 // Status dropdown
                 StatusDropdown(
@@ -314,7 +314,7 @@ fun EditMetadataDialog(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // -- Tags & genres section header --
-                SectionHeader(text = stringResource(MR.strings.edit_metadata_section_tags))
+                SectionHeader(text = stringResource(ephyra.i18n.R.string.edit_metadata_section_tags))
 
                 // Genres
                 GenreEditor(
@@ -344,7 +344,7 @@ fun EditMetadataDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(MR.strings.action_ok))
+                Text(text = stringResource(ephyra.i18n.R.string.action_ok))
             }
         },
     )
@@ -388,9 +388,9 @@ private fun MetadataTextField(
                     Icon(
                         imageVector = if (isLocked) Icons.Outlined.Lock else Icons.Outlined.LockOpen,
                         contentDescription = if (isLocked) {
-                            stringResource(MR.strings.metadata_unlock_field)
+                            stringResource(ephyra.i18n.R.string.metadata_unlock_field)
                         } else {
-                            stringResource(MR.strings.metadata_lock_field)
+                            stringResource(ephyra.i18n.R.string.metadata_lock_field)
                         },
                         modifier = Modifier.size(20.dp),
                         tint = if (isLocked) {
@@ -423,13 +423,13 @@ private fun StatusDropdown(
     var expanded by remember { mutableStateOf(false) }
     val statusEntries = remember {
         listOf(
-            SManga.UNKNOWN.toLong() to MR.strings.unknown_status,
-            SManga.ONGOING.toLong() to MR.strings.ongoing,
-            SManga.COMPLETED.toLong() to MR.strings.completed,
-            SManga.LICENSED.toLong() to MR.strings.licensed,
-            SManga.PUBLISHING_FINISHED.toLong() to MR.strings.publishing_finished,
-            SManga.CANCELLED.toLong() to MR.strings.cancelled,
-            SManga.ON_HIATUS.toLong() to MR.strings.on_hiatus,
+            SManga.UNKNOWN.toLong() to ephyra.i18n.R.string.unknown_status,
+            SManga.ONGOING.toLong() to ephyra.i18n.R.string.ongoing,
+            SManga.COMPLETED.toLong() to ephyra.i18n.R.string.completed,
+            SManga.LICENSED.toLong() to ephyra.i18n.R.string.licensed,
+            SManga.PUBLISHING_FINISHED.toLong() to ephyra.i18n.R.string.publishing_finished,
+            SManga.CANCELLED.toLong() to ephyra.i18n.R.string.cancelled,
+            SManga.ON_HIATUS.toLong() to ephyra.i18n.R.string.on_hiatus,
         )
     }
 
@@ -444,18 +444,18 @@ private fun StatusDropdown(
         ) {
             OutlinedTextField(
                 value = stringResource(
-                    statusEntries.find { it.first == status }?.second ?: MR.strings.unknown_status,
+                    statusEntries.find { it.first == status }?.second ?: ephyra.i18n.R.string.unknown_status,
                 ),
                 onValueChange = {},
                 readOnly = true,
                 label = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = stringResource(MR.strings.locked_field_status))
+                        Text(text = stringResource(ephyra.i18n.R.string.locked_field_status))
                         if (isLocked) {
                             Spacer(modifier = Modifier.width(4.dp))
                             Icon(
                                 imageVector = Icons.Outlined.Lock,
-                                contentDescription = stringResource(MR.strings.metadata_lock_field),
+                                contentDescription = stringResource(ephyra.i18n.R.string.metadata_lock_field),
                                 modifier = Modifier.size(14.dp),
                                 tint = MaterialTheme.colorScheme.primary,
                             )
@@ -469,9 +469,9 @@ private fun StatusDropdown(
                                 Icon(
                                     imageVector = if (isLocked) Icons.Outlined.Lock else Icons.Outlined.LockOpen,
                                     contentDescription = if (isLocked) {
-                                        stringResource(MR.strings.metadata_unlock_field)
+                                        stringResource(ephyra.i18n.R.string.metadata_unlock_field)
                                     } else {
-                                        stringResource(MR.strings.metadata_lock_field)
+                                        stringResource(ephyra.i18n.R.string.metadata_lock_field)
                                     },
                                     modifier = Modifier.size(20.dp),
                                     tint = if (isLocked) {
@@ -526,7 +526,7 @@ private fun GenreEditor(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = stringResource(MR.strings.locked_field_genre),
+                text = stringResource(ephyra.i18n.R.string.locked_field_genre),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -534,7 +534,7 @@ private fun GenreEditor(
                 Spacer(modifier = Modifier.width(4.dp))
                 Icon(
                     imageVector = Icons.Outlined.Lock,
-                    contentDescription = stringResource(MR.strings.metadata_lock_field),
+                    contentDescription = stringResource(ephyra.i18n.R.string.metadata_lock_field),
                     modifier = Modifier.size(14.dp),
                     tint = MaterialTheme.colorScheme.primary,
                 )
@@ -548,9 +548,9 @@ private fun GenreEditor(
                     Icon(
                         imageVector = if (isLocked) Icons.Outlined.Lock else Icons.Outlined.LockOpen,
                         contentDescription = if (isLocked) {
-                            stringResource(MR.strings.metadata_unlock_field)
+                            stringResource(ephyra.i18n.R.string.metadata_unlock_field)
                         } else {
-                            stringResource(MR.strings.metadata_lock_field)
+                            stringResource(ephyra.i18n.R.string.metadata_lock_field)
                         },
                         modifier = Modifier.size(16.dp),
                         tint = if (isLocked) {
@@ -578,7 +578,7 @@ private fun GenreEditor(
                     trailingIcon = {
                         Icon(
                             imageVector = Icons.Outlined.Close,
-                            contentDescription = stringResource(MR.strings.action_remove_genre, genre),
+                            contentDescription = stringResource(ephyra.i18n.R.string.action_remove_genre, genre),
                             modifier = Modifier
                                 .size(16.dp)
                                 .clickable { onRemoveGenre(genre) },
@@ -593,8 +593,8 @@ private fun GenreEditor(
         OutlinedTextField(
             value = newGenre,
             onValueChange = onNewGenreChange,
-            label = { Text(text = stringResource(MR.strings.locked_field_genre)) },
-            placeholder = { Text(text = stringResource(MR.strings.edit_metadata_add_genre)) },
+            label = { Text(text = stringResource(ephyra.i18n.R.string.locked_field_genre)) },
+            placeholder = { Text(text = stringResource(ephyra.i18n.R.string.edit_metadata_add_genre)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             trailingIcon = {
@@ -604,7 +604,7 @@ private fun GenreEditor(
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Add,
-                        contentDescription = stringResource(MR.strings.action_add_genre),
+                        contentDescription = stringResource(ephyra.i18n.R.string.action_add_genre),
                     )
                 }
             },

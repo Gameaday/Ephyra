@@ -52,7 +52,7 @@ fun TrackStatusSelector(
     onDismissRequest: () -> Unit,
 ) {
     BaseSelector(
-        title = stringResource(MR.strings.status),
+        title = stringResource(ephyra.i18n.R.string.status),
         content = {
             val state = rememberLazyListState()
             ScrollbarLazyColumn(state = state) {
@@ -100,7 +100,7 @@ fun TrackChapterSelector(
     onDismissRequest: () -> Unit,
 ) {
     BaseSelector(
-        title = stringResource(MR.strings.chapters),
+        title = stringResource(ephyra.i18n.R.string.chapters),
         content = {
             WheelNumberPicker(
                 items = range.toImmutableList(),
@@ -123,7 +123,7 @@ fun TrackScoreSelector(
     onDismissRequest: () -> Unit,
 ) {
     BaseSelector(
-        title = stringResource(MR.strings.score),
+        title = stringResource(ephyra.i18n.R.string.score),
         content = {
             WheelTextPicker(
                 items = selections,
@@ -170,15 +170,15 @@ fun TrackDateSelector(
                 ) {
                     if (onRemove != null) {
                         TextButton(onClick = onRemove) {
-                            Text(text = stringResource(MR.strings.action_remove))
+                            Text(text = stringResource(ephyra.i18n.R.string.action_remove))
                         }
                         Spacer(modifier = Modifier.weight(1f))
                     }
                     TextButton(onClick = onDismissRequest) {
-                        Text(text = stringResource(MR.strings.action_cancel))
+                        Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
                     }
                     TextButton(onClick = { onConfirm(pickerState.selectedDateMillis!!) }) {
-                        Text(text = stringResource(MR.strings.action_ok))
+                        Text(text = stringResource(ephyra.i18n.R.string.action_ok))
                     }
                 }
             }
@@ -213,10 +213,10 @@ private fun BaseSelector(
                     Spacer(modifier = Modifier.weight(1f))
                 }
                 TextButton(onClick = onDismissRequest) {
-                    Text(text = stringResource(MR.strings.action_cancel))
+                    Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
                 }
                 TextButton(onClick = onConfirm) {
-                    Text(text = stringResource(MR.strings.action_ok))
+                    Text(text = stringResource(ephyra.i18n.R.string.action_ok))
                 }
             }
         },
@@ -233,12 +233,12 @@ private fun TrackStatusSelectorPreviews() {
                 onSelectionChange = {},
                 selections = persistentMapOf(
                     // Anilist values
-                    1L to MR.strings.reading,
-                    2L to MR.strings.plan_to_read,
-                    3L to MR.strings.completed,
-                    4L to MR.strings.on_hold,
-                    5L to MR.strings.dropped,
-                    6L to MR.strings.repeating,
+                    1L to ephyra.i18n.R.string.reading,
+                    2L to ephyra.i18n.R.string.plan_to_read,
+                    3L to ephyra.i18n.R.string.completed,
+                    4L to ephyra.i18n.R.string.on_hold,
+                    5L to ephyra.i18n.R.string.dropped,
+                    6L to ephyra.i18n.R.string.repeating,
                 ),
                 onConfirm = {},
                 onDismissRequest = {},

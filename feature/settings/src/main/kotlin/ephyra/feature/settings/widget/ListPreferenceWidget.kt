@@ -73,7 +73,7 @@ fun <T> ListPreferenceWidget(
             },
             confirmButton = {
                 TextButton(onClick = { isDialogShown = false }) {
-                    Text(text = stringResource(MR.strings.action_cancel))
+                    Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
                 }
             },
         )

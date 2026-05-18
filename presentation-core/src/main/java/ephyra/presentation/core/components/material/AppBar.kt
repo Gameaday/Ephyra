@@ -138,7 +138,7 @@ fun AppBar(
                     IconButton(onClick = onCancelActionMode) {
                         Icon(
                             imageVector = Icons.Outlined.Close,
-                            contentDescription = stringResource(MR.strings.action_cancel),
+                            contentDescription = stringResource(ephyra.i18n.R.string.action_cancel),
                         )
                     }
                 } else {
@@ -225,7 +225,7 @@ fun AppBarActions(
             positionProvider = rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
             tooltip = {
                 PlainTooltip {
-                    Text(stringResource(MR.strings.action_menu_overflow_description))
+                    Text(stringResource(ephyra.i18n.R.string.action_menu_overflow_description))
                 }
             },
             state = rememberTooltipState(),
@@ -236,7 +236,7 @@ fun AppBarActions(
             ) {
                 Icon(
                     Icons.Outlined.MoreVert,
-                    contentDescription = stringResource(MR.strings.action_menu_overflow_description),
+                    contentDescription = stringResource(ephyra.i18n.R.string.action_menu_overflow_description),
                 )
             }
         }
@@ -261,7 +261,7 @@ fun AppBarActions(
 /**
  * @param searchEnabled Set to false if you don't want to show search action.
  * @param searchQuery If null, use normal toolbar.
- * @param placeholderText If null, [MR.strings.action_search_hint] is used.
+ * @param placeholderText If null, [ephyra.i18n.R.string.action_search_hint] is used.
  */
 @Composable
 fun SearchToolbar(
@@ -328,7 +328,7 @@ fun SearchToolbar(
                         placeholder = {
                             Text(
                                 modifier = Modifier.secondaryItemAlpha(),
-                                text = (placeholderText ?: stringResource(MR.strings.action_search_hint)),
+                                text = (placeholderText ?: stringResource(ephyra.i18n.R.string.action_search_hint)),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 style = MaterialTheme.typography.titleMedium.copy(
@@ -354,7 +354,7 @@ fun SearchToolbar(
                         positionProvider = rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
                         tooltip = {
                             PlainTooltip {
-                                Text(stringResource(MR.strings.action_search))
+                                Text(stringResource(ephyra.i18n.R.string.action_search))
                             }
                         },
                         state = rememberTooltipState(),
@@ -365,7 +365,7 @@ fun SearchToolbar(
                         ) {
                             Icon(
                                 Icons.Outlined.Search,
-                                contentDescription = stringResource(MR.strings.action_search),
+                                contentDescription = stringResource(ephyra.i18n.R.string.action_search),
                             )
                         }
                     }
@@ -374,7 +374,7 @@ fun SearchToolbar(
                         positionProvider = rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
                         tooltip = {
                             PlainTooltip {
-                                Text(stringResource(MR.strings.action_reset))
+                                Text(stringResource(ephyra.i18n.R.string.action_reset))
                             }
                         },
                         state = rememberTooltipState(),
@@ -388,7 +388,7 @@ fun SearchToolbar(
                         ) {
                             Icon(
                                 Icons.Outlined.Close,
-                                contentDescription = stringResource(MR.strings.action_reset),
+                                contentDescription = stringResource(ephyra.i18n.R.string.action_reset),
                             )
                         }
                     }
@@ -411,7 +411,7 @@ fun UpIcon(
         ?: Icons.AutoMirrored.Outlined.ArrowBack
     Icon(
         imageVector = icon,
-        contentDescription = stringResource(MR.strings.action_bar_up_description),
+        contentDescription = stringResource(ephyra.i18n.R.string.action_bar_up_description),
         modifier = modifier,
     )
 }

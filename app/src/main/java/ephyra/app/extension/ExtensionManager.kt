@@ -155,7 +155,7 @@ internal class ExtensionManager(
             api.findExtensions()
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e)
-            withUIContext { context.toast(MR.strings.extension_api_error) }
+            withUIContext { context.toast(ephyra.i18n.R.string.extension_api_error) }
             return
         }
 

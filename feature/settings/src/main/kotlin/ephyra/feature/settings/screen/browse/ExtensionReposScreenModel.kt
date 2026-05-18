@@ -131,8 +131,8 @@ class ExtensionReposScreenModel(
 
 sealed class RepoEvent {
     sealed class LocalizedMessage(val stringRes: StringResource) : RepoEvent()
-    data object InvalidUrl : LocalizedMessage(MR.strings.invalid_repo_name)
-    data object RepoAlreadyExists : LocalizedMessage(MR.strings.error_repo_exists)
+    data object InvalidUrl : LocalizedMessage(ephyra.i18n.R.string.invalid_repo_name)
+    data object RepoAlreadyExists : LocalizedMessage(ephyra.i18n.R.string.error_repo_exists)
 }
 
 sealed class RepoDialog {

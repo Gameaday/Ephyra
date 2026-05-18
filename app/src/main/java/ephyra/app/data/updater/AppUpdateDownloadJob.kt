@@ -39,7 +39,7 @@ class AppUpdateDownloadJob(
 
     override suspend fun doWork(): Result {
         val url = inputData.getString(EXTRA_DOWNLOAD_URL)
-        val title = inputData.getString(EXTRA_DOWNLOAD_TITLE) ?: context.stringResource(MR.strings.app_name)
+        val title = inputData.getString(EXTRA_DOWNLOAD_TITLE) ?: context.stringResource(ephyra.i18n.R.string.app_name)
 
         if (url.isNullOrEmpty()) {
             return Result.failure()

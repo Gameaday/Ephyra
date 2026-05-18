@@ -30,15 +30,15 @@ fun Screen.sourcesTab(): TabContent {
     val state by screenModel.state.collectAsStateWithLifecycle()
 
     return TabContent(
-        titleRes = MR.strings.label_content_sources,
+        titleRes = ephyra.i18n.R.string.label_content_sources,
         actions = persistentListOf(
             AppBar.Action(
-                title = stringResource(MR.strings.action_global_search),
+                title = stringResource(ephyra.i18n.R.string.action_global_search),
                 icon = Icons.Outlined.TravelExplore,
                 onClick = { navigator.push(GlobalSearchScreen()) },
             ),
             AppBar.Action(
-                title = stringResource(MR.strings.action_filter),
+                title = stringResource(ephyra.i18n.R.string.action_filter),
                 icon = Icons.Outlined.FilterList,
                 onClick = { navigator.push(SourcesFilterScreen()) },
             ),
@@ -70,7 +70,7 @@ fun Screen.sourcesTab(): TabContent {
                 )
             }
 
-            val internalErrString = stringResource(MR.strings.internal_error)
+            val internalErrString = stringResource(ephyra.i18n.R.string.internal_error)
             LaunchedEffect(Unit) {
                 screenModel.events.collectLatest { event ->
                     when (event) {

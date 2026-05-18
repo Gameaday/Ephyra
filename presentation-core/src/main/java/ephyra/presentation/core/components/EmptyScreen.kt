@@ -18,7 +18,7 @@ private fun NoActionPreview() {
     TachiyomiPreviewTheme {
         Surface {
             EmptyScreen(
-                stringRes = MR.strings.empty_screen,
+                stringRes = ephyra.i18n.R.string.empty_screen,
             )
         }
     }
@@ -30,15 +30,15 @@ private fun WithActionPreview() {
     TachiyomiPreviewTheme {
         Surface {
             EmptyScreen(
-                stringRes = MR.strings.empty_screen,
+                stringRes = ephyra.i18n.R.string.empty_screen,
                 actions = persistentListOf(
                     EmptyScreenAction(
-                        stringRes = MR.strings.action_retry,
+                        stringRes = ephyra.i18n.R.string.action_retry,
                         icon = Icons.Outlined.Refresh,
                         onClick = {},
                     ),
                     EmptyScreenAction(
-                        stringRes = MR.strings.getting_started_guide,
+                        stringRes = ephyra.i18n.R.string.getting_started_guide,
                         icon = Icons.AutoMirrored.Outlined.HelpOutline,
                         onClick = {},
                     ),

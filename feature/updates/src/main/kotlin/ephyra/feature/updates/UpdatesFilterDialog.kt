@@ -36,7 +36,7 @@ fun UpdatesFilterDialog(
     TabbedDialog(
         onDismissRequest = onDismissRequest,
         tabTitles = persistentListOf(
-            stringResource(MR.strings.action_filter),
+            stringResource(ephyra.i18n.R.string.action_filter),
         ),
     ) {
         Column(
@@ -55,7 +55,7 @@ private fun ColumnScope.FilterSheet(
 ) {
     val filterDownloaded by screenModel.updatesPreferences.filterDownloaded().collectAsState()
     TriStateItem(
-        label = stringResource(MR.strings.label_downloaded),
+        label = stringResource(ephyra.i18n.R.string.label_downloaded),
         state = filterDownloaded,
         onClick = {
             screenModel.onEvent(UpdatesSettingsScreenEvent.ToggleFilter(UpdatesPreferences::filterDownloaded))
@@ -64,21 +64,21 @@ private fun ColumnScope.FilterSheet(
 
     val filterUnread by screenModel.updatesPreferences.filterUnread().collectAsState()
     TriStateItem(
-        label = stringResource(MR.strings.action_filter_unread),
+        label = stringResource(ephyra.i18n.R.string.action_filter_unread),
         state = filterUnread,
         onClick = { screenModel.onEvent(UpdatesSettingsScreenEvent.ToggleFilter(UpdatesPreferences::filterUnread)) },
     )
 
     val filterStarted by screenModel.updatesPreferences.filterStarted().collectAsState()
     TriStateItem(
-        label = stringResource(MR.strings.label_started),
+        label = stringResource(ephyra.i18n.R.string.label_started),
         state = filterStarted,
         onClick = { screenModel.onEvent(UpdatesSettingsScreenEvent.ToggleFilter(UpdatesPreferences::filterStarted)) },
     )
 
     val filterBookmarked by screenModel.updatesPreferences.filterBookmarked().collectAsState()
     TriStateItem(
-        label = stringResource(MR.strings.action_filter_bookmarked),
+        label = stringResource(ephyra.i18n.R.string.action_filter_bookmarked),
         state = filterBookmarked,
         onClick = {
             screenModel.onEvent(UpdatesSettingsScreenEvent.ToggleFilter(UpdatesPreferences::filterBookmarked))
@@ -103,7 +103,7 @@ private fun ColumnScope.FilterSheet(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
-            text = stringResource(MR.strings.action_filter_excluded_scanlators),
+            text = stringResource(ephyra.i18n.R.string.action_filter_excluded_scanlators),
             color = MaterialTheme.colorScheme.onSurface,
             style = MaterialTheme.typography.bodyMedium,
         )

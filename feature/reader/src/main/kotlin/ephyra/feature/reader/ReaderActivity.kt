@@ -547,7 +547,7 @@ class ReaderActivity : BaseActivity() {
                 // Show the BigPicture notification here (Activity Context) — the ViewModel
                 // no longer holds a notifier reference, keeping it UI-framework-agnostic.
                 SaveImageNotifier(this).onComplete(result.uri)
-                toast(MR.strings.picture_saved)
+                toast(ephyra.i18n.R.string.picture_saved)
             }
             is ReaderViewModel.SaveImageResult.Error -> toast(result.error.message)
         }
@@ -555,16 +555,16 @@ class ReaderActivity : BaseActivity() {
 
     fun onSetAsCoverResult(result: ReaderViewModel.SetAsCoverResult) {
         when (result) {
-            Success -> toast(MR.strings.cover_updated)
-            AddToLibraryFirst -> toast(MR.strings.notification_first_add_to_library)
-            Error -> toast(MR.strings.error_saving_cover)
+            Success -> toast(ephyra.i18n.R.string.cover_updated)
+            AddToLibraryFirst -> toast(ephyra.i18n.R.string.notification_first_add_to_library)
+            Error -> toast(ephyra.i18n.R.string.error_saving_cover)
         }
     }
 
     fun onBlockPageResult(result: ReaderViewModel.BlockPageResult) {
         when (result) {
-            is ReaderViewModel.BlockPageResult.Success -> toast(MR.strings.page_blocked)
-            is ReaderViewModel.BlockPageResult.Error -> toast(MR.strings.page_block_error)
+            is ReaderViewModel.BlockPageResult.Success -> toast(ephyra.i18n.R.string.page_blocked)
+            is ReaderViewModel.BlockPageResult.Error -> toast(ephyra.i18n.R.string.page_block_error)
         }
     }
 

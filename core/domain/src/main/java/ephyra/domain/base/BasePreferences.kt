@@ -23,10 +23,10 @@ class BasePreferences(
     fun shownOnboardingFlow() = preferenceStore.getBoolean(Preference.appStateKey("onboarding_complete"), false)
 
     enum class ExtensionInstaller(val titleRes: StringResource, val requiresSystemPermission: Boolean) {
-        LEGACY(MR.strings.ext_installer_legacy, true),
-        PACKAGEINSTALLER(MR.strings.ext_installer_packageinstaller, true),
-        SHIZUKU(MR.strings.ext_installer_shizuku, false),
-        PRIVATE(MR.strings.ext_installer_private, false),
+        LEGACY(ephyra.i18n.R.string.ext_installer_legacy, true),
+        PACKAGEINSTALLER(ephyra.i18n.R.string.ext_installer_packageinstaller, true),
+        SHIZUKU(ephyra.i18n.R.string.ext_installer_shizuku, false),
+        PRIVATE(ephyra.i18n.R.string.ext_installer_private, false),
     }
 
     fun displayProfile() = preferenceStore.getString("pref_display_profile_key", "")

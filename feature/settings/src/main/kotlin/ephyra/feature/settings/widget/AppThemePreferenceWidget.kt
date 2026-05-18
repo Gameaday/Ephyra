@@ -176,7 +176,7 @@ fun AppThemePreviewItem(
                 if (selected) {
                     Icon(
                         imageVector = Icons.Filled.CheckCircle,
-                        contentDescription = stringResource(MR.strings.selected),
+                        contentDescription = stringResource(ephyra.i18n.R.string.selected),
                         tint = MaterialTheme.colorScheme.primary,
                     )
                 }

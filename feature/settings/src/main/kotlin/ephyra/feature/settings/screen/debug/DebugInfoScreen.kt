@@ -26,7 +26,7 @@ class DebugInfoScreen : Screen() {
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         PreferenceScaffold(
-            titleRes = MR.strings.pref_debug_info,
+            titleRes = ephyra.i18n.R.string.pref_debug_info,
             onBackPressed = navigator::pop,
             itemsProvider = {
                 listOf(

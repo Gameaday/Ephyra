@@ -29,10 +29,10 @@ object LocaleHelper {
      */
     fun getSourceDisplayName(lang: String?, context: Context): String {
         return when (lang) {
-            "last_used" -> context.stringResource(MR.strings.last_used_source)
-            "pinned" -> context.stringResource(MR.strings.pinned_sources)
-            "other" -> context.stringResource(MR.strings.other_source)
-            "all" -> context.stringResource(MR.strings.multi_lang)
+            "last_used" -> context.stringResource(ephyra.i18n.R.string.last_used_source)
+            "pinned" -> context.stringResource(ephyra.i18n.R.string.pinned_sources)
+            "other" -> context.stringResource(ephyra.i18n.R.string.other_source)
+            "all" -> context.stringResource(ephyra.i18n.R.string.multi_lang)
             else -> getLocalizedDisplayName(lang)
         }
     }

@@ -85,7 +85,7 @@ data class MigrateMangaScreen(
             },
             floatingActionButton = {
                 SmallExtendedFloatingActionButton(
-                    text = { Text(text = stringResource(MR.strings.migrationConfigScreen_continueButtonText)) },
+                    text = { Text(text = stringResource(ephyra.i18n.R.string.migrationConfigScreen_continueButtonText)) },
                     icon = {
                         Icon(imageVector = Icons.AutoMirrored.Outlined.ArrowForward, contentDescription = null)
                     },
@@ -104,7 +104,7 @@ data class MigrateMangaScreen(
         ) { contentPadding ->
             if (state.isEmpty) {
                 EmptyScreen(
-                    stringRes = MR.strings.empty_screen,
+                    stringRes = ephyra.i18n.R.string.empty_screen,
                     modifier = Modifier.padding(contentPadding),
                 )
                 return@Scaffold
@@ -123,7 +123,7 @@ data class MigrateMangaScreen(
             screenModel.events.collectLatest { event ->
                 when (event) {
                     MigrationMangaEvent.FailedFetchingFavorites -> {
-                        context.toast(MR.strings.internal_error)
+                        context.toast(ephyra.i18n.R.string.internal_error)
                     }
                 }
             }

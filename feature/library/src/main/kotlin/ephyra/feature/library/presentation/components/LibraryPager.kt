@@ -132,9 +132,9 @@ private fun LibraryPagerEmptyScreen(
     onGlobalSearchClicked: () -> Unit,
 ) {
     val msg = when {
-        !searchQuery.isNullOrEmpty() -> MR.strings.no_results_found
-        hasActiveFilters -> MR.strings.error_no_match
-        else -> MR.strings.information_no_manga_category
+        !searchQuery.isNullOrEmpty() -> ephyra.i18n.R.string.no_results_found
+        hasActiveFilters -> ephyra.i18n.R.string.error_no_match
+        else -> ephyra.i18n.R.string.information_no_manga_category
     }
 
     Column(

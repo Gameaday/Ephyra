@@ -38,13 +38,13 @@ fun ExtensionReposScreen(
         topBar = { scrollBehavior ->
             AppBar(
                 navigateUp = navigateUp,
-                title = stringResource(MR.strings.label_extension_repos),
+                title = stringResource(ephyra.i18n.R.string.label_extension_repos),
                 scrollBehavior = scrollBehavior,
                 actions = {
                     IconButton(onClick = onClickRefresh) {
                         Icon(
                             imageVector = Icons.Outlined.Refresh,
-                            contentDescription = stringResource(resource = MR.strings.action_webview_refresh),
+                            contentDescription = stringResource(resource = ephyra.i18n.R.string.action_webview_refresh),
                         )
                     }
                 },
@@ -59,7 +59,7 @@ fun ExtensionReposScreen(
     ) { paddingValues ->
         if (state.isEmpty) {
             EmptyScreen(
-                MR.strings.information_empty_repos,
+                ephyra.i18n.R.string.information_empty_repos,
                 modifier = Modifier.padding(paddingValues),
             )
             return@Scaffold

@@ -78,7 +78,7 @@ private fun MangaItem(
 @Composable
 private fun EmptyResultItem() {
     Text(
-        text = stringResource(MR.strings.no_results_found),
+        text = stringResource(ephyra.i18n.R.string.no_results_found),
         modifier = Modifier
             .padding(
                 horizontal = MaterialTheme.padding.medium,

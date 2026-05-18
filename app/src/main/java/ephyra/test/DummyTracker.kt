@@ -32,12 +32,12 @@ data class DummyTracker(
     override fun getStatusList(): List<Long> = valStatuses
 
     override fun getStatus(status: Long): StringResource? = when (status) {
-        1L -> MR.strings.reading
-        2L -> MR.strings.plan_to_read
-        3L -> MR.strings.completed
-        4L -> MR.strings.on_hold
-        5L -> MR.strings.dropped
-        6L -> MR.strings.repeating
+        1L -> ephyra.i18n.R.string.reading
+        2L -> ephyra.i18n.R.string.plan_to_read
+        3L -> ephyra.i18n.R.string.completed
+        4L -> ephyra.i18n.R.string.on_hold
+        5L -> ephyra.i18n.R.string.dropped
+        6L -> ephyra.i18n.R.string.repeating
         else -> null
     }
 

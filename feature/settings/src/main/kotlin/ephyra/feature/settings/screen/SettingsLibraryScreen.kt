@@ -48,7 +48,7 @@ object SettingsLibraryScreen : SearchableSettings {
 
     @Composable
     @ReadOnlyComposable
-    override fun getTitleRes() = MR.strings.pref_category_library
+    override fun getTitleRes() = ephyra.i18n.R.string.pref_category_library
 
     @Composable
     override fun getPreferences(): List<Preference> {
@@ -81,16 +81,16 @@ object SettingsLibraryScreen : SearchableSettings {
         // For default category
         val ids = listOf(libraryPreferences.defaultCategory().defaultValue()) +
             allCategories.fastMap { it.id.toInt() }
-        val labels = listOf(stringResource(MR.strings.default_category_summary)) +
+        val labels = listOf(stringResource(ephyra.i18n.R.string.default_category_summary)) +
             allCategories.fastMap { it.visualName }
 
         return Preference.PreferenceGroup(
-            title = stringResource(MR.strings.categories),
+            title = stringResource(ephyra.i18n.R.string.categories),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.TextPreference(
-                    title = stringResource(MR.strings.action_edit_categories),
+                    title = stringResource(ephyra.i18n.R.string.action_edit_categories),
                     subtitle = pluralStringResource(
-                        MR.plurals.num_categories,
+                        ephyra.i18n.R.plurals.num_categories,
                         count = userCategoriesCount,
                         userCategoriesCount,
                     ),
@@ -99,11 +99,11 @@ object SettingsLibraryScreen : SearchableSettings {
                 Preference.PreferenceItem.ListPreference(
                     preference = libraryPreferences.defaultCategory(),
                     entries = ids.zip(labels).toMap().toImmutableMap(),
-                    title = stringResource(MR.strings.default_category),
+                    title = stringResource(ephyra.i18n.R.string.default_category),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = libraryPreferences.categorizedDisplaySettings(),
-                    title = stringResource(MR.strings.categorized_display_settings),
+                    title = stringResource(ephyra.i18n.R.string.categorized_display_settings),
                     onValueChanged = {
                         if (!it) {
                             scope.launch {
@@ -137,8 +137,8 @@ object SettingsLibraryScreen : SearchableSettings {
         if (showCategoriesDialog) {
             val categoryById = remember(allCategories) { allCategories.associateBy { it.id.toString() } }
             TriStateListDialog(
-                title = stringResource(MR.strings.categories),
-                message = stringResource(MR.strings.pref_library_update_categories_details),
+                title = stringResource(ephyra.i18n.R.string.categories),
+                message = stringResource(ephyra.i18n.R.string.pref_library_update_categories_details),
                 items = allCategories,
                 initialChecked = included.mapNotNull { categoryById[it] },
                 initialInversed = excluded.mapNotNull { categoryById[it] },
@@ -153,19 +153,19 @@ object SettingsLibraryScreen : SearchableSettings {
         }
 
         return Preference.PreferenceGroup(
-            title = stringResource(MR.strings.pref_category_library_update),
+            title = stringResource(ephyra.i18n.R.string.pref_category_library_update),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.ListPreference(
                     preference = autoUpdateIntervalPref,
                     entries = persistentMapOf(
-                        0 to stringResource(MR.strings.update_never),
-                        12 to stringResource(MR.strings.update_12hour),
-                        24 to stringResource(MR.strings.update_24hour),
-                        48 to stringResource(MR.strings.update_48hour),
-                        72 to stringResource(MR.strings.update_72hour),
-                        168 to stringResource(MR.strings.update_weekly),
+                        0 to stringResource(ephyra.i18n.R.string.update_never),
+                        12 to stringResource(ephyra.i18n.R.string.update_12hour),
+                        24 to stringResource(ephyra.i18n.R.string.update_24hour),
+                        48 to stringResource(ephyra.i18n.R.string.update_48hour),
+                        72 to stringResource(ephyra.i18n.R.string.update_72hour),
+                        168 to stringResource(ephyra.i18n.R.string.update_weekly),
                     ),
-                    title = stringResource(MR.strings.pref_library_update_interval),
+                    title = stringResource(ephyra.i18n.R.string.pref_library_update_interval),
                     onValueChanged = {
                         scheduler.setupLibraryUpdateTask()
                         true
@@ -174,12 +174,12 @@ object SettingsLibraryScreen : SearchableSettings {
                 Preference.PreferenceItem.MultiSelectListPreference(
                     preference = libraryPreferences.autoUpdateDeviceRestrictions(),
                     entries = persistentMapOf(
-                        DEVICE_ONLY_ON_WIFI to stringResource(MR.strings.connected_to_wifi),
-                        DEVICE_NETWORK_NOT_METERED to stringResource(MR.strings.network_not_metered),
-                        DEVICE_CHARGING to stringResource(MR.strings.charging),
+                        DEVICE_ONLY_ON_WIFI to stringResource(ephyra.i18n.R.string.connected_to_wifi),
+                        DEVICE_NETWORK_NOT_METERED to stringResource(ephyra.i18n.R.string.network_not_metered),
+                        DEVICE_CHARGING to stringResource(ephyra.i18n.R.string.charging),
                     ),
-                    title = stringResource(MR.strings.pref_library_update_restriction),
-                    subtitle = stringResource(MR.strings.restrictions),
+                    title = stringResource(ephyra.i18n.R.string.pref_library_update_restriction),
+                    subtitle = stringResource(ephyra.i18n.R.string.restrictions),
                     enabled = autoUpdateInterval > 0,
                     onValueChanged = {
                         // Post to event looper to allow the preference to be updated.
@@ -189,7 +189,7 @@ object SettingsLibraryScreen : SearchableSettings {
                     },
                 ),
                 Preference.PreferenceItem.TextPreference(
-                    title = stringResource(MR.strings.categories),
+                    title = stringResource(ephyra.i18n.R.string.categories),
                     subtitle = getCategoriesLabel(
                         allCategories = allCategories,
                         included = included,
@@ -199,22 +199,22 @@ object SettingsLibraryScreen : SearchableSettings {
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = libraryPreferences.autoUpdateMetadata(),
-                    title = stringResource(MR.strings.pref_library_update_refresh_metadata),
-                    subtitle = stringResource(MR.strings.pref_library_update_refresh_metadata_summary),
+                    title = stringResource(ephyra.i18n.R.string.pref_library_update_refresh_metadata),
+                    subtitle = stringResource(ephyra.i18n.R.string.pref_library_update_refresh_metadata_summary),
                 ),
                 Preference.PreferenceItem.MultiSelectListPreference(
                     preference = libraryPreferences.autoUpdateMangaRestrictions(),
                     entries = persistentMapOf(
-                        MANGA_HAS_UNREAD to stringResource(MR.strings.pref_update_only_completely_read),
-                        MANGA_NON_READ to stringResource(MR.strings.pref_update_only_started),
-                        MANGA_NON_COMPLETED to stringResource(MR.strings.pref_update_only_non_completed),
-                        MANGA_OUTSIDE_RELEASE_PERIOD to stringResource(MR.strings.pref_update_only_in_release_period),
+                        MANGA_HAS_UNREAD to stringResource(ephyra.i18n.R.string.pref_update_only_completely_read),
+                        MANGA_NON_READ to stringResource(ephyra.i18n.R.string.pref_update_only_started),
+                        MANGA_NON_COMPLETED to stringResource(ephyra.i18n.R.string.pref_update_only_non_completed),
+                        MANGA_OUTSIDE_RELEASE_PERIOD to stringResource(ephyra.i18n.R.string.pref_update_only_in_release_period),
                     ),
-                    title = stringResource(MR.strings.pref_library_update_smart_update),
+                    title = stringResource(ephyra.i18n.R.string.pref_library_update_smart_update),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = libraryPreferences.newShowUpdatesCount(),
-                    title = stringResource(MR.strings.pref_library_update_show_tab_badge),
+                    title = stringResource(ephyra.i18n.R.string.pref_library_update_show_tab_badge),
                 ),
             ),
         )
@@ -225,18 +225,18 @@ object SettingsLibraryScreen : SearchableSettings {
         libraryPreferences: LibraryPreferences,
     ): Preference.PreferenceGroup {
         return Preference.PreferenceGroup(
-            title = stringResource(MR.strings.pref_image_format),
+            title = stringResource(ephyra.i18n.R.string.pref_image_format),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.ListPreference(
                     preference = libraryPreferences.imageFormat(),
                     entries = persistentMapOf(
                         ImageFormat.WEBP to
-                            stringResource(MR.strings.image_format_webp),
+                            stringResource(ephyra.i18n.R.string.image_format_webp),
                         ImageFormat.PNG to
-                            stringResource(MR.strings.image_format_png),
+                            stringResource(ephyra.i18n.R.string.image_format_png),
                     ),
-                    title = stringResource(MR.strings.pref_image_format),
-                    subtitle = stringResource(MR.strings.pref_image_format_summary),
+                    title = stringResource(ephyra.i18n.R.string.pref_image_format),
+                    subtitle = stringResource(ephyra.i18n.R.string.pref_image_format_summary),
                 ),
             ),
         )
@@ -247,49 +247,49 @@ object SettingsLibraryScreen : SearchableSettings {
         libraryPreferences: LibraryPreferences,
     ): Preference.PreferenceGroup {
         return Preference.PreferenceGroup(
-            title = stringResource(MR.strings.pref_behavior),
+            title = stringResource(ephyra.i18n.R.string.pref_behavior),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.ListPreference(
                     preference = libraryPreferences.swipeToStartAction(),
                     entries = persistentMapOf(
                         LibraryPreferences.ChapterSwipeAction.Disabled to
-                            stringResource(MR.strings.disabled),
+                            stringResource(ephyra.i18n.R.string.disabled),
                         LibraryPreferences.ChapterSwipeAction.ToggleBookmark to
-                            stringResource(MR.strings.action_bookmark),
+                            stringResource(ephyra.i18n.R.string.action_bookmark),
                         LibraryPreferences.ChapterSwipeAction.ToggleRead to
-                            stringResource(MR.strings.action_mark_as_read),
+                            stringResource(ephyra.i18n.R.string.action_mark_as_read),
                         LibraryPreferences.ChapterSwipeAction.Download to
-                            stringResource(MR.strings.action_download),
+                            stringResource(ephyra.i18n.R.string.action_download),
                     ),
-                    title = stringResource(MR.strings.pref_chapter_swipe_start),
+                    title = stringResource(ephyra.i18n.R.string.pref_chapter_swipe_start),
                 ),
                 Preference.PreferenceItem.ListPreference(
                     preference = libraryPreferences.swipeToEndAction(),
                     entries = persistentMapOf(
                         LibraryPreferences.ChapterSwipeAction.Disabled to
-                            stringResource(MR.strings.disabled),
+                            stringResource(ephyra.i18n.R.string.disabled),
                         LibraryPreferences.ChapterSwipeAction.ToggleBookmark to
-                            stringResource(MR.strings.action_bookmark),
+                            stringResource(ephyra.i18n.R.string.action_bookmark),
                         LibraryPreferences.ChapterSwipeAction.ToggleRead to
-                            stringResource(MR.strings.action_mark_as_read),
+                            stringResource(ephyra.i18n.R.string.action_mark_as_read),
                         LibraryPreferences.ChapterSwipeAction.Download to
-                            stringResource(MR.strings.action_download),
+                            stringResource(ephyra.i18n.R.string.action_download),
                     ),
-                    title = stringResource(MR.strings.pref_chapter_swipe_end),
+                    title = stringResource(ephyra.i18n.R.string.pref_chapter_swipe_end),
                 ),
                 Preference.PreferenceItem.MultiSelectListPreference(
                     preference = libraryPreferences.markDuplicateReadChapterAsRead(),
                     entries = persistentMapOf(
                         MARK_DUPLICATE_CHAPTER_READ_EXISTING to
-                            stringResource(MR.strings.pref_mark_duplicate_read_chapter_read_existing),
+                            stringResource(ephyra.i18n.R.string.pref_mark_duplicate_read_chapter_read_existing),
                         MARK_DUPLICATE_CHAPTER_READ_NEW to
-                            stringResource(MR.strings.pref_mark_duplicate_read_chapter_read_new),
+                            stringResource(ephyra.i18n.R.string.pref_mark_duplicate_read_chapter_read_new),
                     ),
-                    title = stringResource(MR.strings.pref_mark_duplicate_read_chapter_read),
+                    title = stringResource(ephyra.i18n.R.string.pref_mark_duplicate_read_chapter_read),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = libraryPreferences.hideMissingChapters(),
-                    title = stringResource(MR.strings.pref_hide_missing_chapter_indicators),
+                    title = stringResource(ephyra.i18n.R.string.pref_hide_missing_chapter_indicators),
                 ),
             ),
         )

@@ -43,7 +43,7 @@ fun UpdatesWidget(
             CircularProgressIndicator(color = contentColor)
         } else if (data.isEmpty()) {
             Text(
-                text = stringResource(MR.strings.information_no_recent),
+                text = stringResource(ephyra.i18n.R.string.information_no_recent),
                 style = TextStyle(color = contentColor),
             )
         } else {

@@ -32,12 +32,12 @@ internal class GuidesStep(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
         ) {
-            Text(stringResource(MR.strings.onboarding_guides_new_user, stringResource(MR.strings.app_name)))
+            Text(stringResource(ephyra.i18n.R.string.onboarding_guides_new_user, stringResource(ephyra.i18n.R.string.app_name)))
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = { handler.openUri(GETTING_STARTED_URL) },
             ) {
-                Text(stringResource(MR.strings.getting_started_guide))
+                Text(stringResource(ephyra.i18n.R.string.getting_started_guide))
             }
 
             HorizontalDivider(
@@ -45,12 +45,12 @@ internal class GuidesStep(
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
 
-            Text(stringResource(MR.strings.onboarding_guides_returning_user, stringResource(MR.strings.app_name)))
+            Text(stringResource(ephyra.i18n.R.string.onboarding_guides_returning_user, stringResource(ephyra.i18n.R.string.app_name)))
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = onRestoreBackup,
             ) {
-                Text(stringResource(MR.strings.pref_restore_backup))
+                Text(stringResource(ephyra.i18n.R.string.pref_restore_backup))
             }
         }
     }

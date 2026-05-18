@@ -63,7 +63,7 @@ fun BrowseSourceContent(
         if (mangaList.itemCount > 0 && errorState != null && errorState is LoadState.Error) {
             val result = snackbarHostState.showSnackbar(
                 message = getErrorMessage(errorState),
-                actionLabel = context.stringResource(MR.strings.action_retry),
+                actionLabel = context.stringResource(ephyra.i18n.R.string.action_retry),
                 duration = SnackbarDuration.Indefinite,
             )
             when (result) {
@@ -83,12 +83,12 @@ fun BrowseSourceContent(
             modifier = Modifier.padding(contentPadding),
             message = when (errorState) {
                 is LoadState.Error -> getErrorMessage(errorState)
-                else -> stringResource(MR.strings.no_results_found)
+                else -> stringResource(ephyra.i18n.R.string.no_results_found)
             },
             actions = if (source is LocalSource) {
                 persistentListOf(
                     EmptyScreenAction(
-                        stringRes = MR.strings.local_source_help_guide,
+                        stringRes = ephyra.i18n.R.string.local_source_help_guide,
                         icon = Icons.AutoMirrored.Outlined.HelpOutline,
                         onClick = onLocalSourceHelpClick,
                     ),
@@ -96,17 +96,17 @@ fun BrowseSourceContent(
             } else {
                 persistentListOf(
                     EmptyScreenAction(
-                        stringRes = MR.strings.action_retry,
+                        stringRes = ephyra.i18n.R.string.action_retry,
                         icon = Icons.Outlined.Refresh,
                         onClick = mangaList::refresh,
                     ),
                     EmptyScreenAction(
-                        stringRes = MR.strings.action_open_in_web_view,
+                        stringRes = ephyra.i18n.R.string.action_open_in_web_view,
                         icon = Icons.Outlined.Public,
                         onClick = onWebViewClick,
                     ),
                     EmptyScreenAction(
-                        stringRes = MR.strings.label_help,
+                        stringRes = ephyra.i18n.R.string.label_help,
                         icon = Icons.AutoMirrored.Outlined.HelpOutline,
                         onClick = onHelpClick,
                     ),
@@ -164,7 +164,7 @@ internal fun MissingSourceScreen(
         },
     ) { paddingValues ->
         EmptyScreen(
-            message = stringResource(MR.strings.source_not_installed, source.toString()),
+            message = stringResource(ephyra.i18n.R.string.source_not_installed, source.toString()),
             modifier = Modifier.padding(paddingValues),
         )
     }

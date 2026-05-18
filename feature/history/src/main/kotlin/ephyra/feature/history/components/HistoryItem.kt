@@ -72,7 +72,7 @@ fun HistoryItem(
             Text(
                 text = if (history.chapterNumber > -1) {
                     stringResource(
-                        MR.strings.recent_manga_time,
+                        ephyra.i18n.R.string.recent_manga_time,
                         formatChapterNumber(history.chapterNumber),
                         readAt,
                     )
@@ -88,7 +88,7 @@ fun HistoryItem(
             IconButton(onClick = onClickFavorite) {
                 Icon(
                     imageVector = Icons.Outlined.FavoriteBorder,
-                    contentDescription = stringResource(MR.strings.add_to_library),
+                    contentDescription = stringResource(ephyra.i18n.R.string.add_to_library),
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
@@ -97,7 +97,7 @@ fun HistoryItem(
         IconButton(onClick = onClickDelete) {
             Icon(
                 imageVector = Icons.Outlined.Delete,
-                contentDescription = stringResource(MR.strings.action_delete),
+                contentDescription = stringResource(ephyra.i18n.R.string.action_delete),
                 tint = MaterialTheme.colorScheme.onSurface,
             )
         }
