@@ -1,33 +1,41 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 
 plugins {
-    id("ephyra.library.multiplatform")
+    id("mihon.library.multiplatform")
     kotlin("plugin.serialization")
 }
 
 kotlin {
     android {
-        // Matches your folder structure: ephyra/source/local
-        namespace = "ephyra.source.local"
+        namespace = "tachiyomi.source.local"
 
         optimization {
-            consumerKeepRules.file("consumer-rules.pro")
+            consumerKeepRules.apply {
+                publish = true
+                files.add(project.file("consumer-rules.pro"))
+            }
         }
     }
-
     sourceSets {
-        commonMain.dependencies {
-            implementation(projects.sourceApi)
-            api(projects.i18n)
-            implementation(libs.unifile)
-        }
+        val commonMain by getting {
+            dependencies {
+                implementation(projects.sourceApi)
+                api(projects.i18n)
 
-        androidMain.dependencies {
-            implementation(projects.core.archive)
-            implementation(projects.core.common)
-            implementation(projects.coreMetadata)
-            implementation(projects.domain)
-            implementation(kotlinx.bundles.serialization)
+                implementation(libs.unifile)
+            }
+        }
+        val androidMain by getting {
+            dependencies {
+                implementation(projects.core.archive)
+                implementation(projects.core.common)
+                implementation(projects.coreMetadata)
+
+                // Move ChapterRecognition to separate module?
+                implementation(projects.domain)
+
+                implementation(kotlinx.bundles.serialization)
+            }
         }
     }
 
@@ -39,3 +47,4 @@ kotlin {
         )
     }
 }
+

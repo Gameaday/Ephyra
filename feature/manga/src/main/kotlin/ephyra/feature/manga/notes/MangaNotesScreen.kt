@@ -3,13 +3,13 @@ package ephyra.feature.manga.notes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.koin.koinScreenModel
+import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import ephyra.core.common.di.CoreContainer
 import ephyra.domain.manga.model.Manga
-import ephyra.presentation.core.util.Screen
-import org.koin.core.parameter.parametersOf
-import ephyra.feature.manga.presentation.MangaNotesScreen as MangaNotesContent
+import ephyra.presentation.manga.MangaNotesScreen
+import ephyra.presentation.util.Screen
 
 class MangaNotesScreen(
     private val manga: Manga,
@@ -18,10 +18,15 @@ class MangaNotesScreen(
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
 
-        val screenModel = koinScreenModel<MangaNotesScreenModel> { parametersOf(manga) }
+        val screenModel = rememberScreenModel {
+            MangaNotesScreenModel(
+                manga = manga,
+                updateMangaNotes = CoreContainer.get(),
+            )
+        }
         val state by screenModel.state.collectAsStateWithLifecycle()
 
-        MangaNotesContent(
+        MangaNotesScreen(
             state = state,
             navigateUp = navigator::pop,
             onUpdate = screenModel::updateNotes,

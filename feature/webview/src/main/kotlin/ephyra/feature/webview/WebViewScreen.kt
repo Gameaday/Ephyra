@@ -2,12 +2,13 @@ package ephyra.feature.webview
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
-import cafe.adriel.voyager.koin.koinScreenModel
+import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import ephyra.presentation.core.util.AssistContentScreen
-import ephyra.presentation.core.util.Screen
-import org.koin.core.parameter.parametersOf
+import ephyra.core.common.di.CoreContainer
+import ephyra.presentation.util.AssistContentScreen
+import ephyra.presentation.util.Screen
+import ephyra.presentation.webview.WebViewScreenContent
 
 class WebViewScreen(
     private val url: String,
@@ -23,7 +24,13 @@ class WebViewScreen(
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val context = LocalContext.current
-        val screenModel = koinScreenModel<WebViewScreenModel> { parametersOf(sourceId) }
+        val screenModel = rememberScreenModel {
+            WebViewScreenModel(
+                sourceId = sourceId,
+                sourceManager = CoreContainer.get(),
+                network = CoreContainer.get(),
+            )
+        }
 
         WebViewScreenContent(
             onNavigateUp = { navigator.pop() },

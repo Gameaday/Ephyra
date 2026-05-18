@@ -270,8 +270,6 @@ dependencies {
     // Preferences
     implementation(libs.preferencektx)
 
-    // Dependency injection
-    implementation(libs.bundles.koin)
 
     // Image loading
     implementation(platform(libs.coil.bom))

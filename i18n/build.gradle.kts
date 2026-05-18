@@ -3,7 +3,7 @@ import ephyra.buildlogic.generatedBuildDir
 import ephyra.buildlogic.tasks.getLocalesConfigTask
 
 plugins {
-    id("ephyra.library.multiplatform")
+    id("mihon.library.multiplatform")
     kotlin("plugin.serialization")
     alias(libs.plugins.moko)
 }
@@ -11,8 +11,6 @@ plugins {
 kotlin {
     android {
         namespace = "ephyra.i18n"
-        compileSdk = AndroidConfig.COMPILE_SDK
-        minSdk = AndroidConfig.MIN_SDK
     }
 
     applyDefaultHierarchyTemplate()
@@ -22,6 +20,13 @@ kotlin {
             dependencies {
                 api(libs.moko.core)
             }
+        }
+
+        androidMain {
+            resources.srcDirs(
+                "src/commonMain/resources",
+                generatedBuildDir.resolve("android/res"),
+            )
         }
     }
 
@@ -34,9 +39,10 @@ multiplatformResources {
     resourcesPackage.set("ephyra.i18n")
 }
 
-val generatedAndroidResourceDir = generatedBuildDir.resolve("android/res")
-val localesConfigTask = project.getLocalesConfigTask(generatedAndroidResourceDir)
-
-tasks.matching { it.name == "preBuild" }.configureEach {
-    dependsOn(localesConfigTask)
+tasks {
+    val generatedAndroidResourceDir = generatedBuildDir.resolve("android/res")
+    val localesConfigTask = project.getLocalesConfigTask(generatedAndroidResourceDir)
+    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>> {
+        dependsOn(localesConfigTask)
+    }
 }

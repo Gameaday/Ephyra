@@ -194,15 +194,18 @@ data object LibraryTab : Tab {
                         degradedSourceCount = state.degradedSourceCount,
                         onChangeCurrentPage = screenModel::updateActiveCategoryIndex,
                         onClickManga = { navigator.push(MangaScreen(it)) },
-                        onContinueReadingClicked = { it: LibraryManga ->
+                        onContinueReadingClicked = { it: ILibraryItem ->
                             scope.launchIO {
-                                val chapter = screenModel.getNextUnreadChapter(it.manga)
-                                if (chapter != null) {
-                                    context.startActivity(
-                                        ReaderActivity.newIntent(context, chapter.mangaId, chapter.id),
-                                    )
-                                } else {
-                                    snackbarHostState.showSnackbar(context.stringResource(MR.strings.no_next_chapter))
+                                val libraryManga = (it as? LibraryItem)?.libraryManga
+                                if (libraryManga != null) {
+                                    val chapter = screenModel.getNextUnreadChapter(libraryManga.manga)
+                                    if (chapter != null) {
+                                        context.startActivity(
+                                            ReaderActivity.newIntent(context, chapter.mangaId, chapter.id),
+                                        )
+                                    } else {
+                                        snackbarHostState.showSnackbar(context.stringResource(MR.strings.no_next_chapter))
+                                    }
                                 }
                             }
                             Unit

@@ -2,17 +2,17 @@ package ephyra.feature.browse.extension.details
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.koin.koinScreenModel
+import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import ephyra.core.common.di.CoreContainer
 import ephyra.feature.browse.presentation.ExtensionDetailsScreen
-import ephyra.presentation.core.screens.LoadingScreen
-import ephyra.presentation.core.util.Screen
+import ephyra.presentation.util.Screen
 import kotlinx.coroutines.flow.collectLatest
-import org.koin.core.parameter.parametersOf
+import ephyra.presentation.core.screens.LoadingScreen
 
 data class ExtensionDetailsScreen(
     private val pkgName: String,
@@ -21,7 +21,18 @@ data class ExtensionDetailsScreen(
     @Composable
     override fun Content() {
         val context = LocalContext.current
-        val screenModel = koinScreenModel<ExtensionDetailsScreenModel> { parametersOf(pkgName) }
+        val screenModel = rememberScreenModel {
+            ExtensionDetailsScreenModel(
+                pkgName = pkgName,
+                context = context,
+                network = CoreContainer.get(),
+                extensionManager = CoreContainer.get(),
+                getExtensionSources = CoreContainer.get(),
+                toggleSource = CoreContainer.get(),
+                toggleIncognito = CoreContainer.get(),
+                preferences = CoreContainer.get(),
+            )
+        }
         val state by screenModel.state.collectAsStateWithLifecycle()
 
         if (state.isLoading) {

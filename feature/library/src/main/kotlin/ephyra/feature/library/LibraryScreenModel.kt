@@ -710,7 +710,7 @@ class LibraryScreenModel(
         mutableState.update { it.copy(selection = setOf()) }
     }
 
-    fun toggleSelection(category: Category, manga: LibraryManga) {
+    fun toggleSelection(category: Category, manga: ILibraryItem) {
         mutableState.update { state ->
             val newSelection = state.selection.mutate { set ->
                 if (!set.remove(manga.id)) set.add(manga.id)
@@ -724,7 +724,7 @@ class LibraryScreenModel(
      * Selects all mangas between and including the given manga and the last pressed manga from the
      * same category as the given manga
      */
-    fun toggleRangeSelection(category: Category, manga: LibraryManga) {
+    fun toggleRangeSelection(category: Category, manga: ILibraryItem) {
         mutableState.update { state ->
             val newSelection = state.selection.mutate { list ->
                 val lastSelected = list.lastOrNull()

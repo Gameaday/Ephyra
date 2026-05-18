@@ -1,30 +1,24 @@
 package ephyra.domain.jellyfin.interactor
 
-import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.manga.model.Manga
+import ephyra.domain.chapter.model.Chapter
 
-class SyncJellyfin {
+interface SyncJellyfin {
 
-    suspend fun pushMetadataToJellyfinIfLinked(manga: Manga) {
-        // TODO
-    }
-
-    suspend fun markJellyfinFavoriteIfLinked(manga: Manga, favorite: Boolean) {
-        // TODO
+    enum class SyncAction {
+        SYNC_ALL_TO_JELLYFIN,
+        SYNC_READ_TO_JELLYFIN,
+        SYNC_UNREAD_TO_JELLYFIN
     }
 
     suspend fun syncToJellyfin(
         manga: Manga,
         chapters: List<Chapter>,
         downloadStates: Map<Long, Boolean>,
-        syncAction: SyncAction,
-    ) {
-        // TODO
-    }
+        syncAction: SyncAction
+    )
 
-    enum class SyncAction {
-        ALL,
-        READ,
-        UNREAD,
-    }
+    suspend fun pushMetadataToJellyfinIfLinked(manga: Manga)
+
+    suspend fun markJellyfinFavoriteIfLinked(manga: Manga, favorite: Boolean)
 }

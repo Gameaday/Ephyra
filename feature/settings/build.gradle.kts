@@ -1,6 +1,7 @@
 plugins {
-    id("ephyra.library")
-    id("ephyra.library.compose")
+    id("mihon.library")
+    id("mihon.library.compose")
+
 }
 
 android {
@@ -8,27 +9,12 @@ android {
 }
 
 dependencies {
-    api(projects.core.common)
-    api(projects.domain)
-    api(projects.data)
-    api(projects.i18n)
-    api(projects.presentationCore)
-    implementation(projects.feature.manga)
-    implementation(projects.feature.browse)
-    implementation(projects.feature.category)
+    implementation(projects.core.common)
+    implementation(projects.domain)
+    implementation(projects.data)
+    implementation(projects.i18n)
+    implementation(projects.presentationCore)
 
-    implementation(compose.material3.core)
-    implementation(compose.material.icons)
-    implementation(compose.foundation)
-    implementation(compose.ui.tooling.preview)
-    debugImplementation(compose.ui.tooling)
-
-    api(libs.bundles.voyager)
-    api(libs.koin.core)
-    implementation(libs.koin.android)
-
-    implementation(androidx.profileinstaller)
-    implementation(kotlinx.coroutines.guava)
-    implementation(kotlinx.serialization.protobuf)
-    implementation(libs.aboutLibraries.compose)
+    implementation(libs.bundles.voyager)
 }
+

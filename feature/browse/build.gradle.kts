@@ -1,8 +1,8 @@
 plugins {
-    id("ephyra.library")
-    id("ephyra.library.compose")
+    id("mihon.library")
+    id("mihon.library.compose")
 
-    alias(libs.plugins.koin.compiler)
+    id("com.google.devtools.ksp")
 }
 
 android {
@@ -17,18 +17,10 @@ dependencies {
     api(projects.i18n)
     api(projects.presentationCore)
     api(projects.feature.manga)
-    api(projects.feature.webview)
-    api(projects.feature.category)
-    api(projects.feature.migration)
 
     implementation(libs.logcat)
-    api(libs.bundles.voyager)
-    api(libs.koin.core)
-    implementation(libs.koin.annotations)
+    implementation(libs.bundles.voyager)
 
     testImplementation(libs.bundles.test)
 }
 
-koinCompiler {
-    compileSafety.set(false)
-}

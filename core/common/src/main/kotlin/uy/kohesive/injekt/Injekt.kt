@@ -1,14 +1,11 @@
 package uy.kohesive.injekt
 
-import org.koin.core.context.GlobalContext
-import org.koin.core.parameter.parametersOf
-import org.koin.core.qualifier.qualifier
-import uy.kohesive.injekt.Injekt.get
+import ephyra.core.common.di.CoreContainer
 import kotlin.reflect.KClass
 
 /**
  * A legacy compatibility shim for extensions that still rely on the Injekt service locator.
- * Directs all [get] calls to the modern Koin [GlobalContext].
+ * Directs all [get] calls to the modern, deterministic [CoreContainer].
  */
 object Injekt {
 
@@ -17,23 +14,15 @@ object Injekt {
         qualifier: String? = null,
         noinline parameters: (() -> Any)? = null,
     ): T {
-        return GlobalContext.get().get(
-            clazz = T::class,
-            qualifier = qualifier?.let { qualifier(it) },
-            parameters = parameters?.let { { parametersOf(it()) } },
-        )
+        return CoreContainer.get(T::class.java)
     }
 
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> get(
         clazz: KClass<T>,
         qualifier: String? = null,
-        parameters: (() -> Any)? = null,
+        noinline parameters: (() -> Any)? = null,
     ): T {
-        return GlobalContext.get().get(
-            clazz = clazz,
-            qualifier = qualifier?.let { qualifier(it) },
-            parameters = parameters?.let { { parametersOf(it()) } },
-        )
+        return CoreContainer.get(clazz.java)
     }
 }

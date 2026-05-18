@@ -1,6 +1,8 @@
 plugins {
-    id("ephyra.library")
-    id("ephyra.library.compose")
+    id("mihon.library")
+    id("mihon.library.compose")
+
+    id("com.google.devtools.ksp")
 }
 
 android {
@@ -8,11 +10,10 @@ android {
 }
 
 dependencies {
-    // Internal project dependencies
     api(projects.core.common)
     api(projects.domain)
+    api(projects.data)
+    api(projects.sourceApi)
+    api(projects.i18n)
     api(projects.presentationCore)
-
-    // Dependency Injection (Koin)
-    api(libs.koin.core)
 }
