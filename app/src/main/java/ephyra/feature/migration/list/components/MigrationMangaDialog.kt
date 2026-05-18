@@ -21,9 +21,9 @@ fun MigrationMangaDialog(
             Text(
                 text = pluralStringResource(
                     resource = if (copy) {
-                        ephyra.i18n.R.plurals.migrationListScreen_migrateDialog_copyTitle
+                        ephyra.app.core.common.R.plurals.migrationListScreen_migrateDialog_copyTitle
                     } else {
-                        ephyra.i18n.R.plurals.migrationListScreen_migrateDialog_migrateTitle
+                        ephyra.app.core.common.R.plurals.migrationListScreen_migrateDialog_migrateTitle
                     },
                     count = totalCount,
                     totalCount,
@@ -34,7 +34,7 @@ fun MigrationMangaDialog(
             if (skippedCount > 0) {
                 Text(
                     text = pluralStringResource(
-                        resource = ephyra.i18n.R.plurals.migrationListScreen_migrateDialog_skipText,
+                        resource = ephyra.app.core.common.R.plurals.migrationListScreen_migrateDialog_skipText,
                         count = skippedCount,
                         skippedCount,
                     ),
@@ -46,9 +46,9 @@ fun MigrationMangaDialog(
                 Text(
                     text = stringResource(
                         resource = if (copy) {
-                            ephyra.i18n.R.string.migrationListScreen_migrateDialog_copyLabel
+                            ephyra.app.core.common.R.string.migrationListScreen_migrateDialog_copyLabel
                         } else {
-                            ephyra.i18n.R.string.migrationListScreen_migrateDialog_migrateLabel
+                            ephyra.app.core.common.R.string.migrationListScreen_migrateDialog_migrateLabel
                         },
                     ),
                 )
@@ -56,7 +56,7 @@ fun MigrationMangaDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(ephyra.i18n.R.string.migrationListScreen_migrateDialog_cancelLabel))
+                Text(text = stringResource(ephyra.app.core.common.R.string.migrationListScreen_migrateDialog_cancelLabel))
             }
         },
     )

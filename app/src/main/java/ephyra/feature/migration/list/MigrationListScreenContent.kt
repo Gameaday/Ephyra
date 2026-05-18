@@ -90,21 +90,21 @@ fun MigrationListScreenContent(
         topBar = { scrollBehavior ->
             AppBar(
                 title = if (items.isNotEmpty()) {
-                    stringResource(ephyra.i18n.R.string.migrationListScreenTitleWithProgress, finishedCount, items.size)
+                    stringResource(ephyra.app.core.common.R.string.migrationListScreenTitleWithProgress, finishedCount, items.size)
                 } else {
-                    stringResource(ephyra.i18n.R.string.migrationListScreenTitle)
+                    stringResource(ephyra.app.core.common.R.string.migrationListScreenTitle)
                 },
                 actions = {
                     AppBarActions(
                         persistentListOf(
                             AppBar.Action(
-                                title = stringResource(ephyra.i18n.R.string.migrationListScreen_copyActionLabel),
+                                title = stringResource(ephyra.app.core.common.R.string.migrationListScreen_copyActionLabel),
                                 icon = if (items.size == 1) Icons.Outlined.ContentCopy else Icons.Outlined.CopyAll,
                                 onClick = { openMigrationDialog(true) },
                                 enabled = migrationComplete,
                             ),
                             AppBar.Action(
-                                title = stringResource(ephyra.i18n.R.string.migrationListScreen_migrateActionLabel),
+                                title = stringResource(ephyra.app.core.common.R.string.migrationListScreen_migrateActionLabel),
                                 icon = if (items.size == 1) Icons.Outlined.Done else Icons.Outlined.DoneAll,
                                 onClick = { openMigrationDialog(false) },
                                 enabled = migrationComplete,
@@ -241,8 +241,8 @@ fun MigrationListItem(
             }
             Text(
                 text = stringResource(
-                    ephyra.i18n.R.string.migrationListScreen_latestChapterLabel,
-                    formattedLatestChapters ?: stringResource(ephyra.i18n.R.string.migrationListScreen_unknownLatestChapter),
+                    ephyra.app.core.common.R.string.migrationListScreen_latestChapterLabel,
+                    formattedLatestChapters ?: stringResource(ephyra.app.core.common.R.string.migrationListScreen_unknownLatestChapter),
                 ),
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 1,
@@ -299,7 +299,7 @@ fun MigrationListItemResult(
                             contentScale = ContentScale.Crop,
                         )
                         Text(
-                            text = stringResource(ephyra.i18n.R.string.migrationListScreen_noMatchFoundText),
+                            text = stringResource(ephyra.app.core.common.R.string.migrationListScreen_noMatchFoundText),
                             modifier = Modifier.padding(MaterialTheme.padding.extraSmall),
                             style = MaterialTheme.typography.titleSmall,
                         )
@@ -319,7 +319,7 @@ fun MigrationListItemResult(
                             val confidencePercent = (targetResult.matchConfidence * 100).toInt()
                             Text(
                                 text = stringResource(
-                                    ephyra.i18n.R.string.migration_match_confidence,
+                                    ephyra.app.core.common.R.string.migration_match_confidence,
                                     confidencePercent,
                                 ),
                                 modifier = Modifier.padding(
@@ -375,14 +375,14 @@ private fun MigrationListItemAction(
                     offset = DpOffset(8.dp, (-56).dp),
                 ) {
                     DropdownMenuItem(
-                        text = { Text(stringResource(ephyra.i18n.R.string.migrationListScreen_searchManuallyActionLabel)) },
+                        text = { Text(stringResource(ephyra.app.core.common.R.string.migrationListScreen_searchManuallyActionLabel)) },
                         onClick = {
                             closeMenu()
                             onSearchManually()
                         },
                     )
                     DropdownMenuItem(
-                        text = { Text(stringResource(ephyra.i18n.R.string.migrationListScreen_skipActionLabel)) },
+                        text = { Text(stringResource(ephyra.app.core.common.R.string.migrationListScreen_skipActionLabel)) },
                         onClick = {
                             closeMenu()
                             onSkip()
@@ -390,14 +390,14 @@ private fun MigrationListItemAction(
                     )
                     if (result is MigratingManga.SearchResult.Success) {
                         DropdownMenuItem(
-                            text = { Text(stringResource(ephyra.i18n.R.string.migrationListScreen_migrateNowActionLabel)) },
+                            text = { Text(stringResource(ephyra.app.core.common.R.string.migrationListScreen_migrateNowActionLabel)) },
                             onClick = {
                                 closeMenu()
                                 onMigrate()
                             },
                         )
                         DropdownMenuItem(
-                            text = { Text(stringResource(ephyra.i18n.R.string.migrationListScreen_copyNowActionLabel)) },
+                            text = { Text(stringResource(ephyra.app.core.common.R.string.migrationListScreen_copyNowActionLabel)) },
                             onClick = {
                                 closeMenu()
                                 onCopy()

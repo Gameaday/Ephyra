@@ -44,7 +44,7 @@ internal fun InfoWidget(text: String) {
 private fun InfoWidgetPreview() {
     TachiyomiPreviewTheme {
         Surface {
-            InfoWidget(text = stringResource(ephyra.i18n.R.string.download_ahead_info))
+            InfoWidget(text = stringResource(ephyra.app.core.common.R.string.download_ahead_info))
         }
     }
 }

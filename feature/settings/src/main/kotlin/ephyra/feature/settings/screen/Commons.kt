@@ -33,15 +33,15 @@ fun getCategoriesLabel(
         includedCategories.isNotEmpty() && includedCategories.size != allCategories.size ->
             includedCategories.joinToString { it.visualName(context) }
         // All explicitly selected
-        includedCategories.size == allCategories.size -> stringResource(ephyra.i18n.R.string.all)
-        allExcluded -> stringResource(ephyra.i18n.R.string.none)
-        else -> stringResource(ephyra.i18n.R.string.all)
+        includedCategories.size == allCategories.size -> stringResource(ephyra.app.core.common.R.string.all)
+        allExcluded -> stringResource(ephyra.app.core.common.R.string.none)
+        else -> stringResource(ephyra.app.core.common.R.string.all)
     }
     val excludedItemsText = when {
-        excludedCategories.isEmpty() -> stringResource(ephyra.i18n.R.string.none)
-        allExcluded -> stringResource(ephyra.i18n.R.string.all)
+        excludedCategories.isEmpty() -> stringResource(ephyra.app.core.common.R.string.none)
+        allExcluded -> stringResource(ephyra.app.core.common.R.string.all)
         else -> excludedCategories.joinToString { it.visualName(context) }
     }
-    return stringResource(ephyra.i18n.R.string.include, includedItemsText) + "\n" +
-        stringResource(ephyra.i18n.R.string.exclude, excludedItemsText)
+    return stringResource(ephyra.app.core.common.R.string.include, includedItemsText) + "\n" +
+        stringResource(ephyra.app.core.common.R.string.exclude, excludedItemsText)
 }

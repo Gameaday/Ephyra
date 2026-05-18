@@ -47,13 +47,13 @@ fun OnboardingScreen(
 
     InfoScreen(
         icon = Icons.Outlined.RocketLaunch,
-        headingText = stringResource(ephyra.i18n.R.string.onboarding_heading),
-        subtitleText = stringResource(ephyra.i18n.R.string.onboarding_description),
+        headingText = stringResource(ephyra.app.core.common.R.string.onboarding_heading),
+        subtitleText = stringResource(ephyra.app.core.common.R.string.onboarding_description),
         acceptText = stringResource(
             if (isLastStep) {
-                ephyra.i18n.R.string.onboarding_action_finish
+                ephyra.app.core.common.R.string.onboarding_action_finish
             } else {
-                ephyra.i18n.R.string.onboarding_action_next
+                ephyra.app.core.common.R.string.onboarding_action_next
             },
         ),
         canAccept = steps[currentStep].isComplete,

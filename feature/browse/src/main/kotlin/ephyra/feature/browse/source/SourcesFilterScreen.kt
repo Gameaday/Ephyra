@@ -29,7 +29,7 @@ class SourcesFilterScreen : Screen() {
         if (state is SourcesFilterScreenModel.State.Error) {
             val context = LocalContext.current
             LaunchedEffect(Unit) {
-                context.toast(ephyra.i18n.R.string.internal_error)
+                context.toast(ephyra.app.core.common.R.string.internal_error)
                 navigator.pop()
             }
             return

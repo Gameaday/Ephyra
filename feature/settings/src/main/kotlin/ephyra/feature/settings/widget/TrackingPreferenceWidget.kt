@@ -63,7 +63,7 @@ fun TrackingPreferenceWidget(
                         .padding(4.dp)
                         .size(32.dp),
                     tint = MaterialTheme.colorScheme.primary,
-                    contentDescription = stringResource(ephyra.i18n.R.string.login_success),
+                    contentDescription = stringResource(ephyra.app.core.common.R.string.login_success),
                 )
             }
         }

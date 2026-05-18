@@ -51,11 +51,11 @@ class Kitsu(
     }
 
     override fun getStatus(status: Long): Int? = when (status) {
-        READING -> ephyra.i18n.R.string.reading
-        PLAN_TO_READ -> ephyra.i18n.R.string.plan_to_read
-        COMPLETED -> ephyra.i18n.R.string.completed
-        ON_HOLD -> ephyra.i18n.R.string.on_hold
-        DROPPED -> ephyra.i18n.R.string.dropped
+        READING -> ephyra.app.core.common.R.string.reading
+        PLAN_TO_READ -> ephyra.app.core.common.R.string.plan_to_read
+        COMPLETED -> ephyra.app.core.common.R.string.completed
+        ON_HOLD -> ephyra.app.core.common.R.string.on_hold
+        DROPPED -> ephyra.app.core.common.R.string.dropped
         else -> null
     }
 

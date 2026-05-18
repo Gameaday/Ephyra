@@ -98,21 +98,21 @@ private fun LibraryRegularToolbar(
             AppBarActions(
                 persistentListOf(
                     AppBar.Action(
-                        title = stringResource(ephyra.i18n.R.string.action_filter),
+                        title = stringResource(ephyra.app.core.common.R.string.action_filter),
                         icon = Icons.Outlined.FilterList,
                         iconTint = filterTint,
                         onClick = onClickFilter,
                     ),
                     AppBar.OverflowAction(
-                        title = stringResource(ephyra.i18n.R.string.action_update_library),
+                        title = stringResource(ephyra.app.core.common.R.string.action_update_library),
                         onClick = onClickGlobalUpdate,
                     ),
                     AppBar.OverflowAction(
-                        title = stringResource(ephyra.i18n.R.string.action_update_category),
+                        title = stringResource(ephyra.app.core.common.R.string.action_update_category),
                         onClick = onClickRefresh,
                     ),
                     AppBar.OverflowAction(
-                        title = stringResource(ephyra.i18n.R.string.action_open_random_manga),
+                        title = stringResource(ephyra.app.core.common.R.string.action_open_random_manga),
                         onClick = onClickOpenRandomManga,
                     ),
                 ),
@@ -135,12 +135,12 @@ private fun LibrarySelectionToolbar(
             AppBarActions(
                 persistentListOf(
                     AppBar.Action(
-                        title = stringResource(ephyra.i18n.R.string.action_select_all),
+                        title = stringResource(ephyra.app.core.common.R.string.action_select_all),
                         icon = Icons.Outlined.SelectAll,
                         onClick = onClickSelectAll,
                     ),
                     AppBar.Action(
-                        title = stringResource(ephyra.i18n.R.string.action_select_inverse),
+                        title = stringResource(ephyra.app.core.common.R.string.action_select_inverse),
                         icon = Icons.Outlined.FlipToBack,
                         onClick = onClickInvertSelection,
                     ),

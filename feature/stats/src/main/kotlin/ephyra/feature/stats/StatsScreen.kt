@@ -24,7 +24,7 @@ class StatsScreen : Screen() {
         Scaffold(
             topBar = { scrollBehavior ->
                 AppBar(
-                    title = stringResource(ephyra.i18n.R.string.label_stats),
+                    title = stringResource(ephyra.app.core.common.R.string.label_stats),
                     navigateUp = navigator::pop,
                     scrollBehavior = scrollBehavior,
                 )

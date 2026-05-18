@@ -185,7 +185,6 @@ kotlin {
 }
 
 dependencies {
-    implementation(projects.i18n)
     implementation(projects.core.archive)
     implementation(projects.core.common)
     implementation(projects.core.data)
@@ -270,7 +269,6 @@ dependencies {
 
     // Preferences
     implementation(libs.preferencektx)
-
 
     // Image loading
     implementation(platform(libs.coil.bom))

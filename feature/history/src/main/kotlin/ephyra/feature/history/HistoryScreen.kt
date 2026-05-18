@@ -42,14 +42,14 @@ fun HistoryScreen(
     Scaffold(
         topBar = { scrollBehavior ->
             SearchToolbar(
-                titleContent = { AppBarTitle(stringResource(ephyra.i18n.R.string.history)) },
+                titleContent = { AppBarTitle(stringResource(ephyra.app.core.common.R.string.history)) },
                 searchQuery = state.searchQuery,
                 onChangeSearchQuery = onSearchQueryChange,
                 actions = {
                     AppBarActions(
                         persistentListOf(
                             AppBar.Action(
-                                title = stringResource(ephyra.i18n.R.string.pref_clear_history),
+                                title = stringResource(ephyra.app.core.common.R.string.pref_clear_history),
                                 icon = Icons.Outlined.DeleteSweep,
                                 onClick = {
                                     onDialogChange(HistoryScreenModel.Dialog.DeleteAll)
@@ -68,9 +68,9 @@ fun HistoryScreen(
                 LoadingScreen(Modifier.padding(contentPadding))
             } else if (it.isEmpty()) {
                 val msg = if (!state.searchQuery.isNullOrEmpty()) {
-                    ephyra.i18n.R.string.no_results_found
+                    ephyra.app.core.common.R.string.no_results_found
                 } else {
-                    ephyra.i18n.R.string.information_no_recent_manga
+                    ephyra.app.core.common.R.string.information_no_recent_manga
                 }
                 EmptyScreen(
                     stringRes = msg,

@@ -18,16 +18,16 @@ import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.core.util.system.hasDisplayCutout
 
 private val themes = listOf(
-    ephyra.i18n.R.string.black_background to 1,
-    ephyra.i18n.R.string.gray_background to 2,
-    ephyra.i18n.R.string.white_background to 0,
-    ephyra.i18n.R.string.automatic_background to 3,
+    ephyra.app.core.common.R.string.black_background to 1,
+    ephyra.app.core.common.R.string.gray_background to 2,
+    ephyra.app.core.common.R.string.white_background to 0,
+    ephyra.app.core.common.R.string.automatic_background to 3,
 )
 
 private val flashColors = listOf(
-    ephyra.i18n.R.string.pref_flash_style_black to ReaderPreferences.FlashColor.BLACK,
-    ephyra.i18n.R.string.pref_flash_style_white to ReaderPreferences.FlashColor.WHITE,
-    ephyra.i18n.R.string.pref_flash_style_white_black to ReaderPreferences.FlashColor.WHITE_BLACK,
+    ephyra.app.core.common.R.string.pref_flash_style_black to ReaderPreferences.FlashColor.BLACK,
+    ephyra.app.core.common.R.string.pref_flash_style_white to ReaderPreferences.FlashColor.WHITE,
+    ephyra.app.core.common.R.string.pref_flash_style_white_black to ReaderPreferences.FlashColor.WHITE_BLACK,
 )
 
 @Composable
@@ -45,7 +45,7 @@ internal fun ColumnScope.GeneralPage(screenModel: ReaderSettingsScreenModel) {
     val flashColorPref = screenModel.preferences.flashColor()
     val flashColor by flashColorPref.collectAsState()
 
-    SettingsChipRow(ephyra.i18n.R.string.pref_reader_theme) {
+    SettingsChipRow(ephyra.app.core.common.R.string.pref_reader_theme) {
         themes.map { (labelRes, value) ->
             FilterChip(
                 selected = readerTheme == value,
@@ -56,82 +56,82 @@ internal fun ColumnScope.GeneralPage(screenModel: ReaderSettingsScreenModel) {
     }
 
     CheckboxItem(
-        label = stringResource(ephyra.i18n.R.string.pref_show_page_number),
+        label = stringResource(ephyra.app.core.common.R.string.pref_show_page_number),
         pref = screenModel.preferences.showPageNumber(),
     )
 
     CheckboxItem(
-        label = stringResource(ephyra.i18n.R.string.pref_fullscreen),
+        label = stringResource(ephyra.app.core.common.R.string.pref_fullscreen),
         pref = screenModel.preferences.fullscreen(),
     )
 
     val isFullscreen by screenModel.preferences.fullscreen().collectAsState()
     if (LocalActivity.current?.hasDisplayCutout() == true && isFullscreen) {
         CheckboxItem(
-            label = stringResource(ephyra.i18n.R.string.pref_cutout_short),
+            label = stringResource(ephyra.app.core.common.R.string.pref_cutout_short),
             pref = screenModel.preferences.drawUnderCutout(),
         )
     }
 
     CheckboxItem(
-        label = stringResource(ephyra.i18n.R.string.pref_keep_screen_on),
+        label = stringResource(ephyra.app.core.common.R.string.pref_keep_screen_on),
         pref = screenModel.preferences.keepScreenOn(),
     )
 
     CheckboxItem(
-        label = stringResource(ephyra.i18n.R.string.pref_read_with_long_tap),
+        label = stringResource(ephyra.app.core.common.R.string.pref_read_with_long_tap),
         pref = screenModel.preferences.readWithLongTap(),
     )
 
     CheckboxItem(
-        label = stringResource(ephyra.i18n.R.string.pref_always_show_chapter_transition),
+        label = stringResource(ephyra.app.core.common.R.string.pref_always_show_chapter_transition),
         pref = screenModel.preferences.alwaysShowChapterTransition(),
     )
 
     CheckboxItem(
-        label = stringResource(ephyra.i18n.R.string.pref_page_transitions),
+        label = stringResource(ephyra.app.core.common.R.string.pref_page_transitions),
         pref = screenModel.preferences.pageTransitions(),
     )
 
     val sliderNavModePref = screenModel.preferences.sliderNavMode()
     val sliderNavMode by sliderNavModePref.collectAsState()
-    SettingsChipRow(ephyra.i18n.R.string.pref_slider_nav_mode) {
+    SettingsChipRow(ephyra.app.core.common.R.string.pref_slider_nav_mode) {
         FilterChip(
             selected = sliderNavMode == ReaderPreferences.SLIDER_NAV_INSTANT,
             onClick = { sliderNavModePref.set(ReaderPreferences.SLIDER_NAV_INSTANT) },
-            label = { Text(stringResource(ephyra.i18n.R.string.slider_nav_instant)) },
+            label = { Text(stringResource(ephyra.app.core.common.R.string.slider_nav_instant)) },
         )
         FilterChip(
             selected = sliderNavMode == ReaderPreferences.SLIDER_NAV_SMOOTH,
             onClick = { sliderNavModePref.set(ReaderPreferences.SLIDER_NAV_SMOOTH) },
-            label = { Text(stringResource(ephyra.i18n.R.string.slider_nav_smooth)) },
+            label = { Text(stringResource(ephyra.app.core.common.R.string.slider_nav_smooth)) },
         )
     }
 
     CheckboxItem(
-        label = stringResource(ephyra.i18n.R.string.pref_flash_page),
+        label = stringResource(ephyra.app.core.common.R.string.pref_flash_page),
         pref = screenModel.preferences.flashOnPageChange(),
     )
     if (flashPageState) {
         SliderItem(
             value = flashMillis / ReaderPreferences.MILLI_CONVERSION,
             valueRange = 1..15,
-            label = stringResource(ephyra.i18n.R.string.pref_flash_duration),
-            valueString = stringResource(ephyra.i18n.R.string.pref_flash_duration_summary, flashMillis),
+            label = stringResource(ephyra.app.core.common.R.string.pref_flash_duration),
+            valueString = stringResource(ephyra.app.core.common.R.string.pref_flash_duration_summary, flashMillis),
             onChange = { flashMillisPref.set(it * ReaderPreferences.MILLI_CONVERSION) },
             pillColor = MaterialTheme.colorScheme.surfaceContainerHighest,
         )
         SliderItem(
             value = flashInterval,
             valueRange = 1..10,
-            label = stringResource(ephyra.i18n.R.string.pref_flash_page_interval),
-            valueString = pluralStringResource(ephyra.i18n.R.plurals.pref_pages, flashInterval, flashInterval),
+            label = stringResource(ephyra.app.core.common.R.string.pref_flash_page_interval),
+            valueString = pluralStringResource(ephyra.app.core.common.R.plurals.pref_pages, flashInterval, flashInterval),
             onChange = {
                 flashIntervalPref.set(it)
             },
             pillColor = MaterialTheme.colorScheme.surfaceContainerHighest,
         )
-        SettingsChipRow(ephyra.i18n.R.string.pref_flash_with) {
+        SettingsChipRow(ephyra.app.core.common.R.string.pref_flash_with) {
             flashColors.map { (labelRes, value) ->
                 FilterChip(
                     selected = flashColor == value,

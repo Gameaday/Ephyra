@@ -92,7 +92,7 @@ private fun ExtensionRepoListItem(
             IconButton(onClick = onOpenWebsite) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Outlined.OpenInNew,
-                    contentDescription = stringResource(ephyra.i18n.R.string.action_open_in_browser),
+                    contentDescription = stringResource(ephyra.app.core.common.R.string.action_open_in_browser),
                 )
             }
 
@@ -104,14 +104,14 @@ private fun ExtensionRepoListItem(
             ) {
                 Icon(
                     imageVector = Icons.Outlined.ContentCopy,
-                    contentDescription = stringResource(ephyra.i18n.R.string.action_copy_to_clipboard),
+                    contentDescription = stringResource(ephyra.app.core.common.R.string.action_copy_to_clipboard),
                 )
             }
 
             IconButton(onClick = onDelete) {
                 Icon(
                     imageVector = Icons.Outlined.Delete,
-                    contentDescription = stringResource(ephyra.i18n.R.string.action_delete),
+                    contentDescription = stringResource(ephyra.app.core.common.R.string.action_delete),
                 )
             }
         }

@@ -57,7 +57,7 @@ private fun IndexingBanner() {
             strokeWidth = 2.dp,
         )
         Text(
-            text = stringResource(ephyra.i18n.R.string.loading),
+            text = stringResource(ephyra.app.core.common.R.string.loading),
             style = MaterialTheme.typography.labelMedium,
             color = Color.White,
         )
@@ -67,7 +67,7 @@ private fun IndexingBanner() {
 @Composable
 private fun DownloadedOnlyModeBanner() {
     Text(
-        text = stringResource(ephyra.i18n.R.string.label_downloaded_only),
+        text = stringResource(ephyra.app.core.common.R.string.label_downloaded_only),
         modifier = Modifier
             .fillMaxWidth()
             .background(DownloadedOnlyBannerBackgroundColor)
@@ -80,7 +80,7 @@ private fun DownloadedOnlyModeBanner() {
 @Composable
 private fun IncognitoModeBanner() {
     Text(
-        text = stringResource(ephyra.i18n.R.string.pref_incognito_mode),
+        text = stringResource(ephyra.app.core.common.R.string.pref_incognito_mode),
         modifier = Modifier
             .fillMaxWidth()
             .background(IncognitoModeBannerBackgroundColor)

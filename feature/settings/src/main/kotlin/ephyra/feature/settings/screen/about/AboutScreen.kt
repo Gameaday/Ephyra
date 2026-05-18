@@ -91,7 +91,7 @@ object AboutScreen : Screen() {
         Scaffold(
             topBar = { scrollBehavior ->
                 AppBar(
-                    title = stringResource(ephyra.i18n.R.string.pref_category_about),
+                    title = stringResource(ephyra.app.core.common.R.string.pref_category_about),
                     navigateUp = if (handleBack != null) handleBack::invoke else null,
                     scrollBehavior = scrollBehavior,
                 )
@@ -106,7 +106,7 @@ object AboutScreen : Screen() {
 
                 item {
                     TextPreferenceWidget(
-                        title = stringResource(ephyra.i18n.R.string.version),
+                        title = stringResource(ephyra.app.core.common.R.string.version),
                         subtitle = screenModel.getVersionName(withBuildDate = true),
                         onPreferenceClick = {
                             val deviceInfo = CrashLogUtil(context, extensionManager).getDebugInfo()
@@ -118,7 +118,7 @@ object AboutScreen : Screen() {
                 if (appInfo.updaterEnabled) {
                     item {
                         TextPreferenceWidget(
-                            title = stringResource(ephyra.i18n.R.string.check_for_updates),
+                            title = stringResource(ephyra.app.core.common.R.string.check_for_updates),
                             widget = {
                                 AnimatedVisibility(visible = state.isCheckingUpdates) {
                                     CircularProgressIndicator(
@@ -135,7 +135,7 @@ object AboutScreen : Screen() {
                 if (!appInfo.isDebug) {
                     item {
                         TextPreferenceWidget(
-                            title = stringResource(ephyra.i18n.R.string.whats_new),
+                            title = stringResource(ephyra.app.core.common.R.string.whats_new),
                             onPreferenceClick = { uriHandler.openUri(appInfo.releaseUrl) },
                         )
                     }
@@ -143,14 +143,14 @@ object AboutScreen : Screen() {
 
                 item {
                     TextPreferenceWidget(
-                        title = stringResource(ephyra.i18n.R.string.licenses),
+                        title = stringResource(ephyra.app.core.common.R.string.licenses),
                         onPreferenceClick = { navigator.push(OpenSourceLicensesScreen()) },
                     )
                 }
 
                 item {
                     TextPreferenceWidget(
-                        title = stringResource(ephyra.i18n.R.string.privacy_policy),
+                        title = stringResource(ephyra.app.core.common.R.string.privacy_policy),
                         onPreferenceClick = {
                             uriHandler.openUri("https://github.com/Gameaday/Ephyra/blob/main/PRIVACY.md")
                         },
@@ -165,7 +165,7 @@ object AboutScreen : Screen() {
                         horizontalArrangement = Arrangement.Center,
                     ) {
                         LinkIcon(
-                            label = stringResource(ephyra.i18n.R.string.website),
+                            label = stringResource(ephyra.app.core.common.R.string.website),
                             icon = Icons.Outlined.Public,
                             url = "https://github.com/Gameaday/Ephyra",
                         )

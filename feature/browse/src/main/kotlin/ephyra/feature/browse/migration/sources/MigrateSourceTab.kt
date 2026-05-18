@@ -25,10 +25,10 @@ fun Screen.migrateSourceTab(): TabContent {
     val state by screenModel.state.collectAsStateWithLifecycle()
 
     return TabContent(
-        titleRes = ephyra.i18n.R.string.label_migration,
+        titleRes = ephyra.app.core.common.R.string.label_migration,
         actions = persistentListOf(
             AppBar.Action(
-                title = stringResource(ephyra.i18n.R.string.migration_help_guide),
+                title = stringResource(ephyra.app.core.common.R.string.migration_help_guide),
                 icon = Icons.AutoMirrored.Outlined.HelpOutline,
                 onClick = {
                     uriHandler.openUri("https://ephyra.app/docs/guides/source-migration")

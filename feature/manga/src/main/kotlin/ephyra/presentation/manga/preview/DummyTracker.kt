@@ -23,12 +23,12 @@ internal data class DummyTracker(
     override fun getStatusList(): List<Long> = (1L..6L).toList()
 
     override fun getStatus(status: Long): Int? = when (status) {
-        1L -> ephyra.i18n.R.string.reading
-        2L -> ephyra.i18n.R.string.plan_to_read
-        3L -> ephyra.i18n.R.string.completed
-        4L -> ephyra.i18n.R.string.on_hold
-        5L -> ephyra.i18n.R.string.dropped
-        6L -> ephyra.i18n.R.string.repeating
+        1L -> ephyra.app.core.common.R.string.reading
+        2L -> ephyra.app.core.common.R.string.plan_to_read
+        3L -> ephyra.app.core.common.R.string.completed
+        4L -> ephyra.app.core.common.R.string.on_hold
+        5L -> ephyra.app.core.common.R.string.dropped
+        6L -> ephyra.app.core.common.R.string.repeating
         else -> null
     }
 

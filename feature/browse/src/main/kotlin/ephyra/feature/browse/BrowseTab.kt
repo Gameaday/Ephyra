@@ -39,7 +39,7 @@ data object BrowseTab : Tab {
             val image = AnimatedImageVector.animatedVectorResource(R.drawable.anim_browse_enter)
             return TabOptions(
                 index = 3u,
-                title = stringResource(ephyra.i18n.R.string.label_discover),
+                title = stringResource(ephyra.app.core.common.R.string.label_discover),
                 icon = rememberAnimatedVectorPainter(image, isSelected),
             )
         }
@@ -72,7 +72,7 @@ data object BrowseTab : Tab {
         val state = rememberPagerState { tabs.size }
 
         TabbedScreen(
-            titleRes = ephyra.i18n.R.string.label_discover,
+            titleRes = ephyra.app.core.common.R.string.label_discover,
             tabs = tabs,
             state = state,
             searchQuery = extensionsState.searchQuery,

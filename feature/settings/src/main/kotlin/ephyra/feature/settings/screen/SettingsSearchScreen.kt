@@ -119,7 +119,7 @@ class SettingsSearchScreen : Screen() {
                                 decorator = {
                                     if (textFieldState.text.isEmpty()) {
                                         Text(
-                                            text = stringResource(ephyra.i18n.R.string.action_search_settings),
+                                            text = stringResource(ephyra.app.core.common.R.string.action_search_settings),
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             style = MaterialTheme.typography.bodyLarge,
                                         )
@@ -237,7 +237,7 @@ private fun SearchResult(
         when {
             it == null -> {}
             it.isEmpty() -> {
-                EmptyScreen(stringResource(ephyra.i18n.R.string.no_results_found))
+                EmptyScreen(stringResource(ephyra.app.core.common.R.string.no_results_found))
             }
 
             else -> {

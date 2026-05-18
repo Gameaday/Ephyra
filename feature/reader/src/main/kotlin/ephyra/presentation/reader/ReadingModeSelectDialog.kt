@@ -59,7 +59,7 @@ private fun DialogContent(
         onUseDefault = { onChangeReadingMode(ReadingMode.DEFAULT) }.takeIf { readingMode != ReadingMode.DEFAULT },
         onApply = { onChangeReadingMode(selected) },
     ) {
-        SettingsIconGrid(ephyra.i18n.R.string.pref_category_reading_mode) {
+        SettingsIconGrid(ephyra.app.core.common.R.string.pref_category_reading_mode) {
             items(ReadingModesWithoutDefault) { mode ->
                 IconToggleButton(
                     checked = mode == selected,

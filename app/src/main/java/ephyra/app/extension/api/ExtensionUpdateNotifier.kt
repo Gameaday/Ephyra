@@ -21,7 +21,7 @@ class ExtensionUpdateNotifier(
         ) {
             setContentTitle(
                 context.pluralStringResource(
-                    ephyra.i18n.R.plurals.update_check_notification_ext_updates,
+                    ephyra.app.core.common.R.plurals.update_check_notification_ext_updates,
                     names.size,
                     names.size,
                 ),

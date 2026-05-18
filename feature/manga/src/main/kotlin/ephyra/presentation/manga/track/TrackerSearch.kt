@@ -132,7 +132,7 @@ fun TrackerSearch(
                             decorator = {
                                 if (state.text.isEmpty()) {
                                     Text(
-                                        text = stringResource(ephyra.i18n.R.string.action_search_hint),
+                                        text = stringResource(ephyra.app.core.common.R.string.action_search_hint),
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         style = MaterialTheme.typography.bodyLarge,
                                     )
@@ -179,7 +179,7 @@ fun TrackerSearch(
                         modifier = Modifier.weight(1f),
                         elevation = ButtonDefaults.elevatedButtonElevation(),
                     ) {
-                        Text(text = stringResource(ephyra.i18n.R.string.action_track))
+                        Text(text = stringResource(ephyra.app.core.common.R.string.action_track))
                     }
                     if (supportsPrivateTracking) {
                         Button(
@@ -188,7 +188,7 @@ fun TrackerSearch(
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.VisibilityOff,
-                                contentDescription = stringResource(ephyra.i18n.R.string.action_toggle_private_on),
+                                contentDescription = stringResource(ephyra.app.core.common.R.string.action_toggle_private_on),
                             )
                         }
                     }
@@ -204,7 +204,7 @@ fun TrackerSearch(
                 if (availableTracks.isEmpty()) {
                     EmptyScreen(
                         modifier = Modifier.padding(innerPadding),
-                        stringRes = ephyra.i18n.R.string.no_results_found,
+                        stringRes = ephyra.app.core.common.R.string.no_results_found,
                     )
                 } else {
                     ScrollbarLazyColumn(
@@ -227,7 +227,7 @@ fun TrackerSearch(
                 EmptyScreen(
                     modifier = Modifier.padding(innerPadding),
                     message = queryResult.exceptionOrNull()?.message
-                        ?: stringResource(ephyra.i18n.R.string.unknown_error),
+                        ?: stringResource(ephyra.app.core.common.R.string.unknown_error),
                 )
             }
         }
@@ -323,13 +323,13 @@ private fun SearchResultItem(
                     }
                     if (type.isNotBlank()) {
                         SearchResultItemDetails(
-                            title = stringResource(ephyra.i18n.R.string.track_type),
+                            title = stringResource(ephyra.app.core.common.R.string.track_type),
                             text = type,
                         )
                     }
                     if (status.isNotBlank()) {
                         SearchResultItemDetails(
-                            title = stringResource(ephyra.i18n.R.string.track_status),
+                            title = stringResource(ephyra.app.core.common.R.string.track_status),
                             text = status,
                         )
                     }
@@ -362,14 +362,14 @@ private fun SearchResultItemDropDownMenu(
         onDismissRequest = onCollapseMenu,
     ) {
         DropdownMenuItem(
-            text = { Text(stringResource(ephyra.i18n.R.string.action_copy_to_clipboard)) },
+            text = { Text(stringResource(ephyra.app.core.common.R.string.action_copy_to_clipboard)) },
             onClick = {
                 onCopyName()
                 onCollapseMenu()
             },
         )
         DropdownMenuItem(
-            text = { Text(stringResource(ephyra.i18n.R.string.action_open_in_browser)) },
+            text = { Text(stringResource(ephyra.app.core.common.R.string.action_open_in_browser)) },
             onClick = {
                 onOpenInBrowser()
             },

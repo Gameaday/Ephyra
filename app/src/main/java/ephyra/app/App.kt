@@ -127,8 +127,8 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
                         Notifications.ID_INCOGNITO_MODE,
                         Notifications.CHANNEL_INCOGNITO_MODE,
                     ) {
-                        setContentTitle(stringResource(ephyra.i18n.R.string.pref_incognito_mode))
-                        setContentText(stringResource(ephyra.i18n.R.string.notification_incognito_text))
+                        setContentTitle(stringResource(ephyra.app.core.common.R.string.pref_incognito_mode))
+                        setContentText(stringResource(ephyra.app.core.common.R.string.notification_incognito_text))
                         setSmallIcon(R.drawable.ic_glasses_24dp)
                         setOngoing(true)
 

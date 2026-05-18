@@ -26,9 +26,9 @@ fun ReaderSettingsDialog(
     screenModel: ReaderSettingsScreenModel,
 ) {
     val tabTitles = persistentListOf(
-        stringResource(ephyra.i18n.R.string.pref_category_reading_mode),
-        stringResource(ephyra.i18n.R.string.pref_category_general),
-        stringResource(ephyra.i18n.R.string.custom_filter),
+        stringResource(ephyra.app.core.common.R.string.pref_category_reading_mode),
+        stringResource(ephyra.app.core.common.R.string.pref_category_general),
+        stringResource(ephyra.app.core.common.R.string.custom_filter),
     )
     val pagerState = rememberPagerState { tabTitles.size }
 

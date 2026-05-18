@@ -173,7 +173,7 @@ class NotificationReceiver : BroadcastReceiver(), KoinComponent {
                 }
                 context.startActivity(intent)
             } else {
-                context.toast(ephyra.i18n.R.string.chapter_error)
+                context.toast(ephyra.app.core.common.R.string.chapter_error)
             }
         }
     }

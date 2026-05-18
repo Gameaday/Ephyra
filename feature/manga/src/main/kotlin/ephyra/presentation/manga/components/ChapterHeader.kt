@@ -36,9 +36,9 @@ fun ChapterHeader(
     ) {
         Text(
             text = if (chapterCount == null) {
-                stringResource(ephyra.i18n.R.string.chapters)
+                stringResource(ephyra.app.core.common.R.string.chapters)
             } else {
-                pluralStringResource(ephyra.i18n.R.plurals.manga_num_chapters, count = chapterCount, chapterCount)
+                pluralStringResource(ephyra.app.core.common.R.plurals.manga_num_chapters, count = chapterCount, chapterCount)
             },
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface,
@@ -55,7 +55,7 @@ private fun MissingChaptersWarning(count: Int) {
     }
 
     Text(
-        text = pluralStringResource(ephyra.i18n.R.plurals.missing_chapters, count = count, count),
+        text = pluralStringResource(ephyra.app.core.common.R.plurals.missing_chapters, count = count, count),
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
         style = MaterialTheme.typography.bodySmall,

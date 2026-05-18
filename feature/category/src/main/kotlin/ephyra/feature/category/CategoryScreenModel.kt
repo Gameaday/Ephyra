@@ -119,7 +119,7 @@ sealed interface CategoryDialog {
 
 sealed interface CategoryEvent {
     sealed class LocalizedMessage(val stringRes: Int) : CategoryEvent
-    data object InternalError : LocalizedMessage(ephyra.i18n.R.string.internal_error)
+    data object InternalError : LocalizedMessage(ephyra.app.core.common.R.string.internal_error)
 }
 
 sealed interface CategoryScreenState {

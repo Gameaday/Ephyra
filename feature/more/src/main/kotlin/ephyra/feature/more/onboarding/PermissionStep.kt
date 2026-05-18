@@ -77,8 +77,8 @@ internal class PermissionStep : OnboardingStep {
 
         Column {
             PermissionCheckbox(
-                title = stringResource(ephyra.i18n.R.string.onboarding_permission_install_apps),
-                subtitle = stringResource(ephyra.i18n.R.string.onboarding_permission_install_apps_description),
+                title = stringResource(ephyra.app.core.common.R.string.onboarding_permission_install_apps),
+                subtitle = stringResource(ephyra.app.core.common.R.string.onboarding_permission_install_apps_description),
                 granted = installGranted,
                 onButtonClick = {
                     context.launchRequestPackageInstallsPermission()
@@ -92,15 +92,15 @@ internal class PermissionStep : OnboardingStep {
                 },
             )
             PermissionCheckbox(
-                title = stringResource(ephyra.i18n.R.string.onboarding_permission_notifications),
-                subtitle = stringResource(ephyra.i18n.R.string.onboarding_permission_notifications_description),
+                title = stringResource(ephyra.app.core.common.R.string.onboarding_permission_notifications),
+                subtitle = stringResource(ephyra.app.core.common.R.string.onboarding_permission_notifications_description),
                 granted = notificationGranted,
                 onButtonClick = { permissionRequester.launch(Manifest.permission.POST_NOTIFICATIONS) },
             )
 
             PermissionCheckbox(
-                title = stringResource(ephyra.i18n.R.string.onboarding_permission_ignore_battery_opts),
-                subtitle = stringResource(ephyra.i18n.R.string.onboarding_permission_ignore_battery_opts_description),
+                title = stringResource(ephyra.app.core.common.R.string.onboarding_permission_ignore_battery_opts),
+                subtitle = stringResource(ephyra.app.core.common.R.string.onboarding_permission_ignore_battery_opts_description),
                 granted = batteryGranted,
                 onButtonClick = {
                     @SuppressLint("BatteryLife")
@@ -121,8 +121,8 @@ internal class PermissionStep : OnboardingStep {
             val crashlyticsPref = privacyPreferences.crashlytics()
             val crashlytics by crashlyticsPref.collectAsState()
             PermissionSwitch(
-                title = stringResource(ephyra.i18n.R.string.onboarding_permission_crashlytics),
-                subtitle = stringResource(ephyra.i18n.R.string.onboarding_permission_crashlytics_description),
+                title = stringResource(ephyra.app.core.common.R.string.onboarding_permission_crashlytics),
+                subtitle = stringResource(ephyra.app.core.common.R.string.onboarding_permission_crashlytics_description),
                 granted = crashlytics,
                 onToggleChange = crashlyticsPref::set,
             )
@@ -130,8 +130,8 @@ internal class PermissionStep : OnboardingStep {
             val analyticsPref = privacyPreferences.analytics()
             val analytics by analyticsPref.collectAsState()
             PermissionSwitch(
-                title = stringResource(ephyra.i18n.R.string.onboarding_permission_analytics),
-                subtitle = stringResource(ephyra.i18n.R.string.onboarding_permission_analytics_description),
+                title = stringResource(ephyra.app.core.common.R.string.onboarding_permission_analytics),
+                subtitle = stringResource(ephyra.app.core.common.R.string.onboarding_permission_analytics_description),
                 granted = analytics,
                 onToggleChange = analyticsPref::set,
             )
@@ -176,7 +176,7 @@ internal class PermissionStep : OnboardingStep {
                             tint = MaterialTheme.colorScheme.primary,
                         )
                     } else {
-                        Text(stringResource(ephyra.i18n.R.string.onboarding_permission_action_grant))
+                        Text(stringResource(ephyra.app.core.common.R.string.onboarding_permission_action_grant))
                     }
                 }
             },

@@ -78,12 +78,12 @@ import org.koin.compose.koinInject
 
 object SettingsDataScreen : SearchableSettings {
 
-    val restorePreferenceKeyString = ephyra.i18n.R.string.label_backup
+    val restorePreferenceKeyString = ephyra.app.core.common.R.string.label_backup
     const val HELP_URL = "https://ephyra.app/docs/faq/storage"
 
     @ReadOnlyComposable
     @Composable
-    override fun getTitleRes() = ephyra.i18n.R.string.label_data_storage
+    override fun getTitleRes() = ephyra.app.core.common.R.string.label_data_storage
 
     @Composable
     override fun RowScope.AppBarAction() {
@@ -91,7 +91,7 @@ object SettingsDataScreen : SearchableSettings {
         IconButton(onClick = { uriHandler.openUri(HELP_URL) }) {
             Icon(
                 imageVector = Icons.AutoMirrored.Outlined.HelpOutline,
-                contentDescription = stringResource(ephyra.i18n.R.string.tracking_guide),
+                contentDescription = stringResource(ephyra.app.core.common.R.string.tracking_guide),
             )
         }
     }
@@ -102,7 +102,7 @@ object SettingsDataScreen : SearchableSettings {
 
         return persistentListOf(
             getStorageLocationPref(storagePreferences = screenModel.storagePreferences),
-            Preference.PreferenceItem.InfoPreference(stringResource(ephyra.i18n.R.string.pref_storage_location_info)),
+            Preference.PreferenceItem.InfoPreference(stringResource(ephyra.app.core.common.R.string.pref_storage_location_info)),
 
             getBackupAndRestoreGroup(backupPreferences = screenModel.backupPreferences),
             getDataGroup(
@@ -135,7 +135,7 @@ object SettingsDataScreen : SearchableSettings {
                     context.contentResolver.takePersistableUriPermission(uri, flags)
                 } catch (e: SecurityException) {
                     logcat(LogPriority.ERROR, e)
-                    context.toast(ephyra.i18n.R.string.file_picker_uri_permission_unsupported)
+                    context.toast(ephyra.app.core.common.R.string.file_picker_uri_permission_unsupported)
                 }
 
                 UniFile.fromUri(context, uri)?.let {
@@ -153,13 +153,13 @@ object SettingsDataScreen : SearchableSettings {
         val storageDir by storageDirPref.collectAsState()
 
         if (storageDir == storageDirPref.defaultValue()) {
-            return stringResource(ephyra.i18n.R.string.no_location_set)
+            return stringResource(ephyra.app.core.common.R.string.no_location_set)
         }
 
         return remember(storageDir) {
             val file = UniFile.fromUri(context, storageDir.toUri())
             file?.displayablePath
-        } ?: stringResource(ephyra.i18n.R.string.invalid_location, storageDir)
+        } ?: stringResource(ephyra.app.core.common.R.string.invalid_location, storageDir)
     }
 
     @Composable
@@ -170,13 +170,13 @@ object SettingsDataScreen : SearchableSettings {
         val pickStorageLocation = storageLocationPicker(storagePreferences.baseStorageDirectory())
 
         return Preference.PreferenceItem.TextPreference(
-            title = stringResource(ephyra.i18n.R.string.pref_storage_location),
+            title = stringResource(ephyra.app.core.common.R.string.pref_storage_location),
             subtitle = storageLocationText(storagePreferences.baseStorageDirectory()),
             onClick = {
                 try {
                     pickStorageLocation.launch(null)
                 } catch (e: ActivityNotFoundException) {
-                    context.toast(ephyra.i18n.R.string.file_picker_error)
+                    context.toast(ephyra.app.core.common.R.string.file_picker_error)
                 }
             },
         )
@@ -195,12 +195,12 @@ object SettingsDataScreen : SearchableSettings {
             object : ActivityResultContracts.GetContent() {
                 override fun createIntent(context: Context, input: String): Intent {
                     val intent = super.createIntent(context, input)
-                    return Intent.createChooser(intent, context.stringResource(ephyra.i18n.R.string.file_select_backup))
+                    return Intent.createChooser(intent, context.stringResource(ephyra.app.core.common.R.string.file_select_backup))
                 }
             },
         ) {
             if (it == null) {
-                context.toast(ephyra.i18n.R.string.file_null_uri_error)
+                context.toast(ephyra.app.core.common.R.string.file_null_uri_error)
                 return@rememberLauncherForActivityResult
             }
 
@@ -208,7 +208,7 @@ object SettingsDataScreen : SearchableSettings {
         }
 
         return Preference.PreferenceGroup(
-            title = stringResource(ephyra.i18n.R.string.label_backup),
+            title = stringResource(ephyra.app.core.common.R.string.label_backup),
             preferenceItems = persistentListOf(
                 // Manual actions
                 Preference.PreferenceItem.CustomPreference(
@@ -228,7 +228,7 @@ object SettingsDataScreen : SearchableSettings {
                                     onCheckedChange = { navigator.push(CreateBackupScreen()) },
                                     shape = SegmentedButtonDefaults.itemShape(0, 2),
                                 ) {
-                                    Text(stringResource(ephyra.i18n.R.string.pref_create_backup))
+                                    Text(stringResource(ephyra.app.core.common.R.string.pref_create_backup))
                                 }
                                 SegmentedButton(
                                     modifier = Modifier.fillMaxHeight(),
@@ -236,18 +236,18 @@ object SettingsDataScreen : SearchableSettings {
                                     onCheckedChange = {
                                         if (!restoreScheduler.isRestoreRunning()) {
                                             if (DeviceUtil.isMiui && DeviceUtil.isMiuiOptimizationDisabled()) {
-                                                context.toast(ephyra.i18n.R.string.restore_miui_warning)
+                                                context.toast(ephyra.app.core.common.R.string.restore_miui_warning)
                                             }
 
                                             // no need to catch because it's wrapped with a chooser
                                             chooseBackup.launch("*/*")
                                         } else {
-                                            context.toast(ephyra.i18n.R.string.restore_in_progress)
+                                            context.toast(ephyra.app.core.common.R.string.restore_in_progress)
                                         }
                                     },
                                     shape = SegmentedButtonDefaults.itemShape(1, 2),
                                 ) {
-                                    Text(stringResource(ephyra.i18n.R.string.pref_restore_backup))
+                                    Text(stringResource(ephyra.app.core.common.R.string.pref_restore_backup))
                                 }
                             }
                         },
@@ -258,22 +258,22 @@ object SettingsDataScreen : SearchableSettings {
                 Preference.PreferenceItem.ListPreference(
                     preference = backupPreferences.backupInterval(),
                     entries = persistentMapOf(
-                        0 to stringResource(ephyra.i18n.R.string.off),
-                        6 to stringResource(ephyra.i18n.R.string.update_6hour),
-                        12 to stringResource(ephyra.i18n.R.string.update_12hour),
-                        24 to stringResource(ephyra.i18n.R.string.update_24hour),
-                        48 to stringResource(ephyra.i18n.R.string.update_48hour),
-                        168 to stringResource(ephyra.i18n.R.string.update_weekly),
+                        0 to stringResource(ephyra.app.core.common.R.string.off),
+                        6 to stringResource(ephyra.app.core.common.R.string.update_6hour),
+                        12 to stringResource(ephyra.app.core.common.R.string.update_12hour),
+                        24 to stringResource(ephyra.app.core.common.R.string.update_24hour),
+                        48 to stringResource(ephyra.app.core.common.R.string.update_48hour),
+                        168 to stringResource(ephyra.app.core.common.R.string.update_weekly),
                     ),
-                    title = stringResource(ephyra.i18n.R.string.pref_backup_interval),
+                    title = stringResource(ephyra.app.core.common.R.string.pref_backup_interval),
                     onValueChanged = {
                         backupScheduler.setupBackupTask(it)
                         true
                     },
                 ),
                 Preference.PreferenceItem.InfoPreference(
-                    stringResource(ephyra.i18n.R.string.backup_info) + "\n\n" +
-                        stringResource(ephyra.i18n.R.string.last_auto_backup_info, relativeTimeSpanString(lastAutoBackup)),
+                    stringResource(ephyra.app.core.common.R.string.backup_info) + "\n\n" +
+                        stringResource(ephyra.app.core.common.R.string.last_auto_backup_info, relativeTimeSpanString(lastAutoBackup)),
                 ),
             ),
         )
@@ -288,16 +288,16 @@ object SettingsDataScreen : SearchableSettings {
         val scope = rememberCoroutineScope()
 
         var cacheReadableSizeSema by remember { mutableIntStateOf(0) }
-        var cacheReadableSize by remember { mutableStateOf(context.stringResource(ephyra.i18n.R.string.calculating)) }
+        var cacheReadableSize by remember { mutableStateOf(context.stringResource(ephyra.app.core.common.R.string.calculating)) }
         LaunchedEffect(cacheReadableSizeSema) {
             cacheReadableSize = chapterCache.getReadableSize()
         }
 
         return Preference.PreferenceGroup(
-            title = stringResource(ephyra.i18n.R.string.pref_storage_usage),
+            title = stringResource(ephyra.app.core.common.R.string.pref_storage_usage),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.CustomPreference(
-                    title = stringResource(ephyra.i18n.R.string.pref_storage_usage),
+                    title = stringResource(ephyra.app.core.common.R.string.pref_storage_usage),
                 ) {
                     BasePreferenceWidget(
                         subcomponent = {
@@ -309,26 +309,26 @@ object SettingsDataScreen : SearchableSettings {
                 },
 
                 Preference.PreferenceItem.TextPreference(
-                    title = stringResource(ephyra.i18n.R.string.pref_clear_chapter_cache),
-                    subtitle = stringResource(ephyra.i18n.R.string.used_cache, cacheReadableSize),
+                    title = stringResource(ephyra.app.core.common.R.string.pref_clear_chapter_cache),
+                    subtitle = stringResource(ephyra.app.core.common.R.string.used_cache, cacheReadableSize),
                     onClick = {
                         scope.launchNonCancellable {
                             try {
                                 val deletedFiles = chapterCache.clear()
                                 withContext(Dispatchers.Main) {
-                                    context.toast(context.stringResource(ephyra.i18n.R.string.cache_deleted, deletedFiles))
+                                    context.toast(context.stringResource(ephyra.app.core.common.R.string.cache_deleted, deletedFiles))
                                     cacheReadableSizeSema++
                                 }
                             } catch (e: Throwable) {
                                 logcat(LogPriority.ERROR, e)
-                                withContext(Dispatchers.Main) { context.toast(ephyra.i18n.R.string.cache_delete_error) }
+                                withContext(Dispatchers.Main) { context.toast(ephyra.app.core.common.R.string.cache_delete_error) }
                             }
                         }
                     },
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = libraryPreferences.autoClearChapterCache(),
-                    title = stringResource(ephyra.i18n.R.string.pref_auto_clear_chapter_cache),
+                    title = stringResource(ephyra.app.core.common.R.string.pref_auto_clear_chapter_cache),
                 ),
             ),
         )
@@ -368,7 +368,7 @@ object SettingsDataScreen : SearchableSettings {
                         options = exportOptions,
                         onExportComplete = {
                             scope.launch(Dispatchers.Main) {
-                                context.toast(ephyra.i18n.R.string.library_exported)
+                                context.toast(ephyra.app.core.common.R.string.library_exported)
                             }
                         },
                     )
@@ -388,10 +388,10 @@ object SettingsDataScreen : SearchableSettings {
         }
 
         return Preference.PreferenceGroup(
-            title = stringResource(ephyra.i18n.R.string.export),
+            title = stringResource(ephyra.app.core.common.R.string.export),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.TextPreference(
-                    title = stringResource(ephyra.i18n.R.string.library_list),
+                    title = stringResource(ephyra.app.core.common.R.string.library_list),
                     onClick = { showDialog = true },
                 ),
             ),
@@ -411,7 +411,7 @@ object SettingsDataScreen : SearchableSettings {
         AlertDialog(
             onDismissRequest = onDismissRequest,
             title = {
-                Text(text = stringResource(ephyra.i18n.R.string.migration_dialog_what_to_include))
+                Text(text = stringResource(ephyra.app.core.common.R.string.migration_dialog_what_to_include))
             },
             text = {
                 Column {
@@ -426,7 +426,7 @@ object SettingsDataScreen : SearchableSettings {
                                 }
                             },
                         )
-                        Text(text = stringResource(ephyra.i18n.R.string.title))
+                        Text(text = stringResource(ephyra.app.core.common.R.string.title))
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -435,7 +435,7 @@ object SettingsDataScreen : SearchableSettings {
                             onCheckedChange = { authorSelected = it },
                             enabled = titleSelected,
                         )
-                        Text(text = stringResource(ephyra.i18n.R.string.author))
+                        Text(text = stringResource(ephyra.app.core.common.R.string.author))
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -444,7 +444,7 @@ object SettingsDataScreen : SearchableSettings {
                             onCheckedChange = { artistSelected = it },
                             enabled = titleSelected,
                         )
-                        Text(text = stringResource(ephyra.i18n.R.string.artist))
+                        Text(text = stringResource(ephyra.app.core.common.R.string.artist))
                     }
                 }
             },
@@ -461,12 +461,12 @@ object SettingsDataScreen : SearchableSettings {
                         onDismissRequest()
                     },
                 ) {
-                    Text(text = stringResource(ephyra.i18n.R.string.action_save))
+                    Text(text = stringResource(ephyra.app.core.common.R.string.action_save))
                 }
             },
             dismissButton = {
                 TextButton(onClick = onDismissRequest) {
-                    Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
+                    Text(text = stringResource(ephyra.app.core.common.R.string.action_cancel))
                 }
             },
         )

@@ -47,7 +47,7 @@ data object HistoryTab : Tab {
             val image = AnimatedImageVector.animatedVectorResource(R.drawable.anim_history_enter)
             return TabOptions(
                 index = 2u,
-                title = stringResource(ephyra.i18n.R.string.label_recent_manga),
+                title = stringResource(ephyra.app.core.common.R.string.label_recent_manga),
                 icon = rememberAnimatedVectorPainter(image, isSelected),
             )
         }
@@ -143,10 +143,10 @@ data object HistoryTab : Tab {
             screenModel.events.collectLatest { e ->
                 when (e) {
                     HistoryScreenModel.Event.InternalError ->
-                        snackbarHostState.showSnackbar(context.stringResource(ephyra.i18n.R.string.internal_error))
+                        snackbarHostState.showSnackbar(context.stringResource(ephyra.app.core.common.R.string.internal_error))
 
                     HistoryScreenModel.Event.HistoryCleared ->
-                        snackbarHostState.showSnackbar(context.stringResource(ephyra.i18n.R.string.clear_history_completed))
+                        snackbarHostState.showSnackbar(context.stringResource(ephyra.app.core.common.R.string.clear_history_completed))
 
                     is HistoryScreenModel.Event.OpenChapter -> openChapter(context, e.chapter)
                 }
@@ -165,7 +165,7 @@ data object HistoryTab : Tab {
             val intent = ReaderActivity.newIntent(context, chapter.mangaId, chapter.id)
             context.startActivity(intent)
         } else {
-            snackbarHostState.showSnackbar(context.stringResource(ephyra.i18n.R.string.no_next_chapter))
+            snackbarHostState.showSnackbar(context.stringResource(ephyra.app.core.common.R.string.no_next_chapter))
         }
     }
 }

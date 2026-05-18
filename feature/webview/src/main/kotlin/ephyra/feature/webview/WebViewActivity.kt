@@ -42,7 +42,7 @@ class WebViewActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
 
         if (!WebViewUtil.supportsWebView(this)) {
-            toast(ephyra.i18n.R.string.information_webview_required, Toast.LENGTH_LONG)
+            toast(ephyra.app.core.common.R.string.information_webview_required, Toast.LENGTH_LONG)
             finish()
             return
         }

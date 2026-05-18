@@ -26,8 +26,8 @@ class SecurityPreferences(
     )
 
     enum class SecureScreenMode(val titleRes: Int) {
-        ALWAYS(ephyra.i18n.R.string.lock_always),
-        INCOGNITO(ephyra.i18n.R.string.pref_incognito_mode),
-        NEVER(ephyra.i18n.R.string.lock_never),
+        ALWAYS(ephyra.app.core.common.R.string.lock_always),
+        INCOGNITO(ephyra.app.core.common.R.string.pref_incognito_mode),
+        NEVER(ephyra.app.core.common.R.string.lock_never),
     }
 }

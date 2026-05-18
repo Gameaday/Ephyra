@@ -79,7 +79,7 @@ object SettingsTrackingScreen : SearchableSettings {
 
     @ReadOnlyComposable
     @Composable
-    override fun getTitleRes() = ephyra.i18n.R.string.pref_category_tracking
+    override fun getTitleRes() = ephyra.app.core.common.R.string.pref_category_tracking
 
     @Composable
     override fun RowScope.AppBarAction() {
@@ -87,7 +87,7 @@ object SettingsTrackingScreen : SearchableSettings {
         IconButton(onClick = { uriHandler.openUri("https://github.com/Gameaday/Ephyra#about-this-fork") }) {
             Icon(
                 imageVector = Icons.AutoMirrored.Outlined.HelpOutline,
-                contentDescription = stringResource(ephyra.i18n.R.string.tracking_guide),
+                contentDescription = stringResource(ephyra.app.core.common.R.string.tracking_guide),
             )
         }
     }
@@ -138,11 +138,11 @@ object SettingsTrackingScreen : SearchableSettings {
                                     importingFromMal = false
                                     if (result.isSuccess) {
                                         val msg = context.stringResource(
-                                            ephyra.i18n.R.string.tracker_import_success,
+                                            ephyra.app.core.common.R.string.tracker_import_success,
                                             result.imported,
                                         ) + if (result.skipped > 0) {
                                             context.stringResource(
-                                                ephyra.i18n.R.string.tracker_import_skipped,
+                                                ephyra.app.core.common.R.string.tracker_import_skipped,
                                                 result.skipped,
                                             )
                                         } else {
@@ -152,7 +152,7 @@ object SettingsTrackingScreen : SearchableSettings {
                                     } else {
                                         context.toast(
                                             context.stringResource(
-                                                ephyra.i18n.R.string.tracker_import_error,
+                                                ephyra.app.core.common.R.string.tracker_import_error,
                                                 result.error.orEmpty(),
                                             ),
                                         )
@@ -183,10 +183,10 @@ object SettingsTrackingScreen : SearchableSettings {
                 acceptedSources.isEmpty() ||
                     sourceManager.getCatalogueSources().any { it::class.qualifiedName in acceptedSources }
             }
-        var enhancedTrackerInfo = stringResource(ephyra.i18n.R.string.enhanced_tracking_info)
+        var enhancedTrackerInfo = stringResource(ephyra.app.core.common.R.string.enhanced_tracking_info)
         if (enhancedTrackers.second.isNotEmpty()) {
             val missingSourcesInfo = stringResource(
-                ephyra.i18n.R.string.enhanced_services_not_installed,
+                ephyra.app.core.common.R.string.enhanced_services_not_installed,
                 enhancedTrackers.second.joinToString { it.name },
             )
             enhancedTrackerInfo += "\n\n$missingSourcesInfo"
@@ -200,11 +200,11 @@ object SettingsTrackingScreen : SearchableSettings {
                 add(
                     Preference.PreferenceItem.TextPreference(
                         title = if (importingFromMal) {
-                            stringResource(ephyra.i18n.R.string.tracker_import_loading, malName)
+                            stringResource(ephyra.app.core.common.R.string.tracker_import_loading, malName)
                         } else {
-                            stringResource(ephyra.i18n.R.string.tracker_import_label, malName)
+                            stringResource(ephyra.app.core.common.R.string.tracker_import_label, malName)
                         },
-                        subtitle = stringResource(ephyra.i18n.R.string.tracker_import_subtitle, malName),
+                        subtitle = stringResource(ephyra.app.core.common.R.string.tracker_import_subtitle, malName),
                         enabled = !importingFromMal,
                         onClick = { dialog = ImportConfirmDialog(malName) },
                     ),
@@ -216,7 +216,7 @@ object SettingsTrackingScreen : SearchableSettings {
             add(
                 Preference.PreferenceItem.SwitchPreference(
                     preference = trackPreferences.autoUpdateTrack(),
-                    title = stringResource(ephyra.i18n.R.string.pref_auto_update_manga_sync),
+                    title = stringResource(ephyra.app.core.common.R.string.pref_auto_update_manga_sync),
                 ),
             )
             add(
@@ -225,12 +225,12 @@ object SettingsTrackingScreen : SearchableSettings {
                     entries = AutoTrackState.entries
                         .associateWith { stringResource(it.titleRes) }
                         .toPersistentMap(),
-                    title = stringResource(ephyra.i18n.R.string.pref_auto_update_manga_on_mark_read),
+                    title = stringResource(ephyra.app.core.common.R.string.pref_auto_update_manga_on_mark_read),
                 ),
             )
             add(
                 Preference.PreferenceGroup(
-                    title = stringResource(ephyra.i18n.R.string.services),
+                    title = stringResource(ephyra.app.core.common.R.string.services),
                     preferenceItems = persistentListOf(
                         Preference.PreferenceItem.TrackerPreference(
                             tracker = trackerManager.get(TrackerManager.MYANIMELIST)!!,
@@ -255,7 +255,7 @@ object SettingsTrackingScreen : SearchableSettings {
                         Preference.PreferenceItem.TrackerPreference(
                             tracker = trackerManager.get(TrackerManager.KITSU)!!,
                             login = {
-                                dialog = LoginDialog(trackerManager.get(TrackerManager.KITSU)!!, ephyra.i18n.R.string.email)
+                                dialog = LoginDialog(trackerManager.get(TrackerManager.KITSU)!!, ephyra.app.core.common.R.string.email)
                             },
                             logout = { dialog = LogoutDialog(trackerManager.get(TrackerManager.KITSU)!!) },
                         ),
@@ -263,7 +263,7 @@ object SettingsTrackingScreen : SearchableSettings {
                             tracker = trackerManager.get(TrackerManager.MANGAUPDATES)!!,
                             login = {
                                 dialog =
-                                    LoginDialog(trackerManager.get(TrackerManager.MANGAUPDATES)!!, ephyra.i18n.R.string.username)
+                                    LoginDialog(trackerManager.get(TrackerManager.MANGAUPDATES)!!, ephyra.app.core.common.R.string.username)
                             },
                             logout = { dialog = LogoutDialog(trackerManager.get(TrackerManager.MANGAUPDATES)!!) },
                         ),
@@ -287,7 +287,7 @@ object SettingsTrackingScreen : SearchableSettings {
                             },
                             logout = { dialog = LogoutDialog(trackerManager.get(TrackerManager.BANGUMI)!!) },
                         ),
-                        Preference.PreferenceItem.InfoPreference(stringResource(ephyra.i18n.R.string.tracking_info)),
+                        Preference.PreferenceItem.InfoPreference(stringResource(ephyra.app.core.common.R.string.tracking_info)),
                     ),
                 ),
             )
@@ -347,19 +347,19 @@ object SettingsTrackingScreen : SearchableSettings {
                 val authorityItems = buildList {
                     add(
                         Preference.PreferenceItem.CustomPreference(
-                            title = stringResource(ephyra.i18n.R.string.pref_authority_order_title),
+                            title = stringResource(ephyra.app.core.common.R.string.pref_authority_order_title),
                         ) {
                             Column(
                                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                             ) {
                                 Text(
-                                    text = stringResource(ephyra.i18n.R.string.pref_authority_order_subtitle),
+                                    text = stringResource(ephyra.app.core.common.R.string.pref_authority_order_subtitle),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(bottom = 8.dp),
                                 )
                                 currentOrder.forEachIndexed { index, trackerId ->
-                                    val label = trackerLabels[trackerId] ?: stringResource(ephyra.i18n.R.string.unknown)
+                                    val label = trackerLabels[trackerId] ?: stringResource(ephyra.app.core.common.R.string.unknown)
                                     val available = isAvailable(trackerId)
                                     androidx.compose.material3.Surface(
                                         color = if (available) {
@@ -397,7 +397,7 @@ object SettingsTrackingScreen : SearchableSettings {
                                             )
                                             if (!available) {
                                                 Text(
-                                                    text = stringResource(ephyra.i18n.R.string.pref_authority_not_available),
+                                                    text = stringResource(ephyra.app.core.common.R.string.pref_authority_not_available),
                                                     style = MaterialTheme.typography.labelSmall,
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
                                                         alpha = 0.5f,
@@ -459,13 +459,13 @@ object SettingsTrackingScreen : SearchableSettings {
 
                     add(
                         Preference.PreferenceItem.CustomPreference(
-                            title = stringResource(ephyra.i18n.R.string.pref_content_source_priority_title),
+                            title = stringResource(ephyra.app.core.common.R.string.pref_content_source_priority_title),
                         ) {
                             Column(
                                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                             ) {
                                 Text(
-                                    text = stringResource(ephyra.i18n.R.string.pref_content_source_priority_subtitle),
+                                    text = stringResource(ephyra.app.core.common.R.string.pref_content_source_priority_subtitle),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(bottom = 8.dp),
@@ -497,7 +497,7 @@ object SettingsTrackingScreen : SearchableSettings {
                                             },
                                             label = {
                                                 Text(
-                                                    text = stringResource(ephyra.i18n.R.string.source_priority_authority),
+                                                    text = stringResource(ephyra.app.core.common.R.string.source_priority_authority),
                                                     style = MaterialTheme.typography.labelSmall,
                                                 )
                                             },
@@ -513,7 +513,7 @@ object SettingsTrackingScreen : SearchableSettings {
                                             },
                                             label = {
                                                 Text(
-                                                    text = stringResource(ephyra.i18n.R.string.source_priority_content),
+                                                    text = stringResource(ephyra.app.core.common.R.string.source_priority_content),
                                                     style = MaterialTheme.typography.labelSmall,
                                                 )
                                             },
@@ -526,30 +526,30 @@ object SettingsTrackingScreen : SearchableSettings {
                     add(
                         Preference.PreferenceItem.TextPreference(
                             title = if (isJobRunning) {
-                                stringResource(ephyra.i18n.R.string.tracker_match_all_running)
+                                stringResource(ephyra.app.core.common.R.string.tracker_match_all_running)
                             } else {
-                                stringResource(ephyra.i18n.R.string.tracker_match_all_action)
+                                stringResource(ephyra.app.core.common.R.string.tracker_match_all_action)
                             },
                             subtitle = if (isJobRunning) {
-                                stringResource(ephyra.i18n.R.string.tracker_match_all_running_subtitle)
+                                stringResource(ephyra.app.core.common.R.string.tracker_match_all_running_subtitle)
                             } else if (resolveResultText != null) {
                                 resolveResultText
                             } else {
-                                stringResource(ephyra.i18n.R.string.tracker_match_all_subtitle)
+                                stringResource(ephyra.app.core.common.R.string.tracker_match_all_subtitle)
                             },
                             enabled = !isJobRunning,
                             onClick = {
                                 resolveResultText = null
                                 matchUnlinkedJobRunner.start(context)
-                                context.toast(ephyra.i18n.R.string.tracker_match_all_started)
+                                context.toast(ephyra.app.core.common.R.string.tracker_match_all_started)
                             },
                         ),
                     )
                     add(
                         Preference.PreferenceItem.SwitchPreference(
                             preference = libraryPreferences.jellyfinSyncEnabled(),
-                            title = stringResource(ephyra.i18n.R.string.pref_jellyfin_sync_enabled),
-                            subtitle = stringResource(ephyra.i18n.R.string.pref_jellyfin_sync_enabled_summary),
+                            title = stringResource(ephyra.app.core.common.R.string.pref_jellyfin_sync_enabled),
+                            subtitle = stringResource(ephyra.app.core.common.R.string.pref_jellyfin_sync_enabled_summary),
                         ),
                     )
                     // Show connection info & settings when Jellyfin is logged in
@@ -572,14 +572,14 @@ object SettingsTrackingScreen : SearchableSettings {
                         if (serverName.isNotBlank() || jellyfinUser.isNotBlank()) {
                             add(
                                 Preference.PreferenceItem.TextPreference(
-                                    title = stringResource(ephyra.i18n.R.string.jellyfin_server_info),
+                                    title = stringResource(ephyra.app.core.common.R.string.jellyfin_server_info),
                                     subtitle = buildString {
                                         if (serverName.isNotBlank()) append(serverName)
                                         if (jellyfinUser.isNotBlank()) {
                                             if (isNotEmpty()) append(" — ")
                                             append(
                                                 context.stringResource(
-                                                    ephyra.i18n.R.string.jellyfin_user_selected,
+                                                    ephyra.app.core.common.R.string.jellyfin_user_selected,
                                                     jellyfinUser,
                                                 ),
                                             )
@@ -622,9 +622,9 @@ object SettingsTrackingScreen : SearchableSettings {
                         }
                         add(
                             Preference.PreferenceItem.TextPreference(
-                                title = stringResource(ephyra.i18n.R.string.jellyfin_library),
+                                title = stringResource(ephyra.app.core.common.R.string.jellyfin_library),
                                 subtitle = if (currentLibraryId.isBlank()) {
-                                    stringResource(ephyra.i18n.R.string.jellyfin_library_all)
+                                    stringResource(ephyra.app.core.common.R.string.jellyfin_library_all)
                                 } else {
                                     jellyfinLibraryName ?: currentLibraryId
                                 },
@@ -663,12 +663,12 @@ object SettingsTrackingScreen : SearchableSettings {
                                                     context.toast(
                                                         if (nextLib != null) {
                                                             context.stringResource(
-                                                                ephyra.i18n.R.string.jellyfin_library_selected,
+                                                                ephyra.app.core.common.R.string.jellyfin_library_selected,
                                                                 nextLib.name,
                                                             )
                                                         } else {
                                                             context.stringResource(
-                                                                ephyra.i18n.R.string.jellyfin_library_all,
+                                                                ephyra.app.core.common.R.string.jellyfin_library_all,
                                                             )
                                                         },
                                                     )
@@ -676,7 +676,7 @@ object SettingsTrackingScreen : SearchableSettings {
                                             }
                                         } catch (e: Exception) {
                                             withContext(Dispatchers.Main) {
-                                                context.toast(ephyra.i18n.R.string.jellyfin_test_failed)
+                                                context.toast(ephyra.app.core.common.R.string.jellyfin_test_failed)
                                             }
                                         }
                                     }
@@ -685,8 +685,8 @@ object SettingsTrackingScreen : SearchableSettings {
                         )
                         add(
                             Preference.PreferenceItem.TextPreference(
-                                title = stringResource(ephyra.i18n.R.string.jellyfin_test_connection),
-                                subtitle = stringResource(ephyra.i18n.R.string.jellyfin_test_connection_summary),
+                                title = stringResource(ephyra.app.core.common.R.string.jellyfin_test_connection),
+                                subtitle = stringResource(ephyra.app.core.common.R.string.jellyfin_test_connection_summary),
                                 onClick = {
                                     scope.launchIO {
                                         try {
@@ -706,7 +706,7 @@ object SettingsTrackingScreen : SearchableSettings {
                                             withContext(Dispatchers.Main) {
                                                 context.toast(
                                                     context.stringResource(
-                                                        ephyra.i18n.R.string.jellyfin_test_success,
+                                                        ephyra.app.core.common.R.string.jellyfin_test_success,
                                                         info.serverName,
                                                         info.version,
                                                     ),
@@ -714,7 +714,7 @@ object SettingsTrackingScreen : SearchableSettings {
                                             }
                                         } catch (e: Exception) {
                                             withContext(Dispatchers.Main) {
-                                                context.toast(ephyra.i18n.R.string.jellyfin_test_failed)
+                                                context.toast(ephyra.app.core.common.R.string.jellyfin_test_failed)
                                             }
                                         }
                                     }
@@ -723,8 +723,8 @@ object SettingsTrackingScreen : SearchableSettings {
                         )
                         add(
                             Preference.PreferenceItem.TextPreference(
-                                title = stringResource(ephyra.i18n.R.string.jellyfin_update_server_url),
-                                subtitle = stringResource(ephyra.i18n.R.string.jellyfin_update_server_url_summary),
+                                title = stringResource(ephyra.app.core.common.R.string.jellyfin_update_server_url),
+                                subtitle = stringResource(ephyra.app.core.common.R.string.jellyfin_update_server_url_summary),
                                 onClick = {
                                     showUpdateServerUrlDialog = true
                                 },
@@ -734,21 +734,21 @@ object SettingsTrackingScreen : SearchableSettings {
                     add(
                         Preference.PreferenceItem.SwitchPreference(
                             preference = libraryPreferences.jellyfinCompatibleNaming(),
-                            title = stringResource(ephyra.i18n.R.string.pref_jellyfin_compatible_naming),
-                            subtitle = stringResource(ephyra.i18n.R.string.pref_jellyfin_compatible_naming_summary),
+                            title = stringResource(ephyra.app.core.common.R.string.pref_jellyfin_compatible_naming),
+                            subtitle = stringResource(ephyra.app.core.common.R.string.pref_jellyfin_compatible_naming_summary),
                         ),
                     )
                 }
                 add(
                     Preference.PreferenceGroup(
-                        title = stringResource(ephyra.i18n.R.string.tracker_authority_group_title),
+                        title = stringResource(ephyra.app.core.common.R.string.tracker_authority_group_title),
                         preferenceItems = authorityItems.toImmutableList(),
                     ),
                 )
             }
             add(
                 Preference.PreferenceGroup(
-                    title = stringResource(ephyra.i18n.R.string.enhanced_services),
+                    title = stringResource(ephyra.app.core.common.R.string.enhanced_services),
                     preferenceItems = (
                         enhancedTrackers.first
                             .map { service ->
@@ -794,13 +794,13 @@ object SettingsTrackingScreen : SearchableSettings {
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = stringResource(ephyra.i18n.R.string.login_title, tracker.name),
+                        text = stringResource(ephyra.app.core.common.R.string.login_title, tracker.name),
                         modifier = Modifier.weight(1f),
                     )
                     IconButton(onClick = onDismissRequest) {
                         Icon(
                             imageVector = Icons.Outlined.Close,
-                            contentDescription = stringResource(ephyra.i18n.R.string.action_close),
+                            contentDescription = stringResource(ephyra.app.core.common.R.string.action_close),
                         )
                     }
                 }
@@ -826,7 +826,7 @@ object SettingsTrackingScreen : SearchableSettings {
                             .semantics { contentType = ContentType.Password },
                         value = password,
                         onValueChange = { password = it },
-                        label = { Text(text = stringResource(ephyra.i18n.R.string.password)) },
+                        label = { Text(text = stringResource(ephyra.app.core.common.R.string.password)) },
                         trailingIcon = {
                             IconButton(onClick = { hidePassword = !hidePassword }) {
                                 Icon(
@@ -872,7 +872,7 @@ object SettingsTrackingScreen : SearchableSettings {
                         }
                     },
                 ) {
-                    val id = if (processing) ephyra.i18n.R.string.logging_in else ephyra.i18n.R.string.login
+                    val id = if (processing) ephyra.app.core.common.R.string.logging_in else ephyra.app.core.common.R.string.login
                     Text(text = stringResource(id))
                 }
             },
@@ -887,7 +887,7 @@ object SettingsTrackingScreen : SearchableSettings {
         val scope = rememberCoroutineScope()
         AlertDialog(
             onDismissRequest = onDismissRequest,
-            title = { Text(stringResource(ephyra.i18n.R.string.logout_title, tracker.name)) },
+            title = { Text(stringResource(ephyra.app.core.common.R.string.logout_title, tracker.name)) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -897,12 +897,12 @@ object SettingsTrackingScreen : SearchableSettings {
                         }
                     },
                 ) {
-                    Text(stringResource(ephyra.i18n.R.string.logout))
+                    Text(stringResource(ephyra.app.core.common.R.string.logout))
                 }
             },
             dismissButton = {
                 Button(onClick = onDismissRequest) {
-                    Text(stringResource(ephyra.i18n.R.string.action_cancel))
+                    Text(stringResource(ephyra.app.core.common.R.string.action_cancel))
                 }
             },
         )
@@ -916,16 +916,16 @@ object SettingsTrackingScreen : SearchableSettings {
     ) {
         AlertDialog(
             onDismissRequest = onDismissRequest,
-            title = { Text(stringResource(ephyra.i18n.R.string.tracker_import_title, trackerName)) },
-            text = { Text(stringResource(ephyra.i18n.R.string.tracker_import_confirm_body, trackerName)) },
+            title = { Text(stringResource(ephyra.app.core.common.R.string.tracker_import_title, trackerName)) },
+            text = { Text(stringResource(ephyra.app.core.common.R.string.tracker_import_confirm_body, trackerName)) },
             confirmButton = {
                 Button(onClick = onConfirm) {
-                    Text(stringResource(ephyra.i18n.R.string.action_ok))
+                    Text(stringResource(ephyra.app.core.common.R.string.action_ok))
                 }
             },
             dismissButton = {
                 Button(onClick = onDismissRequest) {
-                    Text(stringResource(ephyra.i18n.R.string.action_cancel))
+                    Text(stringResource(ephyra.app.core.common.R.string.action_cancel))
                 }
             },
         )
@@ -950,13 +950,13 @@ object SettingsTrackingScreen : SearchableSettings {
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = stringResource(ephyra.i18n.R.string.login_title, tracker.name),
+                        text = stringResource(ephyra.app.core.common.R.string.login_title, tracker.name),
                         modifier = Modifier.weight(1f),
                     )
                     IconButton(onClick = onDismissRequest) {
                         Icon(
                             imageVector = Icons.Outlined.Close,
-                            contentDescription = stringResource(ephyra.i18n.R.string.action_close),
+                            contentDescription = stringResource(ephyra.app.core.common.R.string.action_close),
                         )
                     }
                 }
@@ -967,7 +967,7 @@ object SettingsTrackingScreen : SearchableSettings {
                         modifier = Modifier.fillMaxWidth(),
                         value = serverUrl,
                         onValueChange = { serverUrl = it },
-                        label = { Text(stringResource(ephyra.i18n.R.string.jellyfin_server_url)) },
+                        label = { Text(stringResource(ephyra.app.core.common.R.string.jellyfin_server_url)) },
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                         singleLine = true,
                         isError = inputError && !processing,
@@ -976,7 +976,7 @@ object SettingsTrackingScreen : SearchableSettings {
                         modifier = Modifier.fillMaxWidth(),
                         value = username,
                         onValueChange = { username = it },
-                        label = { Text(stringResource(ephyra.i18n.R.string.jellyfin_username)) },
+                        label = { Text(stringResource(ephyra.app.core.common.R.string.jellyfin_username)) },
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                         singleLine = true,
                         isError = inputError && !processing,
@@ -986,7 +986,7 @@ object SettingsTrackingScreen : SearchableSettings {
                         modifier = Modifier.fillMaxWidth(),
                         value = password,
                         onValueChange = { password = it },
-                        label = { Text(stringResource(ephyra.i18n.R.string.jellyfin_password)) },
+                        label = { Text(stringResource(ephyra.app.core.common.R.string.jellyfin_password)) },
                         trailingIcon = {
                             IconButton(onClick = { hidePassword = !hidePassword }) {
                                 Icon(
@@ -1035,7 +1035,7 @@ object SettingsTrackingScreen : SearchableSettings {
                         }
                     },
                 ) {
-                    Text(stringResource(if (processing) ephyra.i18n.R.string.logging_in else ephyra.i18n.R.string.login))
+                    Text(stringResource(if (processing) ephyra.app.core.common.R.string.logging_in else ephyra.app.core.common.R.string.login))
                 }
             },
         )
@@ -1054,13 +1054,13 @@ object SettingsTrackingScreen : SearchableSettings {
 
         AlertDialog(
             onDismissRequest = onDismissRequest,
-            title = { Text(stringResource(ephyra.i18n.R.string.jellyfin_update_server_url)) },
+            title = { Text(stringResource(ephyra.app.core.common.R.string.jellyfin_update_server_url)) },
             text = {
                 OutlinedTextField(
                     modifier = Modifier.fillMaxWidth(),
                     value = newUrl,
                     onValueChange = { newUrl = it },
-                    label = { Text(stringResource(ephyra.i18n.R.string.jellyfin_server_url)) },
+                    label = { Text(stringResource(ephyra.app.core.common.R.string.jellyfin_server_url)) },
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     singleLine = true,
                 )
@@ -1074,7 +1074,7 @@ object SettingsTrackingScreen : SearchableSettings {
                             try {
                                 jellyfin.updateServerUrl(newUrl.text)
                                 withContext(Dispatchers.Main) {
-                                    context.toast(ephyra.i18n.R.string.jellyfin_server_updated)
+                                    context.toast(ephyra.app.core.common.R.string.jellyfin_server_updated)
                                     onDismissRequest()
                                 }
                             } catch (e: Exception) {
@@ -1084,12 +1084,12 @@ object SettingsTrackingScreen : SearchableSettings {
                         }
                     },
                 ) {
-                    Text(stringResource(ephyra.i18n.R.string.action_ok))
+                    Text(stringResource(ephyra.app.core.common.R.string.action_ok))
                 }
             },
             dismissButton = {
                 Button(onClick = onDismissRequest) {
-                    Text(stringResource(ephyra.i18n.R.string.action_cancel))
+                    Text(stringResource(ephyra.app.core.common.R.string.action_cancel))
                 }
             },
         )

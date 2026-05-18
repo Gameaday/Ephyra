@@ -61,21 +61,21 @@ private fun DownloadDropdownMenuItems(
     // Show Jellyfin sync options at the top when the series is linked to Jellyfin
     if (isJellyfinLinked) {
         DropdownMenuItem(
-            text = { Text(text = stringResource(ephyra.i18n.R.string.download_sync_to_jellyfin)) },
+            text = { Text(text = stringResource(ephyra.app.core.common.R.string.download_sync_to_jellyfin)) },
             onClick = {
                 onDownloadClicked(DownloadAction.SYNC_TO_JELLYFIN)
                 onDismissRequest()
             },
         )
         DropdownMenuItem(
-            text = { Text(text = stringResource(ephyra.i18n.R.string.download_sync_read_to_jellyfin)) },
+            text = { Text(text = stringResource(ephyra.app.core.common.R.string.download_sync_read_to_jellyfin)) },
             onClick = {
                 onDownloadClicked(DownloadAction.SYNC_READ_TO_JELLYFIN)
                 onDismissRequest()
             },
         )
         DropdownMenuItem(
-            text = { Text(text = stringResource(ephyra.i18n.R.string.download_sync_all_to_jellyfin)) },
+            text = { Text(text = stringResource(ephyra.app.core.common.R.string.download_sync_all_to_jellyfin)) },
             onClick = {
                 onDownloadClicked(DownloadAction.SYNC_ALL_TO_JELLYFIN)
                 onDismissRequest()
@@ -85,12 +85,12 @@ private fun DownloadDropdownMenuItems(
     }
 
     val options = persistentListOf(
-        DownloadAction.NEXT_1_CHAPTER to pluralStringResource(ephyra.i18n.R.plurals.download_amount, 1, 1),
-        DownloadAction.NEXT_5_CHAPTERS to pluralStringResource(ephyra.i18n.R.plurals.download_amount, 5, 5),
-        DownloadAction.NEXT_10_CHAPTERS to pluralStringResource(ephyra.i18n.R.plurals.download_amount, 10, 10),
-        DownloadAction.NEXT_25_CHAPTERS to pluralStringResource(ephyra.i18n.R.plurals.download_amount, 25, 25),
-        DownloadAction.UNREAD_CHAPTERS to stringResource(ephyra.i18n.R.string.download_unread),
-        DownloadAction.BOOKMARKED_CHAPTERS to stringResource(ephyra.i18n.R.string.download_bookmarked),
+        DownloadAction.NEXT_1_CHAPTER to pluralStringResource(ephyra.app.core.common.R.plurals.download_amount, 1, 1),
+        DownloadAction.NEXT_5_CHAPTERS to pluralStringResource(ephyra.app.core.common.R.plurals.download_amount, 5, 5),
+        DownloadAction.NEXT_10_CHAPTERS to pluralStringResource(ephyra.app.core.common.R.plurals.download_amount, 10, 10),
+        DownloadAction.NEXT_25_CHAPTERS to pluralStringResource(ephyra.app.core.common.R.plurals.download_amount, 25, 25),
+        DownloadAction.UNREAD_CHAPTERS to stringResource(ephyra.app.core.common.R.string.download_unread),
+        DownloadAction.BOOKMARKED_CHAPTERS to stringResource(ephyra.app.core.common.R.string.download_bookmarked),
     )
 
     options.forEach { (downloadAction, string) ->

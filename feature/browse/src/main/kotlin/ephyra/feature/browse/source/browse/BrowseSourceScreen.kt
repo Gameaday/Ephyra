@@ -165,7 +165,7 @@ data class BrowseSourceScreen(
                                 )
                             },
                             label = {
-                                Text(text = stringResource(ephyra.i18n.R.string.popular))
+                                Text(text = stringResource(ephyra.app.core.common.R.string.popular))
                             },
                         )
                         if ((screenModel.source as CatalogueSource).supportsLatest) {
@@ -184,7 +184,7 @@ data class BrowseSourceScreen(
                                     )
                                 },
                                 label = {
-                                    Text(text = stringResource(ephyra.i18n.R.string.latest))
+                                    Text(text = stringResource(ephyra.app.core.common.R.string.latest))
                                 },
                             )
                         }
@@ -201,7 +201,7 @@ data class BrowseSourceScreen(
                                     )
                                 },
                                 label = {
-                                    Text(text = stringResource(ephyra.i18n.R.string.action_filter))
+                                    Text(text = stringResource(ephyra.app.core.common.R.string.action_filter))
                                 },
                             )
                         }

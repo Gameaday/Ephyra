@@ -43,7 +43,7 @@ class OpenSourceLibraryLicenseScreen(
                             AppBarActions(
                                 persistentListOf(
                                     AppBar.Action(
-                                        title = stringResource(ephyra.i18n.R.string.website),
+                                        title = stringResource(ephyra.app.core.common.R.string.website),
                                         icon = Icons.Default.Public,
                                         onClick = { uriHandler.openUri(website) },
                                     ),

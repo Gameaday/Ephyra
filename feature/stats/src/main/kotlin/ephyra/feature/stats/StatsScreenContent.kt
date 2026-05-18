@@ -55,30 +55,30 @@ fun StatsScreenContent(
 private fun LazyItemScope.OverviewSection(
     data: StatsData.Overview,
 ) {
-    val none = stringResource(ephyra.i18n.R.string.none)
+    val none = stringResource(ephyra.app.core.common.R.string.none)
     val context = LocalContext.current
     val readDurationString = remember(data.totalReadDuration) {
         data.totalReadDuration
             .toDuration(DurationUnit.MILLISECONDS)
             .toDurationString(context, fallback = none)
     }
-    SectionCard(ephyra.i18n.R.string.label_overview_section) {
+    SectionCard(ephyra.app.core.common.R.string.label_overview_section) {
         Row(
             modifier = Modifier.height(IntrinsicSize.Min),
         ) {
             StatsOverviewItem(
                 title = data.libraryMangaCount.toString(),
-                subtitle = stringResource(ephyra.i18n.R.string.in_library),
+                subtitle = stringResource(ephyra.app.core.common.R.string.in_library),
                 icon = Icons.Outlined.CollectionsBookmark,
             )
             StatsOverviewItem(
                 title = readDurationString,
-                subtitle = stringResource(ephyra.i18n.R.string.label_read_duration),
+                subtitle = stringResource(ephyra.app.core.common.R.string.label_read_duration),
                 icon = Icons.Outlined.Schedule,
             )
             StatsOverviewItem(
                 title = data.completedMangaCount.toString(),
-                subtitle = stringResource(ephyra.i18n.R.string.label_completed_titles),
+                subtitle = stringResource(ephyra.app.core.common.R.string.label_completed_titles),
                 icon = Icons.Outlined.LocalLibrary,
             )
         }
@@ -89,19 +89,19 @@ private fun LazyItemScope.OverviewSection(
 private fun LazyItemScope.TitlesStats(
     data: StatsData.Titles,
 ) {
-    SectionCard(ephyra.i18n.R.string.label_titles_section) {
+    SectionCard(ephyra.app.core.common.R.string.label_titles_section) {
         Row {
             StatsItem(
                 data.globalUpdateItemCount.toString(),
-                stringResource(ephyra.i18n.R.string.label_titles_in_global_update),
+                stringResource(ephyra.app.core.common.R.string.label_titles_in_global_update),
             )
             StatsItem(
                 data.startedMangaCount.toString(),
-                stringResource(ephyra.i18n.R.string.label_started),
+                stringResource(ephyra.app.core.common.R.string.label_started),
             )
             StatsItem(
                 data.localMangaCount.toString(),
-                stringResource(ephyra.i18n.R.string.label_local),
+                stringResource(ephyra.app.core.common.R.string.label_local),
             )
         }
     }
@@ -111,19 +111,19 @@ private fun LazyItemScope.TitlesStats(
 private fun LazyItemScope.ChapterStats(
     data: StatsData.Chapters,
 ) {
-    SectionCard(ephyra.i18n.R.string.chapters) {
+    SectionCard(ephyra.app.core.common.R.string.chapters) {
         Row {
             StatsItem(
                 data.totalChapterCount.toString(),
-                stringResource(ephyra.i18n.R.string.label_total_chapters),
+                stringResource(ephyra.app.core.common.R.string.label_total_chapters),
             )
             StatsItem(
                 data.readChapterCount.toString(),
-                stringResource(ephyra.i18n.R.string.label_read_chapters),
+                stringResource(ephyra.app.core.common.R.string.label_read_chapters),
             )
             StatsItem(
                 data.downloadCount.toString(),
-                stringResource(ephyra.i18n.R.string.label_downloaded),
+                stringResource(ephyra.app.core.common.R.string.label_downloaded),
             )
         }
     }
@@ -133,7 +133,7 @@ private fun LazyItemScope.ChapterStats(
 private fun LazyItemScope.TrackerStats(
     data: StatsData.Trackers,
 ) {
-    val notApplicable = stringResource(ephyra.i18n.R.string.not_applicable)
+    val notApplicable = stringResource(ephyra.app.core.common.R.string.not_applicable)
     val meanScoreStr = remember(data.trackedTitleCount, data.meanScore) {
         if (data.trackedTitleCount > 0 && !data.meanScore.isNaN()) {
             // All other numbers are localized in English
@@ -142,19 +142,19 @@ private fun LazyItemScope.TrackerStats(
             notApplicable
         }
     }
-    SectionCard(ephyra.i18n.R.string.label_tracker_section) {
+    SectionCard(ephyra.app.core.common.R.string.label_tracker_section) {
         Row {
             StatsItem(
                 data.trackedTitleCount.toString(),
-                stringResource(ephyra.i18n.R.string.label_tracked_titles),
+                stringResource(ephyra.app.core.common.R.string.label_tracked_titles),
             )
             StatsItem(
                 meanScoreStr,
-                stringResource(ephyra.i18n.R.string.label_mean_score),
+                stringResource(ephyra.app.core.common.R.string.label_mean_score),
             )
             StatsItem(
                 data.trackerCount.toString(),
-                stringResource(ephyra.i18n.R.string.label_used),
+                stringResource(ephyra.app.core.common.R.string.label_used),
             )
         }
     }

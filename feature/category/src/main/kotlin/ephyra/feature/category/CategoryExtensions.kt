@@ -9,12 +9,12 @@ import ephyra.presentation.core.i18n.stringResource
 val Category.visualName: String
     @Composable
     get() = when {
-        isSystemCategory -> stringResource(ephyra.i18n.R.string.label_default)
+        isSystemCategory -> stringResource(ephyra.app.core.common.R.string.label_default)
         else -> name
     }
 
 fun Category.visualName(context: Context): String =
     when {
-        isSystemCategory -> context.stringResource(ephyra.i18n.R.string.label_default)
+        isSystemCategory -> context.stringResource(ephyra.app.core.common.R.string.label_default)
         else -> name
     }

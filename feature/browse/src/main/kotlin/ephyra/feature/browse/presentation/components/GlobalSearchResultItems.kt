@@ -92,7 +92,7 @@ fun GlobalSearchErrorResultItem(message: String?) {
         Icon(imageVector = Icons.Outlined.Error, contentDescription = null)
         Spacer(Modifier.height(4.dp))
         Text(
-            text = message ?: stringResource(ephyra.i18n.R.string.unknown_error),
+            text = message ?: stringResource(ephyra.app.core.common.R.string.unknown_error),
             textAlign = TextAlign.Center,
         )
     }

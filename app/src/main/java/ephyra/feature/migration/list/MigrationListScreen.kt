@@ -50,7 +50,7 @@ class MigrationListScreen(
 
         LaunchedEffect(screenModel) {
             screenModel.missingChaptersEvent.collect {
-                context.toast(ephyra.i18n.R.string.migrationListScreen_matchWithoutChapterToast, Toast.LENGTH_LONG)
+                context.toast(ephyra.app.core.common.R.string.migrationListScreen_matchWithoutChapterToast, Toast.LENGTH_LONG)
             }
         }
 

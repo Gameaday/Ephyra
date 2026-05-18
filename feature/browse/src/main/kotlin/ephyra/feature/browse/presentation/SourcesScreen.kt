@@ -48,7 +48,7 @@ fun SourcesScreen(
     when {
         state.isLoading -> LoadingScreen(Modifier.padding(contentPadding))
         state.isEmpty -> EmptyScreen(
-            stringRes = ephyra.i18n.R.string.source_empty_screen,
+            stringRes = ephyra.app.core.common.R.string.source_empty_screen,
             modifier = Modifier.padding(contentPadding),
         )
 
@@ -124,7 +124,7 @@ private fun SourceItem(
             if (source.supportsLatest) {
                 TextButton(onClick = { onClickItem(source, Listing.Latest) }) {
                     Text(
-                        text = stringResource(ephyra.i18n.R.string.latest),
+                        text = stringResource(ephyra.app.core.common.R.string.latest),
                         style = LocalTextStyle.current.copy(
                             color = MaterialTheme.colorScheme.primary,
                         ),
@@ -152,7 +152,7 @@ private fun SourcePinButton(
             alpha = SECONDARY_ALPHA,
         )
     }
-    val description = if (isPinned) ephyra.i18n.R.string.action_unpin else ephyra.i18n.R.string.action_pin
+    val description = if (isPinned) ephyra.app.core.common.R.string.action_unpin else ephyra.app.core.common.R.string.action_pin
     IconButton(onClick = onClick) {
         Icon(
             imageVector = icon,
@@ -175,7 +175,7 @@ fun SourceOptionsDialog(
         },
         text = {
             Column {
-                val textId = if (Pin.Pinned in source.pin) ephyra.i18n.R.string.action_unpin else ephyra.i18n.R.string.action_pin
+                val textId = if (Pin.Pinned in source.pin) ephyra.app.core.common.R.string.action_unpin else ephyra.app.core.common.R.string.action_pin
                 Text(
                     text = stringResource(textId),
                     modifier = Modifier
@@ -185,7 +185,7 @@ fun SourceOptionsDialog(
                 )
                 if (!source.isLocal()) {
                     Text(
-                        text = stringResource(ephyra.i18n.R.string.action_disable),
+                        text = stringResource(ephyra.app.core.common.R.string.action_disable),
                         modifier = Modifier
                             .clickable(onClick = onClickDisable)
                             .fillMaxWidth()

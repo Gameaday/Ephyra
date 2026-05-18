@@ -83,9 +83,9 @@ class Jellyfin(
     override fun getStatusList(): List<Long> = listOf(UNREAD, READING, COMPLETED)
 
     override fun getStatus(status: Long): Int? = when (status) {
-        UNREAD -> ephyra.i18n.R.string.unread
-        READING -> ephyra.i18n.R.string.reading
-        COMPLETED -> ephyra.i18n.R.string.completed
+        UNREAD -> ephyra.app.core.common.R.string.unread
+        READING -> ephyra.app.core.common.R.string.reading
+        COMPLETED -> ephyra.app.core.common.R.string.completed
         else -> null
     }
 

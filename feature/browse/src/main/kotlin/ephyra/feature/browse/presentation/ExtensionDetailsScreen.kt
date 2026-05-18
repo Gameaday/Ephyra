@@ -88,7 +88,7 @@ fun ExtensionDetailsScreen(
     Scaffold(
         topBar = { scrollBehavior ->
             AppBar(
-                title = stringResource(ephyra.i18n.R.string.label_extension_info),
+                title = stringResource(ephyra.app.core.common.R.string.label_extension_info),
                 navigateUp = navigateUp,
                 actions = {
                     AppBarActions(
@@ -97,7 +97,7 @@ fun ExtensionDetailsScreen(
                                 if (url != null) {
                                     add(
                                         AppBar.Action(
-                                            title = stringResource(ephyra.i18n.R.string.action_open_repo),
+                                            title = stringResource(ephyra.app.core.common.R.string.action_open_repo),
                                             icon = Icons.AutoMirrored.Outlined.Launch,
                                             onClick = {
                                                 uriHandler.openUri(url)
@@ -108,15 +108,15 @@ fun ExtensionDetailsScreen(
                                 addAll(
                                     listOf(
                                         AppBar.OverflowAction(
-                                            title = stringResource(ephyra.i18n.R.string.action_enable_all),
+                                            title = stringResource(ephyra.app.core.common.R.string.action_enable_all),
                                             onClick = onClickEnableAll,
                                         ),
                                         AppBar.OverflowAction(
-                                            title = stringResource(ephyra.i18n.R.string.action_disable_all),
+                                            title = stringResource(ephyra.app.core.common.R.string.action_disable_all),
                                             onClick = onClickDisableAll,
                                         ),
                                         AppBar.OverflowAction(
-                                            title = stringResource(ephyra.i18n.R.string.pref_clear_cookies),
+                                            title = stringResource(ephyra.app.core.common.R.string.pref_clear_cookies),
                                             onClick = onClickClearCookies,
                                         ),
                                     ),
@@ -131,7 +131,7 @@ fun ExtensionDetailsScreen(
     ) { paddingValues ->
         if (state.extension == null) {
             EmptyScreen(
-                ephyra.i18n.R.string.empty_screen,
+                ephyra.app.core.common.R.string.empty_screen,
                 modifier = Modifier.padding(paddingValues),
             )
             return@Scaffold
@@ -169,7 +169,7 @@ private fun ExtensionDetails(
     ) {
         if (extension.isObsolete) {
             item {
-                WarningBanner(stringResource(ephyra.i18n.R.string.obsolete_extension_message))
+                WarningBanner(stringResource(ephyra.app.core.common.R.string.obsolete_extension_message))
             }
         }
 
@@ -294,7 +294,7 @@ private fun DetailsHeader(
             InfoText(
                 modifier = Modifier.weight(1f),
                 primaryText = extension.versionName,
-                secondaryText = stringResource(ephyra.i18n.R.string.ext_info_version),
+                secondaryText = stringResource(ephyra.app.core.common.R.string.ext_info_version),
             )
 
             InfoDivider()
@@ -302,7 +302,7 @@ private fun DetailsHeader(
             InfoText(
                 modifier = Modifier.weight(if (extension.isNsfw) 1.5f else 1f),
                 primaryText = LocaleHelper.getSourceDisplayName(extension.lang, context),
-                secondaryText = stringResource(ephyra.i18n.R.string.ext_info_language),
+                secondaryText = stringResource(ephyra.app.core.common.R.string.ext_info_language),
             )
 
             if (extension.isNsfw) {
@@ -310,12 +310,12 @@ private fun DetailsHeader(
 
                 InfoText(
                     modifier = Modifier.weight(1f),
-                    primaryText = stringResource(ephyra.i18n.R.string.ext_nsfw_short),
+                    primaryText = stringResource(ephyra.app.core.common.R.string.ext_nsfw_short),
                     primaryTextStyle = MaterialTheme.typography.bodyLarge.copy(
                         color = MaterialTheme.colorScheme.error,
                         fontWeight = FontWeight.Medium,
                     ),
-                    secondaryText = stringResource(ephyra.i18n.R.string.ext_info_age_rating),
+                    secondaryText = stringResource(ephyra.app.core.common.R.string.ext_info_age_rating),
                     onClick = onClickAgeRating,
                 )
             }
@@ -331,7 +331,7 @@ private fun DetailsHeader(
                 modifier = Modifier.weight(1f),
                 onClick = onClickUninstall,
             ) {
-                Text(stringResource(ephyra.i18n.R.string.ext_uninstall))
+                Text(stringResource(ephyra.app.core.common.R.string.ext_uninstall))
             }
 
             if (onClickAppInfo != null) {
@@ -340,7 +340,7 @@ private fun DetailsHeader(
                     onClick = onClickAppInfo,
                 ) {
                     Text(
-                        text = stringResource(ephyra.i18n.R.string.ext_app_info),
+                        text = stringResource(ephyra.app.core.common.R.string.ext_app_info),
                         color = MaterialTheme.colorScheme.onPrimary,
                     )
                 }
@@ -362,11 +362,11 @@ private fun DetailsHeader(
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = stringResource(ephyra.i18n.R.string.pref_incognito_mode),
+                    text = stringResource(ephyra.app.core.common.R.string.pref_incognito_mode),
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
-                    text = stringResource(ephyra.i18n.R.string.pref_incognito_mode_extension_summary),
+                    text = stringResource(ephyra.app.core.common.R.string.pref_incognito_mode_extension_summary),
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
@@ -451,7 +451,7 @@ private fun SourceSwitchPreference(
             IconButton(onClick = { onClickSourcePreferences(source.source.id) }) {
                 Icon(
                     imageVector = Icons.Outlined.Settings,
-                    contentDescription = stringResource(ephyra.i18n.R.string.label_settings),
+                    contentDescription = stringResource(ephyra.app.core.common.R.string.label_settings),
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
@@ -470,11 +470,11 @@ private fun NsfwWarningDialog(
 ) {
     AlertDialog(
         text = {
-            Text(text = stringResource(ephyra.i18n.R.string.ext_nsfw_warning))
+            Text(text = stringResource(ephyra.app.core.common.R.string.ext_nsfw_warning))
         },
         confirmButton = {
             TextButton(onClick = onClickConfirm) {
-                Text(text = stringResource(ephyra.i18n.R.string.action_ok))
+                Text(text = stringResource(ephyra.app.core.common.R.string.action_ok))
             }
         },
         onDismissRequest = onClickConfirm,

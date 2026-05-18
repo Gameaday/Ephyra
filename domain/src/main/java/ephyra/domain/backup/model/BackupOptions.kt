@@ -39,35 +39,35 @@ data class BackupOptions(
     companion object {
         val libraryOptions = persistentListOf(
             Entry(
-                label = ephyra.i18n.R.string.manga,
+                label = ephyra.app.core.common.R.string.manga,
                 getter = BackupOptions::libraryEntries,
                 setter = { options, enabled -> options.copy(libraryEntries = enabled) },
             ),
             Entry(
-                label = ephyra.i18n.R.string.chapters,
+                label = ephyra.app.core.common.R.string.chapters,
                 getter = BackupOptions::chapters,
                 setter = { options, enabled -> options.copy(chapters = enabled) },
                 enabled = { it.libraryEntries },
             ),
             Entry(
-                label = ephyra.i18n.R.string.track,
+                label = ephyra.app.core.common.R.string.track,
                 getter = BackupOptions::tracking,
                 setter = { options, enabled -> options.copy(tracking = enabled) },
                 enabled = { it.libraryEntries },
             ),
             Entry(
-                label = ephyra.i18n.R.string.history,
+                label = ephyra.app.core.common.R.string.history,
                 getter = BackupOptions::history,
                 setter = { options, enabled -> options.copy(history = enabled) },
                 enabled = { it.libraryEntries },
             ),
             Entry(
-                label = ephyra.i18n.R.string.categories,
+                label = ephyra.app.core.common.R.string.categories,
                 getter = BackupOptions::categories,
                 setter = { options, enabled -> options.copy(categories = enabled) },
             ),
             Entry(
-                label = ephyra.i18n.R.string.non_library_settings,
+                label = ephyra.app.core.common.R.string.non_library_settings,
                 getter = BackupOptions::readEntries,
                 setter = { options, enabled -> options.copy(readEntries = enabled) },
                 enabled = { it.libraryEntries },
@@ -76,22 +76,22 @@ data class BackupOptions(
 
         val settingsOptions = persistentListOf(
             Entry(
-                label = ephyra.i18n.R.string.app_settings,
+                label = ephyra.app.core.common.R.string.app_settings,
                 getter = BackupOptions::appSettings,
                 setter = { options, enabled -> options.copy(appSettings = enabled) },
             ),
             Entry(
-                label = ephyra.i18n.R.string.extensionRepo_settings,
+                label = ephyra.app.core.common.R.string.extensionRepo_settings,
                 getter = BackupOptions::extensionRepoSettings,
                 setter = { options, enabled -> options.copy(extensionRepoSettings = enabled) },
             ),
             Entry(
-                label = ephyra.i18n.R.string.source_settings,
+                label = ephyra.app.core.common.R.string.source_settings,
                 getter = BackupOptions::sourceSettings,
                 setter = { options, enabled -> options.copy(sourceSettings = enabled) },
             ),
             Entry(
-                label = ephyra.i18n.R.string.private_settings,
+                label = ephyra.app.core.common.R.string.private_settings,
                 getter = BackupOptions::privateSettings,
                 setter = { options, enabled -> options.copy(privateSettings = enabled) },
                 enabled = { it.appSettings || it.sourceSettings },

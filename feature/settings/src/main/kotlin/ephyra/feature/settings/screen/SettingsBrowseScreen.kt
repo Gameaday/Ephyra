@@ -24,7 +24,7 @@ object SettingsBrowseScreen : SearchableSettings {
 
     @ReadOnlyComposable
     @Composable
-    override fun getTitleRes() = ephyra.i18n.R.string.label_discover
+    override fun getTitleRes() = ephyra.app.core.common.R.string.label_discover
 
     @Composable
     override fun getPreferences(): List<Preference> {
@@ -36,15 +36,15 @@ object SettingsBrowseScreen : SearchableSettings {
 
         return listOf(
             Preference.PreferenceGroup(
-                title = stringResource(ephyra.i18n.R.string.label_sources),
+                title = stringResource(ephyra.app.core.common.R.string.label_sources),
                 preferenceItems = persistentListOf(
                     Preference.PreferenceItem.SwitchPreference(
                         preference = screenModel.sourcePreferences.hideInLibraryItems(),
-                        title = stringResource(ephyra.i18n.R.string.pref_hide_in_library_items),
+                        title = stringResource(ephyra.app.core.common.R.string.pref_hide_in_library_items),
                     ),
                     Preference.PreferenceItem.TextPreference(
-                        title = stringResource(ephyra.i18n.R.string.label_extension_repos),
-                        subtitle = pluralStringResource(ephyra.i18n.R.plurals.num_repos, reposCount, reposCount),
+                        title = stringResource(ephyra.app.core.common.R.string.label_extension_repos),
+                        subtitle = pluralStringResource(ephyra.app.core.common.R.plurals.num_repos, reposCount, reposCount),
                         onClick = {
                             navigator.push(ExtensionReposScreen())
                         },
@@ -52,19 +52,19 @@ object SettingsBrowseScreen : SearchableSettings {
                 ),
             ),
             Preference.PreferenceGroup(
-                title = stringResource(ephyra.i18n.R.string.pref_category_nsfw_content),
+                title = stringResource(ephyra.app.core.common.R.string.pref_category_nsfw_content),
                 preferenceItems = persistentListOf(
                     Preference.PreferenceItem.SwitchPreference(
                         preference = screenModel.sourcePreferences.showNsfwSource(),
-                        title = stringResource(ephyra.i18n.R.string.pref_show_nsfw_source),
-                        subtitle = stringResource(ephyra.i18n.R.string.requires_app_restart),
+                        title = stringResource(ephyra.app.core.common.R.string.pref_show_nsfw_source),
+                        subtitle = stringResource(ephyra.app.core.common.R.string.requires_app_restart),
                         onValueChanged = {
                             (context as FragmentActivity).authenticate(
-                                title = context.stringResource(ephyra.i18n.R.string.pref_category_nsfw_content),
+                                title = context.stringResource(ephyra.app.core.common.R.string.pref_category_nsfw_content),
                             )
                         },
                     ),
-                    Preference.PreferenceItem.InfoPreference(stringResource(ephyra.i18n.R.string.parental_controls_info)),
+                    Preference.PreferenceItem.InfoPreference(stringResource(ephyra.app.core.common.R.string.parental_controls_info)),
                 ),
             ),
         )

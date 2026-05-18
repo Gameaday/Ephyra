@@ -61,11 +61,11 @@ class MangaUpdates(
     }
 
     override fun getStatus(status: Long): Int? = when (status) {
-        READING_LIST -> ephyra.i18n.R.string.reading_list
-        WISH_LIST -> ephyra.i18n.R.string.wish_list
-        COMPLETE_LIST -> ephyra.i18n.R.string.complete_list
-        ON_HOLD_LIST -> ephyra.i18n.R.string.on_hold_list
-        UNFINISHED_LIST -> ephyra.i18n.R.string.unfinished_list
+        READING_LIST -> ephyra.app.core.common.R.string.reading_list
+        WISH_LIST -> ephyra.app.core.common.R.string.wish_list
+        COMPLETE_LIST -> ephyra.app.core.common.R.string.complete_list
+        ON_HOLD_LIST -> ephyra.app.core.common.R.string.on_hold_list
+        UNFINISHED_LIST -> ephyra.app.core.common.R.string.unfinished_list
         else -> null
     }
 

@@ -76,7 +76,7 @@ object SettingsAdvancedScreen : SearchableSettings {
 
     @ReadOnlyComposable
     @Composable
-    override fun getTitleRes() = ephyra.i18n.R.string.pref_category_advanced
+    override fun getTitleRes() = ephyra.app.core.common.R.string.pref_category_advanced
 
     @Composable
     override fun getPreferences(): List<Preference> {
@@ -94,8 +94,8 @@ object SettingsAdvancedScreen : SearchableSettings {
 
         return listOf(
             Preference.PreferenceItem.TextPreference(
-                title = stringResource(ephyra.i18n.R.string.pref_dump_crash_logs),
-                subtitle = stringResource(ephyra.i18n.R.string.pref_dump_crash_logs_summary),
+                title = stringResource(ephyra.app.core.common.R.string.pref_dump_crash_logs),
+                subtitle = stringResource(ephyra.app.core.common.R.string.pref_dump_crash_logs_summary),
                 onClick = {
                     scope.launch {
                         CrashLogUtil(context, extensionManager).dumpLogs()
@@ -104,23 +104,23 @@ object SettingsAdvancedScreen : SearchableSettings {
             ),
             Preference.PreferenceItem.SwitchPreference(
                 preference = networkPreferences.verboseLogging(),
-                title = stringResource(ephyra.i18n.R.string.pref_verbose_logging),
-                subtitle = stringResource(ephyra.i18n.R.string.pref_verbose_logging_summary),
+                title = stringResource(ephyra.app.core.common.R.string.pref_verbose_logging),
+                subtitle = stringResource(ephyra.app.core.common.R.string.pref_verbose_logging_summary),
                 onValueChanged = {
-                    context.toast(ephyra.i18n.R.string.requires_app_restart)
+                    context.toast(ephyra.app.core.common.R.string.requires_app_restart)
                     true
                 },
             ),
             Preference.PreferenceItem.TextPreference(
-                title = stringResource(ephyra.i18n.R.string.pref_debug_info),
+                title = stringResource(ephyra.app.core.common.R.string.pref_debug_info),
                 onClick = { navigator.push(DebugInfoScreen()) },
             ),
             Preference.PreferenceItem.TextPreference(
-                title = stringResource(ephyra.i18n.R.string.pref_onboarding_guide),
+                title = stringResource(ephyra.app.core.common.R.string.pref_onboarding_guide),
                 onClick = { navigator.push(onboardingScreenFactory.create()) },
             ),
             Preference.PreferenceItem.TextPreference(
-                title = stringResource(ephyra.i18n.R.string.pref_manage_notifications),
+                title = stringResource(ephyra.app.core.common.R.string.pref_manage_notifications),
                 onClick = {
                     val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
                         putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
@@ -153,11 +153,11 @@ object SettingsAdvancedScreen : SearchableSettings {
         val uriHandler = LocalUriHandler.current
 
         return Preference.PreferenceGroup(
-            title = stringResource(ephyra.i18n.R.string.label_background_activity),
+            title = stringResource(ephyra.app.core.common.R.string.label_background_activity),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.TextPreference(
-                    title = stringResource(ephyra.i18n.R.string.pref_disable_battery_optimization),
-                    subtitle = stringResource(ephyra.i18n.R.string.pref_disable_battery_optimization_summary),
+                    title = stringResource(ephyra.app.core.common.R.string.pref_disable_battery_optimization),
+                    subtitle = stringResource(ephyra.app.core.common.R.string.pref_disable_battery_optimization_summary),
                     onClick = {
                         val packageName: String = context.packageName
                         if (!context.powerManager.isIgnoringBatteryOptimizations(packageName)) {
@@ -170,16 +170,16 @@ object SettingsAdvancedScreen : SearchableSettings {
                                 }
                                 context.startActivity(intent)
                             } catch (e: ActivityNotFoundException) {
-                                context.toast(ephyra.i18n.R.string.battery_optimization_setting_activity_not_found)
+                                context.toast(ephyra.app.core.common.R.string.battery_optimization_setting_activity_not_found)
                             }
                         } else {
-                            context.toast(ephyra.i18n.R.string.battery_optimization_disabled)
+                            context.toast(ephyra.app.core.common.R.string.battery_optimization_disabled)
                         }
                     },
                 ),
                 Preference.PreferenceItem.TextPreference(
                     title = "Don't kill my app!",
-                    subtitle = stringResource(ephyra.i18n.R.string.about_dont_kill_my_app),
+                    subtitle = stringResource(ephyra.app.core.common.R.string.about_dont_kill_my_app),
                     onClick = { uriHandler.openUri("https://dontkillmyapp.com/") },
                 ),
             ),
@@ -193,21 +193,21 @@ object SettingsAdvancedScreen : SearchableSettings {
         val scope = rememberCoroutineScope()
 
         return Preference.PreferenceGroup(
-            title = stringResource(ephyra.i18n.R.string.label_data),
+            title = stringResource(ephyra.app.core.common.R.string.label_data),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.TextPreference(
-                    title = stringResource(ephyra.i18n.R.string.pref_invalidate_download_cache),
-                    subtitle = stringResource(ephyra.i18n.R.string.pref_invalidate_download_cache_summary),
+                    title = stringResource(ephyra.app.core.common.R.string.pref_invalidate_download_cache),
+                    subtitle = stringResource(ephyra.app.core.common.R.string.pref_invalidate_download_cache_summary),
                     onClick = {
                         scope.launch {
                             downloadCache.invalidateCache()
-                            context.toast(ephyra.i18n.R.string.download_cache_invalidated)
+                            context.toast(ephyra.app.core.common.R.string.download_cache_invalidated)
                         }
                     },
                 ),
                 Preference.PreferenceItem.TextPreference(
-                    title = stringResource(ephyra.i18n.R.string.pref_clear_database),
-                    subtitle = stringResource(ephyra.i18n.R.string.pref_clear_database_summary),
+                    title = stringResource(ephyra.app.core.common.R.string.pref_clear_database),
+                    subtitle = stringResource(ephyra.app.core.common.R.string.pref_clear_database_summary),
                     onClick = { navigator.push(ClearDatabaseScreen()) },
                 ),
             ),
@@ -225,17 +225,17 @@ object SettingsAdvancedScreen : SearchableSettings {
         val userAgent by userAgentPref.collectAsState()
 
         return Preference.PreferenceGroup(
-            title = stringResource(ephyra.i18n.R.string.label_network),
+            title = stringResource(ephyra.app.core.common.R.string.label_network),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.TextPreference(
-                    title = stringResource(ephyra.i18n.R.string.pref_clear_cookies),
+                    title = stringResource(ephyra.app.core.common.R.string.pref_clear_cookies),
                     onClick = {
                         networkHelper.cookieJar.removeAll()
-                        context.toast(ephyra.i18n.R.string.cookies_cleared)
+                        context.toast(ephyra.app.core.common.R.string.cookies_cleared)
                     },
                 ),
                 Preference.PreferenceItem.TextPreference(
-                    title = stringResource(ephyra.i18n.R.string.pref_clear_webview_data),
+                    title = stringResource(ephyra.app.core.common.R.string.pref_clear_webview_data),
                     onClick = {
                         try {
                             WebView(context).run {
@@ -247,17 +247,17 @@ object SettingsAdvancedScreen : SearchableSettings {
                             }
                             WebStorage.getInstance().deleteAllData()
                             context.applicationInfo?.dataDir?.let { File("$it/app_webview/").deleteRecursively() }
-                            context.toast(ephyra.i18n.R.string.webview_data_deleted)
+                            context.toast(ephyra.app.core.common.R.string.webview_data_deleted)
                         } catch (e: Throwable) {
                             logcat(LogPriority.ERROR, e)
-                            context.toast(ephyra.i18n.R.string.cache_delete_error)
+                            context.toast(ephyra.app.core.common.R.string.cache_delete_error)
                         }
                     },
                 ),
                 Preference.PreferenceItem.ListPreference(
                     preference = networkPreferences.dohProvider(),
                     entries = persistentMapOf(
-                        -1 to stringResource(ephyra.i18n.R.string.disabled),
+                        -1 to stringResource(ephyra.app.core.common.R.string.disabled),
                         PREF_DOH_CLOUDFLARE to "Cloudflare",
                         PREF_DOH_GOOGLE to "Google",
                         PREF_DOH_ADGUARD to "AdGuard",
@@ -271,33 +271,33 @@ object SettingsAdvancedScreen : SearchableSettings {
                         PREF_DOH_NJALLA to "Njalla",
                         PREF_DOH_SHECAN to "Shecan",
                     ),
-                    title = stringResource(ephyra.i18n.R.string.pref_dns_over_https),
+                    title = stringResource(ephyra.app.core.common.R.string.pref_dns_over_https),
                     onValueChanged = {
-                        context.toast(ephyra.i18n.R.string.requires_app_restart)
+                        context.toast(ephyra.app.core.common.R.string.requires_app_restart)
                         true
                     },
                 ),
                 Preference.PreferenceItem.EditTextPreference(
                     preference = userAgentPref,
-                    title = stringResource(ephyra.i18n.R.string.pref_user_agent_string),
+                    title = stringResource(ephyra.app.core.common.R.string.pref_user_agent_string),
                     onValueChanged = {
                         try {
                             // OkHttp checks for valid values internally
                             Headers.Builder().add("User-Agent", it)
-                            context.toast(ephyra.i18n.R.string.requires_app_restart)
+                            context.toast(ephyra.app.core.common.R.string.requires_app_restart)
                         } catch (_: IllegalArgumentException) {
-                            context.toast(ephyra.i18n.R.string.error_user_agent_string_invalid)
+                            context.toast(ephyra.app.core.common.R.string.error_user_agent_string_invalid)
                             return@EditTextPreference false
                         }
                         true
                     },
                 ),
                 Preference.PreferenceItem.TextPreference(
-                    title = stringResource(ephyra.i18n.R.string.pref_reset_user_agent_string),
+                    title = stringResource(ephyra.app.core.common.R.string.pref_reset_user_agent_string),
                     enabled = remember(userAgent) { userAgent != userAgentPref.defaultValue() },
                     onClick = {
                         userAgentPref.delete()
-                        context.toast(ephyra.i18n.R.string.requires_app_restart)
+                        context.toast(ephyra.app.core.common.R.string.requires_app_restart)
                     },
                 ),
             ),
@@ -314,23 +314,23 @@ object SettingsAdvancedScreen : SearchableSettings {
         val metadataUpdateScheduler: MetadataUpdateScheduler = koinInject()
 
         return Preference.PreferenceGroup(
-            title = stringResource(ephyra.i18n.R.string.label_library),
+            title = stringResource(ephyra.app.core.common.R.string.label_library),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.TextPreference(
-                    title = stringResource(ephyra.i18n.R.string.pref_refresh_library_covers),
+                    title = stringResource(ephyra.app.core.common.R.string.pref_refresh_library_covers),
                     onClick = { metadataUpdateScheduler.startMetadataUpdateNow() },
                 ),
                 Preference.PreferenceItem.TextPreference(
-                    title = stringResource(ephyra.i18n.R.string.pref_reset_viewer_flags),
-                    subtitle = stringResource(ephyra.i18n.R.string.pref_reset_viewer_flags_summary),
+                    title = stringResource(ephyra.app.core.common.R.string.pref_reset_viewer_flags),
+                    subtitle = stringResource(ephyra.app.core.common.R.string.pref_reset_viewer_flags_summary),
                     onClick = {
                         scope.launchNonCancellable {
                             val success = resetViewerFlags.await()
                             withContext(Dispatchers.Main) {
                                 val message = if (success) {
-                                    ephyra.i18n.R.string.pref_reset_viewer_flags_success
+                                    ephyra.app.core.common.R.string.pref_reset_viewer_flags_success
                                 } else {
-                                    ephyra.i18n.R.string.pref_reset_viewer_flags_error
+                                    ephyra.app.core.common.R.string.pref_reset_viewer_flags_error
                                 }
                                 context.toast(message)
                             }
@@ -339,13 +339,13 @@ object SettingsAdvancedScreen : SearchableSettings {
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = libraryPreferences.updateMangaTitles(),
-                    title = stringResource(ephyra.i18n.R.string.pref_update_library_manga_titles),
-                    subtitle = stringResource(ephyra.i18n.R.string.pref_update_library_manga_titles_summary),
+                    title = stringResource(ephyra.app.core.common.R.string.pref_update_library_manga_titles),
+                    subtitle = stringResource(ephyra.app.core.common.R.string.pref_update_library_manga_titles_summary),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = libraryPreferences.disallowNonAsciiFilenames(),
-                    title = stringResource(ephyra.i18n.R.string.pref_disallow_non_ascii_filenames),
-                    subtitle = stringResource(ephyra.i18n.R.string.pref_disallow_non_ascii_filenames_details),
+                    title = stringResource(ephyra.app.core.common.R.string.pref_disallow_non_ascii_filenames),
+                    subtitle = stringResource(ephyra.app.core.common.R.string.pref_disallow_non_ascii_filenames_details),
                 ),
             ),
         )
@@ -366,14 +366,14 @@ object SettingsAdvancedScreen : SearchableSettings {
             }
         }
         return Preference.PreferenceGroup(
-            title = stringResource(ephyra.i18n.R.string.pref_category_reader),
+            title = stringResource(ephyra.app.core.common.R.string.pref_category_reader),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.ListPreference(
                     preference = basePreferences.hardwareBitmapThreshold(),
                     entries = GLUtil.CUSTOM_TEXTURE_LIMIT_OPTIONS
                         .mapIndexed { index, option ->
                             val display = if (index == 0) {
-                                stringResource(ephyra.i18n.R.string.pref_hardware_bitmap_threshold_default, option)
+                                stringResource(ephyra.app.core.common.R.string.pref_hardware_bitmap_threshold_default, option)
                             } else {
                                 option.toString()
                             }
@@ -381,19 +381,19 @@ object SettingsAdvancedScreen : SearchableSettings {
                         }
                         .toMap()
                         .toImmutableMap(),
-                    title = stringResource(ephyra.i18n.R.string.pref_hardware_bitmap_threshold),
+                    title = stringResource(ephyra.app.core.common.R.string.pref_hardware_bitmap_threshold),
                     subtitleProvider = { value, options ->
-                        stringResource(ephyra.i18n.R.string.pref_hardware_bitmap_threshold_summary, options[value].orEmpty())
+                        stringResource(ephyra.app.core.common.R.string.pref_hardware_bitmap_threshold_summary, options[value].orEmpty())
                     },
                     enabled = GLUtil.DEVICE_TEXTURE_LIMIT > GLUtil.SAFE_TEXTURE_LIMIT,
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = basePreferences.alwaysDecodeLongStripWithSSIV(),
-                    title = stringResource(ephyra.i18n.R.string.pref_always_decode_long_strip_with_ssiv_2),
-                    subtitle = stringResource(ephyra.i18n.R.string.pref_always_decode_long_strip_with_ssiv_summary),
+                    title = stringResource(ephyra.app.core.common.R.string.pref_always_decode_long_strip_with_ssiv_2),
+                    subtitle = stringResource(ephyra.app.core.common.R.string.pref_always_decode_long_strip_with_ssiv_summary),
                 ),
                 Preference.PreferenceItem.TextPreference(
-                    title = stringResource(ephyra.i18n.R.string.pref_display_profile),
+                    title = stringResource(ephyra.app.core.common.R.string.pref_display_profile),
                     subtitle = basePreferences.displayProfile().getSync(),
                     onClick = {
                         chooseColorProfile.launch(arrayOf("*/*"))
@@ -418,11 +418,11 @@ object SettingsAdvancedScreen : SearchableSettings {
             val dismiss = { shizukuMissing = false }
             AlertDialog(
                 onDismissRequest = dismiss,
-                title = { Text(text = stringResource(ephyra.i18n.R.string.ext_installer_shizuku)) },
-                text = { Text(text = stringResource(ephyra.i18n.R.string.ext_installer_shizuku_unavailable_dialog)) },
+                title = { Text(text = stringResource(ephyra.app.core.common.R.string.ext_installer_shizuku)) },
+                text = { Text(text = stringResource(ephyra.app.core.common.R.string.ext_installer_shizuku_unavailable_dialog)) },
                 dismissButton = {
                     TextButton(onClick = dismiss) {
-                        Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
+                        Text(text = stringResource(ephyra.app.core.common.R.string.action_cancel))
                     }
                 },
                 confirmButton = {
@@ -432,13 +432,13 @@ object SettingsAdvancedScreen : SearchableSettings {
                             uriHandler.openUri("https://shizuku.rikka.app/download")
                         },
                     ) {
-                        Text(text = stringResource(ephyra.i18n.R.string.action_ok))
+                        Text(text = stringResource(ephyra.app.core.common.R.string.action_ok))
                     }
                 },
             )
         }
         return Preference.PreferenceGroup(
-            title = stringResource(ephyra.i18n.R.string.label_extensions),
+            title = stringResource(ephyra.app.core.common.R.string.label_extensions),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.ListPreference(
                     preference = extensionInstallerPref,
@@ -453,7 +453,7 @@ object SettingsAdvancedScreen : SearchableSettings {
                         }
                         .associateWith { stringResource(it.titleRes) }
                         .toImmutableMap(),
-                    title = stringResource(ephyra.i18n.R.string.ext_installer_pref),
+                    title = stringResource(ephyra.app.core.common.R.string.ext_installer_pref),
                     onValueChanged = {
                         if (it == BasePreferences.ExtensionInstaller.SHIZUKU &&
                             !context.isShizukuInstalled
@@ -466,10 +466,10 @@ object SettingsAdvancedScreen : SearchableSettings {
                     },
                 ),
                 Preference.PreferenceItem.TextPreference(
-                    title = stringResource(ephyra.i18n.R.string.ext_revoke_trust),
+                    title = stringResource(ephyra.app.core.common.R.string.ext_revoke_trust),
                     onClick = {
                         trustExtension.revokeAll()
-                        context.toast(ephyra.i18n.R.string.requires_app_restart)
+                        context.toast(ephyra.app.core.common.R.string.requires_app_restart)
                     },
                 ),
             ),

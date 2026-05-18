@@ -22,9 +22,9 @@ fun DeleteLibraryMangaDialog(
     var list by remember {
         mutableStateOf(
             buildList<CheckboxState.State<Int>> {
-                add(CheckboxState.State.None(ephyra.i18n.R.string.manga_from_library))
+                add(CheckboxState.State.None(ephyra.app.core.common.R.string.manga_from_library))
                 if (!containsLocalManga) {
-                    add(CheckboxState.State.None(ephyra.i18n.R.string.downloaded_chapters))
+                    add(CheckboxState.State.None(ephyra.app.core.common.R.string.downloaded_chapters))
                 }
             },
         )
@@ -33,7 +33,7 @@ fun DeleteLibraryMangaDialog(
         onDismissRequest = onDismissRequest,
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
+                Text(text = stringResource(ephyra.app.core.common.R.string.action_cancel))
             }
         },
         confirmButton = {
@@ -47,11 +47,11 @@ fun DeleteLibraryMangaDialog(
                     )
                 },
             ) {
-                Text(text = stringResource(ephyra.i18n.R.string.action_ok))
+                Text(text = stringResource(ephyra.app.core.common.R.string.action_ok))
             }
         },
         title = {
-            Text(text = stringResource(ephyra.i18n.R.string.action_remove))
+            Text(text = stringResource(ephyra.app.core.common.R.string.action_remove))
         },
         text = {
             Column {

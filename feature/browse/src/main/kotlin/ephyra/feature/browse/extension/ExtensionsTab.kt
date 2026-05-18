@@ -37,16 +37,16 @@ fun extensionsTab(
     var privateExtensionToUninstall by remember { mutableStateOf<Extension?>(null) }
 
     return TabContent(
-        titleRes = ephyra.i18n.R.string.label_extensions,
+        titleRes = ephyra.app.core.common.R.string.label_extensions,
         badgeNumber = state.updates.takeIf { it > 0 },
         searchEnabled = true,
         actions = persistentListOf(
             AppBar.OverflowAction(
-                title = stringResource(ephyra.i18n.R.string.action_filter),
+                title = stringResource(ephyra.app.core.common.R.string.action_filter),
                 onClick = { navigator.push(ExtensionFilterScreen()) },
             ),
             AppBar.OverflowAction(
-                title = stringResource(ephyra.i18n.R.string.label_extension_repos),
+                title = stringResource(ephyra.app.core.common.R.string.label_extension_repos),
                 onClick = { navigator.push(extensionReposFactory.create(null)) },
             ),
         ),
@@ -115,10 +115,10 @@ private fun ExtensionUninstallConfirmation(
 ) {
     AlertDialog(
         title = {
-            Text(text = stringResource(ephyra.i18n.R.string.ext_confirm_remove))
+            Text(text = stringResource(ephyra.app.core.common.R.string.ext_confirm_remove))
         },
         text = {
-            Text(text = stringResource(ephyra.i18n.R.string.remove_private_extension_message, extensionName))
+            Text(text = stringResource(ephyra.app.core.common.R.string.remove_private_extension_message, extensionName))
         },
         confirmButton = {
             TextButton(
@@ -127,12 +127,12 @@ private fun ExtensionUninstallConfirmation(
                     onDismissRequest()
                 },
             ) {
-                Text(text = stringResource(ephyra.i18n.R.string.ext_remove))
+                Text(text = stringResource(ephyra.app.core.common.R.string.ext_remove))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
+                Text(text = stringResource(ephyra.app.core.common.R.string.action_cancel))
             }
         },
         onDismissRequest = onDismissRequest,

@@ -30,7 +30,7 @@ class ExtensionInstallService : Service() {
             setAutoCancel(false)
             setOngoing(true)
             setShowWhen(false)
-            setContentTitle(stringResource(ephyra.i18n.R.string.ext_install_service_notif))
+            setContentTitle(stringResource(ephyra.app.core.common.R.string.ext_install_service_notif))
             setProgress(100, 100, true)
         }.build()
         startForeground(Notifications.ID_EXTENSION_INSTALLER, notification)

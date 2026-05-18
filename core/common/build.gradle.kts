@@ -19,7 +19,6 @@ kotlin {
 }
 
 dependencies {
-    implementation(projects.i18n)
 
     api(libs.logcat)
     implementation(libs.material)

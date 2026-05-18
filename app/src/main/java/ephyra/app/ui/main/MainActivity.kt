@@ -316,15 +316,15 @@ class MainActivity : BaseActivity(), AppReadySignal {
                 if (showChangelog) {
                     AlertDialog(
                         onDismissRequest = { showChangelog = false },
-                        title = { Text(text = stringResource(ephyra.i18n.R.string.updated_version, BuildConfig.VERSION_NAME)) },
+                        title = { Text(text = stringResource(ephyra.app.core.common.R.string.updated_version, BuildConfig.VERSION_NAME)) },
                         dismissButton = {
                             TextButton(onClick = { openInBrowser(appInfo.releaseUrl) }) {
-                                Text(text = stringResource(ephyra.i18n.R.string.whats_new))
+                                Text(text = stringResource(ephyra.app.core.common.R.string.whats_new))
                             }
                         },
                         confirmButton = {
                             TextButton(onClick = { showChangelog = false }) {
-                                Text(text = stringResource(ephyra.i18n.R.string.action_ok))
+                                Text(text = stringResource(ephyra.app.core.common.R.string.action_ok))
                             }
                         },
                     )

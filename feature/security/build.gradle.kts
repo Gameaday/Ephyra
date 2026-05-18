@@ -14,6 +14,5 @@ dependencies {
     api(projects.domain)
     api(projects.data)
     api(projects.sourceApi)
-    api(projects.i18n)
     api(projects.presentationCore)
 }

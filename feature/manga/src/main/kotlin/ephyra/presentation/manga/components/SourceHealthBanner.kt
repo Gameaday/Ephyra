@@ -76,12 +76,12 @@ fun SourceHealthBanner(
         }
         val text = when (sourceStatus) {
             SourceStatus.DEAD -> {
-                val baseText = stringResource(ephyra.i18n.R.string.source_health_dead)
+                val baseText = stringResource(ephyra.app.core.common.R.string.source_health_dead)
                 val durationText = deadSince?.let { formatDeadDuration(it) }
                 if (durationText != null) "$baseText ($durationText)" else baseText
             }
 
-            else -> stringResource(ephyra.i18n.R.string.source_health_degraded)
+            else -> stringResource(ephyra.app.core.common.R.string.source_health_degraded)
         }
 
         Surface(
@@ -102,8 +102,8 @@ fun SourceHealthBanner(
                 Icon(
                     imageVector = Icons.Outlined.Warning,
                     contentDescription = when (sourceStatus) {
-                        SourceStatus.DEAD -> stringResource(ephyra.i18n.R.string.source_health_warning_dead)
-                        else -> stringResource(ephyra.i18n.R.string.source_health_warning_degraded)
+                        SourceStatus.DEAD -> stringResource(ephyra.app.core.common.R.string.source_health_warning_dead)
+                        else -> stringResource(ephyra.app.core.common.R.string.source_health_warning_degraded)
                     },
                 )
                 Text(
@@ -114,7 +114,7 @@ fun SourceHealthBanner(
                 if (sourceStatus == SourceStatus.DEAD && onMigrateClick != null) {
                     TextButton(onClick = onMigrateClick) {
                         Text(
-                            text = stringResource(ephyra.i18n.R.string.migrate),
+                            text = stringResource(ephyra.app.core.common.R.string.migrate),
                             style = MaterialTheme.typography.labelMedium,
                         )
                     }

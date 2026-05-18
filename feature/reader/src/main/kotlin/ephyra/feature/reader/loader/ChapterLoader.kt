@@ -76,7 +76,7 @@ class ChapterLoader(
                     .onEach { it.chapter = chapter }
 
                 if (pages.isEmpty()) {
-                    throw Exception(context.stringResource(ephyra.i18n.R.string.page_list_empty_error))
+                    throw Exception(context.stringResource(ephyra.app.core.common.R.string.page_list_empty_error))
                 }
 
                 // Run the unified pre-processing pipeline on pages that already have
@@ -151,8 +151,8 @@ class ChapterLoader(
                 preProcessor = preProcessor,
             )
 
-            source is StubSource -> error(context.stringResource(ephyra.i18n.R.string.source_not_installed, source.toString()))
-            else -> error(context.stringResource(ephyra.i18n.R.string.loader_not_implemented_error))
+            source is StubSource -> error(context.stringResource(ephyra.app.core.common.R.string.source_not_installed, source.toString()))
+            else -> error(context.stringResource(ephyra.app.core.common.R.string.loader_not_implemented_error))
         }
     }
 }

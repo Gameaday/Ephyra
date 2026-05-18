@@ -80,13 +80,13 @@ class MangaCoverScreenModel(
             try {
                 saveCoverInternal(temp = false)
                 snackbarHostState.showSnackbar(
-                    application.stringResource(ephyra.i18n.R.string.cover_saved),
+                    application.stringResource(ephyra.app.core.common.R.string.cover_saved),
                     withDismissAction = true,
                 )
             } catch (e: Throwable) {
                 logcat(LogPriority.ERROR, e)
                 snackbarHostState.showSnackbar(
-                    application.stringResource(ephyra.i18n.R.string.error_saving_cover),
+                    application.stringResource(ephyra.app.core.common.R.string.error_saving_cover),
                     withDismissAction = true,
                 )
             }
@@ -102,7 +102,7 @@ class MangaCoverScreenModel(
             } catch (e: Throwable) {
                 logcat(LogPriority.ERROR, e)
                 snackbarHostState.showSnackbar(
-                    application.stringResource(ephyra.i18n.R.string.error_sharing_cover),
+                    application.stringResource(ephyra.app.core.common.R.string.error_sharing_cover),
                     withDismissAction = true,
                 )
             }
@@ -222,7 +222,7 @@ class MangaCoverScreenModel(
     private fun notifyCoverUpdated() {
         screenModelScope.launch {
             snackbarHostState.showSnackbar(
-                application.stringResource(ephyra.i18n.R.string.cover_updated),
+                application.stringResource(ephyra.app.core.common.R.string.cover_updated),
                 withDismissAction = true,
             )
         }
@@ -231,7 +231,7 @@ class MangaCoverScreenModel(
     private fun notifyFailedCoverUpdate(e: Throwable) {
         screenModelScope.launch {
             snackbarHostState.showSnackbar(
-                application.stringResource(ephyra.i18n.R.string.notification_cover_update_failed),
+                application.stringResource(ephyra.app.core.common.R.string.notification_cover_update_failed),
                 withDismissAction = true,
             )
             logcat(LogPriority.ERROR, e)

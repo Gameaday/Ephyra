@@ -98,7 +98,7 @@ fun VoyagerScreen.discoverTab(): TabContent {
     val state by screenModel.state.collectAsStateWithLifecycle()
 
     return TabContent(
-        titleRes = ephyra.i18n.R.string.label_search,
+        titleRes = ephyra.app.core.common.R.string.label_search,
         actions = persistentListOf(),
         content = { contentPadding, _ ->
             DiscoverContent(
@@ -185,7 +185,7 @@ private fun DiscoverContent(
     val allTrackers = trackersForFilter(ContentType.UNKNOWN)
     if (allTrackers.isEmpty()) {
         EmptyScreen(
-            stringRes = ephyra.i18n.R.string.discover_no_trackers,
+            stringRes = ephyra.app.core.common.R.string.discover_no_trackers,
             modifier = Modifier.padding(contentPadding),
         )
         return
@@ -212,7 +212,7 @@ private fun DiscoverContent(
                     horizontal = MaterialTheme.padding.medium,
                     vertical = MaterialTheme.padding.small,
                 ),
-            placeholder = { Text(stringResource(ephyra.i18n.R.string.discover_search_hint)) },
+            placeholder = { Text(stringResource(ephyra.app.core.common.R.string.discover_search_hint)) },
             leadingIcon = {
                 Icon(
                     imageVector = Icons.Outlined.Search,
@@ -250,9 +250,9 @@ private fun DiscoverContent(
             listOf(ContentType.UNKNOWN, ContentType.MANGA, ContentType.NOVEL)
         }
         val typeFilterLabels = mapOf(
-            ContentType.UNKNOWN to stringResource(ephyra.i18n.R.string.discover_filter_all),
-            ContentType.MANGA to stringResource(ephyra.i18n.R.string.discover_filter_manga),
-            ContentType.NOVEL to stringResource(ephyra.i18n.R.string.discover_filter_novel),
+            ContentType.UNKNOWN to stringResource(ephyra.app.core.common.R.string.discover_filter_all),
+            ContentType.MANGA to stringResource(ephyra.app.core.common.R.string.discover_filter_manga),
+            ContentType.NOVEL to stringResource(ephyra.app.core.common.R.string.discover_filter_novel),
         )
         LazyRow(
             modifier = Modifier.fillMaxWidth(),
@@ -327,12 +327,12 @@ private fun DiscoverContent(
                 displayResults.size != state.results.size
             ) {
                 stringResource(
-                    ephyra.i18n.R.string.discover_result_count_filtered,
+                    ephyra.app.core.common.R.string.discover_result_count_filtered,
                     displayResults.size,
                     state.results.size,
                 )
             } else {
-                stringResource(ephyra.i18n.R.string.discover_result_count, displayResults.size)
+                stringResource(ephyra.app.core.common.R.string.discover_result_count, displayResults.size)
             }
             Text(
                 text = countText,
@@ -366,7 +366,7 @@ private fun DiscoverContent(
             when (currentDisplayState) {
                 DiscoverDisplayState.LOADING -> LoadingScreen()
                 DiscoverDisplayState.LANDING -> {
-                    EmptyScreen(stringResource(ephyra.i18n.R.string.discover_empty_state))
+                    EmptyScreen(stringResource(ephyra.app.core.common.R.string.discover_empty_state))
                 }
 
                 DiscoverDisplayState.ERROR -> {
@@ -383,19 +383,19 @@ private fun DiscoverContent(
                         )
                         Spacer(Modifier.height(MaterialTheme.padding.medium))
                         Text(
-                            text = stringResource(ephyra.i18n.R.string.discover_search_error),
+                            text = stringResource(ephyra.app.core.common.R.string.discover_search_error),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Spacer(Modifier.height(MaterialTheme.padding.medium))
                         Button(onClick = onRetrySearch) {
-                            Text(stringResource(ephyra.i18n.R.string.discover_retry))
+                            Text(stringResource(ephyra.app.core.common.R.string.discover_retry))
                         }
                     }
                 }
 
                 DiscoverDisplayState.NO_RESULTS -> {
-                    EmptyScreen(stringResource(ephyra.i18n.R.string.no_results_found))
+                    EmptyScreen(stringResource(ephyra.app.core.common.R.string.no_results_found))
                 }
 
                 DiscoverDisplayState.RESULTS -> {
@@ -525,9 +525,9 @@ private fun DiscoverResultCard(
                         },
                         contentDescription = stringResource(
                             if (isAdded) {
-                                ephyra.i18n.R.string.discover_added
+                                ephyra.app.core.common.R.string.discover_added
                             } else {
-                                ephyra.i18n.R.string.discover_add
+                                ephyra.app.core.common.R.string.discover_add
                             },
                         ),
                     )
@@ -582,38 +582,38 @@ private fun DiscoverDetailSheet(
                     val authors = result.authors.joinToString(", ")
                     if (authors.isNotBlank()) {
                         DetailLabel(
-                            label = stringResource(ephyra.i18n.R.string.discover_detail_author),
+                            label = stringResource(ephyra.app.core.common.R.string.discover_detail_author),
                             value = authors,
                         )
                     }
                     val artists = result.artists.joinToString(", ")
                     if (artists.isNotBlank() && artists != authors) {
                         DetailLabel(
-                            label = stringResource(ephyra.i18n.R.string.discover_detail_artist),
+                            label = stringResource(ephyra.app.core.common.R.string.discover_detail_artist),
                             value = artists,
                         )
                     }
                     if (result.publishing_status.isNotBlank()) {
                         DetailLabel(
-                            label = stringResource(ephyra.i18n.R.string.discover_detail_status),
+                            label = stringResource(ephyra.app.core.common.R.string.discover_detail_status),
                             value = result.publishing_status,
                         )
                     }
                     if (result.publishing_type.isNotBlank()) {
                         DetailLabel(
-                            label = stringResource(ephyra.i18n.R.string.discover_detail_type),
+                            label = stringResource(ephyra.app.core.common.R.string.discover_detail_type),
                             value = result.publishing_type,
                         )
                     }
                     if (result.start_date.isNotBlank()) {
                         DetailLabel(
-                            label = stringResource(ephyra.i18n.R.string.discover_detail_start_date),
+                            label = stringResource(ephyra.app.core.common.R.string.discover_detail_start_date),
                             value = result.start_date,
                         )
                     }
                     if (result.total_chapters > 0) {
                         DetailLabel(
-                            label = stringResource(ephyra.i18n.R.string.discover_detail_chapters),
+                            label = stringResource(ephyra.app.core.common.R.string.discover_detail_chapters),
                             value = result.total_chapters.toString(),
                         )
                     }
@@ -636,7 +636,7 @@ private fun DiscoverDetailSheet(
                 Spacer(Modifier.width(8.dp))
                 Text(
                     stringResource(
-                        if (isAdded) ephyra.i18n.R.string.discover_added else ephyra.i18n.R.string.discover_add,
+                        if (isAdded) ephyra.app.core.common.R.string.discover_added else ephyra.app.core.common.R.string.discover_add,
                     ),
                 )
             }
@@ -661,7 +661,7 @@ private fun DiscoverDetailSheet(
                 HorizontalDivider()
                 Spacer(Modifier.height(MaterialTheme.padding.small))
                 Text(
-                    text = stringResource(ephyra.i18n.R.string.discover_detail_alt_titles),
+                    text = stringResource(ephyra.app.core.common.R.string.discover_detail_alt_titles),
                     style = MaterialTheme.typography.titleSmall,
                 )
                 Spacer(Modifier.height(4.dp))
@@ -712,11 +712,11 @@ private fun MergeWithExistingDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(ephyra.i18n.R.string.discover_merge_title)) },
+        title = { Text(stringResource(ephyra.app.core.common.R.string.discover_merge_title)) },
         text = {
             Column {
                 Text(
-                    text = stringResource(ephyra.i18n.R.string.discover_merge_message, resultTitle),
+                    text = stringResource(ephyra.app.core.common.R.string.discover_merge_message, resultTitle),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(Modifier.height(MaterialTheme.padding.medium))
@@ -753,7 +753,7 @@ private fun MergeWithExistingDialog(
                                     )
                                     Text(
                                         text = stringResource(
-                                            ephyra.i18n.R.string.discover_merge_chapters,
+                                            ephyra.app.core.common.R.string.discover_merge_chapters,
                                             candidate.chapterCount,
                                         ),
                                         style = MaterialTheme.typography.bodySmall,
@@ -768,7 +768,7 @@ private fun MergeWithExistingDialog(
         },
         confirmButton = {
             TextButton(onClick = onSkip) {
-                Text(stringResource(ephyra.i18n.R.string.discover_merge_skip))
+                Text(stringResource(ephyra.app.core.common.R.string.discover_merge_skip))
             }
         },
     )
@@ -791,12 +791,12 @@ private fun FindSourceDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(ephyra.i18n.R.string.discover_find_source_title)) },
+        title = { Text(stringResource(ephyra.app.core.common.R.string.discover_find_source_title)) },
         text = {
             Column {
                 if (isSearching) {
                     Text(
-                        text = stringResource(ephyra.i18n.R.string.discover_find_source_searching),
+                        text = stringResource(ephyra.app.core.common.R.string.discover_find_source_searching),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Spacer(Modifier.height(MaterialTheme.padding.medium))
@@ -805,7 +805,7 @@ private fun FindSourceDialog(
                     )
                 } else if (sourceMatches.isNotEmpty()) {
                     Text(
-                        text = stringResource(ephyra.i18n.R.string.discover_find_source_found, mangaTitle),
+                        text = stringResource(ephyra.app.core.common.R.string.discover_find_source_found, mangaTitle),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Spacer(Modifier.height(MaterialTheme.padding.medium))
@@ -846,12 +846,12 @@ private fun FindSourceDialog(
                                         )
                                         val chapterText = when {
                                             match.chapterCount > 0 -> stringResource(
-                                                ephyra.i18n.R.string.discover_find_source_chapters,
+                                                ephyra.app.core.common.R.string.discover_find_source_chapters,
                                                 match.chapterCount,
                                             )
 
                                             match.chapterCount == 0 -> stringResource(
-                                                ephyra.i18n.R.string.discover_find_source_no_chapters,
+                                                ephyra.app.core.common.R.string.discover_find_source_no_chapters,
                                             )
 
                                             else -> null
@@ -884,7 +884,7 @@ private fun FindSourceDialog(
                     }
                 } else {
                     Text(
-                        text = stringResource(ephyra.i18n.R.string.discover_find_source_message, mangaTitle),
+                        text = stringResource(ephyra.app.core.common.R.string.discover_find_source_message, mangaTitle),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
@@ -892,12 +892,12 @@ private fun FindSourceDialog(
         },
         confirmButton = {
             TextButton(onClick = onManualSearch) {
-                Text(stringResource(ephyra.i18n.R.string.discover_find_source_action))
+                Text(stringResource(ephyra.app.core.common.R.string.discover_find_source_action))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(ephyra.i18n.R.string.discover_find_source_skip))
+                Text(stringResource(ephyra.app.core.common.R.string.discover_find_source_skip))
             }
         },
     )

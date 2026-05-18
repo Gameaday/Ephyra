@@ -15,7 +15,6 @@ dependencies {
     api(projects.data)
     api(projects.sourceApi)
     api(projects.sourceLocal)
-    api(projects.i18n)
     api(projects.presentationCore)
 
     implementation(libs.logcat)

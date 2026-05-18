@@ -59,8 +59,8 @@ class SaveImageNotifier(private val context: Context) {
     fun onError(error: String?) {
         // Create notification
         with(notificationBuilder) {
-            setContentTitle(context.stringResource(ephyra.i18n.R.string.download_notifier_title_error))
-            setContentText(error ?: context.stringResource(ephyra.i18n.R.string.unknown_error))
+            setContentTitle(context.stringResource(ephyra.app.core.common.R.string.download_notifier_title_error))
+            setContentText(error ?: context.stringResource(ephyra.app.core.common.R.string.unknown_error))
             setSmallIcon(android.R.drawable.ic_menu_report_image)
         }
         updateNotification()
@@ -68,7 +68,7 @@ class SaveImageNotifier(private val context: Context) {
 
     private fun showCompleteNotification(uri: Uri, image: Bitmap?) {
         with(notificationBuilder) {
-            setContentTitle(context.stringResource(ephyra.i18n.R.string.picture_saved))
+            setContentTitle(context.stringResource(ephyra.app.core.common.R.string.picture_saved))
             setSmallIcon(R.drawable.ic_photo_24dp)
             image?.let { setStyle(NotificationCompat.BigPictureStyle().bigPicture(it)) }
             setLargeIcon(image)
@@ -91,7 +91,7 @@ class SaveImageNotifier(private val context: Context) {
             // Share action — direct PendingIntent avoids a broadcast roundtrip
             addAction(
                 R.drawable.ic_share_24dp,
-                context.stringResource(ephyra.i18n.R.string.action_share),
+                context.stringResource(ephyra.app.core.common.R.string.action_share),
                 PendingIntent.getActivity(
                     context,
                     0,

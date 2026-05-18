@@ -61,14 +61,14 @@ internal fun SourceHealthBadge(sourceStatus: Int) {
             imageVector = Icons.Outlined.Warning,
             color = MaterialTheme.colorScheme.error,
             iconColor = MaterialTheme.colorScheme.onError,
-            contentDescription = stringResource(ephyra.i18n.R.string.source_health_warning_dead),
+            contentDescription = stringResource(ephyra.app.core.common.R.string.source_health_warning_dead),
         )
 
         SourceStatus.DEGRADED -> Badge(
             imageVector = Icons.Outlined.Warning,
             color = MaterialTheme.colorScheme.tertiary,
             iconColor = MaterialTheme.colorScheme.onTertiary,
-            contentDescription = stringResource(ephyra.i18n.R.string.source_health_warning_degraded),
+            contentDescription = stringResource(ephyra.app.core.common.R.string.source_health_warning_degraded),
         )
 
         else -> {}
@@ -83,7 +83,7 @@ internal fun AuthorityBadge(hasCanonicalId: Boolean, canonicalId: String? = null
             imageVector = Icons.Outlined.Verified,
             color = brandColor ?: MaterialTheme.colorScheme.primary,
             iconColor = if (brandColor != null) Color.White else MaterialTheme.colorScheme.onPrimary,
-            contentDescription = stringResource(ephyra.i18n.R.string.authority_badge_description),
+            contentDescription = stringResource(ephyra.app.core.common.R.string.authority_badge_description),
         )
     }
 }

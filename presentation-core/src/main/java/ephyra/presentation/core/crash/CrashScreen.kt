@@ -34,15 +34,15 @@ fun CrashScreen(
 
     InfoScreen(
         icon = Icons.Outlined.BugReport,
-        headingText = stringResource(ephyra.i18n.R.string.crash_screen_title),
-        subtitleText = stringResource(ephyra.i18n.R.string.crash_screen_description, stringResource(ephyra.i18n.R.string.app_name)),
-        acceptText = stringResource(ephyra.i18n.R.string.pref_dump_crash_logs),
+        headingText = stringResource(ephyra.app.core.common.R.string.crash_screen_title),
+        subtitleText = stringResource(ephyra.app.core.common.R.string.crash_screen_description, stringResource(ephyra.app.core.common.R.string.app_name)),
+        acceptText = stringResource(ephyra.app.core.common.R.string.pref_dump_crash_logs),
         onAcceptClick = {
             scope.launch {
                 CrashLogUtil(context, extensionManager).dumpLogs(exception)
             }
         },
-        rejectText = stringResource(ephyra.i18n.R.string.crash_screen_restart_application),
+        rejectText = stringResource(ephyra.app.core.common.R.string.crash_screen_restart_application),
         onRejectClick = onRestartClick,
     ) {
         Box(

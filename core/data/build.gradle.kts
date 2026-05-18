@@ -31,7 +31,6 @@ dependencies {
     implementation(projects.core.archive)
     implementation(projects.sourceApi)
     implementation(projects.sourceLocal)
-    implementation(projects.i18n)
 
     implementation(libs.unifile)
     implementation(platform(libs.coil.bom))

@@ -213,9 +213,9 @@ fun MangaActionRow(
     Row(modifier = modifier.padding(start = 16.dp, top = 8.dp, end = 16.dp)) {
         MangaActionButton(
             title = if (favorite) {
-                stringResource(ephyra.i18n.R.string.in_library)
+                stringResource(ephyra.app.core.common.R.string.in_library)
             } else {
-                stringResource(ephyra.i18n.R.string.add_to_library)
+                stringResource(ephyra.app.core.common.R.string.add_to_library)
             },
             icon = if (favorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
             color = if (favorite) MaterialTheme.colorScheme.primary else defaultActionButtonColor,
@@ -224,10 +224,10 @@ fun MangaActionRow(
         )
         MangaActionButton(
             title = when (nextUpdateDays) {
-                null -> stringResource(ephyra.i18n.R.string.not_applicable)
-                0 -> stringResource(ephyra.i18n.R.string.manga_interval_expected_update_soon)
+                null -> stringResource(ephyra.app.core.common.R.string.not_applicable)
+                0 -> stringResource(ephyra.app.core.common.R.string.manga_interval_expected_update_soon)
                 else -> pluralStringResource(
-                    ephyra.i18n.R.plurals.day,
+                    ephyra.app.core.common.R.plurals.day,
                     count = nextUpdateDays,
                     nextUpdateDays,
                 )
@@ -238,9 +238,9 @@ fun MangaActionRow(
         )
         MangaActionButton(
             title = when {
-                hasAuthority -> stringResource(ephyra.i18n.R.string.tracking_linked)
-                trackingCount > 0 -> pluralStringResource(ephyra.i18n.R.plurals.num_trackers, count = trackingCount, trackingCount)
-                else -> stringResource(ephyra.i18n.R.string.manga_tracking_tab)
+                hasAuthority -> stringResource(ephyra.app.core.common.R.string.tracking_linked)
+                trackingCount > 0 -> pluralStringResource(ephyra.app.core.common.R.plurals.num_trackers, count = trackingCount, trackingCount)
+                else -> stringResource(ephyra.app.core.common.R.string.manga_tracking_tab)
             },
             icon = when {
                 hasAuthority && trackingCount > 0 -> Icons.Outlined.DoneAll
@@ -256,7 +256,7 @@ fun MangaActionRow(
         )
         if (onWebViewClicked != null) {
             MangaActionButton(
-                title = stringResource(ephyra.i18n.R.string.action_web_view),
+                title = stringResource(ephyra.app.core.common.R.string.action_web_view),
                 icon = Icons.Outlined.Public,
                 color = defaultActionButtonColor,
                 onClick = onWebViewClicked,
@@ -283,7 +283,7 @@ fun ExpandableMangaDescription(
             mutableStateOf(defaultExpandState)
         }
         val desc =
-            description.takeIf { !it.isNullOrBlank() } ?: stringResource(ephyra.i18n.R.string.description_placeholder)
+            description.takeIf { !it.isNullOrBlank() } ?: stringResource(ephyra.app.core.common.R.string.description_placeholder)
 
         MangaSummary(
             description = desc,
@@ -312,14 +312,14 @@ fun ExpandableMangaDescription(
                     onDismissRequest = { showMenu = false },
                 ) {
                     DropdownMenuItem(
-                        text = { Text(text = stringResource(ephyra.i18n.R.string.action_search)) },
+                        text = { Text(text = stringResource(ephyra.app.core.common.R.string.action_search)) },
                         onClick = {
                             onTagSearch(tagSelected)
                             showMenu = false
                         },
                     )
                     DropdownMenuItem(
-                        text = { Text(text = stringResource(ephyra.i18n.R.string.action_copy_to_clipboard)) },
+                        text = { Text(text = stringResource(ephyra.app.core.common.R.string.action_copy_to_clipboard)) },
                         onClick = {
                             onCopyTagToClipboard(tagSelected)
                             showMenu = false
@@ -389,7 +389,7 @@ private fun MangaAndSourceTitlesLarge(
                 .crossfade(true)
                 .precision(Precision.EXACT)
                 .build(),
-            contentDescription = stringResource(ephyra.i18n.R.string.manga_cover),
+            contentDescription = stringResource(ephyra.app.core.common.R.string.manga_cover),
             onClick = onCoverClick,
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -439,7 +439,7 @@ private fun MangaAndSourceTitlesSmall(
                 .crossfade(true)
                 .precision(Precision.EXACT)
                 .build(),
-            contentDescription = stringResource(ephyra.i18n.R.string.manga_cover),
+            contentDescription = stringResource(ephyra.app.core.common.R.string.manga_cover),
             onClick = onCoverClick,
         )
         Column(
@@ -481,7 +481,7 @@ private fun ColumnScope.MangaContentInfo(
 ) {
     val context = LocalContext.current
     Text(
-        text = title.ifBlank { stringResource(ephyra.i18n.R.string.unknown_title) },
+        text = title.ifBlank { stringResource(ephyra.app.core.common.R.string.unknown_title) },
         style = MaterialTheme.typography.titleLarge,
         modifier = Modifier.clickableNoIndication(
             onLongClick = {
@@ -513,7 +513,7 @@ private fun ColumnScope.MangaContentInfo(
         )
         Text(
             text = author?.takeIf { it.isNotBlank() }
-                ?: stringResource(ephyra.i18n.R.string.unknown_author),
+                ?: stringResource(ephyra.app.core.common.R.string.unknown_author),
             style = MaterialTheme.typography.titleSmall,
             modifier = Modifier
                 .clickableNoIndication(
@@ -585,13 +585,13 @@ private fun ColumnScope.MangaContentInfo(
         ProvideTextStyle(MaterialTheme.typography.bodyMedium) {
             Text(
                 text = when (status) {
-                    SManga.ONGOING.toLong() -> stringResource(ephyra.i18n.R.string.ongoing)
-                    SManga.COMPLETED.toLong() -> stringResource(ephyra.i18n.R.string.completed)
-                    SManga.LICENSED.toLong() -> stringResource(ephyra.i18n.R.string.licensed)
-                    SManga.PUBLISHING_FINISHED.toLong() -> stringResource(ephyra.i18n.R.string.publishing_finished)
-                    SManga.CANCELLED.toLong() -> stringResource(ephyra.i18n.R.string.cancelled)
-                    SManga.ON_HIATUS.toLong() -> stringResource(ephyra.i18n.R.string.on_hiatus)
-                    else -> stringResource(ephyra.i18n.R.string.unknown)
+                    SManga.ONGOING.toLong() -> stringResource(ephyra.app.core.common.R.string.ongoing)
+                    SManga.COMPLETED.toLong() -> stringResource(ephyra.app.core.common.R.string.completed)
+                    SManga.LICENSED.toLong() -> stringResource(ephyra.app.core.common.R.string.licensed)
+                    SManga.PUBLISHING_FINISHED.toLong() -> stringResource(ephyra.app.core.common.R.string.publishing_finished)
+                    SManga.CANCELLED.toLong() -> stringResource(ephyra.app.core.common.R.string.cancelled)
+                    SManga.ON_HIATUS.toLong() -> stringResource(ephyra.app.core.common.R.string.on_hiatus)
+                    else -> stringResource(ephyra.app.core.common.R.string.unknown)
                 },
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 1,
@@ -654,7 +654,7 @@ private fun ColumnScope.MangaContentInfo(
             )
             ProvideTextStyle(MaterialTheme.typography.bodyMedium) {
                 Text(
-                    text = stringResource(ephyra.i18n.R.string.metadata_source_label),
+                    text = stringResource(ephyra.app.core.common.R.string.metadata_source_label),
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 1,
                 )
@@ -723,7 +723,7 @@ private fun ColumnScope.MangaContentInfo(
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Verified,
-                        contentDescription = stringResource(ephyra.i18n.R.string.authority_badge_description),
+                        contentDescription = stringResource(ephyra.app.core.common.R.string.authority_badge_description),
                         modifier = Modifier
                             .padding(end = 10.dp)
                             .size(20.dp),
@@ -750,7 +750,7 @@ private fun ColumnScope.MangaContentInfo(
                             DotSeparatorText()
                             Icon(
                                 imageVector = Icons.Outlined.Lock,
-                                contentDescription = stringResource(ephyra.i18n.R.string.authority_locked_count, lockCount),
+                                contentDescription = stringResource(ephyra.app.core.common.R.string.authority_locked_count, lockCount),
                                 modifier = Modifier
                                     .padding(end = 4.dp)
                                     .size(14.dp),
@@ -761,7 +761,7 @@ private fun ColumnScope.MangaContentInfo(
                                 },
                             )
                             Text(
-                                text = stringResource(ephyra.i18n.R.string.authority_locked_count, lockCount),
+                                text = stringResource(ephyra.app.core.common.R.string.authority_locked_count, lockCount),
                                 overflow = TextOverflow.Ellipsis,
                                 maxLines = 1,
                                 color = if (brandGradient != null) {
@@ -892,7 +892,7 @@ private fun MangaSummary(
                     Icon(
                         painter = rememberAnimatedVectorPainter(image, !expanded),
                         contentDescription = stringResource(
-                            if (expanded) ephyra.i18n.R.string.manga_info_collapse else ephyra.i18n.R.string.manga_info_expand,
+                            if (expanded) ephyra.app.core.common.R.string.manga_info_collapse else ephyra.app.core.common.R.string.manga_info_expand,
                         ),
                         tint = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.background(Brush.radialGradient(colors = colors.asReversed())),

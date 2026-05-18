@@ -33,7 +33,7 @@ fun MissingChapterCountListItem(
     ) {
         HorizontalDivider(modifier = Modifier.weight(1f))
         Text(
-            text = pluralStringResource(ephyra.i18n.R.plurals.missing_chapters, count = count, count),
+            text = pluralStringResource(ephyra.app.core.common.R.plurals.missing_chapters, count = count, count),
             style = MaterialTheme.typography.labelMedium,
         )
         HorizontalDivider(modifier = Modifier.weight(1f))

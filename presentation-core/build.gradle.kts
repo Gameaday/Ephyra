@@ -36,7 +36,6 @@ dependencies {
     api(projects.core.download)
     api(projects.sourceLocal)
     api(projects.sourceApi)
-    api(projects.i18n)
 
     // Compose Core
     api(compose.activity)

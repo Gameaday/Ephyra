@@ -49,9 +49,9 @@ fun LibrarySettingsDialog(
     TabbedDialog(
         onDismissRequest = onDismissRequest,
         tabTitles = persistentListOf(
-            stringResource(ephyra.i18n.R.string.action_filter),
-            stringResource(ephyra.i18n.R.string.action_sort),
-            stringResource(ephyra.i18n.R.string.action_display),
+            stringResource(ephyra.app.core.common.R.string.action_filter),
+            stringResource(ephyra.app.core.common.R.string.action_sort),
+            stringResource(ephyra.app.core.common.R.string.action_display),
         ),
     ) { page ->
         Column(
@@ -88,7 +88,7 @@ private fun ColumnScope.FilterPage(
         .collectAsState()
 
     TriStateItem(
-        label = stringResource(ephyra.i18n.R.string.label_downloaded),
+        label = stringResource(ephyra.app.core.common.R.string.label_downloaded),
         state = if (downloadedOnly) {
             TriState.ENABLED_IS
         } else {
@@ -101,19 +101,19 @@ private fun ColumnScope.FilterPage(
     )
     val filterUnread by screenModel.libraryPreferences.filterUnread().collectAsState()
     TriStateItem(
-        label = stringResource(ephyra.i18n.R.string.action_filter_unread),
+        label = stringResource(ephyra.app.core.common.R.string.action_filter_unread),
         state = filterUnread,
         onClick = { screenModel.onEvent(LibrarySettingsScreenEvent.ToggleFilter(LibraryPreferences::filterUnread)) },
     )
     val filterStarted by screenModel.libraryPreferences.filterStarted().collectAsState()
     TriStateItem(
-        label = stringResource(ephyra.i18n.R.string.label_started),
+        label = stringResource(ephyra.app.core.common.R.string.label_started),
         state = filterStarted,
         onClick = { screenModel.onEvent(LibrarySettingsScreenEvent.ToggleFilter(LibraryPreferences::filterStarted)) },
     )
     val filterBookmarked by screenModel.libraryPreferences.filterBookmarked().collectAsState()
     TriStateItem(
-        label = stringResource(ephyra.i18n.R.string.action_filter_bookmarked),
+        label = stringResource(ephyra.app.core.common.R.string.action_filter_bookmarked),
         state = filterBookmarked,
         onClick = {
             screenModel.onEvent(LibrarySettingsScreenEvent.ToggleFilter(LibraryPreferences::filterBookmarked))
@@ -121,13 +121,13 @@ private fun ColumnScope.FilterPage(
     )
     val filterCompleted by screenModel.libraryPreferences.filterCompleted().collectAsState()
     TriStateItem(
-        label = stringResource(ephyra.i18n.R.string.completed),
+        label = stringResource(ephyra.app.core.common.R.string.completed),
         state = filterCompleted,
         onClick = { screenModel.onEvent(LibrarySettingsScreenEvent.ToggleFilter(LibraryPreferences::filterCompleted)) },
     )
     val filterSourceHealthDead by screenModel.libraryPreferences.filterSourceHealthDead().collectAsState()
     TriStateItem(
-        label = stringResource(ephyra.i18n.R.string.action_filter_source_health_dead),
+        label = stringResource(ephyra.app.core.common.R.string.action_filter_source_health_dead),
         state = filterSourceHealthDead,
         onClick = {
             screenModel.onEvent(LibrarySettingsScreenEvent.ToggleFilter(LibraryPreferences::filterSourceHealthDead))
@@ -135,7 +135,7 @@ private fun ColumnScope.FilterPage(
     )
     val filterContentTypeManga by screenModel.libraryPreferences.filterContentTypeManga().collectAsState()
     TriStateItem(
-        label = stringResource(ephyra.i18n.R.string.action_filter_content_type_manga),
+        label = stringResource(ephyra.app.core.common.R.string.action_filter_content_type_manga),
         state = filterContentTypeManga,
         onClick = {
             screenModel.onEvent(LibrarySettingsScreenEvent.ToggleFilter(LibraryPreferences::filterContentTypeManga))
@@ -145,7 +145,7 @@ private fun ColumnScope.FilterPage(
     if ((!appInfo.isRelease) && LibraryPreferences.MANGA_OUTSIDE_RELEASE_PERIOD in autoUpdateMangaRestrictions) {
         val filterIntervalCustom by screenModel.libraryPreferences.filterIntervalCustom().collectAsState()
         TriStateItem(
-            label = stringResource(ephyra.i18n.R.string.action_filter_interval_custom),
+            label = stringResource(ephyra.app.core.common.R.string.action_filter_interval_custom),
             state = filterIntervalCustom,
             onClick = {
                 screenModel.onEvent(LibrarySettingsScreenEvent.ToggleFilter(LibraryPreferences::filterIntervalCustom))
@@ -164,14 +164,14 @@ private fun ColumnScope.FilterPage(
             val filterTracker by screenModel.libraryPreferences.filterTracking(service.id.toInt())
                 .collectAsState()
             TriStateItem(
-                label = stringResource(ephyra.i18n.R.string.action_filter_tracked),
+                label = stringResource(ephyra.app.core.common.R.string.action_filter_tracked),
                 state = filterTracker,
                 onClick = { screenModel.onEvent(LibrarySettingsScreenEvent.ToggleTracker(service.id.toInt())) },
             )
         }
 
         else -> {
-            HeadingItem(ephyra.i18n.R.string.action_filter_tracked)
+            HeadingItem(ephyra.app.core.common.R.string.action_filter_tracked)
             trackers.map { service ->
                 val filterTracker by screenModel.libraryPreferences.filterTracking(service.id.toInt())
                     .collectAsState()
@@ -196,21 +196,21 @@ private fun ColumnScope.SortPage(
 
     val options = remember(trackers.isEmpty()) {
         val trackerMeanPair = if (trackers.isNotEmpty()) {
-            ephyra.i18n.R.string.action_sort_tracker_score to LibrarySort.Type.TrackerMean
+            ephyra.app.core.common.R.string.action_sort_tracker_score to LibrarySort.Type.TrackerMean
         } else {
             null
         }
         listOfNotNull(
-            ephyra.i18n.R.string.action_sort_alpha to LibrarySort.Type.Alphabetical,
-            ephyra.i18n.R.string.action_sort_total to LibrarySort.Type.TotalChapters,
-            ephyra.i18n.R.string.action_sort_last_read to LibrarySort.Type.LastRead,
-            ephyra.i18n.R.string.action_sort_last_manga_update to LibrarySort.Type.LastUpdate,
-            ephyra.i18n.R.string.action_sort_unread_count to LibrarySort.Type.UnreadCount,
-            ephyra.i18n.R.string.action_sort_latest_chapter to LibrarySort.Type.LatestChapter,
-            ephyra.i18n.R.string.action_sort_chapter_fetch_date to LibrarySort.Type.ChapterFetchDate,
-            ephyra.i18n.R.string.action_sort_date_added to LibrarySort.Type.DateAdded,
+            ephyra.app.core.common.R.string.action_sort_alpha to LibrarySort.Type.Alphabetical,
+            ephyra.app.core.common.R.string.action_sort_total to LibrarySort.Type.TotalChapters,
+            ephyra.app.core.common.R.string.action_sort_last_read to LibrarySort.Type.LastRead,
+            ephyra.app.core.common.R.string.action_sort_last_manga_update to LibrarySort.Type.LastUpdate,
+            ephyra.app.core.common.R.string.action_sort_unread_count to LibrarySort.Type.UnreadCount,
+            ephyra.app.core.common.R.string.action_sort_latest_chapter to LibrarySort.Type.LatestChapter,
+            ephyra.app.core.common.R.string.action_sort_chapter_fetch_date to LibrarySort.Type.ChapterFetchDate,
+            ephyra.app.core.common.R.string.action_sort_date_added to LibrarySort.Type.DateAdded,
             trackerMeanPair,
-            ephyra.i18n.R.string.action_sort_random to LibrarySort.Type.Random,
+            ephyra.app.core.common.R.string.action_sort_random to LibrarySort.Type.Random,
         )
     }
 
@@ -253,10 +253,10 @@ private fun ColumnScope.SortPage(
 }
 
 private val displayModes = listOf(
-    ephyra.i18n.R.string.action_display_grid to LibraryDisplayMode.CompactGrid,
-    ephyra.i18n.R.string.action_display_comfortable_grid to LibraryDisplayMode.ComfortableGrid,
-    ephyra.i18n.R.string.action_display_cover_only_grid to LibraryDisplayMode.CoverOnlyGrid,
-    ephyra.i18n.R.string.action_display_list to LibraryDisplayMode.List,
+    ephyra.app.core.common.R.string.action_display_grid to LibraryDisplayMode.CompactGrid,
+    ephyra.app.core.common.R.string.action_display_comfortable_grid to LibraryDisplayMode.ComfortableGrid,
+    ephyra.app.core.common.R.string.action_display_cover_only_grid to LibraryDisplayMode.CoverOnlyGrid,
+    ephyra.app.core.common.R.string.action_display_list to LibraryDisplayMode.List,
 )
 
 @Composable
@@ -264,7 +264,7 @@ private fun ColumnScope.DisplayPage(
     screenModel: LibrarySettingsScreenModel,
 ) {
     val displayMode by screenModel.libraryPreferences.displayMode().collectAsState()
-    SettingsChipRow(ephyra.i18n.R.string.action_display_mode) {
+    SettingsChipRow(ephyra.app.core.common.R.string.action_display_mode) {
         displayModes.map { (titleRes, mode) ->
             FilterChip(
                 selected = displayMode == mode,
@@ -288,46 +288,46 @@ private fun ColumnScope.DisplayPage(
         SliderItem(
             value = columns,
             valueRange = 0..10,
-            label = stringResource(ephyra.i18n.R.string.pref_library_columns),
+            label = stringResource(ephyra.app.core.common.R.string.pref_library_columns),
             valueString = if (columns > 0) {
                 columns.toString()
             } else {
-                stringResource(ephyra.i18n.R.string.label_auto)
+                stringResource(ephyra.app.core.common.R.string.label_auto)
             },
             onChange = columnPreference::set,
             pillColor = MaterialTheme.colorScheme.surfaceContainerHighest,
         )
     }
 
-    HeadingItem(ephyra.i18n.R.string.overlay_header)
+    HeadingItem(ephyra.app.core.common.R.string.overlay_header)
     CheckboxItem(
-        label = stringResource(ephyra.i18n.R.string.action_display_download_badge),
+        label = stringResource(ephyra.app.core.common.R.string.action_display_download_badge),
         pref = screenModel.libraryPreferences.downloadBadge(),
     )
     CheckboxItem(
-        label = stringResource(ephyra.i18n.R.string.action_display_unread_badge),
+        label = stringResource(ephyra.app.core.common.R.string.action_display_unread_badge),
         pref = screenModel.libraryPreferences.unreadBadge(),
     )
     CheckboxItem(
-        label = stringResource(ephyra.i18n.R.string.action_display_local_badge),
+        label = stringResource(ephyra.app.core.common.R.string.action_display_local_badge),
         pref = screenModel.libraryPreferences.localBadge(),
     )
     CheckboxItem(
-        label = stringResource(ephyra.i18n.R.string.action_display_language_badge),
+        label = stringResource(ephyra.app.core.common.R.string.action_display_language_badge),
         pref = screenModel.libraryPreferences.languageBadge(),
     )
     CheckboxItem(
-        label = stringResource(ephyra.i18n.R.string.action_display_show_continue_reading_button),
+        label = stringResource(ephyra.app.core.common.R.string.action_display_show_continue_reading_button),
         pref = screenModel.libraryPreferences.showContinueReadingButton(),
     )
 
-    HeadingItem(ephyra.i18n.R.string.tabs_header)
+    HeadingItem(ephyra.app.core.common.R.string.tabs_header)
     CheckboxItem(
-        label = stringResource(ephyra.i18n.R.string.action_display_show_tabs),
+        label = stringResource(ephyra.app.core.common.R.string.action_display_show_tabs),
         pref = screenModel.libraryPreferences.categoryTabs(),
     )
     CheckboxItem(
-        label = stringResource(ephyra.i18n.R.string.action_display_show_number_of_items),
+        label = stringResource(ephyra.app.core.common.R.string.action_display_show_number_of_items),
         pref = screenModel.libraryPreferences.categoryNumberOfItems(),
     )
 }

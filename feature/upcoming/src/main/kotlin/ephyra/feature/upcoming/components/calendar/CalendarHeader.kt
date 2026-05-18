@@ -53,10 +53,10 @@ fun CalenderHeader(
         }
         Row {
             IconButton(onClick = onPreviousClick) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(ephyra.i18n.R.string.upcoming_calendar_prev))
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(ephyra.app.core.common.R.string.upcoming_calendar_prev))
             }
             IconButton(onClick = onNextClick) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(ephyra.i18n.R.string.upcoming_calendar_next))
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(ephyra.app.core.common.R.string.upcoming_calendar_next))
             }
         }
     }

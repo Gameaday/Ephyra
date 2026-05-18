@@ -49,7 +49,7 @@ fun SourceFilterDialog(
                 ) {
                     TextButton(onClick = onReset) {
                         Text(
-                            text = stringResource(ephyra.i18n.R.string.action_reset),
+                            text = stringResource(ephyra.app.core.common.R.string.action_reset),
                             style = LocalTextStyle.current.copy(
                                 color = MaterialTheme.colorScheme.primary,
                             ),
@@ -64,7 +64,7 @@ fun SourceFilterDialog(
                             onDismissRequest()
                         },
                     ) {
-                        Text(stringResource(ephyra.i18n.R.string.action_filter))
+                        Text(stringResource(ephyra.app.core.common.R.string.action_filter))
                     }
                 }
                 HorizontalDivider()

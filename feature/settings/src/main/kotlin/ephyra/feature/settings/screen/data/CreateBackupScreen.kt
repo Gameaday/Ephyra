@@ -58,7 +58,7 @@ class CreateBackupScreen : Screen() {
         Scaffold(
             topBar = {
                 AppBar(
-                    title = stringResource(ephyra.i18n.R.string.pref_create_backup),
+                    title = stringResource(ephyra.app.core.common.R.string.pref_create_backup),
                     navigateUp = navigator::pop,
                     scrollBehavior = it,
                 )
@@ -66,34 +66,34 @@ class CreateBackupScreen : Screen() {
         ) { contentPadding ->
             LazyColumnWithAction(
                 contentPadding = contentPadding,
-                actionLabel = stringResource(ephyra.i18n.R.string.action_create),
+                actionLabel = stringResource(ephyra.app.core.common.R.string.action_create),
                 actionEnabled = state.options.canCreate(),
                 onClickAction = {
                     if (!model.isBackupRunning()) {
                         try {
                             chooseBackupDir.launch(model.getBackupFilename())
                         } catch (e: ActivityNotFoundException) {
-                            context.toast(ephyra.i18n.R.string.file_picker_error)
+                            context.toast(ephyra.app.core.common.R.string.file_picker_error)
                         }
                     } else {
-                        context.toast(ephyra.i18n.R.string.backup_in_progress)
+                        context.toast(ephyra.app.core.common.R.string.backup_in_progress)
                     }
                 },
             ) {
                 if (DeviceUtil.isMiui && DeviceUtil.isMiuiOptimizationDisabled()) {
                     item {
-                        WarningBanner(stringResource(ephyra.i18n.R.string.restore_miui_warning))
+                        WarningBanner(stringResource(ephyra.app.core.common.R.string.restore_miui_warning))
                     }
                 }
 
                 item {
-                    SectionCard(ephyra.i18n.R.string.label_library) {
+                    SectionCard(ephyra.app.core.common.R.string.label_library) {
                         Options(BackupOptions.libraryOptions, state, model)
                     }
                 }
 
                 item {
-                    SectionCard(ephyra.i18n.R.string.label_settings) {
+                    SectionCard(ephyra.app.core.common.R.string.label_settings) {
                         Options(BackupOptions.settingsOptions, state, model)
                     }
                 }

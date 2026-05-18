@@ -82,12 +82,12 @@ fun EditTextPreferenceWidget(
                         }
                     },
                 ) {
-                    Text(text = stringResource(ephyra.i18n.R.string.action_ok))
+                    Text(text = stringResource(ephyra.app.core.common.R.string.action_ok))
                 }
             },
             dismissButton = {
                 TextButton(onClick = onDismissRequest) {
-                    Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
+                    Text(text = stringResource(ephyra.app.core.common.R.string.action_cancel))
                 }
             },
         )

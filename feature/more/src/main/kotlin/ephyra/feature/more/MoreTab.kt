@@ -45,7 +45,7 @@ data object MoreTab : Tab {
             val image = AnimatedImageVector.animatedVectorResource(R.drawable.anim_more_enter)
             return TabOptions(
                 index = 4u,
-                title = stringResource(ephyra.i18n.R.string.label_more),
+                title = stringResource(ephyra.app.core.common.R.string.label_more),
                 icon = rememberAnimatedVectorPainter(image, isSelected),
             )
         }

@@ -92,13 +92,13 @@ private fun UpcomingToolbar() {
     val uriHandler = LocalUriHandler.current
 
     AppBar(
-        title = stringResource(ephyra.i18n.R.string.label_upcoming),
+        title = stringResource(ephyra.app.core.common.R.string.label_upcoming),
         navigateUp = navigator::pop,
         actions = {
             IconButton(onClick = { uriHandler.openUri(Constants.URL_HELP_UPCOMING) }) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Outlined.HelpOutline,
-                    contentDescription = stringResource(ephyra.i18n.R.string.upcoming_guide),
+                    contentDescription = stringResource(ephyra.app.core.common.R.string.upcoming_guide),
                 )
             }
         },

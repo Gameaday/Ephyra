@@ -40,5 +40,5 @@ fun relativeDateText(
         relative = relativeTime,
         dateFormat = dateFormat,
     )
-        ?: stringResource(ephyra.i18n.R.string.not_applicable)
+        ?: stringResource(ephyra.app.core.common.R.string.not_applicable)
 }

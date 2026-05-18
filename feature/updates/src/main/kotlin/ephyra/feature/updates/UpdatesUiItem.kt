@@ -58,7 +58,7 @@ internal fun LazyListScope.updatesLastUpdatedItem(
                 .padding(horizontal = MaterialTheme.padding.medium, vertical = MaterialTheme.padding.small),
         ) {
             Text(
-                text = stringResource(ephyra.i18n.R.string.updates_last_update_info, relativeTimeSpanString(lastUpdated)),
+                text = stringResource(ephyra.app.core.common.R.string.updates_last_update_info, relativeTimeSpanString(lastUpdated)),
                 fontStyle = FontStyle.Italic,
             )
         }
@@ -105,7 +105,7 @@ internal fun LazyListScope.updatesUiItems(
                         .takeIf { !updatesItem.update.read && it > 0L }
                         ?.let {
                             stringResource(
-                                ephyra.i18n.R.string.chapter_progress,
+                                ephyra.app.core.common.R.string.chapter_progress,
                                 it + 1,
                             )
                         },
@@ -187,7 +187,7 @@ private fun UpdatesUiItem(
                 if (!update.read) {
                     Icon(
                         imageVector = Icons.Filled.Circle,
-                        contentDescription = stringResource(ephyra.i18n.R.string.unread),
+                        contentDescription = stringResource(ephyra.app.core.common.R.string.unread),
                         modifier = Modifier
                             .height(8.dp)
                             .padding(end = 4.dp),
@@ -197,7 +197,7 @@ private fun UpdatesUiItem(
                 if (update.bookmark) {
                     Icon(
                         imageVector = Icons.Filled.Bookmark,
-                        contentDescription = stringResource(ephyra.i18n.R.string.action_filter_bookmarked),
+                        contentDescription = stringResource(ephyra.app.core.common.R.string.action_filter_bookmarked),
                         modifier = Modifier
                             .sizeIn(maxHeight = with(LocalDensity.current) { textHeight.toDp() - 2.dp }),
                         tint = MaterialTheme.colorScheme.primary,

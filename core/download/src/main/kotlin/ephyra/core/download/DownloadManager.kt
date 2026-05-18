@@ -160,7 +160,7 @@ class DownloadManager(
             .filter { it.isFile && ImageUtil.isImage(it.name) { it.openInputStream() } }
 
         if (files.isEmpty()) {
-            throw Exception(context.stringResource(ephyra.i18n.R.string.page_list_empty_error))
+            throw Exception(context.stringResource(ephyra.app.core.common.R.string.page_list_empty_error))
         }
 
         return files.sortedBy { it.name }

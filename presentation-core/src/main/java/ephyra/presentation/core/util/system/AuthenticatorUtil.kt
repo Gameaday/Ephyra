@@ -49,7 +49,7 @@ object AuthenticatorUtil {
 
     suspend fun FragmentActivity.authenticate(
         title: String,
-        subtitle: String? = stringResource(ephyra.i18n.R.string.confirm_lock_change),
+        subtitle: String? = stringResource(ephyra.app.core.common.R.string.confirm_lock_change),
     ): Boolean = suspendCancellableCoroutine { cont ->
         if (!isAuthenticationSupported()) {
             cont.resume(true)

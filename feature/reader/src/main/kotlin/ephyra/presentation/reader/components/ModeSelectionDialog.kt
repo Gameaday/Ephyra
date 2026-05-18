@@ -41,7 +41,7 @@ fun ModeSelectionDialog(
             ) {
                 onUseDefault?.let {
                     OutlinedButton(onClick = it) {
-                        Text(text = stringResource(ephyra.i18n.R.string.action_revert_to_default))
+                        Text(text = stringResource(ephyra.app.core.common.R.string.action_revert_to_default))
                     }
                 }
 
@@ -58,7 +58,7 @@ fun ModeSelectionDialog(
                             imageVector = Icons.Outlined.Check,
                             contentDescription = null,
                         )
-                        Text(text = stringResource(ephyra.i18n.R.string.action_apply))
+                        Text(text = stringResource(ephyra.app.core.common.R.string.action_apply))
                     }
                 }
             }

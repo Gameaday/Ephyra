@@ -56,26 +56,26 @@ fun ChapterTransition(
         when (transition) {
             is ChapterTransition.Prev -> {
                 TransitionText(
-                    topLabel = stringResource(ephyra.i18n.R.string.transition_previous),
+                    topLabel = stringResource(ephyra.app.core.common.R.string.transition_previous),
                     topChapter = goingToChapter,
                     topChapterDownloaded = goingToChapterDownloaded,
-                    bottomLabel = stringResource(ephyra.i18n.R.string.transition_current),
+                    bottomLabel = stringResource(ephyra.app.core.common.R.string.transition_current),
                     bottomChapter = currChapter,
                     bottomChapterDownloaded = currChapterDownloaded,
-                    fallbackLabel = stringResource(ephyra.i18n.R.string.transition_no_previous),
+                    fallbackLabel = stringResource(ephyra.app.core.common.R.string.transition_no_previous),
                     chapterGap = calculateChapterGap(currChapter, goingToChapter),
                 )
             }
 
             is ChapterTransition.Next -> {
                 TransitionText(
-                    topLabel = stringResource(ephyra.i18n.R.string.transition_finished),
+                    topLabel = stringResource(ephyra.app.core.common.R.string.transition_finished),
                     topChapter = currChapter,
                     topChapterDownloaded = currChapterDownloaded,
-                    bottomLabel = stringResource(ephyra.i18n.R.string.transition_next),
+                    bottomLabel = stringResource(ephyra.app.core.common.R.string.transition_next),
                     bottomChapter = goingToChapter,
                     bottomChapterDownloaded = goingToChapterDownloaded,
-                    fallbackLabel = stringResource(ephyra.i18n.R.string.transition_no_next),
+                    fallbackLabel = stringResource(ephyra.app.core.common.R.string.transition_no_next),
                     chapterGap = calculateChapterGap(goingToChapter, currChapter),
                 )
             }
@@ -190,7 +190,7 @@ private fun ChapterGapWarning(
             )
 
             Text(
-                text = pluralStringResource(ephyra.i18n.R.plurals.missing_chapters_warning, count = gapCount, gapCount),
+                text = pluralStringResource(ephyra.app.core.common.R.plurals.missing_chapters_warning, count = gapCount, gapCount),
                 style = MaterialTheme.typography.bodyMedium,
             )
         }
@@ -244,7 +244,7 @@ private fun ChapterText(
                 ) {
                     Icon(
                         imageVector = Icons.Filled.CheckCircle,
-                        contentDescription = stringResource(ephyra.i18n.R.string.label_downloaded),
+                        contentDescription = stringResource(ephyra.app.core.common.R.string.label_downloaded),
                     )
                 },
             ),

@@ -460,7 +460,7 @@ class PagerPageHolder(
         }
 
         errorLayout?.errorMessage?.text = with(context) { error?.formattedMessage }
-            ?: context.stringResource(ephyra.i18n.R.string.decode_image_error)
+            ?: context.stringResource(ephyra.app.core.common.R.string.decode_image_error)
 
         errorLayout?.root?.isVisible = true
         return errorLayout!!

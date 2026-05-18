@@ -89,7 +89,7 @@ fun MangaNotesTextArea(
             onValueChange = { if (it.text.length <= MAX_LENGTH) textFieldValue = it },
             textStyle = MaterialTheme.typography.bodyLarge,
             placeholder = {
-                Text(text = stringResource(ephyra.i18n.R.string.notes_placeholder))
+                Text(text = stringResource(ephyra.app.core.common.R.string.notes_placeholder))
             },
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = Color.Transparent,
