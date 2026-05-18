@@ -38,26 +38,29 @@ We prioritize native, mature Android solutions to drastically reduce maintenance
 
 We are currently executing a phased transition to reach the target state described above.
 
-### Phase 1: De-KMP & Build System Simplification
+### Phase 1: De-KMP & Build System Simplification [COMPLETE]
 - Remove `org.jetbrains.kotlin.multiplatform` from all build scripts.
 - Convert `:i18n`, `:source-api`, `:source-local` to standard Android libraries.
 - Collapse all `commonMain` and `androidMain` directories into `main`.
-- Remove Legacy referances and verbiage such as i18n, source-api, source-local.
+- Remove Legacy references and verbiage such as i18n, source-api, source-local.
 
-### Phase 2: Hilt Integration & DI Purge
-- Setup Hilt/KSP globally.
-- Purge `AppDependencyContainer`, `CoreContainer`, and any Koin remnants.
+### Phase 2: Hilt Integration & DI Purge [COMPLETE]
+- Setup Hilt/KSP globally in `libs.versions.toml` and root `build.gradle.kts`.
+- Purge manual Injekt/Koin registries, `AppDependencyContainer`, and all Koin remnants.
 - Annotate `App` with `@HiltAndroidApp` and implement standard `@Module` and `@Inject` bindings.
+- Bridge WorkManager background jobs via an elegant Hilt `@EntryPoint` factory (`AppWorkerFactory`).
+- Implement Hilt-backed deterministic `CoreContainer` compat-shim to facilitate zero-downtime incremental migration.
 
-### Phase 3: Localization Simplification
-- Strip out `moko-resources`.
-- Migrate all `commonMain/moko-resources` content to `src/main/res/values/strings.xml`.
+### Phase 3: Localization Simplification [COMPLETE]
+- Strip out `moko-resources` completely from gradle and application code.
+- Migrate all `commonMain/moko-resources` XML definitions directly to standard Android `src/main/res/values/strings.xml` structures.
+- Systematically replace all class types (`StringResource`, `PluralsResource`) and imports with native Android resource `Int` IDs (`@StringRes`, `@PluralsRes`).
 
-### Phase 4: Navigation & State Modernization
+### Phase 4: Navigation & State Modernization [IN PROGRESS]
 - Replace Voyager `Screen` objects with Jetpack Navigation Compose graphs.
 - Convert `ScreenModel` implementations to `ViewModel` with `@HiltViewModel`.
 
-### Phase 5: Database & Persistence
+### Phase 5: Database & Persistence [UPCOMING]
 - Standardize on Room (SQLite) for structured relational data.
 - Standardize on DataStore (Preferences) for key-value configuration.
 
