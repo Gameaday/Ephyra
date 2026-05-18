@@ -21,17 +21,16 @@ import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.source.online.HttpSource
 import logcat.LogPriority
 import okhttp3.HttpUrl.Companion.toHttpUrl
-import org.koin.android.ext.android.inject
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class WebViewActivity : BaseActivity() {
 
-    private val sourceManager: SourceManager by inject()
-    private val network: NetworkHelper by inject()
+    @Inject lateinit var sourceManager: SourceManager
+    @Inject lateinit var network: NetworkHelper
 
     private var assistUrl: String? = null
-
-    init {
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         overrideTransitionCompat(
