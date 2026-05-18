@@ -4,8 +4,9 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.util.fastFilter
-import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.preference.TriState
 import ephyra.core.common.util.addOrRemove
 import ephyra.core.common.util.insertSeparators
@@ -37,6 +38,8 @@ import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
@@ -50,12 +53,12 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
-import org.koin.core.annotation.Factory
 import java.time.ZonedDateTime
+import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 
-@Factory
-class UpdatesScreenModel(
+@HiltViewModel
+class UpdatesScreenModel @Inject constructor(
     private val sourceManager: SourceManager,
     private val downloadManager: DownloadManager,
     private val downloadCache: DownloadCache,
@@ -68,19 +71,22 @@ class UpdatesScreenModel(
     private val updatesPreferences: UpdatesPreferences,
     private val libraryUpdateScheduler: LibraryUpdateScheduler,
     val snackbarHostState: SnackbarHostState = SnackbarHostState(),
-) : StateScreenModel<UpdatesScreenModel.State>(State()) {
+) : ViewModel() {
+
+    private val _state = MutableStateFlow(State())
+    val state = _state.asStateFlow()
 
     private val _events: Channel<Event> = Channel(Int.MAX_VALUE)
     val events: Flow<Event> = _events.receiveAsFlow()
 
-    val lastUpdated by libraryPreferences.lastUpdatedTimestamp().asState(screenModelScope)
+    val lastUpdated by libraryPreferences.lastUpdatedTimestamp().asState(viewModelScope)
 
     // First and last selected index in list
     private val selectedPositions: Array<Int> = arrayOf(-1, -1)
     private val selectedChapterIds: HashSet<Long> = HashSet()
 
     init {
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             // Set date limit for recent chapters
             val limit = ZonedDateTime.now().minusMonths(3).toInstant()
 
@@ -110,7 +116,7 @@ class UpdatesScreenModel(
                     .toPersistentList()
             }
                 .collectLatest { updateItems ->
-                    mutableState.update {
+                    _state.update {
                         it.copy(
                             isLoading = false,
                             items = updateItems,
@@ -119,7 +125,7 @@ class UpdatesScreenModel(
                 }
         }
 
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             merge(downloadManager.statusFlow(), downloadManager.progressFlow())
                 .catch { logcat(LogPriority.ERROR, it) }
                 .collect(this@UpdatesScreenModel::updateDownloadState)
@@ -137,11 +143,11 @@ class UpdatesScreenModel(
             }
             .distinctUntilChanged()
             .onEach {
-                mutableState.update { state ->
+                _state.update { state ->
                     state.copy(hasActiveFilters = it)
                 }
             }
-            .launchIn(screenModelScope)
+            .launchIn(viewModelScope)
     }
 
     private fun List<UpdatesItem>.applyFilters(
@@ -214,13 +220,13 @@ class UpdatesScreenModel(
     private fun updateLibrary(): Boolean {
         val started = libraryUpdateScheduler.startNow()
         if (started) {
-            mutableState.update { it.copy(isLibraryUpdating = true) }
-            screenModelScope.launch {
+            _state.update { it.copy(isLibraryUpdating = true) }
+            viewModelScope.launch {
                 delay(1.seconds)
-                mutableState.update { it.copy(isLibraryUpdating = false) }
+                _state.update { it.copy(isLibraryUpdating = false) }
             }
         }
-        screenModelScope.launch {
+        viewModelScope.launch {
             _events.send(Event.LibraryUpdateTriggered(started))
         }
         return started
@@ -232,7 +238,7 @@ class UpdatesScreenModel(
      * @param download download object containing progress.
      */
     private fun updateDownloadState(download: Download) {
-        mutableState.update { state ->
+        _state.update { state ->
             val newItems = state.items.mutate { list ->
                 val modifiedIndex = list.indexOfFirst { it.update.chapterId == download.chapter.id }
                 if (modifiedIndex < 0) return@mutate
@@ -249,7 +255,7 @@ class UpdatesScreenModel(
 
     private fun downloadChapters(items: List<UpdatesItem>, action: ChapterDownloadAction) {
         if (items.isEmpty()) return
-        screenModelScope.launch {
+        viewModelScope.launch {
             when (action) {
                 ChapterDownloadAction.START -> {
                     downloadChapters(items)
@@ -292,7 +298,7 @@ class UpdatesScreenModel(
      * @param read whether to mark chapters as read or unread.
      */
     private fun markUpdatesRead(updates: List<UpdatesItem>, read: Boolean) {
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             setReadStatus.await(
                 read = read,
                 chapters = updates
@@ -308,7 +314,7 @@ class UpdatesScreenModel(
      * @param updates the list of chapters to bookmark.
      */
     private fun bookmarkUpdates(updates: List<UpdatesItem>, bookmark: Boolean) {
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             updates
                 .filterNot { it.update.bookmark == bookmark }
                 .map { ChapterUpdate(id = it.update.chapterId, bookmark = bookmark) }
@@ -322,7 +328,7 @@ class UpdatesScreenModel(
      * @param updatesItem the list of chapters to download.
      */
     private fun downloadChapters(updatesItem: List<UpdatesItem>) {
-        screenModelScope.launchNonCancellable {
+        viewModelScope.launchNonCancellable {
             val groupedUpdates = updatesItem.groupBy { it.update.mangaId }.values
             for (updates in groupedUpdates) {
                 val mangaId = updates.first().update.mangaId
@@ -341,7 +347,7 @@ class UpdatesScreenModel(
      * @param updatesItem list of chapters
      */
     private fun deleteChapters(updatesItem: List<UpdatesItem>) {
-        screenModelScope.launchNonCancellable {
+        viewModelScope.launchNonCancellable {
             updatesItem
                 .groupBy { it.update.mangaId }
                 .entries
@@ -364,7 +370,7 @@ class UpdatesScreenModel(
         selected: Boolean,
         fromLongPress: Boolean = false,
     ) {
-        mutableState.update { state ->
+        _state.update { state ->
             val newItems = state.items.toMutableList().apply {
                 val selectedIndex = indexOfFirst { it.update.chapterId == item.update.chapterId }
                 if (selectedIndex < 0) return@apply
@@ -423,7 +429,7 @@ class UpdatesScreenModel(
     }
 
     private fun toggleAllSelection(selected: Boolean) {
-        mutableState.update { state ->
+        _state.update { state ->
             val newItems = state.items.map {
                 selectedChapterIds.addOrRemove(it.update.chapterId, selected)
                 it.copy(selected = selected)
@@ -436,7 +442,7 @@ class UpdatesScreenModel(
     }
 
     private fun invertSelection() {
-        mutableState.update { state ->
+        _state.update { state ->
             val newItems = state.items.map {
                 selectedChapterIds.addOrRemove(it.update.chapterId, !it.selected)
                 it.copy(selected = !it.selected)
@@ -448,7 +454,7 @@ class UpdatesScreenModel(
     }
 
     private fun setDialog(dialog: Dialog?) {
-        mutableState.update { it.copy(dialog = dialog) }
+        _state.update { it.copy(dialog = dialog) }
     }
 
     private fun resetNewUpdatesCount() {
@@ -474,7 +480,7 @@ class UpdatesScreenModel(
     }
 
     private fun showFilterDialog() {
-        mutableState.update { it.copy(dialog = Dialog.FilterSheet) }
+        _state.update { it.copy(dialog = Dialog.FilterSheet) }
     }
 
     @Immutable
@@ -513,8 +519,11 @@ class UpdatesScreenModel(
     }
 
     sealed interface Dialog {
-        data class DeleteConfirmation(val toDelete: List<UpdatesItem>) : Dialog
-        data object FilterSheet : Dialog
+        val toDelete: List<UpdatesItem>
+        data class DeleteConfirmation(override val toDelete: List<UpdatesItem>) : Dialog
+        data object FilterSheet : Dialog {
+            override val toDelete: List<UpdatesItem> = emptyList()
+        }
     }
 
     sealed interface Event {

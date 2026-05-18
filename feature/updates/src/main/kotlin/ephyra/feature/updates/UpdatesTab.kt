@@ -9,7 +9,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.koin.koinScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -50,8 +50,8 @@ data object UpdatesTab : Tab {
     override fun Content() {
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
-        val screenModel = koinScreenModel<UpdatesScreenModel>()
-        val settingsScreenModel = koinScreenModel<UpdatesSettingsScreenModel>()
+        val screenModel = hiltViewModel<UpdatesScreenModel>()
+        val settingsScreenModel = hiltViewModel<UpdatesSettingsScreenModel>()
         val state by screenModel.state.collectAsStateWithLifecycle()
 
         UpdateScreen(

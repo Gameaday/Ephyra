@@ -1,18 +1,19 @@
 package ephyra.feature.updates
 
-import cafe.adriel.voyager.core.model.ScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.preference.Preference
 import ephyra.core.common.preference.TriState
 import ephyra.core.common.preference.getAndSet
 import ephyra.core.common.util.lang.launchIO
 import ephyra.domain.updates.service.UpdatesPreferences
-import org.koin.core.annotation.Factory
+import javax.inject.Inject
 
-@Factory
-class UpdatesSettingsScreenModel(
+@HiltViewModel
+class UpdatesSettingsScreenModel @Inject constructor(
     val updatesPreferences: UpdatesPreferences,
-) : ScreenModel {
+) : ViewModel() {
 
     fun onEvent(event: UpdatesSettingsScreenEvent) {
         when (event) {
@@ -21,7 +22,7 @@ class UpdatesSettingsScreenModel(
     }
 
     private fun toggleFilter(preference: (UpdatesPreferences) -> Preference<TriState>) {
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             preference(updatesPreferences).getAndSet {
                 it.next()
             }
