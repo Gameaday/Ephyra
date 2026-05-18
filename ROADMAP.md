@@ -42,6 +42,7 @@ We are currently executing a phased transition to reach the target state describ
 - Remove `org.jetbrains.kotlin.multiplatform` from all build scripts.
 - Convert `:i18n`, `:source-api`, `:source-local` to standard Android libraries.
 - Collapse all `commonMain` and `androidMain` directories into `main`.
+- Remove Legacy referances and verbiage such as i18n, source-api, source-local.
 
 ### Phase 2: Hilt Integration & DI Purge
 - Setup Hilt/KSP globally.
@@ -59,3 +60,86 @@ We are currently executing a phased transition to reach the target state describ
 ### Phase 5: Database & Persistence
 - Standardize on Room (SQLite) for structured relational data.
 - Standardize on DataStore (Preferences) for key-value configuration.
+
+### Phase 6: UI & Feature Parity
+- **Settings**: Implement `PreferenceFragmentCompat` styled with Material 3.
+- **Library**: Implement robust grid/list views with two-handed gesture support.
+- **Reader**: Implement "Two-Handed" reading gesture (swipe bottom for next page).
+
+### Phase 7: Remote Content Retrieval & Management
+- Add Remote Content Source Manager 
+- Add Remote Tracking Service Manager 
+- Add Remote Content Scanner
+- Add Remote Content Search
+- Add Local Content Manager 
+- Add Local Content Scanner
+- Add Local Content Search
+- Add Merge Content
+- Add Content Details
+- Add Content opprotunistic Merge
+- Add Content Sync Services (Remote and Local)
+- Add Content retrieval preferance heirachy
+- Add Update Checker
+- Add Downloader
+
+### Phase 8: Clean Arch & Domain Separation
+- Identify core business logic in Repository and UseCase layers.
+- Abstract `ContentDatabase`, `RemoteSource`, `TrackingService` behind interfaces in the domain layer.
+- Enforce `sealed class Result` wrappers to handle remote/local data operations explicitly.
+
+### Phase 9: Advanced Features & Polish
+- Add Migration tools (Tachiyomi and Mihon)
+- Improve performance and memory usage
+- Improve battery efficiency
+- Add support for more content types
+- Add support for more tracking services
+- Add support for more content sources
+- Add support for more content formats
+- Add support for more content encodings
+- Add support for more content protocols
+- Add support for more content providers
+
+### Phase 10: Improve app polish
+- improve ui and user experience
+- improve app onboarding
+- improve app performance and memory usage
+- improve app battery efficiency
+- improve app stability
+- improve app security
+- improve app accessibility
+- improve app test coverage
+
+### Phase 11: Refine app architecture and organization
+- improve app architecture
+- improve app organization and heirachy
+- ensure 100% compile time determinism
+- ensure 100% jetpack native 
+
+#### Long Term Goals
+- release app to play store
+- maintain app
+- include other platform ports
+- include media manager and organizer
+- improve cross-platform features and parity
+- improve android native integrations
+- add desktop mode support
+- add tablet mode support
+- add chromeos support
+- add Wear OS support
+- add Android TV support
+- improve support for other platforms
+- improve support for other content types
+- improve support for other tracking services
+- improve support for other content sources
+- improve support for other content formats
+- improve support for other content encodings
+- improve support for other content protocols
+- improve support for other content providers
+
+
+### Phase 12: Release
+- release app to play store
+
+
+
+
