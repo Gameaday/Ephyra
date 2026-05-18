@@ -1,87 +1,68 @@
-# Ephyra Roadmap & Modernization Guide
+# Ephyra Roadmap — Rearchitected as a Modern Android Application
 
-The re-architecture of Ephyra represents a shift from a decade of technical debt—characterized by
-tightly coupled "God Objects" and synchronous data access—to a modern, enterprise-grade mobile
-system. This evolution is guided by a **"Heal to Enable Selection"** philosophy, ensuring that core
-components can be selectively replaced in the future without destabilizing the entire platform.
+## Architectural Principles
 
-This directory contains the documentation guiding our transition from the legacy infrastructure to a
-fully compliant, modernized state.
+The re-architecture of Ephyra represents a shift from a decade of technical debt—characterized by tightly coupled "God Objects" and synchronous data access—to a modern, enterprise-grade mobile system. This evolution is guided by a **"Heal to Enable Selection"** philosophy, ensuring that core components can be selectively replaced in the future without destabilizing the entire platform.
 
-## ✅ Completed — Modernization Sprint
+### 1. The Interactor (Use-Case) Mandate
+The most significant shift in business logic is the migration to **Domain Interactors**.
+- **The Decision**: Moving logic out of the `ScreenModel` and `Repository` into single-purpose classes (e.g., `GetManga`, `SetReadStatus`).
+- **The Rationale**: This detangles the Presentation layer from the Data layer. The UI no longer knows how data is stored; it only knows what action it wants to perform. This isolation ensures that if the database engine changes (e.g., from SQLDelight to Room), the UI remains untouched.
 
-The following foundational work has been completed and merged:
+### 2. The Migration to Room: A New Engine
+A cornerstone of the future roadmap is the complete replacement of SQLDelight with **Room**.
+- **The Decision**: Transitioning from SQL-first (SQLDelight) to an Entity-DAO paradigm (Room).
+- **The Rationale**: While SQLDelight provided the foundation, Room is the industry standard for professional Android development. The transition provides:
+    - **Superior Observability**: Native integration with `Flow` and `Paging 3` reducing boilerplate to keep the UI in sync.
+    - **Modern Tooling**: Deep integration with the Android Studio Database Inspector for professional-level debugging and performance profiling.
+    - **Automated Migrations**: Room simplifies handling a decade-old, complex schema via automated migration paths and compile-time SQL verification.
+    - **Reduced Manual Friction**: Shifts the burden of writing manual SQL for basic operations back to the compiler.
 
-- **Module-boundary architecture**: Feature modules depend only on domain interfaces, not concrete
-  `:app` implementations. Cross-module contracts flow through `presentation-core` and `domain`
-  packages.
-- **Koin 4.2.1 migration**: All internal `Injekt.get()` calls replaced with constructor injection.
-  The `uy.kohesive.injekt.Injekt` shim is preserved for legacy extension compatibility.
-- **Resource decoupling**: All R-resource references corrected to their proper module aliases.
-  Shared UI components (e.g., `AppStateBanners`) extracted to `presentation-core`.
-- **Preference flow modernization**: Remaining `.get()` suspend calls in non-coroutine contexts
-  replaced with `.getSync()` or `Preference.collectAsState()` patterns.
-- **Full build success**: `:app:compileDebugKotlin` **BUILD SUCCESSFUL** ✅
-- **Spotless lint clean**: All modules pass `spotlessCheck` with no violations.
+### 3. Dependency Inversion over Service Location (NO LONGER TRUE)
+The codebase is transitioning from **Injekt** (a Service Locator) to **Koin** (true Dependency Injection).
+- **Refactoring by Intent**: Architecture now enforces **Constructor Injection** instead of global getters.
+- **The Power of Scope**: By utilizing Koin Scopes, dependencies are tied to the lifecycle of a specific feature or screen (like a `MangaId` scope). This eliminates the boilerplate of passing primitive IDs through long chains and ensures memory is reclaimed immediately when the user navigates away.
 
-## ✅ Completed — Startup Hardening & Architectural Fitness
+### 4. Unidirectional Data Flow (UDF)
+To eliminate "Main Thread Jank" and race conditions, the UI paradigm follows strict **Unidirectional Data Flow**.
+- **The Decision**: Every `ScreenModel` is mandated to emit a single, immutable `ViewState` object and receive a single stream of `Events` or `Intents`.
+- **The Rationale**: Standardizing state management ensures UI recompositions are predictable and performant. It prevents bugs where multiple independent data streams fall out of sync.
 
-- **Koin startup hardened**: `startKoin {}` is wrapped in try/catch; failures are recorded via
-  `StartupTracker.recordError()` and re-thrown to surface in `CrashActivity` rather than silently
-  degrading.
-- **Module order corrected**: `koinPreferenceModule` now loads before `koinDomainModule`,
-  ensuring preference bindings are always registered before domain singletons can reference them.
-- **`initializeMigrator()` crash-safe**: The coroutine body is wrapped in try/catch; exceptions
-  call `StartupTracker.recordError()`, complete `MIGRATOR_STARTED`, and fall back to
-  `Migrator.initialize(old=0)` to unblock `Migrator.await()` in `MainActivity`.
-- **Defensive `.getSync()` reads**: Theme and log-level preference reads at startup are guarded
-  with try/catch and safe defaults, preventing a DataStore race condition from surfacing as a
-  crash rather than a harmless visual default.
-- **`HomeScreen` channel strategies fixed**: `librarySearchEvent` and `openTabEvent` now use
-  `Channel.CONFLATED`, preventing stale navigation intents from accumulating on the singleton
-  screen across configuration changes or rapid back-stack cycles.
-- **Explicit `R` import in `App.kt`**: `import ephyra.app.R` added explicitly to remove
-  ambiguity around R-class resolution in multi-module configurations.
-- **Architectural fitness functions in CI**: Two new steps in `build.yml` fail the build if
-  (a) `android.*` imports appear in domain module source trees, or (b) `Injekt.get()` appears
-  anywhere outside the legacy shim. These run in milliseconds and prevent regressions silently
-  creeping back in.
-- **Design Principles document**: `doc/DESIGN_PRINCIPLES.md` created as the authoritative,
-  verbalisable law of the codebase — eight principles with canonical anti-patterns and a guiding
-  code-review question.
+### 5. Asynchronous Data Persistence
+The transition from `AndroidPreferenceStore` (legacy SharedPreferences) to `DataStorePreferenceStore` is a critical "Healing" operation.
+- **The Rationale**: Legacy storage was synchronous and frequently blocked the Main UI thread. The new architecture leverages **AndroidX DataStore**, which is fundamentally asynchronous and `Flow`-based.
+- **The Principle**: No disk I/O should ever occur on the Main thread. All persistence logic is shifted to `Dispatchers.IO`, ensuring the UI remains fluid at 120 FPS.
 
-## Core Documentation
+### 6. Host-Extension API Preservation
+As a host environment for dynamic, APK-based plugins, the re-architecture respects the **Public API Surface**.
+- **The Decision**: While internal modules move to the `ephyra.*` namespace, the `source-api` module strictly preserves the `eu.kanade.tachiyomi.source` namespace.
+- **The Rationale**: This creates a "Bridge" allowing the app to be modernized internally while maintaining 100% compatibility with thousands of external extensions.
 
-1. **[Design Principles](doc/DESIGN_PRINCIPLES.md)**: The authoritative law of the codebase.
-   Eight concrete principles — with canonical anti-patterns and a guiding code-review question —
-   that every developer must read before contributing. This document supersedes any informal
-   conventions previously used in the codebase.
-2. **[Architecture Principles](doc/ARCHITECTURE.md)**: Technical details of the design patterns
-   and architectural rules governing the modernized state of Ephyra (Koin, Room, UDF, Domain
-   Interactors).
-3. **[Migration Plan](doc/MIGRATION_PLAN.md)**: A structured roadmap outlining the phased
-   transition. Use this document to track progress and identify the current active phase of
-   modernization.
-4. **[Validation Criteria (Definition of Done)](doc/VALIDATION_CRITERIA.md)**: Establishing the
-   testable metrics for when a modernization phase or architectural pattern is considered completely
-   migrated.
+### 7. R8/Proguard as Security & API Boundary
+In this re-architecture, the Proguard file is treated as a **Contract** rather than just a shrinking tool.
+- **The Principle**: Surgical retention rules protect shared libraries (like `okhttp3` and `jsoup`) that extensions depend on. This prevents "Transitive DLL Bloat" and ensures that minification does not accidentally strip the "Public API" used by dynamic plugins.
 
-## Next Steps
-
-The following phases are the active next priorities. See `doc/MIGRATION_PLAN.md` for details.
-
-- **Phase 4** — Business Logic Isolation: Break down "God Object" repositories into single-purpose
-  Domain Interactors.
-- **Phase 5** — UI Architecture Stabilization: Enforce strict Unidirectional Data Flow in all
-  `ScreenModel`s.
-- **Phase 6** — Database Engine: Migrate from SQLDelight to Room.
-- **Koin Graph Safety**: Once a future Koin Annotations release includes `@ExternalDefinitions`,
-  replace the current `compileSafety.set(false)` approach with explicit external definition
-  annotations per feature module.
+### 8. Unified Content-First & Generalized Sync Engine
+To avoid the fragmentation and resource-waste pitfalls of legacy readers (where the same series is duplicated across multiple independent sources), the architecture is moving toward a **Content-First Model**.
+- **Unified Identity**: The primary key of library content is a **Canonical ID** (e.g. tracker ID) rather than a source-specific URL. Multiple sources and trackers are bound under this single, unified entity, preventing duplicate series entries.
+- **Selective & Extensible Sync**: Synchronization is treated as a generalized, provider-agnostic engine. Instead of hardcoding specialized sync tasks (like a proprietary Jellyfin sync), a unified coordinator pulls from remote sources, applies user-defined cleanup/modification rules, and selectively stores or mirrors the content (on device, network drive, Google Drive, Jellyfin content folder, etc. or combinations thereof).
+- **Declarative Site Framework Scrapers**: Moving away from dynamic APK loaders and script-chasing. Future parser capabilities will utilize a declarative, cached structural model of sites that updates dynamically over the network, ensuring the core app adapts out-of-the-box as the scraper engine matures.
 
 ---
 
-**Summary of Future Direction**: By rejecting "in-place" substitutions and instead rewriting
-paradigms, the project is moving toward a state of **Structural Weightlessness**. The eventual goal
-is a modularized repository where features are isolated, making the codebase intuitive, navigable,
-and resistant to technical debt.
+**Summary of Future Direction**: By rejecting "in-place" substitutions and instead rewriting paradigms, the project is moving toward a state of **Structural Weightlessness**. The eventual goal is a modularized repository where features are isolated, making the codebase intuitive, navigable, and resistant to technical debt.
+
+## Architecture Summary
+
+| Aspect | Choice |
+|--------|--------|
+| Identity | Canonical ID from tracker (`al:21`, `mal:30013`, `mu:12345`) |
+| Dependency Injection | Pure Compile-Time DI (CoreContainer) |
+| Database Engine | Room (Flow-based Observability) |
+| State Management | Unidirectional Data Flow (ViewState/Event) |
+| Persistence | AndroidX DataStore (Asynchronous) |
+| Business Logic | Domain Interactors (Use-Cases) |
+| Extension API | Legacy Compatibility Bridge (`eu.kanade.*`) |
+| Search | 4-tier: canonical ID (free) → title (1 call) → alt titles → deep search |
+
+

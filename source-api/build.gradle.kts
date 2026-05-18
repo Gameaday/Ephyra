@@ -1,39 +1,39 @@
-import ephyra.buildlogic.AndroidConfig
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 
 plugins {
-    id("ephyra.library.multiplatform")
+    id("mihon.library.multiplatform")
     kotlin("plugin.serialization")
 }
 
 kotlin {
     android {
-        namespace = "ephyra.source.api"
-        compileSdk = AndroidConfig.COMPILE_SDK
-        minSdk = AndroidConfig.MIN_SDK
+        namespace = "eu.kanade.tachiyomi.source"
 
         optimization {
-            consumerKeepRules.file("consumer-proguard.pro")
+            consumerKeepRules.apply {
+                publish = true
+                files.add(project.file("consumer-proguard.pro"))
+            }
         }
     }
-
     sourceSets {
-        commonMain.dependencies {
-            api(kotlinx.serialization.json)
-            api(libs.koin.core)
-            api(libs.jsoup)
+        val commonMain by getting {
+            dependencies {
+                api(kotlinx.serialization.json)
+                api(libs.jsoup)
 
-            implementation(project.dependencies.platform(compose.compose.bom))
-            implementation(compose.runtime)
+                implementation(compose.runtime)
+            }
         }
+        val androidMain by getting {
+            dependencies {
+                implementation(projects.core.common)
+                api(libs.preferencektx)
 
-        androidMain.dependencies {
-            implementation(projects.core.common)
-            api(libs.preferencektx)
-
-            // Workaround for https://youtrack.jetbrains.com/issue/KT-57605
-            implementation(kotlinx.coroutines.android)
-            implementation(project.dependencies.platform(kotlinx.coroutines.bom))
+                // Workaround for https://youtrack.jetbrains.com/issue/KT-57605
+                implementation(kotlinx.coroutines.android)
+                implementation(project.dependencies.platform(kotlinx.coroutines.bom))
+            }
         }
     }
 
@@ -42,3 +42,4 @@ kotlin {
         freeCompilerArgs.add("-Xexpect-actual-classes")
     }
 }
+
