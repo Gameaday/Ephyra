@@ -77,7 +77,6 @@ import ephyra.feature.more.NewUpdateScreen
 import ephyra.feature.more.OnboardingScreen
 import ephyra.feature.settings.screen.browse.ExtensionReposScreen
 import ephyra.feature.settings.screen.data.RestoreBackupScreen
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppStateBanners
 import ephyra.presentation.core.components.DownloadedOnlyBannerBackgroundColor
 import ephyra.presentation.core.components.IncognitoModeBannerBackgroundColor

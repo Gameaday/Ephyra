@@ -8,7 +8,8 @@ plugins {
     id("ephyra.android.application")
     id("ephyra.android.application.compose")
     kotlin("plugin.serialization")
-    alias(libs.plugins.koin.compiler)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
     alias(libs.plugins.aboutLibraries)
 }
 
@@ -310,20 +311,13 @@ dependencies {
 
     testImplementation(kotlinx.coroutines.test)
 
-    // Koin test utilities – static module graph verification and isolated Koin contexts
-    testImplementation(libs.koin.test)
-    testImplementation(libs.koin.test.junit5)
-}
-
-val generateLocalesConfig = tasks.register<LocalesConfigTask>("generateLocalesConfig") {
-    mokoResourcesDir.set(project(":i18n").file("src/commonMain/moko-resources/"))
-    outputDir.set(layout.buildDirectory.dir("generated/res/locales_config"))
+    // Hilt dependencies
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.hilt.navigation.compose)
 }
 
 androidComponents {
-    onVariants { variant ->
-        variant.sources.res?.addGeneratedSourceDirectory(generateLocalesConfig, LocalesConfigTask::outputDir)
-    }
     onVariants(selector().withFlavor("default" to "standard")) {
         // Only excluding in standard flavor because this breaks
         // Layout Inspector's Compose tree
@@ -350,7 +344,3 @@ buildscript {
     }
 }
 
-koinCompiler {
-    // TODO: Enable when Koin Annotations supports @ExternalDefinitions (expected in Koin 1.4+)
-    compileSafety.set(false)
-}

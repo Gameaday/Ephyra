@@ -1,4 +1,5 @@
 import com.android.build.api.dsl.LibraryExtension
+import ephyra.buildlogic.configureAndroid
 import ephyra.buildlogic.configureCompose
 
 plugins {
@@ -8,6 +9,7 @@ plugins {
 }
 
 extensions.configure<LibraryExtension> {
+    configureAndroid(this)
     configureCompose(this)
 }
 

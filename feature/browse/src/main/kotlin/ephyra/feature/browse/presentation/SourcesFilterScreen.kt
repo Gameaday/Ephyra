@@ -17,7 +17,6 @@ import ephyra.core.common.util.system.LocaleHelper
 import ephyra.domain.source.model.Source
 import ephyra.feature.browse.presentation.components.BaseSourceItem
 import ephyra.feature.browse.source.SourcesFilterScreenModel
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.FastScrollLazyColumn
 import ephyra.presentation.core.components.material.Scaffold

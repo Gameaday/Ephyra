@@ -29,7 +29,6 @@ import ephyra.domain.manga.model.getComicInfo
 import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.track.interactor.GetTracks
-import ephyra.i18n.MR
 import eu.kanade.tachiyomi.source.UnmeteredSource
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.online.HttpSource

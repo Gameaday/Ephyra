@@ -9,7 +9,6 @@ import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.feature.browse.presentation.SourcesFilterScreen
-import ephyra.i18n.MR
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.util.Screen
 import ephyra.presentation.core.util.system.toast

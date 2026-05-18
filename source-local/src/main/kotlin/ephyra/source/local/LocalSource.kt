@@ -19,7 +19,6 @@ import ephyra.core.metadata.ephyra.MangaDetails
 import ephyra.domain.chapter.service.ChapterRecognition
 import ephyra.domain.manga.model.JellyfinNaming
 import ephyra.domain.manga.model.Manga
-import ephyra.i18n.MR
 import ephyra.source.local.filter.OrderBy
 import ephyra.source.local.image.LocalCoverManager
 import ephyra.source.local.io.Archive

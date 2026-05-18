@@ -30,8 +30,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import dev.icerock.moko.resources.StringResource
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.ScrollbarLazyColumn
 import ephyra.presentation.core.components.WheelNumberPicker
 import ephyra.presentation.core.components.WheelTextPicker
@@ -47,7 +45,7 @@ import kotlinx.collections.immutable.toImmutableList
 fun TrackStatusSelector(
     selection: Long,
     onSelectionChange: (Long) -> Unit,
-    selections: Map<Long, StringResource?>,
+    selections: Map<Long, Int?>,
     onConfirm: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {

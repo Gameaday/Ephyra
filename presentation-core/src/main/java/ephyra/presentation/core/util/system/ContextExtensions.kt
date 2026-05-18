@@ -13,7 +13,6 @@ import androidx.core.net.toUri
 import com.hippo.unifile.UniFile
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.logcat
-import ephyra.i18n.MR
 import logcat.LogPriority
 import rikka.sui.Sui
 import java.io.File

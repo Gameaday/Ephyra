@@ -32,7 +32,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import ephyra.domain.download.model.Download
-import ephyra.i18n.MR
 import ephyra.presentation.core.R
 import ephyra.presentation.core.components.DropdownMenu
 import ephyra.presentation.core.components.material.IconButtonTokens

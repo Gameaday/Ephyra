@@ -20,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import ephyra.domain.manga.interactor.FetchInterval
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.WheelTextPicker
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.pluralStringResource

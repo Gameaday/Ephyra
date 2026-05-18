@@ -14,7 +14,6 @@ import ephyra.core.common.i18n.stringResource
 import ephyra.domain.source.service.SourcePreferences
 import ephyra.feature.settings.Preference
 import ephyra.feature.settings.screen.browse.ExtensionReposScreen
-import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.collectAsState

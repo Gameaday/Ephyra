@@ -15,7 +15,6 @@ import ephyra.domain.reader.model.ReadingMode
 import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.feature.reader.setting.ReaderSettingsScreenModel
 import ephyra.feature.reader.viewer.webtoon.WebtoonViewer
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.CheckboxItem
 import ephyra.presentation.core.components.HeadingItem
 import ephyra.presentation.core.components.SettingsChipRow

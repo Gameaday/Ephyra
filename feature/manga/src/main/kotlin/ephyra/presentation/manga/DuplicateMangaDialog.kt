@@ -61,7 +61,6 @@ import ephyra.domain.manga.model.MangaWithChapterCount
 import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.service.SourceManager
 import ephyra.feature.manga.presentation.components.MangaCover
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AdaptiveSheet
 import ephyra.presentation.core.components.Badge
 import ephyra.presentation.core.components.BadgeGroup

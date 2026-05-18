@@ -18,7 +18,6 @@ import androidx.compose.ui.Modifier
 import ephyra.domain.category.model.Category
 import ephyra.feature.category.components.CategoryFloatingActionButton
 import ephyra.feature.category.components.CategoryListItem
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding

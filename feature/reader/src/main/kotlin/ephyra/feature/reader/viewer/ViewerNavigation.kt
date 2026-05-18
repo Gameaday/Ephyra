@@ -3,14 +3,12 @@ package ephyra.feature.reader.viewer
 import android.graphics.Color
 import android.graphics.PointF
 import android.graphics.RectF
-import dev.icerock.moko.resources.StringResource
 import ephyra.domain.reader.service.ReaderPreferences
-import ephyra.i18n.MR
 import ephyra.presentation.core.util.invert
 
 abstract class ViewerNavigation {
 
-    sealed class NavigationRegion(val nameRes: StringResource, val color: Int) {
+    sealed class NavigationRegion(val nameRes: Int, val color: Int) {
         data object MENU : NavigationRegion(ephyra.i18n.R.string.action_menu, Color.argb(0xCC, 0x95, 0x81, 0x8D))
         data object PREV : NavigationRegion(ephyra.i18n.R.string.nav_zone_prev, Color.argb(0xCC, 0xFF, 0x77, 0x33))
         data object NEXT : NavigationRegion(ephyra.i18n.R.string.nav_zone_next, Color.argb(0xCC, 0x84, 0xE2, 0x96))

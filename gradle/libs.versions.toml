@@ -21,6 +21,7 @@ koin_annotations = "4.2.1"
 koin_compiler_plugin = "0.6.2"
 
 # Compiler Tools
+hilt = "2.51.1"
 ksp = "2.3.7"
 room = "2.8.4"
 paging = "3.4.2"
@@ -118,6 +119,10 @@ stringSimilarity = { module = "com.aallam.similarity:string-similarity-kotlin", 
 
 materialKolor = { module = "com.materialkolor:material-kolor", version.ref = "materialKolor" }
 
+hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
+hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
+hilt-navigation-compose = "androidx.hilt:hilt-navigation-compose:1.2.0"
+
 [plugins]
 agp = { id = "com.android.application", version.ref = "agp" }
 agp-library = { id = "com.android.library", version.ref = "agp" }
@@ -131,6 +136,7 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 
 # THE KEY: Modern Koin Native Compiler Plugin
 koin-compiler = { id = "io.insert-koin.compiler.plugin", version.ref = "koin_compiler_plugin" }
+hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 
 [bundles]
 okhttp = ["okhttp-core", "okhttp-logging", "okhttp-brotli", "okhttp-dnsoverhttps"]

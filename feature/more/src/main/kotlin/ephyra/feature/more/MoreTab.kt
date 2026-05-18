@@ -24,7 +24,6 @@ import ephyra.feature.category.CategoryScreen
 import ephyra.feature.download.DownloadQueueScreen
 import ephyra.feature.settings.SettingsScreen
 import ephyra.feature.stats.StatsScreen
-import ephyra.i18n.MR
 import ephyra.presentation.core.R
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.AppReadySignal

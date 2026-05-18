@@ -1,92 +1,146 @@
 package ephyra.core.common.di
 
-import java.util.concurrent.ConcurrentHashMap
+import android.content.Context
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
 import kotlin.reflect.KClass
 
-/**
- * A lightweight, deterministic, pure-Kotlin dependency container.
- * Stores singleton dependencies and interactor instances registered during app startup.
- * Guarantees 100% compile-time type-safety.
- */
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface ScreenEntryPoint {
+    // Singletons
+    fun basePreferences(): ephyra.domain.base.BasePreferences
+    fun coverCache(): ephyra.app.data.cache.CoverCache
+    fun mangaScreenModelFactory(): ephyra.feature.manga.MangaScreenModelFactory
+    fun sourceManager(): ephyra.domain.source.service.SourceManager
+    fun networkHelper(): eu.kanade.tachiyomi.network.NetworkHelper
+    fun updatesRepository(): ephyra.domain.updates.repository.UpdatesRepository
+    fun libraryPreferences(): ephyra.domain.library.service.LibraryPreferences
+    fun extensionManager(): ephyra.app.extension.ExtensionManager
+    fun trustExtension(): ephyra.domain.extension.interactor.TrustExtension
+    
+    // Interactors / Use Cases
+    fun updateMangaNotes(): ephyra.domain.manga.interactor.UpdateMangaNotes
+    fun getCategories(): ephyra.domain.category.interactor.GetCategories
+    fun deleteCategory(): ephyra.domain.category.interactor.DeleteCategory
+    fun reorderCategory(): ephyra.domain.category.interactor.ReorderCategory
+    fun renameCategory(): ephyra.domain.category.interactor.RenameCategory
+    fun createCategoryWithName(): ephyra.domain.category.interactor.CreateCategoryWithName
+    fun setDisplayMode(): ephyra.domain.category.interactor.SetDisplayMode
+    fun setSortModeForCategory(): ephyra.domain.category.interactor.SetSortModeForCategory
+    fun resetCategoryFlags(): ephyra.domain.category.interactor.ResetCategoryFlags
+    fun getEnabledSources(): ephyra.domain.source.interactor.GetEnabledSources
+    fun getLanguagesWithSources(): ephyra.domain.source.interactor.GetLanguagesWithSources
+    fun getSourcesWithFavoriteCount(): ephyra.domain.source.interactor.GetSourcesWithFavoriteCount
+    fun getSourcesWithNonLibraryManga(): ephyra.domain.source.interactor.GetSourcesWithNonLibraryManga
+    fun toggleSource(): ephyra.domain.source.interactor.ToggleSource
+    fun toggleSourcePin(): ephyra.domain.source.interactor.ToggleSourcePin
+    fun toggleLanguage(): ephyra.domain.source.interactor.ToggleLanguage
+    fun getExtensionsByType(): ephyra.domain.extension.interactor.GetExtensionsByType
+    fun getExtensionSources(): ephyra.domain.extension.interactor.GetExtensionSources
+    fun getExtensionLanguages(): ephyra.domain.extension.interactor.GetExtensionLanguages
+    fun getUpdates(): ephyra.domain.updates.interactor.GetUpdates
+    fun getLibraryManga(): ephyra.domain.manga.interactor.GetLibraryManga
+    fun getNextChapters(): ephyra.domain.history.interactor.GetNextChapters
+    fun getChaptersByMangaId(): ephyra.domain.chapter.interactor.GetChaptersByMangaId
+    fun getBookmarkedChaptersByMangaId(): ephyra.domain.chapter.interactor.GetBookmarkedChaptersByMangaId
+    fun setReadStatus(): ephyra.domain.chapter.interactor.SetReadStatus
+    fun updateManga(): ephyra.domain.manga.interactor.UpdateManga
+    fun setMangaCategories(): ephyra.domain.category.interactor.SetMangaCategories
+    fun downloadManager(): ephyra.feature.download.DownloadManager
+    fun downloadCache(): ephyra.app.data.download.DownloadCache
+    fun trackerManager(): ephyra.app.data.track.TrackerManager
+    
+    // Preferences / other dependencies
+    fun readerPreferences(): ephyra.feature.reader.setting.ReaderPreferences
+    fun trackPreferences(): ephyra.domain.track.service.TrackPreferences
+    fun downloadPreferences(): ephyra.domain.download.service.DownloadPreferences
+    fun backupPreferences(): ephyra.domain.backup.service.BackupPreferences
+    fun storagePreferences(): ephyra.domain.storage.service.StoragePreferences
+    fun uiPreferences(): ephyra.domain.ui.UiPreferences
+    fun preferenceStore(): ephyra.core.common.preference.PreferenceStore
+    
+    // Extension repos
+    fun getExtensionRepoCount(): ephyra.domain.extensionrepo.interactor.GetExtensionRepoCount
+}
+
 object CoreContainer {
-    private val instances = ConcurrentHashMap<Class<*>, Any>()
-    private val factories = ConcurrentHashMap<Class<*>, () -> Any>()
+    lateinit var applicationContext: Context
 
-    /**
-     * Registers a dependency instance with the container.
-     */
-    fun <T : Any> register(clazz: Class<T>, instance: T) {
-        instances[clazz] = instance
+    fun init(context: Context) {
+        applicationContext = context.applicationContext
     }
 
-    /**
-     * Registers a dependency instance with the container (using KClass).
-     */
-    fun <T : Any> register(clazz: KClass<T>, instance: T) {
-        instances[clazz.java] = instance
+    @Suppress("UNCHECKED_CAST")
+    fun <T : Any> get(clazz: Class<T>): T {
+        val entryPoint = EntryPointAccessors.fromApplication(applicationContext, ScreenEntryPoint::class.java)
+        val result = when (clazz) {
+            ephyra.domain.base.BasePreferences::class.java -> entryPoint.basePreferences()
+            ephyra.app.data.cache.CoverCache::class.java -> entryPoint.coverCache()
+            ephyra.feature.manga.MangaScreenModelFactory::class.java -> entryPoint.mangaScreenModelFactory()
+            ephyra.domain.source.service.SourceManager::class.java -> entryPoint.sourceManager()
+            eu.kanade.tachiyomi.network.NetworkHelper::class.java -> entryPoint.networkHelper()
+            ephyra.domain.updates.repository.UpdatesRepository::class.java -> entryPoint.updatesRepository()
+            ephyra.domain.library.service.LibraryPreferences::class.java -> entryPoint.libraryPreferences()
+            ephyra.app.extension.ExtensionManager::class.java -> entryPoint.extensionManager()
+            ephyra.domain.extension.interactor.TrustExtension::class.java -> entryPoint.trustExtension()
+            
+            // Interactors
+            ephyra.domain.manga.interactor.UpdateMangaNotes::class.java -> entryPoint.updateMangaNotes()
+            ephyra.domain.category.interactor.GetCategories::class.java -> entryPoint.getCategories()
+            ephyra.domain.category.interactor.DeleteCategory::class.java -> entryPoint.deleteCategory()
+            ephyra.domain.category.interactor.ReorderCategory::class.java -> entryPoint.reorderCategory()
+            ephyra.domain.category.interactor.RenameCategory::class.java -> entryPoint.renameCategory()
+            ephyra.domain.category.interactor.CreateCategoryWithName::class.java -> entryPoint.createCategoryWithName()
+            ephyra.domain.category.interactor.SetDisplayMode::class.java -> entryPoint.setDisplayMode()
+            ephyra.domain.category.interactor.SetSortModeForCategory::class.java -> entryPoint.setSortModeForCategory()
+            ephyra.domain.category.interactor.ResetCategoryFlags::class.java -> entryPoint.resetCategoryFlags()
+            ephyra.domain.source.interactor.GetEnabledSources::class.java -> entryPoint.getEnabledSources()
+            ephyra.domain.source.interactor.GetLanguagesWithSources::class.java -> entryPoint.getLanguagesWithSources()
+            ephyra.domain.source.interactor.GetSourcesWithFavoriteCount::class.java -> entryPoint.getSourcesWithFavoriteCount()
+            ephyra.domain.source.interactor.GetSourcesWithNonLibraryManga::class.java -> entryPoint.getSourcesWithNonLibraryManga()
+            ephyra.domain.source.interactor.ToggleSource::class.java -> entryPoint.toggleSource()
+            ephyra.domain.source.interactor.ToggleSourcePin::class.java -> entryPoint.toggleSourcePin()
+            ephyra.domain.source.interactor.ToggleLanguage::class.java -> entryPoint.toggleLanguage()
+            ephyra.domain.extension.interactor.GetExtensionsByType::class.java -> entryPoint.getExtensionsByType()
+            ephyra.domain.extension.interactor.GetExtensionSources::class.java -> entryPoint.getExtensionSources()
+            ephyra.domain.extension.interactor.GetExtensionLanguages::class.java -> entryPoint.getExtensionLanguages()
+            ephyra.domain.updates.interactor.GetUpdates::class.java -> entryPoint.getUpdates()
+            ephyra.domain.manga.interactor.GetLibraryManga::class.java -> entryPoint.getLibraryManga()
+            ephyra.domain.history.interactor.GetNextChapters::class.java -> entryPoint.getNextChapters()
+            ephyra.domain.chapter.interactor.GetChaptersByMangaId::class.java -> entryPoint.getChaptersByMangaId()
+            ephyra.domain.chapter.interactor.GetBookmarkedChaptersByMangaId::class.java -> entryPoint.getBookmarkedChaptersByMangaId()
+            ephyra.domain.chapter.interactor.SetReadStatus::class.java -> entryPoint.setReadStatus()
+            ephyra.domain.manga.interactor.UpdateManga::class.java -> entryPoint.updateManga()
+            ephyra.domain.category.interactor.SetMangaCategories::class.java -> entryPoint.setMangaCategories()
+            ephyra.feature.download.DownloadManager::class.java -> entryPoint.downloadManager()
+            ephyra.app.data.download.DownloadCache::class.java -> entryPoint.downloadCache()
+            ephyra.app.data.track.TrackerManager::class.java -> entryPoint.trackerManager()
+            
+            // Preferences / other dependencies
+            ephyra.feature.reader.setting.ReaderPreferences::class.java -> entryPoint.readerPreferences()
+            ephyra.domain.track.service.TrackPreferences::class.java -> entryPoint.trackPreferences()
+            ephyra.domain.download.service.DownloadPreferences::class.java -> entryPoint.downloadPreferences()
+            ephyra.domain.backup.service.BackupPreferences::class.java -> entryPoint.backupPreferences()
+            ephyra.domain.storage.service.StoragePreferences::class.java -> entryPoint.storagePreferences()
+            ephyra.domain.ui.UiPreferences::class.java -> entryPoint.uiPreferences()
+            ephyra.core.common.preference.PreferenceStore::class.java -> entryPoint.preferenceStore()
+            
+            // Extension repos
+            ephyra.domain.extensionrepo.interactor.GetExtensionRepoCount::class.java -> entryPoint.getExtensionRepoCount()
+            
+            else -> throw IllegalArgumentException("No Hilt EntryPoint mapping for requested class: ${clazz.name}")
+        }
+        return result as T
     }
 
-    /**
-     * Registers a factory function for generating instances of type [T].
-     */
-    fun <T : Any> registerFactory(clazz: Class<T>, factory: () -> T) {
-        factories[clazz] = factory
-    }
-
-    /**
-     * Registers a factory function for generating instances of type [T] (using KClass).
-     */
-    fun <T : Any> registerFactory(clazz: KClass<T>, factory: () -> T) {
-        factories[clazz.java] = factory
-    }
-
-    /**
-     * Retrieves a dependency of type [T].
-     * Throws [IllegalStateException] if the dependency is not registered.
-     */
     inline fun <reified T : Any> get(): T {
         return get(T::class.java)
     }
 
-    /**
-     * Retrieves a dependency of the specified [Class].
-     */
-    @Suppress("UNCHECKED_CAST")
-    fun <T : Any> get(clazz: Class<T>): T {
-        val instance = instances[clazz]
-        if (instance != null) {
-            return instance as T
-        }
-
-        val factory = factories[clazz]
-        if (factory != null) {
-            return factory() as T
-        }
-
-        throw IllegalStateException(
-            "No dependency or factory registered for class: ${clazz.name}. Ensure it is registered in AppDependencyContainer."
-        )
-    }
-
-    /**
-     * Retrieves a dependency of the specified [KClass].
-     */
     fun <T : Any> get(clazz: KClass<T>): T {
         return get(clazz.java)
-    }
-
-    /**
-     * Checks if a dependency of the specified [Class] is registered.
-     */
-    fun has(clazz: Class<*>): Boolean {
-        return instances.containsKey(clazz) || factories.containsKey(clazz)
-    }
-
-    /**
-     * Clears all registered dependencies and factories (mainly for testing).
-     */
-    fun clear() {
-        instances.clear()
-        factories.clear()
     }
 }

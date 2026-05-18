@@ -25,7 +25,6 @@ import ephyra.domain.library.model.sort
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.feature.library.LibrarySettingsScreenEvent
 import ephyra.feature.library.LibrarySettingsScreenModel
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.BaseSortItem
 import ephyra.presentation.core.components.CheckboxItem
 import ephyra.presentation.core.components.HeadingItem

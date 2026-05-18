@@ -1,10 +1,8 @@
 package ephyra.feature.common.utils
 
-import dev.icerock.moko.resources.StringResource
 import ephyra.domain.migration.models.MigrationFlag
-import ephyra.i18n.MR
 
-fun MigrationFlag.getLabel(): StringResource {
+fun MigrationFlag.getLabel(): Int {
     return when (this) {
         MigrationFlag.CHAPTER -> ephyra.i18n.R.string.chapters
         MigrationFlag.CATEGORY -> ephyra.i18n.R.string.categories

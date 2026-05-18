@@ -9,9 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import dev.icerock.moko.resources.StringResource
 import ephyra.core.common.preference.CheckboxState
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.LabeledCheckbox
 import ephyra.presentation.core.i18n.stringResource
 
@@ -23,7 +21,7 @@ fun DeleteLibraryMangaDialog(
 ) {
     var list by remember {
         mutableStateOf(
-            buildList<CheckboxState.State<StringResource>> {
+            buildList<CheckboxState.State<Int>> {
                 add(CheckboxState.State.None(ephyra.i18n.R.string.manga_from_library))
                 if (!containsLocalManga) {
                     add(CheckboxState.State.None(ephyra.i18n.R.string.downloaded_chapters))
@@ -65,7 +63,7 @@ fun DeleteLibraryMangaDialog(
                             val index = list.indexOf(state)
                             if (index != -1) {
                                 val mutableList = list.toMutableList()
-                                mutableList[index] = state.next() as CheckboxState.State<StringResource>
+                                mutableList[index] = state.next() as CheckboxState.State<Int>
                                 list = mutableList.toList()
                             }
                         },

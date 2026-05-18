@@ -12,7 +12,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.window.DialogProperties
 import ephyra.feature.settings.Preference
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.LabeledCheckbox
 import ephyra.presentation.core.i18n.stringResource
 

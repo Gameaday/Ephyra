@@ -38,7 +38,6 @@ import ephyra.feature.manga.presentation.components.ChapterDownloadAction
 import ephyra.feature.manga.presentation.components.ChapterDownloadIndicator
 import ephyra.feature.manga.presentation.components.DotSeparatorText
 import ephyra.feature.manga.presentation.components.MangaCover
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.ListGroupHeader
 import ephyra.presentation.core.components.material.DISABLED_ALPHA
 import ephyra.presentation.core.components.material.padding

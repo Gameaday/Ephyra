@@ -16,7 +16,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ephyra.core.common.preference.TriState
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AdaptiveSheet
 import ephyra.presentation.core.components.CheckboxItem
 import ephyra.presentation.core.components.CollapsibleBox

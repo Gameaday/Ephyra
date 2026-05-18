@@ -50,7 +50,6 @@ import ephyra.feature.manga.MangaScreen
 import ephyra.feature.manga.presentation.DuplicateMangaDialog
 import ephyra.feature.migration.dialog.MigrateMangaDialog
 import ephyra.feature.webview.WebViewScreen
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource

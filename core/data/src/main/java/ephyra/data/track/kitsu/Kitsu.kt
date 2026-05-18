@@ -1,7 +1,6 @@
 package ephyra.data.track.kitsu
 
 import android.app.Application
-import dev.icerock.moko.resources.StringResource
 import ephyra.app.core.common.R
 import ephyra.core.common.util.system.logcat
 import ephyra.data.track.BaseTracker
@@ -13,7 +12,6 @@ import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.model.Track
 import ephyra.domain.track.service.DeletableTracker
 import ephyra.domain.track.service.TrackPreferences
-import ephyra.i18n.MR
 import eu.kanade.tachiyomi.network.NetworkHelper
 import kotlinx.serialization.json.Json
 import logcat.LogPriority
@@ -52,7 +50,7 @@ class Kitsu(
         return listOf(READING, COMPLETED, ON_HOLD, DROPPED, PLAN_TO_READ)
     }
 
-    override fun getStatus(status: Long): StringResource? = when (status) {
+    override fun getStatus(status: Long): Int? = when (status) {
         READING -> ephyra.i18n.R.string.reading
         PLAN_TO_READ -> ephyra.i18n.R.string.plan_to_read
         COMPLETED -> ephyra.i18n.R.string.completed

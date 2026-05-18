@@ -15,7 +15,6 @@ import ephyra.core.common.util.system.notificationBuilder
 import ephyra.core.common.util.system.notify
 import ephyra.data.notification.Notifications
 import ephyra.domain.track.interactor.MatchUnlinkedManga
-import ephyra.i18n.MR
 
 /**
  * Manages notifications for the authority matching job.

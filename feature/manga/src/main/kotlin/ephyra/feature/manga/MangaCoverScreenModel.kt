@@ -22,7 +22,6 @@ import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.service.CoverCache
 import ephyra.domain.source.service.SourceManager
-import ephyra.i18n.MR
 import ephyra.presentation.core.util.manga.editCover
 import ephyra.presentation.core.util.system.encoder
 import ephyra.presentation.core.util.system.getBitmapOrNull

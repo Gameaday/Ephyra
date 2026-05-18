@@ -22,7 +22,6 @@ import androidx.compose.ui.util.fastAny
 import ephyra.domain.download.model.Download
 import ephyra.feature.manga.presentation.components.ChapterDownloadAction
 import ephyra.feature.manga.presentation.components.MangaBottomActionMenu
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.FastScrollLazyColumn

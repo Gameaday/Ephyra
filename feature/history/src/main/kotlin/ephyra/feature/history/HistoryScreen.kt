@@ -13,7 +13,6 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import ephyra.domain.history.model.HistoryWithRelations
 import ephyra.feature.history.components.HistoryItem
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.AppBarTitle

@@ -23,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.ScrollbarLazyColumn
 import ephyra.presentation.core.i18n.stringResource
 

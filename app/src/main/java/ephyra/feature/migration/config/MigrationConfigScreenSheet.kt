@@ -38,7 +38,6 @@ import ephyra.core.util.fastFilterNot
 import ephyra.domain.migration.models.MigrationFlag
 import ephyra.domain.source.service.SourcePreferences
 import ephyra.feature.common.utils.getLabel
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AdaptiveSheet
 import ephyra.presentation.core.components.material.Button
 import ephyra.presentation.core.components.material.padding

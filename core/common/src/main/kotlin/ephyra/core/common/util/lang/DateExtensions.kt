@@ -3,7 +3,6 @@ package ephyra.core.common.util.lang
 import android.content.Context
 import ephyra.core.common.i18n.pluralStringResource
 import ephyra.core.common.i18n.stringResource
-import ephyra.i18n.MR
 import java.text.DateFormat
 import java.time.Instant
 import java.time.LocalDate

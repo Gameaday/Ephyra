@@ -39,7 +39,6 @@ import ephyra.domain.manga.interactor.ResetViewerFlags
 import ephyra.feature.settings.Preference
 import ephyra.feature.settings.screen.advanced.ClearDatabaseScreen
 import ephyra.feature.settings.screen.debug.DebugInfoScreen
-import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.AppInfo
 import ephyra.presentation.core.ui.OnboardingScreenFactory

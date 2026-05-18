@@ -19,7 +19,6 @@ import androidx.compose.ui.platform.LocalContext
 import ephyra.feature.stats.components.StatsItem
 import ephyra.feature.stats.components.StatsOverviewItem
 import ephyra.feature.stats.data.StatsData
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.SectionCard
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource

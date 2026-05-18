@@ -1,11 +1,9 @@
 package ephyra.domain.reader.service
 
-import dev.icerock.moko.resources.StringResource
 import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.common.preference.getEnum
 import ephyra.domain.reader.model.ReaderOrientation
 import ephyra.domain.reader.model.ReadingMode
-import ephyra.i18n.MR
 
 class ReaderPreferences(
     private val preferenceStore: PreferenceStore,
@@ -152,7 +150,7 @@ class ReaderPreferences(
     }
 
     enum class TappingInvertMode(
-        val titleRes: StringResource,
+        val titleRes: Int,
         val shouldInvertHorizontal: Boolean = false,
         val shouldInvertVertical: Boolean = false,
     ) {

@@ -14,7 +14,6 @@ import ephyra.core.common.util.system.notificationBuilder
 import ephyra.core.common.util.system.notify
 import ephyra.data.notification.Notifications
 import ephyra.domain.download.model.Download
-import ephyra.i18n.MR
 import java.util.regex.Pattern
 import ephyra.domain.download.service.DownloadNotifier as IDownloadNotifier
 

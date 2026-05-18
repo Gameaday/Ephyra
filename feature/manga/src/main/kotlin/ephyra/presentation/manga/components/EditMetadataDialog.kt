@@ -54,7 +54,6 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import ephyra.domain.manga.model.LockedField
-import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource
 import eu.kanade.tachiyomi.source.model.SManga
 

@@ -1,9 +1,7 @@
 package ephyra.domain.ui.model
 
-import dev.icerock.moko.resources.StringResource
-import ephyra.i18n.MR
 
-enum class AppTheme(val titleRes: StringResource?) {
+enum class AppTheme(val titleRes: Int?) {
     DEFAULT(ephyra.i18n.R.string.label_default),
     MONET(ephyra.i18n.R.string.theme_monet),
     EPHYRA(ephyra.i18n.R.string.theme_ephyra),

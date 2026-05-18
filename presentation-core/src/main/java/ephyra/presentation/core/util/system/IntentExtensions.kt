@@ -6,7 +6,6 @@ import android.content.Intent
 import android.net.Uri
 import androidx.core.content.IntentCompat
 import ephyra.core.common.i18n.stringResource
-import ephyra.i18n.MR
 import java.io.Serializable
 
 fun Uri.toShareIntent(context: Context, type: String = "image/*", message: String? = null): Intent {

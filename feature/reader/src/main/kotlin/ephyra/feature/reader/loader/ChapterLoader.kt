@@ -16,7 +16,6 @@ import ephyra.domain.download.service.DownloadPreferences
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.model.StubSource
 import ephyra.feature.reader.model.ReaderChapter
-import ephyra.i18n.MR
 import ephyra.source.local.LocalSource
 import ephyra.source.local.io.Format
 import eu.kanade.tachiyomi.source.Source

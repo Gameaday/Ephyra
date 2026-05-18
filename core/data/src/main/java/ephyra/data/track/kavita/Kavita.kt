@@ -1,7 +1,6 @@
 package ephyra.data.track.kavita
 
 import android.app.Application
-import dev.icerock.moko.resources.StringResource
 import ephyra.app.core.common.R
 import ephyra.data.track.BaseTracker
 import ephyra.data.track.model.TrackSearch
@@ -13,7 +12,6 @@ import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.model.Track
 import ephyra.domain.track.service.EnhancedTracker
 import ephyra.domain.track.service.TrackPreferences
-import ephyra.i18n.MR
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.source.ConfigurableSource
 import eu.kanade.tachiyomi.source.Source
@@ -48,7 +46,7 @@ class Kavita(
 
     override fun getStatusList(): List<Long> = listOf(UNREAD, READING, COMPLETED)
 
-    override fun getStatus(status: Long): StringResource? = when (status) {
+    override fun getStatus(status: Long): Int? = when (status) {
         UNREAD -> ephyra.i18n.R.string.unread
         READING -> ephyra.i18n.R.string.reading
         COMPLETED -> ephyra.i18n.R.string.completed

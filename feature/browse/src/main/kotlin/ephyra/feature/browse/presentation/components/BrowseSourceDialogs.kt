@@ -5,7 +5,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import ephyra.domain.manga.model.Manga
-import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource
 
 @Composable

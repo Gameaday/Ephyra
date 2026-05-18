@@ -18,7 +18,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import ephyra.domain.updates.service.UpdatesPreferences
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.SettingsItemsPaddings
 import ephyra.presentation.core.components.TabbedDialog
 import ephyra.presentation.core.components.TabbedDialogPaddings

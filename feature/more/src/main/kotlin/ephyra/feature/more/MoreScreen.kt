@@ -19,7 +19,6 @@ import androidx.compose.ui.res.vectorResource
 import ephyra.core.common.Constants
 import ephyra.feature.settings.widget.SwitchPreferenceWidget
 import ephyra.feature.settings.widget.TextPreferenceWidget
-import ephyra.i18n.MR
 import ephyra.presentation.core.R
 import ephyra.presentation.core.components.ScrollbarLazyColumn
 import ephyra.presentation.core.components.material.Scaffold

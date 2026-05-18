@@ -5,7 +5,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.zIndex
-import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource
 
 @Composable

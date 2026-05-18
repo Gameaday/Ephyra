@@ -5,7 +5,6 @@ import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.system.isOnline
 import ephyra.domain.source.model.NoResultsException
 import ephyra.domain.source.model.SourceNotInstalledException
-import ephyra.i18n.MR
 import eu.kanade.tachiyomi.network.HttpException
 import java.net.UnknownHostException
 

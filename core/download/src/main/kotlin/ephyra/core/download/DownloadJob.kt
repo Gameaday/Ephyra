@@ -18,7 +18,6 @@ import ephyra.core.common.util.system.notificationBuilder
 import ephyra.core.common.util.system.setForegroundSafely
 import ephyra.data.notification.Notifications
 import ephyra.domain.download.service.DownloadPreferences
-import ephyra.i18n.MR
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combineTransform

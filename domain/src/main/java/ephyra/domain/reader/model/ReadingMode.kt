@@ -1,10 +1,8 @@
 package ephyra.domain.reader.model
 
-import dev.icerock.moko.resources.StringResource
-import ephyra.i18n.MR
 
 enum class ReadingMode(
-    val stringRes: StringResource,
+    val stringRes: Int,
     val flagValue: Int,
     val direction: Direction? = null,
     val type: ViewerType? = null,

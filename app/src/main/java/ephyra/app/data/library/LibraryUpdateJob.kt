@@ -45,7 +45,6 @@ import ephyra.domain.manga.model.SourceStatus
 import ephyra.domain.manga.model.toSManga
 import ephyra.domain.source.model.SourceNotInstalledException
 import ephyra.domain.source.service.SourceManager
-import ephyra.i18n.MR
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.model.UpdateStrategy
 import kotlinx.coroutines.CancellationException

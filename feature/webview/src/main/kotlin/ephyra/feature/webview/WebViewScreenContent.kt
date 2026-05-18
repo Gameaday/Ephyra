@@ -44,7 +44,6 @@ import com.kevinnzou.web.WebViewNavigator
 import com.kevinnzou.web.WebViewState
 import ephyra.core.common.util.system.getHtml
 import ephyra.core.common.util.system.setDefaultSettings
-import ephyra.i18n.MR
 import ephyra.presentation.core.R
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions

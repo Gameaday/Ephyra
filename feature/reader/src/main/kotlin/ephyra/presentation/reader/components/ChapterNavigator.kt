@@ -36,7 +36,6 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.Slider
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.isTabletUi

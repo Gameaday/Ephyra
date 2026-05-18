@@ -15,7 +15,6 @@ import ephyra.feature.manga.MangaScreen
 import ephyra.feature.migration.list.components.MigrationExitDialog
 import ephyra.feature.migration.list.components.MigrationMangaDialog
 import ephyra.feature.migration.list.components.MigrationProgressDialog
-import ephyra.i18n.MR
 import ephyra.presentation.core.ui.MigrationListPresenter
 import ephyra.presentation.core.util.Screen
 import ephyra.presentation.core.util.system.toast

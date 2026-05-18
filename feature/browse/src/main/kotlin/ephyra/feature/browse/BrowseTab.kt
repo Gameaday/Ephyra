@@ -19,7 +19,6 @@ import ephyra.feature.browse.migration.sources.migrateSourceTab
 import ephyra.feature.browse.source.authority.discoverTab
 import ephyra.feature.browse.source.globalsearch.GlobalSearchScreen
 import ephyra.feature.browse.source.sourcesTab
-import ephyra.i18n.MR
 import ephyra.presentation.core.R
 import ephyra.presentation.core.components.TabbedScreen
 import ephyra.presentation.core.i18n.stringResource

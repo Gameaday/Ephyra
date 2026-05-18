@@ -31,7 +31,6 @@ import ephyra.core.common.preference.TriState
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.downloadedFilter
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.LabeledCheckbox
 import ephyra.presentation.core.components.RadioItem
 import ephyra.presentation.core.components.SortItem

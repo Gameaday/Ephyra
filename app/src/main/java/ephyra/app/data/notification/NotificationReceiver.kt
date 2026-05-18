@@ -25,7 +25,6 @@ import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.service.SourceManager
 import ephyra.feature.reader.ReaderActivity
-import ephyra.i18n.MR
 import ephyra.presentation.core.util.system.getParcelableExtraCompat
 import ephyra.presentation.core.util.system.toShareIntent
 import ephyra.presentation.core.util.system.toast

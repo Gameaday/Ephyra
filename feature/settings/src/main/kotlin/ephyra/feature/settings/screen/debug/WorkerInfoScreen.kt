@@ -28,7 +28,6 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.core.common.util.lang.toDateTimestampString
 import ephyra.core.common.util.system.workManager
 import ephyra.domain.ui.UiPreferences
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.material.Scaffold

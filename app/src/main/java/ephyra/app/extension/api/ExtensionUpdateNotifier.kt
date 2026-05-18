@@ -9,7 +9,6 @@ import ephyra.core.common.i18n.pluralStringResource
 import ephyra.core.common.util.system.cancelNotification
 import ephyra.core.common.util.system.notify
 import ephyra.data.notification.Notifications
-import ephyra.i18n.MR
 
 class ExtensionUpdateNotifier(
     private val context: Context,

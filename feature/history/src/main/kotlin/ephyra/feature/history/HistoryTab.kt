@@ -26,7 +26,6 @@ import ephyra.feature.manga.MangaScreen
 import ephyra.feature.manga.presentation.DuplicateMangaDialog
 import ephyra.feature.migration.dialog.MigrateMangaDialog
 import ephyra.feature.reader.ReaderActivity
-import ephyra.i18n.MR
 import ephyra.presentation.core.R
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.AppReadySignal

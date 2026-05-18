@@ -24,7 +24,6 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter

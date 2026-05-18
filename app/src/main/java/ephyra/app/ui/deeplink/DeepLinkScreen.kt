@@ -12,7 +12,6 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.feature.browse.source.globalsearch.GlobalSearchScreen
 import ephyra.feature.manga.MangaScreen
 import ephyra.feature.reader.ReaderActivity
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource

@@ -18,7 +18,6 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.domain.backup.model.BackupOptions
 import ephyra.domain.backup.service.BackupScheduler
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.LabeledCheckbox
 import ephyra.presentation.core.components.LazyColumnWithAction

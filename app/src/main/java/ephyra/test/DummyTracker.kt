@@ -1,11 +1,9 @@
 package ephyra.test
 
-import dev.icerock.moko.resources.StringResource
 import ephyra.app.R
 import ephyra.domain.track.model.Track
 import ephyra.domain.track.model.TrackSearch
 import ephyra.domain.track.service.Tracker
-import ephyra.i18n.MR
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.Flow
@@ -31,7 +29,7 @@ data class DummyTracker(
 
     override fun getStatusList(): List<Long> = valStatuses
 
-    override fun getStatus(status: Long): StringResource? = when (status) {
+    override fun getStatus(status: Long): Int? = when (status) {
         1L -> ephyra.i18n.R.string.reading
         2L -> ephyra.i18n.R.string.plan_to_read
         3L -> ephyra.i18n.R.string.completed

@@ -38,7 +38,6 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import dev.icerock.moko.resources.StringResource
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.lang.convertEpochMillisZone
 import ephyra.core.common.util.lang.launchNonCancellable
@@ -57,7 +56,6 @@ import ephyra.domain.track.service.EnhancedTracker
 import ephyra.domain.track.service.Tracker
 import ephyra.domain.track.service.TrackerManager
 import ephyra.domain.ui.UiPreferences
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.LabeledCheckbox
 import ephyra.presentation.core.components.material.AlertDialogContent
 import ephyra.presentation.core.components.material.padding
@@ -375,7 +373,7 @@ private data class TrackStatusSelectorScreen(
         private val tracker: Tracker,
     ) : StateScreenModel<Model.State>(State(track.status)) {
 
-        fun getSelections(): Map<Long, StringResource?> {
+        fun getSelections(): Map<Long, Int?> {
             return tracker.getStatusList().associateWith { tracker.getStatus(it) }
         }
 

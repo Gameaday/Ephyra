@@ -6,7 +6,6 @@ import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.PreviewLightDark
-import ephyra.i18n.MR
 import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.EmptyScreenAction
 import ephyra.presentation.theme.TachiyomiPreviewTheme

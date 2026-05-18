@@ -31,7 +31,6 @@ import ephyra.app.util.system.toast
 import kotlinx.coroutines.flow.collectLatest
 import ephyra.feature.migration.config.MigrationConfigScreen
 import ephyra.domain.manga.model.Manga
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.FastScrollLazyColumn
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource

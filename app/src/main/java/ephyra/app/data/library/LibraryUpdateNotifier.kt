@@ -32,7 +32,6 @@ import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.library.model.LibraryManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.service.SourceManager
-import ephyra.i18n.MR
 import ephyra.presentation.core.util.formatChapterNumber
 import eu.kanade.tachiyomi.source.UnmeteredSource
 import java.math.RoundingMode

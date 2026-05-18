@@ -65,7 +65,6 @@ import ephyra.feature.manga.presentation.components.MangaInfoBox
 import ephyra.feature.manga.presentation.components.MangaToolbar
 import ephyra.feature.manga.presentation.components.MissingChapterCountListItem
 import ephyra.feature.manga.presentation.components.SourceHealthBanner
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.TwoPanelBox
 import ephyra.presentation.core.components.VerticalFastScroller
 import ephyra.presentation.core.components.material.PullRefresh

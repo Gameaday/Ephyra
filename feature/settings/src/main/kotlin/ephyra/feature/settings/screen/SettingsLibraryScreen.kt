@@ -34,7 +34,6 @@ import ephyra.feature.category.CategoryScreen
 import ephyra.feature.category.presentation.visualName
 import ephyra.feature.settings.Preference
 import ephyra.feature.settings.widget.TriStateListDialog
-import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.collectAsState

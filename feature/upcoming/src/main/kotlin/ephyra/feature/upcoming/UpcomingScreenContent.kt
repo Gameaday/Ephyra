@@ -26,7 +26,6 @@ import ephyra.core.common.Constants
 import ephyra.domain.manga.model.Manga
 import ephyra.feature.upcoming.components.UpcomingItem
 import ephyra.feature.upcoming.components.calendar.Calendar
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.FastScrollLazyColumn
 import ephyra.presentation.core.components.TwoPanelBox

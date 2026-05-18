@@ -49,7 +49,6 @@ import ephyra.domain.source.service.SourcePreferences
 import ephyra.feature.browse.migration.search.MigrateSearchScreen
 import ephyra.feature.browse.presentation.components.SourceIcon
 import ephyra.feature.migration.list.MigrationListScreen
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.FastScrollLazyColumn

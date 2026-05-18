@@ -26,7 +26,6 @@ import ephyra.domain.source.model.Source
 import ephyra.feature.browse.presentation.components.BaseSourceItem
 import ephyra.feature.browse.source.SourcesScreenModel
 import ephyra.feature.browse.source.browse.BrowseSourceScreenModel.Listing
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.ScrollbarLazyColumn
 import ephyra.presentation.core.components.material.SECONDARY_ALPHA
 import ephyra.presentation.core.components.material.padding

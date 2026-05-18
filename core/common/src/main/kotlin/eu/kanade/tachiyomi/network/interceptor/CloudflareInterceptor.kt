@@ -11,7 +11,6 @@ import androidx.core.content.ContextCompat
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.system.isOutdated
 import ephyra.core.common.util.system.toast
-import ephyra.i18n.MR
 import eu.kanade.tachiyomi.network.AndroidCookieJar
 import okhttp3.Cookie
 import okhttp3.HttpUrl.Companion.toHttpUrl

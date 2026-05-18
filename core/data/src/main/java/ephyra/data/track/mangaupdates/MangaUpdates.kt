@@ -1,7 +1,6 @@
 package ephyra.data.track.mangaupdates
 
 import android.app.Application
-import dev.icerock.moko.resources.StringResource
 import ephyra.app.core.common.R
 import ephyra.data.track.BaseTracker
 import ephyra.data.track.mangaupdates.dto.MUListItem
@@ -15,7 +14,6 @@ import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.model.Track
 import ephyra.domain.track.service.DeletableTracker
 import ephyra.domain.track.service.TrackPreferences
-import ephyra.i18n.MR
 import eu.kanade.tachiyomi.network.NetworkHelper
 import kotlinx.serialization.json.Json
 import ephyra.data.database.models.Track as DbTrack
@@ -62,7 +60,7 @@ class MangaUpdates(
         return listOf(READING_LIST, COMPLETE_LIST, ON_HOLD_LIST, UNFINISHED_LIST, WISH_LIST)
     }
 
-    override fun getStatus(status: Long): StringResource? = when (status) {
+    override fun getStatus(status: Long): Int? = when (status) {
         READING_LIST -> ephyra.i18n.R.string.reading_list
         WISH_LIST -> ephyra.i18n.R.string.wish_list
         COMPLETE_LIST -> ephyra.i18n.R.string.complete_list

@@ -9,7 +9,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.feature.reader.setting.ReaderSettingsScreenModel
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.CheckboxItem
 import ephyra.presentation.core.components.SettingsChipRow
 import ephyra.presentation.core.components.SliderItem

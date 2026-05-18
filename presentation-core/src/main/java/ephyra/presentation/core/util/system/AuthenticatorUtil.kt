@@ -11,7 +11,6 @@ import androidx.biometric.auth.startClass2BiometricOrCredentialAuthentication
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import ephyra.core.common.i18n.stringResource
-import ephyra.i18n.MR
 import ephyra.presentation.core.util.system.AuthenticatorUtil.isAuthenticating
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume

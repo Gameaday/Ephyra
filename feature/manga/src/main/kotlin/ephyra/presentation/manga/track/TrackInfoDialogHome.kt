@@ -49,11 +49,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
-import dev.icerock.moko.resources.StringResource
 import ephyra.core.common.util.lang.toLocalDate
 import ephyra.domain.track.service.Tracker
 import ephyra.feature.manga.track.TrackItem
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.DropdownMenu
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.system.copyToClipboard
@@ -172,7 +170,7 @@ private fun TrackInfoItem(
     title: String,
     tracker: Tracker,
     isAuthority: Boolean,
-    status: StringResource?,
+    status: Int?,
     onStatusClick: () -> Unit,
     chapters: String,
     onChaptersClick: () -> Unit,

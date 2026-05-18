@@ -23,7 +23,6 @@ import ephyra.domain.manga.interactor.GetFavorites
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.repository.MangaRepository
 import ephyra.domain.storage.service.StorageManager
-import ephyra.i18n.MR
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.protobuf.ProtoBuf
 import logcat.LogPriority

@@ -17,7 +17,6 @@ import androidx.compose.ui.unit.dp
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaCover
 import ephyra.domain.manga.model.asMangaCover
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.manga.components.CommonMangaItemDefaults

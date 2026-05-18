@@ -43,7 +43,6 @@ import androidx.lifecycle.lifecycleScope
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 import com.google.android.material.transition.platform.MaterialContainerTransform
 import com.hippo.unifile.UniFile
-import dev.icerock.moko.resources.StringResource
 import ephyra.core.common.Constants
 import ephyra.core.common.notification.NotificationManager
 import ephyra.core.common.util.lang.launchNonCancellable
@@ -64,7 +63,6 @@ import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.model.ViewerChapters
 import ephyra.feature.reader.setting.ReaderSettingsScreenModel
 import ephyra.feature.reader.viewer.ReaderProgressIndicator
-import ephyra.i18n.MR
 import ephyra.presentation.core.data.coil.TachiyomiImageDecoder
 import ephyra.presentation.core.ui.activity.BaseActivity
 import ephyra.presentation.core.util.AppNavigator
@@ -470,7 +468,7 @@ class ReaderActivity : BaseActivity() {
         startActivity(url.toUri().toShareIntent(this, "text/plain"))
     }
 
-    private fun showToast(stringRes: StringResource) {
+    private fun showToast(stringRes: Int) {
         readingModeToast?.cancel()
         readingModeToast = toast(stringRes)
     }

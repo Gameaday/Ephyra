@@ -14,7 +14,6 @@ import ephyra.core.common.util.system.WebViewUtil
 import ephyra.feature.settings.Preference
 import ephyra.feature.settings.PreferenceScaffold
 import ephyra.feature.settings.screen.about.AboutScreen
-import ephyra.i18n.MR
 import ephyra.presentation.core.util.Screen
 import kotlinx.collections.immutable.mutate
 import kotlinx.collections.immutable.persistentListOf

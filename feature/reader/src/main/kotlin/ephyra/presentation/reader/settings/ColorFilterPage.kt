@@ -14,7 +14,6 @@ import androidx.core.graphics.red
 import ephyra.core.common.preference.getAndSet
 import ephyra.domain.reader.service.ReaderPreferences.Companion.ColorFilterMode
 import ephyra.feature.reader.setting.ReaderSettingsScreenModel
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.CheckboxItem
 import ephyra.presentation.core.components.SettingsChipRow
 import ephyra.presentation.core.components.SliderItem

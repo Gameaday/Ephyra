@@ -32,10 +32,8 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import dev.icerock.moko.resources.StringResource
 import ephyra.feature.settings.screen.about.AboutScreen
 import ephyra.feature.settings.widget.TextPreferenceWidget
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.material.Scaffold
@@ -148,8 +146,8 @@ object SettingsMainScreen : Screen() {
     }
 
     private data class Item(
-        val titleRes: StringResource,
-        val subtitleRes: StringResource? = null,
+        val titleRes: Int,
+        val subtitleRes: Int? = null,
         val formatSubtitle: @Composable () -> String? = { subtitleRes?.let { stringResource(it) } },
         val icon: ImageVector,
         val screen: VoyagerScreen,

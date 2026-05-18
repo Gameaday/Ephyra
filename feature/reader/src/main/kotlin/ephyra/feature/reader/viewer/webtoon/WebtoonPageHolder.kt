@@ -22,7 +22,6 @@ import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.viewer.ReaderPageImageView
 import ephyra.feature.reader.viewer.ReaderProgressIndicator
 import ephyra.feature.webview.WebViewActivity
-import ephyra.i18n.MR
 import ephyra.presentation.core.util.formattedMessage
 import eu.kanade.tachiyomi.source.model.Page
 import kotlinx.coroutines.CancellationException

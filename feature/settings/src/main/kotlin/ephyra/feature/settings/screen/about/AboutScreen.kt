@@ -32,7 +32,6 @@ import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.release.interactor.GetApplicationRelease
 import ephyra.domain.ui.UiPreferences
 import ephyra.feature.settings.widget.TextPreferenceWidget
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.LinkIcon
 import ephyra.presentation.core.components.LogoHeader

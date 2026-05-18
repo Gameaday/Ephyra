@@ -1,6 +1,5 @@
 package ephyra.domain.track.service
 
-import dev.icerock.moko.resources.StringResource
 import ephyra.domain.track.model.Track
 import ephyra.domain.track.model.TrackSearch
 import kotlinx.coroutines.flow.Flow
@@ -22,7 +21,7 @@ interface Tracker {
 
     fun getStatusList(): List<Long>
 
-    fun getStatus(status: Long): StringResource?
+    fun getStatus(status: Long): Int?
 
     fun getReadingStatus(): Long
 

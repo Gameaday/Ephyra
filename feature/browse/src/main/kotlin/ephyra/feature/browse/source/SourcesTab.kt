@@ -15,7 +15,6 @@ import ephyra.feature.browse.presentation.SourceOptionsDialog
 import ephyra.feature.browse.presentation.SourcesScreen
 import ephyra.feature.browse.source.browse.BrowseSourceScreen
 import ephyra.feature.browse.source.globalsearch.GlobalSearchScreen
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.TabContent
 import ephyra.presentation.core.i18n.stringResource

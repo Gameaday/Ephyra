@@ -1,7 +1,5 @@
 package ephyra.domain.reader.model
 
-import dev.icerock.moko.resources.StringResource
-import ephyra.i18n.MR
 
 /**
  * Screen orientation modes for the reader.
@@ -15,7 +13,7 @@ import ephyra.i18n.MR
  */
 enum class ReaderOrientation(
     val flag: Int,
-    val stringRes: StringResource,
+    val stringRes: Int,
     val flagValue: Int,
 ) {
     DEFAULT(

@@ -15,7 +15,6 @@ import ephyra.core.common.util.system.notificationBuilder
 import ephyra.core.common.util.system.notify
 import ephyra.data.notification.Notifications
 import ephyra.domain.release.model.Release
-import ephyra.i18n.MR
 import ephyra.domain.release.service.AppUpdateNotifier as DomainAppUpdateNotifier
 
 class AppUpdateNotifier(private val context: Context) : DomainAppUpdateNotifier {

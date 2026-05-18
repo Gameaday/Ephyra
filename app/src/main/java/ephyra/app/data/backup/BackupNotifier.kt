@@ -8,7 +8,6 @@ import ephyra.core.common.util.system.cancelNotification
 import ephyra.core.common.util.system.notificationBuilder
 import ephyra.core.common.util.system.notify
 import ephyra.data.notification.Notifications
-import ephyra.i18n.MR
 import ephyra.domain.backup.service.BackupNotifier as DomainBackupNotifier
 
 class BackupNotifier(private val context: Context) : DomainBackupNotifier {

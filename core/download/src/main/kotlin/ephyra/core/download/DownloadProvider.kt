@@ -12,7 +12,6 @@ import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.model.JellyfinNaming
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.storage.service.StorageManager
-import ephyra.i18n.MR
 import eu.kanade.tachiyomi.source.Source
 import logcat.LogPriority
 import java.io.IOException

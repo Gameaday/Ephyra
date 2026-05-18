@@ -15,7 +15,6 @@ import ephyra.core.common.util.system.logcat
 import ephyra.core.common.util.system.notificationBuilder
 import ephyra.data.notification.Notifications
 import ephyra.domain.base.BasePreferences
-import ephyra.i18n.MR
 import ephyra.presentation.core.util.system.getSerializableExtraCompat
 import logcat.LogPriority
 import org.koin.android.ext.android.inject

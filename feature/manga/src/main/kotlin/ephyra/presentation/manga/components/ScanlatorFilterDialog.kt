@@ -27,7 +27,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.TextButton
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource

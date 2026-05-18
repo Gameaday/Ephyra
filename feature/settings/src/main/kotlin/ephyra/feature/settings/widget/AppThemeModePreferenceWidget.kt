@@ -9,7 +9,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import ephyra.domain.ui.model.ThemeMode
-import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource
 
 private val options = mapOf(

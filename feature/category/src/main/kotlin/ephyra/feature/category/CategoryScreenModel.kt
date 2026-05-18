@@ -3,14 +3,12 @@ package ephyra.feature.category
 import androidx.compose.runtime.Immutable
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import dev.icerock.moko.resources.StringResource
 import ephyra.domain.category.interactor.CreateCategoryWithName
 import ephyra.domain.category.interactor.DeleteCategory
 import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.category.interactor.RenameCategory
 import ephyra.domain.category.interactor.ReorderCategory
 import ephyra.domain.category.model.Category
-import ephyra.i18n.MR
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.channels.Channel
@@ -120,7 +118,7 @@ sealed interface CategoryDialog {
 }
 
 sealed interface CategoryEvent {
-    sealed class LocalizedMessage(val stringRes: StringResource) : CategoryEvent
+    sealed class LocalizedMessage(val stringRes: Int) : CategoryEvent
     data object InternalError : LocalizedMessage(ephyra.i18n.R.string.internal_error)
 }
 

@@ -14,7 +14,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource
 
 val IndexingBannerBackgroundColor = Color(0xFF36B37E)

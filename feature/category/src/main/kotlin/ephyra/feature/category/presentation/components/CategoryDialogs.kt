@@ -28,7 +28,6 @@ import androidx.compose.ui.focus.focusRequester
 import ephyra.core.common.preference.CheckboxState
 import ephyra.domain.category.model.Category
 import ephyra.feature.category.presentation.visualName
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.asToggleableState

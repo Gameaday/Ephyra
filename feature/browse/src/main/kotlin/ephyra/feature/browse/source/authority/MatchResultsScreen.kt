@@ -46,7 +46,6 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import coil3.compose.AsyncImage
 import ephyra.domain.manga.model.Manga
 import ephyra.feature.manga.MangaScreen
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding

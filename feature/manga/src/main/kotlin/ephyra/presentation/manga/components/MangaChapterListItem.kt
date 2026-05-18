@@ -38,7 +38,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ephyra.domain.download.model.Download
 import ephyra.domain.library.service.LibraryPreferences
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.DISABLED_ALPHA
 import ephyra.presentation.core.components.material.SECONDARY_ALPHA
 import ephyra.presentation.core.i18n.stringResource

@@ -4,7 +4,6 @@ import android.app.Application
 import androidx.compose.runtime.Immutable
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import dev.icerock.moko.resources.StringResource
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.system.LocaleHelper
 import ephyra.domain.base.BasePreferences
@@ -13,7 +12,6 @@ import ephyra.domain.extension.model.Extension
 import ephyra.domain.extension.model.InstallStep
 import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.source.service.SourcePreferences
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.SEARCH_DEBOUNCE_MILLIS
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.delay
@@ -226,7 +224,7 @@ typealias ItemGroups = Map<ExtensionUiModel.Header, List<ExtensionUiModel.Item>>
 
 object ExtensionUiModel {
     sealed interface Header {
-        data class Resource(val textRes: StringResource) : Header
+        data class Resource(val textRes: Int) : Header
         data class Text(val text: String) : Header
     }
 

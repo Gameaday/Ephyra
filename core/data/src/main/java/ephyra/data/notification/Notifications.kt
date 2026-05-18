@@ -9,7 +9,6 @@ import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.notification.NotificationIds
 import ephyra.core.common.util.system.buildNotificationChannel
 import ephyra.core.common.util.system.buildNotificationChannelGroup
-import ephyra.i18n.MR
 
 /**
  * Notification channel and ID constants for the app.

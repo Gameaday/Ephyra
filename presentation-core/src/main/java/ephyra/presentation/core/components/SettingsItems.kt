@@ -50,7 +50,6 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import dev.icerock.moko.resources.StringResource
 import ephyra.core.common.preference.Preference
 import ephyra.core.common.preference.TriState
 import ephyra.core.common.preference.toggle
@@ -70,7 +69,7 @@ object SettingsItemsPaddings {
 }
 
 @Composable
-fun HeadingItem(labelRes: StringResource) {
+fun HeadingItem(labelRes: Int) {
     HeadingItem(stringResource(labelRes))
 }
 
@@ -401,7 +400,7 @@ fun TextItem(label: String, value: String, onChange: (String) -> Unit) {
 }
 
 @Composable
-fun SettingsChipRow(labelRes: StringResource, content: @Composable FlowRowScope.() -> Unit) {
+fun SettingsChipRow(labelRes: Int, content: @Composable FlowRowScope.() -> Unit) {
     Column {
         HeadingItem(labelRes)
         FlowRow(
@@ -418,7 +417,7 @@ fun SettingsChipRow(labelRes: StringResource, content: @Composable FlowRowScope.
 }
 
 @Composable
-fun SettingsIconGrid(labelRes: StringResource, content: LazyGridScope.() -> Unit) {
+fun SettingsIconGrid(labelRes: Int, content: LazyGridScope.() -> Unit) {
     Column {
         HeadingItem(labelRes)
         LazyVerticalGrid(

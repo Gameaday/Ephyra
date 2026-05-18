@@ -1,7 +1,5 @@
 package ephyra.domain.backup.model
 
-import dev.icerock.moko.resources.StringResource
-import ephyra.i18n.MR
 import kotlinx.collections.immutable.persistentListOf
 
 /**
@@ -115,7 +113,7 @@ data class BackupOptions(
     }
 
     data class Entry(
-        val label: StringResource,
+        val label: Int,
         val getter: (BackupOptions) -> Boolean,
         val setter: (BackupOptions, Boolean) -> BackupOptions,
         val enabled: (BackupOptions) -> Boolean = { true },

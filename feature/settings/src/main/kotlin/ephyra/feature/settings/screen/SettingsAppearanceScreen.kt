@@ -19,7 +19,6 @@ import ephyra.feature.settings.Preference
 import ephyra.feature.settings.screen.appearance.AppLanguageScreen
 import ephyra.feature.settings.widget.AppThemeModePreferenceWidget
 import ephyra.feature.settings.widget.AppThemePreferenceWidget
-import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.core.util.system.toast

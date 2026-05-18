@@ -37,7 +37,6 @@ import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.service.calculateChapterGap
 import ephyra.feature.reader.model.ChapterTransition
 import ephyra.feature.reader.model.ReaderChapter
-import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.secondaryItemAlpha

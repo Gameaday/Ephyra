@@ -3,7 +3,6 @@ package ephyra.core.common.util.system
 import android.content.Context
 import androidx.core.os.LocaleListCompat
 import ephyra.core.common.i18n.stringResource
-import ephyra.i18n.MR
 import java.util.Locale
 
 /**

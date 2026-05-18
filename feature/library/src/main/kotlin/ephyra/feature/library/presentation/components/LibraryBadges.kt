@@ -11,7 +11,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import ephyra.domain.manga.model.SourceStatus
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.Badge
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.theme.TachiyomiPreviewTheme

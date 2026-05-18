@@ -1,7 +1,5 @@
 package ephyra.domain.backup.model
 
-import dev.icerock.moko.resources.StringResource
-import ephyra.i18n.MR
 import kotlinx.collections.immutable.persistentListOf
 
 /**
@@ -67,7 +65,7 @@ data class RestoreOptions(
     }
 
     data class Entry(
-        val label: StringResource,
+        val label: Int,
         val getter: (RestoreOptions) -> Boolean,
         val setter: (RestoreOptions, Boolean) -> RestoreOptions,
     )

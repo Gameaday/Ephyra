@@ -50,7 +50,6 @@ import ephyra.domain.track.service.TrackerManager
 import ephyra.feature.category.presentation.visualName
 import ephyra.feature.settings.Preference
 import ephyra.feature.settings.widget.TriStateListDialog
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource

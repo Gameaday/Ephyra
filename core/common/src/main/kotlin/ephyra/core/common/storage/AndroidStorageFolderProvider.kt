@@ -4,7 +4,6 @@ import android.content.Context
 import android.os.Environment
 import androidx.core.net.toUri
 import ephyra.core.common.i18n.stringResource
-import ephyra.i18n.MR
 import java.io.File
 
 class AndroidStorageFolderProvider(

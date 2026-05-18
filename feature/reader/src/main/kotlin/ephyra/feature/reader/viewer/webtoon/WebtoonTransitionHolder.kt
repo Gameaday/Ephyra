@@ -14,7 +14,6 @@ import ephyra.core.common.util.system.dpToPx
 import ephyra.feature.reader.model.ChapterTransition
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.viewer.ReaderTransitionView
-import ephyra.i18n.MR
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.collectLatest

@@ -23,7 +23,6 @@ import ephyra.domain.source.model.StubSource
 import ephyra.feature.browse.presentation.components.BrowseSourceComfortableGrid
 import ephyra.feature.browse.presentation.components.BrowseSourceCompactGrid
 import ephyra.feature.browse.presentation.components.BrowseSourceList
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource

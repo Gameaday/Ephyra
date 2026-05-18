@@ -6,7 +6,6 @@ import androidx.core.app.ActivityCompat.finishAffinity
 import androidx.fragment.app.FragmentActivity
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.system.logcat
-import ephyra.i18n.MR
 import ephyra.presentation.core.ui.activity.BaseActivity
 import ephyra.presentation.core.ui.delegate.SecureActivityDelegateState
 import ephyra.presentation.core.util.system.AuthenticatorUtil

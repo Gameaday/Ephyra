@@ -63,7 +63,6 @@ import ephyra.feature.settings.screen.data.RestoreBackupScreen
 import ephyra.feature.settings.screen.data.StorageInfo
 import ephyra.feature.settings.widget.BasePreferenceWidget
 import ephyra.feature.settings.widget.PrefsHorizontalPadding
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.TextButton
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.collectAsState

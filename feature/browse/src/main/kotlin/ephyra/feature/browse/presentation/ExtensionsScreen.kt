@@ -42,7 +42,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import dev.icerock.moko.resources.StringResource
 import ephyra.core.common.util.system.LocaleHelper
 import ephyra.domain.extension.model.Extension
 import ephyra.domain.extension.model.InstallStep
@@ -51,7 +50,6 @@ import ephyra.feature.browse.extension.ExtensionsScreenModel
 import ephyra.feature.browse.presentation.components.BaseBrowseItem
 import ephyra.feature.browse.presentation.components.ExtensionIcon
 import ephyra.feature.manga.presentation.components.DotSeparatorNoSpaceText
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.FastScrollLazyColumn
 import ephyra.presentation.core.components.WarningBanner
 import ephyra.presentation.core.components.material.PullRefresh
@@ -501,7 +499,7 @@ private fun ExtensionItemActions(
 
 @Composable
 private fun ExtensionHeader(
-    textRes: StringResource,
+    textRes: Int,
     modifier: Modifier = Modifier,
     action: @Composable RowScope.() -> Unit = {},
 ) {

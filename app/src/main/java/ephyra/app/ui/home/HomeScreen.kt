@@ -43,7 +43,6 @@ import ephyra.feature.library.LibraryTab
 import ephyra.feature.manga.MangaScreen
 import ephyra.feature.more.MoreTab
 import ephyra.feature.updates.UpdatesTab
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.NavigationBar
 import ephyra.presentation.core.components.material.NavigationRail
 import ephyra.presentation.core.components.material.Scaffold

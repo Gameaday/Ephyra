@@ -10,7 +10,6 @@ import ephyra.core.common.util.system.WebViewUtil
 import ephyra.core.common.util.system.logcat
 import ephyra.core.common.util.system.setDefaultSettings
 import ephyra.core.common.util.system.toast
-import ephyra.i18n.MR
 import logcat.LogPriority
 import okhttp3.Headers
 import okhttp3.Interceptor

@@ -40,7 +40,6 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import ephyra.feature.manga.CoverResult
 import ephyra.feature.manga.CoverSearchScreenModel
-import ephyra.i18n.MR
 import ephyra.presentation.core.R
 import ephyra.presentation.core.components.DropdownMenu
 import ephyra.presentation.core.components.material.Scaffold

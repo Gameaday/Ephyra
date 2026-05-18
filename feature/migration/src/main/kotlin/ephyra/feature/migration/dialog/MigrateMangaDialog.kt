@@ -21,7 +21,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
-import dev.icerock.moko.resources.StringResource
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.withUIContext
 import ephyra.domain.download.service.DownloadManager
@@ -31,7 +30,6 @@ import ephyra.domain.manga.service.CoverCache
 import ephyra.domain.migration.models.MigrationFlag
 import ephyra.domain.migration.usecases.MigrateMangaUseCase
 import ephyra.domain.source.service.SourcePreferences
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.LabeledCheckbox
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
@@ -39,7 +37,7 @@ import ephyra.presentation.core.screens.LoadingScreen
 import kotlinx.coroutines.flow.update
 import kotlin.collections.toMutableSet
 
-private fun MigrationFlag.getLabel(): StringResource {
+private fun MigrationFlag.getLabel(): Int {
     return when (this) {
         MigrationFlag.CHAPTER -> ephyra.i18n.R.string.chapters
         MigrationFlag.CATEGORY -> ephyra.i18n.R.string.categories

@@ -70,7 +70,6 @@ import ephyra.domain.manga.model.MangaWithChapterCount
 import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.model.TrackSearch
 import ephyra.feature.browse.source.globalsearch.GlobalSearchScreen
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AdaptiveSheet
 import ephyra.presentation.core.components.ScrollbarLazyColumn
 import ephyra.presentation.core.components.TabContent

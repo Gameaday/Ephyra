@@ -19,7 +19,6 @@ import ephyra.domain.category.model.Category
 import ephyra.feature.category.CategoryScreenState
 import ephyra.feature.category.presentation.components.CategoryFloatingActionButton
 import ephyra.feature.category.presentation.components.CategoryListItem
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.AppBar
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding

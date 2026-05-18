@@ -5,7 +5,6 @@ import android.text.format.DateUtils
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import ephyra.core.common.i18n.stringResource
-import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource
 import java.time.Instant
 import kotlin.time.Duration

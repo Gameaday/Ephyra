@@ -16,7 +16,6 @@ import ephyra.core.common.util.storage.getUriCompat
 import ephyra.core.common.util.system.setForegroundSafely
 import ephyra.core.common.util.system.workManager
 import ephyra.data.notification.Notifications
-import ephyra.i18n.MR
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.ProgressListener

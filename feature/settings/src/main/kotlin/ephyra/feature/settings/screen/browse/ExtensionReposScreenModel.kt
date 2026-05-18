@@ -3,7 +3,6 @@ package ephyra.feature.settings.screen.browse
 import androidx.compose.runtime.Immutable
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import dev.icerock.moko.resources.StringResource
 import ephyra.core.common.util.lang.launchIO
 import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.extensionrepo.interactor.CreateExtensionRepo
@@ -12,7 +11,6 @@ import ephyra.domain.extensionrepo.interactor.GetExtensionRepo
 import ephyra.domain.extensionrepo.interactor.ReplaceExtensionRepo
 import ephyra.domain.extensionrepo.interactor.UpdateExtensionRepo
 import ephyra.domain.extensionrepo.model.ExtensionRepo
-import ephyra.i18n.MR
 import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.coroutines.channels.Channel
@@ -130,7 +128,7 @@ class ExtensionReposScreenModel(
 }
 
 sealed class RepoEvent {
-    sealed class LocalizedMessage(val stringRes: StringResource) : RepoEvent()
+    sealed class LocalizedMessage(val stringRes: Int) : RepoEvent()
     data object InvalidUrl : LocalizedMessage(ephyra.i18n.R.string.invalid_repo_name)
     data object RepoAlreadyExists : LocalizedMessage(ephyra.i18n.R.string.error_repo_exists)
 }

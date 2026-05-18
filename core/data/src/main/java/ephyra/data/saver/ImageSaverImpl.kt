@@ -17,7 +17,6 @@ import ephyra.core.common.util.storage.cacheImageDir
 import ephyra.core.common.util.storage.getUriCompat
 import ephyra.core.common.util.system.ImageUtil
 import ephyra.core.common.util.system.logcat
-import ephyra.i18n.MR
 import logcat.LogPriority
 import okio.IOException
 import java.io.File

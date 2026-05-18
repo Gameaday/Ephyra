@@ -15,7 +15,6 @@ import ephyra.core.common.notification.NotificationIds
 import ephyra.core.common.util.system.cancelNotification
 import ephyra.core.common.util.system.notificationBuilder
 import ephyra.core.common.util.system.notify
-import ephyra.i18n.MR
 import ephyra.presentation.core.R
 import ephyra.presentation.core.util.system.getBitmapOrNull
 import ephyra.presentation.core.util.system.toShareIntent

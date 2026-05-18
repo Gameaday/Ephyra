@@ -43,7 +43,6 @@ import ephyra.feature.library.presentation.components.LibraryToolbar
 import ephyra.feature.manga.MangaScreen
 import ephyra.feature.manga.presentation.components.LibraryBottomActionMenu
 import ephyra.feature.reader.ReaderActivity
-import ephyra.i18n.MR
 import ephyra.presentation.core.R
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource

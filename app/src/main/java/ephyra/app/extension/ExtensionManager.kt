@@ -16,7 +16,6 @@ import ephyra.domain.extension.model.Extension
 import ephyra.domain.extension.model.InstallStep
 import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.service.SourcePreferences
-import ephyra.i18n.MR
 import ephyra.presentation.core.util.system.toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob

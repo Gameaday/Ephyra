@@ -71,7 +71,6 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import ephyra.domain.track.model.TrackSearch
 import ephyra.feature.manga.presentation.components.MangaCover
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.DropdownMenu
 import ephyra.presentation.core.components.ScrollbarLazyColumn
 import ephyra.presentation.core.components.material.Scaffold
