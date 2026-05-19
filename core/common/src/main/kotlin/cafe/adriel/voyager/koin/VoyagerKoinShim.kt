@@ -10,7 +10,9 @@ import ephyra.core.common.di.CoreContainer
  * Resolves ScreenModels deterministically at compile-time via CoreContainer.
  */
 @Composable
-inline fun <reified T : ScreenModel> koinScreenModel(): T {
+inline fun <reified T : ScreenModel> koinScreenModel(
+    noinline parameters: (() -> Any)? = null
+): T {
     return rememberScreenModel {
         CoreContainer.get<T>()
     }

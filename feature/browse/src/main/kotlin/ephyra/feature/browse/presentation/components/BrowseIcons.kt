@@ -33,7 +33,6 @@ import ephyra.presentation.core.R
 import ephyra.presentation.core.util.rememberResourceBitmapPainter
 import ephyra.presentation.core.util.system.icon
 import ephyra.source.local.isLocal
-import org.koin.compose.koinInject
 
 private val defaultModifier = Modifier
     .height(40.dp)
@@ -44,7 +43,7 @@ fun SourceIcon(
     source: Source,
     modifier: Modifier = Modifier,
 ) {
-    val extensionManager = koinInject<ExtensionManager>()
+    val extensionManager = ephyra.core.common.di.CoreContainer.get<ExtensionManager>()
     val icon = source.icon(extensionManager)
 
     when {
@@ -102,7 +101,7 @@ fun ExtensionIcon(
         }
 
         is Extension.Installed -> {
-            val extensionManager = koinInject<ExtensionManager>()
+            val extensionManager = ephyra.core.common.di.CoreContainer.get<ExtensionManager>()
             val icon by extension.getIcon(extensionManager, density)
             when (icon) {
                 Result.Loading -> Box(modifier = modifier)

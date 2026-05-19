@@ -15,7 +15,6 @@ import ephyra.core.common.util.system.notificationBuilder
 import ephyra.core.common.util.system.notify
 import ephyra.data.notification.Notifications
 import ephyra.domain.track.interactor.MatchUnlinkedManga
-import ephyra.i18n.MR
 
 /**
  * Manages notifications for the authority matching job.
@@ -44,14 +43,14 @@ class MatchUnlinkedNotifier(private val context: Context) {
 
     val progressNotificationBuilder by lazy {
         context.notificationBuilder(Notifications.CHANNEL_MATCH_PROGRESS) {
-            setContentTitle(context.stringResource(ephyra.i18n.R.string.tracker_match_all_running))
+            setContentTitle(context.stringResource(ephyra.app.core.common.R.string.tracker_match_all_running))
             setSmallIcon(R.drawable.ic_refresh_24dp)
             setLargeIcon(notificationBitmap)
             setOngoing(true)
             setOnlyAlertOnce(true)
             addAction(
                 R.drawable.ic_close_24dp,
-                context.stringResource(ephyra.i18n.R.string.action_cancel),
+                context.stringResource(ephyra.app.core.common.R.string.action_cancel),
                 cancelIntent,
             )
         }
@@ -60,7 +59,7 @@ class MatchUnlinkedNotifier(private val context: Context) {
     fun showProgressNotification(mangaTitle: String, current: Int, total: Int) {
         progressNotificationBuilder
             .setContentTitle(
-                context.stringResource(ephyra.i18n.R.string.tracker_match_all_running_progress, current, total),
+                context.stringResource(ephyra.app.core.common.R.string.tracker_match_all_running_progress, current, total),
             )
             .setContentText(mangaTitle)
             .setStyle(NotificationCompat.BigTextStyle().bigText(mangaTitle))
@@ -80,17 +79,17 @@ class MatchUnlinkedNotifier(private val context: Context) {
 
         val text = if (totalResolved > 0) {
             context.stringResource(
-                ephyra.i18n.R.string.tracker_match_all_result_detail,
+                ephyra.app.core.common.R.string.tracker_match_all_result_detail,
                 totalResolved,
                 result.linked,
                 result.matched,
                 unmatched,
             )
         } else if (result.total == 0) {
-            context.stringResource(ephyra.i18n.R.string.tracker_match_all_none)
+            context.stringResource(ephyra.app.core.common.R.string.tracker_match_all_none)
         } else {
             context.stringResource(
-                ephyra.i18n.R.string.tracker_match_all_no_matches_detail,
+                ephyra.app.core.common.R.string.tracker_match_all_no_matches_detail,
                 result.total,
             )
         }
@@ -98,7 +97,7 @@ class MatchUnlinkedNotifier(private val context: Context) {
         context.notify(
             Notifications.ID_MATCH_COMPLETE,
             context.notificationBuilder(Notifications.CHANNEL_MATCH_PROGRESS) {
-                setContentTitle(context.stringResource(ephyra.i18n.R.string.tracker_match_all_complete_title))
+                setContentTitle(context.stringResource(ephyra.app.core.common.R.string.tracker_match_all_complete_title))
                 setContentText(text)
                 setStyle(NotificationCompat.BigTextStyle().bigText(text))
                 setSmallIcon(R.drawable.ic_ephyra)
@@ -115,11 +114,11 @@ class MatchUnlinkedNotifier(private val context: Context) {
         context.notify(
             Notifications.ID_MATCH_COMPLETE,
             context.notificationBuilder(Notifications.CHANNEL_MATCH_PROGRESS) {
-                setContentTitle(context.stringResource(ephyra.i18n.R.string.tracker_match_all_complete_title))
-                setContentText(context.stringResource(ephyra.i18n.R.string.tracker_match_all_failed))
+                setContentTitle(context.stringResource(ephyra.app.core.common.R.string.tracker_match_all_complete_title))
+                setContentText(context.stringResource(ephyra.app.core.common.R.string.tracker_match_all_failed))
                 setStyle(
                     NotificationCompat.BigTextStyle()
-                        .bigText(context.stringResource(ephyra.i18n.R.string.tracker_match_all_failed)),
+                        .bigText(context.stringResource(ephyra.app.core.common.R.string.tracker_match_all_failed)),
                 )
                 setSmallIcon(R.drawable.ic_ephyra)
                 setLargeIcon(notificationBitmap)

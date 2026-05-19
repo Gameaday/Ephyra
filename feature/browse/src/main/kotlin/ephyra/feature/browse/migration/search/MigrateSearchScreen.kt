@@ -1,18 +1,19 @@
 package ephyra.feature.browse.migration.search
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
-import cafe.adriel.voyager.core.model.rememberScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import ephyra.core.common.di.CoreContainer
 import ephyra.feature.browse.presentation.MigrateSearchScreen
 import ephyra.presentation.util.Screen
 import ephyra.feature.browse.source.globalsearch.SearchScreenModel
-import ephyra.app.ui.manga.MangaScreen
+import ephyra.feature.browse.source.globalsearch.SearchScreenEvent
+import ephyra.feature.manga.MangaScreen
 import ephyra.feature.migration.dialog.MigrateMangaDialog
-import ephyra.feature.migration.list.MigrationListScreen
+import ephyra.presentation.core.ui.MigrationListPresenter
 
 class MigrateSearchScreen(private val mangaId: Long) : Screen() {
 
@@ -20,15 +21,9 @@ class MigrateSearchScreen(private val mangaId: Long) : Screen() {
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
 
-        val screenModel = rememberScreenModel {
-            MigrateSearchScreenModel(
-                mangaId = mangaId,
-                getManga = CoreContainer.get(),
-                sourcePreferences = CoreContainer.get(),
-                sourceManager = CoreContainer.get(),
-                extensionManager = CoreContainer.get(),
-                networkToLocalManga = CoreContainer.get(),
-            )
+        val screenModel = hiltViewModel<MigrateSearchScreenModel>()
+        LaunchedEffect(mangaId) {
+            screenModel.init(mangaId)
         }
         val state by screenModel.state.collectAsStateWithLifecycle()
 
@@ -36,22 +31,22 @@ class MigrateSearchScreen(private val mangaId: Long) : Screen() {
             state = state,
             fromSourceId = state.from?.source,
             navigateUp = navigator::pop,
-            onChangeSearchQuery = screenModel::updateSearchQuery,
-            onSearch = { screenModel.search() },
+            onChangeSearchQuery = { screenModel.onEvent(SearchScreenEvent.UpdateSearchQuery(it)) },
+            onSearch = { screenModel.onEvent(SearchScreenEvent.Search) },
             getManga = { screenModel.getManga(it) },
-            onChangeSearchFilter = screenModel::setSourceFilter,
-            onToggleResults = screenModel::toggleFilterResults,
+            onChangeSearchFilter = { screenModel.onEvent(SearchScreenEvent.SetSourceFilter(it)) },
+            onToggleResults = { screenModel.onEvent(SearchScreenEvent.ToggleFilterResults) },
             onClickSource = { navigator.push(MigrateSourceSearchScreen(state.from!!, it.id, state.searchQuery)) },
             onClickItem = {
                 val migrateListScreen = navigator.items
-                    .filterIsInstance<MigrationListScreen>()
+                    .filterIsInstance<MigrationListPresenter>()
                     .lastOrNull()
 
                 if (migrateListScreen == null) {
-                    screenModel.setMigrateDialog(mangaId, it)
+                    screenModel.onEvent(SearchScreenEvent.SetMigrateDialog(mangaId, it))
                 } else {
                     migrateListScreen.addMatchOverride(current = mangaId, target = it.id)
-                    navigator.popUntil { screen -> screen is MigrationListScreen }
+                    navigator.popUntil { screen -> screen is MigrationListPresenter }
                 }
             },
             onLongClickItem = { navigator.push(MangaScreen(it.id, true)) },
@@ -64,7 +59,7 @@ class MigrateSearchScreen(private val mangaId: Long) : Screen() {
                     target = dialog.target,
                     // Initiated from the context of [dialog.current] so we show [dialog.target].
                     onClickTitle = { navigator.push(MangaScreen(dialog.target.id, true)) },
-                    onDismissRequest = { screenModel.clearDialog() },
+                    onDismissRequest = { screenModel.onEvent(SearchScreenEvent.ClearDialog) },
                     onComplete = {
                         if (navigator.lastItem is MangaScreen) {
                             val lastItem = navigator.lastItem

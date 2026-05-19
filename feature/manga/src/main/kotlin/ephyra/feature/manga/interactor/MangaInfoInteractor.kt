@@ -9,10 +9,9 @@ import ephyra.domain.manga.model.MangaUpdate
 import ephyra.domain.manga.repository.MangaRepository
 import ephyra.domain.track.interactor.MatchUnlinkedManga
 import ephyra.domain.track.interactor.RefreshCanonicalMetadata
-import org.koin.core.annotation.Factory
+import javax.inject.Inject
 
-@Factory
-class MangaInfoInteractor(
+class MangaInfoInteractor @Inject constructor(
     private val updateManga: UpdateManga,
     private val mangaRepository: MangaRepository,
     private val refreshCanonical: RefreshCanonicalMetadata,

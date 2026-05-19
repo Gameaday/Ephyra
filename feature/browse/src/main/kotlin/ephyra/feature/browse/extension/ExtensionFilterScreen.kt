@@ -5,12 +5,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.koin.koinScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.core.common.i18n.stringResource
 import ephyra.feature.browse.presentation.ExtensionFilterScreen
-import ephyra.i18n.MR
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.util.Screen
 import kotlinx.coroutines.flow.collectLatest
@@ -21,7 +20,7 @@ class ExtensionFilterScreen : Screen() {
     override fun Content() {
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
-        val screenModel = koinScreenModel<ExtensionFilterScreenModel>()
+        val screenModel = hiltViewModel<ExtensionFilterScreenModel>()
         val state by screenModel.state.collectAsStateWithLifecycle()
 
         if (state is ExtensionFilterState.Loading) {
@@ -41,7 +40,7 @@ class ExtensionFilterScreen : Screen() {
             screenModel.events.collectLatest {
                 when (it) {
                     ExtensionFilterEvent.FailedFetchingLanguages -> {
-                        context.stringResource(ephyra.i18n.R.string.internal_error)
+                        context.stringResource(ephyra.app.core.common.R.string.internal_error)
                     }
                 }
             }

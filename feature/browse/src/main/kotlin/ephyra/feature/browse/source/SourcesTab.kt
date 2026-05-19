@@ -7,15 +7,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.hilt.navigation.compose.hiltViewModel
 import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.feature.browse.presentation.SourceOptionsDialog
 import ephyra.feature.browse.presentation.SourcesScreen
 import ephyra.feature.browse.source.browse.BrowseSourceScreen
 import ephyra.feature.browse.source.globalsearch.GlobalSearchScreen
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.TabContent
 import ephyra.presentation.core.i18n.stringResource
@@ -26,19 +25,19 @@ import kotlinx.coroutines.launch
 @Composable
 fun Screen.sourcesTab(): TabContent {
     val navigator = LocalNavigator.currentOrThrow
-    val screenModel = koinScreenModel<SourcesScreenModel>()
+    val screenModel = hiltViewModel<SourcesScreenModel>()
     val state by screenModel.state.collectAsStateWithLifecycle()
 
     return TabContent(
-        titleRes = ephyra.i18n.R.string.label_content_sources,
+        titleRes = ephyra.app.core.common.R.string.label_content_sources,
         actions = persistentListOf(
             AppBar.Action(
-                title = stringResource(ephyra.i18n.R.string.action_global_search),
+                title = stringResource(ephyra.app.core.common.R.string.action_global_search),
                 icon = Icons.Outlined.TravelExplore,
                 onClick = { navigator.push(GlobalSearchScreen()) },
             ),
             AppBar.Action(
-                title = stringResource(ephyra.i18n.R.string.action_filter),
+                title = stringResource(ephyra.app.core.common.R.string.action_filter),
                 icon = Icons.Outlined.FilterList,
                 onClick = { navigator.push(SourcesFilterScreen()) },
             ),
@@ -70,7 +69,7 @@ fun Screen.sourcesTab(): TabContent {
                 )
             }
 
-            val internalErrString = stringResource(ephyra.i18n.R.string.internal_error)
+            val internalErrString = stringResource(ephyra.app.core.common.R.string.internal_error)
             LaunchedEffect(Unit) {
                 screenModel.events.collectLatest { event ->
                     when (event) {

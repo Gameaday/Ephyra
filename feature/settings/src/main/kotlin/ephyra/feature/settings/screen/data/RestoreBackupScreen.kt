@@ -19,16 +19,19 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.core.net.toUri
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.rememberScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.domain.backup.model.RestoreOptions
 import ephyra.domain.backup.service.BackupFileValidator
 import ephyra.domain.backup.service.RestoreScheduler
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.LabeledCheckbox
 import ephyra.presentation.core.components.LazyColumnWithAction
@@ -39,8 +42,7 @@ import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.Screen
 import kotlinx.coroutines.flow.update
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
+import androidx.compose.runtime.LaunchedEffect
 
 class RestoreBackupScreen(
     private val uri: String,
@@ -50,13 +52,17 @@ class RestoreBackupScreen(
     override fun Content() {
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
-        val model = rememberScreenModel { RestoreBackupScreenModel(uri) }
+        val model = hiltViewModel<RestoreBackupViewModel>()
         val state by model.state.collectAsStateWithLifecycle()
+
+        LaunchedEffect(uri) {
+            model.initialize(uri)
+        }
 
         Scaffold(
             topBar = {
                 AppBar(
-                    title = stringResource(ephyra.i18n.R.string.pref_restore_backup),
+                    title = stringResource(ephyra.app.core.common.R.string.pref_restore_backup),
                     navigateUp = navigator::pop,
                     scrollBehavior = it,
                 )
@@ -64,7 +70,7 @@ class RestoreBackupScreen(
         ) { contentPadding ->
             LazyColumnWithAction(
                 contentPadding = contentPadding,
-                actionLabel = stringResource(ephyra.i18n.R.string.action_restore),
+                actionLabel = stringResource(ephyra.app.core.common.R.string.action_restore),
                 actionEnabled = state.canRestore && state.options.canRestore(),
                 onClickAction = {
                     model.startRestore()
@@ -73,7 +79,7 @@ class RestoreBackupScreen(
             ) {
                 if (DeviceUtil.isMiui && DeviceUtil.isMiuiOptimizationDisabled()) {
                     item {
-                        WarningBanner(stringResource(ephyra.i18n.R.string.restore_miui_warning))
+                        WarningBanner(stringResource(ephyra.app.core.common.R.string.restore_miui_warning))
                     }
                 }
 
@@ -112,11 +118,11 @@ class RestoreBackupScreen(
                     val msg = buildAnnotatedString {
                         when (error) {
                             is MissingRestoreComponents -> {
-                                appendLine(stringResource(ephyra.i18n.R.string.backup_restore_content_full))
+                                appendLine(stringResource(ephyra.app.core.common.R.string.backup_restore_content_full))
                                 if (error.sources.isNotEmpty()) {
                                     appendLine()
                                     withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
-                                        appendLine(stringResource(ephyra.i18n.R.string.backup_restore_missing_sources))
+                                        appendLine(stringResource(ephyra.app.core.common.R.string.backup_restore_missing_sources))
                                     }
                                     error.sources.joinTo(
                                         this,
@@ -127,7 +133,7 @@ class RestoreBackupScreen(
                                 if (error.trackers.isNotEmpty()) {
                                     appendLine()
                                     withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
-                                        appendLine(stringResource(ephyra.i18n.R.string.backup_restore_missing_trackers))
+                                        appendLine(stringResource(ephyra.app.core.common.R.string.backup_restore_missing_trackers))
                                     }
                                     error.trackers.joinTo(
                                         this,
@@ -139,14 +145,14 @@ class RestoreBackupScreen(
 
                             is InvalidRestore -> {
                                 withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
-                                    appendLine(stringResource(ephyra.i18n.R.string.invalid_backup_file))
+                                    appendLine(stringResource(ephyra.app.core.common.R.string.invalid_backup_file))
                                 }
                                 appendLine(error.uri.toString())
 
                                 appendLine()
 
                                 withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
-                                    appendLine(stringResource(ephyra.i18n.R.string.invalid_backup_file_error))
+                                    appendLine(stringResource(ephyra.app.core.common.R.string.invalid_backup_file_error))
                                 }
                                 appendLine(error.message)
                             }
@@ -166,19 +172,26 @@ class RestoreBackupScreen(
     }
 }
 
-private class RestoreBackupScreenModel(
-    private val uri: String,
-) : StateScreenModel<RestoreBackupScreenModel.State>(State()), KoinComponent {
+@HiltViewModel
+class RestoreBackupViewModel @Inject constructor(
+    private val restoreScheduler: RestoreScheduler,
+    private val backupFileValidator: BackupFileValidator,
+) : ViewModel() {
 
-    private val restoreScheduler: RestoreScheduler by inject()
-    private val backupFileValidator: BackupFileValidator by inject()
+    private var uri: String? = null
 
-    init {
-        validate(uri)
+    private val _state = MutableStateFlow(State())
+    val state: StateFlow<State> = _state.asStateFlow()
+
+    fun initialize(uri: String) {
+        if (this.uri == null) {
+            this.uri = uri
+            validate(uri)
+        }
     }
 
     fun toggle(setter: (RestoreOptions, Boolean) -> RestoreOptions, enabled: Boolean) {
-        mutableState.update {
+        _state.update {
             it.copy(
                 options = setter(it.options, enabled),
             )
@@ -186,8 +199,9 @@ private class RestoreBackupScreenModel(
     }
 
     fun startRestore() {
+        val currentUri = uri ?: return
         restoreScheduler.startRestoreNow(
-            uriString = uri,
+            uriString = currentUri,
             optionsArray = state.value.options.asBooleanArray(),
         )
     }
@@ -219,7 +233,7 @@ private class RestoreBackupScreenModel(
     }
 
     private fun setError(error: Any?, canRestore: Boolean) {
-        mutableState.update {
+        _state.update {
             it.copy(
                 error = error,
                 canRestore = canRestore,

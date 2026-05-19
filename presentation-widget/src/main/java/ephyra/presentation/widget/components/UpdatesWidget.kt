@@ -22,7 +22,6 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import ephyra.core.common.Constants
-import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.widget.util.calculateRowAndColumnCount
 import kotlinx.collections.immutable.ImmutableList
@@ -43,7 +42,7 @@ fun UpdatesWidget(
             CircularProgressIndicator(color = contentColor)
         } else if (data.isEmpty()) {
             Text(
-                text = stringResource(ephyra.i18n.R.string.information_no_recent),
+                text = stringResource(ephyra.app.core.common.R.string.information_no_recent),
                 style = TextStyle(color = contentColor),
             )
         } else {

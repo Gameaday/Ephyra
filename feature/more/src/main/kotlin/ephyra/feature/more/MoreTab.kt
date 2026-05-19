@@ -9,9 +9,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.core.model.ScreenModel
-import cafe.adriel.voyager.core.model.rememberScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import androidx.hilt.navigation.compose.hiltViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -24,7 +26,6 @@ import ephyra.feature.category.CategoryScreen
 import ephyra.feature.download.DownloadQueueScreen
 import ephyra.feature.settings.SettingsScreen
 import ephyra.feature.stats.StatsScreen
-import ephyra.i18n.MR
 import ephyra.presentation.core.R
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.AppReadySignal
@@ -35,7 +36,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
-import org.koin.compose.koinInject
 
 data object MoreTab : Tab {
 
@@ -46,7 +46,7 @@ data object MoreTab : Tab {
             val image = AnimatedImageVector.animatedVectorResource(R.drawable.anim_more_enter)
             return TabOptions(
                 index = 4u,
-                title = stringResource(ephyra.i18n.R.string.label_more),
+                title = stringResource(ephyra.app.core.common.R.string.label_more),
                 icon = rememberAnimatedVectorPainter(image, isSelected),
             )
         }
@@ -59,9 +59,7 @@ data object MoreTab : Tab {
     override fun Content() {
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
-        val downloadManager = koinInject<DownloadManager>()
-        val preferences = koinInject<BasePreferences>()
-        val screenModel = rememberScreenModel { MoreScreenModel(downloadManager, preferences) }
+        val screenModel = hiltViewModel<MoreScreenModel>()
         val downloadQueueState by screenModel.downloadQueueState.collectAsStateWithLifecycle()
         MoreScreen(
             downloadQueueStateProvider = { downloadQueueState },
@@ -83,21 +81,21 @@ data object MoreTab : Tab {
     }
 }
 
-@Suppress("UNUSED") // instantiated by rememberScreenModel in MoreTab.Content()
-private class MoreScreenModel(
+@HiltViewModel
+class MoreScreenModel @Inject constructor(
     private val downloadManager: DownloadManager,
-    preferences: BasePreferences,
-) : ScreenModel {
+    private val preferences: BasePreferences,
+) : ViewModel() {
 
-    var downloadedOnly by preferences.downloadedOnly().asState(screenModelScope)
-    var incognitoMode by preferences.incognitoMode().asState(screenModelScope)
+    var downloadedOnly by preferences.downloadedOnly().asState(viewModelScope)
+    var incognitoMode by preferences.incognitoMode().asState(viewModelScope)
 
     private var _downloadQueueState: MutableStateFlow<DownloadQueueState> = MutableStateFlow(DownloadQueueState.Stopped)
     val downloadQueueState: StateFlow<DownloadQueueState> = _downloadQueueState.asStateFlow()
 
     init {
         // Handle running/paused status change and queue progress updating
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             combine(
                 downloadManager.isDownloaderRunning,
                 downloadManager.queueState,

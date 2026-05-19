@@ -19,13 +19,11 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import ephyra.domain.storage.service.StoragePreferences
 import ephyra.feature.settings.screen.SettingsDataScreen
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.Button
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.system.toast
 import kotlinx.coroutines.flow.collectLatest
-import org.koin.compose.koinInject
 
 internal class StorageStep : OnboardingStep {
 
@@ -39,7 +37,7 @@ internal class StorageStep : OnboardingStep {
         val context = LocalContext.current
         val handler = LocalUriHandler.current
 
-        val storagePref = koinInject<StoragePreferences>().baseStorageDirectory()
+        val storagePref = remember { ephyra.core.common.di.CoreContainer.get<StoragePreferences>() }.baseStorageDirectory()
 
         val pickStorageLocation = SettingsDataScreen.storageLocationPicker(storagePref)
 
@@ -49,8 +47,8 @@ internal class StorageStep : OnboardingStep {
         ) {
             Text(
                 stringResource(
-                    ephyra.i18n.R.string.onboarding_storage_info,
-                    stringResource(ephyra.i18n.R.string.app_name),
+                    ephyra.app.core.common.R.string.onboarding_storage_info,
+                    stringResource(ephyra.app.core.common.R.string.app_name),
                     SettingsDataScreen.storageLocationText(storagePref),
                 ),
             )
@@ -61,11 +59,11 @@ internal class StorageStep : OnboardingStep {
                     try {
                         pickStorageLocation.launch(null)
                     } catch (e: ActivityNotFoundException) {
-                        context.toast(ephyra.i18n.R.string.file_picker_error)
+                        context.toast(ephyra.app.core.common.R.string.file_picker_error)
                     }
                 },
             ) {
-                Text(stringResource(ephyra.i18n.R.string.onboarding_storage_action_select))
+                Text(stringResource(ephyra.app.core.common.R.string.onboarding_storage_action_select))
             }
 
             HorizontalDivider(
@@ -73,12 +71,12 @@ internal class StorageStep : OnboardingStep {
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
 
-            Text(stringResource(ephyra.i18n.R.string.onboarding_storage_help_info, stringResource(ephyra.i18n.R.string.app_name)))
+            Text(stringResource(ephyra.app.core.common.R.string.onboarding_storage_help_info, stringResource(ephyra.app.core.common.R.string.app_name)))
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = { handler.openUri(SettingsDataScreen.HELP_URL) },
             ) {
-                Text(stringResource(ephyra.i18n.R.string.onboarding_storage_help_action))
+                Text(stringResource(ephyra.app.core.common.R.string.onboarding_storage_help_action))
             }
         }
 

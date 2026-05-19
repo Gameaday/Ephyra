@@ -10,7 +10,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.koin.koinScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -26,7 +26,6 @@ import ephyra.feature.manga.MangaScreen
 import ephyra.feature.manga.presentation.DuplicateMangaDialog
 import ephyra.feature.migration.dialog.MigrateMangaDialog
 import ephyra.feature.reader.ReaderActivity
-import ephyra.i18n.MR
 import ephyra.presentation.core.R
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.AppReadySignal
@@ -48,7 +47,7 @@ data object HistoryTab : Tab {
             val image = AnimatedImageVector.animatedVectorResource(R.drawable.anim_history_enter)
             return TabOptions(
                 index = 2u,
-                title = stringResource(ephyra.i18n.R.string.label_recent_manga),
+                title = stringResource(ephyra.app.core.common.R.string.label_recent_manga),
                 icon = rememberAnimatedVectorPainter(image, isSelected),
             )
         }
@@ -61,7 +60,7 @@ data object HistoryTab : Tab {
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val context = LocalContext.current
-        val screenModel = koinScreenModel<HistoryScreenModel>()
+        val screenModel = hiltViewModel<HistoryScreenModel>()
         val state by screenModel.state.collectAsStateWithLifecycle()
 
         HistoryScreen(
@@ -144,10 +143,10 @@ data object HistoryTab : Tab {
             screenModel.events.collectLatest { e ->
                 when (e) {
                     HistoryScreenModel.Event.InternalError ->
-                        snackbarHostState.showSnackbar(context.stringResource(ephyra.i18n.R.string.internal_error))
+                        snackbarHostState.showSnackbar(context.stringResource(ephyra.app.core.common.R.string.internal_error))
 
                     HistoryScreenModel.Event.HistoryCleared ->
-                        snackbarHostState.showSnackbar(context.stringResource(ephyra.i18n.R.string.clear_history_completed))
+                        snackbarHostState.showSnackbar(context.stringResource(ephyra.app.core.common.R.string.clear_history_completed))
 
                     is HistoryScreenModel.Event.OpenChapter -> openChapter(context, e.chapter)
                 }
@@ -166,7 +165,7 @@ data object HistoryTab : Tab {
             val intent = ReaderActivity.newIntent(context, chapter.mangaId, chapter.id)
             context.startActivity(intent)
         } else {
-            snackbarHostState.showSnackbar(context.stringResource(ephyra.i18n.R.string.no_next_chapter))
+            snackbarHostState.showSnackbar(context.stringResource(ephyra.app.core.common.R.string.no_next_chapter))
         }
     }
 }

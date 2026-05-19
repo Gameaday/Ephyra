@@ -13,7 +13,6 @@ android {
 
 dependencies {
     implementation(projects.sourceApi)
-    api(projects.i18n)
 
     implementation(libs.unifile)
 

@@ -16,7 +16,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import ephyra.feature.manga.presentation.components.MarkdownRender
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.InfoScreen
@@ -33,11 +32,11 @@ fun NewUpdateScreen(
 ) {
     InfoScreen(
         icon = Icons.Outlined.NewReleases,
-        headingText = stringResource(ephyra.i18n.R.string.update_check_notification_update_available),
+        headingText = stringResource(ephyra.app.core.common.R.string.update_check_notification_update_available),
         subtitleText = versionName,
-        acceptText = stringResource(ephyra.i18n.R.string.update_check_confirm),
+        acceptText = stringResource(ephyra.app.core.common.R.string.update_check_confirm),
         onAcceptClick = onAcceptUpdate,
-        rejectText = stringResource(ephyra.i18n.R.string.action_not_now),
+        rejectText = stringResource(ephyra.app.core.common.R.string.action_not_now),
         onRejectClick = onRejectUpdate,
     ) {
         Column(
@@ -54,7 +53,7 @@ fun NewUpdateScreen(
                 onClick = onOpenInBrowser,
                 modifier = Modifier.padding(top = MaterialTheme.padding.small),
             ) {
-                Text(text = stringResource(ephyra.i18n.R.string.update_check_open))
+                Text(text = stringResource(ephyra.app.core.common.R.string.update_check_open))
                 Spacer(modifier = Modifier.width(MaterialTheme.padding.extraSmall))
                 Icon(imageVector = Icons.AutoMirrored.Outlined.OpenInNew, contentDescription = null)
             }

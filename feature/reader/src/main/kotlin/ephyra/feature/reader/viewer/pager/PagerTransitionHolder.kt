@@ -17,7 +17,6 @@ import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.viewer.ReaderButton
 import ephyra.feature.reader.viewer.ReaderTransitionView
 import ephyra.feature.reader.widget.ViewPagerAdapter
-import ephyra.i18n.MR
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.collectLatest
@@ -105,7 +104,7 @@ class PagerTransitionHolder(
 
         val textView = AppCompatTextView(context).apply {
             wrapContent()
-            text = context.stringResource(ephyra.i18n.R.string.transition_pages_loading)
+            text = context.stringResource(ephyra.app.core.common.R.string.transition_pages_loading)
         }
 
         pagesContainer.addView(progress)
@@ -118,13 +117,13 @@ class PagerTransitionHolder(
     private fun setError(error: Throwable) {
         val textView = AppCompatTextView(context).apply {
             wrapContent()
-            text = context.stringResource(ephyra.i18n.R.string.transition_pages_error, error.message ?: "")
+            text = context.stringResource(ephyra.app.core.common.R.string.transition_pages_error, error.message ?: "")
         }
 
         val retryBtn = ReaderButton(context).apply {
             viewer = this@PagerTransitionHolder.viewer
             wrapContent()
-            text = context.stringResource(ephyra.i18n.R.string.action_retry)
+            text = context.stringResource(ephyra.app.core.common.R.string.action_retry)
             setOnClickListener {
                 val toChapter = transition.to
                 if (toChapter != null) {

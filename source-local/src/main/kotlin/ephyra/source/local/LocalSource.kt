@@ -19,7 +19,6 @@ import ephyra.core.metadata.ephyra.MangaDetails
 import ephyra.domain.chapter.service.ChapterRecognition
 import ephyra.domain.manga.model.JellyfinNaming
 import ephyra.domain.manga.model.Manga
-import ephyra.i18n.MR
 import ephyra.source.local.filter.OrderBy
 import ephyra.source.local.image.LocalCoverManager
 import ephyra.source.local.io.Archive
@@ -41,7 +40,6 @@ import kotlinx.serialization.json.decodeFromStream
 import logcat.LogPriority
 import nl.adaptivity.xmlutil.core.AndroidXmlReader
 import nl.adaptivity.xmlutil.serialization.XML
-import org.koin.core.context.GlobalContext
 import java.io.InputStream
 import java.nio.charset.StandardCharsets
 import kotlin.time.Duration.Companion.days
@@ -53,8 +51,8 @@ actual class LocalSource(
     private val coverManager: LocalCoverManager,
 ) : CatalogueSource, UnmeteredSource {
 
-    private val json: Json by lazy { GlobalContext.get().get() }
-    private val xml: XML by lazy { GlobalContext.get().get() }
+    private val json: Json by lazy { ephyra.core.common.di.CoreContainer.get<Json>() }
+    private val xml: XML by lazy { ephyra.core.common.di.CoreContainer.get<XML>() }
 
     @Suppress("PrivatePropertyName")
     private val PopularFilters = FilterList(OrderBy.Popular(context))
@@ -62,7 +60,7 @@ actual class LocalSource(
     @Suppress("PrivatePropertyName")
     private val LatestFilters = FilterList(OrderBy.Latest(context))
 
-    override val name: String = context.stringResource(ephyra.i18n.R.string.local_source)
+    override val name: String = context.stringResource(ephyra.app.core.common.R.string.local_source)
 
     override val id: Long = ID
 
@@ -342,9 +340,9 @@ actual class LocalSource(
                 ?.findFile(mangaDirName)
                 ?.findFile(chapterName)
                 ?.let(Format.Companion::valueOf)
-                ?: throw Exception(context.stringResource(ephyra.i18n.R.string.chapter_not_found))
+                ?: throw Exception(context.stringResource(ephyra.app.core.common.R.string.chapter_not_found))
         } catch (e: Format.UnknownFormatException) {
-            throw Exception(context.stringResource(ephyra.i18n.R.string.local_invalid_format))
+            throw Exception(context.stringResource(ephyra.app.core.common.R.string.local_invalid_format))
         } catch (e: Exception) {
             throw e
         }

@@ -1,17 +1,20 @@
 package ephyra.feature.settings.screen
 
-import cafe.adriel.voyager.core.model.ScreenModel
+import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.category.interactor.ResetCategoryFlags
 import ephyra.domain.category.model.Category
 import ephyra.domain.library.service.LibraryPreferences
 import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
 
-class SettingsLibraryScreenModel(
+@HiltViewModel
+class SettingsLibraryScreenModel @Inject constructor(
     val libraryPreferences: LibraryPreferences,
     private val getCategories: GetCategories,
     val resetCategoryFlags: ResetCategoryFlags,
-) : ScreenModel {
+) : ViewModel() {
 
     fun getCategories(): Flow<List<Category>> {
         return getCategories.subscribe()

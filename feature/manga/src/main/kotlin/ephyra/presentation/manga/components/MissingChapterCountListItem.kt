@@ -11,7 +11,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.util.secondaryItemAlpha
@@ -34,7 +33,7 @@ fun MissingChapterCountListItem(
     ) {
         HorizontalDivider(modifier = Modifier.weight(1f))
         Text(
-            text = pluralStringResource(ephyra.i18n.R.plurals.missing_chapters, count = count, count),
+            text = pluralStringResource(ephyra.app.core.common.R.plurals.missing_chapters, count = count, count),
             style = MaterialTheme.typography.labelMedium,
         )
         HorizontalDivider(modifier = Modifier.weight(1f))

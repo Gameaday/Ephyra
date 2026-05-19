@@ -1,10 +1,8 @@
 package ephyra.domain.base
 
-import dev.icerock.moko.resources.StringResource
 import ephyra.core.common.preference.Preference
 import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.common.util.system.GLUtil
-import ephyra.i18n.MR
 
 class BasePreferences(
     private val capabilityProvider: InstallerCapabilityProvider,
@@ -22,11 +20,11 @@ class BasePreferences(
 
     fun shownOnboardingFlow() = preferenceStore.getBoolean(Preference.appStateKey("onboarding_complete"), false)
 
-    enum class ExtensionInstaller(val titleRes: StringResource, val requiresSystemPermission: Boolean) {
-        LEGACY(ephyra.i18n.R.string.ext_installer_legacy, true),
-        PACKAGEINSTALLER(ephyra.i18n.R.string.ext_installer_packageinstaller, true),
-        SHIZUKU(ephyra.i18n.R.string.ext_installer_shizuku, false),
-        PRIVATE(ephyra.i18n.R.string.ext_installer_private, false),
+    enum class ExtensionInstaller(val titleRes: Int, val requiresSystemPermission: Boolean) {
+        LEGACY(ephyra.app.core.common.R.string.ext_installer_legacy, true),
+        PACKAGEINSTALLER(ephyra.app.core.common.R.string.ext_installer_packageinstaller, true),
+        SHIZUKU(ephyra.app.core.common.R.string.ext_installer_shizuku, false),
+        PRIVATE(ephyra.app.core.common.R.string.ext_installer_private, false),
     }
 
     fun displayProfile() = preferenceStore.getString("pref_display_profile_key", "")

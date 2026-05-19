@@ -30,9 +30,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastMap
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
-import cafe.adriel.voyager.koin.koinScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.core.common.util.lang.launchIO
@@ -45,7 +50,6 @@ import ephyra.domain.source.interactor.GetSourcesWithNonLibraryManga
 import ephyra.domain.source.model.Source
 import ephyra.domain.source.model.SourceWithCount
 import ephyra.feature.browse.presentation.components.SourceIcon
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.LazyColumnWithAction
@@ -60,9 +64,6 @@ import ephyra.presentation.core.util.system.toast
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
-import org.koin.androidx.compose.koinViewModel
-import org.koin.compose.koinInject
-import org.koin.core.parameter.parametersOf
 
 class ClearDatabaseScreen : Screen() {
 
@@ -70,7 +71,7 @@ class ClearDatabaseScreen : Screen() {
     override fun Content() {
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
-        val model = koinScreenModel<ClearDatabaseScreenModel>()
+        val model = hiltViewModel<ClearDatabaseScreenModel>()
         val state by model.state.collectAsStateWithLifecycle()
         val scope = rememberCoroutineScope()
 
@@ -81,20 +82,20 @@ class ClearDatabaseScreen : Screen() {
                     var keepReadManga by remember { mutableStateOf(true) }
                     AlertDialog(
                         title = {
-                            Text(text = stringResource(ephyra.i18n.R.string.are_you_sure))
+                            Text(text = stringResource(ephyra.app.core.common.R.string.are_you_sure))
                         },
                         text = {
                             Column(
                                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
                             ) {
-                                Text(text = stringResource(ephyra.i18n.R.string.clear_database_text))
+                                Text(text = stringResource(ephyra.app.core.common.R.string.clear_database_text))
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.extraSmall),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     Text(
-                                        text = stringResource(ephyra.i18n.R.string.clear_db_exclude_read),
+                                        text = stringResource(ephyra.app.core.common.R.string.clear_db_exclude_read),
                                         modifier = Modifier.weight(1f),
                                     )
                                     Switch(
@@ -104,7 +105,7 @@ class ClearDatabaseScreen : Screen() {
                                 }
                                 if (!keepReadManga) {
                                     Text(
-                                        text = stringResource(ephyra.i18n.R.string.clear_database_history_warning),
+                                        text = stringResource(ephyra.app.core.common.R.string.clear_database_history_warning),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.error,
                                     )
@@ -119,16 +120,16 @@ class ClearDatabaseScreen : Screen() {
                                         model.removeMangaBySourceId(keepReadManga)
                                         model.clearSelection()
                                         model.hideConfirmation()
-                                        context.toast(ephyra.i18n.R.string.clear_database_completed)
+                                        context.toast(ephyra.app.core.common.R.string.clear_database_completed)
                                     }
                                 },
                             ) {
-                                Text(text = stringResource(ephyra.i18n.R.string.action_ok))
+                                Text(text = stringResource(ephyra.app.core.common.R.string.action_ok))
                             }
                         },
                         dismissButton = {
                             TextButton(onClick = model::hideConfirmation) {
-                                Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
+                                Text(text = stringResource(ephyra.app.core.common.R.string.action_cancel))
                             }
                         },
                     )
@@ -137,19 +138,19 @@ class ClearDatabaseScreen : Screen() {
                 Scaffold(
                     topBar = { scrollBehavior ->
                         AppBar(
-                            title = stringResource(ephyra.i18n.R.string.pref_clear_database),
+                            title = stringResource(ephyra.app.core.common.R.string.pref_clear_database),
                             navigateUp = navigator::pop,
                             actions = {
                                 if (s.items.isNotEmpty()) {
                                     AppBarActions(
                                         actions = persistentListOf(
                                             AppBar.Action(
-                                                title = stringResource(ephyra.i18n.R.string.action_select_all),
+                                                title = stringResource(ephyra.app.core.common.R.string.action_select_all),
                                                 icon = Icons.Outlined.SelectAll,
                                                 onClick = model::selectAll,
                                             ),
                                             AppBar.Action(
-                                                title = stringResource(ephyra.i18n.R.string.action_select_inverse),
+                                                title = stringResource(ephyra.app.core.common.R.string.action_select_inverse),
                                                 icon = Icons.Outlined.FlipToBack,
                                                 onClick = model::invertSelection,
                                             ),
@@ -163,13 +164,13 @@ class ClearDatabaseScreen : Screen() {
                 ) { contentPadding ->
                     if (s.items.isEmpty()) {
                         EmptyScreen(
-                            message = stringResource(ephyra.i18n.R.string.database_clean),
+                            message = stringResource(ephyra.app.core.common.R.string.database_clean),
                             modifier = Modifier.padding(contentPadding),
                         )
                     } else {
                         LazyColumnWithAction(
                             contentPadding = contentPadding,
-                            actionLabel = stringResource(ephyra.i18n.R.string.action_delete),
+                            actionLabel = stringResource(ephyra.app.core.common.R.string.action_delete),
                             actionEnabled = s.selection.isNotEmpty(),
                             onClickAction = model::showConfirmation,
                         ) {
@@ -213,7 +214,7 @@ class ClearDatabaseScreen : Screen() {
                     text = source.visualName,
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                Text(text = stringResource(ephyra.i18n.R.string.clear_database_source_item_count, count))
+                Text(text = stringResource(ephyra.app.core.common.R.string.clear_database_source_item_count, count))
             }
             Checkbox(
                 checked = isSelected,
@@ -223,17 +224,21 @@ class ClearDatabaseScreen : Screen() {
     }
 }
 
-class ClearDatabaseScreenModel(
+@HiltViewModel
+class ClearDatabaseScreenModel @Inject constructor(
     private val getSourcesWithNonLibraryManga: GetSourcesWithNonLibraryManga,
     private val deleteNonLibraryManga: DeleteNonLibraryManga,
     private val removeResettedHistory: RemoveResettedHistory,
-) : StateScreenModel<ClearDatabaseScreenModel.State>(State.Loading) {
+) : ViewModel() {
+
+    private val _state = MutableStateFlow<State>(State.Loading)
+    val state: StateFlow<State> = _state.asStateFlow()
 
     init {
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             getSourcesWithNonLibraryManga.subscribe()
                 .collectLatest { list ->
-                    mutableState.update { old ->
+                    _state.update { old ->
                         val items = list.sortedBy { it.name }
                         when (old) {
                             State.Loading -> State.Ready(items)
@@ -250,7 +255,7 @@ class ClearDatabaseScreenModel(
         removeResettedHistory.await()
     }
 
-    fun toggleSelection(source: Source) = mutableState.update { state ->
+    fun toggleSelection(source: Source) = _state.update { state ->
         if (state !is State.Ready) return@update state
         val mutableList = state.selection.toMutableList()
         if (mutableList.contains(source.id)) {
@@ -261,17 +266,17 @@ class ClearDatabaseScreenModel(
         state.copy(selection = mutableList)
     }
 
-    fun clearSelection() = mutableState.update { state ->
+    fun clearSelection() = _state.update { state ->
         if (state !is State.Ready) return@update state
         state.copy(selection = emptyList())
     }
 
-    fun selectAll() = mutableState.update { state ->
+    fun selectAll() = _state.update { state ->
         if (state !is State.Ready) return@update state
         state.copy(selection = state.items.fastMap { it.id })
     }
 
-    fun invertSelection() = mutableState.update { state ->
+    fun invertSelection() = _state.update { state ->
         if (state !is State.Ready) return@update state
         state.copy(
             selection = state.items
@@ -280,12 +285,12 @@ class ClearDatabaseScreenModel(
         )
     }
 
-    fun showConfirmation() = mutableState.update { state ->
+    fun showConfirmation() = _state.update { state ->
         if (state !is State.Ready) return@update state
         state.copy(showConfirmation = true)
     }
 
-    fun hideConfirmation() = mutableState.update { state ->
+    fun hideConfirmation() = _state.update { state ->
         if (state !is State.Ready) return@update state
         state.copy(showConfirmation = false)
     }

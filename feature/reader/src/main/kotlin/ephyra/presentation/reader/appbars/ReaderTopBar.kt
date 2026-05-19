@@ -6,7 +6,6 @@ import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.i18n.stringResource
@@ -38,9 +37,9 @@ fun ReaderTopBar(
                             AppBar.Action(
                                 title = stringResource(
                                     if (bookmarked) {
-                                        ephyra.i18n.R.string.action_remove_bookmark
+                                        ephyra.app.core.common.R.string.action_remove_bookmark
                                     } else {
-                                        ephyra.i18n.R.string.action_bookmark
+                                        ephyra.app.core.common.R.string.action_bookmark
                                     },
                                 ),
                                 icon = if (bookmarked) {
@@ -54,7 +53,7 @@ fun ReaderTopBar(
                         onOpenInWebView?.let {
                             add(
                                 AppBar.OverflowAction(
-                                    title = stringResource(ephyra.i18n.R.string.action_open_in_web_view),
+                                    title = stringResource(ephyra.app.core.common.R.string.action_open_in_web_view),
                                     onClick = it,
                                 ),
                             )
@@ -62,7 +61,7 @@ fun ReaderTopBar(
                         onOpenInBrowser?.let {
                             add(
                                 AppBar.OverflowAction(
-                                    title = stringResource(ephyra.i18n.R.string.action_open_in_browser),
+                                    title = stringResource(ephyra.app.core.common.R.string.action_open_in_browser),
                                     onClick = it,
                                 ),
                             )
@@ -70,7 +69,7 @@ fun ReaderTopBar(
                         onShare?.let {
                             add(
                                 AppBar.OverflowAction(
-                                    title = stringResource(ephyra.i18n.R.string.action_share),
+                                    title = stringResource(ephyra.app.core.common.R.string.action_share),
                                     onClick = it,
                                 ),
                             )

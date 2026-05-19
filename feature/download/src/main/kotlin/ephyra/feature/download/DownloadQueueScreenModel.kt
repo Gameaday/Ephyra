@@ -1,20 +1,24 @@
 package ephyra.feature.download
 
-import cafe.adriel.voyager.core.model.ScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import ephyra.domain.download.model.Download
 import ephyra.domain.download.service.DownloadManager
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
-class DownloadQueueScreenModel(
+
+@HiltViewModel
+class DownloadQueueScreenModel @Inject constructor(
     private val downloadManager: DownloadManager,
-) : ScreenModel {
+) : ViewModel() {
 
     val state = downloadManager.queueState
-        .stateIn(screenModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val isDownloaderRunning = downloadManager.isDownloaderRunning
-        .stateIn(screenModelScope, SharingStarted.WhileSubscribed(5000), false)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     fun onEvent(event: DownloadQueueScreenEvent) {
         when (event) {

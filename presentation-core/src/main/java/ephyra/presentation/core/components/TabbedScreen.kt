@@ -21,7 +21,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.zIndex
-import dev.icerock.moko.resources.StringResource
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.TabText
 import ephyra.presentation.core.i18n.stringResource
@@ -31,7 +30,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun TabbedScreen(
-    titleRes: StringResource,
+    titleRes: Int,
     tabs: ImmutableList<TabContent>,
     state: PagerState = rememberPagerState { tabs.size },
     searchQuery: String? = null,
@@ -97,7 +96,7 @@ fun TabbedScreen(
 }
 
 data class TabContent(
-    val titleRes: StringResource,
+    val titleRes: Int,
     val badgeNumber: Int? = null,
     val searchEnabled: Boolean = false,
     val actions: ImmutableList<AppBar.AppBarAction> = persistentListOf(),

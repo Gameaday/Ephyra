@@ -49,7 +49,6 @@ import ephyra.domain.source.service.SourcePreferences
 import ephyra.feature.browse.migration.search.MigrateSearchScreen
 import ephyra.feature.browse.presentation.components.SourceIcon
 import ephyra.feature.migration.list.MigrationListScreen
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.FastScrollLazyColumn
@@ -118,21 +117,21 @@ class MigrationConfigScreen(private val mangaIds: Collection<Long>) : Screen() {
                         AppBarActions(
                             persistentListOf(
                                 AppBar.Action(
-                                    title = stringResource(ephyra.i18n.R.string.migrationConfigScreen_selectAllLabel),
+                                    title = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_selectAllLabel),
                                     icon = Icons.Outlined.SelectAll,
                                     onClick = { screenModel.toggleSelection(ScreenModel.SelectionConfig.All) },
                                 ),
                                 AppBar.Action(
-                                    title = stringResource(ephyra.i18n.R.string.migrationConfigScreen_selectNoneLabel),
+                                    title = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_selectNoneLabel),
                                     icon = Icons.Outlined.Deselect,
                                     onClick = { screenModel.toggleSelection(ScreenModel.SelectionConfig.None) },
                                 ),
                                 AppBar.OverflowAction(
-                                    title = stringResource(ephyra.i18n.R.string.migrationConfigScreen_selectEnabledLabel),
+                                    title = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_selectEnabledLabel),
                                     onClick = { screenModel.toggleSelection(ScreenModel.SelectionConfig.Enabled) },
                                 ),
                                 AppBar.OverflowAction(
-                                    title = stringResource(ephyra.i18n.R.string.migrationConfigScreen_selectPinnedLabel),
+                                    title = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_selectPinnedLabel),
                                     onClick = { screenModel.toggleSelection(ScreenModel.SelectionConfig.Pinned) },
                                 ),
                             ),
@@ -142,7 +141,7 @@ class MigrationConfigScreen(private val mangaIds: Collection<Long>) : Screen() {
             },
             floatingActionButton = {
                 ExtendedFloatingActionButton(
-                    text = { Text(text = stringResource(ephyra.i18n.R.string.migrationConfigScreen_continueButtonText)) },
+                    text = { Text(text = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_continueButtonText)) },
                     icon = { Icon(imageVector = Icons.AutoMirrored.Outlined.ArrowForward, contentDescription = null) },
                     onClick = {
                         screenModel.saveSources()
@@ -172,9 +171,9 @@ class MigrationConfigScreen(private val mangaIds: Collection<Long>) : Screen() {
                             Text(
                                 text = stringResource(
                                     resource = if (selectedSourceList) {
-                                        ephyra.i18n.R.string.migrationConfigScreen_selectedHeader
+                                        ephyra.app.core.common.R.string.migrationConfigScreen_selectedHeader
                                     } else {
-                                        ephyra.i18n.R.string.migrationConfigScreen_availableHeader
+                                        ephyra.app.core.common.R.string.migrationConfigScreen_availableHeader
                                     },
                                 ),
                                 style = MaterialTheme.typography.bodyMedium,

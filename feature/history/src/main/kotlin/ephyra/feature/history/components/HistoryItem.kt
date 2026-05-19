@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.dp
 import ephyra.core.common.util.lang.toTimestampString
 import ephyra.domain.history.model.HistoryWithRelations
 import ephyra.feature.manga.presentation.components.MangaCover
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.formatChapterNumber
@@ -72,7 +71,7 @@ fun HistoryItem(
             Text(
                 text = if (history.chapterNumber > -1) {
                     stringResource(
-                        ephyra.i18n.R.string.recent_manga_time,
+                        ephyra.app.core.common.R.string.recent_manga_time,
                         formatChapterNumber(history.chapterNumber),
                         readAt,
                     )
@@ -88,7 +87,7 @@ fun HistoryItem(
             IconButton(onClick = onClickFavorite) {
                 Icon(
                     imageVector = Icons.Outlined.FavoriteBorder,
-                    contentDescription = stringResource(ephyra.i18n.R.string.add_to_library),
+                    contentDescription = stringResource(ephyra.app.core.common.R.string.add_to_library),
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
@@ -97,7 +96,7 @@ fun HistoryItem(
         IconButton(onClick = onClickDelete) {
             Icon(
                 imageVector = Icons.Outlined.Delete,
-                contentDescription = stringResource(ephyra.i18n.R.string.action_delete),
+                contentDescription = stringResource(ephyra.app.core.common.R.string.action_delete),
                 tint = MaterialTheme.colorScheme.onSurface,
             )
         }

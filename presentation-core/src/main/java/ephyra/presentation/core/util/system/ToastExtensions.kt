@@ -2,7 +2,6 @@ package ephyra.presentation.core.util.system
 
 import android.content.Context
 import android.widget.Toast
-import dev.icerock.moko.resources.StringResource
 import ephyra.core.common.i18n.stringResource
 
 /**
@@ -12,7 +11,7 @@ import ephyra.core.common.i18n.stringResource
  * @param duration the duration of the toast. Defaults to short.
  */
 fun Context.toast(
-    resource: StringResource,
+    resource: Int,
     duration: Int = Toast.LENGTH_SHORT,
     block: (Toast) -> Unit = {},
 ): Toast {

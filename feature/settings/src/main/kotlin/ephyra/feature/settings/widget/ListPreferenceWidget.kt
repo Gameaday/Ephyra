@@ -23,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.ScrollbarLazyColumn
 import ephyra.presentation.core.i18n.stringResource
 
@@ -73,7 +72,7 @@ fun <T> ListPreferenceWidget(
             },
             confirmButton = {
                 TextButton(onClick = { isDialogShown = false }) {
-                    Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
+                    Text(text = stringResource(ephyra.app.core.common.R.string.action_cancel))
                 }
             },
         )

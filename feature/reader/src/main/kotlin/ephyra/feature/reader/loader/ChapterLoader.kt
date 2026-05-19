@@ -16,7 +16,6 @@ import ephyra.domain.download.service.DownloadPreferences
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.model.StubSource
 import ephyra.feature.reader.model.ReaderChapter
-import ephyra.i18n.MR
 import ephyra.source.local.LocalSource
 import ephyra.source.local.io.Format
 import eu.kanade.tachiyomi.source.Source
@@ -77,7 +76,7 @@ class ChapterLoader(
                     .onEach { it.chapter = chapter }
 
                 if (pages.isEmpty()) {
-                    throw Exception(context.stringResource(ephyra.i18n.R.string.page_list_empty_error))
+                    throw Exception(context.stringResource(ephyra.app.core.common.R.string.page_list_empty_error))
                 }
 
                 // Run the unified pre-processing pipeline on pages that already have
@@ -152,8 +151,8 @@ class ChapterLoader(
                 preProcessor = preProcessor,
             )
 
-            source is StubSource -> error(context.stringResource(ephyra.i18n.R.string.source_not_installed, source.toString()))
-            else -> error(context.stringResource(ephyra.i18n.R.string.loader_not_implemented_error))
+            source is StubSource -> error(context.stringResource(ephyra.app.core.common.R.string.source_not_installed, source.toString()))
+            else -> error(context.stringResource(ephyra.app.core.common.R.string.loader_not_implemented_error))
         }
     }
 }

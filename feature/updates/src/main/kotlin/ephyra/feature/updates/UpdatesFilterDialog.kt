@@ -18,7 +18,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import ephyra.domain.updates.service.UpdatesPreferences
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.SettingsItemsPaddings
 import ephyra.presentation.core.components.TabbedDialog
 import ephyra.presentation.core.components.TabbedDialogPaddings
@@ -36,7 +35,7 @@ fun UpdatesFilterDialog(
     TabbedDialog(
         onDismissRequest = onDismissRequest,
         tabTitles = persistentListOf(
-            stringResource(ephyra.i18n.R.string.action_filter),
+            stringResource(ephyra.app.core.common.R.string.action_filter),
         ),
     ) {
         Column(
@@ -55,7 +54,7 @@ private fun ColumnScope.FilterSheet(
 ) {
     val filterDownloaded by screenModel.updatesPreferences.filterDownloaded().collectAsState()
     TriStateItem(
-        label = stringResource(ephyra.i18n.R.string.label_downloaded),
+        label = stringResource(ephyra.app.core.common.R.string.label_downloaded),
         state = filterDownloaded,
         onClick = {
             screenModel.onEvent(UpdatesSettingsScreenEvent.ToggleFilter(UpdatesPreferences::filterDownloaded))
@@ -64,21 +63,21 @@ private fun ColumnScope.FilterSheet(
 
     val filterUnread by screenModel.updatesPreferences.filterUnread().collectAsState()
     TriStateItem(
-        label = stringResource(ephyra.i18n.R.string.action_filter_unread),
+        label = stringResource(ephyra.app.core.common.R.string.action_filter_unread),
         state = filterUnread,
         onClick = { screenModel.onEvent(UpdatesSettingsScreenEvent.ToggleFilter(UpdatesPreferences::filterUnread)) },
     )
 
     val filterStarted by screenModel.updatesPreferences.filterStarted().collectAsState()
     TriStateItem(
-        label = stringResource(ephyra.i18n.R.string.label_started),
+        label = stringResource(ephyra.app.core.common.R.string.label_started),
         state = filterStarted,
         onClick = { screenModel.onEvent(UpdatesSettingsScreenEvent.ToggleFilter(UpdatesPreferences::filterStarted)) },
     )
 
     val filterBookmarked by screenModel.updatesPreferences.filterBookmarked().collectAsState()
     TriStateItem(
-        label = stringResource(ephyra.i18n.R.string.action_filter_bookmarked),
+        label = stringResource(ephyra.app.core.common.R.string.action_filter_bookmarked),
         state = filterBookmarked,
         onClick = {
             screenModel.onEvent(UpdatesSettingsScreenEvent.ToggleFilter(UpdatesPreferences::filterBookmarked))
@@ -103,7 +102,7 @@ private fun ColumnScope.FilterSheet(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
-            text = stringResource(ephyra.i18n.R.string.action_filter_excluded_scanlators),
+            text = stringResource(ephyra.app.core.common.R.string.action_filter_excluded_scanlators),
             color = MaterialTheme.colorScheme.onSurface,
             style = MaterialTheme.typography.bodyMedium,
         )

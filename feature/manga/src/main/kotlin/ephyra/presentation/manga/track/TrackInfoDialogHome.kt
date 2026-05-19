@@ -49,11 +49,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
-import dev.icerock.moko.resources.StringResource
 import ephyra.core.common.util.lang.toLocalDate
 import ephyra.domain.track.service.Tracker
 import ephyra.feature.manga.track.TrackItem
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.DropdownMenu
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.system.copyToClipboard
@@ -172,7 +170,7 @@ private fun TrackInfoItem(
     title: String,
     tracker: Tracker,
     isAuthority: Boolean,
-    status: StringResource?,
+    status: Int?,
     onStatusClick: () -> Unit,
     chapters: String,
     onChaptersClick: () -> Unit,
@@ -213,7 +211,7 @@ private fun TrackInfoItem(
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Verified,
-                                contentDescription = stringResource(ephyra.i18n.R.string.authority_badge_description),
+                                contentDescription = stringResource(ephyra.app.core.common.R.string.authority_badge_description),
                                 modifier = Modifier.size(14.dp),
                             )
                         }
@@ -225,7 +223,7 @@ private fun TrackInfoItem(
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.VisibilityOff,
-                                contentDescription = stringResource(ephyra.i18n.R.string.tracked_privately),
+                                contentDescription = stringResource(ephyra.app.core.common.R.string.tracked_privately),
                                 modifier = Modifier.size(14.dp),
                             )
                         }
@@ -262,7 +260,7 @@ private fun TrackInfoItem(
                     if (isAuthority) {
                         val isJellyfinAuth = tracker.id == JELLYFIN_TRACKER_ID
                         Text(
-                            text = stringResource(ephyra.i18n.R.string.authority_linked_label),
+                            text = stringResource(ephyra.app.core.common.R.string.authority_linked_label),
                             style = MaterialTheme.typography.labelSmall,
                             color = if (isJellyfinAuth) JellyfinBadgeColor else MaterialTheme.colorScheme.primary,
                         )
@@ -311,7 +309,7 @@ private fun TrackInfoItem(
                         TrackDetailsItem(
                             modifier = Modifier.weight(1f),
                             text = score,
-                            placeholder = stringResource(ephyra.i18n.R.string.score),
+                            placeholder = stringResource(ephyra.app.core.common.R.string.score),
                             onClick = onScoreClick,
                         )
                     }
@@ -323,14 +321,14 @@ private fun TrackInfoItem(
                         TrackDetailsItem(
                             modifier = Modifier.weight(1F),
                             text = startDate,
-                            placeholder = stringResource(ephyra.i18n.R.string.track_started_reading_date),
+                            placeholder = stringResource(ephyra.app.core.common.R.string.track_started_reading_date),
                             onClick = onStartDateClick,
                         )
                         VerticalDivider()
                         TrackDetailsItem(
                             modifier = Modifier.weight(1F),
                             text = endDate,
-                            placeholder = stringResource(ephyra.i18n.R.string.track_finished_reading_date),
+                            placeholder = stringResource(ephyra.app.core.common.R.string.track_finished_reading_date),
                             onClick = onEndDateClick,
                         )
                     }
@@ -388,7 +386,7 @@ private fun TrackInfoItemEmpty(
                 .padding(start = 16.dp)
                 .weight(1f),
         ) {
-            Text(text = stringResource(ephyra.i18n.R.string.add_tracking))
+            Text(text = stringResource(ephyra.app.core.common.R.string.add_tracking))
         }
     }
 }
@@ -406,7 +404,7 @@ private fun TrackInfoItemMenu(
         IconButton(onClick = { expanded = true }) {
             Icon(
                 imageVector = Icons.Default.MoreVert,
-                contentDescription = stringResource(ephyra.i18n.R.string.label_more),
+                contentDescription = stringResource(ephyra.app.core.common.R.string.label_more),
             )
         }
         DropdownMenu(
@@ -414,14 +412,14 @@ private fun TrackInfoItemMenu(
             onDismissRequest = { expanded = false },
         ) {
             DropdownMenuItem(
-                text = { Text(stringResource(ephyra.i18n.R.string.action_open_in_browser)) },
+                text = { Text(stringResource(ephyra.app.core.common.R.string.action_open_in_browser)) },
                 onClick = {
                     onOpenInBrowser()
                     expanded = false
                 },
             )
             DropdownMenuItem(
-                text = { Text(stringResource(ephyra.i18n.R.string.action_copy_link)) },
+                text = { Text(stringResource(ephyra.app.core.common.R.string.action_copy_link)) },
                 onClick = {
                     onCopyLink()
                     expanded = false
@@ -433,9 +431,9 @@ private fun TrackInfoItemMenu(
                         Text(
                             stringResource(
                                 if (isPrivate) {
-                                    ephyra.i18n.R.string.action_toggle_private_off
+                                    ephyra.app.core.common.R.string.action_toggle_private_off
                                 } else {
-                                    ephyra.i18n.R.string.action_toggle_private_on
+                                    ephyra.app.core.common.R.string.action_toggle_private_on
                                 },
                             ),
                         )
@@ -447,7 +445,7 @@ private fun TrackInfoItemMenu(
                 )
             }
             DropdownMenuItem(
-                text = { Text(stringResource(ephyra.i18n.R.string.action_remove)) },
+                text = { Text(stringResource(ephyra.app.core.common.R.string.action_remove)) },
                 onClick = {
                     onRemoved()
                     expanded = false

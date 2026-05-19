@@ -12,7 +12,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.PreviewLightDark
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.LabeledCheckbox
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
@@ -27,16 +26,16 @@ fun HistoryDeleteDialog(
 
     AlertDialog(
         title = {
-            Text(text = stringResource(ephyra.i18n.R.string.action_remove))
+            Text(text = stringResource(ephyra.app.core.common.R.string.action_remove))
         },
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
             ) {
-                Text(text = stringResource(ephyra.i18n.R.string.dialog_with_checkbox_remove_description))
+                Text(text = stringResource(ephyra.app.core.common.R.string.dialog_with_checkbox_remove_description))
 
                 LabeledCheckbox(
-                    label = stringResource(ephyra.i18n.R.string.dialog_with_checkbox_reset),
+                    label = stringResource(ephyra.app.core.common.R.string.dialog_with_checkbox_reset),
                     checked = removeEverything,
                     onCheckedChange = { removeEverything = it },
                 )
@@ -48,12 +47,12 @@ fun HistoryDeleteDialog(
                 onDelete(removeEverything)
                 onDismissRequest()
             }) {
-                Text(text = stringResource(ephyra.i18n.R.string.action_remove))
+                Text(text = stringResource(ephyra.app.core.common.R.string.action_remove))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
+                Text(text = stringResource(ephyra.app.core.common.R.string.action_cancel))
             }
         },
     )
@@ -66,10 +65,10 @@ fun HistoryDeleteAllDialog(
 ) {
     AlertDialog(
         title = {
-            Text(text = stringResource(ephyra.i18n.R.string.action_remove_everything))
+            Text(text = stringResource(ephyra.app.core.common.R.string.action_remove_everything))
         },
         text = {
-            Text(text = stringResource(ephyra.i18n.R.string.clear_history_confirmation))
+            Text(text = stringResource(ephyra.app.core.common.R.string.clear_history_confirmation))
         },
         onDismissRequest = onDismissRequest,
         confirmButton = {
@@ -77,12 +76,12 @@ fun HistoryDeleteAllDialog(
                 onDelete()
                 onDismissRequest()
             }) {
-                Text(text = stringResource(ephyra.i18n.R.string.action_ok))
+                Text(text = stringResource(ephyra.app.core.common.R.string.action_ok))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
+                Text(text = stringResource(ephyra.app.core.common.R.string.action_cancel))
             }
         },
     )

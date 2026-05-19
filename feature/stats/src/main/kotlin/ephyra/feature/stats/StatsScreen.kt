@@ -3,10 +3,9 @@ package ephyra.feature.stats
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.koin.koinScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
@@ -19,13 +18,13 @@ class StatsScreen : Screen() {
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
 
-        val screenModel = koinScreenModel<StatsScreenModel>()
+        val screenModel = hiltViewModel<StatsScreenModel>()
         val state by screenModel.state.collectAsStateWithLifecycle()
 
         Scaffold(
             topBar = { scrollBehavior ->
                 AppBar(
-                    title = stringResource(ephyra.i18n.R.string.label_stats),
+                    title = stringResource(ephyra.app.core.common.R.string.label_stats),
                     navigateUp = navigator::pop,
                     scrollBehavior = scrollBehavior,
                 )

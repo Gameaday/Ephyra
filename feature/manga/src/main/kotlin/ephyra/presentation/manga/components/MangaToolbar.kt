@@ -17,7 +17,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.AppBarTitle
@@ -84,14 +83,14 @@ fun MangaToolbar(
                     if (isActionMode) {
                         add(
                             AppBar.Action(
-                                title = stringResource(ephyra.i18n.R.string.action_select_all),
+                                title = stringResource(ephyra.app.core.common.R.string.action_select_all),
                                 icon = Icons.Outlined.SelectAll,
                                 onClick = onSelectAll,
                             ),
                         )
                         add(
                             AppBar.Action(
-                                title = stringResource(ephyra.i18n.R.string.action_select_inverse),
+                                title = stringResource(ephyra.app.core.common.R.string.action_select_inverse),
                                 icon = Icons.Outlined.FlipToBack,
                                 onClick = onInvertSelection,
                             ),
@@ -102,9 +101,9 @@ fun MangaToolbar(
                         add(
                             AppBar.Action(
                                 title = if (isJellyfinLinked) {
-                                    stringResource(ephyra.i18n.R.string.download_sync_to_jellyfin)
+                                    stringResource(ephyra.app.core.common.R.string.download_sync_to_jellyfin)
                                 } else {
-                                    stringResource(ephyra.i18n.R.string.manga_download)
+                                    stringResource(ephyra.app.core.common.R.string.manga_download)
                                 },
                                 icon = if (isJellyfinLinked) {
                                     Icons.Outlined.CloudUpload
@@ -117,7 +116,7 @@ fun MangaToolbar(
                     }
                     add(
                         AppBar.Action(
-                            title = stringResource(ephyra.i18n.R.string.action_filter),
+                            title = stringResource(ephyra.app.core.common.R.string.action_filter),
                             icon = Icons.Outlined.FilterList,
                             iconTint = filterTint,
                             onClick = onClickFilter,
@@ -125,14 +124,14 @@ fun MangaToolbar(
                     )
                     add(
                         AppBar.OverflowAction(
-                            title = stringResource(ephyra.i18n.R.string.action_webview_refresh),
+                            title = stringResource(ephyra.app.core.common.R.string.action_webview_refresh),
                             onClick = onClickRefresh,
                         ),
                     )
                     if (onClickEditCategory != null) {
                         add(
                             AppBar.OverflowAction(
-                                title = stringResource(ephyra.i18n.R.string.action_edit_categories),
+                                title = stringResource(ephyra.app.core.common.R.string.action_edit_categories),
                                 onClick = onClickEditCategory,
                             ),
                         )
@@ -140,7 +139,7 @@ fun MangaToolbar(
                     if (onClickMigrate != null) {
                         add(
                             AppBar.OverflowAction(
-                                title = stringResource(ephyra.i18n.R.string.action_migrate),
+                                title = stringResource(ephyra.app.core.common.R.string.action_migrate),
                                 onClick = onClickMigrate,
                             ),
                         )
@@ -148,21 +147,21 @@ fun MangaToolbar(
                     if (onClickShare != null) {
                         add(
                             AppBar.OverflowAction(
-                                title = stringResource(ephyra.i18n.R.string.action_share),
+                                title = stringResource(ephyra.app.core.common.R.string.action_share),
                                 onClick = onClickShare,
                             ),
                         )
                     }
                     add(
                         AppBar.OverflowAction(
-                            title = stringResource(ephyra.i18n.R.string.action_notes),
+                            title = stringResource(ephyra.app.core.common.R.string.action_notes),
                             onClick = onClickEditNotes,
                         ),
                     )
                     if (onClickEditMetadata != null) {
                         add(
                             AppBar.OverflowAction(
-                                title = stringResource(ephyra.i18n.R.string.edit_metadata_title),
+                                title = stringResource(ephyra.app.core.common.R.string.edit_metadata_title),
                                 onClick = onClickEditMetadata,
                             ),
                         )

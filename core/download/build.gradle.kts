@@ -24,7 +24,6 @@ dependencies {
     api(projects.coreMetadata)
     api(projects.sourceApi)
     api(projects.sourceLocal)
-    api(projects.i18n)
 
     implementation(androidx.workmanager)
     implementation(libs.logcat)

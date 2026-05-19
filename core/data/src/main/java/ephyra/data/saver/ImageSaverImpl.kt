@@ -17,7 +17,6 @@ import ephyra.core.common.util.storage.cacheImageDir
 import ephyra.core.common.util.storage.getUriCompat
 import ephyra.core.common.util.system.ImageUtil
 import ephyra.core.common.util.system.logcat
-import ephyra.i18n.MR
 import logcat.LogPriority
 import okio.IOException
 import java.io.File
@@ -81,7 +80,7 @@ class ImageSaverImpl(
         val imageLocation = (image.location as Location.Pictures).relativePath
         val relativePath = listOf(
             if (isMimeTypeSupported) Environment.DIRECTORY_PICTURES else Environment.DIRECTORY_DOCUMENTS,
-            context.stringResource(ephyra.i18n.R.string.app_name),
+            context.stringResource(ephyra.app.core.common.R.string.app_name),
             imageLocation,
         ).joinToString(File.separator)
 
@@ -96,20 +95,20 @@ class ImageSaverImpl(
             context.contentResolver.insert(
                 pictureDir,
                 contentValues,
-            ) ?: throw IOException(context.stringResource(ephyra.i18n.R.string.error_saving_picture))
+            ) ?: throw IOException(context.stringResource(ephyra.app.core.common.R.string.error_saving_picture))
         }
 
         try {
             data().use { input ->
                 val outputStream = context.contentResolver.openOutputStream(picture, "w")
-                    ?: throw IOException(context.stringResource(ephyra.i18n.R.string.error_saving_picture))
+                    ?: throw IOException(context.stringResource(ephyra.app.core.common.R.string.error_saving_picture))
                 outputStream.use { output ->
                     input.copyTo(output)
                 }
             }
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e)
-            throw IOException(context.stringResource(ephyra.i18n.R.string.error_saving_picture))
+            throw IOException(context.stringResource(ephyra.app.core.common.R.string.error_saving_picture))
         }
 
         DiskUtil.scanMedia(context, picture)
@@ -162,7 +161,7 @@ private fun Location.directory(context: Context): File = when (this) {
     is Location.Pictures -> {
         val base = File(
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
-            context.stringResource(ephyra.i18n.R.string.app_name),
+            context.stringResource(ephyra.app.core.common.R.string.app_name),
         )
         if (relativePath.isNotEmpty()) File(base, relativePath) else base
     }

@@ -38,7 +38,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import ephyra.feature.manga.presentation.components.MangaCover
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.BadgeGroup
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.theme.ShapeTokens
@@ -416,7 +415,7 @@ private fun ContinueReadingButton(
         ) {
             Icon(
                 imageVector = Icons.Filled.PlayArrow,
-                contentDescription = stringResource(ephyra.i18n.R.string.action_resume),
+                contentDescription = stringResource(ephyra.app.core.common.R.string.action_resume),
                 modifier = Modifier.size(iconSize),
             )
         }

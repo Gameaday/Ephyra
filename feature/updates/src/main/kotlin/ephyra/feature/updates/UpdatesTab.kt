@@ -9,7 +9,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.koin.koinScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -21,7 +21,6 @@ import ephyra.feature.manga.MangaScreen
 import ephyra.feature.reader.ReaderActivity
 import ephyra.feature.upcoming.UpcomingScreen
 import ephyra.feature.updates.UpdatesScreenModel.Event
-import ephyra.i18n.MR
 import ephyra.presentation.core.R
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.AppReadySignal
@@ -38,7 +37,7 @@ data object UpdatesTab : Tab {
             val image = AnimatedImageVector.animatedVectorResource(R.drawable.anim_updates_enter)
             return TabOptions(
                 index = 1u,
-                title = stringResource(ephyra.i18n.R.string.label_recent_updates),
+                title = stringResource(ephyra.app.core.common.R.string.label_recent_updates),
                 icon = rememberAnimatedVectorPainter(image, isSelected),
             )
         }
@@ -51,8 +50,8 @@ data object UpdatesTab : Tab {
     override fun Content() {
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
-        val screenModel = koinScreenModel<UpdatesScreenModel>()
-        val settingsScreenModel = koinScreenModel<UpdatesSettingsScreenModel>()
+        val screenModel = hiltViewModel<UpdatesScreenModel>()
+        val settingsScreenModel = hiltViewModel<UpdatesSettingsScreenModel>()
         val state by screenModel.state.collectAsStateWithLifecycle()
 
         UpdateScreen(
@@ -111,14 +110,14 @@ data object UpdatesTab : Tab {
             screenModel.events.collectLatest { event ->
                 when (event) {
                     Event.InternalError -> screenModel.snackbarHostState.showSnackbar(
-                        context.stringResource(ephyra.i18n.R.string.internal_error),
+                        context.stringResource(ephyra.app.core.common.R.string.internal_error),
                     )
 
                     is Event.LibraryUpdateTriggered -> {
                         val msg = if (event.started) {
-                            ephyra.i18n.R.string.updating_library
+                            ephyra.app.core.common.R.string.updating_library
                         } else {
-                            ephyra.i18n.R.string.update_already_running
+                            ephyra.app.core.common.R.string.update_already_running
                         }
                         screenModel.snackbarHostState.showSnackbar(context.stringResource(msg))
                     }

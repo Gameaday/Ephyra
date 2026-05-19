@@ -14,12 +14,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import dev.icerock.moko.resources.StringResource
 import ephyra.domain.manga.model.readingMode
 import ephyra.domain.reader.model.ReadingMode
 import ephyra.feature.reader.setting.ReaderSettingsScreenModel
 import ephyra.feature.reader.setting.iconRes
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AdaptiveSheet
 import ephyra.presentation.core.components.SettingsIconGrid
 import ephyra.presentation.core.components.material.IconToggleButton
@@ -33,7 +31,7 @@ private val ReadingModesWithoutDefault = ReadingMode.entries - ReadingMode.DEFAU
 fun ReadingModeSelectDialog(
     onDismissRequest: () -> Unit,
     screenModel: ReaderSettingsScreenModel,
-    onChange: (StringResource) -> Unit,
+    onChange: (Int) -> Unit,
 ) {
     val manga by screenModel.mangaFlow.collectAsStateWithLifecycle()
     val readingMode = remember(manga) { ReadingMode.fromPreference(manga?.readingMode?.toInt()) }
@@ -61,7 +59,7 @@ private fun DialogContent(
         onUseDefault = { onChangeReadingMode(ReadingMode.DEFAULT) }.takeIf { readingMode != ReadingMode.DEFAULT },
         onApply = { onChangeReadingMode(selected) },
     ) {
-        SettingsIconGrid(ephyra.i18n.R.string.pref_category_reading_mode) {
+        SettingsIconGrid(ephyra.app.core.common.R.string.pref_category_reading_mode) {
             items(ReadingModesWithoutDefault) { mode ->
                 IconToggleButton(
                     checked = mode == selected,

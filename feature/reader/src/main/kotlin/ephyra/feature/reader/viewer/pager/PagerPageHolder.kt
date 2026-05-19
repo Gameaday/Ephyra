@@ -19,7 +19,6 @@ import ephyra.feature.reader.viewer.ReaderPageImageView
 import ephyra.feature.reader.viewer.ReaderProgressIndicator
 import ephyra.feature.reader.widget.ViewPagerAdapter
 import ephyra.feature.webview.WebViewActivity
-import ephyra.i18n.MR
 import ephyra.presentation.core.util.formattedMessage
 import eu.kanade.tachiyomi.source.model.Page
 import kotlinx.coroutines.CancellationException
@@ -461,7 +460,7 @@ class PagerPageHolder(
         }
 
         errorLayout?.errorMessage?.text = with(context) { error?.formattedMessage }
-            ?: context.stringResource(ephyra.i18n.R.string.decode_image_error)
+            ?: context.stringResource(ephyra.app.core.common.R.string.decode_image_error)
 
         errorLayout?.root?.isVisible = true
         return errorLayout!!

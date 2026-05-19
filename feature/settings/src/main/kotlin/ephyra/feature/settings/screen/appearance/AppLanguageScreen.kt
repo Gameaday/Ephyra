@@ -25,7 +25,6 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.system.LocaleHelper
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
@@ -58,7 +57,7 @@ class AppLanguageScreen : Screen() {
         Scaffold(
             topBar = { scrollBehavior ->
                 AppBar(
-                    title = stringResource(ephyra.i18n.R.string.pref_app_language),
+                    title = stringResource(ephyra.app.core.common.R.string.pref_app_language),
                     navigateUp = navigator::pop,
                     scrollBehavior = scrollBehavior,
                 )
@@ -115,7 +114,7 @@ class AppLanguageScreen : Screen() {
         }
 
         langs.sortBy { it.displayName }
-        langs.add(0, Language("", context.stringResource(ephyra.i18n.R.string.label_default), null))
+        langs.add(0, Language("", context.stringResource(ephyra.app.core.common.R.string.label_default), null))
 
         return langs.toImmutableList()
     }

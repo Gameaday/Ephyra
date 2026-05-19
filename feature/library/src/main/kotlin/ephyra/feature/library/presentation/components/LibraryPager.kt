@@ -22,7 +22,6 @@ import ephyra.domain.category.model.Category
 import ephyra.domain.library.model.LibraryDisplayMode
 import ephyra.domain.library.model.LibraryManga
 import ephyra.feature.library.LibraryItem
-import ephyra.i18n.MR
 import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.util.PreferenceMutableState
 import ephyra.presentation.core.util.plus
@@ -132,9 +131,9 @@ private fun LibraryPagerEmptyScreen(
     onGlobalSearchClicked: () -> Unit,
 ) {
     val msg = when {
-        !searchQuery.isNullOrEmpty() -> ephyra.i18n.R.string.no_results_found
-        hasActiveFilters -> ephyra.i18n.R.string.error_no_match
-        else -> ephyra.i18n.R.string.information_no_manga_category
+        !searchQuery.isNullOrEmpty() -> ephyra.app.core.common.R.string.no_results_found
+        hasActiveFilters -> ephyra.app.core.common.R.string.error_no_match
+        else -> ephyra.app.core.common.R.string.information_no_manga_category
     }
 
     Column(

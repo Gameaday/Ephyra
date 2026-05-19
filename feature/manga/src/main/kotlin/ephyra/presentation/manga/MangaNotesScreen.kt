@@ -7,7 +7,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import ephyra.feature.manga.notes.MangaNotesState
 import ephyra.feature.manga.presentation.components.MangaNotesTextArea
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarTitle
 import ephyra.presentation.core.components.material.Scaffold
@@ -24,7 +23,7 @@ fun MangaNotesScreen(
             AppBar(
                 titleContent = {
                     AppBarTitle(
-                        title = stringResource(ephyra.i18n.R.string.action_edit_notes),
+                        title = stringResource(ephyra.app.core.common.R.string.action_edit_notes),
                         subtitle = state.manga.title,
                     )
                 },

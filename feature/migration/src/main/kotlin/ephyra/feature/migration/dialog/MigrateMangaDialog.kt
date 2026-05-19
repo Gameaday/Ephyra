@@ -17,11 +17,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.util.fastForEach
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.koin.koinScreenModel
-import dev.icerock.moko.resources.StringResource
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.withUIContext
 import ephyra.domain.download.service.DownloadManager
@@ -31,7 +35,6 @@ import ephyra.domain.manga.service.CoverCache
 import ephyra.domain.migration.models.MigrationFlag
 import ephyra.domain.migration.usecases.MigrateMangaUseCase
 import ephyra.domain.source.service.SourcePreferences
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.LabeledCheckbox
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
@@ -39,13 +42,13 @@ import ephyra.presentation.core.screens.LoadingScreen
 import kotlinx.coroutines.flow.update
 import kotlin.collections.toMutableSet
 
-private fun MigrationFlag.getLabel(): StringResource {
+private fun MigrationFlag.getLabel(): Int {
     return when (this) {
-        MigrationFlag.CHAPTER -> ephyra.i18n.R.string.chapters
-        MigrationFlag.CATEGORY -> ephyra.i18n.R.string.categories
-        MigrationFlag.CUSTOM_COVER -> ephyra.i18n.R.string.custom_cover
-        MigrationFlag.NOTES -> ephyra.i18n.R.string.action_notes
-        MigrationFlag.REMOVE_DOWNLOAD -> ephyra.i18n.R.string.delete_downloaded
+        MigrationFlag.CHAPTER -> ephyra.app.core.common.R.string.chapters
+        MigrationFlag.CATEGORY -> ephyra.app.core.common.R.string.categories
+        MigrationFlag.CUSTOM_COVER -> ephyra.app.core.common.R.string.custom_cover
+        MigrationFlag.NOTES -> ephyra.app.core.common.R.string.action_notes
+        MigrationFlag.REMOVE_DOWNLOAD -> ephyra.app.core.common.R.string.delete_downloaded
     }
 }
 
@@ -59,7 +62,7 @@ fun Screen.MigrateMangaDialog(
 ) {
     val scope = rememberCoroutineScope()
 
-    val screenModel = koinScreenModel<MigrateDialogScreenModel>()
+    val screenModel = hiltViewModel<MigrateDialogScreenModel>()
     LaunchedEffect(current, target) {
         screenModel.init(current, target)
     }
@@ -77,7 +80,7 @@ fun Screen.MigrateMangaDialog(
     AlertDialog(
         onDismissRequest = onDismissRequest,
         title = {
-            Text(text = stringResource(ephyra.i18n.R.string.migration_dialog_what_to_include))
+            Text(text = stringResource(ephyra.app.core.common.R.string.migration_dialog_what_to_include))
         },
         text = {
             Column(
@@ -102,7 +105,7 @@ fun Screen.MigrateMangaDialog(
                         onClickTitle()
                     },
                 ) {
-                    Text(text = stringResource(ephyra.i18n.R.string.action_show_manga))
+                    Text(text = stringResource(ephyra.app.core.common.R.string.action_show_manga))
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
@@ -115,7 +118,7 @@ fun Screen.MigrateMangaDialog(
                         }
                     },
                 ) {
-                    Text(text = stringResource(ephyra.i18n.R.string.copy))
+                    Text(text = stringResource(ephyra.app.core.common.R.string.copy))
                 }
                 TextButton(
                     onClick = {
@@ -125,19 +128,23 @@ fun Screen.MigrateMangaDialog(
                         }
                     },
                 ) {
-                    Text(text = stringResource(ephyra.i18n.R.string.migrate))
+                    Text(text = stringResource(ephyra.app.core.common.R.string.migrate))
                 }
             }
         },
     )
 }
 
-class MigrateDialogScreenModel(
+@HiltViewModel
+class MigrateDialogScreenModel @Inject constructor(
     private val sourcePreference: SourcePreferences,
     private val coverCache: CoverCache,
     private val downloadManager: DownloadManager,
     private val migrateManga: MigrateMangaUseCase,
-) : StateScreenModel<MigrateDialogScreenModel.State>(State()) {
+) : ViewModel() {
+
+    private val _state = MutableStateFlow(State())
+    val state: StateFlow<State> = _state.asStateFlow()
 
     fun init(current: Manga, target: Manga) {
         val applicableFlags = buildList {
@@ -153,7 +160,7 @@ class MigrateDialogScreenModel(
             }
         }
         val selectedFlags = sourcePreference.migrationFlags().getSync()
-        mutableState.update {
+        _state.update {
             State(
                 current = current,
                 target = target,
@@ -164,7 +171,7 @@ class MigrateDialogScreenModel(
     }
 
     fun toggleSelection(flag: MigrationFlag) {
-        mutableState.update {
+        _state.update {
             val selectedFlags = it.selectedFlags.toMutableSet()
                 .apply { if (contains(flag)) remove(flag) else add(flag) }
                 .toSet()
@@ -177,9 +184,9 @@ class MigrateDialogScreenModel(
         val current = state.current ?: return
         val target = state.target ?: return
         sourcePreference.migrationFlags().set(state.selectedFlags)
-        mutableState.update { it.copy(isMigrating = true) }
+        _state.update { it.copy(isMigrating = true) }
         migrateManga(current, target, replace)
-        mutableState.update { it.copy(isMigrating = false, isMigrated = true) }
+        _state.update { it.copy(isMigrating = false, isMigrated = true) }
     }
 
     data class State(

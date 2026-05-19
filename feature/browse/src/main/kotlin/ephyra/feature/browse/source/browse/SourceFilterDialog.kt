@@ -16,7 +16,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ephyra.core.common.preference.TriState
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AdaptiveSheet
 import ephyra.presentation.core.components.CheckboxItem
 import ephyra.presentation.core.components.CollapsibleBox
@@ -50,7 +49,7 @@ fun SourceFilterDialog(
                 ) {
                     TextButton(onClick = onReset) {
                         Text(
-                            text = stringResource(ephyra.i18n.R.string.action_reset),
+                            text = stringResource(ephyra.app.core.common.R.string.action_reset),
                             style = LocalTextStyle.current.copy(
                                 color = MaterialTheme.colorScheme.primary,
                             ),
@@ -65,7 +64,7 @@ fun SourceFilterDialog(
                             onDismissRequest()
                         },
                     ) {
-                        Text(stringResource(ephyra.i18n.R.string.action_filter))
+                        Text(stringResource(ephyra.app.core.common.R.string.action_filter))
                     }
                 }
                 HorizontalDivider()

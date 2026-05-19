@@ -1,8 +1,10 @@
 package ephyra.feature.browse.source
 
 import androidx.compose.runtime.Immutable
-import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import ephyra.domain.source.interactor.GetLanguagesWithSources
 import ephyra.domain.source.interactor.ToggleLanguage
 import ephyra.domain.source.interactor.ToggleSource
@@ -11,35 +13,40 @@ import ephyra.domain.source.service.SourcePreferences
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.koin.core.annotation.Factory
 import java.util.SortedMap
 
-@Factory
-class SourcesFilterScreenModel(
+@HiltViewModel
+class SourcesFilterScreenModel @Inject constructor(
     private val preferences: SourcePreferences,
     private val getLanguagesWithSources: GetLanguagesWithSources,
     private val toggleSource: ToggleSource,
     private val toggleLanguage: ToggleLanguage,
-) : StateScreenModel<SourcesFilterScreenModel.State>(State.Loading) {
+) : ViewModel() {
+
+    private val _state = MutableStateFlow<State>(State.Loading)
+    val state: StateFlow<State> = _state.asStateFlow()
 
     init {
-        screenModelScope.launch {
+        viewModelScope.launch {
             combine(
                 getLanguagesWithSources.subscribe(),
                 preferences.enabledLanguages().changes(),
                 preferences.disabledSources().changes(),
             ) { a, b, c -> Triple(a, b, c) }
                 .catch { throwable ->
-                    mutableState.update {
+                    _state.update {
                         State.Error(
                             throwable = throwable,
                         )
                     }
                 }
                 .collectLatest { (languagesWithSources, enabledLanguages, disabledSources) ->
-                    mutableState.update {
+                    _state.update {
                         State.Success(
                             items = languagesWithSources,
                             enabledLanguages = enabledLanguages,
@@ -58,11 +65,11 @@ class SourcesFilterScreenModel(
     }
 
     private fun toggleSource(source: Source) {
-        screenModelScope.launch { toggleSource.await(source) }
+        viewModelScope.launch { toggleSource.await(source) }
     }
 
     private fun toggleLanguage(language: String) {
-        screenModelScope.launch { toggleLanguage.await(language) }
+        viewModelScope.launch { toggleLanguage.await(language) }
     }
 
     sealed interface State {
@@ -85,7 +92,6 @@ class SourcesFilterScreenModel(
             val isEmpty: Boolean
                 get() = items.isEmpty()
 
-            /** Pre-parsed as `Long` IDs for O(1) membership checks without String allocation. */
             val disabledSourceIds: Set<Long> by lazy { disabledSources.mapTo(HashSet()) { it.toLong() } }
         }
     }

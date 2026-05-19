@@ -19,7 +19,6 @@ import ephyra.domain.category.model.Category
 import ephyra.feature.category.CategoryScreenState
 import ephyra.feature.category.presentation.components.CategoryFloatingActionButton
 import ephyra.feature.category.presentation.components.CategoryListItem
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.AppBar
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding
@@ -44,7 +43,7 @@ fun CategoryScreen(
     Scaffold(
         topBar = { scrollBehavior ->
             AppBar(
-                title = stringResource(ephyra.i18n.R.string.action_edit_categories),
+                title = stringResource(ephyra.app.core.common.R.string.action_edit_categories),
                 navigateUp = navigateUp,
                 scrollBehavior = scrollBehavior,
             )
@@ -58,7 +57,7 @@ fun CategoryScreen(
     ) { paddingValues ->
         if (state.isEmpty) {
             EmptyScreen(
-                stringRes = ephyra.i18n.R.string.information_empty_category,
+                stringRes = ephyra.app.core.common.R.string.information_empty_category,
                 modifier = Modifier.padding(paddingValues),
             )
             return@Scaffold

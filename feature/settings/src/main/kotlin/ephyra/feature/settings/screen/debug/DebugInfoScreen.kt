@@ -14,7 +14,6 @@ import ephyra.core.common.util.system.WebViewUtil
 import ephyra.feature.settings.Preference
 import ephyra.feature.settings.PreferenceScaffold
 import ephyra.feature.settings.screen.about.AboutScreen
-import ephyra.i18n.MR
 import ephyra.presentation.core.util.Screen
 import kotlinx.collections.immutable.mutate
 import kotlinx.collections.immutable.persistentListOf
@@ -26,7 +25,7 @@ class DebugInfoScreen : Screen() {
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         PreferenceScaffold(
-            titleRes = ephyra.i18n.R.string.pref_debug_info,
+            titleRes = ephyra.app.core.common.R.string.pref_debug_info,
             onBackPressed = navigator::pop,
             itemsProvider = {
                 listOf(

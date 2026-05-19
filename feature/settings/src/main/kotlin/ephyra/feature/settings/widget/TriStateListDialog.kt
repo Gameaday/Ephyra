@@ -28,7 +28,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource
 
 private enum class State {
@@ -104,9 +103,9 @@ fun <T> TriStateListDialog(
                                     },
                                     contentDescription = stringResource(
                                         when (state) {
-                                            State.UNCHECKED -> ephyra.i18n.R.string.not_selected
-                                            State.CHECKED -> ephyra.i18n.R.string.selected
-                                            State.INVERSED -> ephyra.i18n.R.string.disabled
+                                            State.UNCHECKED -> ephyra.app.core.common.R.string.not_selected
+                                            State.CHECKED -> ephyra.app.core.common.R.string.selected
+                                            State.INVERSED -> ephyra.app.core.common.R.string.disabled
                                         },
                                     ),
                                 )
@@ -122,7 +121,7 @@ fun <T> TriStateListDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
+                Text(text = stringResource(ephyra.app.core.common.R.string.action_cancel))
             }
         },
         confirmButton = {
@@ -137,7 +136,7 @@ fun <T> TriStateListDialog(
                     onValueChanged(included, excluded)
                 },
             ) {
-                Text(text = stringResource(ephyra.i18n.R.string.action_ok))
+                Text(text = stringResource(ephyra.app.core.common.R.string.action_ok))
             }
         },
     )

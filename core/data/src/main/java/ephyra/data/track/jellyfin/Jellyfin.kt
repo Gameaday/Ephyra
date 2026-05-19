@@ -1,7 +1,6 @@
 package ephyra.data.track.jellyfin
 
 import android.app.Application
-import dev.icerock.moko.resources.StringResource
 import ephyra.app.core.common.R
 import ephyra.core.common.util.system.logcat
 import ephyra.data.track.BaseTracker
@@ -14,7 +13,6 @@ import ephyra.domain.track.model.Track
 import ephyra.domain.track.service.DeletableTracker
 import ephyra.domain.track.service.EnhancedTracker
 import ephyra.domain.track.service.TrackPreferences
-import ephyra.i18n.MR
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.interceptor.rateLimit
 import eu.kanade.tachiyomi.source.Source
@@ -84,10 +82,10 @@ class Jellyfin(
 
     override fun getStatusList(): List<Long> = listOf(UNREAD, READING, COMPLETED)
 
-    override fun getStatus(status: Long): StringResource? = when (status) {
-        UNREAD -> ephyra.i18n.R.string.unread
-        READING -> ephyra.i18n.R.string.reading
-        COMPLETED -> ephyra.i18n.R.string.completed
+    override fun getStatus(status: Long): Int? = when (status) {
+        UNREAD -> ephyra.app.core.common.R.string.unread
+        READING -> ephyra.app.core.common.R.string.reading
+        COMPLETED -> ephyra.app.core.common.R.string.completed
         else -> null
     }
 

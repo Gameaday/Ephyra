@@ -21,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.window.DialogProperties
-import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource
 import kotlinx.coroutines.launch
 
@@ -83,12 +82,12 @@ fun EditTextPreferenceWidget(
                         }
                     },
                 ) {
-                    Text(text = stringResource(ephyra.i18n.R.string.action_ok))
+                    Text(text = stringResource(ephyra.app.core.common.R.string.action_ok))
                 }
             },
             dismissButton = {
                 TextButton(onClick = onDismissRequest) {
-                    Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
+                    Text(text = stringResource(ephyra.app.core.common.R.string.action_cancel))
                 }
             },
         )

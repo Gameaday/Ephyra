@@ -13,7 +13,6 @@ import androidx.core.net.toUri
 import com.hippo.unifile.UniFile
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.logcat
-import ephyra.i18n.MR
 import logcat.LogPriority
 import rikka.sui.Sui
 import java.io.File
@@ -33,7 +32,7 @@ fun Context.copyToClipboard(label: String, content: String) {
         // Android 13+ shows a visual confirmation of copied contents natively
     } catch (e: Throwable) {
         logcat(LogPriority.ERROR, e)
-        toast(ephyra.i18n.R.string.clipboard_copy_error)
+        toast(ephyra.app.core.common.R.string.clipboard_copy_error)
     }
 }
 

@@ -14,10 +14,9 @@ import ephyra.domain.track.service.Tracker
 import ephyra.domain.track.service.TrackerManager
 import eu.kanade.tachiyomi.source.Source
 import kotlinx.coroutines.flow.Flow
-import org.koin.core.annotation.Factory
+import javax.inject.Inject
 
-@Factory
-class MangaTrackInteractor(
+class MangaTrackInteractor @Inject constructor(
     private val getTracks: GetTracks,
     private val addTracks: AddTracks,
     private val refreshCanonical: RefreshCanonicalMetadata,

@@ -32,7 +32,6 @@ import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.library.model.LibraryManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.service.SourceManager
-import ephyra.i18n.MR
 import ephyra.presentation.core.util.formatChapterNumber
 import eu.kanade.tachiyomi.source.UnmeteredSource
 import java.math.RoundingMode
@@ -69,12 +68,12 @@ class LibraryUpdateNotifier(
      */
     val progressNotificationBuilder by lazy {
         context.notificationBuilder(Notifications.CHANNEL_LIBRARY_PROGRESS) {
-            setContentTitle(context.stringResource(ephyra.i18n.R.string.app_name))
+            setContentTitle(context.stringResource(ephyra.app.core.common.R.string.app_name))
             setSmallIcon(R.drawable.ic_refresh_24dp)
             setLargeIcon(notificationBitmap)
             setOngoing(true)
             setOnlyAlertOnce(true)
-            addAction(R.drawable.ic_close_24dp, context.stringResource(ephyra.i18n.R.string.action_cancel), cancelIntent)
+            addAction(R.drawable.ic_close_24dp, context.stringResource(ephyra.app.core.common.R.string.action_cancel), cancelIntent)
         }
     }
 
@@ -89,7 +88,7 @@ class LibraryUpdateNotifier(
         progressNotificationBuilder
             .setContentTitle(
                 context.stringResource(
-                    ephyra.i18n.R.string.notification_updating_progress,
+                    ephyra.app.core.common.R.string.notification_updating_progress,
                     percentFormatter.format(current.toFloat() / total),
                 ),
             )
@@ -124,9 +123,9 @@ class LibraryUpdateNotifier(
             Notifications.ID_LIBRARY_SIZE_WARNING,
             Notifications.CHANNEL_LIBRARY_PROGRESS,
         ) {
-            setContentTitle(context.stringResource(ephyra.i18n.R.string.label_warning))
+            setContentTitle(context.stringResource(ephyra.app.core.common.R.string.label_warning))
             setStyle(
-                NotificationCompat.BigTextStyle().bigText(context.stringResource(ephyra.i18n.R.string.notification_size_warning)),
+                NotificationCompat.BigTextStyle().bigText(context.stringResource(ephyra.app.core.common.R.string.notification_size_warning)),
             )
             setSmallIcon(R.drawable.ic_warning_white_24dp)
             setTimeoutAfter(WARNING_NOTIF_TIMEOUT_MS)
@@ -149,8 +148,8 @@ class LibraryUpdateNotifier(
             Notifications.ID_LIBRARY_ERROR,
             Notifications.CHANNEL_LIBRARY_ERROR,
         ) {
-            setContentTitle(context.stringResource(ephyra.i18n.R.string.notification_update_error, failed))
-            setContentText(context.stringResource(ephyra.i18n.R.string.action_show_errors))
+            setContentTitle(context.stringResource(ephyra.app.core.common.R.string.notification_update_error, failed))
+            setContentText(context.stringResource(ephyra.app.core.common.R.string.action_show_errors))
             setSmallIcon(R.drawable.ic_ephyra)
 
             setContentIntent(NotificationReceiver.openErrorLogPendingActivity(context, Uri.parse(uriString)))
@@ -169,13 +168,13 @@ class LibraryUpdateNotifier(
             Notifications.ID_NEW_CHAPTERS,
             Notifications.CHANNEL_NEW_CHAPTERS,
         ) {
-            setContentTitle(context.stringResource(ephyra.i18n.R.string.notification_new_chapters))
+            setContentTitle(context.stringResource(ephyra.app.core.common.R.string.notification_new_chapters))
             if (updates.size == 1 && !hideContent) {
                 setContentText(updates.first().first.title.chop(NOTIF_TITLE_MAX_LEN))
             } else {
                 setContentText(
                     context.pluralStringResource(
-                        ephyra.i18n.R.plurals.notification_new_chapters_summary,
+                        ephyra.app.core.common.R.plurals.notification_new_chapters_summary,
                         updates.size,
                         updates.size,
                     ),
@@ -241,7 +240,7 @@ class LibraryUpdateNotifier(
             // Mark chapters as read action
             addAction(
                 R.drawable.ic_done_24dp,
-                context.stringResource(ephyra.i18n.R.string.action_mark_as_read),
+                context.stringResource(ephyra.app.core.common.R.string.action_mark_as_read),
                 NotificationReceiver.markAsReadPendingBroadcast(
                     context,
                     manga,
@@ -252,7 +251,7 @@ class LibraryUpdateNotifier(
             // View chapters action
             addAction(
                 R.drawable.ic_book_24dp,
-                context.stringResource(ephyra.i18n.R.string.action_view_chapters),
+                context.stringResource(ephyra.app.core.common.R.string.action_view_chapters),
                 NotificationReceiver.openChapterPendingActivity(
                     context,
                     manga,
@@ -264,7 +263,7 @@ class LibraryUpdateNotifier(
             if (chapters.size <= Downloader.CHAPTERS_PER_SOURCE_QUEUE_WARNING_THRESHOLD) {
                 addAction(
                     android.R.drawable.stat_sys_download_done,
-                    context.stringResource(ephyra.i18n.R.string.action_download),
+                    context.stringResource(ephyra.app.core.common.R.string.action_download),
                     NotificationReceiver.downloadChaptersPendingBroadcast(
                         context,
                         manga,
@@ -298,14 +297,14 @@ class LibraryUpdateNotifier(
 
         if (deadManga.isNotEmpty()) {
             lines.add(
-                context.stringResource(ephyra.i18n.R.string.notification_dead_sources, deadManga.size),
+                context.stringResource(ephyra.app.core.common.R.string.notification_dead_sources, deadManga.size),
             )
             if (!securityPreferences.hideNotificationContent().get()) {
                 deadManga.take(NOTIF_MAX_HEALTH_ENTRIES).forEach { manga ->
                     val sourceName = sourceManager.getOrStub(manga.source).name
                     lines.add(
                         context.stringResource(
-                            ephyra.i18n.R.string.notification_list_item,
+                            ephyra.app.core.common.R.string.notification_list_item,
                             manga.title.chop(NOTIF_TITLE_MAX_LEN),
                             sourceName,
                         ),
@@ -314,7 +313,7 @@ class LibraryUpdateNotifier(
                 if (deadManga.size > NOTIF_MAX_HEALTH_ENTRIES) {
                     lines.add(
                         context.stringResource(
-                            ephyra.i18n.R.string.notification_and_more,
+                            ephyra.app.core.common.R.string.notification_and_more,
                             deadManga.size - NOTIF_MAX_HEALTH_ENTRIES,
                         ),
                     )
@@ -324,14 +323,14 @@ class LibraryUpdateNotifier(
 
         if (degradedManga.isNotEmpty()) {
             lines.add(
-                context.stringResource(ephyra.i18n.R.string.notification_degraded_sources, degradedManga.size),
+                context.stringResource(ephyra.app.core.common.R.string.notification_degraded_sources, degradedManga.size),
             )
             if (!securityPreferences.hideNotificationContent().get()) {
                 degradedManga.take(NOTIF_MAX_HEALTH_ENTRIES).forEach { manga ->
                     val sourceName = sourceManager.getOrStub(manga.source).name
                     lines.add(
                         context.stringResource(
-                            ephyra.i18n.R.string.notification_list_item,
+                            ephyra.app.core.common.R.string.notification_list_item,
                             manga.title.chop(NOTIF_TITLE_MAX_LEN),
                             sourceName,
                         ),
@@ -340,7 +339,7 @@ class LibraryUpdateNotifier(
                 if (degradedManga.size > NOTIF_MAX_HEALTH_ENTRIES) {
                     lines.add(
                         context.stringResource(
-                            ephyra.i18n.R.string.notification_and_more,
+                            ephyra.app.core.common.R.string.notification_and_more,
                             degradedManga.size - NOTIF_MAX_HEALTH_ENTRIES,
                         ),
                     )
@@ -353,7 +352,7 @@ class LibraryUpdateNotifier(
             Notifications.CHANNEL_LIBRARY_ERROR,
         ) {
             setContentTitle(
-                context.stringResource(ephyra.i18n.R.string.notification_source_health_title, totalAffected),
+                context.stringResource(ephyra.app.core.common.R.string.notification_source_health_title, totalAffected),
             )
             setContentText(lines.first())
             setStyle(NotificationCompat.BigTextStyle().bigText(lines.joinToString("\n")))
@@ -375,14 +374,14 @@ class LibraryUpdateNotifier(
 
         val lines = mutableListOf<String>()
         lines.add(
-            context.stringResource(ephyra.i18n.R.string.notification_migration_suggestion_body, persistentlyDeadManga.size),
+            context.stringResource(ephyra.app.core.common.R.string.notification_migration_suggestion_body, persistentlyDeadManga.size),
         )
         if (!securityPreferences.hideNotificationContent().get()) {
             persistentlyDeadManga.take(NOTIF_MAX_HEALTH_ENTRIES).forEach { manga ->
                 val sourceName = sourceManager.getOrStub(manga.source).name
                 lines.add(
                     context.stringResource(
-                        ephyra.i18n.R.string.notification_list_item,
+                        ephyra.app.core.common.R.string.notification_list_item,
                         manga.title.chop(NOTIF_TITLE_MAX_LEN),
                         sourceName,
                     ),
@@ -391,7 +390,7 @@ class LibraryUpdateNotifier(
             if (persistentlyDeadManga.size > NOTIF_MAX_HEALTH_ENTRIES) {
                 lines.add(
                     context.stringResource(
-                        ephyra.i18n.R.string.notification_and_more,
+                        ephyra.app.core.common.R.string.notification_and_more,
                         persistentlyDeadManga.size - NOTIF_MAX_HEALTH_ENTRIES,
                     ),
                 )
@@ -403,7 +402,7 @@ class LibraryUpdateNotifier(
             Notifications.CHANNEL_LIBRARY_ERROR,
         ) {
             setContentTitle(
-                context.stringResource(ephyra.i18n.R.string.notification_migration_suggestion_title),
+                context.stringResource(ephyra.app.core.common.R.string.notification_migration_suggestion_title),
             )
             setContentText(lines.first())
             setStyle(NotificationCompat.BigTextStyle().bigText(lines.joinToString("\n")))
@@ -435,7 +434,7 @@ class LibraryUpdateNotifier(
             0 -> {
                 // "1 new chapter" or "5 new chapters"
                 context.pluralStringResource(
-                    ephyra.i18n.R.plurals.notification_chapters_generic,
+                    ephyra.app.core.common.R.plurals.notification_chapters_generic,
                     chapters.size,
                     chapters.size,
                 )
@@ -446,13 +445,13 @@ class LibraryUpdateNotifier(
                 if (remaining == 0) {
                     // "Chapter 2.5"
                     context.stringResource(
-                        ephyra.i18n.R.string.notification_chapters_single,
+                        ephyra.app.core.common.R.string.notification_chapters_single,
                         displayableChapterNumbers.first(),
                     )
                 } else {
                     // "Chapter 2.5 and 10 more"
                     context.stringResource(
-                        ephyra.i18n.R.string.notification_chapters_single_and_more,
+                        ephyra.app.core.common.R.string.notification_chapters_single_and_more,
                         displayableChapterNumbers.first(),
                         remaining,
                     )
@@ -468,7 +467,7 @@ class LibraryUpdateNotifier(
                         .take(NOTIF_MAX_CHAPTERS)
                         .joinToString(", ")
                     context.pluralStringResource(
-                        ephyra.i18n.R.plurals.notification_chapters_multiple_and_more,
+                        ephyra.app.core.common.R.plurals.notification_chapters_multiple_and_more,
                         remaining,
                         joinedChapterNumbers,
                         remaining,
@@ -476,7 +475,7 @@ class LibraryUpdateNotifier(
                 } else {
                     // "Chapters 1, 2.5, 3"
                     context.stringResource(
-                        ephyra.i18n.R.string.notification_chapters_multiple,
+                        ephyra.app.core.common.R.string.notification_chapters_multiple,
                         displayableChapterNumbers.joinToString(", "),
                     )
                 }

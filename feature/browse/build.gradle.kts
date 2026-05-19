@@ -1,8 +1,8 @@
 plugins {
-    id("mihon.library")
-    id("mihon.library.compose")
+    id("ephyra.library")
+    id("ephyra.library.compose")
 
-    id("com.google.devtools.ksp")
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -14,7 +14,6 @@ dependencies {
     api(projects.domain)
     api(projects.data)
     api(projects.sourceApi)
-    api(projects.i18n)
     api(projects.presentationCore)
     api(projects.feature.manga)
 

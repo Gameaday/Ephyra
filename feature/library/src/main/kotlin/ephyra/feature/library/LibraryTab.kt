@@ -20,8 +20,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.util.fastAll
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -43,7 +43,6 @@ import ephyra.feature.library.presentation.components.LibraryToolbar
 import ephyra.feature.manga.MangaScreen
 import ephyra.feature.manga.presentation.components.LibraryBottomActionMenu
 import ephyra.feature.reader.ReaderActivity
-import ephyra.i18n.MR
 import ephyra.presentation.core.R
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
@@ -61,7 +60,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
-import org.koin.compose.koinInject
 
 data object LibraryTab : Tab {
 
@@ -72,7 +70,7 @@ data object LibraryTab : Tab {
             val image = AnimatedImageVector.animatedVectorResource(R.drawable.anim_library_enter)
             return TabOptions(
                 index = 0u,
-                title = stringResource(ephyra.i18n.R.string.label_library),
+                title = stringResource(ephyra.app.core.common.R.string.label_library),
                 icon = rememberAnimatedVectorPainter(image, isSelected),
             )
         }
@@ -88,10 +86,10 @@ data object LibraryTab : Tab {
         val scope = rememberCoroutineScope()
         val haptic = LocalHapticFeedback.current
 
-        val screenModel = koinScreenModel<LibraryScreenModel>()
-        val updateScheduler = koinInject<LibraryUpdateScheduler>()
-        val settingsScreenModel = koinScreenModel<LibrarySettingsScreenModel>()
-        val migrationConfigScreenFactory = koinInject<MigrationConfigScreenFactory>()
+        val screenModel = hiltViewModel<LibraryScreenModel>()
+        val updateScheduler = remember { ephyra.core.common.di.CoreContainer.get<LibraryUpdateScheduler>() }
+        val settingsScreenModel = hiltViewModel<LibrarySettingsScreenModel>()
+        val migrationConfigScreenFactory = remember { ephyra.core.common.di.CoreContainer.get<MigrationConfigScreenFactory>() }
         val state by screenModel.state.collectAsStateWithLifecycle()
 
         val snackbarHostState = remember { SnackbarHostState() }
@@ -100,9 +98,9 @@ data object LibraryTab : Tab {
             val started = updateScheduler.startNow(category)
             scope.launch {
                 val msgRes = when {
-                    !started -> ephyra.i18n.R.string.update_already_running
-                    category != null -> ephyra.i18n.R.string.updating_category
-                    else -> ephyra.i18n.R.string.updating_library
+                    !started -> ephyra.app.core.common.R.string.update_already_running
+                    category != null -> ephyra.app.core.common.R.string.updating_category
+                    else -> ephyra.app.core.common.R.string.updating_library
                 }
                 snackbarHostState.showSnackbar(context.stringResource(msgRes))
             }
@@ -112,8 +110,8 @@ data object LibraryTab : Tab {
         Scaffold(
             topBar = { scrollBehavior ->
                 val title = state.getToolbarTitle(
-                    defaultTitle = stringResource(ephyra.i18n.R.string.label_library),
-                    defaultCategoryTitle = stringResource(ephyra.i18n.R.string.label_default),
+                    defaultTitle = stringResource(ephyra.app.core.common.R.string.label_library),
+                    defaultCategoryTitle = stringResource(ephyra.app.core.common.R.string.label_default),
                     page = state.coercedActiveCategoryIndex,
                 )
                 LibraryToolbar(
@@ -133,7 +131,7 @@ data object LibraryTab : Tab {
                                 navigator.push(MangaScreen(randomItem.libraryManga.manga.id))
                             } else {
                                 snackbarHostState.showSnackbar(
-                                    context.stringResource(ephyra.i18n.R.string.information_no_entries_found),
+                                    context.stringResource(ephyra.app.core.common.R.string.information_no_entries_found),
                                 )
                             }
                         }
@@ -171,11 +169,11 @@ data object LibraryTab : Tab {
                 state.searchQuery.isNullOrEmpty() && !state.hasActiveFilters && state.isLibraryEmpty -> {
                     val handler = LocalUriHandler.current
                     EmptyScreen(
-                        stringRes = ephyra.i18n.R.string.information_empty_library,
+                        stringRes = ephyra.app.core.common.R.string.information_empty_library,
                         modifier = Modifier.padding(contentPadding),
                         actions = persistentListOf(
                             EmptyScreenAction(
-                                stringRes = ephyra.i18n.R.string.getting_started_guide,
+                                stringRes = ephyra.app.core.common.R.string.getting_started_guide,
                                 icon = Icons.AutoMirrored.Outlined.HelpOutline,
                                 onClick = { handler.openUri("https://ephyra.app/docs/guides/getting-started") },
                             ),
@@ -206,7 +204,7 @@ data object LibraryTab : Tab {
                                             ReaderActivity.newIntent(context, chapter.mangaId, chapter.id),
                                         )
                                     } else {
-                                        snackbarHostState.showSnackbar(context.stringResource(ephyra.i18n.R.string.no_next_chapter))
+                                        snackbarHostState.showSnackbar(context.stringResource(ephyra.app.core.common.R.string.no_next_chapter))
                                     }
                                 }
                             }

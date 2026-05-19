@@ -77,7 +77,6 @@ import ephyra.feature.more.NewUpdateScreen
 import ephyra.feature.more.OnboardingScreen
 import ephyra.feature.settings.screen.browse.ExtensionReposScreen
 import ephyra.feature.settings.screen.data.RestoreBackupScreen
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppStateBanners
 import ephyra.presentation.core.components.DownloadedOnlyBannerBackgroundColor
 import ephyra.presentation.core.components.IncognitoModeBannerBackgroundColor
@@ -104,23 +103,25 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import logcat.LogPriority
-import org.koin.android.ext.android.inject
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class MainActivity : BaseActivity(), AppReadySignal {
 
-    private val libraryPreferences: LibraryPreferences by inject()
-    private val preferences: BasePreferences by inject()
+    @Inject lateinit var libraryPreferences: LibraryPreferences
+    @Inject lateinit var preferences: BasePreferences
 
-    private val downloadCache: DownloadCache by inject()
-    private val chapterCache: ChapterCache by inject()
+    @Inject lateinit var downloadCache: DownloadCache
+    @Inject lateinit var chapterCache: ChapterCache
 
-    private val getIncognitoState: GetIncognitoState by inject()
-    private val uiPreferences: ephyra.domain.ui.UiPreferences by inject()
-    private val privacyPreferences: ephyra.core.common.core.security.PrivacyPreferences by inject()
-    private val storagePreferences: ephyra.domain.storage.service.StoragePreferences by inject()
-    private val extensionApi: ExtensionApi by inject()
-    private val appUpdateChecker: AppUpdateChecker by inject()
-    private val appInfo: AppInfo by inject()
+    @Inject lateinit var getIncognitoState: GetIncognitoState
+    @Inject lateinit var uiPreferences: ephyra.domain.ui.UiPreferences
+    @Inject lateinit var privacyPreferences: ephyra.core.common.core.security.PrivacyPreferences
+    @Inject lateinit var storagePreferences: ephyra.domain.storage.service.StoragePreferences
+    @Inject lateinit var extensionApi: ExtensionApi
+    @Inject lateinit var appUpdateChecker: AppUpdateChecker
+    @Inject lateinit var appInfo: AppInfo
 
     // To be checked by splash screen. If true then splash screen will be removed.
     var ready = false
@@ -317,15 +318,15 @@ class MainActivity : BaseActivity(), AppReadySignal {
                 if (showChangelog) {
                     AlertDialog(
                         onDismissRequest = { showChangelog = false },
-                        title = { Text(text = stringResource(ephyra.i18n.R.string.updated_version, BuildConfig.VERSION_NAME)) },
+                        title = { Text(text = stringResource(ephyra.app.core.common.R.string.updated_version, BuildConfig.VERSION_NAME)) },
                         dismissButton = {
                             TextButton(onClick = { openInBrowser(appInfo.releaseUrl) }) {
-                                Text(text = stringResource(ephyra.i18n.R.string.whats_new))
+                                Text(text = stringResource(ephyra.app.core.common.R.string.whats_new))
                             }
                         },
                         confirmButton = {
                             TextButton(onClick = { showChangelog = false }) {
-                                Text(text = stringResource(ephyra.i18n.R.string.action_ok))
+                                Text(text = stringResource(ephyra.app.core.common.R.string.action_ok))
                             }
                         },
                     )

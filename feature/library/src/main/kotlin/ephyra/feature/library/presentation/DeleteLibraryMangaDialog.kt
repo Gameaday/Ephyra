@@ -9,9 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import dev.icerock.moko.resources.StringResource
 import ephyra.core.common.preference.CheckboxState
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.LabeledCheckbox
 import ephyra.presentation.core.i18n.stringResource
 
@@ -23,10 +21,10 @@ fun DeleteLibraryMangaDialog(
 ) {
     var list by remember {
         mutableStateOf(
-            buildList<CheckboxState.State<StringResource>> {
-                add(CheckboxState.State.None(ephyra.i18n.R.string.manga_from_library))
+            buildList<CheckboxState.State<Int>> {
+                add(CheckboxState.State.None(ephyra.app.core.common.R.string.manga_from_library))
                 if (!containsLocalManga) {
-                    add(CheckboxState.State.None(ephyra.i18n.R.string.downloaded_chapters))
+                    add(CheckboxState.State.None(ephyra.app.core.common.R.string.downloaded_chapters))
                 }
             },
         )
@@ -35,7 +33,7 @@ fun DeleteLibraryMangaDialog(
         onDismissRequest = onDismissRequest,
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
+                Text(text = stringResource(ephyra.app.core.common.R.string.action_cancel))
             }
         },
         confirmButton = {
@@ -49,11 +47,11 @@ fun DeleteLibraryMangaDialog(
                     )
                 },
             ) {
-                Text(text = stringResource(ephyra.i18n.R.string.action_ok))
+                Text(text = stringResource(ephyra.app.core.common.R.string.action_ok))
             }
         },
         title = {
-            Text(text = stringResource(ephyra.i18n.R.string.action_remove))
+            Text(text = stringResource(ephyra.app.core.common.R.string.action_remove))
         },
         text = {
             Column {
@@ -65,7 +63,7 @@ fun DeleteLibraryMangaDialog(
                             val index = list.indexOf(state)
                             if (index != -1) {
                                 val mutableList = list.toMutableList()
-                                mutableList[index] = state.next() as CheckboxState.State<StringResource>
+                                mutableList[index] = state.next() as CheckboxState.State<Int>
                                 list = mutableList.toList()
                             }
                         },

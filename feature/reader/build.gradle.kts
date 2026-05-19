@@ -1,7 +1,8 @@
 plugins {
-    id("mihon.library")
-    id("mihon.library.compose")
-
+    id("ephyra.library")
+    id("ephyra.library.compose")
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -18,7 +19,6 @@ dependencies {
     implementation(projects.data)
     implementation(projects.sourceApi)
     implementation(projects.sourceLocal)
-    implementation(projects.i18n)
     implementation(projects.presentationCore)
 
     implementation(libs.logcat)
@@ -26,5 +26,10 @@ dependencies {
     
     implementation(libs.subsamplingscaleimageview)
     implementation(libs.image.decoder)
+
+    // Hilt
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.hilt.navigation.compose)
 }
 

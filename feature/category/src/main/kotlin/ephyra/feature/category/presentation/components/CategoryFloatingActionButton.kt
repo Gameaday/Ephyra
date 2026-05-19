@@ -8,7 +8,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.shouldExpandFAB
 
@@ -19,7 +18,7 @@ fun CategoryFloatingActionButton(
     modifier: Modifier = Modifier,
 ) {
     ExtendedFloatingActionButton(
-        text = { Text(text = stringResource(ephyra.i18n.R.string.action_add)) },
+        text = { Text(text = stringResource(ephyra.app.core.common.R.string.action_add)) },
         icon = { Icon(imageVector = Icons.Outlined.Add, contentDescription = null) },
         onClick = onCreate,
         expanded = lazyListState.shouldExpandFAB(),

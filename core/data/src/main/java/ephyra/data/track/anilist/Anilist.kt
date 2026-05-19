@@ -1,7 +1,6 @@
 package ephyra.data.track.anilist
 
 import android.app.Application
-import dev.icerock.moko.resources.StringResource
 import ephyra.app.core.common.R
 import ephyra.data.track.BaseTracker
 import ephyra.data.track.anilist.dto.ALOAuth
@@ -12,7 +11,6 @@ import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.model.Track
 import ephyra.domain.track.service.TrackPreferences
-import ephyra.i18n.MR
 import eu.kanade.tachiyomi.network.NetworkHelper
 import kotlinx.serialization.json.Json
 import ephyra.data.database.models.Track as DbTrack
@@ -55,13 +53,13 @@ class Anilist(
         return listOf(READING, COMPLETED, ON_HOLD, DROPPED, PLAN_TO_READ, REPEATING)
     }
 
-    override fun getStatus(status: Long): StringResource? = when (status) {
-        READING -> ephyra.i18n.R.string.reading
-        PLAN_TO_READ -> ephyra.i18n.R.string.plan_to_read
-        COMPLETED -> ephyra.i18n.R.string.completed
-        ON_HOLD -> ephyra.i18n.R.string.on_hold
-        DROPPED -> ephyra.i18n.R.string.dropped
-        REPEATING -> ephyra.i18n.R.string.repeating
+    override fun getStatus(status: Long): Int? = when (status) {
+        READING -> ephyra.app.core.common.R.string.reading
+        PLAN_TO_READ -> ephyra.app.core.common.R.string.plan_to_read
+        COMPLETED -> ephyra.app.core.common.R.string.completed
+        ON_HOLD -> ephyra.app.core.common.R.string.on_hold
+        DROPPED -> ephyra.app.core.common.R.string.dropped
+        REPEATING -> ephyra.app.core.common.R.string.repeating
         else -> null
     }
 

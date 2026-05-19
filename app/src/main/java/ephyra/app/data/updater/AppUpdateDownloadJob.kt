@@ -16,7 +16,6 @@ import ephyra.core.common.util.storage.getUriCompat
 import ephyra.core.common.util.system.setForegroundSafely
 import ephyra.core.common.util.system.workManager
 import ephyra.data.notification.Notifications
-import ephyra.i18n.MR
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.ProgressListener
@@ -39,7 +38,7 @@ class AppUpdateDownloadJob(
 
     override suspend fun doWork(): Result {
         val url = inputData.getString(EXTRA_DOWNLOAD_URL)
-        val title = inputData.getString(EXTRA_DOWNLOAD_TITLE) ?: context.stringResource(ephyra.i18n.R.string.app_name)
+        val title = inputData.getString(EXTRA_DOWNLOAD_TITLE) ?: context.stringResource(ephyra.app.core.common.R.string.app_name)
 
         if (url.isNullOrEmpty()) {
             return Result.failure()

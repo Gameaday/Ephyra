@@ -1,25 +1,22 @@
 package ephyra.feature.browse.source.globalsearch
 
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.interactor.NetworkToLocalManga
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
 import eu.kanade.tachiyomi.source.CatalogueSource
-import org.koin.core.annotation.Factory
-import org.koin.core.annotation.InjectedParam
 
-@Factory
-class GlobalSearchScreenModel(
-    @InjectedParam initialQuery: String = "",
-    @InjectedParam initialExtensionFilter: String? = null,
+@HiltViewModel
+class GlobalSearchScreenModel @Inject constructor(
     sourcePreferences: SourcePreferences,
     sourceManager: SourceManager,
     extensionManager: ExtensionManager,
     networkToLocalManga: NetworkToLocalManga,
     getManga: GetManga,
 ) : SearchScreenModel(
-    initialState = State(searchQuery = initialQuery),
     sourcePreferences = sourcePreferences,
     sourceManager = sourceManager,
     extensionManager = extensionManager,
@@ -27,11 +24,16 @@ class GlobalSearchScreenModel(
     getManga = getManga,
 ) {
 
-    init {
+    private var isInitialized = false
+
+    fun init(initialQuery: String = "", initialExtensionFilter: String? = null) {
+        if (isInitialized) return
+        isInitialized = true
+
+        updateSearchQuery(initialQuery)
         extensionFilter = initialExtensionFilter
         if (initialQuery.isNotBlank() || !initialExtensionFilter.isNullOrBlank()) {
             if (extensionFilter != null) {
-                // we're going to use custom extension filter instead
                 setSourceFilter(SourceFilter.All)
             }
             search()

@@ -15,14 +15,15 @@ import ephyra.core.common.util.system.logcat
 import ephyra.core.common.util.system.notificationBuilder
 import ephyra.data.notification.Notifications
 import ephyra.domain.base.BasePreferences
-import ephyra.i18n.MR
 import ephyra.presentation.core.util.system.getSerializableExtraCompat
 import logcat.LogPriority
-import org.koin.android.ext.android.inject
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class ExtensionInstallService : Service() {
 
-    private val extensionManager: ephyra.app.extension.ExtensionManager by inject()
+    @Inject lateinit var extensionManager: ephyra.app.extension.ExtensionManager
     private var installer: Installer? = null
 
     override fun onCreate() {
@@ -31,7 +32,7 @@ class ExtensionInstallService : Service() {
             setAutoCancel(false)
             setOngoing(true)
             setShowWhen(false)
-            setContentTitle(stringResource(ephyra.i18n.R.string.ext_install_service_notif))
+            setContentTitle(stringResource(ephyra.app.core.common.R.string.ext_install_service_notif))
             setProgress(100, 100, true)
         }.build()
         startForeground(Notifications.ID_EXTENSION_INSTALLER, notification)

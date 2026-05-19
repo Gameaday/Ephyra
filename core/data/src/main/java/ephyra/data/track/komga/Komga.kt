@@ -1,7 +1,6 @@
 package ephyra.data.track.komga
 
 import android.app.Application
-import dev.icerock.moko.resources.StringResource
 import ephyra.app.core.common.R
 import ephyra.data.track.BaseTracker
 import ephyra.data.track.model.TrackSearch
@@ -12,7 +11,6 @@ import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.model.Track
 import ephyra.domain.track.service.EnhancedTracker
 import ephyra.domain.track.service.TrackPreferences
-import ephyra.i18n.MR
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.source.Source
 import kotlinx.serialization.json.Json
@@ -47,10 +45,10 @@ class Komga(
 
     override fun getStatusList(): List<Long> = listOf(UNREAD, READING, COMPLETED)
 
-    override fun getStatus(status: Long): StringResource? = when (status) {
-        UNREAD -> ephyra.i18n.R.string.unread
-        READING -> ephyra.i18n.R.string.reading
-        COMPLETED -> ephyra.i18n.R.string.completed
+    override fun getStatus(status: Long): Int? = when (status) {
+        UNREAD -> ephyra.app.core.common.R.string.unread
+        READING -> ephyra.app.core.common.R.string.reading
+        COMPLETED -> ephyra.app.core.common.R.string.completed
         else -> null
     }
 

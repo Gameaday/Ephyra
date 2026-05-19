@@ -9,6 +9,8 @@ dependencies {
     implementation(kotlinx.gradle)
     implementation(libs.kotlin.compose.gradle)
     implementation(libs.spotless.gradle)
+    implementation("com.google.devtools.ksp:symbol-processing-gradle-plugin:2.3.7")
+    implementation("com.google.dagger:hilt-android-gradle-plugin:2.51.1")
     implementation(gradleApi())
 }
 

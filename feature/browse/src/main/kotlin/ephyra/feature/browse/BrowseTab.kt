@@ -9,7 +9,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.koin.koinScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
@@ -19,7 +19,6 @@ import ephyra.feature.browse.migration.sources.migrateSourceTab
 import ephyra.feature.browse.source.authority.discoverTab
 import ephyra.feature.browse.source.globalsearch.GlobalSearchScreen
 import ephyra.feature.browse.source.sourcesTab
-import ephyra.i18n.MR
 import ephyra.presentation.core.R
 import ephyra.presentation.core.components.TabbedScreen
 import ephyra.presentation.core.i18n.stringResource
@@ -40,7 +39,7 @@ data object BrowseTab : Tab {
             val image = AnimatedImageVector.animatedVectorResource(R.drawable.anim_browse_enter)
             return TabOptions(
                 index = 3u,
-                title = stringResource(ephyra.i18n.R.string.label_discover),
+                title = stringResource(ephyra.app.core.common.R.string.label_discover),
                 icon = rememberAnimatedVectorPainter(image, isSelected),
             )
         }
@@ -60,7 +59,7 @@ data object BrowseTab : Tab {
         val context = LocalContext.current
 
         // Hoisted for extensions tab's search bar
-        val extensionsScreenModel = koinScreenModel<ExtensionsScreenModel>()
+        val extensionsScreenModel = hiltViewModel<ExtensionsScreenModel>()
         val extensionsState by extensionsScreenModel.state.collectAsStateWithLifecycle()
 
         val tabs = persistentListOf(
@@ -73,7 +72,7 @@ data object BrowseTab : Tab {
         val state = rememberPagerState { tabs.size }
 
         TabbedScreen(
-            titleRes = ephyra.i18n.R.string.label_discover,
+            titleRes = ephyra.app.core.common.R.string.label_discover,
             tabs = tabs,
             state = state,
             searchQuery = extensionsState.searchQuery,

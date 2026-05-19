@@ -1,6 +1,5 @@
 package ephyra.feature.reader.setting
 
-import cafe.adriel.voyager.core.model.ScreenModel
 import ephyra.domain.reader.model.ReaderOrientation
 import ephyra.domain.reader.model.ReadingMode
 import ephyra.domain.reader.service.ReaderPreferences
@@ -17,7 +16,7 @@ class ReaderSettingsScreenModel(
     val onChangeReadingMode: (ReadingMode) -> Unit,
     val onChangeOrientation: (ReaderOrientation) -> Unit,
     val preferences: ReaderPreferences,
-) : ScreenModel {
+) {
 
     val viewerFlow = readerState
         .map { it.viewer }

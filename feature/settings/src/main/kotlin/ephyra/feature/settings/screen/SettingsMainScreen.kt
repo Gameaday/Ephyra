@@ -32,10 +32,8 @@ import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import dev.icerock.moko.resources.StringResource
 import ephyra.feature.settings.screen.about.AboutScreen
 import ephyra.feature.settings.widget.TextPreferenceWidget
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.material.Scaffold
@@ -68,13 +66,13 @@ object SettingsMainScreen : Screen() {
             topBarScrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(topBarState),
             topBar = { scrollBehavior ->
                 AppBar(
-                    title = stringResource(ephyra.i18n.R.string.label_settings),
+                    title = stringResource(ephyra.app.core.common.R.string.label_settings),
                     navigateUp = backPress::invoke,
                     actions = {
                         AppBarActions(
                             persistentListOf(
                                 AppBar.Action(
-                                    title = stringResource(ephyra.i18n.R.string.action_search),
+                                    title = stringResource(ephyra.app.core.common.R.string.action_search),
                                     icon = Icons.Outlined.Search,
                                     onClick = { navigator.navigate(SettingsSearchScreen(), twoPane) },
                                 ),
@@ -148,8 +146,8 @@ object SettingsMainScreen : Screen() {
     }
 
     private data class Item(
-        val titleRes: StringResource,
-        val subtitleRes: StringResource? = null,
+        val titleRes: Int,
+        val subtitleRes: Int? = null,
         val formatSubtitle: @Composable () -> String? = { subtitleRes?.let { stringResource(it) } },
         val icon: ImageVector,
         val screen: VoyagerScreen,
@@ -157,63 +155,63 @@ object SettingsMainScreen : Screen() {
 
     private val items = listOf(
         Item(
-            titleRes = ephyra.i18n.R.string.pref_category_appearance,
-            subtitleRes = ephyra.i18n.R.string.pref_appearance_summary,
+            titleRes = ephyra.app.core.common.R.string.pref_category_appearance,
+            subtitleRes = ephyra.app.core.common.R.string.pref_appearance_summary,
             icon = Icons.Outlined.Palette,
             screen = SettingsAppearanceScreen,
         ),
         Item(
-            titleRes = ephyra.i18n.R.string.pref_category_library,
-            subtitleRes = ephyra.i18n.R.string.pref_library_summary,
+            titleRes = ephyra.app.core.common.R.string.pref_category_library,
+            subtitleRes = ephyra.app.core.common.R.string.pref_library_summary,
             icon = Icons.Outlined.CollectionsBookmark,
             screen = SettingsLibraryScreen,
         ),
         Item(
-            titleRes = ephyra.i18n.R.string.pref_category_reader,
-            subtitleRes = ephyra.i18n.R.string.pref_reader_summary,
+            titleRes = ephyra.app.core.common.R.string.pref_category_reader,
+            subtitleRes = ephyra.app.core.common.R.string.pref_reader_summary,
             icon = Icons.AutoMirrored.Outlined.ChromeReaderMode,
             screen = SettingsReaderScreen,
         ),
         Item(
-            titleRes = ephyra.i18n.R.string.pref_category_downloads,
-            subtitleRes = ephyra.i18n.R.string.pref_downloads_summary,
+            titleRes = ephyra.app.core.common.R.string.pref_category_downloads,
+            subtitleRes = ephyra.app.core.common.R.string.pref_downloads_summary,
             icon = Icons.Outlined.GetApp,
             screen = SettingsDownloadScreen,
         ),
         Item(
-            titleRes = ephyra.i18n.R.string.pref_category_tracking,
-            subtitleRes = ephyra.i18n.R.string.pref_tracking_summary,
+            titleRes = ephyra.app.core.common.R.string.pref_category_tracking,
+            subtitleRes = ephyra.app.core.common.R.string.pref_tracking_summary,
             icon = Icons.Outlined.Sync,
             screen = SettingsTrackingScreen,
         ),
         Item(
-            titleRes = ephyra.i18n.R.string.label_discover,
-            subtitleRes = ephyra.i18n.R.string.pref_browse_summary,
+            titleRes = ephyra.app.core.common.R.string.label_discover,
+            subtitleRes = ephyra.app.core.common.R.string.pref_browse_summary,
             icon = Icons.Outlined.Explore,
             screen = SettingsBrowseScreen,
         ),
         Item(
-            titleRes = ephyra.i18n.R.string.label_data_storage,
-            subtitleRes = ephyra.i18n.R.string.pref_backup_summary,
+            titleRes = ephyra.app.core.common.R.string.label_data_storage,
+            subtitleRes = ephyra.app.core.common.R.string.pref_backup_summary,
             icon = Icons.Outlined.Storage,
             screen = SettingsDataScreen,
         ),
         Item(
-            titleRes = ephyra.i18n.R.string.pref_category_security,
-            subtitleRes = ephyra.i18n.R.string.pref_security_summary,
+            titleRes = ephyra.app.core.common.R.string.pref_category_security,
+            subtitleRes = ephyra.app.core.common.R.string.pref_security_summary,
             icon = Icons.Outlined.Security,
             screen = SettingsSecurityScreen,
         ),
         Item(
-            titleRes = ephyra.i18n.R.string.pref_category_advanced,
-            subtitleRes = ephyra.i18n.R.string.pref_advanced_summary,
+            titleRes = ephyra.app.core.common.R.string.pref_category_advanced,
+            subtitleRes = ephyra.app.core.common.R.string.pref_advanced_summary,
             icon = Icons.Outlined.Code,
             screen = SettingsAdvancedScreen,
         ),
         Item(
-            titleRes = ephyra.i18n.R.string.pref_category_about,
+            titleRes = ephyra.app.core.common.R.string.pref_category_about,
             formatSubtitle = {
-                "${stringResource(ephyra.i18n.R.string.app_name)} ${AboutScreen.getVersionName(withBuildDate = false)}"
+                "${stringResource(ephyra.app.core.common.R.string.app_name)} ${AboutScreen.getVersionName(withBuildDate = false)}"
             },
             icon = Icons.Outlined.Info,
             screen = AboutScreen,

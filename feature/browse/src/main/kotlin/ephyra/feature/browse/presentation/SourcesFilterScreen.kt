@@ -17,7 +17,6 @@ import ephyra.core.common.util.system.LocaleHelper
 import ephyra.domain.source.model.Source
 import ephyra.feature.browse.presentation.components.BaseSourceItem
 import ephyra.feature.browse.source.SourcesFilterScreenModel
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.FastScrollLazyColumn
 import ephyra.presentation.core.components.material.Scaffold
@@ -36,7 +35,7 @@ fun SourcesFilterScreen(
     Scaffold(
         topBar = { scrollBehavior ->
             AppBar(
-                title = stringResource(ephyra.i18n.R.string.label_sources),
+                title = stringResource(ephyra.app.core.common.R.string.label_sources),
                 navigateUp = navigateUp,
                 scrollBehavior = scrollBehavior,
             )
@@ -44,7 +43,7 @@ fun SourcesFilterScreen(
     ) { contentPadding ->
         if (state.isEmpty) {
             EmptyScreen(
-                stringRes = ephyra.i18n.R.string.source_filter_empty_screen,
+                stringRes = ephyra.app.core.common.R.string.source_filter_empty_screen,
                 modifier = Modifier.padding(contentPadding),
             )
             return@Scaffold

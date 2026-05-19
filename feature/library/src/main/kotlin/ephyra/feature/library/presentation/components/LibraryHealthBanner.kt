@@ -21,7 +21,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.theme.MotionTokens
@@ -75,7 +74,7 @@ fun LibraryHealthBanner(
                 .fillMaxWidth()
                 .background(containerColor)
                 .clickable(
-                    onClickLabel = stringResource(ephyra.i18n.R.string.source_health_banner_description),
+                    onClickLabel = stringResource(ephyra.app.core.common.R.string.source_health_banner_description),
                     onClick = onClickFilter,
                 )
                 .padding(
@@ -89,22 +88,22 @@ fun LibraryHealthBanner(
             Icon(
                 imageVector = Icons.Outlined.Warning,
                 contentDescription = if (isDead) {
-                    stringResource(ephyra.i18n.R.string.source_health_warning_dead)
+                    stringResource(ephyra.app.core.common.R.string.source_health_warning_dead)
                 } else {
-                    stringResource(ephyra.i18n.R.string.source_health_warning_degraded)
+                    stringResource(ephyra.app.core.common.R.string.source_health_warning_degraded)
                 },
                 tint = contentColor,
             )
 
             Text(
-                text = stringResource(ephyra.i18n.R.string.library_health_banner_summary),
+                text = stringResource(ephyra.app.core.common.R.string.library_health_banner_summary),
                 color = contentColor,
                 style = MaterialTheme.typography.labelLarge,
             )
 
             val parts = buildList {
-                if (deadCount > 0) add(stringResource(ephyra.i18n.R.string.library_health_banner_dead, deadCount))
-                if (degradedCount > 0) add(stringResource(ephyra.i18n.R.string.library_health_banner_degraded, degradedCount))
+                if (deadCount > 0) add(stringResource(ephyra.app.core.common.R.string.library_health_banner_dead, deadCount))
+                if (degradedCount > 0) add(stringResource(ephyra.app.core.common.R.string.library_health_banner_degraded, degradedCount))
             }
             Text(
                 text = parts.joinToString(", "),

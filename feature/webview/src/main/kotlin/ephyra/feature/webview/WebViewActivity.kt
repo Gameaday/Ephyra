@@ -10,7 +10,6 @@ import androidx.core.net.toUri
 import ephyra.core.common.util.system.WebViewUtil
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.source.service.SourceManager
-import ephyra.i18n.MR
 import ephyra.presentation.core.R
 import ephyra.presentation.core.ui.activity.BaseActivity
 import ephyra.presentation.core.util.system.openInBrowser
@@ -22,17 +21,16 @@ import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.source.online.HttpSource
 import logcat.LogPriority
 import okhttp3.HttpUrl.Companion.toHttpUrl
-import org.koin.android.ext.android.inject
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class WebViewActivity : BaseActivity() {
 
-    private val sourceManager: SourceManager by inject()
-    private val network: NetworkHelper by inject()
+    @Inject lateinit var sourceManager: SourceManager
+    @Inject lateinit var network: NetworkHelper
 
     private var assistUrl: String? = null
-
-    init {
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         overrideTransitionCompat(
@@ -43,7 +41,7 @@ class WebViewActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
 
         if (!WebViewUtil.supportsWebView(this)) {
-            toast(ephyra.i18n.R.string.information_webview_required, Toast.LENGTH_LONG)
+            toast(ephyra.app.core.common.R.string.information_webview_required, Toast.LENGTH_LONG)
             finish()
             return
         }

@@ -15,7 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import ephyra.core.common.util.system.LocaleHelper
 import ephyra.feature.browse.extension.ExtensionFilterState
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding
@@ -31,7 +30,7 @@ fun ExtensionFilterScreen(
     Scaffold(
         topBar = { scrollBehavior ->
             AppBar(
-                title = stringResource(ephyra.i18n.R.string.label_extensions),
+                title = stringResource(ephyra.app.core.common.R.string.label_extensions),
                 navigateUp = navigateUp,
                 scrollBehavior = scrollBehavior,
             )
@@ -39,7 +38,7 @@ fun ExtensionFilterScreen(
     ) { contentPadding ->
         if (state.isEmpty) {
             EmptyScreen(
-                stringRes = ephyra.i18n.R.string.empty_screen,
+                stringRes = ephyra.app.core.common.R.string.empty_screen,
                 modifier = Modifier.padding(contentPadding),
             )
             return@Scaffold

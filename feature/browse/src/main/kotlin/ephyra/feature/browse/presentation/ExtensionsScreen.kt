@@ -42,7 +42,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import dev.icerock.moko.resources.StringResource
 import ephyra.core.common.util.system.LocaleHelper
 import ephyra.domain.extension.model.Extension
 import ephyra.domain.extension.model.InstallStep
@@ -51,7 +50,6 @@ import ephyra.feature.browse.extension.ExtensionsScreenModel
 import ephyra.feature.browse.presentation.components.BaseBrowseItem
 import ephyra.feature.browse.presentation.components.ExtensionIcon
 import ephyra.feature.manga.presentation.components.DotSeparatorNoSpaceText
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.FastScrollLazyColumn
 import ephyra.presentation.core.components.WarningBanner
 import ephyra.presentation.core.components.material.PullRefresh
@@ -69,7 +67,6 @@ import ephyra.presentation.core.util.rememberRequestPackageInstallsPermissionSta
 import ephyra.presentation.core.util.secondaryItemAlpha
 import ephyra.presentation.core.util.system.launchRequestPackageInstallsPermission
 import kotlinx.collections.immutable.persistentListOf
-import org.koin.compose.koinInject
 
 @Composable
 fun ExtensionScreen(
@@ -88,7 +85,7 @@ fun ExtensionScreen(
     onRefresh: () -> Unit,
 ) {
     val navigator = LocalNavigator.currentOrThrow
-    val extensionReposFactory = koinInject<ExtensionReposScreenFactory>()
+    val extensionReposFactory = remember { ephyra.core.common.di.CoreContainer.get<ExtensionReposScreenFactory>() }
 
     PullRefresh(
         refreshing = state.isRefreshing,
@@ -99,16 +96,16 @@ fun ExtensionScreen(
             state.isLoading -> LoadingScreen(Modifier.padding(contentPadding))
             state.isEmpty -> {
                 val msg = if (!searchQuery.isNullOrEmpty()) {
-                    ephyra.i18n.R.string.no_results_found
+                    ephyra.app.core.common.R.string.no_results_found
                 } else {
-                    ephyra.i18n.R.string.empty_screen
+                    ephyra.app.core.common.R.string.empty_screen
                 }
                 EmptyScreen(
                     stringRes = msg,
                     modifier = Modifier.padding(contentPadding),
                     actions = persistentListOf(
                         EmptyScreenAction(
-                            stringRes = ephyra.i18n.R.string.label_extension_repos,
+                            stringRes = ephyra.app.core.common.R.string.label_extension_repos,
                             icon = Icons.Outlined.Settings,
                             onClick = { navigator.push(extensionReposFactory.create(null)) },
                         ),
@@ -159,7 +156,7 @@ private fun ExtensionContent(
         if (!installGranted && state.installer?.requiresSystemPermission == true) {
             item(key = "extension-permissions-warning") {
                 WarningBanner(
-                    text = stringResource(ephyra.i18n.R.string.ext_permission_install_apps_warning),
+                    text = stringResource(ephyra.app.core.common.R.string.ext_permission_install_apps_warning),
                     modifier = Modifier.clickable {
                         context.launchRequestPackageInstallsPermission()
                     },
@@ -178,11 +175,11 @@ private fun ExtensionContent(
                 when (header) {
                     is ExtensionUiModel.Header.Resource -> {
                         val action: @Composable RowScope.() -> Unit =
-                            if (header.textRes == ephyra.i18n.R.string.ext_updates_pending) {
+                            if (header.textRes == ephyra.app.core.common.R.string.ext_updates_pending) {
                                 {
                                     Button(onClick = { onClickUpdateAll() }) {
                                         Text(
-                                            text = stringResource(ephyra.i18n.R.string.ext_update_all),
+                                            text = stringResource(ephyra.app.core.common.R.string.ext_update_all),
                                             style = LocalTextStyle.current.copy(
                                                 color = MaterialTheme.colorScheme.onPrimary,
                                             ),
@@ -373,9 +370,9 @@ private fun ExtensionItemContent(
                 }
 
                 val warning = when {
-                    extension is Extension.Untrusted -> ephyra.i18n.R.string.ext_untrusted
-                    extension is Extension.Installed && extension.isObsolete -> ephyra.i18n.R.string.ext_obsolete
-                    extension.isNsfw -> ephyra.i18n.R.string.ext_nsfw_short
+                    extension is Extension.Untrusted -> ephyra.app.core.common.R.string.ext_untrusted
+                    extension is Extension.Installed && extension.isObsolete -> ephyra.app.core.common.R.string.ext_obsolete
+                    extension.isNsfw -> ephyra.app.core.common.R.string.ext_nsfw_short
                     else -> null
                 }
                 if (warning != null) {
@@ -391,7 +388,7 @@ private fun ExtensionItemContent(
                 if (extension is Extension.Installed && !extension.isShared) {
                     if (hasAlreadyShownAnElement) DotSeparatorNoSpaceText()
                     Text(
-                        text = stringResource(ephyra.i18n.R.string.ext_installer_private),
+                        text = stringResource(ephyra.app.core.common.R.string.ext_installer_private),
                     )
                 }
 
@@ -399,9 +396,9 @@ private fun ExtensionItemContent(
                     DotSeparatorNoSpaceText()
                     Text(
                         text = when (installStep) {
-                            InstallStep.Pending -> stringResource(ephyra.i18n.R.string.ext_pending)
-                            InstallStep.Downloading -> stringResource(ephyra.i18n.R.string.ext_downloading)
-                            InstallStep.Installing -> stringResource(ephyra.i18n.R.string.ext_installing)
+                            InstallStep.Pending -> stringResource(ephyra.app.core.common.R.string.ext_pending)
+                            InstallStep.Downloading -> stringResource(ephyra.app.core.common.R.string.ext_downloading)
+                            InstallStep.Installing -> stringResource(ephyra.app.core.common.R.string.ext_installing)
                             else -> error("Must not show non-install process text")
                         },
                     )
@@ -431,7 +428,7 @@ private fun ExtensionItemActions(
                 IconButton(onClick = { onClickItemCancel(extension) }) {
                     Icon(
                         imageVector = Icons.Outlined.Close,
-                        contentDescription = stringResource(ephyra.i18n.R.string.action_cancel),
+                        contentDescription = stringResource(ephyra.app.core.common.R.string.action_cancel),
                     )
                 }
             }
@@ -440,7 +437,7 @@ private fun ExtensionItemActions(
                 IconButton(onClick = { onClickItemAction(extension) }) {
                     Icon(
                         imageVector = Icons.Outlined.Refresh,
-                        contentDescription = stringResource(ephyra.i18n.R.string.action_retry),
+                        contentDescription = stringResource(ephyra.app.core.common.R.string.action_retry),
                     )
                 }
             }
@@ -451,7 +448,7 @@ private fun ExtensionItemActions(
                         IconButton(onClick = { onClickItemSecondaryAction(extension) }) {
                             Icon(
                                 imageVector = Icons.Outlined.Settings,
-                                contentDescription = stringResource(ephyra.i18n.R.string.action_settings),
+                                contentDescription = stringResource(ephyra.app.core.common.R.string.action_settings),
                             )
                         }
 
@@ -459,7 +456,7 @@ private fun ExtensionItemActions(
                             IconButton(onClick = { onClickItemAction(extension) }) {
                                 Icon(
                                     imageVector = Icons.Outlined.GetApp,
-                                    contentDescription = stringResource(ephyra.i18n.R.string.ext_update),
+                                    contentDescription = stringResource(ephyra.app.core.common.R.string.ext_update),
                                 )
                             }
                         }
@@ -469,7 +466,7 @@ private fun ExtensionItemActions(
                         IconButton(onClick = { onClickItemAction(extension) }) {
                             Icon(
                                 imageVector = Icons.Outlined.VerifiedUser,
-                                contentDescription = stringResource(ephyra.i18n.R.string.ext_trust),
+                                contentDescription = stringResource(ephyra.app.core.common.R.string.ext_trust),
                             )
                         }
                     }
@@ -481,7 +478,7 @@ private fun ExtensionItemActions(
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.Public,
-                                    contentDescription = stringResource(ephyra.i18n.R.string.action_open_in_web_view),
+                                    contentDescription = stringResource(ephyra.app.core.common.R.string.action_open_in_web_view),
                                 )
                             }
                         }
@@ -489,7 +486,7 @@ private fun ExtensionItemActions(
                         IconButton(onClick = { onClickItemAction(extension) }) {
                             Icon(
                                 imageVector = Icons.Outlined.GetApp,
-                                contentDescription = stringResource(ephyra.i18n.R.string.ext_install),
+                                contentDescription = stringResource(ephyra.app.core.common.R.string.ext_install),
                             )
                         }
                     }
@@ -501,7 +498,7 @@ private fun ExtensionItemActions(
 
 @Composable
 private fun ExtensionHeader(
-    textRes: StringResource,
+    textRes: Int,
     modifier: Modifier = Modifier,
     action: @Composable RowScope.() -> Unit = {},
 ) {
@@ -541,19 +538,19 @@ private fun ExtensionTrustDialog(
 ) {
     AlertDialog(
         title = {
-            Text(text = stringResource(ephyra.i18n.R.string.untrusted_extension))
+            Text(text = stringResource(ephyra.app.core.common.R.string.untrusted_extension))
         },
         text = {
-            Text(text = stringResource(ephyra.i18n.R.string.untrusted_extension_message))
+            Text(text = stringResource(ephyra.app.core.common.R.string.untrusted_extension_message))
         },
         confirmButton = {
             TextButton(onClick = onClickConfirm) {
-                Text(text = stringResource(ephyra.i18n.R.string.ext_trust))
+                Text(text = stringResource(ephyra.app.core.common.R.string.ext_trust))
             }
         },
         dismissButton = {
             TextButton(onClick = onClickDismiss) {
-                Text(text = stringResource(ephyra.i18n.R.string.ext_uninstall))
+                Text(text = stringResource(ephyra.app.core.common.R.string.ext_uninstall))
             }
         },
         onDismissRequest = onDismissRequest,

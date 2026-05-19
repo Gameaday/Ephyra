@@ -13,7 +13,7 @@ import ephyra.feature.reader.model.ViewerChapters
 import ephyra.feature.reader.util.createReaderThemeContext
 import ephyra.feature.reader.viewer.calculateChapterGap
 import ephyra.feature.reader.widget.ViewPagerAdapter
-import org.koin.android.ext.android.getKoin
+import ephyra.core.common.di.CoreContainer
 
 /**
  * Pager adapter used by this [viewer] to where [ViewerChapters] updates are posted.
@@ -41,8 +41,8 @@ class PagerViewerAdapter(private val viewer: PagerViewer) : ViewPagerAdapter() {
      * current app theme and reader background color
      */
     private var readerThemedContext = viewer.activity.createReaderThemeContext(
-        viewer.activity.getKoin().get<UiPreferences>(),
-        viewer.activity.getKoin().get<ReaderPreferences>(),
+        CoreContainer.get<UiPreferences>(),
+        CoreContainer.get<ReaderPreferences>(),
     )
 
     /**
@@ -208,8 +208,8 @@ class PagerViewerAdapter(private val viewer: PagerViewer) : ViewPagerAdapter() {
 
     fun refresh() {
         readerThemedContext = viewer.activity.createReaderThemeContext(
-            viewer.activity.getKoin().get<UiPreferences>(),
-            viewer.activity.getKoin().get<ReaderPreferences>(),
+            CoreContainer.get<UiPreferences>(),
+            CoreContainer.get<ReaderPreferences>(),
         )
     }
 }

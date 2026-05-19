@@ -4,7 +4,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource
 
 @Composable
@@ -14,7 +13,7 @@ fun UpdatesDeleteConfirmationDialog(
 ) {
     AlertDialog(
         text = {
-            Text(text = stringResource(ephyra.i18n.R.string.confirm_delete_chapters))
+            Text(text = stringResource(ephyra.app.core.common.R.string.confirm_delete_chapters))
         },
         onDismissRequest = onDismissRequest,
         confirmButton = {
@@ -22,12 +21,12 @@ fun UpdatesDeleteConfirmationDialog(
                 onConfirm()
                 onDismissRequest()
             }) {
-                Text(text = stringResource(ephyra.i18n.R.string.action_ok))
+                Text(text = stringResource(ephyra.app.core.common.R.string.action_ok))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
+                Text(text = stringResource(ephyra.app.core.common.R.string.action_cancel))
             }
         },
     )

@@ -16,7 +16,6 @@ import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import ephyra.core.common.Constants
-import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource
 
 @Composable
@@ -34,7 +33,7 @@ fun LockedWidget(
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = stringResource(ephyra.i18n.R.string.appwidget_unavailable_locked),
+            text = stringResource(ephyra.app.core.common.R.string.appwidget_unavailable_locked),
             style = TextStyle(
                 color = foreground,
                 fontSize = 12.sp,

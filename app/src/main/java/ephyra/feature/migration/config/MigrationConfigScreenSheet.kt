@@ -38,7 +38,6 @@ import ephyra.core.util.fastFilterNot
 import ephyra.domain.migration.models.MigrationFlag
 import ephyra.domain.source.service.SourcePreferences
 import ephyra.feature.common.utils.getLabel
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AdaptiveSheet
 import ephyra.presentation.core.components.material.Button
 import ephyra.presentation.core.components.material.padding
@@ -67,7 +66,7 @@ fun MigrationConfigScreenSheet(
                     .padding(top = MaterialTheme.padding.medium),
             ) {
                 Text(
-                    text = stringResource(ephyra.i18n.R.string.migrationConfigScreen_dataToMigrateHeader),
+                    text = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_dataToMigrateHeader),
                     style = MaterialTheme.typography.header,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -113,7 +112,7 @@ fun MigrationConfigScreenSheet(
                 }
                 val removeDownloads = MigrationFlag.REMOVE_DOWNLOAD in migrationFlags
                 MigrationSheetSwitchItem(
-                    title = stringResource(ephyra.i18n.R.string.migrationConfigScreen_removeDownloadsTitle),
+                    title = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_removeDownloadsTitle),
                     subtitle = null,
                     checked = removeDownloads,
                     onClick = {
@@ -132,9 +131,9 @@ fun MigrationConfigScreenSheet(
                 OutlinedTextField(
                     value = extraSearchQuery,
                     onValueChange = { extraSearchQuery = it },
-                    label = { Text(stringResource(ephyra.i18n.R.string.migrationConfigScreen_additionalSearchQueryLabel)) },
+                    label = { Text(stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_additionalSearchQueryLabel)) },
                     supportingText = {
-                        Text(stringResource(ephyra.i18n.R.string.migrationConfigScreen_additionalSearchQuerySupportingText))
+                        Text(stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_additionalSearchQuerySupportingText))
                     },
                     singleLine = true,
                     modifier = Modifier
@@ -145,25 +144,25 @@ fun MigrationConfigScreenSheet(
                         ),
                 )
                 MigrationSheetSwitchItem(
-                    title = stringResource(ephyra.i18n.R.string.migrationConfigScreen_hideUnmatchedTitle),
+                    title = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_hideUnmatchedTitle),
                     subtitle = null,
                     preference = preferences.migrationHideUnmatched(),
                 )
                 MigrationSheetSwitchItem(
-                    title = stringResource(ephyra.i18n.R.string.migrationConfigScreen_hideWithoutUpdatesTitle),
-                    subtitle = stringResource(ephyra.i18n.R.string.migrationConfigScreen_hideWithoutUpdatesSubtitle),
+                    title = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_hideWithoutUpdatesTitle),
+                    subtitle = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_hideWithoutUpdatesSubtitle),
                     preference = preferences.migrationHideWithoutUpdates(),
                 )
                 MigrationSheetDividerItem()
-                MigrationSheetWarningItem(stringResource(ephyra.i18n.R.string.migrationConfigScreen_enhancedOptionsWarning))
+                MigrationSheetWarningItem(stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_enhancedOptionsWarning))
                 MigrationSheetSwitchItem(
-                    title = stringResource(ephyra.i18n.R.string.migrationConfigScreen_deepSearchModeTitle),
-                    subtitle = stringResource(ephyra.i18n.R.string.migrationConfigScreen_deepSearchModeSubtitle),
+                    title = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_deepSearchModeTitle),
+                    subtitle = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_deepSearchModeSubtitle),
                     preference = preferences.migrationDeepSearchMode(),
                 )
                 MigrationSheetSwitchItem(
-                    title = stringResource(ephyra.i18n.R.string.migrationConfigScreen_prioritizeByChaptersTitle),
-                    subtitle = stringResource(ephyra.i18n.R.string.migrationConfigScreen_prioritizeByChaptersSubtitle),
+                    title = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_prioritizeByChaptersTitle),
+                    subtitle = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_prioritizeByChaptersSubtitle),
                     preference = preferences.migrationPrioritizeByChapters(),
                 )
             }
@@ -180,7 +179,7 @@ fun MigrationConfigScreenSheet(
                         vertical = MaterialTheme.padding.small,
                     ),
             ) {
-                Text(text = stringResource(ephyra.i18n.R.string.migrationConfigScreen_continueButtonText))
+                Text(text = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_continueButtonText))
             }
         }
     }

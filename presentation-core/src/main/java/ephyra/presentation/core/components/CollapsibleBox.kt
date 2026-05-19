@@ -21,7 +21,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.theme.MotionTokens
@@ -54,7 +53,7 @@ fun CollapsibleBox(
             Icon(
                 imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                 contentDescription = stringResource(
-                    if (expanded) ephyra.i18n.R.string.manga_info_collapse else ephyra.i18n.R.string.manga_info_expand,
+                    if (expanded) ephyra.app.core.common.R.string.manga_info_collapse else ephyra.app.core.common.R.string.manga_info_expand,
                 ),
             )
         }

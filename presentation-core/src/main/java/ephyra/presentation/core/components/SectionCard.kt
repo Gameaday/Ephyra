@@ -10,14 +10,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import dev.icerock.moko.resources.StringResource
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.theme.sectionLabel
 
 @Composable
 fun LazyItemScope.SectionCard(
-    titleRes: StringResource? = null,
+    titleRes: Int? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     if (titleRes != null) {

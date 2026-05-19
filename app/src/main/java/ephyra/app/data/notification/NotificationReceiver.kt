@@ -25,33 +25,27 @@ import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.service.SourceManager
 import ephyra.feature.reader.ReaderActivity
-import ephyra.i18n.MR
 import ephyra.presentation.core.util.system.getParcelableExtraCompat
 import ephyra.presentation.core.util.system.toShareIntent
 import ephyra.presentation.core.util.system.toast
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import ephyra.app.BuildConfig.APPLICATION_ID as ID
 
 /**
  * Global [BroadcastReceiver] that runs on UI thread
  * Pending Broadcasts should be made from here.
  * NOTE: Use local broadcasts if possible.
- *
- * Implements [KoinComponent] so that dependencies are resolved through Koin's
- * standard injection mechanism rather than accessing [GlobalContext] directly.
- * The `by inject()` delegates are lazy, meaning Koin is only queried when
- * [onReceive] is actually invoked — well after [App.onCreate] has called
- * [startKoin], so the container is always available.
  */
-class NotificationReceiver : BroadcastReceiver(), KoinComponent {
+@AndroidEntryPoint
+class NotificationReceiver : BroadcastReceiver() {
 
-    private val getManga: GetManga by inject()
-    private val getChapter: GetChapter by inject()
-    private val updateChapter: UpdateChapter by inject()
-    private val downloadManager: DownloadManager by inject()
-    private val downloadPreferences: DownloadPreferences by inject()
-    private val sourceManager: SourceManager by inject()
+    @Inject lateinit var getManga: GetManga
+    @Inject lateinit var getChapter: GetChapter
+    @Inject lateinit var updateChapter: UpdateChapter
+    @Inject lateinit var downloadManager: DownloadManager
+    @Inject lateinit var downloadPreferences: DownloadPreferences
+    @Inject lateinit var sourceManager: SourceManager
 
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
@@ -174,7 +168,7 @@ class NotificationReceiver : BroadcastReceiver(), KoinComponent {
                 }
                 context.startActivity(intent)
             } else {
-                context.toast(ephyra.i18n.R.string.chapter_error)
+                context.toast(ephyra.app.core.common.R.string.chapter_error)
             }
         }
     }

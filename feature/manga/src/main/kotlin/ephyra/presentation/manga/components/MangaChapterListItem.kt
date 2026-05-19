@@ -38,7 +38,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ephyra.domain.download.model.Download
 import ephyra.domain.library.service.LibraryPreferences
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.DISABLED_ALPHA
 import ephyra.presentation.core.components.material.SECONDARY_ALPHA
 import ephyra.presentation.core.i18n.stringResource
@@ -110,7 +109,7 @@ fun MangaChapterListItem(
                     if (!read) {
                         Icon(
                             imageVector = Icons.Filled.Circle,
-                            contentDescription = stringResource(ephyra.i18n.R.string.unread),
+                            contentDescription = stringResource(ephyra.app.core.common.R.string.unread),
                             modifier = Modifier
                                 .height(8.dp)
                                 .padding(end = 4.dp),
@@ -120,7 +119,7 @@ fun MangaChapterListItem(
                     if (bookmark) {
                         Icon(
                             imageVector = Icons.Filled.Bookmark,
-                            contentDescription = stringResource(ephyra.i18n.R.string.action_filter_bookmarked),
+                            contentDescription = stringResource(ephyra.app.core.common.R.string.action_filter_bookmarked),
                             modifier = Modifier
                                 .sizeIn(maxHeight = with(LocalDensity.current) { textHeight.toDp() - 2.dp }),
                             tint = MaterialTheme.colorScheme.primary,

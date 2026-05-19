@@ -27,7 +27,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import ephyra.feature.browse.source.globalsearch.SourceFilter
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.SearchToolbar
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
@@ -87,7 +86,7 @@ fun GlobalSearchToolbar(
                         )
                     },
                     label = {
-                        Text(text = stringResource(ephyra.i18n.R.string.pinned_sources))
+                        Text(text = stringResource(ephyra.app.core.common.R.string.pinned_sources))
                     },
                 )
                 FilterChip(
@@ -102,7 +101,7 @@ fun GlobalSearchToolbar(
                         )
                     },
                     label = {
-                        Text(text = stringResource(ephyra.i18n.R.string.all))
+                        Text(text = stringResource(ephyra.app.core.common.R.string.all))
                     },
                 )
 
@@ -121,7 +120,7 @@ fun GlobalSearchToolbar(
                     )
                 },
                 label = {
-                    Text(text = stringResource(ephyra.i18n.R.string.has_results))
+                    Text(text = stringResource(ephyra.app.core.common.R.string.has_results))
                 },
             )
         }

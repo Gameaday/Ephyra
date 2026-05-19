@@ -17,7 +17,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import ephyra.domain.category.model.Category
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import sh.calvin.reorderable.ReorderableCollectionItemScope
@@ -55,13 +54,13 @@ fun ReorderableCollectionItemScope.CategoryListItem(
             IconButton(onClick = onRename) {
                 Icon(
                     imageVector = Icons.Outlined.Edit,
-                    contentDescription = stringResource(ephyra.i18n.R.string.action_rename_category),
+                    contentDescription = stringResource(ephyra.app.core.common.R.string.action_rename_category),
                 )
             }
             IconButton(onClick = onDelete) {
                 Icon(
                     imageVector = Icons.Outlined.Delete,
-                    contentDescription = stringResource(ephyra.i18n.R.string.action_delete),
+                    contentDescription = stringResource(ephyra.app.core.common.R.string.action_delete),
                 )
             }
         }

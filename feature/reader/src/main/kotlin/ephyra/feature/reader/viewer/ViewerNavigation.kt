@@ -3,19 +3,17 @@ package ephyra.feature.reader.viewer
 import android.graphics.Color
 import android.graphics.PointF
 import android.graphics.RectF
-import dev.icerock.moko.resources.StringResource
 import ephyra.domain.reader.service.ReaderPreferences
-import ephyra.i18n.MR
 import ephyra.presentation.core.util.invert
 
 abstract class ViewerNavigation {
 
-    sealed class NavigationRegion(val nameRes: StringResource, val color: Int) {
-        data object MENU : NavigationRegion(ephyra.i18n.R.string.action_menu, Color.argb(0xCC, 0x95, 0x81, 0x8D))
-        data object PREV : NavigationRegion(ephyra.i18n.R.string.nav_zone_prev, Color.argb(0xCC, 0xFF, 0x77, 0x33))
-        data object NEXT : NavigationRegion(ephyra.i18n.R.string.nav_zone_next, Color.argb(0xCC, 0x84, 0xE2, 0x96))
-        data object LEFT : NavigationRegion(ephyra.i18n.R.string.nav_zone_left, Color.argb(0xCC, 0x7D, 0x11, 0x28))
-        data object RIGHT : NavigationRegion(ephyra.i18n.R.string.nav_zone_right, Color.argb(0xCC, 0xA6, 0xCF, 0xD5))
+    sealed class NavigationRegion(val nameRes: Int, val color: Int) {
+        data object MENU : NavigationRegion(ephyra.app.core.common.R.string.action_menu, Color.argb(0xCC, 0x95, 0x81, 0x8D))
+        data object PREV : NavigationRegion(ephyra.app.core.common.R.string.nav_zone_prev, Color.argb(0xCC, 0xFF, 0x77, 0x33))
+        data object NEXT : NavigationRegion(ephyra.app.core.common.R.string.nav_zone_next, Color.argb(0xCC, 0x84, 0xE2, 0x96))
+        data object LEFT : NavigationRegion(ephyra.app.core.common.R.string.nav_zone_left, Color.argb(0xCC, 0x7D, 0x11, 0x28))
+        data object RIGHT : NavigationRegion(ephyra.app.core.common.R.string.nav_zone_right, Color.argb(0xCC, 0xA6, 0xCF, 0xD5))
     }
 
     data class Region(

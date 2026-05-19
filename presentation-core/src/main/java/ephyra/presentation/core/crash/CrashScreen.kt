@@ -15,14 +15,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import ephyra.domain.extension.service.ExtensionManager
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.InfoScreen
 import ephyra.presentation.core.util.CrashLogUtil
 import ephyra.presentation.theme.TachiyomiPreviewTheme
 import kotlinx.coroutines.launch
-import org.koin.compose.koinInject
 
 @Composable
 fun CrashScreen(
@@ -31,19 +29,19 @@ fun CrashScreen(
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    val extensionManager = koinInject<ExtensionManager>()
+    val extensionManager = androidx.compose.runtime.remember { ephyra.core.common.di.CoreContainer.get<ExtensionManager>() }
 
     InfoScreen(
         icon = Icons.Outlined.BugReport,
-        headingText = stringResource(ephyra.i18n.R.string.crash_screen_title),
-        subtitleText = stringResource(ephyra.i18n.R.string.crash_screen_description, stringResource(ephyra.i18n.R.string.app_name)),
-        acceptText = stringResource(ephyra.i18n.R.string.pref_dump_crash_logs),
+        headingText = stringResource(ephyra.app.core.common.R.string.crash_screen_title),
+        subtitleText = stringResource(ephyra.app.core.common.R.string.crash_screen_description, stringResource(ephyra.app.core.common.R.string.app_name)),
+        acceptText = stringResource(ephyra.app.core.common.R.string.pref_dump_crash_logs),
         onAcceptClick = {
             scope.launch {
                 CrashLogUtil(context, extensionManager).dumpLogs(exception)
             }
         },
-        rejectText = stringResource(ephyra.i18n.R.string.crash_screen_restart_application),
+        rejectText = stringResource(ephyra.app.core.common.R.string.crash_screen_restart_application),
         onRejectClick = onRestartClick,
     ) {
         Box(

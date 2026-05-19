@@ -49,7 +49,6 @@ import ephyra.core.common.util.system.isDynamicColorAvailable
 import ephyra.domain.ui.UiPreferences
 import ephyra.domain.ui.model.AppTheme
 import ephyra.feature.manga.presentation.components.MangaCover
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.LocalUiPreferences
@@ -176,7 +175,7 @@ fun AppThemePreviewItem(
                 if (selected) {
                     Icon(
                         imageVector = Icons.Filled.CheckCircle,
-                        contentDescription = stringResource(ephyra.i18n.R.string.selected),
+                        contentDescription = stringResource(ephyra.app.core.common.R.string.selected),
                         tint = MaterialTheme.colorScheme.primary,
                     )
                 }

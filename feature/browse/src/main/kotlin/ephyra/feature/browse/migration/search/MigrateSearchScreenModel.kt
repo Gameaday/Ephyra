@@ -1,6 +1,8 @@
 package ephyra.feature.browse.migration.search
 
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.interactor.NetworkToLocalManga
@@ -11,12 +13,9 @@ import ephyra.feature.browse.source.globalsearch.SearchScreenModel
 import eu.kanade.tachiyomi.source.CatalogueSource
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.koin.core.annotation.Factory
-import org.koin.core.annotation.InjectedParam
 
-@Factory
-class MigrateSearchScreenModel(
-    @InjectedParam val mangaId: Long,
+@HiltViewModel
+class MigrateSearchScreenModel @Inject constructor(
     private val getManga: GetManga,
     sourcePreferences: SourcePreferences,
     sourceManager: SourceManager,
@@ -40,10 +39,14 @@ class MigrateSearchScreenModel(
         )
     }
 
-    init {
-        screenModelScope.launch {
+    private var isInitialized = false
+
+    fun init(mangaId: Long) {
+        if (isInitialized) return
+        isInitialized = true
+        viewModelScope.launch {
             val manga = getManga.await(mangaId)!!
-            mutableState.update {
+            _state.update {
                 it.copy(
                     from = manga,
                     searchQuery = manga.title,

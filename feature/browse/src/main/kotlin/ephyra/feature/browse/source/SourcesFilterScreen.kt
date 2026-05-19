@@ -5,11 +5,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.koin.koinScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.feature.browse.presentation.SourcesFilterScreen
-import ephyra.i18n.MR
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.util.Screen
 import ephyra.presentation.core.util.system.toast
@@ -19,7 +18,7 @@ class SourcesFilterScreen : Screen() {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val screenModel = koinScreenModel<SourcesFilterScreenModel>()
+        val screenModel = hiltViewModel<SourcesFilterScreenModel>()
         val state by screenModel.state.collectAsStateWithLifecycle()
 
         if (state is SourcesFilterScreenModel.State.Loading) {
@@ -30,7 +29,7 @@ class SourcesFilterScreen : Screen() {
         if (state is SourcesFilterScreenModel.State.Error) {
             val context = LocalContext.current
             LaunchedEffect(Unit) {
-                context.toast(ephyra.i18n.R.string.internal_error)
+                context.toast(ephyra.app.core.common.R.string.internal_error)
                 navigator.pop()
             }
             return

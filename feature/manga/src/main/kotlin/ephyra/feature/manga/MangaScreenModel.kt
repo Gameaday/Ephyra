@@ -3,8 +3,10 @@ package ephyra.feature.manga
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.util.fastAny
-import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.preference.CheckboxState
 import ephyra.core.common.preference.TriState
@@ -36,7 +38,6 @@ import ephyra.domain.manga.model.toSManga
 import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.domain.source.service.SourceManager
 import ephyra.feature.manga.presentation.components.ChapterDownloadAction
-import ephyra.i18n.MR
 import ephyra.presentation.core.util.asState
 import ephyra.presentation.core.util.manga.DownloadAction
 import ephyra.presentation.core.util.manga.removeCovers
@@ -45,8 +46,10 @@ import ephyra.source.local.isLocal
 import eu.kanade.tachiyomi.source.Source
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
@@ -57,13 +60,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
-import org.koin.core.annotation.Factory
-import org.koin.core.annotation.InjectedParam
 import java.time.Instant
 
-@Factory
-class MangaScreenModel(
-    @InjectedParam private val mangaId: Long,
+@HiltViewModel
+class MangaScreenModel @Inject constructor(
     private val getManga: ephyra.domain.manga.interactor.GetManga,
     private val downloadManager: DownloadManager,
     private val downloadCache: DownloadCache,
@@ -82,7 +82,10 @@ class MangaScreenModel(
     private val basePreferences: ephyra.domain.base.BasePreferences,
     private val coverCache: ephyra.domain.manga.service.CoverCache,
     val snackbarHostState: SnackbarHostState = SnackbarHostState(),
-) : StateScreenModel<MangaScreenModel.State>(State.Loading) {
+) : ViewModel() {
+
+    private val _state = MutableStateFlow<State>(State.Loading)
+    val state: StateFlow<State> = _state.asStateFlow()
 
     private val successState: State.Success?
         get() = state.value as? State.Success
@@ -93,33 +96,39 @@ class MangaScreenModel(
     val source: Source?
         get() = successState?.source
 
-    private val skipRead by readerPreferences.skipRead().asState(screenModelScope)
-    private val skipFiltered by readerPreferences.skipFiltered().asState(screenModelScope)
-    private val skipDupe by readerPreferences.skipDupe().asState(screenModelScope)
+    private val skipRead by readerPreferences.skipRead().asState(viewModelScope)
+    private val skipFiltered by readerPreferences.skipFiltered().asState(viewModelScope)
+    private val skipDupe by readerPreferences.skipDupe().asState(viewModelScope)
 
     private val selectedChapterIds = HashSet<Long>()
 
-    init {
-        screenModelScope.launch {
+    private var isInitialized = false
+
+    fun init(mangaId: Long, isFromSource: Boolean) {
+        if (isInitialized) return
+        isInitialized = true
+
+        viewModelScope.launch {
             getManga.subscribe(mangaId)
                 .distinctUntilChanged()
                 .collect { manga ->
                     if (manga == null) return@collect
-                    mutableState.update { state ->
+                    _state.update { state ->
                         when (state) {
                             is State.Loading -> State.Success(
                                 manga = manga,
                                 source = sourceManager.getOrStub(manga.source),
                                 isAnySelected = false,
                                 chapterListItems = emptyList(),
+                                isFromSource = isFromSource,
                             )
-                            is State.Success -> state.copy(manga = manga)
+                            is State.Success -> state.copy(manga = manga, isFromSource = isFromSource)
                         }
                     }
                 }
         }
 
-        screenModelScope.launch {
+        viewModelScope.launch {
             combine(
                 getMangaAndChapters.subscribe(mangaId),
                 downloadCache.changes,
@@ -127,8 +136,7 @@ class MangaScreenModel(
                 libraryPreferences.swipeToEndAction().changes(),
                 libraryPreferences.swipeToStartAction().changes(),
             ) { (manga, chapters), _, queue, swipeStart, swipeEnd ->
-
-                mutableState.update { state ->
+                _state.update { state ->
                     val success = state as? State.Success ?: return@update state
                     success.copy(
                         manga = manga,
@@ -144,7 +152,7 @@ class MangaScreenModel(
 
     fun toggleFavorite() {
         val manga = manga ?: return
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             val favorite = !manga.favorite
             if (mangaInfoInteractor.updateFavorite(manga.id, favorite)) {
                 mangaInfoInteractor.markJellyfinFavoriteIfLinked(manga, favorite)
@@ -177,62 +185,62 @@ class MangaScreenModel(
                 updateSelectionState()
             }
             MangaScreenEvent.DismissDialog -> {
-                mutableState.update { state ->
+                _state.update { state ->
                     val success = state as? State.Success ?: return@update state
                     success.copy(dialog = null)
                 }
             }
             MangaScreenEvent.ShowSettingsDialog -> {
-                mutableState.update { state ->
+                _state.update { state ->
                     val success = state as? State.Success ?: return@update state
                     success.copy(dialog = Dialog.SettingsSheet)
                 }
             }
             MangaScreenEvent.ShowTrackDialog -> {
-                mutableState.update { state ->
+                _state.update { state ->
                     val success = state as? State.Success ?: return@update state
                     success.copy(dialog = Dialog.TrackSheet)
                 }
             }
             MangaScreenEvent.ShowCoverDialog -> {
-                mutableState.update { state ->
+                _state.update { state ->
                     val success = state as? State.Success ?: return@update state
                     success.copy(dialog = Dialog.FullCover)
                 }
             }
             MangaScreenEvent.ShowEditMetadataDialog -> {
-                mutableState.update { state ->
+                _state.update { state ->
                     val success = state as? State.Success ?: return@update state
                     success.copy(dialog = Dialog.EditMetadata)
                 }
             }
             is MangaScreenEvent.ShowDeleteChapterDialog -> {
-                mutableState.update { state ->
+                _state.update { state ->
                     val success = state as? State.Success ?: return@update state
                     success.copy(dialog = Dialog.DeleteChapters(event.chapters))
                 }
             }
             is MangaScreenEvent.ShowMigrateDialog -> {
-                mutableState.update { state ->
+                _state.update { state ->
                     val success = state as? State.Success ?: return@update state
                     success.copy(dialog = Dialog.Migrate(current = success.manga, target = event.duplicate))
                 }
             }
             MangaScreenEvent.ShowChangeCategoryDialog -> {
-                screenModelScope.launchIO {
+                viewModelScope.launchIO {
                     val manga = manga ?: return@launchIO
                     val categories = getCategories.await()
                     val selection = categories.map { category ->
                         CheckboxState.State.None(category) as CheckboxState<Category>
                     }
-                    mutableState.update { state ->
+                    _state.update { state ->
                         val success = state as? State.Success ?: return@update state
                         success.copy(dialog = Dialog.ChangeCategory(manga, selection))
                     }
                 }
             }
             MangaScreenEvent.ShowSetFetchIntervalDialog -> {
-                mutableState.update { state ->
+                _state.update { state ->
                     val success = state as? State.Success ?: return@update state
                     success.copy(dialog = Dialog.SetFetchInterval(success.manga))
                 }
@@ -242,7 +250,7 @@ class MangaScreenModel(
     }
 
     private fun updateSelectionState() {
-        mutableState.update { state ->
+        _state.update { state ->
             val success = state as? State.Success ?: return@update state
             success.copy(
                 isAnySelected = selectedChapterIds.isNotEmpty(),

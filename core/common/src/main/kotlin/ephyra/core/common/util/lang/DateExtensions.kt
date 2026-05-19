@@ -3,7 +3,6 @@ package ephyra.core.common.util.lang
 import android.content.Context
 import ephyra.core.common.i18n.pluralStringResource
 import ephyra.core.common.i18n.stringResource
-import ephyra.i18n.MR
 import java.text.DateFormat
 import java.time.Instant
 import java.time.LocalDate
@@ -56,13 +55,13 @@ fun LocalDate.toRelativeString(
     return when {
         difference < -7 -> dateFormat.format(this)
         difference < 0 -> context.pluralStringResource(
-            ephyra.i18n.R.plurals.upcoming_relative_time,
+            ephyra.app.core.common.R.plurals.upcoming_relative_time,
             difference.toInt().absoluteValue,
             difference.toInt().absoluteValue,
         )
-        difference < 1 -> context.stringResource(ephyra.i18n.R.string.relative_time_today)
+        difference < 1 -> context.stringResource(ephyra.app.core.common.R.string.relative_time_today)
         difference < 7 -> context.pluralStringResource(
-            ephyra.i18n.R.plurals.relative_time,
+            ephyra.app.core.common.R.plurals.relative_time,
             difference.toInt(),
             difference.toInt(),
         )

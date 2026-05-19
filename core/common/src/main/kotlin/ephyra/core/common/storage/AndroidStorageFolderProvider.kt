@@ -4,7 +4,6 @@ import android.content.Context
 import android.os.Environment
 import androidx.core.net.toUri
 import ephyra.core.common.i18n.stringResource
-import ephyra.i18n.MR
 import java.io.File
 
 class AndroidStorageFolderProvider(
@@ -14,7 +13,7 @@ class AndroidStorageFolderProvider(
     override fun directory(): File {
         return File(
             Environment.getExternalStorageDirectory().absolutePath + File.separator +
-                context.stringResource(ephyra.i18n.R.string.app_name),
+                context.stringResource(ephyra.app.core.common.R.string.app_name),
         )
     }
 

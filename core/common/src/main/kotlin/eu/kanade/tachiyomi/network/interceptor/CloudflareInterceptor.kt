@@ -11,7 +11,6 @@ import androidx.core.content.ContextCompat
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.system.isOutdated
 import ephyra.core.common.util.system.toast
-import ephyra.i18n.MR
 import eu.kanade.tachiyomi.network.AndroidCookieJar
 import okhttp3.Cookie
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -63,7 +62,7 @@ class CloudflareInterceptor(
         // Because OkHttp's enqueue only handles IOExceptions, wrap the exception so that
         // we don't crash the entire app
         catch (e: CloudflareBypassException) {
-            throw IOException(context.stringResource(ephyra.i18n.R.string.information_cloudflare_bypass_failure), e)
+            throw IOException(context.stringResource(ephyra.app.core.common.R.string.information_cloudflare_bypass_failure), e)
         } catch (e: Exception) {
             throw IOException(e)
         }
@@ -143,7 +142,7 @@ class CloudflareInterceptor(
         if (!cloudflareBypassed) {
             // Prompt user to update WebView if it seems too outdated
             if (isWebViewOutdated) {
-                context.toast(ephyra.i18n.R.string.information_webview_outdated, Toast.LENGTH_LONG)
+                context.toast(ephyra.app.core.common.R.string.information_webview_outdated, Toast.LENGTH_LONG)
             }
 
             throw CloudflareBypassException()

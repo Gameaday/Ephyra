@@ -43,16 +43,13 @@ import ephyra.presentation.widget.util.calculateRowAndColumnCount
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.map
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.time.Instant
 import java.time.ZonedDateTime
+abstract class BaseUpdatesGridGlanceWidget : GlanceAppWidget() {
 
-abstract class BaseUpdatesGridGlanceWidget : GlanceAppWidget(), KoinComponent {
-
-    private val widgetContext: Application by inject()
-    private val getUpdates: GetUpdates by inject()
-    private val preferences: SecurityPreferences by inject()
+    private val widgetContext: Application = ephyra.core.common.di.CoreContainer.applicationContext as Application
+    private val getUpdates: GetUpdates = ephyra.core.common.di.CoreContainer.get()
+    private val preferences: SecurityPreferences = ephyra.core.common.di.CoreContainer.get()
 
     override val sizeMode = SizeMode.Exact
 

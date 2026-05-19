@@ -1,9 +1,9 @@
 package ephyra.feature.settings.screen.browse
 
 import androidx.compose.runtime.Immutable
-import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
-import dev.icerock.moko.resources.StringResource
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.util.lang.launchIO
 import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.extensionrepo.interactor.CreateExtensionRepo
@@ -12,31 +12,38 @@ import ephyra.domain.extensionrepo.interactor.GetExtensionRepo
 import ephyra.domain.extensionrepo.interactor.ReplaceExtensionRepo
 import ephyra.domain.extensionrepo.interactor.UpdateExtensionRepo
 import ephyra.domain.extensionrepo.model.ExtensionRepo
-import ephyra.i18n.MR
 import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
+import javax.inject.Inject
 
-class ExtensionReposScreenModel(
+@HiltViewModel
+class ExtensionReposScreenModel @Inject constructor(
     private val getExtensionRepo: GetExtensionRepo,
     private val createExtensionRepo: CreateExtensionRepo,
     private val deleteExtensionRepo: DeleteExtensionRepo,
     private val replaceExtensionRepo: ReplaceExtensionRepo,
     private val updateExtensionRepo: UpdateExtensionRepo,
     private val extensionManager: ExtensionManager,
-) : StateScreenModel<RepoScreenState>(RepoScreenState.Loading) {
+) : ViewModel() {
+
+    private val _state = MutableStateFlow<RepoScreenState>(RepoScreenState.Loading)
+    val state: StateFlow<RepoScreenState> = _state.asStateFlow()
 
     private val _events: Channel<RepoEvent> = Channel(Int.MAX_VALUE)
     val events = _events.receiveAsFlow()
 
     init {
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             getExtensionRepo.subscribeAll()
                 .collectLatest { repos ->
-                    mutableState.update {
+                    _state.update {
                         RepoScreenState.Success(
                             repos = repos.toImmutableSet(),
                         )
@@ -62,7 +69,7 @@ class ExtensionReposScreenModel(
      * @param baseUrl The baseUrl of the repo to create.
      */
     private fun createRepo(baseUrl: String) {
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             when (val result = createExtensionRepo.await(baseUrl)) {
                 CreateExtensionRepo.Result.Success -> extensionManager.findAvailableExtensions()
                 CreateExtensionRepo.Result.InvalidUrl -> _events.send(RepoEvent.InvalidUrl)
@@ -82,7 +89,7 @@ class ExtensionReposScreenModel(
      * @param newRepo The repo to insert
      */
     private fun replaceRepo(newRepo: ExtensionRepo) {
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             replaceExtensionRepo.await(newRepo)
         }
     }
@@ -94,7 +101,7 @@ class ExtensionReposScreenModel(
         val status = state.value
 
         if (status is RepoScreenState.Success) {
-            screenModelScope.launchIO {
+            viewModelScope.launchIO {
                 updateExtensionRepo.awaitAll()
             }
         }
@@ -104,14 +111,14 @@ class ExtensionReposScreenModel(
      * Deletes the given repo from the database
      */
     private fun deleteRepo(baseUrl: String) {
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             deleteExtensionRepo.await(baseUrl)
             extensionManager.findAvailableExtensions()
         }
     }
 
     private fun showDialog(dialog: RepoDialog) {
-        mutableState.update {
+        _state.update {
             when (it) {
                 RepoScreenState.Loading -> it
                 is RepoScreenState.Success -> it.copy(dialog = dialog)
@@ -120,7 +127,7 @@ class ExtensionReposScreenModel(
     }
 
     private fun dismissDialog() {
-        mutableState.update {
+        _state.update {
             when (it) {
                 RepoScreenState.Loading -> it
                 is RepoScreenState.Success -> it.copy(dialog = null)
@@ -130,9 +137,9 @@ class ExtensionReposScreenModel(
 }
 
 sealed class RepoEvent {
-    sealed class LocalizedMessage(val stringRes: StringResource) : RepoEvent()
-    data object InvalidUrl : LocalizedMessage(ephyra.i18n.R.string.invalid_repo_name)
-    data object RepoAlreadyExists : LocalizedMessage(ephyra.i18n.R.string.error_repo_exists)
+    sealed class LocalizedMessage(val stringRes: Int) : RepoEvent()
+    data object InvalidUrl : LocalizedMessage(ephyra.app.core.common.R.string.invalid_repo_name)
+    data object RepoAlreadyExists : LocalizedMessage(ephyra.app.core.common.R.string.error_repo_exists)
 }
 
 sealed class RepoDialog {

@@ -24,7 +24,6 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -54,10 +53,10 @@ fun CalenderHeader(
         }
         Row {
             IconButton(onClick = onPreviousClick) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(ephyra.i18n.R.string.upcoming_calendar_prev))
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(ephyra.app.core.common.R.string.upcoming_calendar_prev))
             }
             IconButton(onClick = onNextClick) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(ephyra.i18n.R.string.upcoming_calendar_next))
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(ephyra.app.core.common.R.string.upcoming_calendar_next))
             }
         }
     }

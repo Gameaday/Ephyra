@@ -6,7 +6,6 @@ import androidx.core.app.ActivityCompat.finishAffinity
 import androidx.fragment.app.FragmentActivity
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.system.logcat
-import ephyra.i18n.MR
 import ephyra.presentation.core.ui.activity.BaseActivity
 import ephyra.presentation.core.ui.delegate.SecureActivityDelegateState
 import ephyra.presentation.core.util.system.AuthenticatorUtil
@@ -21,7 +20,7 @@ class UnlockActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         startAuthentication(
-            stringResource(ephyra.i18n.R.string.unlock_app_title, stringResource(ephyra.i18n.R.string.app_name)),
+            stringResource(ephyra.app.core.common.R.string.unlock_app_title, stringResource(ephyra.app.core.common.R.string.app_name)),
             confirmationRequired = false,
             callback = object : AuthenticatorUtil.AuthenticationCallback() {
                 override fun onAuthenticationError(

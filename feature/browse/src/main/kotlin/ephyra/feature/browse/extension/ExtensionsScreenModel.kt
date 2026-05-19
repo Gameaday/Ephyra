@@ -2,9 +2,10 @@ package ephyra.feature.browse.extension
 
 import android.app.Application
 import androidx.compose.runtime.Immutable
-import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
-import dev.icerock.moko.resources.StringResource
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.system.LocaleHelper
 import ephyra.domain.base.BasePreferences
@@ -13,11 +14,13 @@ import ephyra.domain.extension.model.Extension
 import ephyra.domain.extension.model.InstallStep
 import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.source.service.SourcePreferences
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.SEARCH_DEBOUNCE_MILLIS
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
@@ -29,18 +32,20 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.koin.core.annotation.Factory
 import java.util.TreeMap
 import kotlin.time.Duration.Companion.seconds
 
-@Factory
-class ExtensionsScreenModel(
+@HiltViewModel
+class ExtensionsScreenModel @Inject constructor(
     private val context: Application,
     private val preferences: SourcePreferences,
     private val basePreferences: BasePreferences,
     private val extensionManager: ExtensionManager,
     private val getExtensions: GetExtensionsByType,
-) : StateScreenModel<ExtensionsScreenModel.State>(State()) {
+) : ViewModel() {
+
+    private val _state = MutableStateFlow<State>(State())
+    val state: StateFlow<State> = _state.asStateFlow()
 
     init {
         val extensionMapper: (Map<String, InstallStep>) -> ((Extension) -> ExtensionUiModel.Item) = { map ->
@@ -49,7 +54,7 @@ class ExtensionsScreenModel(
             }
         }
 
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             combine(
                 state.map { it.searchQuery }
                     .distinctUntilChanged()
@@ -62,13 +67,13 @@ class ExtensionsScreenModel(
                 buildMap {
                     val updates = _updates.mapNotNull { if (predicate(it)) mapper(it) else null }
                     if (updates.isNotEmpty()) {
-                        put(ExtensionUiModel.Header.Resource(ephyra.i18n.R.string.ext_updates_pending), updates)
+                        put(ExtensionUiModel.Header.Resource(ephyra.app.core.common.R.string.ext_updates_pending), updates)
                     }
 
                     val installed = _installed.mapNotNull { if (predicate(it)) mapper(it) else null }
                     val untrusted = _untrusted.mapNotNull { if (predicate(it)) mapper(it) else null }
                     if (installed.isNotEmpty() || untrusted.isNotEmpty()) {
-                        put(ExtensionUiModel.Header.Resource(ephyra.i18n.R.string.ext_installed), installed + untrusted)
+                        put(ExtensionUiModel.Header.Resource(ephyra.app.core.common.R.string.ext_installed), installed + untrusted)
                     }
 
                     val langGroups = TreeMap<String, MutableList<Extension.Available>>(LocaleHelper.comparator)
@@ -82,7 +87,7 @@ class ExtensionsScreenModel(
                 }
             }
                 .collectLatest { items ->
-                    mutableState.update { state ->
+                    _state.update { state ->
                         state.copy(
                             isLoading = false,
                             items = items,
@@ -91,15 +96,15 @@ class ExtensionsScreenModel(
                 }
         }
 
-        screenModelScope.launchIO { findAvailableExtensions() }
+        viewModelScope.launchIO { findAvailableExtensions() }
 
         preferences.extensionUpdatesCount().changes()
-            .onEach { mutableState.update { state -> state.copy(updates = it) } }
-            .launchIn(screenModelScope)
+            .onEach { updates -> _state.update { it.copy(updates = updates) } }
+            .launchIn(viewModelScope)
 
         basePreferences.extensionInstaller().changes()
-            .onEach { mutableState.update { state -> state.copy(installer = it) } }
-            .launchIn(screenModelScope)
+            .onEach { installer -> _state.update { it.copy(installer = installer) } }
+            .launchIn(viewModelScope)
     }
 
     fun searchQueryPredicate(query: String): (Extension) -> Boolean {
@@ -109,7 +114,6 @@ class ExtensionsScreenModel(
 
         if (subqueries.isEmpty()) return { true }
 
-        // Pre-compute Long ID parsing once per subquery, instead of once per extension
         val parsedSubqueries = subqueries.map { it to it.toLongOrNull() }
 
         return { extension ->
@@ -135,13 +139,13 @@ class ExtensionsScreenModel(
     }
 
     fun search(query: String?) {
-        mutableState.update {
+        _state.update {
             it.copy(searchQuery = query)
         }
     }
 
     fun updateAllExtensions() {
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             state.value.items.values.forEach { items ->
                 items.forEach { item ->
                     val ext = item.extension
@@ -154,13 +158,13 @@ class ExtensionsScreenModel(
     }
 
     fun installExtension(extension: Extension.Available) {
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             extensionManager.installExtension(extension).collectToInstallUpdate(extension)
         }
     }
 
     fun updateExtension(extension: Extension.Installed) {
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             extensionManager.updateExtension(extension).collectToInstallUpdate(extension)
         }
     }
@@ -171,11 +175,11 @@ class ExtensionsScreenModel(
     }
 
     private fun addDownloadState(extension: Extension, installStep: InstallStep) {
-        mutableState.update { it.copy(currentDownloads = it.currentDownloads + (extension.pkgName to installStep)) }
+        _state.update { it.copy(currentDownloads = it.currentDownloads + (extension.pkgName to installStep)) }
     }
 
     private fun removeDownloadState(extension: Extension) {
-        mutableState.update { it.copy(currentDownloads = it.currentDownloads - extension.pkgName) }
+        _state.update { it.copy(currentDownloads = it.currentDownloads - extension.pkgName) }
     }
 
     private suspend fun Flow<InstallStep>.collectToInstallUpdate(extension: Extension) =
@@ -189,20 +193,19 @@ class ExtensionsScreenModel(
     }
 
     fun findAvailableExtensions() {
-        screenModelScope.launchIO {
-            mutableState.update { it.copy(isRefreshing = true) }
+        viewModelScope.launchIO {
+            _state.update { it.copy(isRefreshing = true) }
 
             extensionManager.findAvailableExtensions()
 
-            // Fake slower refresh so it doesn't seem like it's not doing anything
             delay(1.seconds)
 
-            mutableState.update { it.copy(isRefreshing = false) }
+            _state.update { it.copy(isRefreshing = false) }
         }
     }
 
     fun trustExtension(extension: Extension.Untrusted) {
-        screenModelScope.launch {
+        viewModelScope.launch {
             extensionManager.trust(extension)
         }
     }
@@ -215,7 +218,6 @@ class ExtensionsScreenModel(
         val updates: Int = 0,
         val installer: BasePreferences.ExtensionInstaller? = null,
         val searchQuery: String? = null,
-        /** Per-extension install-step progress, keyed by package name. */
         val currentDownloads: Map<String, InstallStep> = emptyMap(),
     ) {
         val isEmpty = items.isEmpty()
@@ -226,7 +228,7 @@ typealias ItemGroups = Map<ExtensionUiModel.Header, List<ExtensionUiModel.Item>>
 
 object ExtensionUiModel {
     sealed interface Header {
-        data class Resource(val textRes: StringResource) : Header
+        data class Resource(val textRes: Int) : Header
         data class Text(val text: String) : Header
     }
 

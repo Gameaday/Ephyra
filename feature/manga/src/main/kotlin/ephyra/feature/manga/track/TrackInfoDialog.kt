@@ -38,7 +38,6 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import dev.icerock.moko.resources.StringResource
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.lang.convertEpochMillisZone
 import ephyra.core.common.util.lang.launchNonCancellable
@@ -57,7 +56,6 @@ import ephyra.domain.track.service.EnhancedTracker
 import ephyra.domain.track.service.Tracker
 import ephyra.domain.track.service.TrackerManager
 import ephyra.domain.ui.UiPreferences
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.LabeledCheckbox
 import ephyra.presentation.core.components.material.AlertDialogContent
 import ephyra.presentation.core.components.material.padding
@@ -85,7 +83,6 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
-import org.koin.compose.koinInject
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -102,13 +99,13 @@ data class TrackInfoDialogHomeScreen(
         val navigator = LocalNavigator.currentOrThrow
         val context = LocalContext.current
 
-        val getTracks = koinInject<GetTracks>()
-        val trackerManager = koinInject<TrackerManager>()
-        val sourceManager = koinInject<SourceManager>()
-        val getManga = koinInject<GetManga>()
-        val refreshTracks = koinInject<RefreshTracks>()
-        val application = koinInject<Application>()
-        val deleteTrack = koinInject<DeleteTrack>()
+        val getTracks = remember { ephyra.core.common.di.CoreContainer.get<GetTracks>() }
+        val trackerManager = remember { ephyra.core.common.di.CoreContainer.get<TrackerManager>() }
+        val sourceManager = remember { ephyra.core.common.di.CoreContainer.get<SourceManager>() }
+        val getManga = remember { ephyra.core.common.di.CoreContainer.get<GetManga>() }
+        val refreshTracks = remember { ephyra.core.common.di.CoreContainer.get<RefreshTracks>() }
+        val application = remember { ephyra.core.common.di.CoreContainer.get<Application>() }
+        val deleteTrack = remember { ephyra.core.common.di.CoreContainer.get<DeleteTrack>() }
 
         val screenModel = rememberScreenModel {
             Model(
@@ -124,7 +121,7 @@ data class TrackInfoDialogHomeScreen(
             )
         }
 
-        val uiPreferences = koinInject<UiPreferences>()
+        val uiPreferences = remember { ephyra.core.common.di.CoreContainer.get<UiPreferences>() }
         val dateFormat = remember { UiPreferences.dateFormat(uiPreferences.dateFormat().getSync()) }
         val state by screenModel.state.collectAsStateWithLifecycle()
 
@@ -284,7 +281,7 @@ data class TrackInfoDialogHomeScreen(
                     logcat(LogPriority.ERROR, e) {
                         "Failed to register track for tracker '${item.tracker.name}'; manga id=$mangaId"
                     }
-                    effectChannel.send(Effect.ShowToast(application.stringResource(ephyra.i18n.R.string.error_no_match)))
+                    effectChannel.send(Effect.ShowToast(application.stringResource(ephyra.app.core.common.R.string.error_no_match)))
                 }
             }
         }
@@ -299,7 +296,7 @@ data class TrackInfoDialogHomeScreen(
                     effectChannel.send(
                         Effect.ShowToast(
                             application.stringResource(
-                                ephyra.i18n.R.string.track_error,
+                                ephyra.app.core.common.R.string.track_error,
                                 track!!.name,
                                 e.message ?: "",
                             ),
@@ -350,7 +347,7 @@ private data class TrackStatusSelectorScreen(
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val trackerManager = koinInject<TrackerManager>()
+        val trackerManager = remember { ephyra.core.common.di.CoreContainer.get<TrackerManager>() }
         val screenModel = rememberScreenModel {
             Model(
                 track = track,
@@ -375,7 +372,7 @@ private data class TrackStatusSelectorScreen(
         private val tracker: Tracker,
     ) : StateScreenModel<Model.State>(State(track.status)) {
 
-        fun getSelections(): Map<Long, StringResource?> {
+        fun getSelections(): Map<Long, Int?> {
             return tracker.getStatusList().associateWith { tracker.getStatus(it) }
         }
 
@@ -404,7 +401,7 @@ private data class TrackChapterSelectorScreen(
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val trackerManager = koinInject<TrackerManager>()
+        val trackerManager = remember { ephyra.core.common.di.CoreContainer.get<TrackerManager>() }
         val screenModel = rememberScreenModel {
             Model(
                 track = track,
@@ -464,7 +461,7 @@ private data class TrackScoreSelectorScreen(
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val trackerManager = koinInject<TrackerManager>()
+        val trackerManager = remember { ephyra.core.common.di.CoreContainer.get<TrackerManager>() }
         val screenModel = rememberScreenModel {
             Model(
                 track = track,
@@ -569,7 +566,7 @@ private data class TrackDateSelectorScreen(
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val trackerManager = koinInject<TrackerManager>()
+        val trackerManager = remember { ephyra.core.common.di.CoreContainer.get<TrackerManager>() }
         val screenModel = rememberScreenModel {
             Model(
                 track = track,
@@ -585,9 +582,9 @@ private data class TrackDateSelectorScreen(
         }
         TrackDateSelector(
             title = if (start) {
-                stringResource(ephyra.i18n.R.string.track_started_reading_date)
+                stringResource(ephyra.app.core.common.R.string.track_started_reading_date)
             } else {
-                stringResource(ephyra.i18n.R.string.track_finished_reading_date)
+                stringResource(ephyra.app.core.common.R.string.track_finished_reading_date)
             },
             initialSelectedDateMillis = screenModel.initialSelection,
             selectableDates = selectableDates,
@@ -643,7 +640,7 @@ private data class TrackDateRemoverScreen(
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val trackerManager = koinInject<TrackerManager>()
+        val trackerManager = remember { ephyra.core.common.di.CoreContainer.get<TrackerManager>() }
         val screenModel = rememberScreenModel {
             Model(
                 track = track,
@@ -661,7 +658,7 @@ private data class TrackDateRemoverScreen(
             },
             title = {
                 Text(
-                    text = stringResource(ephyra.i18n.R.string.track_remove_date_conf_title),
+                    text = stringResource(ephyra.app.core.common.R.string.track_remove_date_conf_title),
                     textAlign = TextAlign.Center,
                 )
             },
@@ -669,9 +666,9 @@ private data class TrackDateRemoverScreen(
                 val serviceName = screenModel.getServiceName()
                 Text(
                     text = if (start) {
-                        stringResource(ephyra.i18n.R.string.track_remove_start_date_conf_text, serviceName)
+                        stringResource(ephyra.app.core.common.R.string.track_remove_start_date_conf_text, serviceName)
                     } else {
-                        stringResource(ephyra.i18n.R.string.track_remove_finish_date_conf_text, serviceName)
+                        stringResource(ephyra.app.core.common.R.string.track_remove_finish_date_conf_text, serviceName)
                     },
                 )
             },
@@ -681,7 +678,7 @@ private data class TrackDateRemoverScreen(
                     horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small, Alignment.End),
                 ) {
                     TextButton(onClick = navigator::pop) {
-                        Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
+                        Text(text = stringResource(ephyra.app.core.common.R.string.action_cancel))
                     }
                     FilledTonalButton(
                         onClick = {
@@ -693,7 +690,7 @@ private data class TrackDateRemoverScreen(
                             contentColor = MaterialTheme.colorScheme.onErrorContainer,
                         ),
                     ) {
-                        Text(text = stringResource(ephyra.i18n.R.string.action_remove))
+                        Text(text = stringResource(ephyra.app.core.common.R.string.action_remove))
                     }
                 }
             },
@@ -730,7 +727,7 @@ data class TrackerSearchScreen(
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val trackerManager = koinInject<TrackerManager>()
+        val trackerManager = remember { ephyra.core.common.di.CoreContainer.get<TrackerManager>() }
         val screenModel = rememberScreenModel {
             Model(
                 mangaId = mangaId,
@@ -841,8 +838,8 @@ private data class TrackerRemoveScreen(
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val trackerManager = koinInject<TrackerManager>()
-        val deleteTrack = koinInject<DeleteTrack>()
+        val trackerManager = remember { ephyra.core.common.di.CoreContainer.get<TrackerManager>() }
+        val deleteTrack = remember { ephyra.core.common.di.CoreContainer.get<DeleteTrack>() }
         val screenModel = rememberScreenModel {
             Model(
                 mangaId = mangaId,
@@ -863,7 +860,7 @@ private data class TrackerRemoveScreen(
             },
             title = {
                 Text(
-                    text = stringResource(ephyra.i18n.R.string.track_delete_title, serviceName),
+                    text = stringResource(ephyra.app.core.common.R.string.track_delete_title, serviceName),
                     textAlign = TextAlign.Center,
                 )
             },
@@ -872,12 +869,12 @@ private data class TrackerRemoveScreen(
                     verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
                 ) {
                     Text(
-                        text = stringResource(ephyra.i18n.R.string.track_delete_text, serviceName),
+                        text = stringResource(ephyra.app.core.common.R.string.track_delete_text, serviceName),
                     )
 
                     if (screenModel.isDeletable()) {
                         LabeledCheckbox(
-                            label = stringResource(ephyra.i18n.R.string.track_delete_remote_text, serviceName),
+                            label = stringResource(ephyra.app.core.common.R.string.track_delete_remote_text, serviceName),
                             checked = removeRemoteTrack,
                             onCheckedChange = { removeRemoteTrack = it },
                         )
@@ -893,7 +890,7 @@ private data class TrackerRemoveScreen(
                     ),
                 ) {
                     TextButton(onClick = navigator::pop) {
-                        Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
+                        Text(text = stringResource(ephyra.app.core.common.R.string.action_cancel))
                     }
                     FilledTonalButton(
                         onClick = {
@@ -906,7 +903,7 @@ private data class TrackerRemoveScreen(
                             contentColor = MaterialTheme.colorScheme.onErrorContainer,
                         ),
                     ) {
-                        Text(text = stringResource(ephyra.i18n.R.string.action_ok))
+                        Text(text = stringResource(ephyra.app.core.common.R.string.action_ok))
                     }
                 }
             },

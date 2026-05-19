@@ -13,7 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.theme.TachiyomiPreviewTheme
@@ -32,12 +31,12 @@ internal class GuidesStep(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
         ) {
-            Text(stringResource(ephyra.i18n.R.string.onboarding_guides_new_user, stringResource(ephyra.i18n.R.string.app_name)))
+            Text(stringResource(ephyra.app.core.common.R.string.onboarding_guides_new_user, stringResource(ephyra.app.core.common.R.string.app_name)))
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = { handler.openUri(GETTING_STARTED_URL) },
             ) {
-                Text(stringResource(ephyra.i18n.R.string.getting_started_guide))
+                Text(stringResource(ephyra.app.core.common.R.string.getting_started_guide))
             }
 
             HorizontalDivider(
@@ -45,12 +44,12 @@ internal class GuidesStep(
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
 
-            Text(stringResource(ephyra.i18n.R.string.onboarding_guides_returning_user, stringResource(ephyra.i18n.R.string.app_name)))
+            Text(stringResource(ephyra.app.core.common.R.string.onboarding_guides_returning_user, stringResource(ephyra.app.core.common.R.string.app_name)))
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = onRestoreBackup,
             ) {
-                Text(stringResource(ephyra.i18n.R.string.pref_restore_backup))
+                Text(stringResource(ephyra.app.core.common.R.string.pref_restore_backup))
             }
         }
     }

@@ -6,13 +6,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.hilt.navigation.compose.hiltViewModel
 import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.feature.browse.migration.manga.MigrateMangaScreen
 import ephyra.feature.browse.presentation.MigrateSourceScreen
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.TabContent
 import ephyra.presentation.core.i18n.stringResource
@@ -22,14 +21,14 @@ import kotlinx.collections.immutable.persistentListOf
 fun Screen.migrateSourceTab(): TabContent {
     val uriHandler = LocalUriHandler.current
     val navigator = LocalNavigator.currentOrThrow
-    val screenModel = koinScreenModel<MigrateSourceScreenModel>()
+    val screenModel = hiltViewModel<MigrateSourceScreenModel>()
     val state by screenModel.state.collectAsStateWithLifecycle()
 
     return TabContent(
-        titleRes = ephyra.i18n.R.string.label_migration,
+        titleRes = ephyra.app.core.common.R.string.label_migration,
         actions = persistentListOf(
             AppBar.Action(
-                title = stringResource(ephyra.i18n.R.string.migration_help_guide),
+                title = stringResource(ephyra.app.core.common.R.string.migration_help_guide),
                 icon = Icons.AutoMirrored.Outlined.HelpOutline,
                 onClick = {
                     uriHandler.openUri("https://ephyra.app/docs/guides/source-migration")

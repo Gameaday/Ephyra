@@ -13,7 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.window.DialogWindowProvider
 import ephyra.feature.reader.setting.ReaderSettingsScreenModel
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.TabbedDialog
 import ephyra.presentation.core.components.TabbedDialogPaddings
 import ephyra.presentation.core.i18n.stringResource
@@ -27,9 +26,9 @@ fun ReaderSettingsDialog(
     screenModel: ReaderSettingsScreenModel,
 ) {
     val tabTitles = persistentListOf(
-        stringResource(ephyra.i18n.R.string.pref_category_reading_mode),
-        stringResource(ephyra.i18n.R.string.pref_category_general),
-        stringResource(ephyra.i18n.R.string.custom_filter),
+        stringResource(ephyra.app.core.common.R.string.pref_category_reading_mode),
+        stringResource(ephyra.app.core.common.R.string.pref_category_general),
+        stringResource(ephyra.app.core.common.R.string.custom_filter),
     )
     val pagerState = rememberPagerState { tabTitles.size }
 

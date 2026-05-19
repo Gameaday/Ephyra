@@ -1,10 +1,8 @@
 package ephyra.core.common.core.security
 
-import dev.icerock.moko.resources.StringResource
 import ephyra.core.common.preference.Preference
 import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.common.preference.getEnum
-import ephyra.i18n.MR
 
 class SecurityPreferences(
     private val preferenceStore: PreferenceStore,
@@ -27,9 +25,9 @@ class SecurityPreferences(
         0,
     )
 
-    enum class SecureScreenMode(val titleRes: StringResource) {
-        ALWAYS(ephyra.i18n.R.string.lock_always),
-        INCOGNITO(ephyra.i18n.R.string.pref_incognito_mode),
-        NEVER(ephyra.i18n.R.string.lock_never),
+    enum class SecureScreenMode(val titleRes: Int) {
+        ALWAYS(ephyra.app.core.common.R.string.lock_always),
+        INCOGNITO(ephyra.app.core.common.R.string.pref_incognito_mode),
+        NEVER(ephyra.app.core.common.R.string.lock_never),
     }
 }

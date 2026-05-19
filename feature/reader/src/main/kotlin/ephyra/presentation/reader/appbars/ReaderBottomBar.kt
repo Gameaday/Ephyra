@@ -15,7 +15,6 @@ import ephyra.domain.reader.model.ReaderOrientation
 import ephyra.domain.reader.model.ReadingMode
 import ephyra.feature.reader.setting.icon
 import ephyra.feature.reader.setting.iconRes
-import ephyra.i18n.MR
 import ephyra.presentation.core.R
 import ephyra.presentation.core.i18n.stringResource
 
@@ -39,28 +38,28 @@ fun ReaderBottomBar(
         IconButton(onClick = onClickReadingMode) {
             Icon(
                 painter = painterResource(readingMode.iconRes),
-                contentDescription = stringResource(ephyra.i18n.R.string.viewer),
+                contentDescription = stringResource(ephyra.app.core.common.R.string.viewer),
             )
         }
 
         IconButton(onClick = onClickOrientation) {
             Icon(
                 imageVector = orientation.icon,
-                contentDescription = stringResource(ephyra.i18n.R.string.rotation_type),
+                contentDescription = stringResource(ephyra.app.core.common.R.string.rotation_type),
             )
         }
 
         IconButton(onClick = onClickCropBorder) {
             Icon(
                 painter = painterResource(if (cropEnabled) R.drawable.ic_crop_24dp else R.drawable.ic_crop_off_24dp),
-                contentDescription = stringResource(ephyra.i18n.R.string.pref_crop_borders),
+                contentDescription = stringResource(ephyra.app.core.common.R.string.pref_crop_borders),
             )
         }
 
         IconButton(onClick = onClickSettings) {
             Icon(
                 imageVector = Icons.Outlined.Settings,
-                contentDescription = stringResource(ephyra.i18n.R.string.action_settings),
+                contentDescription = stringResource(ephyra.app.core.common.R.string.action_settings),
             )
         }
     }

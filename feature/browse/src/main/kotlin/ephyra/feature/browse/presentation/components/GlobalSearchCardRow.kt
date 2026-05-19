@@ -17,7 +17,6 @@ import androidx.compose.ui.unit.dp
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaCover
 import ephyra.domain.manga.model.asMangaCover
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.manga.components.CommonMangaItemDefaults
@@ -78,7 +77,7 @@ private fun MangaItem(
 @Composable
 private fun EmptyResultItem() {
     Text(
-        text = stringResource(ephyra.i18n.R.string.no_results_found),
+        text = stringResource(ephyra.app.core.common.R.string.no_results_found),
         modifier = Modifier
             .padding(
                 horizontal = MaterialTheme.padding.medium,

@@ -19,7 +19,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.SettingsItemsPaddings
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
@@ -42,7 +41,7 @@ fun ModeSelectionDialog(
             ) {
                 onUseDefault?.let {
                     OutlinedButton(onClick = it) {
-                        Text(text = stringResource(ephyra.i18n.R.string.action_revert_to_default))
+                        Text(text = stringResource(ephyra.app.core.common.R.string.action_revert_to_default))
                     }
                 }
 
@@ -59,7 +58,7 @@ fun ModeSelectionDialog(
                             imageVector = Icons.Outlined.Check,
                             contentDescription = null,
                         )
-                        Text(text = stringResource(ephyra.i18n.R.string.action_apply))
+                        Text(text = stringResource(ephyra.app.core.common.R.string.action_apply))
                     }
                 }
             }

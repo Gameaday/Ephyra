@@ -11,7 +11,6 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
 import logcat.LogPriority
-import org.koin.core.context.GlobalContext
 
 class GlobalExceptionHandler private constructor(
     private val applicationContext: Context,
@@ -32,12 +31,12 @@ class GlobalExceptionHandler private constructor(
 
     override fun uncaughtException(thread: Thread, exception: Throwable) {
         logcat(priority = LogPriority.ERROR, throwable = exception)
-        // Only launch CrashActivity when Koin is ready.  CrashActivity extends BaseActivity
-        // which eagerly resolves Koin delegates (SecureActivityDelegate, ThemingDelegate) via
-        // KoinJavaComponent.get().  Launching it before startKoin() completes would trigger a
-        // second crash that swallows the original exception and shows no UI.  When Koin is not
-        // yet available we fall through to the default handler so the process terminates cleanly.
-        if (GlobalContext.getOrNull() != null) {
+        val isDiReady = try {
+            ephyra.core.common.di.CoreContainer.applicationContext != null
+        } catch (e: Exception) {
+            false
+        }
+        if (isDiReady) {
             launchActivity(applicationContext, activityToBeLaunched, exception)
         }
         defaultHandler?.uncaughtException(thread, exception)

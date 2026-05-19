@@ -8,7 +8,9 @@ import ephyra.feature.reader.viewer.pager.R2LPagerViewer
 import ephyra.feature.reader.viewer.pager.VerticalPagerViewer
 import ephyra.feature.reader.viewer.webtoon.WebtoonViewer
 import ephyra.presentation.core.R
-import org.koin.android.ext.android.get
+import ephyra.core.common.di.CoreContainer
+import ephyra.domain.download.service.DownloadManager
+import ephyra.domain.reader.service.ReaderPreferences
 
 val ReadingMode.iconRes: Int
     get() = when (this) {
@@ -21,12 +23,14 @@ val ReadingMode.iconRes: Int
     }
 
 fun ReadingMode.toViewer(activity: ReaderActivity): Viewer {
+    val downloadManager = CoreContainer.get<DownloadManager>()
+    val readerPreferences = CoreContainer.get<ReaderPreferences>()
     return when (this) {
-        ReadingMode.LEFT_TO_RIGHT -> L2RPagerViewer(activity, activity.get(), activity.get())
-        ReadingMode.RIGHT_TO_LEFT -> R2LPagerViewer(activity, activity.get(), activity.get())
-        ReadingMode.VERTICAL -> VerticalPagerViewer(activity, activity.get(), activity.get())
-        ReadingMode.WEBTOON -> WebtoonViewer(activity, activity.get(), activity.get())
-        ReadingMode.CONTINUOUS_VERTICAL -> WebtoonViewer(activity, activity.get(), activity.get(), isContinuous = false)
+        ReadingMode.LEFT_TO_RIGHT -> L2RPagerViewer(activity, downloadManager, readerPreferences)
+        ReadingMode.RIGHT_TO_LEFT -> R2LPagerViewer(activity, downloadManager, readerPreferences)
+        ReadingMode.VERTICAL -> VerticalPagerViewer(activity, downloadManager, readerPreferences)
+        ReadingMode.WEBTOON -> WebtoonViewer(activity, downloadManager, readerPreferences)
+        ReadingMode.CONTINUOUS_VERTICAL -> WebtoonViewer(activity, downloadManager, readerPreferences, isContinuous = false)
         ReadingMode.DEFAULT -> throw IllegalStateException("Preference value must be resolved")
     }
 }

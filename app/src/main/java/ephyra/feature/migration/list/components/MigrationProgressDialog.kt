@@ -9,7 +9,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.window.DialogProperties
-import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource
 
 @Composable
@@ -21,7 +20,7 @@ fun MigrationProgressDialog(
         onDismissRequest = {},
         confirmButton = {
             TextButton(onClick = exitMigration) {
-                Text(text = stringResource(ephyra.i18n.R.string.migrationListScreen_progressDialog_cancelLabel))
+                Text(text = stringResource(ephyra.app.core.common.R.string.migrationListScreen_progressDialog_cancelLabel))
             }
         },
         text = {

@@ -20,22 +20,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.work.WorkInfo
 import androidx.work.WorkQuery
-import cafe.adriel.voyager.core.model.ScreenModel
-import cafe.adriel.voyager.core.model.rememberScreenModel
-import cafe.adriel.voyager.koin.koinScreenModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+import androidx.hilt.navigation.compose.hiltViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.core.common.util.lang.toDateTimestampString
 import ephyra.core.common.util.system.workManager
 import ephyra.domain.ui.UiPreferences
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.Screen
-import ephyra.presentation.core.util.ioCoroutineScope
-import ephyra.presentation.core.util.plus
 import ephyra.presentation.core.util.system.copyToClipboard
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.SharingStarted
@@ -56,7 +56,7 @@ class WorkerInfoScreen : Screen() {
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
 
-        val screenModel = koinScreenModel<Model>()
+        val screenModel = hiltViewModel<WorkerInfoScreenModel>()
         val enqueued by screenModel.enqueued.collectAsState()
         val finished by screenModel.finished.collectAsState()
         val running by screenModel.running.collectAsState()
@@ -70,7 +70,7 @@ class WorkerInfoScreen : Screen() {
                         AppBarActions(
                             persistentListOf(
                                 AppBar.Action(
-                                    title = stringResource(ephyra.i18n.R.string.action_copy_to_clipboard),
+                                    title = stringResource(ephyra.app.core.common.R.string.action_copy_to_clipboard),
                                     icon = Icons.Default.ContentCopy,
                                     onClick = {
                                         context.copyToClipboard(TITLE, enqueued + finished + running)
@@ -116,56 +116,57 @@ class WorkerInfoScreen : Screen() {
             fontFamily = FontFamily.Monospace,
         )
     }
+}
 
-    class Model(
-        context: Context,
-        private val uiPreferences: UiPreferences,
-    ) : ScreenModel {
-        private val workManager = context.workManager
+@HiltViewModel
+class WorkerInfoScreenModel @Inject constructor(
+    @ApplicationContext context: Context,
+    private val uiPreferences: UiPreferences,
+) : ViewModel() {
+    private val workManager = context.workManager
 
-        val finished = workManager
-            .getWorkInfosFlow(
-                WorkQuery.fromStates(WorkInfo.State.SUCCEEDED, WorkInfo.State.FAILED, WorkInfo.State.CANCELLED),
-            )
-            .map(::constructString)
-            .stateIn(ioCoroutineScope, SharingStarted.WhileSubscribed(), "")
+    val finished = workManager
+        .getWorkInfosFlow(
+            WorkQuery.fromStates(WorkInfo.State.SUCCEEDED, WorkInfo.State.FAILED, WorkInfo.State.CANCELLED),
+        )
+        .map(::constructString)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), "")
 
-        val running = workManager
-            .getWorkInfosFlow(WorkQuery.fromStates(WorkInfo.State.RUNNING))
-            .map(::constructString)
-            .stateIn(ioCoroutineScope, SharingStarted.WhileSubscribed(), "")
+    val running = workManager
+        .getWorkInfosFlow(WorkQuery.fromStates(WorkInfo.State.RUNNING))
+        .map(::constructString)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), "")
 
-        val enqueued = workManager
-            .getWorkInfosFlow(WorkQuery.fromStates(WorkInfo.State.ENQUEUED))
-            .map(::constructString)
-            .stateIn(ioCoroutineScope, SharingStarted.WhileSubscribed(), "")
+    val enqueued = workManager
+        .getWorkInfosFlow(WorkQuery.fromStates(WorkInfo.State.ENQUEUED))
+        .map(::constructString)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), "")
 
-        private fun constructString(list: List<WorkInfo>) = buildString {
-            if (list.isEmpty()) {
-                appendLine("-")
-            } else {
-                list.fastForEach { workInfo ->
-                    appendLine("Id: ${workInfo.id}")
-                    appendLine("Tags:")
-                    workInfo.tags.forEach {
-                        appendLine(" - $it")
-                    }
-                    appendLine("State: ${workInfo.state}")
-                    if (workInfo.state == WorkInfo.State.ENQUEUED) {
-                        val timestamp = LocalDateTime.ofInstant(
-                            Instant.ofEpochMilli(workInfo.nextScheduleTimeMillis),
-                            ZoneId.systemDefault(),
-                        )
-                            .toDateTimestampString(
-                                UiPreferences.dateFormat(
-                                    uiPreferences.dateFormat().getSync(),
-                                ),
-                            )
-                        appendLine("Next scheduled run: $timestamp")
-                        appendLine("Attempt #${workInfo.runAttemptCount + 1}")
-                    }
-                    appendLine()
+    private fun constructString(list: List<WorkInfo>) = buildString {
+        if (list.isEmpty()) {
+            appendLine("-")
+        } else {
+            list.fastForEach { workInfo ->
+                appendLine("Id: ${workInfo.id}")
+                appendLine("Tags:")
+                workInfo.tags.forEach {
+                    appendLine(" - $it")
                 }
+                appendLine("State: ${workInfo.state}")
+                if (workInfo.state == WorkInfo.State.ENQUEUED) {
+                    val timestamp = LocalDateTime.ofInstant(
+                        Instant.ofEpochMilli(workInfo.nextScheduleTimeMillis),
+                        ZoneId.systemDefault(),
+                    )
+                        .toDateTimestampString(
+                            UiPreferences.dateFormat(
+                                uiPreferences.dateFormat().getSync(),
+                            ),
+                        )
+                    appendLine("Next scheduled run: $timestamp")
+                    appendLine("Attempt #${workInfo.runAttemptCount + 1}")
+                }
+                appendLine()
             }
         }
     }

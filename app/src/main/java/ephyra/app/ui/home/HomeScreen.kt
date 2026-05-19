@@ -43,7 +43,6 @@ import ephyra.feature.library.LibraryTab
 import ephyra.feature.manga.MangaScreen
 import ephyra.feature.more.MoreTab
 import ephyra.feature.updates.UpdatesTab
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.NavigationBar
 import ephyra.presentation.core.components.material.NavigationRail
 import ephyra.presentation.core.components.material.Scaffold
@@ -58,7 +57,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
-import org.koin.compose.koinInject
 import soup.compose.material.motion.animation.materialFadeThroughIn
 import soup.compose.material.motion.animation.materialFadeThroughOut
 
@@ -255,7 +253,7 @@ object HomeScreen : Screen(), BottomNavController, SearchableScreen {
             badge = {
                 when {
                     tab is UpdatesTab -> {
-                        val pref = koinInject<LibraryPreferences>()
+                        val pref = remember { ephyra.core.common.di.CoreContainer.get<LibraryPreferences>() }
                         val count by produceState(initialValue = 0) {
                             combine(
                                 pref.newShowUpdatesCount().changes(),
@@ -266,7 +264,7 @@ object HomeScreen : Screen(), BottomNavController, SearchableScreen {
                         if (count > 0) {
                             Badge {
                                 val desc = pluralStringResource(
-                                    ephyra.i18n.R.plurals.notification_chapters_generic,
+                                    ephyra.app.core.common.R.plurals.notification_chapters_generic,
                                     count = count,
                                     count,
                                 )
@@ -278,7 +276,7 @@ object HomeScreen : Screen(), BottomNavController, SearchableScreen {
                         }
                     }
                     BrowseTab::class.isInstance(tab) -> {
-                        val sourcePreferences = koinInject<SourcePreferences>()
+                        val sourcePreferences = remember { ephyra.core.common.di.CoreContainer.get<SourcePreferences>() }
                         val count by produceState(initialValue = 0) {
                             sourcePreferences.extensionUpdatesCount().changes()
                                 .collectLatest { value = it }
@@ -286,7 +284,7 @@ object HomeScreen : Screen(), BottomNavController, SearchableScreen {
                         if (count > 0) {
                             Badge {
                                 val desc = pluralStringResource(
-                                    ephyra.i18n.R.plurals.update_check_notification_ext_updates,
+                                    ephyra.app.core.common.R.plurals.update_check_notification_ext_updates,
                                     count = count,
                                     count,
                                 )

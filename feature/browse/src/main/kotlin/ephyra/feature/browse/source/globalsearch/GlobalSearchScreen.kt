@@ -7,15 +7,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import cafe.adriel.voyager.core.model.rememberScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import ephyra.core.common.di.CoreContainer
 import ephyra.core.util.ifSourcesLoaded
 import ephyra.feature.browse.presentation.GlobalSearchScreen
 import ephyra.presentation.util.Screen
 import ephyra.feature.browse.source.browse.BrowseSourceScreen
-import ephyra.app.ui.manga.MangaScreen
+import ephyra.feature.manga.MangaScreen
+import ephyra.presentation.core.screens.LoadingScreen
 
 class GlobalSearchScreen(
     val searchQuery: String = "",
@@ -31,16 +31,9 @@ class GlobalSearchScreen(
 
         val navigator = LocalNavigator.currentOrThrow
 
-        val screenModel = rememberScreenModel {
-            GlobalSearchScreenModel(
-                initialQuery = searchQuery,
-                initialExtensionFilter = extensionFilter,
-                sourcePreferences = CoreContainer.get(),
-                sourceManager = CoreContainer.get(),
-                extensionManager = CoreContainer.get(),
-                networkToLocalManga = CoreContainer.get(),
-                getManga = CoreContainer.get(),
-            )
+        val screenModel = hiltViewModel<GlobalSearchScreenModel>()
+        LaunchedEffect(searchQuery, extensionFilter) {
+            screenModel.init(searchQuery, extensionFilter)
         }
         val state by screenModel.state.collectAsStateWithLifecycle()
         var showSingleLoadingScreen by remember {
@@ -58,7 +51,6 @@ class GlobalSearchScreen(
                         if (manga != null) {
                             navigator.replace(MangaScreen(manga.id, true))
                         } else {
-                            // Backoff to result screen
                             showSingleLoadingScreen = false
                         }
                     }

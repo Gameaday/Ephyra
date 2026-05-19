@@ -22,7 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
-import cafe.adriel.voyager.koin.koinScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.core.common.util.lang.launchUI
@@ -32,7 +32,6 @@ import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.release.interactor.GetApplicationRelease
 import ephyra.domain.ui.UiPreferences
 import ephyra.feature.settings.widget.TextPreferenceWidget
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.LinkIcon
 import ephyra.presentation.core.components.LogoHeader
@@ -51,17 +50,16 @@ import ephyra.presentation.core.util.system.copyToClipboard
 import ephyra.presentation.core.util.system.toast
 import kotlinx.coroutines.flow.collectLatest
 import logcat.LogPriority
-import org.koin.compose.koinInject
 
 object AboutScreen : Screen() {
 
     @Composable
     override fun Content() {
-        val screenModel = koinScreenModel<AboutScreenModel>()
+        val screenModel = hiltViewModel<AboutScreenModel>()
         val state by screenModel.state.collectAsState()
-        val appInfo: AppInfo = koinInject()
-        val newUpdateScreenFactory: NewUpdateScreenFactory = koinInject()
-        val extensionManager: ExtensionManager = koinInject()
+        val appInfo = remember { ephyra.core.common.di.CoreContainer.get<AppInfo>() }
+        val newUpdateScreenFactory = remember { ephyra.core.common.di.CoreContainer.get<NewUpdateScreenFactory>() }
+        val extensionManager = remember { ephyra.core.common.di.CoreContainer.get<ExtensionManager>() }
 
         val context = LocalContext.current
         val uriHandler = LocalUriHandler.current
@@ -92,7 +90,7 @@ object AboutScreen : Screen() {
         Scaffold(
             topBar = { scrollBehavior ->
                 AppBar(
-                    title = stringResource(ephyra.i18n.R.string.pref_category_about),
+                    title = stringResource(ephyra.app.core.common.R.string.pref_category_about),
                     navigateUp = if (handleBack != null) handleBack::invoke else null,
                     scrollBehavior = scrollBehavior,
                 )
@@ -107,7 +105,7 @@ object AboutScreen : Screen() {
 
                 item {
                     TextPreferenceWidget(
-                        title = stringResource(ephyra.i18n.R.string.version),
+                        title = stringResource(ephyra.app.core.common.R.string.version),
                         subtitle = screenModel.getVersionName(withBuildDate = true),
                         onPreferenceClick = {
                             val deviceInfo = CrashLogUtil(context, extensionManager).getDebugInfo()
@@ -119,7 +117,7 @@ object AboutScreen : Screen() {
                 if (appInfo.updaterEnabled) {
                     item {
                         TextPreferenceWidget(
-                            title = stringResource(ephyra.i18n.R.string.check_for_updates),
+                            title = stringResource(ephyra.app.core.common.R.string.check_for_updates),
                             widget = {
                                 AnimatedVisibility(visible = state.isCheckingUpdates) {
                                     CircularProgressIndicator(
@@ -136,7 +134,7 @@ object AboutScreen : Screen() {
                 if (!appInfo.isDebug) {
                     item {
                         TextPreferenceWidget(
-                            title = stringResource(ephyra.i18n.R.string.whats_new),
+                            title = stringResource(ephyra.app.core.common.R.string.whats_new),
                             onPreferenceClick = { uriHandler.openUri(appInfo.releaseUrl) },
                         )
                     }
@@ -144,14 +142,14 @@ object AboutScreen : Screen() {
 
                 item {
                     TextPreferenceWidget(
-                        title = stringResource(ephyra.i18n.R.string.licenses),
+                        title = stringResource(ephyra.app.core.common.R.string.licenses),
                         onPreferenceClick = { navigator.push(OpenSourceLicensesScreen()) },
                     )
                 }
 
                 item {
                     TextPreferenceWidget(
-                        title = stringResource(ephyra.i18n.R.string.privacy_policy),
+                        title = stringResource(ephyra.app.core.common.R.string.privacy_policy),
                         onPreferenceClick = {
                             uriHandler.openUri("https://github.com/Gameaday/Ephyra/blob/main/PRIVACY.md")
                         },
@@ -166,7 +164,7 @@ object AboutScreen : Screen() {
                         horizontalArrangement = Arrangement.Center,
                     ) {
                         LinkIcon(
-                            label = stringResource(ephyra.i18n.R.string.website),
+                            label = stringResource(ephyra.app.core.common.R.string.website),
                             icon = Icons.Outlined.Public,
                             url = "https://github.com/Gameaday/Ephyra",
                         )
@@ -183,14 +181,14 @@ object AboutScreen : Screen() {
 
     @Composable
     fun getVersionName(withBuildDate: Boolean): String {
-        val screenModel = koinScreenModel<AboutScreenModel>()
+        val screenModel = hiltViewModel<AboutScreenModel>()
         return screenModel.getVersionName(withBuildDate)
     }
 
     @Composable
     fun getFormattedBuildTime(): String {
-        val appInfo: AppInfo = koinInject()
-        val uiPreferences: UiPreferences = koinInject()
+        val appInfo = remember { ephyra.core.common.di.CoreContainer.get<AppInfo>() }
+        val uiPreferences = remember { ephyra.core.common.di.CoreContainer.get<UiPreferences>() }
         return try {
             val fmt = uiPreferences.dateFormat().getSync()
             val dt = java.time.LocalDateTime.ofInstant(

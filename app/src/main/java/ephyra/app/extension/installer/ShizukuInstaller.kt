@@ -16,7 +16,6 @@ import ephyra.app.shizuku.IShellInterface
 import ephyra.app.shizuku.ShellInterface
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.extension.model.InstallStep
-import ephyra.i18n.MR
 import ephyra.presentation.core.util.system.toast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -94,7 +93,7 @@ internal class ShizukuInstaller(
         if (ready) return
         if (!Shizuku.pingBinder()) {
             logcat(LogPriority.ERROR) { "Shizuku is not ready to use" }
-            service.toast(ephyra.i18n.R.string.ext_installer_shizuku_stopped)
+            service.toast(ephyra.app.core.common.R.string.ext_installer_shizuku_stopped)
             service.stopSelf()
             return
         }

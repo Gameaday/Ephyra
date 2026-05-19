@@ -1,25 +1,34 @@
 package ephyra.feature.settings.screen.about
 
 import androidx.compose.runtime.Immutable
-import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.toDateTimestampString
 import ephyra.domain.release.interactor.GetApplicationRelease
 import ephyra.domain.ui.UiPreferences
 import ephyra.presentation.core.ui.AppInfo
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
+import javax.inject.Inject
 
-class AboutScreenModel(
+@HiltViewModel
+class AboutScreenModel @Inject constructor(
     private val getApplicationRelease: GetApplicationRelease,
     private val uiPreferences: UiPreferences,
     private val appInfo: AppInfo,
-) : StateScreenModel<AboutScreenState>(AboutScreenState()) {
+) : ViewModel() {
+
+    private val _state = MutableStateFlow(AboutScreenState())
+    val state: StateFlow<AboutScreenState> = _state.asStateFlow()
 
     private val _events: Channel<AboutEvent> = Channel(Int.MAX_VALUE)
     val events = _events.receiveAsFlow()
@@ -27,9 +36,9 @@ class AboutScreenModel(
     fun checkVersion() {
         if (state.value.isCheckingUpdates) return
 
-        mutableState.update { it.copy(isCheckingUpdates = true) }
+        _state.update { it.copy(isCheckingUpdates = true) }
 
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             try {
                 val result = getApplicationRelease.await(
                     GetApplicationRelease.Arguments(
@@ -46,11 +55,11 @@ class AboutScreenModel(
                 if (result is GetApplicationRelease.Result.NewUpdate) {
                     _events.send(AboutEvent.NewUpdate(result))
                 }
-                mutableState.update { it.copy(updateResult = result) }
+                _state.update { it.copy(updateResult = result) }
             } catch (e: Exception) {
                 _events.send(AboutEvent.UpdateError(e))
             } finally {
-                mutableState.update { it.copy(isCheckingUpdates = false) }
+                _state.update { it.copy(isCheckingUpdates = false) }
             }
         }
     }

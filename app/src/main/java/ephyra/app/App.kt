@@ -24,58 +24,86 @@ import coil3.request.allowRgb565
 import coil3.request.bitmapConfig
 import coil3.request.crossfade
 import coil3.util.DebugLogger
-import ephyra.domain.base.BasePreferences
-import ephyra.domain.ui.UiPreferences
-import ephyra.domain.ui.model.setAppCompatDelegateThemeMode
+import dagger.hilt.android.HiltAndroidApp
 import ephyra.app.core.security.PrivacyPreferences
+import ephyra.app.core.security.SecurityPreferences
 import ephyra.app.crash.CrashActivity
 import ephyra.app.crash.GlobalExceptionHandler
 import ephyra.app.data.coil.BufferedSourceFetcher
 import ephyra.app.data.coil.MangaCoverFetcher
 import ephyra.app.data.coil.MangaCoverKeyer
 import ephyra.app.data.coil.MangaKeyer
-import ephyra.presentation.core.data.coil.TachiyomiImageDecoder
 import ephyra.app.data.notification.Notifications
-import ephyra.app.di.AppDependencyContainer
-import eu.kanade.tachiyomi.network.NetworkHelper
-import eu.kanade.tachiyomi.network.NetworkPreferences
 import ephyra.app.ui.base.delegate.SecureActivityDelegate
 import ephyra.app.util.system.DeviceUtil
 import ephyra.app.util.system.GLUtil
 import ephyra.app.util.system.WebViewUtil
 import ephyra.app.util.system.animatorDurationScale
 import ephyra.app.util.system.cancelNotification
+import ephyra.app.util.system.isDebugBuildType
 import ephyra.app.util.system.notify
+import ephyra.core.common.preference.PreferenceStore
+import ephyra.core.common.util.system.ImageUtil
+import ephyra.core.common.util.system.logcat
+import ephyra.core.migration.Migrator
+import ephyra.domain.base.BasePreferences
+import ephyra.domain.ui.UiPreferences
+import ephyra.domain.ui.model.setAppCompatDelegateThemeMode
+import ephyra.domain.updates.interactor.GetUpdates
+import ephyra.presentation.core.data.coil.TachiyomiImageDecoder
+import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.widget.WidgetManager
+import ephyra.telemetry.TelemetryConfig
+import eu.kanade.tachiyomi.network.NetworkHelper
+import eu.kanade.tachiyomi.network.NetworkPreferences
+import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import logcat.AndroidLogcatLogger
 import logcat.LogPriority
 import logcat.LogcatLogger
-import ephyra.core.migration.Migrator
-import ephyra.telemetry.TelemetryConfig
-import ephyra.core.common.preference.PreferenceStore
-import ephyra.core.common.util.system.ImageUtil
-import ephyra.core.common.util.system.logcat
-import ephyra.presentation.widget.WidgetManager
 
+import ephyra.core.common.di.CoreContainer
+
+@HiltAndroidApp
 class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factory, androidx.work.Configuration.Provider {
+
+    @Inject
+    lateinit var basePreferences: BasePreferences
+
+    @Inject
+    lateinit var privacyPreferences: PrivacyPreferences
+
+    @Inject
+    lateinit var networkPreferences: NetworkPreferences
+
+    @Inject
+    lateinit var securityPreferences: SecurityPreferences
+
+    @Inject
+    lateinit var preferenceStore: PreferenceStore
+
+    @Inject
+    lateinit var networkHelper: NetworkHelper
+
+    @Inject
+    lateinit var getUpdates: GetUpdates
+
+    @Inject
+    lateinit var uiPreferences: UiPreferences
 
     override val workManagerConfiguration: androidx.work.Configuration
         get() = androidx.work.Configuration.Builder()
             .setWorkerFactory(ephyra.app.data.work.AppWorkerFactory())
             .build()
 
-    private val basePreferences: BasePreferences by lazy { container.basePreferences }
-    private val privacyPreferences: PrivacyPreferences by lazy { container.privacyPreferences }
-    private val networkPreferences: NetworkPreferences by lazy { container.networkPreferences }
-
     private val disableIncognitoReceiver = DisableIncognitoReceiver()
 
     @SuppressLint("LaunchActivityFromNotification")
     override fun onCreate() {
-        container = AppDependencyContainer(this)
-        super<Application>.onCreate()
+        CoreContainer.init(this)
+        super.onCreate()
         TelemetryConfig.init(applicationContext)
 
         GlobalExceptionHandler.initialize(applicationContext, CrashActivity::class.java)
@@ -99,8 +127,8 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
                         Notifications.ID_INCOGNITO_MODE,
                         Notifications.CHANNEL_INCOGNITO_MODE,
                     ) {
-                        setContentTitle(stringResource(ephyra.i18n.R.string.pref_incognito_mode))
-                        setContentText(stringResource(ephyra.i18n.R.string.notification_incognito_text))
+                        setContentTitle(stringResource(ephyra.app.core.common.R.string.pref_incognito_mode))
+                        setContentText(stringResource(ephyra.app.core.common.R.string.notification_incognito_text))
                         setSmallIcon(R.drawable.ic_glasses_24dp)
                         setOngoing(true)
 
@@ -137,10 +165,10 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
             .onEach { ImageUtil.hardwareBitmapThreshold = it }
             .launchIn(scope)
 
-        setAppCompatDelegateThemeMode(container.uiPreferences.themeMode().get())
+        setAppCompatDelegateThemeMode(uiPreferences.themeMode().get())
 
         // Updates widget update
-        WidgetManager(container.getUpdates(), container.securityPreferences).apply { init(scope) }
+        WidgetManager(getUpdates, securityPreferences).apply { init(scope) }
 
         if (!LogcatLogger.isInstalled) {
             val minLogPriority = when {
@@ -156,7 +184,6 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
     }
 
     private fun initializeMigrator() {
-        val preferenceStore = container.preferenceStore
         val preference = preferenceStore.getInt(Preference.appStateKey("last_version_code"), 0)
         logcat { "Migration from ${preference.get()} to ${BuildConfig.VERSION_CODE}" }
         Migrator.initialize(
@@ -172,7 +199,7 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
 
     override fun newImageLoader(context: Context): ImageLoader {
         return ImageLoader.Builder(this).apply {
-            val callFactoryLazy = lazy { container.networkHelper.client }
+            val callFactoryLazy = lazy { networkHelper.client }
             components {
                 // NetworkFetcher.Factory
                 add(OkHttpNetworkFetcherFactory(callFactoryLazy::value))
@@ -210,11 +237,11 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
     }
 
     override fun onStart(owner: LifecycleOwner) {
-        SecureActivityDelegate.onApplicationStart(container.basePreferences)
+        SecureActivityDelegate.onApplicationStart(basePreferences)
     }
 
     override fun onStop(owner: LifecycleOwner) {
-        SecureActivityDelegate.onApplicationStopped(container.basePreferences)
+        SecureActivityDelegate.onApplicationStopped(basePreferences)
     }
 
     /**
@@ -289,7 +316,6 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
     }
 
     companion object {
-        lateinit var container: AppDependencyContainer
         private const val ACTION_DISABLE_INCOGNITO_MODE = "tachi.action.DISABLE_INCOGNITO_MODE"
     }
 }

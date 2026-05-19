@@ -13,7 +13,6 @@ import androidx.fragment.app.FragmentActivity
 import ephyra.app.util.system.AuthenticatorUtil.isAuthenticating
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.system.toast
-import ephyra.i18n.MR
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
@@ -51,7 +50,7 @@ object AuthenticatorUtil {
 
     suspend fun FragmentActivity.authenticate(
         title: String,
-        subtitle: String? = stringResource(ephyra.i18n.R.string.confirm_lock_change),
+        subtitle: String? = stringResource(ephyra.app.core.common.R.string.confirm_lock_change),
     ): Boolean = suspendCancellableCoroutine { cont ->
         if (!isAuthenticationSupported()) {
             cont.resume(true)

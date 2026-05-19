@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import cafe.adriel.voyager.core.screen.Screen
-import dev.icerock.moko.resources.StringResource
 import ephyra.feature.settings.Preference
 import ephyra.feature.settings.PreferenceScaffold
 import ephyra.presentation.core.util.LocalBackPress
@@ -13,7 +12,7 @@ interface SearchableSettings : Screen {
 
     @Composable
     @ReadOnlyComposable
-    fun getTitleRes(): StringResource
+    fun getTitleRes(): Int
 
     @Composable
     fun getPreferences(): List<Preference>

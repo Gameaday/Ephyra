@@ -26,7 +26,6 @@ import ephyra.core.common.Constants
 import ephyra.domain.manga.model.Manga
 import ephyra.feature.upcoming.components.UpcomingItem
 import ephyra.feature.upcoming.components.calendar.Calendar
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.FastScrollLazyColumn
 import ephyra.presentation.core.components.TwoPanelBox
@@ -93,13 +92,13 @@ private fun UpcomingToolbar() {
     val uriHandler = LocalUriHandler.current
 
     AppBar(
-        title = stringResource(ephyra.i18n.R.string.label_upcoming),
+        title = stringResource(ephyra.app.core.common.R.string.label_upcoming),
         navigateUp = navigator::pop,
         actions = {
             IconButton(onClick = { uriHandler.openUri(Constants.URL_HELP_UPCOMING) }) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Outlined.HelpOutline,
-                    contentDescription = stringResource(ephyra.i18n.R.string.upcoming_guide),
+                    contentDescription = stringResource(ephyra.app.core.common.R.string.upcoming_guide),
                 )
             }
         },

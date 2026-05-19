@@ -6,12 +6,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.fragment.app.FragmentActivity
-import cafe.adriel.voyager.koin.koinScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import ephyra.core.common.core.security.PrivacyPreferences
 import ephyra.core.common.core.security.SecurityPreferences
 import ephyra.core.common.i18n.stringResource
 import ephyra.feature.settings.Preference
-import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.AppInfo
@@ -20,20 +19,19 @@ import ephyra.presentation.core.util.system.AuthenticatorUtil.authenticate
 import ephyra.presentation.core.util.system.AuthenticatorUtil.isAuthenticationSupported
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableMap
-import org.koin.compose.koinInject
 
 object SettingsSecurityScreen : SearchableSettings {
 
     @ReadOnlyComposable
     @Composable
-    override fun getTitleRes() = ephyra.i18n.R.string.pref_category_security
+    override fun getTitleRes() = ephyra.app.core.common.R.string.pref_category_security
 
     @Composable
     override fun getPreferences(): List<Preference> {
-        val screenModel = koinScreenModel<SettingsSecurityScreenModel>()
+        val screenModel = hiltViewModel<SettingsSecurityScreenModel>()
         val securityPreferences = screenModel.securityPreferences
         val privacyPreferences = screenModel.privacyPreferences
-        val appInfo: AppInfo = koinInject()
+        val appInfo = remember { ephyra.core.common.di.CoreContainer.get<AppInfo>() }
 
         return buildList(2) {
             add(getSecurityGroup(securityPreferences))
@@ -52,15 +50,15 @@ object SettingsSecurityScreen : SearchableSettings {
         val useAuth by useAuthPref.collectAsState()
 
         return Preference.PreferenceGroup(
-            title = stringResource(ephyra.i18n.R.string.pref_security),
+            title = stringResource(ephyra.app.core.common.R.string.pref_security),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.SwitchPreference(
                     preference = useAuthPref,
-                    title = stringResource(ephyra.i18n.R.string.lock_with_biometrics),
+                    title = stringResource(ephyra.app.core.common.R.string.lock_with_biometrics),
                     enabled = authSupported,
                     onValueChanged = {
                         (context as FragmentActivity).authenticate(
-                            title = context.stringResource(ephyra.i18n.R.string.lock_with_biometrics),
+                            title = context.stringResource(ephyra.app.core.common.R.string.lock_with_biometrics),
                         )
                     },
                 ),
@@ -69,33 +67,33 @@ object SettingsSecurityScreen : SearchableSettings {
                     entries = LockAfterValues
                         .associateWith {
                             when (it) {
-                                -1 -> stringResource(ephyra.i18n.R.string.lock_never)
-                                0 -> stringResource(ephyra.i18n.R.string.lock_always)
-                                else -> pluralStringResource(ephyra.i18n.R.plurals.lock_after_mins, count = it, it)
+                                -1 -> stringResource(ephyra.app.core.common.R.string.lock_never)
+                                0 -> stringResource(ephyra.app.core.common.R.string.lock_always)
+                                else -> pluralStringResource(ephyra.app.core.common.R.plurals.lock_after_mins, count = it, it)
                             }
                         }
                         .toImmutableMap(),
-                    title = stringResource(ephyra.i18n.R.string.lock_when_idle),
+                    title = stringResource(ephyra.app.core.common.R.string.lock_when_idle),
                     enabled = authSupported && useAuth,
                     onValueChanged = {
                         (context as FragmentActivity).authenticate(
-                            title = context.stringResource(ephyra.i18n.R.string.lock_when_idle),
+                            title = context.stringResource(ephyra.app.core.common.R.string.lock_when_idle),
                         )
                     },
                 ),
 
                 Preference.PreferenceItem.SwitchPreference(
                     preference = securityPreferences.hideNotificationContent(),
-                    title = stringResource(ephyra.i18n.R.string.hide_notification_content),
+                    title = stringResource(ephyra.app.core.common.R.string.hide_notification_content),
                 ),
                 Preference.PreferenceItem.ListPreference(
                     preference = securityPreferences.secureScreen(),
                     entries = SecurityPreferences.SecureScreenMode.entries
                         .associateWith { stringResource(it.titleRes) }
                         .toImmutableMap(),
-                    title = stringResource(ephyra.i18n.R.string.secure_screen),
+                    title = stringResource(ephyra.app.core.common.R.string.secure_screen),
                 ),
-                Preference.PreferenceItem.InfoPreference(stringResource(ephyra.i18n.R.string.secure_screen_summary)),
+                Preference.PreferenceItem.InfoPreference(stringResource(ephyra.app.core.common.R.string.secure_screen_summary)),
             ),
         )
     }
@@ -105,19 +103,19 @@ object SettingsSecurityScreen : SearchableSettings {
         privacyPreferences: PrivacyPreferences,
     ): Preference.PreferenceGroup {
         return Preference.PreferenceGroup(
-            title = stringResource(ephyra.i18n.R.string.pref_firebase),
+            title = stringResource(ephyra.app.core.common.R.string.pref_firebase),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.SwitchPreference(
                     preference = privacyPreferences.crashlytics(),
-                    title = stringResource(ephyra.i18n.R.string.onboarding_permission_crashlytics),
-                    subtitle = stringResource(ephyra.i18n.R.string.onboarding_permission_crashlytics_description),
+                    title = stringResource(ephyra.app.core.common.R.string.onboarding_permission_crashlytics),
+                    subtitle = stringResource(ephyra.app.core.common.R.string.onboarding_permission_crashlytics_description),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = privacyPreferences.analytics(),
-                    title = stringResource(ephyra.i18n.R.string.onboarding_permission_analytics),
-                    subtitle = stringResource(ephyra.i18n.R.string.onboarding_permission_analytics_description),
+                    title = stringResource(ephyra.app.core.common.R.string.onboarding_permission_analytics),
+                    subtitle = stringResource(ephyra.app.core.common.R.string.onboarding_permission_analytics_description),
                 ),
-                Preference.PreferenceItem.InfoPreference(stringResource(ephyra.i18n.R.string.firebase_summary)),
+                Preference.PreferenceItem.InfoPreference(stringResource(ephyra.app.core.common.R.string.firebase_summary)),
             ),
         )
     }

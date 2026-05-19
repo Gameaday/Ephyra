@@ -3,7 +3,6 @@ package ephyra.core.common.util.system
 import android.content.Context
 import androidx.core.os.LocaleListCompat
 import ephyra.core.common.i18n.stringResource
-import ephyra.i18n.MR
 import java.util.Locale
 
 /**
@@ -29,10 +28,10 @@ object LocaleHelper {
      */
     fun getSourceDisplayName(lang: String?, context: Context): String {
         return when (lang) {
-            "last_used" -> context.stringResource(ephyra.i18n.R.string.last_used_source)
-            "pinned" -> context.stringResource(ephyra.i18n.R.string.pinned_sources)
-            "other" -> context.stringResource(ephyra.i18n.R.string.other_source)
-            "all" -> context.stringResource(ephyra.i18n.R.string.multi_lang)
+            "last_used" -> context.stringResource(ephyra.app.core.common.R.string.last_used_source)
+            "pinned" -> context.stringResource(ephyra.app.core.common.R.string.pinned_sources)
+            "other" -> context.stringResource(ephyra.app.core.common.R.string.other_source)
+            "all" -> context.stringResource(ephyra.app.core.common.R.string.multi_lang)
             else -> getLocalizedDisplayName(lang)
         }
     }

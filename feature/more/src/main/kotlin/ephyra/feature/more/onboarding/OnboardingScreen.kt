@@ -17,7 +17,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.InfoScreen
@@ -48,13 +47,13 @@ fun OnboardingScreen(
 
     InfoScreen(
         icon = Icons.Outlined.RocketLaunch,
-        headingText = stringResource(ephyra.i18n.R.string.onboarding_heading),
-        subtitleText = stringResource(ephyra.i18n.R.string.onboarding_description),
+        headingText = stringResource(ephyra.app.core.common.R.string.onboarding_heading),
+        subtitleText = stringResource(ephyra.app.core.common.R.string.onboarding_description),
         acceptText = stringResource(
             if (isLastStep) {
-                ephyra.i18n.R.string.onboarding_action_finish
+                ephyra.app.core.common.R.string.onboarding_action_finish
             } else {
-                ephyra.i18n.R.string.onboarding_action_next
+                ephyra.app.core.common.R.string.onboarding_action_next
             },
         ),
         canAccept = steps[currentStep].isComplete,

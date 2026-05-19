@@ -9,7 +9,6 @@ import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.notification.NotificationIds
 import ephyra.core.common.util.system.buildNotificationChannel
 import ephyra.core.common.util.system.buildNotificationChannelGroup
-import ephyra.i18n.MR
 
 /**
  * Notification channel and ID constants for the app.
@@ -119,16 +118,16 @@ object Notifications {
         notificationManager.createNotificationChannelGroupsCompat(
             listOf(
                 buildNotificationChannelGroup(GROUP_BACKUP_RESTORE) {
-                    setName(context.stringResource(ephyra.i18n.R.string.label_backup))
+                    setName(context.stringResource(ephyra.app.core.common.R.string.label_backup))
                 },
                 buildNotificationChannelGroup(GROUP_DOWNLOADER) {
-                    setName(context.stringResource(ephyra.i18n.R.string.download_notifier_downloader_title))
+                    setName(context.stringResource(ephyra.app.core.common.R.string.download_notifier_downloader_title))
                 },
                 buildNotificationChannelGroup(GROUP_LIBRARY) {
-                    setName(context.stringResource(ephyra.i18n.R.string.label_library))
+                    setName(context.stringResource(ephyra.app.core.common.R.string.label_library))
                 },
                 buildNotificationChannelGroup(GROUP_APK_UPDATES) {
-                    setName(context.stringResource(ephyra.i18n.R.string.label_recent_updates))
+                    setName(context.stringResource(ephyra.app.core.common.R.string.label_recent_updates))
                 },
             ),
         )
@@ -136,55 +135,55 @@ object Notifications {
         notificationManager.createNotificationChannelsCompat(
             listOf(
                 buildNotificationChannel(CHANNEL_COMMON, IMPORTANCE_LOW) {
-                    setName(context.stringResource(ephyra.i18n.R.string.channel_common))
+                    setName(context.stringResource(ephyra.app.core.common.R.string.channel_common))
                 },
                 buildNotificationChannel(CHANNEL_LIBRARY_PROGRESS, IMPORTANCE_LOW) {
-                    setName(context.stringResource(ephyra.i18n.R.string.channel_progress))
+                    setName(context.stringResource(ephyra.app.core.common.R.string.channel_progress))
                     setGroup(GROUP_LIBRARY)
                     setShowBadge(false)
                 },
                 buildNotificationChannel(CHANNEL_LIBRARY_ERROR, IMPORTANCE_LOW) {
-                    setName(context.stringResource(ephyra.i18n.R.string.channel_errors))
+                    setName(context.stringResource(ephyra.app.core.common.R.string.channel_errors))
                     setGroup(GROUP_LIBRARY)
                     setShowBadge(false)
                 },
                 buildNotificationChannel(CHANNEL_NEW_CHAPTERS, IMPORTANCE_DEFAULT) {
-                    setName(context.stringResource(ephyra.i18n.R.string.channel_new_chapters))
+                    setName(context.stringResource(ephyra.app.core.common.R.string.channel_new_chapters))
                 },
                 buildNotificationChannel(CHANNEL_DOWNLOADER_PROGRESS, IMPORTANCE_LOW) {
-                    setName(context.stringResource(ephyra.i18n.R.string.channel_progress))
+                    setName(context.stringResource(ephyra.app.core.common.R.string.channel_progress))
                     setGroup(GROUP_DOWNLOADER)
                     setShowBadge(false)
                 },
                 buildNotificationChannel(CHANNEL_DOWNLOADER_ERROR, IMPORTANCE_LOW) {
-                    setName(context.stringResource(ephyra.i18n.R.string.channel_errors))
+                    setName(context.stringResource(ephyra.app.core.common.R.string.channel_errors))
                     setGroup(GROUP_DOWNLOADER)
                     setShowBadge(false)
                 },
                 buildNotificationChannel(CHANNEL_BACKUP_RESTORE_PROGRESS, IMPORTANCE_LOW) {
-                    setName(context.stringResource(ephyra.i18n.R.string.channel_progress))
+                    setName(context.stringResource(ephyra.app.core.common.R.string.channel_progress))
                     setGroup(GROUP_BACKUP_RESTORE)
                     setShowBadge(false)
                 },
                 buildNotificationChannel(CHANNEL_BACKUP_RESTORE_COMPLETE, IMPORTANCE_HIGH) {
-                    setName(context.stringResource(ephyra.i18n.R.string.channel_complete))
+                    setName(context.stringResource(ephyra.app.core.common.R.string.channel_complete))
                     setGroup(GROUP_BACKUP_RESTORE)
                     setShowBadge(false)
                     setSound(null, null)
                 },
                 buildNotificationChannel(CHANNEL_INCOGNITO_MODE, IMPORTANCE_LOW) {
-                    setName(context.stringResource(ephyra.i18n.R.string.pref_incognito_mode))
+                    setName(context.stringResource(ephyra.app.core.common.R.string.pref_incognito_mode))
                 },
                 buildNotificationChannel(CHANNEL_APP_UPDATE, IMPORTANCE_DEFAULT) {
                     setGroup(GROUP_APK_UPDATES)
-                    setName(context.stringResource(ephyra.i18n.R.string.channel_app_updates))
+                    setName(context.stringResource(ephyra.app.core.common.R.string.channel_app_updates))
                 },
                 buildNotificationChannel(CHANNEL_EXTENSIONS_UPDATE, IMPORTANCE_DEFAULT) {
                     setGroup(GROUP_APK_UPDATES)
-                    setName(context.stringResource(ephyra.i18n.R.string.channel_ext_updates))
+                    setName(context.stringResource(ephyra.app.core.common.R.string.channel_ext_updates))
                 },
                 buildNotificationChannel(CHANNEL_MATCH_PROGRESS, IMPORTANCE_LOW) {
-                    setName(context.stringResource(ephyra.i18n.R.string.channel_match_progress))
+                    setName(context.stringResource(ephyra.app.core.common.R.string.channel_match_progress))
                     setGroup(GROUP_LIBRARY)
                     setShowBadge(false)
                 },

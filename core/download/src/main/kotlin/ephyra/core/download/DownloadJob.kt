@@ -18,7 +18,6 @@ import ephyra.core.common.util.system.notificationBuilder
 import ephyra.core.common.util.system.setForegroundSafely
 import ephyra.data.notification.Notifications
 import ephyra.domain.download.service.DownloadPreferences
-import ephyra.i18n.MR
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combineTransform
@@ -39,7 +38,7 @@ class DownloadJob(
 
     override suspend fun getForegroundInfo(): ForegroundInfo {
         val notification = context.notificationBuilder(Notifications.CHANNEL_DOWNLOADER_PROGRESS) {
-            setContentTitle(context.stringResource(ephyra.i18n.R.string.download_notifier_downloader_title))
+            setContentTitle(context.stringResource(ephyra.app.core.common.R.string.download_notifier_downloader_title))
             setSmallIcon(android.R.drawable.stat_sys_download)
         }.build()
         return ForegroundInfo(
@@ -85,12 +84,12 @@ class DownloadJob(
             val noWifi = requireWifi && !state.isWifi
             if (noWifi) {
                 downloadManager.downloaderStop(
-                    context.stringResource(ephyra.i18n.R.string.download_notifier_text_only_wifi),
+                    context.stringResource(ephyra.app.core.common.R.string.download_notifier_text_only_wifi),
                 )
             }
             !noWifi
         } else {
-            downloadManager.downloaderStop(context.stringResource(ephyra.i18n.R.string.download_notifier_no_network))
+            downloadManager.downloaderStop(context.stringResource(ephyra.app.core.common.R.string.download_notifier_no_network))
             false
         }
     }

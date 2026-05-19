@@ -26,7 +26,6 @@ import ephyra.domain.source.model.Source
 import ephyra.feature.browse.migration.sources.MigrateSourceScreenModel
 import ephyra.feature.browse.presentation.components.BaseSourceItem
 import ephyra.feature.browse.presentation.components.SourceIcon
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.Badge
 import ephyra.presentation.core.components.BadgeGroup
 import ephyra.presentation.core.components.ScrollbarLazyColumn
@@ -54,7 +53,7 @@ fun MigrateSourceScreen(
     when {
         state.isLoading -> LoadingScreen(Modifier.padding(contentPadding))
         state.isEmpty -> EmptyScreen(
-            stringRes = ephyra.i18n.R.string.information_empty_library,
+            stringRes = ephyra.app.core.common.R.string.information_empty_library,
             modifier = Modifier.padding(contentPadding),
         )
 
@@ -97,7 +96,7 @@ private fun MigrateSourceList(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(ephyra.i18n.R.string.migration_selection_prompt),
+                    text = stringResource(ephyra.app.core.common.R.string.migration_selection_prompt),
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.header,
                 )
@@ -106,12 +105,12 @@ private fun MigrateSourceList(
                     when (sortingMode) {
                         SetMigrateSorting.Mode.ALPHABETICAL -> Icon(
                             Icons.Outlined.SortByAlpha,
-                            contentDescription = stringResource(ephyra.i18n.R.string.action_sort_alpha),
+                            contentDescription = stringResource(ephyra.app.core.common.R.string.action_sort_alpha),
                         )
 
                         SetMigrateSorting.Mode.TOTAL -> Icon(
                             Icons.Outlined.Numbers,
-                            contentDescription = stringResource(ephyra.i18n.R.string.action_sort_count),
+                            contentDescription = stringResource(ephyra.app.core.common.R.string.action_sort_count),
                         )
                     }
                 }
@@ -119,12 +118,12 @@ private fun MigrateSourceList(
                     when (sortingDirection) {
                         SetMigrateSorting.Direction.ASCENDING -> Icon(
                             Icons.Outlined.ArrowUpward,
-                            contentDescription = stringResource(ephyra.i18n.R.string.action_asc),
+                            contentDescription = stringResource(ephyra.app.core.common.R.string.action_asc),
                         )
 
                         SetMigrateSorting.Direction.DESCENDING -> Icon(
                             Icons.Outlined.ArrowDownward,
-                            contentDescription = stringResource(ephyra.i18n.R.string.action_desc),
+                            contentDescription = stringResource(ephyra.app.core.common.R.string.action_desc),
                         )
                     }
                 }
@@ -195,7 +194,7 @@ private fun MigrateSourceItem(
                     if (source.isStub) {
                         Text(
                             modifier = Modifier.secondaryItemAlpha(),
-                            text = stringResource(ephyra.i18n.R.string.not_installed),
+                            text = stringResource(ephyra.app.core.common.R.string.not_installed),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             style = MaterialTheme.typography.bodySmall,

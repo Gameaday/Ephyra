@@ -10,15 +10,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.rememberScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.domain.backup.model.BackupOptions
 import ephyra.domain.backup.service.BackupScheduler
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.LabeledCheckbox
 import ephyra.presentation.core.components.LazyColumnWithAction
@@ -30,8 +33,6 @@ import ephyra.presentation.core.util.Screen
 import ephyra.presentation.core.util.system.toast
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.flow.update
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 class CreateBackupScreen : Screen() {
 
@@ -39,7 +40,7 @@ class CreateBackupScreen : Screen() {
     override fun Content() {
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
-        val model = rememberScreenModel { CreateBackupScreenModel() }
+        val model = hiltViewModel<CreateBackupViewModel>()
         val state by model.state.collectAsStateWithLifecycle()
 
         val chooseBackupDir = rememberLauncherForActivityResult(
@@ -59,7 +60,7 @@ class CreateBackupScreen : Screen() {
         Scaffold(
             topBar = {
                 AppBar(
-                    title = stringResource(ephyra.i18n.R.string.pref_create_backup),
+                    title = stringResource(ephyra.app.core.common.R.string.pref_create_backup),
                     navigateUp = navigator::pop,
                     scrollBehavior = it,
                 )
@@ -67,34 +68,34 @@ class CreateBackupScreen : Screen() {
         ) { contentPadding ->
             LazyColumnWithAction(
                 contentPadding = contentPadding,
-                actionLabel = stringResource(ephyra.i18n.R.string.action_create),
+                actionLabel = stringResource(ephyra.app.core.common.R.string.action_create),
                 actionEnabled = state.options.canCreate(),
                 onClickAction = {
                     if (!model.isBackupRunning()) {
                         try {
                             chooseBackupDir.launch(model.getBackupFilename())
                         } catch (e: ActivityNotFoundException) {
-                            context.toast(ephyra.i18n.R.string.file_picker_error)
+                            context.toast(ephyra.app.core.common.R.string.file_picker_error)
                         }
                     } else {
-                        context.toast(ephyra.i18n.R.string.backup_in_progress)
+                        context.toast(ephyra.app.core.common.R.string.backup_in_progress)
                     }
                 },
             ) {
                 if (DeviceUtil.isMiui && DeviceUtil.isMiuiOptimizationDisabled()) {
                     item {
-                        WarningBanner(stringResource(ephyra.i18n.R.string.restore_miui_warning))
+                        WarningBanner(stringResource(ephyra.app.core.common.R.string.restore_miui_warning))
                     }
                 }
 
                 item {
-                    SectionCard(ephyra.i18n.R.string.label_library) {
+                    SectionCard(ephyra.app.core.common.R.string.label_library) {
                         Options(BackupOptions.libraryOptions, state, model)
                     }
                 }
 
                 item {
-                    SectionCard(ephyra.i18n.R.string.label_settings) {
+                    SectionCard(ephyra.app.core.common.R.string.label_settings) {
                         Options(BackupOptions.settingsOptions, state, model)
                     }
                 }
@@ -105,8 +106,8 @@ class CreateBackupScreen : Screen() {
     @Composable
     private fun Options(
         options: ImmutableList<BackupOptions.Entry>,
-        state: CreateBackupScreenModel.State,
-        model: CreateBackupScreenModel,
+        state: CreateBackupViewModel.State,
+        model: CreateBackupViewModel,
     ) {
         options.forEach { option ->
             LabeledCheckbox(
@@ -121,16 +122,20 @@ class CreateBackupScreen : Screen() {
     }
 }
 
-private class CreateBackupScreenModel : StateScreenModel<CreateBackupScreenModel.State>(State()), KoinComponent {
+@HiltViewModel
+class CreateBackupViewModel @Inject constructor(
+    private val backupScheduler: BackupScheduler,
+) : ViewModel() {
 
-    private val backupScheduler: BackupScheduler by inject()
+    private val _state = MutableStateFlow(State())
+    val state: StateFlow<State> = _state.asStateFlow()
 
     fun isBackupRunning(): Boolean = backupScheduler.isBackupRunning()
 
     fun getBackupFilename(): String = backupScheduler.getBackupFilename()
 
     fun toggle(setter: (BackupOptions, Boolean) -> BackupOptions, enabled: Boolean) {
-        mutableState.update {
+        _state.update {
             it.copy(
                 options = setter(it.options, enabled),
             )

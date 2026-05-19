@@ -5,7 +5,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import ephyra.core.common.util.lang.toRelativeString
 import ephyra.domain.ui.UiPreferences
-import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource
 import java.time.Instant
 import java.time.LocalDate
@@ -41,5 +40,5 @@ fun relativeDateText(
         relative = relativeTime,
         dateFormat = dateFormat,
     )
-        ?: stringResource(ephyra.i18n.R.string.not_applicable)
+        ?: stringResource(ephyra.app.core.common.R.string.not_applicable)
 }

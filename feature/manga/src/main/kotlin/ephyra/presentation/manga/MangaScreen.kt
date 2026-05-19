@@ -65,7 +65,6 @@ import ephyra.feature.manga.presentation.components.MangaInfoBox
 import ephyra.feature.manga.presentation.components.MangaToolbar
 import ephyra.feature.manga.presentation.components.MissingChapterCountListItem
 import ephyra.feature.manga.presentation.components.SourceHealthBanner
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.TwoPanelBox
 import ephyra.presentation.core.components.VerticalFastScroller
 import ephyra.presentation.core.components.material.PullRefresh
@@ -344,7 +343,7 @@ private fun MangaScreenSmallImpl(
                         state.chapters.fastAny { it.read }
                     }
                     Text(
-                        text = stringResource(if (isReading) ephyra.i18n.R.string.action_resume else ephyra.i18n.R.string.action_start),
+                        text = stringResource(if (isReading) ephyra.app.core.common.R.string.action_resume else ephyra.app.core.common.R.string.action_start),
                     )
                 },
                 icon = { Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = null) },
@@ -605,7 +604,7 @@ fun MangaScreenLargeImpl(
                     }
                     Text(
                         text = stringResource(
-                            if (isReading) ephyra.i18n.R.string.action_resume else ephyra.i18n.R.string.action_start,
+                            if (isReading) ephyra.app.core.common.R.string.action_resume else ephyra.app.core.common.R.string.action_start,
                         ),
                     )
                 },
@@ -804,7 +803,7 @@ private fun LazyListScope.sharedChapterItems(
                 MangaChapterListItem(
                     title = if (manga.displayMode == Manga.CHAPTER_DISPLAY_NUMBER) {
                         stringResource(
-                            ephyra.i18n.R.string.display_mode_chapter,
+                            ephyra.app.core.common.R.string.display_mode_chapter,
                             formatChapterNumber(item.chapter.chapterNumber),
                         )
                     } else {
@@ -815,7 +814,7 @@ private fun LazyListScope.sharedChapterItems(
                         .takeIf { !item.chapter.read && it > 0L }
                         ?.let {
                             stringResource(
-                                ephyra.i18n.R.string.chapter_progress,
+                                ephyra.app.core.common.R.string.chapter_progress,
                                 it + 1,
                             )
                         },

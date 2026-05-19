@@ -22,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ephyra.domain.track.service.Tracker
 import ephyra.feature.settings.LocalPreferenceHighlighted
-import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.theme.MotionTokens
 import ephyra.presentation.manga.track.components.TrackLogoIcon
@@ -64,7 +63,7 @@ fun TrackingPreferenceWidget(
                         .padding(4.dp)
                         .size(32.dp),
                     tint = MaterialTheme.colorScheme.primary,
-                    contentDescription = stringResource(ephyra.i18n.R.string.login_success),
+                    contentDescription = stringResource(ephyra.app.core.common.R.string.login_success),
                 )
             }
         }

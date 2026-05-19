@@ -11,7 +11,6 @@ import androidx.biometric.auth.startClass2BiometricOrCredentialAuthentication
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import ephyra.core.common.i18n.stringResource
-import ephyra.i18n.MR
 import ephyra.presentation.core.util.system.AuthenticatorUtil.isAuthenticating
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
@@ -50,7 +49,7 @@ object AuthenticatorUtil {
 
     suspend fun FragmentActivity.authenticate(
         title: String,
-        subtitle: String? = stringResource(ephyra.i18n.R.string.confirm_lock_change),
+        subtitle: String? = stringResource(ephyra.app.core.common.R.string.confirm_lock_change),
     ): Boolean = suspendCancellableCoroutine { cont ->
         if (!isAuthenticationSupported()) {
             cont.resume(true)

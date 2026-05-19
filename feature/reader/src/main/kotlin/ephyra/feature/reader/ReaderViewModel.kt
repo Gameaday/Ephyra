@@ -82,10 +82,14 @@ import java.io.InputStream
 import java.time.Instant
 import java.util.Date
 
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+
 /**
  * Presenter used by the activity to perform background operations.
  */
-class ReaderViewModel @JvmOverloads constructor(
+@HiltViewModel
+class ReaderViewModel @Inject constructor(
     private val savedState: SavedStateHandle,
     private val sourceManager: SourceManager,
     private val downloadManager: DownloadManager,

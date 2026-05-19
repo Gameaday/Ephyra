@@ -4,7 +4,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource
 
 @Composable
@@ -15,16 +14,16 @@ fun MigrationExitDialog(
     AlertDialog(
         onDismissRequest = onDismissRequest,
         title = {
-            Text(text = stringResource(ephyra.i18n.R.string.migrationListScreen_exitDialogTitle))
+            Text(text = stringResource(ephyra.app.core.common.R.string.migrationListScreen_exitDialogTitle))
         },
         confirmButton = {
             TextButton(onClick = exitMigration) {
-                Text(text = stringResource(ephyra.i18n.R.string.migrationListScreen_exitDialog_stopLabel))
+                Text(text = stringResource(ephyra.app.core.common.R.string.migrationListScreen_exitDialog_stopLabel))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(ephyra.i18n.R.string.migrationListScreen_exitDialog_cancelLabel))
+                Text(text = stringResource(ephyra.app.core.common.R.string.migrationListScreen_exitDialog_cancelLabel))
             }
         },
     )

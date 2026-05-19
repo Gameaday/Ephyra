@@ -43,7 +43,6 @@ import androidx.lifecycle.lifecycleScope
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 import com.google.android.material.transition.platform.MaterialContainerTransform
 import com.hippo.unifile.UniFile
-import dev.icerock.moko.resources.StringResource
 import ephyra.core.common.Constants
 import ephyra.core.common.notification.NotificationManager
 import ephyra.core.common.util.lang.launchNonCancellable
@@ -64,7 +63,6 @@ import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.model.ViewerChapters
 import ephyra.feature.reader.setting.ReaderSettingsScreenModel
 import ephyra.feature.reader.viewer.ReaderProgressIndicator
-import ephyra.i18n.MR
 import ephyra.presentation.core.data.coil.TachiyomiImageDecoder
 import ephyra.presentation.core.ui.activity.BaseActivity
 import ephyra.presentation.core.util.AppNavigator
@@ -95,11 +93,13 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import logcat.LogPriority
-import org.koin.android.ext.android.inject
-import org.koin.androidx.viewmodel.ext.android.viewModel
+import dagger.hilt.android.AndroidEntryPoint
+import androidx.activity.viewModels
+import javax.inject.Inject
 import java.io.ByteArrayOutputStream
 import ephyra.presentation.core.R as CoreR
 
+@AndroidEntryPoint
 @OptIn(FlowPreview::class)
 class ReaderActivity : BaseActivity() {
 
@@ -113,14 +113,14 @@ class ReaderActivity : BaseActivity() {
         }
     }
 
-    private val readerPreferences: ReaderPreferences by inject()
-    private val preferences: BasePreferences by inject()
-    private val navigator: AppNavigator by inject()
-    private val notificationManager: NotificationManager by inject()
+    @Inject lateinit var readerPreferences: ReaderPreferences
+    @Inject lateinit var preferences: BasePreferences
+    @Inject lateinit var navigator: AppNavigator
+    @Inject lateinit var notificationManager: NotificationManager
 
     lateinit var binding: ReaderActivityBinding
 
-    val viewModel by viewModel<ReaderViewModel>()
+    val viewModel: ReaderViewModel by viewModels()
     private var assistUrl: String? = null
 
     /**
@@ -470,7 +470,7 @@ class ReaderActivity : BaseActivity() {
         startActivity(url.toUri().toShareIntent(this, "text/plain"))
     }
 
-    private fun showToast(stringRes: StringResource) {
+    private fun showToast(stringRes: Int) {
         readingModeToast?.cancel()
         readingModeToast = toast(stringRes)
     }
@@ -547,7 +547,7 @@ class ReaderActivity : BaseActivity() {
                 // Show the BigPicture notification here (Activity Context) — the ViewModel
                 // no longer holds a notifier reference, keeping it UI-framework-agnostic.
                 SaveImageNotifier(this).onComplete(result.uri)
-                toast(ephyra.i18n.R.string.picture_saved)
+                toast(ephyra.app.core.common.R.string.picture_saved)
             }
             is ReaderViewModel.SaveImageResult.Error -> toast(result.error.message)
         }
@@ -555,16 +555,16 @@ class ReaderActivity : BaseActivity() {
 
     fun onSetAsCoverResult(result: ReaderViewModel.SetAsCoverResult) {
         when (result) {
-            Success -> toast(ephyra.i18n.R.string.cover_updated)
-            AddToLibraryFirst -> toast(ephyra.i18n.R.string.notification_first_add_to_library)
-            Error -> toast(ephyra.i18n.R.string.error_saving_cover)
+            Success -> toast(ephyra.app.core.common.R.string.cover_updated)
+            AddToLibraryFirst -> toast(ephyra.app.core.common.R.string.notification_first_add_to_library)
+            Error -> toast(ephyra.app.core.common.R.string.error_saving_cover)
         }
     }
 
     fun onBlockPageResult(result: ReaderViewModel.BlockPageResult) {
         when (result) {
-            is ReaderViewModel.BlockPageResult.Success -> toast(ephyra.i18n.R.string.page_blocked)
-            is ReaderViewModel.BlockPageResult.Error -> toast(ephyra.i18n.R.string.page_block_error)
+            is ReaderViewModel.BlockPageResult.Success -> toast(ephyra.app.core.common.R.string.page_blocked)
+            is ReaderViewModel.BlockPageResult.Error -> toast(ephyra.app.core.common.R.string.page_block_error)
         }
     }
 

@@ -19,7 +19,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import ephyra.core.common.util.storage.DiskUtil
-import ephyra.i18n.MR
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.theme.header
@@ -62,12 +61,12 @@ private fun StorageInfo(
     }
 
     val availableText = if (available == -1L) {
-        stringResource(ephyra.i18n.R.string.calculating)
+        stringResource(ephyra.app.core.common.R.string.calculating)
     } else {
         Formatter.formatFileSize(context, available)
     }
     val totalText = if (total == -1L) {
-        stringResource(ephyra.i18n.R.string.calculating)
+        stringResource(ephyra.app.core.common.R.string.calculating)
     } else {
         Formatter.formatFileSize(context, total)
     }
@@ -91,7 +90,7 @@ private fun StorageInfo(
         }
 
         Text(
-            text = stringResource(ephyra.i18n.R.string.available_disk_space_info, availableText, totalText),
+            text = stringResource(ephyra.app.core.common.R.string.available_disk_space_info, availableText, totalText),
             modifier = Modifier.secondaryItemAlpha(),
             style = MaterialTheme.typography.bodySmall,
         )

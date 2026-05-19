@@ -17,14 +17,13 @@ import ephyra.domain.extension.model.Extension
 import ephyra.feature.browse.extension.details.ExtensionDetailsScreen
 import ephyra.feature.browse.presentation.ExtensionScreen
 import ephyra.feature.webview.WebViewScreen
-import ephyra.i18n.MR
+import ephyra.core.common.di.CoreContainer
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.TabContent
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.ExtensionReposScreenFactory
 import ephyra.presentation.core.util.system.isPackageInstalled
 import kotlinx.collections.immutable.persistentListOf
-import org.koin.compose.koinInject
 
 @Composable
 fun extensionsTab(
@@ -32,22 +31,22 @@ fun extensionsTab(
 ): TabContent {
     val navigator = LocalNavigator.currentOrThrow
     val context = LocalContext.current
-    val extensionReposFactory = koinInject<ExtensionReposScreenFactory>()
+    val extensionReposFactory = CoreContainer.get<ExtensionReposScreenFactory>()
 
     val state by extensionsScreenModel.state.collectAsStateWithLifecycle()
     var privateExtensionToUninstall by remember { mutableStateOf<Extension?>(null) }
 
     return TabContent(
-        titleRes = ephyra.i18n.R.string.label_extensions,
+        titleRes = ephyra.app.core.common.R.string.label_extensions,
         badgeNumber = state.updates.takeIf { it > 0 },
         searchEnabled = true,
         actions = persistentListOf(
             AppBar.OverflowAction(
-                title = stringResource(ephyra.i18n.R.string.action_filter),
+                title = stringResource(ephyra.app.core.common.R.string.action_filter),
                 onClick = { navigator.push(ExtensionFilterScreen()) },
             ),
             AppBar.OverflowAction(
-                title = stringResource(ephyra.i18n.R.string.label_extension_repos),
+                title = stringResource(ephyra.app.core.common.R.string.label_extension_repos),
                 onClick = { navigator.push(extensionReposFactory.create(null)) },
             ),
         ),
@@ -116,10 +115,10 @@ private fun ExtensionUninstallConfirmation(
 ) {
     AlertDialog(
         title = {
-            Text(text = stringResource(ephyra.i18n.R.string.ext_confirm_remove))
+            Text(text = stringResource(ephyra.app.core.common.R.string.ext_confirm_remove))
         },
         text = {
-            Text(text = stringResource(ephyra.i18n.R.string.remove_private_extension_message, extensionName))
+            Text(text = stringResource(ephyra.app.core.common.R.string.remove_private_extension_message, extensionName))
         },
         confirmButton = {
             TextButton(
@@ -128,12 +127,12 @@ private fun ExtensionUninstallConfirmation(
                     onDismissRequest()
                 },
             ) {
-                Text(text = stringResource(ephyra.i18n.R.string.ext_remove))
+                Text(text = stringResource(ephyra.app.core.common.R.string.ext_remove))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(ephyra.i18n.R.string.action_cancel))
+                Text(text = stringResource(ephyra.app.core.common.R.string.action_cancel))
             }
         },
         onDismissRequest = onDismissRequest,

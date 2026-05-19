@@ -1,7 +1,5 @@
 package ephyra.domain.backup.model
 
-import dev.icerock.moko.resources.StringResource
-import ephyra.i18n.MR
 import kotlinx.collections.immutable.persistentListOf
 
 /**
@@ -31,27 +29,27 @@ data class RestoreOptions(
     companion object {
         val options = persistentListOf(
             Entry(
-                label = ephyra.i18n.R.string.label_library,
+                label = ephyra.app.core.common.R.string.label_library,
                 getter = RestoreOptions::libraryEntries,
                 setter = { options, enabled -> options.copy(libraryEntries = enabled) },
             ),
             Entry(
-                label = ephyra.i18n.R.string.categories,
+                label = ephyra.app.core.common.R.string.categories,
                 getter = RestoreOptions::categories,
                 setter = { options, enabled -> options.copy(categories = enabled) },
             ),
             Entry(
-                label = ephyra.i18n.R.string.app_settings,
+                label = ephyra.app.core.common.R.string.app_settings,
                 getter = RestoreOptions::appSettings,
                 setter = { options, enabled -> options.copy(appSettings = enabled) },
             ),
             Entry(
-                label = ephyra.i18n.R.string.extensionRepo_settings,
+                label = ephyra.app.core.common.R.string.extensionRepo_settings,
                 getter = RestoreOptions::extensionRepoSettings,
                 setter = { options, enabled -> options.copy(extensionRepoSettings = enabled) },
             ),
             Entry(
-                label = ephyra.i18n.R.string.source_settings,
+                label = ephyra.app.core.common.R.string.source_settings,
                 getter = RestoreOptions::sourceSettings,
                 setter = { options, enabled -> options.copy(sourceSettings = enabled) },
             ),
@@ -67,7 +65,7 @@ data class RestoreOptions(
     }
 
     data class Entry(
-        val label: StringResource,
+        val label: Int,
         val getter: (RestoreOptions) -> Boolean,
         val setter: (RestoreOptions, Boolean) -> RestoreOptions,
     )

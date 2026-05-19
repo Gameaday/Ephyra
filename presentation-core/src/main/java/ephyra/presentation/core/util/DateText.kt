@@ -4,7 +4,6 @@ import android.text.format.DateUtils
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.platform.LocalContext
-import ephyra.i18n.MR
 import ephyra.presentation.core.i18n.stringResource
 import java.time.Instant
 
@@ -15,7 +14,7 @@ import java.time.Instant
 @ReadOnlyComposable
 fun relativeDateText(date: Long): String {
     if (date <= 0L) {
-        return stringResource(ephyra.i18n.R.string.not_applicable)
+        return stringResource(ephyra.app.core.common.R.string.not_applicable)
     }
 
     val context = LocalContext.current
