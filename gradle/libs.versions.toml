@@ -25,7 +25,7 @@ koin_compiler_plugin = "0.6.2"
 hilt = "2.51.1"
 ksp = "2.3.7"
 room = "2.8.4"
-paging = "3.4.2"
+paging = "3.5.0"
 
 [libraries]
 desugar = "com.android.tools:desugar_jdk_libs:2.1.5"
