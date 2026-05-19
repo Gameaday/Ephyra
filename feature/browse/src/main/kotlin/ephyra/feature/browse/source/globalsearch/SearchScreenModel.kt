@@ -3,8 +3,8 @@ package ephyra.feature.browse.source.globalsearch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.produceState
-import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import ephyra.core.common.preference.toggle
 import ephyra.core.common.util.lang.launchIO
 import ephyra.domain.extension.service.ExtensionManager
@@ -27,6 +27,9 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -38,15 +41,16 @@ abstract class SearchScreenModel(
     private val extensionManager: ExtensionManager,
     private val networkToLocalManga: NetworkToLocalManga,
     private val getManga: GetManga,
-) : StateScreenModel<SearchScreenModel.State>(initialState) {
+) : ViewModel() {
+
+    protected val _state = MutableStateFlow(initialState)
+    val state: StateFlow<State> = _state.asStateFlow()
 
     private val coroutineDispatcher = Dispatchers.IO.limitedParallelism(5)
     private var searchJob: Job? = null
 
     private val enabledLanguages = sourcePreferences.enabledLanguages().getSync()
 
-    // Parse Set<String> source IDs to Set<Long> once at construction time to avoid creating a
-    // new String per source on every getEnabledSources()/sortComparator call.
     private val disabledSourceIds = sourcePreferences.disabledSources().getSync()
         .mapTo(HashSet()) { it.toLong() }
     protected val pinnedSourceIds = sourcePreferences.pinnedSources().getSync()
@@ -68,9 +72,9 @@ abstract class SearchScreenModel(
     }
 
     init {
-        screenModelScope.launch {
-            sourcePreferences.globalSearchFilterState().changes().collectLatest { state ->
-                mutableState.update { it.copy(onlyShowHasResults = state) }
+        viewModelScope.launch {
+            sourcePreferences.globalSearchFilterState().changes().collectLatest { filterState ->
+                _state.update { it.copy(onlyShowHasResults = filterState) }
             }
         }
     }
@@ -107,9 +111,7 @@ abstract class SearchScreenModel(
             return enabledSources
         }
 
-        // Build O(1) lookup set for enabled source IDs to replace O(N) List.contains
         val enabledIds = enabledSources.mapTo(HashSet(enabledSources.size)) { it.id }
-        // Single-pass: find matching extension and collect enabled CatalogueSources in one loop
         val result = mutableListOf<CatalogueSource>()
         for (ext in extensionManager.installedExtensionsFlow.value) {
             if (ext.pkgName != filter) continue
@@ -122,7 +124,6 @@ abstract class SearchScreenModel(
         return result
     }
 
-    // ── UDF entry-point ──────────────────────────────────────────────────────
     fun onEvent(event: SearchScreenEvent) {
         when (event) {
             is SearchScreenEvent.UpdateSearchQuery -> updateSearchQuery(event.query)
@@ -135,16 +136,16 @@ abstract class SearchScreenModel(
     }
 
     protected fun updateSearchQuery(query: String?) {
-        mutableState.update { it.copy(searchQuery = query) }
+        _state.update { it.copy(searchQuery = query) }
     }
 
     protected fun setSourceFilter(filter: SourceFilter) {
-        mutableState.update { it.copy(sourceFilter = filter) }
+        _state.update { it.copy(sourceFilter = filter) }
         search()
     }
 
     protected fun toggleFilterResults() {
-        screenModelScope.launch { sourcePreferences.globalSearchFilterState().toggle() }
+        viewModelScope.launch { sourcePreferences.globalSearchFilterState().toggle() }
     }
 
     protected fun search() {
@@ -163,7 +164,6 @@ abstract class SearchScreenModel(
 
         val sources = getSelectedSources()
 
-        // Reuse previous results if possible
         if (sameQuery) {
             val existingResults = state.value.items
             updateItems(
@@ -212,7 +212,7 @@ abstract class SearchScreenModel(
     }
 
     private fun updateItems(items: PersistentMap<CatalogueSource, SearchItemResult>) {
-        mutableState.update {
+        _state.update {
             it.copy(
                 items = items
                     .toSortedMap(sortComparator(items))
@@ -229,14 +229,14 @@ abstract class SearchScreenModel(
     }
 
     protected fun setMigrateDialog(currentId: Long, target: Manga) {
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             val current = getManga.await(currentId) ?: return@launchIO
-            mutableState.update { it.copy(dialog = Dialog.Migrate(target, current)) }
+            _state.update { it.copy(dialog = Dialog.Migrate(target, current)) }
         }
     }
 
     protected fun clearDialog() {
-        mutableState.update { it.copy(dialog = null) }
+        _state.update { it.copy(dialog = null) }
     }
 
     @Immutable

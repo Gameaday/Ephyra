@@ -40,7 +40,6 @@ import kotlinx.serialization.json.decodeFromStream
 import logcat.LogPriority
 import nl.adaptivity.xmlutil.core.AndroidXmlReader
 import nl.adaptivity.xmlutil.serialization.XML
-import org.koin.core.context.GlobalContext
 import java.io.InputStream
 import java.nio.charset.StandardCharsets
 import kotlin.time.Duration.Companion.days
@@ -52,8 +51,8 @@ actual class LocalSource(
     private val coverManager: LocalCoverManager,
 ) : CatalogueSource, UnmeteredSource {
 
-    private val json: Json by lazy { GlobalContext.get().get() }
-    private val xml: XML by lazy { GlobalContext.get().get() }
+    private val json: Json by lazy { ephyra.core.common.di.CoreContainer.get<Json>() }
+    private val xml: XML by lazy { ephyra.core.common.di.CoreContainer.get<XML>() }
 
     @Suppress("PrivatePropertyName")
     private val PopularFilters = FilterList(OrderBy.Popular(context))

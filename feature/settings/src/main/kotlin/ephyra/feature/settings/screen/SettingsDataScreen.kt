@@ -74,7 +74,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import logcat.LogPriority
-import org.koin.compose.koinInject
 
 object SettingsDataScreen : SearchableSettings {
 
@@ -186,8 +185,8 @@ object SettingsDataScreen : SearchableSettings {
     private fun getBackupAndRestoreGroup(backupPreferences: BackupPreferences): Preference.PreferenceGroup {
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
-        val backupScheduler: BackupScheduler = koinInject()
-        val restoreScheduler: RestoreScheduler = koinInject()
+        val backupScheduler = remember { ephyra.core.common.di.CoreContainer.get<BackupScheduler>() }
+        val restoreScheduler = remember { ephyra.core.common.di.CoreContainer.get<RestoreScheduler>() }
 
         val lastAutoBackup by backupPreferences.lastAutoBackupTimestamp().collectAsState()
 

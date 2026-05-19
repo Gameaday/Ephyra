@@ -60,7 +60,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
-import org.koin.compose.koinInject
 
 data object LibraryTab : Tab {
 
@@ -88,9 +87,9 @@ data object LibraryTab : Tab {
         val haptic = LocalHapticFeedback.current
 
         val screenModel = hiltViewModel<LibraryScreenModel>()
-        val updateScheduler = koinInject<LibraryUpdateScheduler>()
+        val updateScheduler = remember { ephyra.core.common.di.CoreContainer.get<LibraryUpdateScheduler>() }
         val settingsScreenModel = hiltViewModel<LibrarySettingsScreenModel>()
-        val migrationConfigScreenFactory = koinInject<MigrationConfigScreenFactory>()
+        val migrationConfigScreenFactory = remember { ephyra.core.common.di.CoreContainer.get<MigrationConfigScreenFactory>() }
         val state by screenModel.state.collectAsStateWithLifecycle()
 
         val snackbarHostState = remember { SnackbarHostState() }

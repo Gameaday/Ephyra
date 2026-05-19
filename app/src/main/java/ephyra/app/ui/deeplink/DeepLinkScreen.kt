@@ -17,7 +17,6 @@ import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.util.Screen
-import org.koin.core.parameter.parametersOf
 
 class DeepLinkScreen(
     val query: String = "",
@@ -28,7 +27,10 @@ class DeepLinkScreen(
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
 
-        val screenModel = koinScreenModel<DeepLinkScreenModel> { parametersOf(query) }
+        val screenModel = koinScreenModel<DeepLinkScreenModel>()
+        androidx.compose.runtime.remember(screenModel) {
+            screenModel.init(query)
+        }
         val state by screenModel.state.collectAsStateWithLifecycle()
         Scaffold(
             topBar = { scrollBehavior ->

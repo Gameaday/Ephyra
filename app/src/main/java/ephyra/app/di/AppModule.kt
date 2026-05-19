@@ -1179,6 +1179,22 @@ object AppModule {
         mangaTrackInteractor,
         syncJellyfin
     )
+ 
+    @Provides
+    @Singleton
+    fun provideExtensionReposScreenFactory(): ephyra.presentation.core.ui.ExtensionReposScreenFactory {
+        return ephyra.presentation.core.ui.ExtensionReposScreenFactory { url ->
+            ephyra.feature.settings.screen.browse.ExtensionReposScreen(url)
+        }
+    }
+
+    @Provides
+    @Singleton
+    fun provideMigrationConfigScreenFactory(): ephyra.presentation.core.ui.MigrationConfigScreenFactory {
+        return ephyra.presentation.core.ui.MigrationConfigScreenFactory { mangaIds ->
+            ephyra.feature.migration.config.MigrationConfigScreen(mangaIds)
+        }
+    }
 
     @Provides
     @Singleton
@@ -1201,4 +1217,20 @@ object AppModule {
     @Provides
     @Singleton
     fun provideMetadataUpdateScheduler(workScheduler: ephyra.app.data.scheduler.WorkSchedulerImpl): ephyra.domain.library.service.MetadataUpdateScheduler = workScheduler
+
+    @Provides
+    @Singleton
+    fun provideAppInfo(): ephyra.presentation.core.ui.AppInfo {
+        return object : ephyra.presentation.core.ui.AppInfo {
+            override val isDebug: Boolean = ephyra.app.BuildConfig.DEBUG
+            override val buildType: String = ephyra.app.BuildConfig.BUILD_TYPE
+            override val commitSha: String = "unknown"
+            override val commitCount: String = "0"
+            override val versionName: String = ephyra.app.BuildConfig.VERSION_NAME
+            override val buildTime: String = "unknown"
+            override val githubRepo: String = "Gameaday/Ephyra"
+            override val telemetryIncluded: Boolean = ephyra.app.BuildConfig.TELEMETRY_INCLUDED
+            override val updaterEnabled: Boolean = ephyra.app.BuildConfig.UPDATER_ENABLED
+        }
+    }
 }

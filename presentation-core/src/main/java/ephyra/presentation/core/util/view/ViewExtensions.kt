@@ -26,15 +26,14 @@ import ephyra.domain.ui.UiPreferences
 import ephyra.presentation.core.util.LocalPrivacyPreferences
 import ephyra.presentation.core.util.LocalUiPreferences
 import ephyra.presentation.theme.TachiyomiTheme
-import org.koin.compose.koinInject
 
 inline fun ComponentActivity.setComposeContent(
     parent: CompositionContext? = null,
     crossinline content: @Composable () -> Unit,
 ) {
     setContent(parent) {
-        val uiPreferences = koinInject<UiPreferences>()
-        val privacyPreferences = koinInject<PrivacyPreferences>()
+        val uiPreferences = androidx.compose.runtime.remember { ephyra.core.common.di.CoreContainer.get<UiPreferences>() }
+        val privacyPreferences = androidx.compose.runtime.remember { ephyra.core.common.di.CoreContainer.get<PrivacyPreferences>() }
         CompositionLocalProvider(
             LocalUiPreferences provides uiPreferences,
             LocalPrivacyPreferences provides privacyPreferences,
@@ -56,8 +55,8 @@ fun ComposeView.setComposeContent(
 ) {
     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
     setContent {
-        val uiPreferences = koinInject<UiPreferences>()
-        val privacyPreferences = koinInject<PrivacyPreferences>()
+        val uiPreferences = androidx.compose.runtime.remember { ephyra.core.common.di.CoreContainer.get<UiPreferences>() }
+        val privacyPreferences = androidx.compose.runtime.remember { ephyra.core.common.di.CoreContainer.get<PrivacyPreferences>() }
         CompositionLocalProvider(
             LocalUiPreferences provides uiPreferences,
             LocalPrivacyPreferences provides privacyPreferences,

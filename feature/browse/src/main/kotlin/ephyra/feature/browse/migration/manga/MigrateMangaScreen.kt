@@ -14,22 +14,21 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.animateFloatingActionButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import cafe.adriel.voyager.core.model.rememberScreenModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.hilt.navigation.compose.hiltViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import ephyra.core.common.di.CoreContainer
 import ephyra.presentation.components.AppBar
 import ephyra.presentation.manga.components.BaseMangaListItem
 import ephyra.presentation.util.Screen
-import ephyra.app.ui.manga.MangaScreen
-import ephyra.app.util.system.toast
+import ephyra.feature.manga.MangaScreen
+import ephyra.presentation.core.util.system.toast
 import kotlinx.coroutines.flow.collectLatest
-import ephyra.feature.migration.config.MigrationConfigScreen
+import ephyra.presentation.core.ui.MigrationConfigScreenFactory
 import ephyra.domain.manga.model.Manga
 import ephyra.presentation.core.components.FastScrollLazyColumn
 import ephyra.presentation.core.components.material.Scaffold
@@ -47,12 +46,10 @@ data class MigrateMangaScreen(
     override fun Content() {
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
-        val screenModel = rememberScreenModel {
-            MigrateMangaScreenModel(
-                sourceId = sourceId,
-                sourceManager = CoreContainer.get(),
-                getFavorites = CoreContainer.get(),
-            )
+        val screenModel = hiltViewModel<MigrateMangaScreenModel>()
+
+        LaunchedEffect(sourceId) {
+            screenModel.init(sourceId)
         }
 
         val state by screenModel.state.collectAsStateWithLifecycle()
@@ -63,7 +60,7 @@ data class MigrateMangaScreen(
         }
 
         BackHandler(enabled = state.selectionMode) {
-            screenModel.clearSelection()
+            screenModel.onEvent(MigrateMangaScreenEvent.ClearSelection)
         }
 
         val lazyListState = rememberLazyListState()
@@ -74,7 +71,7 @@ data class MigrateMangaScreen(
                     title = state.source!!.name,
                     navigateUp = {
                         if (state.selectionMode) {
-                            screenModel.clearSelection()
+                            screenModel.onEvent(MigrateMangaScreenEvent.ClearSelection)
                         } else {
                             navigator.pop()
                         }
@@ -90,8 +87,9 @@ data class MigrateMangaScreen(
                     },
                     onClick = {
                         val selection = state.selection
-                        screenModel.clearSelection()
-                        navigator.push(MigrationConfigScreen(selection))
+                        screenModel.onEvent(MigrateMangaScreenEvent.ClearSelection)
+                        val migrationConfigScreenFactory = ephyra.core.common.di.CoreContainer.get<MigrationConfigScreenFactory>()
+                        navigator.push(migrationConfigScreenFactory.create(selection))
                     },
                     expanded = lazyListState.shouldExpandFAB(),
                     modifier = Modifier.animateFloatingActionButton(
@@ -113,7 +111,7 @@ data class MigrateMangaScreen(
                 lazyListState = lazyListState,
                 contentPadding = contentPadding,
                 state = state,
-                onClickItem = screenModel::toggleSelection,
+                onClickItem = { screenModel.onEvent(MigrateMangaScreenEvent.ToggleSelection(it)) },
                 onClickCover = { navigator.push(MangaScreen(it.id)) },
             )
         }

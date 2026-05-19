@@ -18,7 +18,6 @@ import ephyra.feature.migration.list.components.MigrationProgressDialog
 import ephyra.presentation.core.ui.MigrationListPresenter
 import ephyra.presentation.core.util.Screen
 import ephyra.presentation.core.util.system.toast
-import org.koin.core.parameter.parametersOf
 
 class MigrationListScreen(
     private val mangaIds: Collection<Long>,
@@ -34,7 +33,10 @@ class MigrationListScreen(
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val screenModel = koinScreenModel<MigrationListScreenModel> { parametersOf(mangaIds, extraSearchQuery) }
+        val screenModel = koinScreenModel<MigrationListScreenModel>()
+        androidx.compose.runtime.remember(screenModel) {
+            screenModel.init(mangaIds, extraSearchQuery)
+        }
         val state by screenModel.state.collectAsStateWithLifecycle()
         val context = LocalContext.current
 

@@ -1,8 +1,10 @@
 package ephyra.feature.browse.migration.manga
 
 import androidx.compose.runtime.Immutable
-import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import ephyra.core.common.util.system.logcat
 import ephyra.core.common.utils.mutate
 import ephyra.domain.manga.interactor.GetFavorites
@@ -14,6 +16,9 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.map
@@ -21,22 +26,27 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
-import org.koin.core.annotation.Factory
-import org.koin.core.annotation.InjectedParam
 
-@Factory
-class MigrateMangaScreenModel(
-    @InjectedParam private val sourceId: Long,
+@HiltViewModel
+class MigrateMangaScreenModel @Inject constructor(
     private val sourceManager: SourceManager,
     private val getFavorites: GetFavorites,
-) : StateScreenModel<MigrateMangaScreenModel.State>(State()) {
+) : ViewModel() {
+
+    private val _state = MutableStateFlow(State())
+    val state: StateFlow<State> = _state.asStateFlow()
 
     private val _events: Channel<MigrationMangaEvent> = Channel()
     val events: Flow<MigrationMangaEvent> = _events.receiveAsFlow()
 
-    init {
-        screenModelScope.launch {
-            mutableState.update { state ->
+    private var isInitialized = false
+
+    fun init(sourceId: Long) {
+        if (isInitialized) return
+        isInitialized = true
+
+        viewModelScope.launch {
+            _state.update { state ->
                 state.copy(source = sourceManager.getOrStub(sourceId))
             }
 
@@ -44,7 +54,7 @@ class MigrateMangaScreenModel(
                 .catch {
                     logcat(LogPriority.ERROR, it)
                     _events.send(MigrationMangaEvent.FailedFetchingFavorites)
-                    mutableState.update { state ->
+                    _state.update { state ->
                         state.copy(titleList = persistentListOf())
                     }
                 }
@@ -54,7 +64,7 @@ class MigrateMangaScreenModel(
                         .toImmutableList()
                 }
                 .collectLatest { list ->
-                    mutableState.update { it.copy(titleList = list) }
+                    _state.update { it.copy(titleList = list) }
                 }
         }
     }
@@ -67,7 +77,7 @@ class MigrateMangaScreenModel(
     }
 
     private fun toggleSelection(item: Manga) {
-        mutableState.update { state ->
+        _state.update { state ->
             val selection = state.selection.mutate { list ->
                 if (!list.remove(item.id)) list.add(item.id)
             }
@@ -76,7 +86,7 @@ class MigrateMangaScreenModel(
     }
 
     private fun clearSelection() {
-        mutableState.update { it.copy(selection = emptySet()) }
+        _state.update { it.copy(selection = emptySet()) }
     }
 
     @Immutable

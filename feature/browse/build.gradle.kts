@@ -1,8 +1,8 @@
 plugins {
-    id("mihon.library")
-    id("mihon.library.compose")
+    id("ephyra.library")
+    id("ephyra.library.compose")
 
-    id("com.google.devtools.ksp")
+    alias(libs.plugins.ksp)
 }
 
 android {

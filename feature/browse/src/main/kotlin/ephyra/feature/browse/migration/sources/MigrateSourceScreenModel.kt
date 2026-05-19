@@ -1,8 +1,10 @@
 package ephyra.feature.browse.migration.sources
 
 import androidx.compose.runtime.Immutable
-import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.source.interactor.GetSourcesWithFavoriteCount
@@ -13,6 +15,9 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.launchIn
@@ -20,27 +25,29 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import logcat.LogPriority
-import org.koin.core.annotation.Factory
 
-@Factory
-class MigrateSourceScreenModel(
+@HiltViewModel
+class MigrateSourceScreenModel @Inject constructor(
     preferences: SourcePreferences,
     private val getSourcesWithFavoriteCount: GetSourcesWithFavoriteCount,
     private val setMigrateSorting: SetMigrateSorting,
-) : StateScreenModel<MigrateSourceScreenModel.State>(State()) {
+) : ViewModel() {
+
+    private val _state = MutableStateFlow(State())
+    val state: StateFlow<State> = _state.asStateFlow()
 
     private val _channel = Channel<Event>(Int.MAX_VALUE)
     val channel = _channel.receiveAsFlow()
 
     init {
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             getSourcesWithFavoriteCount.subscribe()
                 .catch {
                     logcat(LogPriority.ERROR, it)
                     _channel.send(Event.FailedFetchingSourcesWithCount)
                 }
                 .collectLatest { sources ->
-                    mutableState.update {
+                    _state.update {
                         it.copy(
                             isLoading = false,
                             items = sources.toImmutableList(),
@@ -50,12 +57,12 @@ class MigrateSourceScreenModel(
         }
 
         preferences.migrationSortingDirection().changes()
-            .onEach { mutableState.update { state -> state.copy(sortingDirection = it) } }
-            .launchIn(screenModelScope)
+            .onEach { dir -> _state.update { state -> state.copy(sortingDirection = dir) } }
+            .launchIn(viewModelScope)
 
         preferences.migrationSortingMode().changes()
-            .onEach { mutableState.update { state -> state.copy(sortingMode = it) } }
-            .launchIn(screenModelScope)
+            .onEach { mode -> _state.update { state -> state.copy(sortingMode = mode) } }
+            .launchIn(viewModelScope)
     }
 
     fun onEvent(event: MigrateSourceScreenEvent) {

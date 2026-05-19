@@ -60,7 +60,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.koin.koinScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import coil3.compose.AsyncImage
@@ -94,7 +94,7 @@ import cafe.adriel.voyager.core.screen.Screen as VoyagerScreen
 @Composable
 fun VoyagerScreen.discoverTab(): TabContent {
     val navigator = LocalNavigator.currentOrThrow
-    val screenModel = koinScreenModel<AuthoritySearchScreenModel>()
+    val screenModel = hiltViewModel<AuthoritySearchScreenModel>()
     val state by screenModel.state.collectAsStateWithLifecycle()
 
     return TabContent(

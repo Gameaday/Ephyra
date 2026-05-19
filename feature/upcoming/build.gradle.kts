@@ -3,7 +3,7 @@ plugins {
     id("ephyra.library.compose")
     id("org.jetbrains.kotlin.plugin.compose")
     alias(libs.plugins.hilt)
-    id("com.google.devtools.ksp")
+    alias(libs.plugins.ksp)
 }
 
 android {

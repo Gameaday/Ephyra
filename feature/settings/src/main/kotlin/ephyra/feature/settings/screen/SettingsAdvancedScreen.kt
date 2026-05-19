@@ -69,7 +69,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import logcat.LogPriority
 import okhttp3.Headers
-import org.koin.compose.koinInject
 import java.io.File
 
 object SettingsAdvancedScreen : SearchableSettings {
@@ -84,8 +83,8 @@ object SettingsAdvancedScreen : SearchableSettings {
         val scope = rememberCoroutineScope()
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
-        val appInfo: AppInfo = koinInject()
-        val onboardingScreenFactory: OnboardingScreenFactory = koinInject()
+        val appInfo = remember { ephyra.core.common.di.CoreContainer.get<AppInfo>() }
+        val onboardingScreenFactory = remember { ephyra.core.common.di.CoreContainer.get<OnboardingScreenFactory>() }
         val extensionManager: ExtensionManager = screenModel.extensionManager
 
         val basePreferences = screenModel.basePreferences
@@ -311,7 +310,7 @@ object SettingsAdvancedScreen : SearchableSettings {
     ): Preference.PreferenceGroup {
         val scope = rememberCoroutineScope()
         val context = LocalContext.current
-        val metadataUpdateScheduler: MetadataUpdateScheduler = koinInject()
+        val metadataUpdateScheduler = remember { ephyra.core.common.di.CoreContainer.get<MetadataUpdateScheduler>() }
 
         return Preference.PreferenceGroup(
             title = stringResource(ephyra.app.core.common.R.string.label_library),

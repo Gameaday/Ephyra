@@ -2,7 +2,7 @@ plugins {
     id("ephyra.library")
     kotlin("plugin.serialization")
     // Keep KSP for Room database processing
-    id("com.google.devtools.ksp")
+    alias(libs.plugins.ksp)
     alias(libs.plugins.sqldelight)
 }
 

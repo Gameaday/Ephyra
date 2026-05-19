@@ -41,7 +41,6 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.coroutines.launch
-import org.koin.compose.koinInject
 
 object SettingsLibraryScreen : SearchableSettings {
 
@@ -122,7 +121,7 @@ object SettingsLibraryScreen : SearchableSettings {
         libraryPreferences: LibraryPreferences,
     ): Preference.PreferenceGroup {
         val context = LocalContext.current
-        val scheduler: LibraryUpdateScheduler = koinInject()
+        val scheduler = remember { ephyra.core.common.di.CoreContainer.get<LibraryUpdateScheduler>() }
 
         val autoUpdateIntervalPref = libraryPreferences.autoUpdateInterval()
         val autoUpdateCategoriesPref = libraryPreferences.updateCategories()

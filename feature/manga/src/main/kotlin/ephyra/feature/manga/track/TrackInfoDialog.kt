@@ -83,7 +83,6 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
-import org.koin.compose.koinInject
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -100,13 +99,13 @@ data class TrackInfoDialogHomeScreen(
         val navigator = LocalNavigator.currentOrThrow
         val context = LocalContext.current
 
-        val getTracks = koinInject<GetTracks>()
-        val trackerManager = koinInject<TrackerManager>()
-        val sourceManager = koinInject<SourceManager>()
-        val getManga = koinInject<GetManga>()
-        val refreshTracks = koinInject<RefreshTracks>()
-        val application = koinInject<Application>()
-        val deleteTrack = koinInject<DeleteTrack>()
+        val getTracks = remember { ephyra.core.common.di.CoreContainer.get<GetTracks>() }
+        val trackerManager = remember { ephyra.core.common.di.CoreContainer.get<TrackerManager>() }
+        val sourceManager = remember { ephyra.core.common.di.CoreContainer.get<SourceManager>() }
+        val getManga = remember { ephyra.core.common.di.CoreContainer.get<GetManga>() }
+        val refreshTracks = remember { ephyra.core.common.di.CoreContainer.get<RefreshTracks>() }
+        val application = remember { ephyra.core.common.di.CoreContainer.get<Application>() }
+        val deleteTrack = remember { ephyra.core.common.di.CoreContainer.get<DeleteTrack>() }
 
         val screenModel = rememberScreenModel {
             Model(
@@ -122,7 +121,7 @@ data class TrackInfoDialogHomeScreen(
             )
         }
 
-        val uiPreferences = koinInject<UiPreferences>()
+        val uiPreferences = remember { ephyra.core.common.di.CoreContainer.get<UiPreferences>() }
         val dateFormat = remember { UiPreferences.dateFormat(uiPreferences.dateFormat().getSync()) }
         val state by screenModel.state.collectAsStateWithLifecycle()
 
@@ -348,7 +347,7 @@ private data class TrackStatusSelectorScreen(
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val trackerManager = koinInject<TrackerManager>()
+        val trackerManager = remember { ephyra.core.common.di.CoreContainer.get<TrackerManager>() }
         val screenModel = rememberScreenModel {
             Model(
                 track = track,
@@ -402,7 +401,7 @@ private data class TrackChapterSelectorScreen(
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val trackerManager = koinInject<TrackerManager>()
+        val trackerManager = remember { ephyra.core.common.di.CoreContainer.get<TrackerManager>() }
         val screenModel = rememberScreenModel {
             Model(
                 track = track,
@@ -462,7 +461,7 @@ private data class TrackScoreSelectorScreen(
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val trackerManager = koinInject<TrackerManager>()
+        val trackerManager = remember { ephyra.core.common.di.CoreContainer.get<TrackerManager>() }
         val screenModel = rememberScreenModel {
             Model(
                 track = track,
@@ -567,7 +566,7 @@ private data class TrackDateSelectorScreen(
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val trackerManager = koinInject<TrackerManager>()
+        val trackerManager = remember { ephyra.core.common.di.CoreContainer.get<TrackerManager>() }
         val screenModel = rememberScreenModel {
             Model(
                 track = track,
@@ -641,7 +640,7 @@ private data class TrackDateRemoverScreen(
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val trackerManager = koinInject<TrackerManager>()
+        val trackerManager = remember { ephyra.core.common.di.CoreContainer.get<TrackerManager>() }
         val screenModel = rememberScreenModel {
             Model(
                 track = track,
@@ -728,7 +727,7 @@ data class TrackerSearchScreen(
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val trackerManager = koinInject<TrackerManager>()
+        val trackerManager = remember { ephyra.core.common.di.CoreContainer.get<TrackerManager>() }
         val screenModel = rememberScreenModel {
             Model(
                 mangaId = mangaId,
@@ -839,8 +838,8 @@ private data class TrackerRemoveScreen(
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val trackerManager = koinInject<TrackerManager>()
-        val deleteTrack = koinInject<DeleteTrack>()
+        val trackerManager = remember { ephyra.core.common.di.CoreContainer.get<TrackerManager>() }
+        val deleteTrack = remember { ephyra.core.common.di.CoreContainer.get<DeleteTrack>() }
         val screenModel = rememberScreenModel {
             Model(
                 mangaId = mangaId,

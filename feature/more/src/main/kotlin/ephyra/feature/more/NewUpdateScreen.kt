@@ -8,7 +8,6 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.domain.release.service.AppUpdateDownloader
 import ephyra.presentation.core.util.Screen
 import ephyra.presentation.core.util.system.openInBrowser
-import org.koin.compose.koinInject
 
 class NewUpdateScreen(
     private val versionName: String,
@@ -21,7 +20,7 @@ class NewUpdateScreen(
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val context = LocalContext.current
-        val appUpdateDownloader = koinInject<AppUpdateDownloader>()
+        val appUpdateDownloader = remember { ephyra.core.common.di.CoreContainer.get<AppUpdateDownloader>() }
         val changelogInfoNoChecksum = remember {
             changelogInfo.replace("""---(\R|.)*Checksums(\R|.)*""".toRegex(), "")
         }

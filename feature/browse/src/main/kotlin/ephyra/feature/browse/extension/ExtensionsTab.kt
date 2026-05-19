@@ -17,13 +17,13 @@ import ephyra.domain.extension.model.Extension
 import ephyra.feature.browse.extension.details.ExtensionDetailsScreen
 import ephyra.feature.browse.presentation.ExtensionScreen
 import ephyra.feature.webview.WebViewScreen
+import ephyra.core.common.di.CoreContainer
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.TabContent
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.ExtensionReposScreenFactory
 import ephyra.presentation.core.util.system.isPackageInstalled
 import kotlinx.collections.immutable.persistentListOf
-import org.koin.compose.koinInject
 
 @Composable
 fun extensionsTab(
@@ -31,7 +31,7 @@ fun extensionsTab(
 ): TabContent {
     val navigator = LocalNavigator.currentOrThrow
     val context = LocalContext.current
-    val extensionReposFactory = koinInject<ExtensionReposScreenFactory>()
+    val extensionReposFactory = CoreContainer.get<ExtensionReposScreenFactory>()
 
     val state by extensionsScreenModel.state.collectAsStateWithLifecycle()
     var privateExtensionToUninstall by remember { mutableStateOf<Extension?>(null) }

@@ -14,6 +14,8 @@ interface ScreenEntryPoint {
     fun basePreferences(): ephyra.domain.base.BasePreferences
     fun coverCache(): ephyra.app.data.cache.CoverCache
     fun mangaScreenModelFactory(): ephyra.feature.manga.MangaScreenModelFactory
+    fun extensionReposScreenFactory(): ephyra.presentation.core.ui.ExtensionReposScreenFactory
+    fun migrationConfigScreenFactory(): ephyra.presentation.core.ui.MigrationConfigScreenFactory
     fun sourceManager(): ephyra.domain.source.service.SourceManager
     fun networkHelper(): eu.kanade.tachiyomi.network.NetworkHelper
     fun updatesRepository(): ephyra.domain.updates.repository.UpdatesRepository
@@ -70,6 +72,10 @@ interface ScreenEntryPoint {
     
     // Extension repos
     fun getExtensionRepoCount(): ephyra.domain.extensionrepo.interactor.GetExtensionRepoCount
+
+    // Serialization
+    fun json(): kotlinx.serialization.json.Json
+    fun xml(): nl.adaptivity.xmlutil.serialization.XML
 }
 
 object CoreContainer {
@@ -86,6 +92,8 @@ object CoreContainer {
             ephyra.domain.base.BasePreferences::class.java -> entryPoint.basePreferences()
             ephyra.app.data.cache.CoverCache::class.java -> entryPoint.coverCache()
             ephyra.feature.manga.MangaScreenModelFactory::class.java -> entryPoint.mangaScreenModelFactory()
+            ephyra.presentation.core.ui.ExtensionReposScreenFactory::class.java -> entryPoint.extensionReposScreenFactory()
+            ephyra.presentation.core.ui.MigrationConfigScreenFactory::class.java -> entryPoint.migrationConfigScreenFactory()
             ephyra.domain.source.service.SourceManager::class.java -> entryPoint.sourceManager()
             eu.kanade.tachiyomi.network.NetworkHelper::class.java -> entryPoint.networkHelper()
             ephyra.domain.updates.repository.UpdatesRepository::class.java -> entryPoint.updatesRepository()
@@ -142,6 +150,10 @@ object CoreContainer {
             
             // Extension repos
             ephyra.domain.extensionrepo.interactor.GetExtensionRepoCount::class.java -> entryPoint.getExtensionRepoCount()
+
+            // Serialization
+            kotlinx.serialization.json.Json::class.java -> entryPoint.json()
+            nl.adaptivity.xmlutil.serialization.XML::class.java -> entryPoint.xml()
             
             else -> throw IllegalArgumentException("No Hilt EntryPoint mapping for requested class: ${clazz.name}")
         }

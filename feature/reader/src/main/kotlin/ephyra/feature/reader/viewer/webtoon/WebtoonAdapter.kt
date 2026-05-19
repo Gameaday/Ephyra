@@ -14,7 +14,7 @@ import ephyra.feature.reader.model.ViewerChapters
 import ephyra.feature.reader.util.createReaderThemeContext
 import ephyra.feature.reader.viewer.ReaderPageImageView
 import ephyra.feature.reader.viewer.calculateChapterGap
-import org.koin.android.ext.android.getKoin
+import ephyra.core.common.di.CoreContainer
 
 /**
  * RecyclerView Adapter used by this [viewer] to where [ViewerChapters] updates are posted.
@@ -34,8 +34,8 @@ class WebtoonAdapter(val viewer: WebtoonViewer) : RecyclerView.Adapter<RecyclerV
      * current app theme and reader background color
      */
     private var readerThemedContext = viewer.activity.createReaderThemeContext(
-        viewer.activity.getKoin().get<UiPreferences>(),
-        viewer.activity.getKoin().get<ReaderPreferences>(),
+        CoreContainer.get<UiPreferences>(),
+        CoreContainer.get<ReaderPreferences>(),
     )
 
     /**
@@ -83,8 +83,8 @@ class WebtoonAdapter(val viewer: WebtoonViewer) : RecyclerView.Adapter<RecyclerV
 
     fun refresh() {
         readerThemedContext = viewer.activity.createReaderThemeContext(
-            viewer.activity.getKoin().get<UiPreferences>(),
-            viewer.activity.getKoin().get<ReaderPreferences>(),
+            CoreContainer.get<UiPreferences>(),
+            CoreContainer.get<ReaderPreferences>(),
         )
     }
 
@@ -112,7 +112,7 @@ class WebtoonAdapter(val viewer: WebtoonViewer) : RecyclerView.Adapter<RecyclerV
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return when (viewType) {
             PAGE_VIEW -> {
-                val alwaysDecode = viewer.activity.getKoin()
+                val alwaysDecode = CoreContainer
                     .get<BasePreferences>()
                     .alwaysDecodeLongStripWithSSIV()
                     .getSync()

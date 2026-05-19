@@ -41,7 +41,6 @@ import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.core.util.rememberRequestPackageInstallsPermissionState
 import ephyra.presentation.core.util.secondaryItemAlpha
 import ephyra.presentation.core.util.system.launchRequestPackageInstallsPermission
-import org.koin.compose.koinInject
 
 internal class PermissionStep : OnboardingStep {
 
@@ -55,7 +54,7 @@ internal class PermissionStep : OnboardingStep {
         val context = LocalContext.current
         val lifecycleOwner = LocalLifecycleOwner.current
         val privacyPreferences = LocalPrivacyPreferences.current
-        val appInfo: AppInfo = koinInject()
+        val appInfo = remember { ephyra.core.common.di.CoreContainer.get<AppInfo>() }
 
         val installGranted = rememberRequestPackageInstallsPermissionState()
 

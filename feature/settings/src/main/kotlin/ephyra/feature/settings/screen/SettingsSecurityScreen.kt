@@ -19,7 +19,6 @@ import ephyra.presentation.core.util.system.AuthenticatorUtil.authenticate
 import ephyra.presentation.core.util.system.AuthenticatorUtil.isAuthenticationSupported
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableMap
-import org.koin.compose.koinInject
 
 object SettingsSecurityScreen : SearchableSettings {
 
@@ -32,7 +31,7 @@ object SettingsSecurityScreen : SearchableSettings {
         val screenModel = hiltViewModel<SettingsSecurityScreenModel>()
         val securityPreferences = screenModel.securityPreferences
         val privacyPreferences = screenModel.privacyPreferences
-        val appInfo: AppInfo = koinInject()
+        val appInfo = remember { ephyra.core.common.di.CoreContainer.get<AppInfo>() }
 
         return buildList(2) {
             add(getSecurityGroup(securityPreferences))

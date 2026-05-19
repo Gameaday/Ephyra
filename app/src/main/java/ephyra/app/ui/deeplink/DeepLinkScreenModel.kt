@@ -3,6 +3,8 @@ package ephyra.app.ui.deeplink
 import androidx.compose.runtime.Immutable
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import ephyra.core.common.util.lang.launchIO
 import ephyra.domain.chapter.interactor.GetChapterByUrlAndMangaId
 import ephyra.domain.chapter.interactor.SyncChaptersWithSource
@@ -18,15 +20,20 @@ import eu.kanade.tachiyomi.source.online.ResolvableSource
 import eu.kanade.tachiyomi.source.online.UriType
 import kotlinx.coroutines.flow.update
 
-class DeepLinkScreenModel(
-    query: String,
+@HiltViewModel
+class DeepLinkScreenModel @Inject constructor(
     private val sourceManager: SourceManager,
     private val networkToLocalManga: NetworkToLocalManga,
     private val getChapterByUrlAndMangaId: GetChapterByUrlAndMangaId,
     private val syncChaptersWithSource: SyncChaptersWithSource,
 ) : StateScreenModel<DeepLinkScreenModel.State>(State.Loading) {
 
-    init {
+    private var isInitialized = false
+
+    fun init(query: String) {
+        if (isInitialized) return
+        isInitialized = true
+
         screenModelScope.launchIO {
             val source = sourceManager.getCatalogueSources()
                 .filterIsInstance<ResolvableSource>()

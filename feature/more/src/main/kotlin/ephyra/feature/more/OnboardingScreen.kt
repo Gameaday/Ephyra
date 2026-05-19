@@ -15,7 +15,6 @@ import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.AppReadySignal
 import ephyra.presentation.core.util.Screen
 import ephyra.presentation.core.util.collectAsState
-import org.koin.compose.koinInject
 import ephyra.feature.more.onboarding.OnboardingScreen as OnboardingContent
 
 class OnboardingScreen : Screen() {
@@ -25,7 +24,7 @@ class OnboardingScreen : Screen() {
         val context = LocalContext.current
         val navigator = LocalNavigator.currentOrThrow
 
-        val basePreferences = koinInject<BasePreferences>()
+        val basePreferences = remember { ephyra.core.common.di.CoreContainer.get<BasePreferences>() }
         val shownOnboardingFlow by basePreferences.shownOnboardingFlow().collectAsState()
 
         // Dismiss the splash screen promptly when onboarding is shown.  Without this,

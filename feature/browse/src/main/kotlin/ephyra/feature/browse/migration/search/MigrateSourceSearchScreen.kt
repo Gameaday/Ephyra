@@ -8,6 +8,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -16,7 +17,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.koin.koinScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.core.common.Constants
@@ -40,7 +41,6 @@ import ephyra.presentation.core.util.ifSourcesLoaded
 import ephyra.source.local.LocalSource
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.launch
-import org.koin.core.parameter.parametersOf
 
 data class MigrateSourceSearchScreen(
     private val currentManga: Manga,
@@ -59,9 +59,18 @@ data class MigrateSourceSearchScreen(
         val navigator = LocalNavigator.currentOrThrow
         val scope = rememberCoroutineScope()
 
-        val screenModel = koinScreenModel<BrowseSourceScreenModel> { parametersOf(sourceId, query) }
-        val state by screenModel.state.collectAsStateWithLifecycle()
+        val screenModel = hiltViewModel<BrowseSourceScreenModel>()
+        LaunchedEffect(sourceId, query) {
+            screenModel.init(sourceId, query)
+        }
 
+        val source = screenModel.source
+        if (source == null) {
+            LoadingScreen()
+            return
+        }
+
+        val state by screenModel.state.collectAsStateWithLifecycle()
         val snackbarHostState = remember { SnackbarHostState() }
 
         Scaffold(
@@ -101,19 +110,19 @@ data class MigrateSourceSearchScreen(
                 }
             }
             BrowseSourceContent(
-                source = screenModel.source,
+                source = source,
                 mangaList = screenModel.mangaPagerFlowFlow.collectAsLazyPagingItems(),
                 columns = screenModel.getColumnsPreference(LocalConfiguration.current.orientation),
                 displayMode = screenModel.displayMode,
                 snackbarHostState = snackbarHostState,
                 contentPadding = paddingValues,
                 onWebViewClick = {
-                    val source = screenModel.source as? HttpSource ?: return@BrowseSourceContent
+                    val httpSource = source as? HttpSource ?: return@BrowseSourceContent
                     navigator.push(
                         WebViewScreen(
-                            url = source.baseUrl,
-                            initialTitle = source.name,
-                            sourceId = source.id,
+                            url = httpSource.baseUrl,
+                            initialTitle = httpSource.name,
+                            sourceId = httpSource.id,
                         ),
                     )
                 },
@@ -140,7 +149,6 @@ data class MigrateSourceSearchScreen(
                 MigrateMangaDialog(
                     current = currentManga,
                     target = dialog.target,
-                    // Initiated from the context of [currentManga] so we show [dialog.target].
                     onClickTitle = { navigator.push(MangaScreen(dialog.target.id)) },
                     onDismissRequest = onDismissRequest,
                     onComplete = {

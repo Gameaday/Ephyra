@@ -7,7 +7,7 @@ import ephyra.domain.ui.UiPreferences
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.feature.reader.setting.ReaderPreferences
 import ephyra.core.download.DownloadManager
-import ephyra.app.data.download.DownloadCache
+import ephyra.core.download.DownloadCache
 import ephyra.domain.manga.interactor.GetMangaWithChapters
 import ephyra.domain.manga.interactor.GetDuplicateLibraryManga
 import ephyra.domain.chapter.interactor.GetAvailableScanlators

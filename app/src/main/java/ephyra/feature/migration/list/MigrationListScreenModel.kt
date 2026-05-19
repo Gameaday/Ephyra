@@ -40,9 +40,11 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import logcat.LogPriority
 
-class MigrationListScreenModel(
-    mangaIds: Collection<Long>,
-    extraSearchQuery: String?,
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+
+@HiltViewModel
+class MigrationListScreenModel @Inject constructor(
     private val preferences: SourcePreferences,
     private val sourceManager: SourceManager,
     private val getManga: GetManga,
@@ -54,7 +56,7 @@ class MigrationListScreenModel(
     private val getFavoritesByCanonicalId: GetFavoritesByCanonicalId,
 ) : StateScreenModel<MigrationListScreenModel.State>(State()) {
 
-    private val smartSearchEngine = SmartSourceSearchEngine(extraSearchQuery)
+    private lateinit var smartSearchEngine: SmartSourceSearchEngine
 
     val items
         inline get() = state.value.items
@@ -71,7 +73,14 @@ class MigrationListScreenModel(
 
     private var migrateJob: Job? = null
 
-    init {
+    private var isInitialized = false
+
+    fun init(mangaIds: Collection<Long>, extraSearchQuery: String?) {
+        if (isInitialized) return
+        isInitialized = true
+
+        smartSearchEngine = SmartSourceSearchEngine(extraSearchQuery)
+
         screenModelScope.launchIO {
             val manga = mangaIds
                 .map {

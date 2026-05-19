@@ -29,12 +29,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import okhttp3.HttpUrl.Companion.toHttpUrl
-import org.koin.core.annotation.Factory
-import org.koin.core.annotation.InjectedParam
-
-@Factory
 class ExtensionDetailsScreenModel(
-    @InjectedParam pkgName: String,
+    pkgName: String,
     private val context: Context,
     private val network: NetworkHelper,
     private val extensionManager: ExtensionManager,

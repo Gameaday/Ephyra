@@ -67,7 +67,6 @@ import ephyra.presentation.core.util.rememberRequestPackageInstallsPermissionSta
 import ephyra.presentation.core.util.secondaryItemAlpha
 import ephyra.presentation.core.util.system.launchRequestPackageInstallsPermission
 import kotlinx.collections.immutable.persistentListOf
-import org.koin.compose.koinInject
 
 @Composable
 fun ExtensionScreen(
@@ -86,7 +85,7 @@ fun ExtensionScreen(
     onRefresh: () -> Unit,
 ) {
     val navigator = LocalNavigator.currentOrThrow
-    val extensionReposFactory = koinInject<ExtensionReposScreenFactory>()
+    val extensionReposFactory = remember { ephyra.core.common.di.CoreContainer.get<ExtensionReposScreenFactory>() }
 
     PullRefresh(
         refreshing = state.isRefreshing,

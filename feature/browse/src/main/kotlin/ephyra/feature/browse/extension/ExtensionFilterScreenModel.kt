@@ -1,8 +1,10 @@
 package ephyra.feature.browse.extension
 
 import androidx.compose.runtime.Immutable
-import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.extension.interactor.GetExtensionLanguages
 import ephyra.domain.source.interactor.ToggleLanguage
@@ -14,6 +16,9 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
@@ -21,20 +26,22 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
-import org.koin.core.annotation.Factory
 
-@Factory
-class ExtensionFilterScreenModel(
+@HiltViewModel
+class ExtensionFilterScreenModel @Inject constructor(
     private val preferences: SourcePreferences,
     private val getExtensionLanguages: GetExtensionLanguages,
     private val toggleLanguage: ToggleLanguage,
-) : StateScreenModel<ExtensionFilterState>(ExtensionFilterState.Loading) {
+) : ViewModel() {
+
+    private val _state = MutableStateFlow<ExtensionFilterState>(ExtensionFilterState.Loading)
+    val state: StateFlow<ExtensionFilterState> = _state.asStateFlow()
 
     private val _events: Channel<ExtensionFilterEvent> = Channel()
     val events: Flow<ExtensionFilterEvent> = _events.receiveAsFlow()
 
     init {
-        screenModelScope.launch {
+        viewModelScope.launch {
             combine(
                 getExtensionLanguages.subscribe(),
                 preferences.enabledLanguages().changes(),
@@ -44,7 +51,7 @@ class ExtensionFilterScreenModel(
                     _events.send(ExtensionFilterEvent.FailedFetchingLanguages)
                 }
                 .collectLatest { (extensionLanguages, enabledLanguages) ->
-                    mutableState.update {
+                    _state.update {
                         ExtensionFilterState.Success(
                             languages = extensionLanguages.toImmutableList(),
                             enabledLanguages = enabledLanguages.toImmutableSet(),
@@ -55,7 +62,7 @@ class ExtensionFilterScreenModel(
     }
 
     fun toggle(language: String) {
-        screenModelScope.launch {
+        viewModelScope.launch {
             toggleLanguage.await(language)
         }
     }

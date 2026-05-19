@@ -9,7 +9,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.koin.koinScreenModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
@@ -59,7 +59,7 @@ data object BrowseTab : Tab {
         val context = LocalContext.current
 
         // Hoisted for extensions tab's search bar
-        val extensionsScreenModel = koinScreenModel<ExtensionsScreenModel>()
+        val extensionsScreenModel = hiltViewModel<ExtensionsScreenModel>()
         val extensionsState by extensionsScreenModel.state.collectAsStateWithLifecycle()
 
         val tabs = persistentListOf(

@@ -81,7 +81,7 @@ fun DuplicateMangaDialog(
     onMigrate: (manga: Manga) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val sourceManager = org.koin.compose.koinInject<SourceManager>()
+    val sourceManager = remember { ephyra.core.common.di.CoreContainer.get<SourceManager>() }
     val minHeight = 48.dp
     val horizontalPadding = PaddingValues(horizontal = TabbedDialogPaddings.Horizontal)
     val horizontalPaddingModifier = Modifier.padding(horizontalPadding)

@@ -1,4 +1,6 @@
 plugins {
+    id("com.android.application") apply false
+    id("com.android.library") apply false
     alias(kotlinx.plugins.serialization) apply false
     alias(libs.plugins.aboutLibraries) apply false
     alias(libs.plugins.firebase.crashlytics) apply false

@@ -21,7 +21,6 @@ import ephyra.presentation.core.screens.InfoScreen
 import ephyra.presentation.core.util.CrashLogUtil
 import ephyra.presentation.theme.TachiyomiPreviewTheme
 import kotlinx.coroutines.launch
-import org.koin.compose.koinInject
 
 @Composable
 fun CrashScreen(
@@ -30,7 +29,7 @@ fun CrashScreen(
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    val extensionManager = koinInject<ExtensionManager>()
+    val extensionManager = androidx.compose.runtime.remember { ephyra.core.common.di.CoreContainer.get<ExtensionManager>() }
 
     InfoScreen(
         icon = Icons.Outlined.BugReport,

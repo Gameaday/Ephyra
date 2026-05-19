@@ -57,7 +57,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
-import org.koin.compose.koinInject
 import soup.compose.material.motion.animation.materialFadeThroughIn
 import soup.compose.material.motion.animation.materialFadeThroughOut
 
@@ -254,7 +253,7 @@ object HomeScreen : Screen(), BottomNavController, SearchableScreen {
             badge = {
                 when {
                     tab is UpdatesTab -> {
-                        val pref = koinInject<LibraryPreferences>()
+                        val pref = remember { ephyra.core.common.di.CoreContainer.get<LibraryPreferences>() }
                         val count by produceState(initialValue = 0) {
                             combine(
                                 pref.newShowUpdatesCount().changes(),
@@ -277,7 +276,7 @@ object HomeScreen : Screen(), BottomNavController, SearchableScreen {
                         }
                     }
                     BrowseTab::class.isInstance(tab) -> {
-                        val sourcePreferences = koinInject<SourcePreferences>()
+                        val sourcePreferences = remember { ephyra.core.common.di.CoreContainer.get<SourcePreferences>() }
                         val count by produceState(initialValue = 0) {
                             sourcePreferences.extensionUpdatesCount().changes()
                                 .collectLatest { value = it }

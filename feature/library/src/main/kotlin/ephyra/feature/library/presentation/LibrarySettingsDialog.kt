@@ -38,7 +38,6 @@ import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.AppInfo
 import ephyra.presentation.core.util.collectAsState
 import kotlinx.collections.immutable.persistentListOf
-import org.koin.compose.koinInject
 
 @Composable
 fun LibrarySettingsDialog(
@@ -81,7 +80,7 @@ fun LibrarySettingsDialog(
 private fun ColumnScope.FilterPage(
     screenModel: LibrarySettingsScreenModel,
 ) {
-    val appInfo: AppInfo = koinInject()
+    val appInfo = remember { ephyra.core.common.di.CoreContainer.get<AppInfo>() }
     val filterDownloaded by screenModel.libraryPreferences.filterDownloaded().collectAsState()
     val downloadedOnly by screenModel.preferences.downloadedOnly().collectAsState()
     val autoUpdateMangaRestrictions by screenModel.libraryPreferences.autoUpdateMangaRestrictions()

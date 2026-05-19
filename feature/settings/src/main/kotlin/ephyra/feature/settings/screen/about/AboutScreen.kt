@@ -50,7 +50,6 @@ import ephyra.presentation.core.util.system.copyToClipboard
 import ephyra.presentation.core.util.system.toast
 import kotlinx.coroutines.flow.collectLatest
 import logcat.LogPriority
-import org.koin.compose.koinInject
 
 object AboutScreen : Screen() {
 
@@ -58,9 +57,9 @@ object AboutScreen : Screen() {
     override fun Content() {
         val screenModel = hiltViewModel<AboutScreenModel>()
         val state by screenModel.state.collectAsState()
-        val appInfo: AppInfo = koinInject()
-        val newUpdateScreenFactory: NewUpdateScreenFactory = koinInject()
-        val extensionManager: ExtensionManager = koinInject()
+        val appInfo = remember { ephyra.core.common.di.CoreContainer.get<AppInfo>() }
+        val newUpdateScreenFactory = remember { ephyra.core.common.di.CoreContainer.get<NewUpdateScreenFactory>() }
+        val extensionManager = remember { ephyra.core.common.di.CoreContainer.get<ExtensionManager>() }
 
         val context = LocalContext.current
         val uriHandler = LocalUriHandler.current
@@ -188,8 +187,8 @@ object AboutScreen : Screen() {
 
     @Composable
     fun getFormattedBuildTime(): String {
-        val appInfo: AppInfo = koinInject()
-        val uiPreferences: UiPreferences = koinInject()
+        val appInfo = remember { ephyra.core.common.di.CoreContainer.get<AppInfo>() }
+        val uiPreferences = remember { ephyra.core.common.di.CoreContainer.get<UiPreferences>() }
         return try {
             val fmt = uiPreferences.dateFormat().getSync()
             val dt = java.time.LocalDateTime.ofInstant(

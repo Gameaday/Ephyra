@@ -24,7 +24,6 @@ import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.system.toast
 import kotlinx.coroutines.flow.collectLatest
-import org.koin.compose.koinInject
 
 internal class StorageStep : OnboardingStep {
 
@@ -38,7 +37,7 @@ internal class StorageStep : OnboardingStep {
         val context = LocalContext.current
         val handler = LocalUriHandler.current
 
-        val storagePref = koinInject<StoragePreferences>().baseStorageDirectory()
+        val storagePref = remember { ephyra.core.common.di.CoreContainer.get<StoragePreferences>() }.baseStorageDirectory()
 
         val pickStorageLocation = SettingsDataScreen.storageLocationPicker(storagePref)
 

@@ -26,7 +26,6 @@ import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.AppInfo
 import kotlinx.collections.immutable.toImmutableList
-import org.koin.compose.koinInject
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import kotlin.math.absoluteValue
@@ -69,7 +68,7 @@ fun SetIntervalDialog(
     onDismissRequest: () -> Unit,
     onValueChanged: ((Int) -> Unit)? = null,
 ) {
-    val appInfo: AppInfo = koinInject()
+    val appInfo = remember { ephyra.core.common.di.CoreContainer.get<AppInfo>() }
     var selectedInterval by rememberSaveable { mutableIntStateOf(if (interval < 0) -interval else 0) }
 
     val nextUpdateDays = remember(nextUpdate) {

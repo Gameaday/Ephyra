@@ -14,10 +14,9 @@ import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.interactor.SetMangaChapterFlags
 import ephyra.domain.manga.model.Manga
 import eu.kanade.tachiyomi.source.Source
-import org.koin.core.annotation.Factory
+import javax.inject.Inject
 
-@Factory
-class MangaChapterInteractor(
+class MangaChapterInteractor @Inject constructor(
     private val setMangaChapterFlags: SetMangaChapterFlags,
     private val setMangaDefaultChapterFlags: SetMangaDefaultChapterFlags,
     private val setReadStatus: SetReadStatus,
