@@ -13,7 +13,7 @@ navigation = "2.8.8"
 ktlint-core = "1.8.0"
 firebase-bom = "34.13.0"
 markdown = "0.40.2"
-junit = "6.0.3"
+junit = "6.1.0"
 materialKolor = "5.0.0-alpha07"
 
 # Koin 4.2.0 Ecosystem (Native Plugin path)
