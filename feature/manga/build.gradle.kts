@@ -16,9 +16,15 @@ dependencies {
     api(projects.sourceApi)
     api(projects.sourceLocal)
     api(projects.presentationCore)
+    implementation(projects.feature.reader)
+    implementation(projects.feature.webview)
+    implementation(projects.feature.category)
+    implementation(projects.feature.settings)
 
     implementation(libs.logcat)
     implementation(libs.bundles.voyager)
+    implementation(libs.navigation.compose)
+    implementation(libs.hilt.navigation.compose)
 
     testImplementation(libs.bundles.test)
 }

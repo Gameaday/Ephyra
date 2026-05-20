@@ -171,3 +171,15 @@ class WorkerInfoScreenModel @Inject constructor(
         }
     }
 }
+
+@Composable
+private operator fun PaddingValues.plus(other: PaddingValues): PaddingValues {
+    val layoutDirection = androidx.compose.ui.platform.LocalLayoutDirection.current
+    return PaddingValues(
+        start = this.calculateStartPadding(layoutDirection) + other.calculateStartPadding(layoutDirection),
+        top = this.calculateTopPadding() + other.calculateTopPadding(),
+        end = this.calculateEndPadding(layoutDirection) + other.calculateEndPadding(layoutDirection),
+        bottom = this.calculateBottomPadding() + other.calculateBottomPadding()
+    )
+}
+

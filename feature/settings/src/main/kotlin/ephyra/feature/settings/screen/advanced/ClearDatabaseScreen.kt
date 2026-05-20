@@ -49,7 +49,7 @@ import ephyra.domain.manga.interactor.DeleteNonLibraryManga
 import ephyra.domain.source.interactor.GetSourcesWithNonLibraryManga
 import ephyra.domain.source.model.Source
 import ephyra.domain.source.model.SourceWithCount
-import ephyra.feature.browse.presentation.components.SourceIcon
+import ephyra.presentation.core.components.SourceIcon
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.LazyColumnWithAction

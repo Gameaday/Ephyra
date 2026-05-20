@@ -2,7 +2,6 @@ plugins {
     id("ephyra.library")
     id("ephyra.library.compose")
 
-    alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
 }
 
@@ -17,5 +16,11 @@ dependencies {
     api(projects.sourceApi)
     api(projects.presentationCore)
 
+    implementation(projects.feature.category)
+    implementation(projects.feature.manga)
+    implementation(projects.feature.migration)
+    implementation(projects.feature.reader)
+
     ksp(libs.hilt.compiler)
 }
+

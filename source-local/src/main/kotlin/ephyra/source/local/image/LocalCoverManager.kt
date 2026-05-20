@@ -9,12 +9,12 @@ import ephyra.source.local.io.LocalSourceFileSystem
 import eu.kanade.tachiyomi.source.model.SManga
 import java.io.InputStream
 
-actual class LocalCoverManager(
+class LocalCoverManager(
     private val context: Context,
     private val fileSystem: LocalSourceFileSystem,
 ) {
 
-    actual fun find(mangaUrl: String): UniFile? {
+    fun find(mangaUrl: String): UniFile? {
         return fileSystem.getFilesInMangaDirectory(mangaUrl)
             // Get all files whose names match known cover naming conventions.
             // Supports: cover.*, poster.*, folder.* (Jellyfin convention)
@@ -29,7 +29,7 @@ actual class LocalCoverManager(
             .firstOrNull { ImageUtil.isImage(it.name) { it.openInputStream() } }
     }
 
-    actual fun update(
+    fun update(
         manga: SManga,
         inputStream: InputStream,
     ): UniFile? {

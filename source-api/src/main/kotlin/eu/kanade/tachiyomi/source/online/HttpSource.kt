@@ -14,7 +14,7 @@ import okhttp3.Headers
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
-import org.koin.core.context.GlobalContext
+import ephyra.core.common.di.CoreContainer
 import java.net.URI
 import java.net.URISyntaxException
 import java.security.MessageDigest
@@ -28,7 +28,7 @@ abstract class HttpSource : CatalogueSource {
     /**
      * Network service.
      */
-    protected val network: NetworkHelper = GlobalContext.get().get()
+    protected val network: NetworkHelper = CoreContainer.get()
 
     /**
      * Base url of the website without the trailing slash, like: http://mysite.com

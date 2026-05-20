@@ -65,6 +65,7 @@ import logcat.LogPriority
 import logcat.LogcatLogger
 
 import ephyra.core.common.di.CoreContainer
+import ephyra.app.di.initializeCoreContainer
 
 @HiltAndroidApp
 class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factory, androidx.work.Configuration.Provider {
@@ -102,7 +103,7 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
 
     @SuppressLint("LaunchActivityFromNotification")
     override fun onCreate() {
-        CoreContainer.init(this)
+        initializeCoreContainer(this)
         super.onCreate()
         TelemetryConfig.init(applicationContext)
 

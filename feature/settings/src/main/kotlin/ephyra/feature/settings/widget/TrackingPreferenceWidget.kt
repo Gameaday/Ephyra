@@ -24,7 +24,7 @@ import ephyra.domain.track.service.Tracker
 import ephyra.feature.settings.LocalPreferenceHighlighted
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.theme.MotionTokens
-import ephyra.presentation.manga.track.components.TrackLogoIcon
+import ephyra.presentation.core.components.TrackLogoIcon
 
 @Composable
 fun TrackingPreferenceWidget(

@@ -55,7 +55,7 @@ import ephyra.feature.manga.track.TrackItem
 import ephyra.presentation.core.components.DropdownMenu
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.system.copyToClipboard
-import ephyra.presentation.manga.track.components.TrackLogoIcon
+import ephyra.presentation.core.components.TrackLogoIcon
 import ephyra.presentation.theme.TachiyomiPreviewTheme
 import java.time.format.DateTimeFormatter
 import kotlin.collections.sortedWith

@@ -1,4 +1,4 @@
-package ephyra.feature.browse.presentation.components
+package ephyra.presentation.core.components
 
 import android.graphics.drawable.Drawable
 import android.util.DisplayMetrics

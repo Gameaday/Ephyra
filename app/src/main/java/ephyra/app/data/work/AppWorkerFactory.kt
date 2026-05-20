@@ -18,7 +18,7 @@ import ephyra.app.data.library.LibraryUpdateJob
 import ephyra.app.data.library.LibraryUpdateNotifier
 import ephyra.app.data.library.MetadataUpdateJob
 import ephyra.app.data.updater.AppUpdateDownloadJob
-import ephyra.app.data.cache.CoverCache
+import ephyra.data.cache.CoverCache
 import ephyra.domain.backup.service.BackupPreferences
 import ephyra.domain.chapter.interactor.FilterChaptersForDownload
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId

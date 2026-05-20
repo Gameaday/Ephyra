@@ -47,7 +47,7 @@ import ephyra.domain.source.model.Source
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
 import ephyra.feature.browse.migration.search.MigrateSearchScreen
-import ephyra.feature.browse.presentation.components.SourceIcon
+import ephyra.presentation.core.components.SourceIcon
 import ephyra.feature.migration.list.MigrationListScreen
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions

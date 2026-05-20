@@ -48,7 +48,7 @@ import ephyra.domain.extension.model.InstallStep
 import ephyra.feature.browse.extension.ExtensionUiModel
 import ephyra.feature.browse.extension.ExtensionsScreenModel
 import ephyra.feature.browse.presentation.components.BaseBrowseItem
-import ephyra.feature.browse.presentation.components.ExtensionIcon
+import ephyra.presentation.core.components.ExtensionIcon
 import ephyra.feature.manga.presentation.components.DotSeparatorNoSpaceText
 import ephyra.presentation.core.components.FastScrollLazyColumn
 import ephyra.presentation.core.components.WarningBanner

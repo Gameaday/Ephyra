@@ -47,7 +47,7 @@ import ephyra.core.common.util.system.LocaleHelper
 import ephyra.domain.extension.interactor.ExtensionSourceItem
 import ephyra.domain.extension.model.Extension
 import ephyra.feature.browse.extension.details.ExtensionDetailsScreenModel
-import ephyra.feature.browse.presentation.components.ExtensionIcon
+import ephyra.presentation.core.components.ExtensionIcon
 import ephyra.presentation.core.R
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions

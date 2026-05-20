@@ -20,12 +20,14 @@ dependencies {
     implementation(projects.sourceApi)
     implementation(projects.sourceLocal)
     implementation(projects.presentationCore)
+    implementation(projects.feature.webview)
 
     implementation(libs.logcat)
     implementation(libs.bundles.voyager)
     
     implementation(libs.subsamplingscaleimageview)
     implementation(libs.image.decoder)
+    implementation(libs.directionalviewpager)
 
     // Hilt
     implementation(libs.hilt.android)

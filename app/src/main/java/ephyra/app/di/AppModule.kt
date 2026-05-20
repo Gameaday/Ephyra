@@ -27,7 +27,7 @@ import ephyra.app.data.backup.restore.restorers.CategoriesRestorer
 import ephyra.app.data.backup.restore.restorers.MangaRestorer
 import ephyra.app.data.backup.restore.restorers.PreferenceRestorer
 import ephyra.app.data.cache.ChapterCache
-import ephyra.app.data.cache.CoverCache
+import ephyra.data.cache.CoverCache
 import ephyra.app.data.download.DownloadCache
 import ephyra.app.data.download.DownloadNotifier
 import ephyra.app.data.download.DownloadPendingDeleter

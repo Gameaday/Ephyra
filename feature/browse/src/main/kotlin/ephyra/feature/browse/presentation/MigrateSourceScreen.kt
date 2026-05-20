@@ -25,7 +25,7 @@ import ephyra.domain.source.interactor.SetMigrateSorting
 import ephyra.domain.source.model.Source
 import ephyra.feature.browse.migration.sources.MigrateSourceScreenModel
 import ephyra.feature.browse.presentation.components.BaseSourceItem
-import ephyra.feature.browse.presentation.components.SourceIcon
+import ephyra.presentation.core.components.SourceIcon
 import ephyra.presentation.core.components.Badge
 import ephyra.presentation.core.components.BadgeGroup
 import ephyra.presentation.core.components.ScrollbarLazyColumn

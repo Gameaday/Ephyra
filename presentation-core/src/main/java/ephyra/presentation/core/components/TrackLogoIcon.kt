@@ -1,4 +1,4 @@
-package ephyra.presentation.manga.track.components
+package ephyra.presentation.core.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
@@ -7,12 +7,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.PreviewLightDark
-import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import ephyra.domain.track.service.Tracker
 import ephyra.presentation.core.util.clickableNoIndication
-import ephyra.presentation.theme.TachiyomiPreviewTheme
 
 @Composable
 fun TrackLogoIcon(
@@ -33,19 +30,4 @@ fun TrackLogoIcon(
             .size(48.dp)
             .clip(MaterialTheme.shapes.medium),
     )
-}
-
-@PreviewLightDark
-@Composable
-private fun TrackLogoIconPreviews(
-    @PreviewParameter(TrackLogoIconPreviewProvider::class)
-    tracker: Tracker,
-) {
-    TachiyomiPreviewTheme {
-        TrackLogoIcon(
-            tracker = tracker,
-            onClick = null,
-            onLongClick = null,
-        )
-    }
 }

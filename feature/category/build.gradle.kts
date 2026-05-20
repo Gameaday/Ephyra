@@ -2,7 +2,6 @@ plugins {
     id("ephyra.library")
     id("ephyra.library.compose")
 
-    alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
 }
 

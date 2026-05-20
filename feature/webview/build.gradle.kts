@@ -17,5 +17,8 @@ dependencies {
     api(projects.sourceApi)
     api(projects.presentationCore)
 
+    implementation(libs.hilt.android)
+    implementation(libs.compose.webview)
     ksp(libs.hilt.compiler)
 }
+

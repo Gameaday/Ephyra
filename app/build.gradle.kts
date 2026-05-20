@@ -225,6 +225,8 @@ dependencies {
     debugImplementation(compose.ui.tooling)
     implementation(compose.ui.tooling.preview)
     implementation(compose.ui.util)
+    implementation(libs.navigation.compose)
+    implementation(libs.hilt.navigation.compose)
 
     implementation(androidx.paging.runtime)
     implementation(androidx.paging.compose)

@@ -362,9 +362,9 @@
     <string name="pref_hide_missing_chapter_indicators">Hide missing chapter indicators</string>
     <string name="pref_disallow_non_ascii_filenames">Disallow non-ASCII filenames</string>
     <string name="pref_disallow_non_ascii_filenames_details">Ensures compatibility with certain
-        storage media that don't support Unicode. When this is enabled, you'll need to manually
+        storage media that don\'t support Unicode. When this is enabled, you\'ll need to manually
         rename source and manga folders by replacing non-ASCII characters with their lowercase UTF-8
-        hexadecimal representations. Chapter files don't need to be renamed.
+        hexadecimal representations. Chapter files don\'t need to be renamed.
     </string>
     <string name="pref_jellyfin_compatible_naming">Jellyfin-compatible naming</string>
     <string name="pref_jellyfin_compatible_naming_summary">Format files as \"Series Name Ch.
@@ -1303,7 +1303,6 @@
     <string name="migrationListScreen.searchManuallyActionLabel">Search manually</string>
     <string name="migrationListScreen.skipActionLabel">Don\'t migrate</string>
     <string name="migrationListScreen.migrateNowActionLabel">Migrate now</string>
-    <string name="migrationListScreen.copyNowActionLabel">Copy now</string>
     <string name="migrationListScreen.copyNowActionLabel">Copy now</string>
     <string name="migrationListScreen.exitDialogTitle">Stop migrating?</string>
     <string name="migrationListScreen.exitDialog.stopLabel">Stop</string>

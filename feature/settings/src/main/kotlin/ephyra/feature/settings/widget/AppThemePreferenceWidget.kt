@@ -48,7 +48,6 @@ import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.isDynamicColorAvailable
 import ephyra.domain.ui.UiPreferences
 import ephyra.domain.ui.model.AppTheme
-import ephyra.feature.manga.presentation.components.MangaCover
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.LocalUiPreferences
@@ -191,7 +190,7 @@ fun AppThemePreviewItem(
                     shape = MaterialTheme.shapes.small,
                 )
                 .fillMaxWidth(0.5f)
-                .aspectRatio(MangaCover.Book.ratio),
+                .aspectRatio(2f / 3f),
         ) {
             Row(
                 modifier = Modifier

@@ -43,6 +43,11 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.util.Consumer
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
+import ephyra.presentation.core.ui.navigation.LocalNavController
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.NavigatorDisposeBehavior
@@ -163,9 +168,11 @@ class MainActivity : BaseActivity(), AppReadySignal {
             LaunchedEffect(Unit) {
                 StartupTracker.complete(StartupTracker.Phase.COMPOSE_STARTED)
             }
+            val navController = rememberNavController()
             androidx.compose.runtime.CompositionLocalProvider(
                 ephyra.presentation.core.util.LocalUiPreferences provides uiPreferences,
                 ephyra.presentation.core.util.LocalPrivacyPreferences provides privacyPreferences,
+                LocalNavController provides navController,
             ) {
                 var didMigration by remember { mutableStateOf<Boolean?>(null) }
                 LaunchedEffect(Unit) {
@@ -220,91 +227,114 @@ class MainActivity : BaseActivity(), AppReadySignal {
                     )
                 }
 
-                Navigator(
-                    screen = HomeScreen,
-                    disposeBehavior = NavigatorDisposeBehavior(disposeNestedNavigators = false, disposeSteps = true),
-                ) { navigator ->
-                    LaunchedEffect(navigator) {
-                        this@MainActivity.navigator = navigator
-                        StartupTracker.complete(StartupTracker.Phase.NAVIGATOR_CREATED)
+                NavHost(
+                    navController = navController,
+                    startDestination = ScreenRoutes.Home.route,
+                ) {
+                    composable(ScreenRoutes.Home.route) {
+                        Navigator(
+                            screen = HomeScreen,
+                            disposeBehavior = NavigatorDisposeBehavior(disposeNestedNavigators = false, disposeSteps = true),
+                        ) { navigator ->
+                            LaunchedEffect(navigator) {
+                                this@MainActivity.navigator = navigator
+                                StartupTracker.complete(StartupTracker.Phase.NAVIGATOR_CREATED)
 
-                        if (isLaunch) {
-                            // Set start screen
-                            handleIntentAction(intent, navigator)
+                                if (isLaunch) {
+                                    // Set start screen
+                                    handleIntentAction(intent, navigator)
 
-                            // Reset Incognito Mode on relaunch
-                            preferences.incognitoMode().set(false)
-                        }
+                                    // Reset Incognito Mode on relaunch
+                                    preferences.incognitoMode().set(false)
+                                }
 
-                        // signalReady() is intentionally NOT called here.
-                        // HOME_SCREEN_LOADED must only be completed when actual content is
-                        // visible: tabs call it when their data finishes loading, and
-                        // OnboardingScreen calls it when it is first shown.  Completing the
-                        // phase here (at Navigator-creation time) would cause
-                        // StartupDiagnosticOverlay to never show, defeating its purpose.
-                    }
-                    LaunchedEffect(navigator.lastItem) {
-                        (navigator.lastItem as? BrowseSourceScreen)?.sourceId
-                            .let(getIncognitoState::subscribe)
-                            .collectLatest { incognito = it }
-                    }
-
-                    val scaffoldInsets = WindowInsets.navigationBars.only(WindowInsetsSides.Horizontal)
-                    Scaffold(
-                        topBar = {
-                            AppStateBanners(
-                                downloadedOnlyMode = downloadOnly,
-                                incognitoMode = incognito,
-                                indexing = indexing,
-                                modifier = Modifier.windowInsetsPadding(scaffoldInsets),
-                            )
-                        },
-                        contentWindowInsets = scaffoldInsets,
-                    ) { contentPadding ->
-                        // Consume insets already used by app state banners
-                        Box {
-                            // Shows current screen
-                            DefaultNavigatorScreenTransition(
-                                navigator = navigator,
-                                modifier = Modifier
-                                    .padding(contentPadding)
-                                    .consumeWindowInsets(contentPadding),
-                            )
-
-                            // Draw navigation bar scrim when needed
-                            if (remember { context.isNavigationBarNeedsScrim() }) {
-                                Spacer(
-                                    modifier = Modifier
-                                        .align(Alignment.BottomCenter)
-                                        .fillMaxWidth()
-                                        .windowInsetsBottomHeight(WindowInsets.navigationBars)
-                                        .alpha(0.8f)
-                                        .background(MaterialTheme.colorScheme.surfaceContainer),
-                                )
+                                // signalReady() is intentionally NOT called here.
+                                // HOME_SCREEN_LOADED must only be completed when actual content is
+                                // visible: tabs call it when their data finishes loading, and
+                                // OnboardingScreen calls it when it is first shown.  Completing the
+                                // phase here (at Navigator-creation time) would cause
+                                // StartupDiagnosticOverlay to never show, defeating its purpose.
                             }
-                        }
-                    }
+                            LaunchedEffect(navigator.lastItem) {
+                                (navigator.lastItem as? BrowseSourceScreen)?.sourceId
+                                    .let(getIncognitoState::subscribe)
+                                    .collectLatest { incognito = it }
+                            }
 
-                    // Pop source-related screens when incognito mode is turned off
-                    LaunchedEffect(Unit) {
-                        preferences.incognitoMode().changes()
-                            .drop(1)
-                            .filter { !it }
-                            .onEach {
-                                val currentScreen = navigator.lastItem
-                                if (currentScreen is BrowseSourceScreen ||
-                                    (currentScreen is MangaScreen && currentScreen.fromSource)
-                                ) {
-                                    navigator.popUntilRoot()
+                            val scaffoldInsets = WindowInsets.navigationBars.only(WindowInsetsSides.Horizontal)
+                            Scaffold(
+                                topBar = {
+                                    AppStateBanners(
+                                        downloadedOnlyMode = downloadOnly,
+                                        incognitoMode = incognito,
+                                        indexing = indexing,
+                                        modifier = Modifier.windowInsetsPadding(scaffoldInsets),
+                                    )
+                                },
+                                contentWindowInsets = scaffoldInsets,
+                            ) { contentPadding ->
+                                // Consume insets already used by app state banners
+                                Box {
+                                    // Shows current screen
+                                    DefaultNavigatorScreenTransition(
+                                        navigator = navigator,
+                                        modifier = Modifier
+                                            .padding(contentPadding)
+                                            .consumeWindowInsets(contentPadding),
+                                    )
+
+                                    // Draw navigation bar scrim when needed
+                                    if (remember { context.isNavigationBarNeedsScrim() }) {
+                                        Spacer(
+                                            modifier = Modifier
+                                                .align(Alignment.BottomCenter)
+                                                .fillMaxWidth()
+                                                .windowInsetsBottomHeight(WindowInsets.navigationBars)
+                                                .alpha(0.8f)
+                                                .background(MaterialTheme.colorScheme.surfaceContainer),
+                                        )
+                                    }
                                 }
                             }
-                            .launchIn(this)
+
+                            // Pop source-related screens when incognito mode is turned off
+                            LaunchedEffect(Unit) {
+                                preferences.incognitoMode().changes()
+                                    .drop(1)
+                                    .filter { !it }
+                                    .onEach {
+                                        val currentScreen = navigator.lastItem
+                                        if (currentScreen is BrowseSourceScreen ||
+                                            (currentScreen is MangaScreen && currentScreen.fromSource)
+                                        ) {
+                                            navigator.popUntilRoot()
+                                        }
+                                    }
+                                    .launchIn(this)
+                            }
+
+                            HandleOnNewIntent(context = context, navigator = navigator)
+
+                            CheckForUpdates()
+                            ShowOnboarding()
+                        }
                     }
 
-                    HandleOnNewIntent(context = context, navigator = navigator)
-
-                    CheckForUpdates()
-                    ShowOnboarding()
+                    composable(
+                        route = ScreenRoutes.MangaDetails.route,
+                        arguments = listOf(
+                            androidx.navigation.navArgument("mangaId") { type = androidx.navigation.NavType.LongType },
+                            androidx.navigation.navArgument("fromSource") { type = androidx.navigation.NavType.BoolType }
+                        )
+                    ) { backStackEntry ->
+                        val mangaId = backStackEntry.arguments?.getLong("mangaId") ?: return@composable
+                        val fromSource = backStackEntry.arguments?.getBoolean("fromSource") ?: false
+                        ephyra.feature.manga.MangaDetailsScreen(
+                            mangaId = mangaId,
+                            fromSource = fromSource,
+                            navigateUp = { navController.popBackStack() }
+                        )
+                    }
                 }
 
                 var showChangelog by remember { mutableStateOf(false) }
