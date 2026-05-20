@@ -173,7 +173,6 @@ import ephyra.domain.updates.interactor.GetUpdates
 import ephyra.domain.updates.repository.UpdatesRepository
 import ephyra.domain.updates.service.UpdatesPreferences
 import ephyra.feature.download.DownloadManager
-import ephyra.feature.manga.MangaScreenModelFactory
 import ephyra.feature.manga.interactor.MangaChapterInteractor
 import ephyra.feature.manga.interactor.MangaInfoInteractor
 import ephyra.feature.manga.interactor.MangaTrackInteractor
@@ -1140,45 +1139,7 @@ object AppModule {
         refreshTracks: RefreshTracks
     ) = MangaTrackInteractor(getTracks, addTracks, refreshCanonical, matchUnlinkedManga, trackChapter, trackPreferences, trackerManager, refreshTracks)
 
-    @Provides
-    @Singleton
-    fun provideMangaScreenModelFactory(
-        @ApplicationContext context: Context,
-        basePreferences: BasePreferences,
-        uiPreferences: UiPreferences,
-        libraryPreferences: LibraryPreferences,
-        readerPreferences: ReaderPreferences,
-        downloadManager: DownloadManager,
-        downloadCache: DownloadCache,
-        getMangaAndChapters: GetMangaWithChapters,
-        getDuplicateLibraryManga: GetDuplicateLibraryManga,
-        getAvailableScanlators: GetAvailableScanlators,
-        getExcludedScanlators: GetExcludedScanlators,
-        getCategories: GetCategories,
-        sourceManager: SourceManager,
-        mangaInfoInteractor: MangaInfoInteractor,
-        mangaChapterInteractor: MangaChapterInteractor,
-        mangaTrackInteractor: MangaTrackInteractor,
-        syncJellyfin: SyncJellyfin
-    ) = MangaScreenModelFactory(
-        context,
-        basePreferences,
-        uiPreferences,
-        libraryPreferences,
-        readerPreferences,
-        downloadManager,
-        downloadCache,
-        getMangaAndChapters,
-        getDuplicateLibraryManga,
-        getAvailableScanlators,
-        getExcludedScanlators,
-        getCategories,
-        sourceManager,
-        mangaInfoInteractor,
-        mangaChapterInteractor,
-        mangaTrackInteractor,
-        syncJellyfin
-    )
+
  
     @Provides
     @Singleton

@@ -254,6 +254,7 @@ class ReaderActivity : BaseActivity() {
                             onShowMenus = { viewModel.onEvent(ReaderEvent.ShowMenus(true)) },
                             onHideMenus = { viewModel.onEvent(ReaderEvent.ShowMenus(false)) },
                             screenModel = ReaderSettingsScreenModel(
+                                scope = lifecycleScope,
                                 readerState = viewModel.state,
                                 onChangeReadingMode = { viewModel.onEvent(ReaderEvent.SetMangaReadingMode(it)) },
                                 onChangeOrientation = { viewModel.onEvent(ReaderEvent.SetMangaOrientationType(it)) },
@@ -265,6 +266,7 @@ class ReaderActivity : BaseActivity() {
                         ReadingModeSelectDialog(
                             onDismissRequest = { viewModel.onEvent(ReaderEvent.CloseDialog) },
                             screenModel = ReaderSettingsScreenModel(
+                                scope = lifecycleScope,
                                 readerState = viewModel.state,
                                 onChangeReadingMode = { viewModel.onEvent(ReaderEvent.SetMangaReadingMode(it)) },
                                 onChangeOrientation = { viewModel.onEvent(ReaderEvent.SetMangaOrientationType(it)) },
@@ -277,6 +279,7 @@ class ReaderActivity : BaseActivity() {
                         OrientationSelectDialog(
                             onDismissRequest = { viewModel.onEvent(ReaderEvent.CloseDialog) },
                             screenModel = ReaderSettingsScreenModel(
+                                scope = lifecycleScope,
                                 readerState = viewModel.state,
                                 onChangeReadingMode = { viewModel.onEvent(ReaderEvent.SetMangaReadingMode(it)) },
                                 onChangeOrientation = { viewModel.onEvent(ReaderEvent.SetMangaOrientationType(it)) },

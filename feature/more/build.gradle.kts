@@ -20,6 +20,8 @@ dependencies {
     implementation(projects.feature.download)
     implementation(projects.feature.settings)
     implementation(projects.feature.stats)
+    implementation(projects.feature.manga)
+    implementation(libs.bundles.markdown)
 
     ksp(libs.hilt.compiler)
 }

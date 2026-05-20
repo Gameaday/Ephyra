@@ -13,7 +13,6 @@ interface ScreenEntryPoint {
     // Singletons
     fun basePreferences(): ephyra.domain.base.BasePreferences
     fun coverCache(): ephyra.data.cache.CoverCache
-    fun mangaScreenModelFactory(): ephyra.feature.manga.MangaScreenModelFactory
     fun extensionReposScreenFactory(): ephyra.presentation.core.ui.ExtensionReposScreenFactory
     fun migrationConfigScreenFactory(): ephyra.presentation.core.ui.MigrationConfigScreenFactory
     fun sourceManager(): ephyra.domain.source.service.SourceManager
@@ -85,7 +84,6 @@ fun initializeCoreContainer(context: Context) {
     // Singletons
     CoreContainer.register(ephyra.domain.base.BasePreferences::class.java) { entryPoint.basePreferences() }
     CoreContainer.register(ephyra.data.cache.CoverCache::class.java) { entryPoint.coverCache() }
-    CoreContainer.register(ephyra.feature.manga.MangaScreenModelFactory::class.java) { entryPoint.mangaScreenModelFactory() }
     CoreContainer.register(ephyra.presentation.core.ui.ExtensionReposScreenFactory::class.java) { entryPoint.extensionReposScreenFactory() }
     CoreContainer.register(ephyra.presentation.core.ui.MigrationConfigScreenFactory::class.java) { entryPoint.migrationConfigScreenFactory() }
     CoreContainer.register(ephyra.domain.source.service.SourceManager::class.java) { entryPoint.sourceManager() }
