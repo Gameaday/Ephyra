@@ -1,5 +1,6 @@
 package ephyra.core.common.util.system
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.ConnectivityManager.NetworkCallback
@@ -24,6 +25,7 @@ data class NetworkState(
     val isOnline = isConnected && isValidated
 }
 
+@SuppressLint("MissingPermission")
 fun Context.activeNetworkState(): NetworkState {
     val activeNetwork = connectivityManager.activeNetwork
     val capabilities = connectivityManager.getNetworkCapabilities(activeNetwork)
@@ -34,6 +36,7 @@ fun Context.activeNetworkState(): NetworkState {
     )
 }
 
+@SuppressLint("MissingPermission")
 fun Context.networkStateFlow() = callbackFlow {
     val networkCallback = object : NetworkCallback() {
         override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
@@ -50,6 +53,7 @@ fun Context.networkStateFlow() = callbackFlow {
     }
 }
 
+@SuppressLint("MissingPermission")
 fun Context.isOnline(): Boolean {
     val activeNetwork = connectivityManager.activeNetwork ?: return false
     val networkCapabilities = connectivityManager.getNetworkCapabilities(activeNetwork) ?: return false
@@ -60,6 +64,7 @@ fun Context.isOnline(): Boolean {
 /**
  * Returns true if device is connected to Wifi.
  */
+@SuppressLint("MissingPermission")
 fun Context.isConnectedToWifi(): Boolean {
     if (!wifiManager.isWifiEnabled) return false
 

@@ -44,7 +44,6 @@ class AboutScreenModel @Inject constructor(
             try {
                 val result = getApplicationRelease.await(
                     GetApplicationRelease.Arguments(
-                        isFoss = appInfo.isFoss,
                         isPreview = appInfo.isPreview,
                         isNightly = appInfo.isNightly,
                         commitCount = appInfo.commitCount.toIntOrNull() ?: 0,

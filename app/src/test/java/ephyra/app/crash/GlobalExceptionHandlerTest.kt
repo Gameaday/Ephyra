@@ -61,7 +61,7 @@ class GlobalExceptionHandlerTest {
      */
     @Test
     fun `ThrowableSerializer round-trips exception message`() {
-        val original = IllegalStateException("Koin failed to initialise")
+        val original = IllegalStateException("Hilt failed to initialise")
         val json = Json.encodeToString(GlobalExceptionHandler.ThrowableSerializer, original)
         val decoded = Json.decodeFromString(GlobalExceptionHandler.ThrowableSerializer, json)
 
@@ -72,7 +72,7 @@ class GlobalExceptionHandlerTest {
         assert("IllegalStateException" in decoded.message!!) {
             "Decoded message must contain the original exception class name"
         }
-        assert("Koin failed to initialise" in decoded.message!!) {
+        assert("Hilt failed to initialise" in decoded.message!!) {
             "Decoded message must contain the original exception message text"
         }
     }

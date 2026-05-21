@@ -9,19 +9,17 @@ import androidx.appcompat.app.AppCompatActivity
 import ephyra.app.ui.main.MainActivity
 
 /**
- * Fallback crash UI shown when the app fails before Koin is initialised.
+ * Fallback crash UI shown when the app fails before Hilt is initialised.
  *
- * [CrashActivity] extends [ephyra.presentation.core.ui.activity.BaseActivity] which eagerly
- * resolves Koin delegates (`KoinJavaComponent.get(...)`).  Launching it before
- * `startKoin()` completes therefore causes a second crash that silently swallows the
- * original error.
+ * [CrashActivity] is annotated with [@AndroidEntryPoint] which eagerly resolves Hilt dependencies
+ * on creation. Launching it when Hilt initialization has failed will cause a secondary crash
+ * that silently swallows the original startup error.
  *
- * This activity has zero Koin dependencies and uses only plain Android Views so it works
- * regardless of DI state.  It is exclusively used by the [App.onCreate] catch-block around
- * `startKoin()`.
+ * This activity has zero Hilt dependencies and uses only plain Android Views so it works
+ * regardless of DI state. It is exclusively used during early bootstrap failures.
  *
  * The activity runs in the default (main-app) process, not `:error_handler`, so it can be
- * shown even when the Koin-dependent process bootstrap is broken.
+ * shown even when the Hilt-dependent process bootstrap is broken.
  */
 class StartupFailureActivity : AppCompatActivity() {
 

@@ -11,7 +11,7 @@ import java.io.InputStream
  * Lives in `core/common` so that feature modules (`feature/reader`, `feature/manga`) can
  * depend on it without taking a direct dependency on the `data` layer.
  * The concrete implementation ([ephyra.data.saver.ImageSaverImpl]) lives in `:data` and is
- * wired via Koin in `:app`.
+ * wired via Hilt in `:app`.
  */
 interface ImageSaver {
     /**

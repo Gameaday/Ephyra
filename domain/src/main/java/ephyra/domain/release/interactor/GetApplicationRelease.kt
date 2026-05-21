@@ -87,7 +87,6 @@ class GetApplicationRelease(
     }
 
     data class Arguments(
-        val isFoss: Boolean,
         val isPreview: Boolean,
         val isNightly: Boolean = false,
         val commitCount: Int,

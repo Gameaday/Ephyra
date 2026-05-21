@@ -29,7 +29,7 @@ class ReleaseServiceImpl(
                 .parseAs<GithubRelease>()
         }
 
-        val downloadLink = getDownloadLink(release = release, isFoss = arguments.isFoss) ?: return null
+        val downloadLink = getDownloadLink(release = release) ?: return null
 
         // For nightly builds the tag is always "nightly", so use the short SHA extracted from
         // the asset filename as the version identifier for comparison.
@@ -60,7 +60,7 @@ class ReleaseServiceImpl(
             ?.let { name -> Regex("nightly-([a-f0-9]+)\\.apk").find(name)?.groupValues?.get(1) }
     }
 
-    private fun getDownloadLink(release: GithubRelease, isFoss: Boolean): String? {
+    private fun getDownloadLink(release: GithubRelease): String? {
         // Sort so that unsigned APKs are processed first; since associate keeps the last
         // value for duplicate keys, signed APKs will take priority over unsigned ones.
         val sortedAssets = release.assets.sortedBy { if ("unsigned" in it.name) 0 else 1 }
@@ -68,16 +68,11 @@ class ReleaseServiceImpl(
             BUILD_TYPES.find { "-$it" in asset.name } to asset.downloadLink
         }
 
-        return if (!isFoss) {
-            map[Build.SUPPORTED_ABIS[0]] ?: map[null]
-        } else {
-            map[FOSS]
-        }
+        return map[Build.SUPPORTED_ABIS[0]] ?: map[null]
     }
 
     companion object {
-        private const val FOSS = "foss"
-        private val BUILD_TYPES = listOf(FOSS, "arm64-v8a", "armeabi-v7a", "x86_64", "x86")
+        private val BUILD_TYPES = listOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
 
         /**
          * Regular expression that matches a mention to a valid GitHub username, like it's

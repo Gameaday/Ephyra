@@ -49,9 +49,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.time.Instant
 import javax.inject.Inject
-import kotlinx.coroutines.runBlocking
 import eu.kanade.tachiyomi.source.model.Filter as SourceModelFilter
 
 @HiltViewModel

@@ -90,7 +90,9 @@
     </style>
 
     <!--== Default Theme ==-->
-    <style name="Theme.Tachiyomi" parent="Base.Theme.Tachiyomi" />
+    <style name="Theme.Tachiyomi" parent="Base.Theme.Tachiyomi">
+        <item name="preferenceTheme">@style/PreferenceThemeOverlay.Tachiyomi</item>
+    </style>
 
     <!-- Monet theme only support S+ -->
     <style name="Theme.Tachiyomi.Monet" />

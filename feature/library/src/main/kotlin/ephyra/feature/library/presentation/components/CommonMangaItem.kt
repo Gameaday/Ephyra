@@ -1,6 +1,7 @@
 package ephyra.feature.library.presentation.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -30,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
@@ -40,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import ephyra.feature.manga.presentation.components.MangaCover
 import ephyra.presentation.core.components.BadgeGroup
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.theme.LocalBrandedTheme
 import ephyra.presentation.core.theme.ShapeTokens
 import ephyra.domain.manga.model.MangaCover as MangaCoverModel
 
@@ -299,8 +302,26 @@ private fun GridItemSelectable(
     content: @Composable () -> Unit,
 ) {
     val selectionColor = MaterialTheme.colorScheme.secondaryContainer
+    val config = LocalBrandedTheme.current
+    val surfaceColor = MaterialTheme.colorScheme.surfaceContainerLow
+
+    val elevationModifier = if (config.cardElevation > 0.dp) {
+        Modifier.shadow(config.cardElevation, ShapeTokens.card, clip = false)
+    } else {
+        Modifier
+    }
+
+    val borderModifier = if (config.cardBorderWidth > 0.dp) {
+        Modifier.border(config.cardBorderWidth, MaterialTheme.colorScheme.outlineVariant, ShapeTokens.card)
+    } else {
+        Modifier
+    }
+
     Box(
         modifier = modifier
+            .then(elevationModifier)
+            .background(surfaceColor, ShapeTokens.card)
+            .then(borderModifier)
             .clip(ShapeTokens.card)
             .combinedClickable(
                 onClick = onClick,
@@ -345,6 +366,13 @@ fun MangaListItem(
     onClickContinueReading: (() -> Unit)? = null,
 ) {
     val selectionColor = MaterialTheme.colorScheme.secondaryContainer
+    val config = LocalBrandedTheme.current
+
+    val verticalPadding = config.cardContentPadding
+    val horizontalPadding = if (config.name == "Ephyra") 20.dp else 16.dp
+    val itemHeight = 40.dp + (verticalPadding * 2)
+    val contentSpacing = if (config.cardContentPadding <= 6.dp) 12.dp else 16.dp
+
     Row(
         modifier = Modifier
             .then(
@@ -354,12 +382,12 @@ fun MangaListItem(
                     Modifier
                 },
             )
-            .height(56.dp)
+            .height(itemHeight)
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick,
             )
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = horizontalPadding, vertical = verticalPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         val contentColor = if (isSelected) {
@@ -373,15 +401,18 @@ fun MangaListItem(
                     .fillMaxHeight()
                     .alpha(coverAlpha),
                 data = coverData,
+                shape = ShapeTokens.coverImage,
             )
             Text(
                 text = title,
                 modifier = Modifier
-                    .padding(horizontal = 16.dp)
+                    .padding(horizontal = contentSpacing)
                     .weight(1f),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = config.bodyWeight,
+                ),
             )
             BadgeGroup(content = badge)
             if (onClickContinueReading != null) {

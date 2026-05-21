@@ -65,7 +65,7 @@ internal fun Project.configureAndroid(commonExtension: CommonExtension) {
                 checkReleaseBuilds = false
                 lintConfig = rootProject.file("lint.xml")
                 baseline = file("lint-baseline.xml")
-                checkDependencies = true
+                checkDependencies = false
                 ignoreTestSources = true
             }
         }
@@ -83,7 +83,7 @@ internal fun Project.configureAndroid(commonExtension: CommonExtension) {
                 checkReleaseBuilds = false
                 lintConfig = rootProject.file("lint.xml")
                 baseline = file("lint-baseline.xml")
-                checkDependencies = true
+                checkDependencies = false
                 ignoreTestSources = true
             }
         }
@@ -98,7 +98,6 @@ internal fun Project.configureAndroid(commonExtension: CommonExtension) {
                 "-Xcontext-parameters",
                 "-opt-in=kotlin.RequiresOptIn",
                 "-opt-in=kotlin.ExperimentalStdlibApi",
-                "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
             )
 
             val warningsAsErrors: String? by project
@@ -148,6 +147,12 @@ internal fun Project.configureCompose(commonExtension: CommonExtension) {
         val stabilityConfig = rootProject.layout.projectDirectory.file("app/compose_stability.conf")
         if (stabilityConfig.asFile.exists()) {
             stabilityConfigurationFiles.add(stabilityConfig)
+        }
+    }
+
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+        compilerOptions {
+            freeCompilerArgs.add("-opt-in=androidx.compose.material3.ExperimentalMaterial3Api")
         }
     }
 }

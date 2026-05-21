@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ephyra.presentation.core.components.FastScrollLazyVerticalGrid
+import ephyra.presentation.core.theme.LocalBrandedTheme
 import ephyra.presentation.core.util.plus
 
 @Composable
@@ -18,12 +19,13 @@ internal fun LazyLibraryGrid(
     contentPadding: PaddingValues,
     content: LazyGridScope.() -> Unit,
 ) {
+    val config = LocalBrandedTheme.current
     FastScrollLazyVerticalGrid(
         columns = if (columns == 0) GridCells.Adaptive(128.dp) else GridCells.Fixed(columns),
         modifier = modifier,
         contentPadding = contentPadding + PaddingValues(8.dp),
-        verticalArrangement = Arrangement.spacedBy(CommonMangaItemDefaults.GridVerticalSpacer),
-        horizontalArrangement = Arrangement.spacedBy(CommonMangaItemDefaults.GridHorizontalSpacer),
+        verticalArrangement = Arrangement.spacedBy(config.gridVerticalSpacing),
+        horizontalArrangement = Arrangement.spacedBy(config.gridHorizontalSpacing),
         content = content,
     )
 }
