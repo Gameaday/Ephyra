@@ -53,7 +53,9 @@ class AppUpdateNotifier(private val context: Context) : DomainAppUpdateNotifier 
         }
 
         with(notificationBuilder) {
-            setContentTitle(context.stringResource(ephyra.app.core.common.R.string.update_check_notification_update_available))
+            setContentTitle(
+                context.stringResource(ephyra.app.core.common.R.string.update_check_notification_update_available),
+            )
             setContentText(release.version)
             setSmallIcon(android.R.drawable.stat_sys_download_done)
             setContentIntent(updateIntent)
@@ -81,7 +83,9 @@ class AppUpdateNotifier(private val context: Context) : DomainAppUpdateNotifier 
     override fun onDownloadStarted(title: String?) {
         with(notificationBuilder) {
             title?.let { setContentTitle(title) }
-            setContentText(context.stringResource(ephyra.app.core.common.R.string.update_check_notification_download_in_progress))
+            setContentText(
+                context.stringResource(ephyra.app.core.common.R.string.update_check_notification_download_in_progress),
+            )
             setSmallIcon(android.R.drawable.stat_sys_download)
             setOngoing(true)
 
@@ -121,7 +125,9 @@ class AppUpdateNotifier(private val context: Context) : DomainAppUpdateNotifier 
         val uri = uriString.toUri()
         val installIntent = NotificationHandler.installApkPendingActivity(context, uri)
         with(notificationBuilder) {
-            setContentText(context.stringResource(ephyra.app.core.common.R.string.update_check_notification_download_complete))
+            setContentText(
+                context.stringResource(ephyra.app.core.common.R.string.update_check_notification_download_complete),
+            )
             setSmallIcon(android.R.drawable.stat_sys_download_done)
             setOnlyAlertOnce(false)
             setProgress(0, 0, false)
@@ -150,7 +156,9 @@ class AppUpdateNotifier(private val context: Context) : DomainAppUpdateNotifier 
      */
     override fun onDownloadError(url: String) {
         with(notificationBuilder) {
-            setContentText(context.stringResource(ephyra.app.core.common.R.string.update_check_notification_download_error))
+            setContentText(
+                context.stringResource(ephyra.app.core.common.R.string.update_check_notification_download_error),
+            )
             setSmallIcon(R.drawable.ic_warning_white_24dp)
             setOnlyAlertOnce(false)
             setProgress(0, 0, false)

@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.IBinder
+import dagger.hilt.android.AndroidEntryPoint
 import ephyra.app.R
 import ephyra.app.extension.installer.Installer
 import ephyra.app.extension.installer.PackageInstallerInstaller
@@ -17,7 +18,6 @@ import ephyra.data.notification.Notifications
 import ephyra.domain.base.BasePreferences
 import ephyra.presentation.core.util.system.getSerializableExtraCompat
 import logcat.LogPriority
-import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
 @AndroidEntryPoint

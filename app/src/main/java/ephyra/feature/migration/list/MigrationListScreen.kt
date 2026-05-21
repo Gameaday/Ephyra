@@ -8,13 +8,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import ephyra.feature.migration.list.components.MigrationExitDialog
 import ephyra.feature.migration.list.components.MigrationMangaDialog
 import ephyra.feature.migration.list.components.MigrationProgressDialog
-import ephyra.presentation.core.util.system.toast
-import androidx.navigation.NavController
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
+import ephyra.presentation.core.util.system.toast
 
 @Composable
 fun MigrationListScreen(
@@ -32,7 +32,8 @@ fun MigrationListScreen(
     val matchOverride by navController.currentBackStackEntry
         ?.savedStateHandle
         ?.getStateFlow<Pair<Long, Long>?>("match_override", null)
-        ?.collectAsStateWithLifecycle() ?: androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(null) }
+        ?.collectAsStateWithLifecycle()
+        ?: androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(null) }
 
     LaunchedEffect(matchOverride) {
         val (current, target) = matchOverride ?: return@LaunchedEffect
@@ -46,7 +47,10 @@ fun MigrationListScreen(
 
     LaunchedEffect(screenModel) {
         screenModel.missingChaptersEvent.collect {
-            context.toast(ephyra.app.core.common.R.string.migrationListScreen_matchWithoutChapterToast, Toast.LENGTH_LONG)
+            context.toast(
+                ephyra.app.core.common.R.string.migrationListScreen_matchWithoutChapterToast,
+                Toast.LENGTH_LONG,
+            )
         }
     }
 

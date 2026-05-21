@@ -37,8 +37,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.util.lang.launchIO
@@ -120,22 +120,38 @@ fun MigrationConfigScreen(
                     AppBarActions(
                         persistentListOf(
                             AppBar.Action(
-                                title = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_selectAllLabel),
+                                title = stringResource(
+                                    ephyra.app.core.common.R.string.migrationConfigScreen_selectAllLabel,
+                                ),
                                 icon = Icons.Outlined.SelectAll,
-                                onClick = { screenModel.toggleSelection(MigrationConfigScreenModel.SelectionConfig.All) },
+                                onClick = {
+                                    screenModel.toggleSelection(MigrationConfigScreenModel.SelectionConfig.All)
+                                },
                             ),
                             AppBar.Action(
-                                title = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_selectNoneLabel),
+                                title = stringResource(
+                                    ephyra.app.core.common.R.string.migrationConfigScreen_selectNoneLabel,
+                                ),
                                 icon = Icons.Outlined.Deselect,
-                                onClick = { screenModel.toggleSelection(MigrationConfigScreenModel.SelectionConfig.None) },
+                                onClick = {
+                                    screenModel.toggleSelection(MigrationConfigScreenModel.SelectionConfig.None)
+                                },
                             ),
                             AppBar.OverflowAction(
-                                title = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_selectEnabledLabel),
-                                onClick = { screenModel.toggleSelection(MigrationConfigScreenModel.SelectionConfig.Enabled) },
+                                title = stringResource(
+                                    ephyra.app.core.common.R.string.migrationConfigScreen_selectEnabledLabel,
+                                ),
+                                onClick = {
+                                    screenModel.toggleSelection(MigrationConfigScreenModel.SelectionConfig.Enabled)
+                                },
                             ),
                             AppBar.OverflowAction(
-                                title = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_selectPinnedLabel),
-                                onClick = { screenModel.toggleSelection(MigrationConfigScreenModel.SelectionConfig.Pinned) },
+                                title = stringResource(
+                                    ephyra.app.core.common.R.string.migrationConfigScreen_selectPinnedLabel,
+                                ),
+                                onClick = {
+                                    screenModel.toggleSelection(MigrationConfigScreenModel.SelectionConfig.Pinned)
+                                },
                             ),
                         ),
                     )
@@ -144,7 +160,11 @@ fun MigrationConfigScreen(
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                text = { Text(text = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_continueButtonText)) },
+                text = {
+                    Text(
+                        text = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_continueButtonText),
+                    )
+                },
                 icon = { Icon(imageVector = Icons.AutoMirrored.Outlined.ArrowForward, contentDescription = null) },
                 onClick = {
                     screenModel.saveSources()
@@ -154,161 +174,161 @@ fun MigrationConfigScreen(
             )
         },
     ) { contentPadding ->
-            val reorderableState = rememberReorderableLazyListState(lazyListState, contentPadding) { from, to ->
-                val fromIndex = selectedSources.indexOfFirst { it.id == from.key }
-                val toIndex = selectedSources.indexOfFirst { it.id == to.key }
-                if (fromIndex == -1 || toIndex == -1) return@rememberReorderableLazyListState
-                screenModel.orderSource(fromIndex, toIndex)
-            }
+        val reorderableState = rememberReorderableLazyListState(lazyListState, contentPadding) { from, to ->
+            val fromIndex = selectedSources.indexOfFirst { it.id == from.key }
+            val toIndex = selectedSources.indexOfFirst { it.id == to.key }
+            if (fromIndex == -1 || toIndex == -1) return@rememberReorderableLazyListState
+            screenModel.orderSource(fromIndex, toIndex)
+        }
 
-            FastScrollLazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                state = lazyListState,
-                contentPadding = contentPadding,
-            ) {
-                listOf(selectedSources, availableSources).fastForEachIndexed { listIndex, sources ->
-                    val selectedSourceList = listIndex == 0
-                    if (sources.isNotEmpty()) {
-                        val headerPrefix = if (selectedSourceList) "selected" else "available"
-                        item("$headerPrefix-header") {
-                            Text(
-                                text = stringResource(
-                                    resource = if (selectedSourceList) {
-                                        ephyra.app.core.common.R.string.migrationConfigScreen_selectedHeader
-                                    } else {
-                                        ephyra.app.core.common.R.string.migrationConfigScreen_availableHeader
-                                    },
-                                ),
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier
-                                    .padding(MaterialTheme.padding.medium)
-                                    .animateItem(),
-                            )
-                        }
-                    }
-                    itemsIndexed(
-                        items = sources,
-                        key = { _, item -> item.id },
-                    ) { index, item ->
-                        SourceItemContainer(
-                            firstItem = index == 0,
-                            lastItem = index == (sources.size - 1),
-                            source = item,
-                            showLanguage = showLanguage,
-                            dragEnabled = selectedSourceList && sources.size > 1,
-                            state = reorderableState,
-                            key = { if (selectedSourceList) it.id else "available-${it.id}" },
-                            onClick = { screenModel.toggleSelection(item.id) },
+        FastScrollLazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            state = lazyListState,
+            contentPadding = contentPadding,
+        ) {
+            listOf(selectedSources, availableSources).fastForEachIndexed { listIndex, sources ->
+                val selectedSourceList = listIndex == 0
+                if (sources.isNotEmpty()) {
+                    val headerPrefix = if (selectedSourceList) "selected" else "available"
+                    item("$headerPrefix-header") {
+                        Text(
+                            text = stringResource(
+                                resource = if (selectedSourceList) {
+                                    ephyra.app.core.common.R.string.migrationConfigScreen_selectedHeader
+                                } else {
+                                    ephyra.app.core.common.R.string.migrationConfigScreen_availableHeader
+                                },
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier
+                                .padding(MaterialTheme.padding.medium)
+                                .animateItem(),
                         )
                     }
                 }
+                itemsIndexed(
+                    items = sources,
+                    key = { _, item -> item.id },
+                ) { index, item ->
+                    SourceItemContainer(
+                        firstItem = index == 0,
+                        lastItem = index == (sources.size - 1),
+                        source = item,
+                        showLanguage = showLanguage,
+                        dragEnabled = selectedSourceList && sources.size > 1,
+                        state = reorderableState,
+                        key = { if (selectedSourceList) it.id else "available-${it.id}" },
+                        onClick = { screenModel.toggleSelection(item.id) },
+                    )
+                }
             }
         }
+    }
 
-        if (migrationSheetOpen) {
-            MigrationConfigScreenSheet(
-                preferences = screenModel.sourcePreferences,
-                onDismissRequest = { migrationSheetOpen = false },
-                onStartMigration = { extraSearchQuery ->
-                    migrationSheetOpen = false
-                    continueMigration(openSheet = false, extraSearchQuery = extraSearchQuery)
-                },
+    if (migrationSheetOpen) {
+        MigrationConfigScreenSheet(
+            preferences = screenModel.sourcePreferences,
+            onDismissRequest = { migrationSheetOpen = false },
+            onStartMigration = { extraSearchQuery ->
+                migrationSheetOpen = false
+                continueMigration(openSheet = false, extraSearchQuery = extraSearchQuery)
+            },
+        )
+    }
+}
+
+@Composable
+private fun LazyItemScope.SourceItemContainer(
+    firstItem: Boolean,
+    lastItem: Boolean,
+    source: MigrationSource,
+    showLanguage: Boolean,
+    dragEnabled: Boolean,
+    state: ReorderableLazyListState,
+    key: (MigrationSource) -> Any,
+    onClick: () -> Unit,
+) {
+    val shape = remember(firstItem, lastItem) {
+        val top = if (firstItem) 12.dp else 0.dp
+        val bottom = if (lastItem) 12.dp else 0.dp
+        RoundedCornerShape(top, top, bottom, bottom)
+    }
+
+    ReorderableItem(
+        state = state,
+        key = key(source),
+        enabled = dragEnabled,
+    ) { _ ->
+        ElevatedCard(
+            shape = shape,
+            modifier = Modifier
+                .padding(horizontal = MaterialTheme.padding.medium)
+                .animateItem(),
+        ) {
+            SourceItem(
+                source = source,
+                showLanguage = showLanguage,
+                dragEnabled = dragEnabled,
+                scope = this@ReorderableItem,
+                onClick = onClick,
             )
         }
     }
 
-    @Composable
-    private fun LazyItemScope.SourceItemContainer(
-        firstItem: Boolean,
-        lastItem: Boolean,
-        source: MigrationSource,
-        showLanguage: Boolean,
-        dragEnabled: Boolean,
-        state: ReorderableLazyListState,
-        key: (MigrationSource) -> Any,
-        onClick: () -> Unit,
-    ) {
-        val shape = remember(firstItem, lastItem) {
-            val top = if (firstItem) 12.dp else 0.dp
-            val bottom = if (lastItem) 12.dp else 0.dp
-            RoundedCornerShape(top, top, bottom, bottom)
-        }
+    if (!lastItem) {
+        HorizontalDivider(modifier = Modifier.padding(horizontal = MaterialTheme.padding.medium))
+    }
+}
 
-        ReorderableItem(
-            state = state,
-            key = key(source),
-            enabled = dragEnabled,
-        ) { _ ->
-            ElevatedCard(
-                shape = shape,
-                modifier = Modifier
-                    .padding(horizontal = MaterialTheme.padding.medium)
-                    .animateItem(),
+@Composable
+private fun SourceItem(
+    source: MigrationSource,
+    showLanguage: Boolean,
+    dragEnabled: Boolean,
+    scope: ReorderableCollectionItemScope,
+    onClick: () -> Unit,
+) {
+    ListItem(
+        headlineContent = {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                SourceItem(
-                    source = source,
-                    showLanguage = showLanguage,
-                    dragEnabled = dragEnabled,
-                    scope = this@ReorderableItem,
-                    onClick = onClick,
+                SourceIcon(source = source.source)
+                Text(
+                    text = source.name,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.weight(1f),
+                )
+                if (showLanguage) {
+                    Pill(
+                        text = LocaleHelper.getShortDisplayName(source.shortLanguage, uppercase = true),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
+        },
+        trailingContent = if (dragEnabled) {
+            {
+                Icon(
+                    imageVector = Icons.Outlined.DragHandle,
+                    contentDescription = null,
+                    modifier = with(scope) {
+                        Modifier.draggableHandle()
+                    },
                 )
             }
-        }
-
-        if (!lastItem) {
-            HorizontalDivider(modifier = Modifier.padding(horizontal = MaterialTheme.padding.medium))
-        }
-    }
-
-    @Composable
-    private fun SourceItem(
-        source: MigrationSource,
-        showLanguage: Boolean,
-        dragEnabled: Boolean,
-        scope: ReorderableCollectionItemScope,
-        onClick: () -> Unit,
-    ) {
-        ListItem(
-            headlineContent = {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    SourceIcon(source = source.source)
-                    Text(
-                        text = source.name,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.weight(1f),
-                    )
-                    if (showLanguage) {
-                        Pill(
-                            text = LocaleHelper.getShortDisplayName(source.shortLanguage, uppercase = true),
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                    }
-                }
-            },
-            trailingContent = if (dragEnabled) {
-                {
-                    Icon(
-                        imageVector = Icons.Outlined.DragHandle,
-                        contentDescription = null,
-                        modifier = with(scope) {
-                            Modifier.draggableHandle()
-                        },
-                    )
-                }
-            } else {
-                null
-            },
-            colors = ListItemDefaults.colors(
-                containerColor = Color.Transparent,
-            ),
-            modifier = Modifier.clickable(onClick = onClick),
-        )
-    }
+        } else {
+            null
+        },
+        colors = ListItemDefaults.colors(
+            containerColor = Color.Transparent,
+        ),
+        modifier = Modifier.clickable(onClick = onClick),
+    )
+}
 
 @HiltViewModel
 class MigrationConfigScreenModel @Inject constructor(

@@ -3,6 +3,7 @@ package ephyra.feature.migration.list
 import androidx.annotation.FloatRange
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
@@ -41,7 +42,6 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import logcat.LogPriority
-import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @HiltViewModel

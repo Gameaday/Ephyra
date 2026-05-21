@@ -20,7 +20,11 @@ fun MigrationProgressDialog(
         onDismissRequest = {},
         confirmButton = {
             TextButton(onClick = exitMigration) {
-                Text(text = stringResource(ephyra.app.core.common.R.string.migrationListScreen_progressDialog_cancelLabel))
+                Text(
+                    text = stringResource(
+                        ephyra.app.core.common.R.string.migrationListScreen_progressDialog_cancelLabel,
+                    ),
+                )
             }
         },
         text = {

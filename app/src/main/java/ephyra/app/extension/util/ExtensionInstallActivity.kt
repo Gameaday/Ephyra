@@ -1,13 +1,13 @@
 package ephyra.app.extension.util
 
-import androidx.appcompat.app.AppCompatActivity
 import android.content.Intent
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
+import dagger.hilt.android.AndroidEntryPoint
 import ephyra.app.extension.ExtensionManager
 import ephyra.core.common.util.system.hasMiuiPackageInstaller
 import ephyra.domain.extension.model.InstallStep
 import ephyra.presentation.core.util.system.toast
-import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 

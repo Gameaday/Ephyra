@@ -10,13 +10,40 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import ephyra.app.crash.CrashActivity
+import ephyra.app.data.backup.BackupNotifier
+import ephyra.app.data.download.DownloadNotifier
+import ephyra.app.data.library.LibraryUpdateNotifier
+import ephyra.app.data.notification.NotificationManagerImpl
+import ephyra.app.data.storage.StorageManagerImpl
+import ephyra.app.data.track.jellyfin.SyncJellyfinImpl
+import ephyra.app.data.updater.AppUpdateNotifier
+import ephyra.app.extension.ExtensionManager
+import ephyra.app.extension.api.ExtensionApi
+import ephyra.app.extension.util.ExtensionInstaller
+import ephyra.app.extension.util.ExtensionLoader
+import ephyra.app.installer.AndroidInstallerCapabilityProvider
+import ephyra.app.track.DelayedTrackingStore
+import ephyra.app.track.TrackingJobSchedulerImpl
+import ephyra.app.ui.base.delegate.SecureActivityDelegateImpl
+import ephyra.app.ui.base.delegate.ThemingDelegateImpl
+import ephyra.app.util.NavigatorImpl
+import ephyra.app.util.system.isDebugBuildType
 import ephyra.core.common.core.security.PrivacyPreferences
 import ephyra.core.common.core.security.SecurityPreferences
-import ephyra.app.crash.CrashActivity
+import ephyra.core.common.notification.NotificationManager
+import ephyra.core.common.preference.DataStorePreferenceStore
+import ephyra.core.common.preference.PreferenceStore
+import ephyra.core.common.saver.ImageSaver
+import ephyra.core.common.storage.AndroidStorageFolderProvider
+import ephyra.core.download.DownloadCache
+import ephyra.core.download.DownloadManager
+import ephyra.core.download.DownloadPendingDeleter
+import ephyra.core.download.DownloadProvider
+import ephyra.core.download.DownloadStore
+import ephyra.core.download.Downloader
 import ephyra.data.backup.BackupDecoder
-import ephyra.domain.backup.service.BackupFileValidator
 import ephyra.data.backup.BackupFileValidatorImpl
-import ephyra.app.data.backup.BackupNotifier
 import ephyra.data.backup.create.BackupCreator
 import ephyra.data.backup.create.creators.CategoriesBackupCreator
 import ephyra.data.backup.create.creators.ExtensionRepoBackupCreator
@@ -30,59 +57,34 @@ import ephyra.data.backup.restore.restorers.MangaRestorer
 import ephyra.data.backup.restore.restorers.PreferenceRestorer
 import ephyra.data.cache.ChapterCache
 import ephyra.data.cache.CoverCache
-import ephyra.core.download.DownloadCache
-import ephyra.app.data.download.DownloadNotifier
-import ephyra.core.download.DownloadPendingDeleter
-import ephyra.core.download.DownloadProvider
-import ephyra.core.download.DownloadStore
-import ephyra.core.download.Downloader
-import ephyra.app.data.library.LibraryUpdateNotifier
-import ephyra.app.data.notification.NotificationManagerImpl
-import ephyra.core.common.saver.ImageSaver
-import ephyra.data.saver.ImageSaverImpl
-import ephyra.domain.track.service.TrackerManager
-import ephyra.data.track.TrackerManagerImpl
-import ephyra.app.data.track.jellyfin.SyncJellyfinImpl
-import ephyra.data.updater.AppUpdateChecker
-import ephyra.app.data.updater.AppUpdateNotifier
-import ephyra.app.extension.ExtensionManager
-import ephyra.app.extension.api.ExtensionApi
-import ephyra.app.extension.util.ExtensionInstaller
-import ephyra.app.extension.util.ExtensionLoader
-import ephyra.app.ui.base.delegate.SecureActivityDelegateImpl
-import ephyra.app.ui.base.delegate.ThemingDelegateImpl
-import ephyra.app.data.storage.StorageManagerImpl
-import ephyra.presentation.core.util.CrashLogUtil
-import ephyra.app.util.NavigatorImpl
-import ephyra.app.util.system.isDebugBuildType
-import ephyra.core.common.notification.NotificationManager
-import ephyra.core.common.preference.DataStorePreferenceStore
-import ephyra.core.common.preference.PreferenceStore
-import ephyra.core.common.storage.AndroidStorageFolderProvider
 import ephyra.data.category.CategoryRepositoryImpl
 import ephyra.data.chapter.ChapterRepositoryImpl
 import ephyra.data.history.HistoryRepositoryImpl
+import ephyra.data.manga.ExcludedScanlatorRepositoryImpl
 import ephyra.data.manga.MangaRepositoryImpl
 import ephyra.data.release.ReleaseServiceImpl
 import ephyra.data.repository.ExtensionRepoRepositoryImpl
 import ephyra.data.room.EphyraDatabase
-import ephyra.data.source.SourceRepositoryImpl
-import ephyra.data.source.StubSourceRepositoryImpl
-import ephyra.data.track.TrackRepositoryImpl
-import ephyra.data.updates.UpdatesRepositoryImpl
 import ephyra.data.room.daos.CategoryDao
 import ephyra.data.room.daos.ChapterDao
+import ephyra.data.room.daos.ExcludedScanlatorDao
+import ephyra.data.room.daos.ExtensionRepoDao
 import ephyra.data.room.daos.HistoryDao
 import ephyra.data.room.daos.MangaDao
 import ephyra.data.room.daos.SourceDao
 import ephyra.data.room.daos.TrackDao
 import ephyra.data.room.daos.UpdateDao
-import ephyra.data.room.daos.ExtensionRepoDao
-import ephyra.data.room.daos.ExcludedScanlatorDao
-import ephyra.data.manga.ExcludedScanlatorRepositoryImpl
-import ephyra.domain.manga.repository.ExcludedScanlatorRepository
+import ephyra.data.saver.ImageSaverImpl
+import ephyra.data.source.SourceRepositoryImpl
+import ephyra.data.source.StubSourceRepositoryImpl
+import ephyra.data.track.TrackRepositoryImpl
+import ephyra.data.track.TrackerManagerImpl
+import ephyra.data.updater.AppUpdateChecker
+import ephyra.data.updates.UpdatesRepositoryImpl
+import ephyra.domain.backup.service.BackupFileValidator
 import ephyra.domain.backup.service.BackupPreferences
 import ephyra.domain.base.BasePreferences
+import ephyra.domain.base.InstallerCapabilityProvider
 import ephyra.domain.category.interactor.CreateCategoryWithName
 import ephyra.domain.category.interactor.DeleteCategory
 import ephyra.domain.category.interactor.GetCategories
@@ -96,8 +98,8 @@ import ephyra.domain.category.interactor.UpdateCategory
 import ephyra.domain.category.repository.CategoryRepository
 import ephyra.domain.chapter.interactor.FilterChaptersForDownload
 import ephyra.domain.chapter.interactor.GenerateAuthorityChapters
-import ephyra.domain.chapter.interactor.GetBookmarkedChaptersByMangaId
 import ephyra.domain.chapter.interactor.GetAvailableScanlators
+import ephyra.domain.chapter.interactor.GetBookmarkedChaptersByMangaId
 import ephyra.domain.chapter.interactor.GetChapter
 import ephyra.domain.chapter.interactor.GetChapterByUrlAndMangaId
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
@@ -110,9 +112,9 @@ import ephyra.domain.chapter.repository.ChapterRepository
 import ephyra.domain.download.interactor.DeleteDownload
 import ephyra.domain.download.service.DownloadPreferences
 import ephyra.domain.extension.interactor.GetExtensionLanguages
-import ephyra.domain.extension.interactor.TrustExtension
-import ephyra.domain.extension.interactor.GetExtensionsByType
 import ephyra.domain.extension.interactor.GetExtensionSources
+import ephyra.domain.extension.interactor.GetExtensionsByType
+import ephyra.domain.extension.interactor.TrustExtension
 import ephyra.domain.extensionrepo.interactor.CreateExtensionRepo
 import ephyra.domain.extensionrepo.interactor.DeleteExtensionRepo
 import ephyra.domain.extensionrepo.interactor.GetExtensionRepo
@@ -132,29 +134,29 @@ import ephyra.domain.jellyfin.interactor.SyncJellyfin
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.interactor.DeleteNonLibraryManga
 import ephyra.domain.manga.interactor.FetchInterval
+import ephyra.domain.manga.interactor.FindContentSource
 import ephyra.domain.manga.interactor.GetDeadFavorites
 import ephyra.domain.manga.interactor.GetDuplicateLibraryManga
+import ephyra.domain.manga.interactor.GetExcludedScanlators
 import ephyra.domain.manga.interactor.GetFavorites
 import ephyra.domain.manga.interactor.GetFavoritesByCanonicalId
 import ephyra.domain.manga.interactor.GetLibraryManga
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.interactor.GetMangaByUrlAndSourceId
 import ephyra.domain.manga.interactor.GetMangaWithChapters
-import ephyra.domain.manga.interactor.GetExcludedScanlators
-import ephyra.domain.manga.interactor.SetExcludedScanlators
 import ephyra.domain.manga.interactor.NetworkToLocalManga
 import ephyra.domain.manga.interactor.ResetViewerFlags
+import ephyra.domain.manga.interactor.SetExcludedScanlators
 import ephyra.domain.manga.interactor.SetMangaChapterFlags
 import ephyra.domain.manga.interactor.SetMangaViewerFlags
 import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.interactor.UpdateMangaNotes
-import ephyra.domain.manga.interactor.FindContentSource
+import ephyra.domain.manga.repository.ExcludedScanlatorRepository
 import ephyra.domain.manga.repository.MangaRepository
 import ephyra.domain.migration.usecases.MigrateMangaUseCase
+import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.domain.release.interactor.GetApplicationRelease
 import ephyra.domain.release.service.ReleaseService
-import ephyra.app.installer.AndroidInstallerCapabilityProvider
-import ephyra.domain.base.InstallerCapabilityProvider
 import ephyra.domain.source.interactor.GetEnabledSources
 import ephyra.domain.source.interactor.GetIncognitoState
 import ephyra.domain.source.interactor.GetLanguagesWithSources
@@ -186,35 +188,33 @@ import ephyra.domain.track.interactor.TrackChapter
 import ephyra.domain.track.interactor.TrackerListImporter
 import ephyra.domain.track.repository.TrackRepository
 import ephyra.domain.track.service.TrackPreferences
-import ephyra.app.track.DelayedTrackingStore
-import ephyra.domain.track.store.TrackingQueueStore
-import ephyra.app.track.TrackingJobSchedulerImpl
+import ephyra.domain.track.service.TrackerManager
 import ephyra.domain.track.service.TrackingJobScheduler
+import ephyra.domain.track.store.TrackingQueueStore
 import ephyra.domain.ui.UiPreferences
-import ephyra.domain.updates.interactor.GetUpdates
 import ephyra.domain.upcoming.interactor.GetUpcomingManga
+import ephyra.domain.updates.interactor.GetUpdates
 import ephyra.domain.updates.repository.UpdatesRepository
 import ephyra.domain.updates.service.UpdatesPreferences
-import ephyra.core.download.DownloadManager
 import ephyra.feature.manga.interactor.MangaChapterInteractor
 import ephyra.feature.manga.interactor.MangaInfoInteractor
 import ephyra.feature.manga.interactor.MangaTrackInteractor
-import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.presentation.core.ui.delegate.SecureActivityDelegate
 import ephyra.presentation.core.ui.delegate.ThemingDelegate
 import ephyra.presentation.core.util.AppNavigator
+import ephyra.presentation.core.util.CrashLogUtil
 import ephyra.source.local.image.LocalCoverManager
 import ephyra.source.local.io.LocalSourceFileSystem
 import eu.kanade.tachiyomi.network.JavaScriptEngine
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.NetworkPreferences
 import eu.kanade.tachiyomi.source.AndroidSourceManager
-import javax.inject.Singleton
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf
-import nl.adaptivity.xmlutil.serialization.XML
 import nl.adaptivity.xmlutil.XmlDeclMode
 import nl.adaptivity.xmlutil.core.XmlVersion
+import nl.adaptivity.xmlutil.serialization.XML
+import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -249,7 +249,7 @@ object AppModule {
         return Room.databaseBuilder(
             context = context,
             klass = EphyraDatabase::class.java,
-            name = "tachiyomi.db"
+            name = "tachiyomi.db",
         )
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onOpen(db: SupportSQLiteDatabase) {
@@ -363,7 +363,7 @@ object AppModule {
     @Singleton
     fun provideStoragePreferences(
         androidStorageFolderProvider: AndroidStorageFolderProvider,
-        preferenceStore: PreferenceStore
+        preferenceStore: PreferenceStore,
     ) = StoragePreferences(androidStorageFolderProvider, preferenceStore)
 
     @Provides
@@ -380,7 +380,7 @@ object AppModule {
     @Singleton
     fun provideBasePreferences(
         capabilityProvider: InstallerCapabilityProvider,
-        preferenceStore: PreferenceStore
+        preferenceStore: PreferenceStore,
     ) = BasePreferences(capabilityProvider, preferenceStore)
 
     // 4. Repositories Providers
@@ -414,7 +414,7 @@ object AppModule {
     fun provideSourceRepository(
         sourceManager: SourceManager,
         mangaDao: MangaDao,
-        networkToLocalManga: NetworkToLocalManga
+        networkToLocalManga: NetworkToLocalManga,
     ): SourceRepository = SourceRepositoryImpl(sourceManager, mangaDao, networkToLocalManga)
 
     @Provides
@@ -464,7 +464,7 @@ object AppModule {
         @ApplicationContext context: Context,
         basePreferences: BasePreferences,
         networkHelper: NetworkHelper,
-        extensionLoader: ExtensionLoader
+        extensionLoader: ExtensionLoader,
     ) = ExtensionInstaller(context, basePreferences, networkHelper, extensionLoader)
 
     @Provides
@@ -476,8 +476,16 @@ object AppModule {
         updateExtensionRepo: UpdateExtensionRepo,
         securityPreferences: SecurityPreferences,
         extensionLoader: ExtensionLoader,
-        json: Json
-    ) = ExtensionApi(networkHelper, preferenceStore, getExtensionRepo, updateExtensionRepo, securityPreferences, extensionLoader, json)
+        json: Json,
+    ) = ExtensionApi(
+        networkHelper,
+        preferenceStore,
+        getExtensionRepo,
+        updateExtensionRepo,
+        securityPreferences,
+        extensionLoader,
+        json,
+    )
 
     @Provides
     @Singleton
@@ -488,11 +496,21 @@ object AppModule {
         securityPreferences: SecurityPreferences,
         extensionLoader: ExtensionLoader,
         extensionApi: ExtensionApi,
-        extensionInstaller: ExtensionInstaller
-    ) = ExtensionManager(context, sourcePreferences, trustExtension, securityPreferences, extensionLoader, extensionApi, extensionInstaller)
+        extensionInstaller: ExtensionInstaller,
+    ) = ExtensionManager(
+        context,
+        sourcePreferences,
+        trustExtension,
+        securityPreferences,
+        extensionLoader,
+        extensionApi,
+        extensionInstaller,
+    )
 
     @Provides
-    fun provideDomainExtensionManager(extensionManager: ExtensionManager): ephyra.domain.extension.service.ExtensionManager = extensionManager
+    fun provideDomainExtensionManager(
+        extensionManager: ExtensionManager,
+    ): ephyra.domain.extension.service.ExtensionManager = extensionManager
 
     @Provides
     @Singleton
@@ -502,8 +520,15 @@ object AppModule {
         stubSourceRepository: StubSourceRepository,
         localSourceFileSystem: LocalSourceFileSystem,
         localCoverManager: LocalCoverManager,
-        downloadManager: DownloadManager
-    ): SourceManager = AndroidSourceManager(context, extensionManager, stubSourceRepository, localSourceFileSystem, localCoverManager, downloadManager)
+        downloadManager: DownloadManager,
+    ): SourceManager = AndroidSourceManager(
+        context,
+        extensionManager,
+        stubSourceRepository,
+        localSourceFileSystem,
+        localCoverManager,
+        downloadManager,
+    )
 
     @Provides
     @Singleton
@@ -514,14 +539,14 @@ object AppModule {
     @Singleton
     fun provideLocalCoverManager(
         @ApplicationContext context: Context,
-        localSourceFileSystem: LocalSourceFileSystem
+        localSourceFileSystem: LocalSourceFileSystem,
     ) = LocalCoverManager(context, localSourceFileSystem)
 
     @Provides
     @Singleton
     fun provideStorageManager(
         @ApplicationContext context: Context,
-        storagePreferences: StoragePreferences
+        storagePreferences: StoragePreferences,
     ): StorageManager = StorageManagerImpl(context, storagePreferences)
 
     @Provides
@@ -531,7 +556,7 @@ object AppModule {
         sourceManager: SourceManager,
         json: Json,
         getManga: GetManga,
-        getChapter: GetChapter
+        getChapter: GetChapter,
     ): DownloadStore = DownloadStore(context, sourceManager, json, getManga, getChapter)
 
     @Provides
@@ -539,7 +564,7 @@ object AppModule {
     fun provideDownloadProvider(
         @ApplicationContext context: Context,
         storageManager: StorageManager,
-        libraryPreferences: LibraryPreferences
+        libraryPreferences: LibraryPreferences,
     ): DownloadProvider = DownloadProvider(context, storageManager, libraryPreferences)
 
     @Provides
@@ -548,7 +573,7 @@ object AppModule {
         application: Application,
         downloadProvider: DownloadProvider,
         sourceManager: SourceManager,
-        storageManager: StorageManager
+        storageManager: StorageManager,
     ): DownloadCache = DownloadCache(application, downloadProvider, sourceManager, storageManager)
 
     @Provides
@@ -564,7 +589,7 @@ object AppModule {
         downloadPreferences: DownloadPreferences,
         libraryPreferences: LibraryPreferences,
         downloader: Downloader,
-        pendingDeleter: DownloadPendingDeleter
+        pendingDeleter: DownloadPendingDeleter,
     ): DownloadManager = DownloadManager(
         context = context,
         provider = downloadProvider,
@@ -576,7 +601,7 @@ object AppModule {
         downloadPreferences = downloadPreferences,
         libraryPreferences = libraryPreferences,
         downloader = downloader,
-        pendingDeleter = pendingDeleter
+        pendingDeleter = pendingDeleter,
     )
 
     @Provides
@@ -594,7 +619,7 @@ object AppModule {
         getCategories: GetCategories,
         getTracks: GetTracks,
         downloadNotifier: ephyra.domain.download.service.DownloadNotifier,
-        downloadStore: DownloadStore
+        downloadStore: DownloadStore,
     ): Downloader = Downloader(
         context = context,
         provider = downloadProvider,
@@ -608,7 +633,7 @@ object AppModule {
         getCategories = getCategories,
         getTracks = getTracks,
         notifier = downloadNotifier,
-        store = downloadStore
+        store = downloadStore,
     )
 
     @Provides
@@ -620,7 +645,7 @@ object AppModule {
     @Singleton
     fun provideDownloadNotifier(
         @ApplicationContext context: Context,
-        securityPreferences: SecurityPreferences
+        securityPreferences: SecurityPreferences,
     ): ephyra.domain.download.service.DownloadNotifier =
         DownloadNotifier(context, securityPreferences)
 
@@ -634,7 +659,7 @@ object AppModule {
         networkHelper: NetworkHelper,
         addTracks: AddTracks,
         insertTrack: InsertTrack,
-        json: Json
+        json: Json,
     ): TrackerManager = TrackerManagerImpl(
         context = application,
         trackPreferences = trackPreferences,
@@ -643,7 +668,7 @@ object AppModule {
         networkService = networkHelper,
         addTracks = addTracks,
         insertTrack = insertTrack,
-        json = json
+        json = json,
     )
 
     @Provides
@@ -670,7 +695,9 @@ object AppModule {
     fun provideCoverCache(@ApplicationContext context: Context) = CoverCache(context)
 
     @Provides
-    fun provideDomainCoverCache(coverCache: ephyra.data.cache.CoverCache): ephyra.domain.manga.service.CoverCache = coverCache
+    fun provideDomainCoverCache(
+        coverCache: ephyra.data.cache.CoverCache,
+    ): ephyra.domain.manga.service.CoverCache = coverCache
 
     @Provides
     @Singleton
@@ -693,7 +720,10 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideSecureActivityDelegate(basePreferences: BasePreferences, securityPreferences: SecurityPreferences): SecureActivityDelegate =
+    fun provideSecureActivityDelegate(
+        basePreferences: BasePreferences,
+        securityPreferences: SecurityPreferences,
+    ): SecureActivityDelegate =
         SecureActivityDelegateImpl(basePreferences, securityPreferences)
 
     // 6. Backup & Restore
@@ -707,7 +737,7 @@ object AppModule {
     fun provideBackupFileValidator(
         @ApplicationContext context: Context,
         trackerManager: TrackerManager,
-        sourceManager: SourceManager
+        sourceManager: SourceManager,
     ): BackupFileValidator = BackupFileValidatorImpl(context, trackerManager, sourceManager)
 
     @Provides
@@ -753,7 +783,7 @@ object AppModule {
         preferenceBackupCreator: PreferenceBackupCreator,
         extensionRepoBackupCreator: ExtensionRepoBackupCreator,
         sourcesBackupCreator: SourcesBackupCreator,
-        storageManager: StorageManager
+        storageManager: StorageManager,
     ) = BackupCreator(
         context = context,
         parser = protoBuf,
@@ -765,7 +795,7 @@ object AppModule {
         preferenceBackupCreator = preferenceBackupCreator,
         extensionRepoBackupCreator = extensionRepoBackupCreator,
         sourcesBackupCreator = sourcesBackupCreator,
-        storageManager = storageManager
+        storageManager = storageManager,
     )
 
     @Provides
@@ -773,7 +803,7 @@ object AppModule {
     fun provideCategoriesRestorer(
         categoryRepository: CategoryRepository,
         getCategories: GetCategories,
-        libraryPreferences: LibraryPreferences
+        libraryPreferences: LibraryPreferences,
     ) = CategoriesRestorer(categoryRepository, getCategories, libraryPreferences)
 
     @Provides
@@ -785,7 +815,7 @@ object AppModule {
         libraryPreferences: LibraryPreferences,
         backupPreferences: BackupPreferences,
         backupScheduler: ephyra.domain.backup.service.BackupScheduler,
-        libraryUpdateScheduler: ephyra.domain.library.service.LibraryUpdateScheduler
+        libraryUpdateScheduler: ephyra.domain.library.service.LibraryUpdateScheduler,
     ) = PreferenceRestorer(
         context = context,
         getCategories = getCategories,
@@ -793,14 +823,14 @@ object AppModule {
         libraryPreferences = libraryPreferences,
         backupPreferences = backupPreferences,
         backupScheduler = backupScheduler,
-        libraryUpdateScheduler = libraryUpdateScheduler
+        libraryUpdateScheduler = libraryUpdateScheduler,
     )
 
     @Provides
     @Singleton
     fun provideExtensionRepoRestorer(
         extensionRepoRepository: ExtensionRepoRepository,
-        getExtensionRepos: GetExtensionRepo
+        getExtensionRepos: GetExtensionRepo,
     ) = ExtensionRepoRestorer(extensionRepoRepository, getExtensionRepos)
 
     @Provides
@@ -819,7 +849,7 @@ object AppModule {
         insertTrack: InsertTrack,
         getExcludedScanlators: GetExcludedScanlators,
         setExcludedScanlators: SetExcludedScanlators,
-        fetchInterval: FetchInterval
+        fetchInterval: FetchInterval,
     ) = MangaRestorer(
         database = database,
         mangaRepository = mangaRepository,
@@ -834,7 +864,7 @@ object AppModule {
         insertTrack = insertTrack,
         getExcludedScanlators = getExcludedScanlators,
         setExcludedScanlators = setExcludedScanlators,
-        fetchInterval = fetchInterval
+        fetchInterval = fetchInterval,
     )
 
     @Provides
@@ -845,26 +875,28 @@ object AppModule {
         preferenceRestorer: PreferenceRestorer,
         extensionRepoRestorer: ExtensionRepoRestorer,
         mangaRestorer: MangaRestorer,
-        backupNotifier: ephyra.domain.backup.service.BackupNotifier
+        backupNotifier: ephyra.domain.backup.service.BackupNotifier,
     ) = BackupRestorer(
         context = context,
         categoriesRestorer = categoriesRestorer,
         preferenceRestorer = preferenceRestorer,
         extensionRepoRestorer = extensionRepoRestorer,
         mangaRestorer = mangaRestorer,
-        notifier = backupNotifier
+        notifier = backupNotifier,
     )
 
     @Provides
     @Singleton
-    fun provideAppUpdateNotifier(@ApplicationContext context: Context): ephyra.domain.release.service.AppUpdateNotifier =
+    fun provideAppUpdateNotifier(
+        @ApplicationContext context: Context,
+    ): ephyra.domain.release.service.AppUpdateNotifier =
         AppUpdateNotifier(context)
 
     @Provides
     @Singleton
     fun provideAppUpdateChecker(
         getApplicationRelease: GetApplicationRelease,
-        appUpdateNotifier: ephyra.domain.release.service.AppUpdateNotifier
+        appUpdateNotifier: ephyra.domain.release.service.AppUpdateNotifier,
     ) = AppUpdateChecker(getApplicationRelease, appUpdateNotifier)
 
     @Provides
@@ -872,7 +904,7 @@ object AppModule {
     fun provideLibraryUpdateNotifier(
         @ApplicationContext context: Context,
         securityPreferences: SecurityPreferences,
-        sourceManager: SourceManager
+        sourceManager: SourceManager,
     ) = LibraryUpdateNotifier(context, securityPreferences, sourceManager)
 
     @Provides
@@ -917,7 +949,7 @@ object AppModule {
     fun provideDeleteCategory(
         categoryRepository: CategoryRepository,
         libraryPreferences: LibraryPreferences,
-        downloadPreferences: DownloadPreferences
+        downloadPreferences: DownloadPreferences,
     ) = DeleteCategory(categoryRepository, libraryPreferences, downloadPreferences)
 
     @Provides
@@ -949,7 +981,7 @@ object AppModule {
     fun provideGetNextChapters(
         getChaptersByMangaId: GetChaptersByMangaId,
         getManga: GetManga,
-        historyRepository: HistoryRepository
+        historyRepository: HistoryRepository,
     ) = GetNextChapters(getChaptersByMangaId, getManga, historyRepository)
 
     @Provides
@@ -968,7 +1000,7 @@ object AppModule {
     fun provideSetMangaDefaultChapterFlags(
         libraryPreferences: LibraryPreferences,
         setMangaChapterFlags: SetMangaChapterFlags,
-        getFavorites: GetFavorites
+        getFavorites: GetFavorites,
     ) = SetMangaDefaultChapterFlags(libraryPreferences, setMangaChapterFlags, getFavorites)
 
     @Provides
@@ -984,7 +1016,7 @@ object AppModule {
         coverCache: CoverCache,
         libraryPreferences: LibraryPreferences,
         downloadManager: DownloadManager,
-        trackPreferences: TrackPreferences
+        trackPreferences: TrackPreferences,
     ) = UpdateManga(mangaRepository, fetchInterval, coverCache, libraryPreferences, downloadManager, trackPreferences)
 
     @Provides
@@ -998,10 +1030,14 @@ object AppModule {
     fun provideSetMangaCategories(mangaRepository: MangaRepository) = SetMangaCategories(mangaRepository)
 
     @Provides
-    fun provideGetExcludedScanlators(excludedScanlatorRepository: ExcludedScanlatorRepository) = GetExcludedScanlators(excludedScanlatorRepository)
+    fun provideGetExcludedScanlators(
+        excludedScanlatorRepository: ExcludedScanlatorRepository,
+    ) = GetExcludedScanlators(excludedScanlatorRepository)
 
     @Provides
-    fun provideSetExcludedScanlators(excludedScanlatorRepository: ExcludedScanlatorRepository) = SetExcludedScanlators(excludedScanlatorRepository)
+    fun provideSetExcludedScanlators(
+        excludedScanlatorRepository: ExcludedScanlatorRepository,
+    ) = SetExcludedScanlators(excludedScanlatorRepository)
 
     @Provides
     fun provideDeleteNonLibraryManga(mangaRepository: MangaRepository) = DeleteNonLibraryManga(mangaRepository)
@@ -1034,7 +1070,7 @@ object AppModule {
         setMangaCategories,
         getTracks,
         insertTrack,
-        coverCache
+        coverCache,
     )
 
     @Provides
@@ -1047,7 +1083,7 @@ object AppModule {
         trackerManager: TrackerManager,
         insertTrack: InsertTrack,
         trackingQueue: TrackingQueueStore,
-        trackingJobScheduler: TrackingJobScheduler
+        trackingJobScheduler: TrackingJobScheduler,
     ) = TrackChapter(getTracks, trackerManager, insertTrack, trackingQueue, trackingJobScheduler)
 
     @Provides
@@ -1057,14 +1093,14 @@ object AppModule {
         getChaptersByMangaId: GetChaptersByMangaId,
         getHistory: GetHistory,
         trackerManager: TrackerManager,
-        mangaRepository: MangaRepository
+        mangaRepository: MangaRepository,
     ) = AddTracks(
         insertTrack = insertTrack,
         syncChapterProgressWithTrack = syncChapterProgressWithTrack,
         getChaptersByMangaId = getChaptersByMangaId,
         getHistory = getHistory,
         trackerManager = trackerManager,
-        mangaRepository = mangaRepository
+        mangaRepository = mangaRepository,
     )
 
     @Provides
@@ -1072,7 +1108,7 @@ object AppModule {
         getTracks: GetTracks,
         trackerManager: TrackerManager,
         insertTrack: InsertTrack,
-        syncChapterProgressWithTrack: SyncChapterProgressWithTrack
+        syncChapterProgressWithTrack: SyncChapterProgressWithTrack,
     ) = RefreshTracks(getTracks, trackerManager, insertTrack, syncChapterProgressWithTrack)
 
     @Provides
@@ -1091,7 +1127,7 @@ object AppModule {
     fun provideSyncChapterProgressWithTrack(
         updateChapter: UpdateChapter,
         insertTrack: InsertTrack,
-        getChaptersByMangaId: GetChaptersByMangaId
+        getChaptersByMangaId: GetChaptersByMangaId,
     ) = SyncChapterProgressWithTrack(updateChapter, insertTrack, getChaptersByMangaId)
 
     @Provides
@@ -1099,7 +1135,7 @@ object AppModule {
         mangaRepository: MangaRepository,
         insertTrack: InsertTrack,
         trackerManager: TrackerManager,
-        generateAuthorityChapters: GenerateAuthorityChapters
+        generateAuthorityChapters: GenerateAuthorityChapters,
     ) = TrackerListImporter(mangaRepository, insertTrack, trackerManager, generateAuthorityChapters)
 
     @Provides
@@ -1111,7 +1147,7 @@ object AppModule {
         mangaRepository: MangaRepository,
         trackerManager: TrackerManager,
         getTracks: GetTracks,
-        trackPreferences: TrackPreferences
+        trackPreferences: TrackPreferences,
     ) = MatchUnlinkedManga(mangaRepository, trackerManager, getTracks, trackPreferences)
 
     @Provides
@@ -1119,7 +1155,7 @@ object AppModule {
         mangaRepository: MangaRepository,
         trackerManager: TrackerManager,
         trackPreferences: TrackPreferences,
-        coverCache: ephyra.domain.manga.service.CoverCache
+        coverCache: ephyra.domain.manga.service.CoverCache,
     ) = RefreshCanonicalMetadata(mangaRepository, trackerManager, trackPreferences, coverCache)
 
     @Provides
@@ -1172,7 +1208,7 @@ object AppModule {
         getChaptersByMangaId,
         getExcludedScanlators,
         libraryPreferences,
-        setMangaChapterFlags
+        setMangaChapterFlags,
     )
 
     @Provides
@@ -1212,7 +1248,10 @@ object AppModule {
         DeleteDownload(sourceManager, downloadManager)
 
     @Provides
-    fun provideGetExtensionsByType(extensionManager: ephyra.domain.extension.service.ExtensionManager, sourcePreferences: SourcePreferences) =
+    fun provideGetExtensionsByType(
+        extensionManager: ephyra.domain.extension.service.ExtensionManager,
+        sourcePreferences: SourcePreferences,
+    ) =
         GetExtensionsByType(sourcePreferences, extensionManager)
 
     @Provides
@@ -1220,7 +1259,10 @@ object AppModule {
         GetExtensionSources(sourcePreferences)
 
     @Provides
-    fun provideGetExtensionLanguages(extensionManager: ephyra.domain.extension.service.ExtensionManager, sourcePreferences: SourcePreferences) =
+    fun provideGetExtensionLanguages(
+        extensionManager: ephyra.domain.extension.service.ExtensionManager,
+        sourcePreferences: SourcePreferences,
+    ) =
         GetExtensionLanguages(sourcePreferences, extensionManager)
 
     @Provides
@@ -1272,7 +1314,7 @@ object AppModule {
     @Provides
     fun provideCreateExtensionRepo(
         extensionRepoRepository: ExtensionRepoRepository,
-        extensionRepoService: ExtensionRepoService
+        extensionRepoService: ExtensionRepoService,
     ) = CreateExtensionRepo(extensionRepoRepository, extensionRepoService)
 
     @Provides
@@ -1286,7 +1328,7 @@ object AppModule {
     @Provides
     fun provideUpdateExtensionRepo(
         extensionRepoRepository: ExtensionRepoRepository,
-        extensionRepoService: ExtensionRepoService
+        extensionRepoService: ExtensionRepoService,
     ) = UpdateExtensionRepo(extensionRepoRepository, extensionRepoService)
 
     @Provides
@@ -1296,7 +1338,7 @@ object AppModule {
     fun provideGetIncognitoState(
         basePreferences: BasePreferences,
         sourcePreferences: SourcePreferences,
-        extensionManager: ephyra.domain.extension.service.ExtensionManager
+        extensionManager: ephyra.domain.extension.service.ExtensionManager,
     ) = GetIncognitoState(basePreferences, sourcePreferences, extensionManager)
 
     @Provides
@@ -1312,8 +1354,16 @@ object AppModule {
         matchUnlinkedManga: MatchUnlinkedManga,
         syncJellyfin: SyncJellyfin,
         setExcludedScanlators: SetExcludedScanlators,
-        setMangaCategories: SetMangaCategories
-    ) = MangaInfoInteractor(updateManga, mangaRepository, refreshCanonical, matchUnlinkedManga, syncJellyfin, setExcludedScanlators, setMangaCategories)
+        setMangaCategories: SetMangaCategories,
+    ) = MangaInfoInteractor(
+        updateManga,
+        mangaRepository,
+        refreshCanonical,
+        matchUnlinkedManga,
+        syncJellyfin,
+        setExcludedScanlators,
+        setMangaCategories,
+    )
 
     @Provides
     @Singleton
@@ -1325,8 +1375,17 @@ object AppModule {
         libraryPreferences: LibraryPreferences,
         filterChaptersForDownload: FilterChaptersForDownload,
         syncChaptersWithSource: SyncChaptersWithSource,
-        downloadManager: DownloadManager
-    ) = MangaChapterInteractor(setMangaChapterFlags, setMangaDefaultChapterFlags, setReadStatus, updateChapter, libraryPreferences, filterChaptersForDownload, syncChaptersWithSource, downloadManager)
+        downloadManager: DownloadManager,
+    ) = MangaChapterInteractor(
+        setMangaChapterFlags,
+        setMangaDefaultChapterFlags,
+        setReadStatus,
+        updateChapter,
+        libraryPreferences,
+        filterChaptersForDownload,
+        syncChaptersWithSource,
+        downloadManager,
+    )
 
     @Provides
     @Singleton
@@ -1338,11 +1397,18 @@ object AppModule {
         trackChapter: TrackChapter,
         trackPreferences: TrackPreferences,
         trackerManager: TrackerManager,
-        refreshTracks: RefreshTracks
-    ) = MangaTrackInteractor(getTracks, addTracks, refreshCanonical, matchUnlinkedManga, trackChapter, trackPreferences, trackerManager, refreshTracks)
+        refreshTracks: RefreshTracks,
+    ) = MangaTrackInteractor(
+        getTracks,
+        addTracks,
+        refreshCanonical,
+        matchUnlinkedManga,
+        trackChapter,
+        trackPreferences,
+        trackerManager,
+        refreshTracks,
+    )
 
-
- 
     @Provides
     @Singleton
     fun provideExtensionReposScreenFactory(): ephyra.presentation.core.ui.ExtensionReposScreenFactory {
@@ -1367,19 +1433,27 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideBackupScheduler(workScheduler: ephyra.app.data.scheduler.WorkSchedulerImpl): ephyra.domain.backup.service.BackupScheduler = workScheduler
+    fun provideBackupScheduler(
+        workScheduler: ephyra.app.data.scheduler.WorkSchedulerImpl,
+    ): ephyra.domain.backup.service.BackupScheduler = workScheduler
 
     @Provides
     @Singleton
-    fun provideRestoreScheduler(workScheduler: ephyra.app.data.scheduler.WorkSchedulerImpl): ephyra.domain.backup.service.RestoreScheduler = workScheduler
+    fun provideRestoreScheduler(
+        workScheduler: ephyra.app.data.scheduler.WorkSchedulerImpl,
+    ): ephyra.domain.backup.service.RestoreScheduler = workScheduler
 
     @Provides
     @Singleton
-    fun provideLibraryUpdateScheduler(workScheduler: ephyra.app.data.scheduler.WorkSchedulerImpl): ephyra.domain.library.service.LibraryUpdateScheduler = workScheduler
+    fun provideLibraryUpdateScheduler(
+        workScheduler: ephyra.app.data.scheduler.WorkSchedulerImpl,
+    ): ephyra.domain.library.service.LibraryUpdateScheduler = workScheduler
 
     @Provides
     @Singleton
-    fun provideMetadataUpdateScheduler(workScheduler: ephyra.app.data.scheduler.WorkSchedulerImpl): ephyra.domain.library.service.MetadataUpdateScheduler = workScheduler
+    fun provideMetadataUpdateScheduler(
+        workScheduler: ephyra.app.data.scheduler.WorkSchedulerImpl,
+    ): ephyra.domain.library.service.MetadataUpdateScheduler = workScheduler
 
     @Provides
     @Singleton

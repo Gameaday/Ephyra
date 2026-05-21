@@ -4,7 +4,6 @@ import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import ephyra.core.common.util.lang.launchIO
 import ephyra.domain.chapter.interactor.GetChapterByUrlAndMangaId
 import ephyra.domain.chapter.interactor.SyncChaptersWithSource
@@ -22,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import javax.inject.Inject
 
 @HiltViewModel
 class DeepLinkScreenModel @Inject constructor(

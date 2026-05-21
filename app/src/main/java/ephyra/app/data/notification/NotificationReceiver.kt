@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.core.net.toUri
+import dagger.hilt.android.AndroidEntryPoint
 import ephyra.app.data.backup.restore.BackupRestoreJob
 import ephyra.app.data.library.LibraryUpdateJob
 import ephyra.app.data.updater.AppUpdateDownloadJob
@@ -28,7 +29,6 @@ import ephyra.feature.reader.ReaderActivity
 import ephyra.presentation.core.util.system.getParcelableExtraCompat
 import ephyra.presentation.core.util.system.toShareIntent
 import ephyra.presentation.core.util.system.toast
-import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import ephyra.app.BuildConfig.APPLICATION_ID as ID
 
@@ -41,10 +41,15 @@ import ephyra.app.BuildConfig.APPLICATION_ID as ID
 class NotificationReceiver : BroadcastReceiver() {
 
     @Inject lateinit var getManga: GetManga
+
     @Inject lateinit var getChapter: GetChapter
+
     @Inject lateinit var updateChapter: UpdateChapter
+
     @Inject lateinit var downloadManager: DownloadManager
+
     @Inject lateinit var downloadPreferences: DownloadPreferences
+
     @Inject lateinit var sourceManager: SourceManager
 
     override fun onReceive(context: Context, intent: Intent) {

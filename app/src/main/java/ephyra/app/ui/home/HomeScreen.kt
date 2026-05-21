@@ -33,6 +33,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -40,7 +41,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.lifecycle.viewmodel.compose.viewModel
 import ephyra.app.util.system.updaterEnabled
 import ephyra.core.common.util.system.logcat
 import ephyra.feature.browse.BrowseTabScreen
@@ -356,5 +356,5 @@ enum class HomeTab(
         ephyra.app.core.common.R.string.label_more,
         ephyra.presentation.core.R.drawable.anim_more_enter,
         ephyra.presentation.core.R.drawable.anim_more_enter,
-    );
+    ),
 }

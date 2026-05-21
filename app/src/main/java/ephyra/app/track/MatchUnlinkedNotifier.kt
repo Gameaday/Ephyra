@@ -59,7 +59,11 @@ class MatchUnlinkedNotifier(private val context: Context) {
     fun showProgressNotification(mangaTitle: String, current: Int, total: Int) {
         progressNotificationBuilder
             .setContentTitle(
-                context.stringResource(ephyra.app.core.common.R.string.tracker_match_all_running_progress, current, total),
+                context.stringResource(
+                    ephyra.app.core.common.R.string.tracker_match_all_running_progress,
+                    current,
+                    total,
+                ),
             )
             .setContentText(mangaTitle)
             .setStyle(NotificationCompat.BigTextStyle().bigText(mangaTitle))
@@ -97,7 +101,9 @@ class MatchUnlinkedNotifier(private val context: Context) {
         context.notify(
             Notifications.ID_MATCH_COMPLETE,
             context.notificationBuilder(Notifications.CHANNEL_MATCH_PROGRESS) {
-                setContentTitle(context.stringResource(ephyra.app.core.common.R.string.tracker_match_all_complete_title))
+                setContentTitle(
+                    context.stringResource(ephyra.app.core.common.R.string.tracker_match_all_complete_title),
+                )
                 setContentText(text)
                 setStyle(NotificationCompat.BigTextStyle().bigText(text))
                 setSmallIcon(R.drawable.ic_ephyra)
@@ -114,7 +120,9 @@ class MatchUnlinkedNotifier(private val context: Context) {
         context.notify(
             Notifications.ID_MATCH_COMPLETE,
             context.notificationBuilder(Notifications.CHANNEL_MATCH_PROGRESS) {
-                setContentTitle(context.stringResource(ephyra.app.core.common.R.string.tracker_match_all_complete_title))
+                setContentTitle(
+                    context.stringResource(ephyra.app.core.common.R.string.tracker_match_all_complete_title),
+                )
                 setContentText(context.stringResource(ephyra.app.core.common.R.string.tracker_match_all_failed))
                 setStyle(
                     NotificationCompat.BigTextStyle()
