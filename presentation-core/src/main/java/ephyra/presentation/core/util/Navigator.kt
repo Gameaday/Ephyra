@@ -26,5 +26,5 @@ interface AssistContentScreen {
 }
 
 interface Tab {
-    suspend fun onReselect() {}
+    fun onReselect() {}
 }
