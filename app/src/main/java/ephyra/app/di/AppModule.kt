@@ -215,6 +215,7 @@ import nl.adaptivity.xmlutil.XmlDeclMode
 import nl.adaptivity.xmlutil.core.XmlVersion
 import nl.adaptivity.xmlutil.serialization.XML
 import javax.inject.Singleton
+import javax.inject.Provider
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -520,14 +521,14 @@ object AppModule {
         stubSourceRepository: StubSourceRepository,
         localSourceFileSystem: LocalSourceFileSystem,
         localCoverManager: LocalCoverManager,
-        downloadManager: DownloadManager,
+        downloadManagerProvider: Provider<DownloadManager>,
     ): SourceManager = AndroidSourceManager(
         context,
         extensionManager,
         stubSourceRepository,
         localSourceFileSystem,
         localCoverManager,
-        downloadManager,
+        downloadManagerProvider,
     )
 
     @Provides
@@ -1092,14 +1093,14 @@ object AppModule {
         syncChapterProgressWithTrack: SyncChapterProgressWithTrack,
         getChaptersByMangaId: GetChaptersByMangaId,
         getHistory: GetHistory,
-        trackerManager: TrackerManager,
+        trackerManagerProvider: Provider<TrackerManager>,
         mangaRepository: MangaRepository,
     ) = AddTracks(
         insertTrack = insertTrack,
         syncChapterProgressWithTrack = syncChapterProgressWithTrack,
         getChaptersByMangaId = getChaptersByMangaId,
         getHistory = getHistory,
-        trackerManager = trackerManager,
+        trackerManagerProvider = trackerManagerProvider,
         mangaRepository = mangaRepository,
     )
 

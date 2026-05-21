@@ -4,6 +4,7 @@ import android.content.Context
 import ephyra.app.extension.ExtensionManager
 import ephyra.core.common.i18n.stringResource
 import ephyra.domain.download.service.DownloadManager
+import javax.inject.Provider
 import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.repository.StubSourceRepository
 import ephyra.domain.source.service.SourceManager
@@ -27,7 +28,7 @@ internal class AndroidSourceManager(
     private val sourceRepository: StubSourceRepository,
     private val fileSystem: ephyra.source.local.io.LocalSourceFileSystem,
     private val coverManager: ephyra.source.local.image.LocalCoverManager,
-    private val downloadManager: DownloadManager,
+    private val downloadManagerProvider: Provider<DownloadManager>,
 ) : SourceManager {
 
     private val _isInitialized = MutableStateFlow(false)
@@ -122,7 +123,7 @@ internal class AndroidSourceManager(
             if (dbSource == source) return@launch
             sourceRepository.upsertStubSource(source.id, source.lang, source.name)
             if (dbSource != null) {
-                downloadManager.renameSource(dbSource, source)
+                downloadManagerProvider.get().renameSource(dbSource, source)
             }
         }
     }

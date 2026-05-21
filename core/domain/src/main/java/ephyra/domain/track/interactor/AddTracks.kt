@@ -16,6 +16,7 @@ import ephyra.domain.track.model.Track
 import ephyra.domain.track.service.EnhancedTracker
 import ephyra.domain.track.service.Tracker
 import ephyra.domain.track.service.TrackerManager
+import javax.inject.Provider
 import eu.kanade.tachiyomi.source.Source
 import logcat.LogPriority
 import java.time.ZoneOffset
@@ -25,7 +26,7 @@ class AddTracks(
     private val syncChapterProgressWithTrack: SyncChapterProgressWithTrack,
     private val getChaptersByMangaId: GetChaptersByMangaId,
     private val getHistory: GetHistory,
-    private val trackerManager: TrackerManager,
+    private val trackerManagerProvider: Provider<TrackerManager>,
     private val mangaRepository: MangaRepository,
 ) {
 
@@ -93,7 +94,7 @@ class AddTracks(
 
     suspend fun bindEnhancedTrackers(manga: Manga, source: Source) = withNonCancellableContext {
         withIOContext {
-            trackerManager.loggedInTrackers()
+            trackerManagerProvider.get().loggedInTrackers()
                 .filterIsInstance<EnhancedTracker>()
                 .filter { it.accept(source) }
                 .forEach { service ->
