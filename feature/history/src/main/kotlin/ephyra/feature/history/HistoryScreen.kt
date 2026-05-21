@@ -13,16 +13,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import ephyra.core.common.i18n.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import ephyra.core.common.i18n.stringResource
 import ephyra.domain.history.model.HistoryWithRelations
 import ephyra.feature.history.components.HistoryDeleteAllDialog
 import ephyra.feature.history.components.HistoryDeleteDialog
 import ephyra.feature.history.components.HistoryItem
+import ephyra.feature.manga.presentation.DuplicateMangaDialog
 import ephyra.feature.migration.dialog.MigrateMangaDialog
 import ephyra.feature.reader.ReaderActivity
 import ephyra.presentation.core.components.AppBar
@@ -41,7 +42,6 @@ import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.NavigationEvents
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.animateItemFastScroll
-import ephyra.feature.manga.presentation.DuplicateMangaDialog
 import ephyra.presentation.theme.TachiyomiPreviewTheme
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.collectLatest
@@ -235,7 +235,9 @@ fun HistoryTabScreen(
             MigrateMangaDialog(
                 current = dialog.current,
                 target = dialog.target,
-                onClickTitle = { navController.navigate(ScreenRoutes.MangaDetails.createRoute(dialog.current.id, false)) },
+                onClickTitle = {
+                    navController.navigate(ScreenRoutes.MangaDetails.createRoute(dialog.current.id, false))
+                },
                 onDismissRequest = onDismissRequest,
             )
         }
@@ -253,10 +255,14 @@ fun HistoryTabScreen(
         screenModel.events.collectLatest { e ->
             when (e) {
                 HistoryScreenModel.Event.InternalError ->
-                    snackbarHostState.showSnackbar(context.stringResource(ephyra.app.core.common.R.string.internal_error))
+                    snackbarHostState.showSnackbar(
+                        context.stringResource(ephyra.app.core.common.R.string.internal_error),
+                    )
 
                 HistoryScreenModel.Event.HistoryCleared ->
-                    snackbarHostState.showSnackbar(context.stringResource(ephyra.app.core.common.R.string.clear_history_completed))
+                    snackbarHostState.showSnackbar(
+                        context.stringResource(ephyra.app.core.common.R.string.clear_history_completed),
+                    )
 
                 is HistoryScreenModel.Event.OpenChapter -> {
                     val chapter = e.chapter
@@ -278,7 +284,9 @@ fun HistoryTabScreen(
                     val intent = ReaderActivity.newIntent(context, nextChapter.mangaId, nextChapter.id)
                     context.startActivity(intent)
                 } else {
-                    snackbarHostState.showSnackbar(context.stringResource(ephyra.app.core.common.R.string.no_next_chapter))
+                    snackbarHostState.showSnackbar(
+                        context.stringResource(ephyra.app.core.common.R.string.no_next_chapter),
+                    )
                 }
             }
     }

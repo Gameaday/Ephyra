@@ -97,7 +97,9 @@ fun LibraryScreen(
                     scope.launch {
                         val randomItem = screenModel.getRandomLibraryItemForCurrentCategory()
                         if (randomItem != null) {
-                            navController.navigate(ScreenRoutes.MangaDetails.createRoute(randomItem.libraryManga.manga.id, false))
+                            navController.navigate(
+                                ScreenRoutes.MangaDetails.createRoute(randomItem.libraryManga.manga.id, false),
+                            )
                         } else {
                             snackbarHostState.showSnackbar(
                                 context.stringResource(ephyra.app.core.common.R.string.information_no_entries_found),
@@ -172,7 +174,9 @@ fun LibraryScreen(
                                     ReaderActivity.newIntent(context, chapter.mangaId, chapter.id),
                                 )
                             } else {
-                                snackbarHostState.showSnackbar(context.stringResource(ephyra.app.core.common.R.string.no_next_chapter))
+                                snackbarHostState.showSnackbar(
+                                    context.stringResource(ephyra.app.core.common.R.string.no_next_chapter),
+                                )
                             }
                         }
                         Unit
@@ -186,7 +190,9 @@ fun LibraryScreen(
                     },
                     onRefresh = { onClickRefresh(state.activeCategory) },
                     onGlobalSearchClicked = {
-                        navController.navigate(ScreenRoutes.GlobalSearch.createRoute(screenModel.state.value.searchQuery))
+                        navController.navigate(
+                            ScreenRoutes.GlobalSearch.createRoute(screenModel.state.value.searchQuery),
+                        )
                     },
                     onClickHealthFilter = { screenModel.enableHealthFilter() },
                     getItemCountForCategory = { state.getItemCountForCategory(it) },

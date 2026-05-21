@@ -1,8 +1,8 @@
 package ephyra.feature.more
 
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.automirrored.outlined.Label
@@ -27,9 +27,15 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.Constants
+import ephyra.core.common.util.lang.launchIO
+import ephyra.domain.base.BasePreferences
+import ephyra.domain.download.service.DownloadManager
 import ephyra.feature.settings.widget.SwitchPreferenceWidget
 import ephyra.feature.settings.widget.TextPreferenceWidget
 import ephyra.presentation.core.R
@@ -41,19 +47,13 @@ import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.AppReadySignal
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
-import ephyra.core.common.util.lang.launchIO
-import ephyra.domain.base.BasePreferences
-import ephyra.domain.download.service.DownloadManager
 import ephyra.presentation.core.util.asState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import javax.inject.Inject
 
 @Composable
 fun MoreTabScreen(
@@ -184,7 +184,11 @@ fun MoreScreen(
                         }
                         is DownloadQueueState.Downloading -> {
                             val pending = downloadQueueState.pending
-                            pluralStringResource(ephyra.app.core.common.R.plurals.download_queue_summary, count = pending, pending)
+                            pluralStringResource(
+                                ephyra.app.core.common.R.plurals.download_queue_summary,
+                                count = pending,
+                                pending,
+                            )
                         }
                     },
                     icon = Icons.Outlined.GetApp,

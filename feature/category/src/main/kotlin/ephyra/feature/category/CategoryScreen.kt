@@ -44,39 +44,39 @@ fun CategoryScreen(
         navigateUp = { navController.popBackStack() },
     )
 
-        when (val dialog = successState.dialog) {
-            null -> {}
-            CategoryDialog.Create -> {
-                CategoryCreateDialog(
-                    onDismissRequest = { screenModel.onEvent(CategoryScreenEvent.DismissDialog) },
-                    onCreate = { screenModel.onEvent(CategoryScreenEvent.CreateCategory(it)) },
-                    categories = successState.categories.fastMap { it.name }.toImmutableList(),
-                )
-            }
-
-            is CategoryDialog.Rename -> {
-                CategoryRenameDialog(
-                    onDismissRequest = { screenModel.onEvent(CategoryScreenEvent.DismissDialog) },
-                    onRename = { screenModel.onEvent(CategoryScreenEvent.RenameCategory(dialog.category, it)) },
-                    categories = successState.categories.fastMap { it.name }.toImmutableList(),
-                    category = dialog.category.name,
-                )
-            }
-
-            is CategoryDialog.Delete -> {
-                CategoryDeleteDialog(
-                    onDismissRequest = { screenModel.onEvent(CategoryScreenEvent.DismissDialog) },
-                    onDelete = { screenModel.onEvent(CategoryScreenEvent.DeleteCategory(dialog.category.id)) },
-                    category = dialog.category.name,
-                )
-            }
+    when (val dialog = successState.dialog) {
+        null -> {}
+        CategoryDialog.Create -> {
+            CategoryCreateDialog(
+                onDismissRequest = { screenModel.onEvent(CategoryScreenEvent.DismissDialog) },
+                onCreate = { screenModel.onEvent(CategoryScreenEvent.CreateCategory(it)) },
+                categories = successState.categories.fastMap { it.name }.toImmutableList(),
+            )
         }
 
-        LaunchedEffect(Unit) {
-            screenModel.events.collectLatest { event ->
-                if (event is CategoryEvent.LocalizedMessage) {
-                    context.toast(event.stringRes)
-                }
+        is CategoryDialog.Rename -> {
+            CategoryRenameDialog(
+                onDismissRequest = { screenModel.onEvent(CategoryScreenEvent.DismissDialog) },
+                onRename = { screenModel.onEvent(CategoryScreenEvent.RenameCategory(dialog.category, it)) },
+                categories = successState.categories.fastMap { it.name }.toImmutableList(),
+                category = dialog.category.name,
+            )
+        }
+
+        is CategoryDialog.Delete -> {
+            CategoryDeleteDialog(
+                onDismissRequest = { screenModel.onEvent(CategoryScreenEvent.DismissDialog) },
+                onDelete = { screenModel.onEvent(CategoryScreenEvent.DeleteCategory(dialog.category.id)) },
+                category = dialog.category.name,
+            )
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        screenModel.events.collectLatest { event ->
+            if (event is CategoryEvent.LocalizedMessage) {
+                context.toast(event.stringRes)
             }
         }
     }
+}

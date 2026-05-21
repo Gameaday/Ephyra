@@ -21,10 +21,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.withUIContext
 import ephyra.domain.download.service.DownloadManager
@@ -38,7 +34,11 @@ import ephyra.presentation.core.components.LabeledCheckbox
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.LoadingScreen
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import javax.inject.Inject
 import kotlin.collections.toMutableSet
 
 private fun MigrationFlag.getLabel(): Int {

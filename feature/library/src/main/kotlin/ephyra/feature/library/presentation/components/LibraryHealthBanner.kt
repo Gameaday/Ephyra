@@ -102,8 +102,21 @@ fun LibraryHealthBanner(
             )
 
             val parts = buildList {
-                if (deadCount > 0) add(stringResource(ephyra.app.core.common.R.string.library_health_banner_dead, deadCount))
-                if (degradedCount > 0) add(stringResource(ephyra.app.core.common.R.string.library_health_banner_degraded, degradedCount))
+                if (deadCount >
+                    0
+                ) {
+                    add(stringResource(ephyra.app.core.common.R.string.library_health_banner_dead, deadCount))
+                }
+                if (degradedCount >
+                    0
+                ) {
+                    add(
+                        stringResource(
+                            ephyra.app.core.common.R.string.library_health_banner_degraded,
+                            degradedCount,
+                        ),
+                    )
+                }
             }
             Text(
                 text = parts.joinToString(", "),

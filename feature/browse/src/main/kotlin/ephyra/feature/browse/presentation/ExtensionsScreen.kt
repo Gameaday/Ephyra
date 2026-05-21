@@ -47,8 +47,8 @@ import ephyra.domain.extension.model.InstallStep
 import ephyra.feature.browse.extension.ExtensionUiModel
 import ephyra.feature.browse.extension.ExtensionsScreenModel
 import ephyra.feature.browse.presentation.components.BaseBrowseItem
-import ephyra.presentation.core.components.ExtensionIcon
 import ephyra.feature.manga.presentation.components.DotSeparatorNoSpaceText
+import ephyra.presentation.core.components.ExtensionIcon
 import ephyra.presentation.core.components.FastScrollLazyColumn
 import ephyra.presentation.core.components.WarningBanner
 import ephyra.presentation.core.components.material.PullRefresh
@@ -369,7 +369,8 @@ private fun ExtensionItemContent(
 
                 val warning = when {
                     extension is Extension.Untrusted -> ephyra.app.core.common.R.string.ext_untrusted
-                    extension is Extension.Installed && extension.isObsolete -> ephyra.app.core.common.R.string.ext_obsolete
+                    extension is Extension.Installed && extension.isObsolete ->
+                        ephyra.app.core.common.R.string.ext_obsolete
                     extension.isNsfw -> ephyra.app.core.common.R.string.ext_nsfw_short
                     else -> null
                 }
@@ -377,7 +378,9 @@ private fun ExtensionItemContent(
                     if (hasAlreadyShownAnElement) DotSeparatorNoSpaceText()
                     hasAlreadyShownAnElement = true
                     Text(
-                        text = stringResource(warning).uppercase(),
+                        text = stringResource(
+                            warning,
+                        ).uppercase(),
                         color = MaterialTheme.colorScheme.error,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -476,7 +479,9 @@ private fun ExtensionItemActions(
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.Public,
-                                    contentDescription = stringResource(ephyra.app.core.common.R.string.action_open_in_web_view),
+                                    contentDescription = stringResource(
+                                        ephyra.app.core.common.R.string.action_open_in_web_view,
+                                    ),
                                 )
                             }
                         }

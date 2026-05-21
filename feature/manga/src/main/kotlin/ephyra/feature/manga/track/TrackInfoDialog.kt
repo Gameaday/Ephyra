@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -45,6 +46,7 @@ import ephyra.core.common.util.lang.toLocalDate
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.manga.interactor.GetManga
+import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.track.interactor.DeleteTrack
 import ephyra.domain.track.interactor.GetTracks
@@ -56,6 +58,7 @@ import ephyra.domain.track.service.EnhancedTracker
 import ephyra.domain.track.service.Tracker
 import ephyra.domain.track.service.TrackerManager
 import ephyra.domain.ui.UiPreferences
+import ephyra.presentation.core.components.AdaptiveSheet
 import ephyra.presentation.core.components.LabeledCheckbox
 import ephyra.presentation.core.components.material.AlertDialogContent
 import ephyra.presentation.core.components.material.padding
@@ -69,6 +72,7 @@ import ephyra.presentation.manga.track.TrackInfoDialogHome
 import ephyra.presentation.manga.track.TrackScoreSelector
 import ephyra.presentation.manga.track.TrackStatusSelector
 import ephyra.presentation.manga.track.TrackerSearch
+import eu.kanade.tachiyomi.source.Source
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.channels.Channel
@@ -87,12 +91,6 @@ import logcat.LogPriority
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
-
-import androidx.compose.runtime.mutableStateListOf
-
-import ephyra.presentation.core.components.AdaptiveSheet
-import ephyra.domain.manga.model.Manga
-import eu.kanade.tachiyomi.source.Source
 
 @Composable
 fun TrackInfoDialog(
@@ -154,7 +152,15 @@ fun TrackInfoDialog(
                 serviceId = currentScreen.serviceId,
                 start = currentScreen.start,
                 onConfirm = { stack.removeAt(stack.lastIndex) },
-                onRemove = { stack.add(TrackInfoDialogScreen.DateRemover(currentScreen.track, currentScreen.serviceId, currentScreen.start)) },
+                onRemove = {
+                    stack.add(
+                        TrackInfoDialogScreen.DateRemover(
+                            currentScreen.track,
+                            currentScreen.serviceId,
+                            currentScreen.start,
+                        ),
+                    )
+                },
                 onDismissRequest = { stack.removeAt(stack.lastIndex) },
             )
 
@@ -196,7 +202,12 @@ private sealed interface TrackInfoDialogScreen {
     data class Score(val track: Track, val serviceId: Long) : TrackInfoDialogScreen
     data class Date(val track: Track, val serviceId: Long, val start: Boolean) : TrackInfoDialogScreen
     data class DateRemover(val track: Track, val serviceId: Long, val start: Boolean) : TrackInfoDialogScreen
-    data class Search(val mangaId: Long, val initialQuery: String, val currentUrl: String?, val serviceId: Long) : TrackInfoDialogScreen
+    data class Search(
+        val mangaId: Long,
+        val initialQuery: String,
+        val currentUrl: String?,
+        val serviceId: Long,
+    ) : TrackInfoDialogScreen
     data class Remove(val mangaId: Long, val track: Track, val serviceId: Long) : TrackInfoDialogScreen
 }
 
@@ -331,7 +342,9 @@ class TrackInfoHomeViewModel @AssistedInject constructor(
                 logcat(LogPriority.ERROR, e) {
                     "Failed to register track for tracker '${item.tracker.name}'; manga id=$mangaId"
                 }
-                effectChannel.send(Effect.ShowToast(application.stringResource(ephyra.app.core.common.R.string.error_no_match)))
+                effectChannel.send(
+                    Effect.ShowToast(application.stringResource(ephyra.app.core.common.R.string.error_no_match)),
+                )
             }
         }
     }
@@ -1005,4 +1018,3 @@ class TrackerRemoveViewModel @AssistedInject constructor(
         viewModelScope.launchNonCancellable { deleteTrack.await(mangaId, serviceId) }
     }
 }
-

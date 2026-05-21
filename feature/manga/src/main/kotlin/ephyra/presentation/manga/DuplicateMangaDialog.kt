@@ -253,7 +253,9 @@ private fun DuplicateMangaListItem(
                 SManga.ONGOING.toLong() -> stringResource(ephyra.app.core.common.R.string.ongoing)
                 SManga.COMPLETED.toLong() -> stringResource(ephyra.app.core.common.R.string.completed)
                 SManga.LICENSED.toLong() -> stringResource(ephyra.app.core.common.R.string.licensed)
-                SManga.PUBLISHING_FINISHED.toLong() -> stringResource(ephyra.app.core.common.R.string.publishing_finished)
+                SManga.PUBLISHING_FINISHED.toLong() -> stringResource(
+                    ephyra.app.core.common.R.string.publishing_finished,
+                )
                 SManga.CANCELLED.toLong() -> stringResource(ephyra.app.core.common.R.string.cancelled)
                 SManga.ON_HIATUS.toLong() -> stringResource(ephyra.app.core.common.R.string.on_hiatus)
                 else -> stringResource(ephyra.app.core.common.R.string.unknown)

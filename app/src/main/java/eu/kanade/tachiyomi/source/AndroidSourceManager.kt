@@ -3,8 +3,7 @@ package eu.kanade.tachiyomi.source
 import android.content.Context
 import ephyra.app.extension.ExtensionManager
 import ephyra.core.common.i18n.stringResource
-import ephyra.domain.download.service.DownloadManager
-import javax.inject.Provider
+import ephyra.core.download.DownloadManager
 import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.repository.StubSourceRepository
 import ephyra.domain.source.service.SourceManager
@@ -21,6 +20,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
+import javax.inject.Provider
 
 internal class AndroidSourceManager(
     private val context: Context,

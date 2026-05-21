@@ -22,8 +22,6 @@ import androidx.navigation.NavController
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.chapter.model.Chapter
-import ephyra.presentation.core.util.ifSourcesLoaded
-import kotlinx.collections.immutable.toImmutableList
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.hasCustomCover
 import ephyra.domain.manga.model.toSManga
@@ -43,6 +41,7 @@ import ephyra.feature.reader.ReaderActivity
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
+import ephyra.presentation.core.util.ifSourcesLoaded
 import ephyra.presentation.core.util.isTabletUi
 import ephyra.presentation.core.util.system.copyToClipboard
 import ephyra.presentation.core.util.system.openInBrowser
@@ -51,6 +50,7 @@ import ephyra.presentation.core.util.system.toast
 import ephyra.source.local.isLocalOrStub
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.online.HttpSource
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 
@@ -108,7 +108,11 @@ fun MangaDetailsScreen(
         chapterSwipeEndAction = successState.chapterSwipeEndAction,
         navigateUp = navigateUp,
         onChapterClicked = { openChapter(context, it) },
-        onDownloadChapter = if (!successState.source.isLocalOrStub()) { { items, action -> screenModel.onEvent(MangaScreenEvent.RunChapterDownloadActions(items, action)) } } else null,
+        onDownloadChapter = if (!successState.source.isLocalOrStub()) {
+            { items, action -> screenModel.onEvent(MangaScreenEvent.RunChapterDownloadActions(items, action)) }
+        } else {
+            null
+        },
         onAddToLibraryClicked = {
             screenModel.onEvent(MangaScreenEvent.ToggleFavorite())
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -122,7 +126,9 @@ fun MangaDetailsScreen(
                     screenModel.source,
                 )
             }
-        } else null,
+        } else {
+            null
+        },
         onWebViewLongClicked = if (isHttpSource) {
             {
                 copyMangaUrl(
@@ -131,7 +137,9 @@ fun MangaDetailsScreen(
                     screenModel.source,
                 )
             }
-        } else null,
+        } else {
+            null
+        },
         onTrackingClicked = {
             if (!successState.hasLoggedInTrackers) {
                 navController.navigate(ScreenRoutes.Settings.route)
@@ -161,25 +169,51 @@ fun MangaDetailsScreen(
             }
         },
         onCoverClicked = { screenModel.onEvent(MangaScreenEvent.ShowCoverDialog) },
-        onShareClicked = if (isHttpSource) { { shareManga(context, screenModel.manga, screenModel.source) } } else null,
-        onDownloadActionClicked = if (!successState.source.isLocalOrStub()) { { screenModel.onEvent(MangaScreenEvent.RunDownloadAction(it)) } } else null,
-        onEditCategoryClicked = if (successState.manga.favorite) { { screenModel.onEvent(MangaScreenEvent.ShowChangeCategoryDialog) } } else null,
-        onEditFetchIntervalClicked = if (successState.manga.favorite) { { screenModel.onEvent(MangaScreenEvent.ShowSetFetchIntervalDialog) } } else null,
+        onShareClicked = if (isHttpSource) {
+            { shareManga(context, screenModel.manga, screenModel.source) }
+        } else {
+            null
+        },
+        onDownloadActionClicked = if (!successState.source.isLocalOrStub()) {
+            { screenModel.onEvent(MangaScreenEvent.RunDownloadAction(it)) }
+        } else {
+            null
+        },
+        onEditCategoryClicked = if (successState.manga.favorite) {
+            { screenModel.onEvent(MangaScreenEvent.ShowChangeCategoryDialog) }
+        } else {
+            null
+        },
+        onEditFetchIntervalClicked = if (successState.manga.favorite) {
+            { screenModel.onEvent(MangaScreenEvent.ShowSetFetchIntervalDialog) }
+        } else {
+            null
+        },
         onMigrateClicked = if (successState.manga.favorite) {
             {
                 navController.navigate(ScreenRoutes.MigrateManga.createRoute(successState.manga.id))
             }
-        } else null,
+        } else {
+            null
+        },
         onEditNotesClicked = {
             navController.navigate(ScreenRoutes.MangaNotes.createRoute(successState.manga.id))
         },
-        onEditMetadataClicked = if (successState.manga.favorite || successState.manga.canonicalId != null) { { screenModel.onEvent(MangaScreenEvent.ShowEditMetadataDialog) } } else null,
+        onEditMetadataClicked = if (successState.manga.favorite ||
+            successState.manga.canonicalId != null
+        ) {
+            { screenModel.onEvent(MangaScreenEvent.ShowEditMetadataDialog) }
+        } else {
+            null
+        },
         onMultiBookmarkClicked = { ch, b -> screenModel.onEvent(MangaScreenEvent.BookmarkChapters(ch, b)) },
         onMultiMarkAsReadClicked = { ch, b -> screenModel.onEvent(MangaScreenEvent.MarkChaptersRead(ch, b)) },
         onMarkPreviousAsReadClicked = { screenModel.onEvent(MangaScreenEvent.MarkPreviousChapterRead(it)) },
         onMultiDeleteClicked = { screenModel.onEvent(MangaScreenEvent.ShowDeleteChapterDialog(it)) },
         onChapterSwipe = { ch, sw -> screenModel.onEvent(MangaScreenEvent.ChapterSwipe(ch, sw)) },
-        onChapterSelected = { item, selected, fromLongPress -> screenModel.onEvent(MangaScreenEvent.ToggleSelection(item, selected, fromLongPress)) },
+        onChapterSelected = { item, selected, fromLongPress ->
+            screenModel.onEvent(MangaScreenEvent.ToggleSelection(item, selected, fromLongPress))
+        },
         onAllChapterSelected = { screenModel.onEvent(MangaScreenEvent.ToggleAllSelection(it)) },
         onInvertSelection = { screenModel.onEvent(MangaScreenEvent.InvertSelection) },
     )
@@ -328,7 +362,9 @@ fun MangaDetailsScreen(
                 interval = dialog.manga.fetchInterval,
                 nextUpdate = dialog.manga.expectedNextUpdate,
                 onDismissRequest = onDismissRequest,
-                onValueChanged = { interval: Int -> screenModel.onEvent(MangaScreenEvent.SetFetchInterval(dialog.manga, interval)) }
+                onValueChanged = { interval: Int ->
+                    screenModel.onEvent(MangaScreenEvent.SetFetchInterval(dialog.manga, interval))
+                }
                     .takeIf { successState.isUpdateIntervalEnabled },
                 appInfo = screenModel.appInfo,
             )

@@ -214,8 +214,8 @@ import kotlinx.serialization.protobuf.ProtoBuf
 import nl.adaptivity.xmlutil.XmlDeclMode
 import nl.adaptivity.xmlutil.core.XmlVersion
 import nl.adaptivity.xmlutil.serialization.XML
-import javax.inject.Singleton
 import javax.inject.Provider
+import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -607,6 +607,12 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideDomainDownloadManager(
+        downloadManager: DownloadManager,
+    ): ephyra.domain.download.service.DownloadManager = downloadManager
+
+    @Provides
+    @Singleton
     fun provideDownloader(
         @ApplicationContext context: Context,
         downloadProvider: DownloadProvider,
@@ -915,6 +921,39 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideBackupNotifierDomain(@ApplicationContext context: Context): ephyra.domain.backup.service.BackupNotifier =
+        BackupNotifier(context)
+
+    @Provides
+    @Singleton
+    fun provideChapterCacheDomain(
+        @ApplicationContext context: Context,
+        json: Json,
+    ): ephyra.domain.chapter.service.ChapterCache =
+        ChapterCache(context, json)
+
+    @Provides
+    @Singleton
+    fun provideSnackbarHostState(): androidx.compose.material3.SnackbarHostState =
+        androidx.compose.material3.SnackbarHostState()
+
+    @Provides
+    @Singleton
+    fun provideLibraryExporter(@ApplicationContext context: Context): ephyra.domain.export.LibraryExporter =
+        ephyra.data.export.LibraryExporterImpl(context)
+
+    @Provides
+    @Singleton
+    fun provideMatchUnlinkedJobRunner(): ephyra.presentation.core.ui.MatchUnlinkedJobRunner =
+        object : ephyra.presentation.core.ui.MatchUnlinkedJobRunner {
+            override fun isRunning(context: Context): Boolean = false
+            override fun start(context: Context) {
+                // No-op default runner used to satisfy DI during build; replace with real implementation if needed.
+            }
+        }
+
+    @Provides
+    @Singleton
     fun provideReleaseService(networkHelper: NetworkHelper, json: Json): ReleaseService =
         ReleaseServiceImpl(networkHelper, json)
 
@@ -1093,14 +1132,14 @@ object AppModule {
         syncChapterProgressWithTrack: SyncChapterProgressWithTrack,
         getChaptersByMangaId: GetChaptersByMangaId,
         getHistory: GetHistory,
-        trackerManagerProvider: Provider<TrackerManager>,
+        trackerManagerProvider: javax.inject.Provider<TrackerManager>,
         mangaRepository: MangaRepository,
     ) = AddTracks(
         insertTrack = insertTrack,
         syncChapterProgressWithTrack = syncChapterProgressWithTrack,
         getChaptersByMangaId = getChaptersByMangaId,
         getHistory = getHistory,
-        trackerManagerProvider = trackerManagerProvider,
+        trackerManagerProvider = { trackerManagerProvider.get() },
         mangaRepository = mangaRepository,
     )
 

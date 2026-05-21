@@ -6,16 +6,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.NavController
 import ephyra.domain.base.BasePreferences
 import ephyra.feature.settings.screen.SettingsDataScreen
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.AppReadySignal
-import ephyra.presentation.core.util.collectAsState
-import ephyra.feature.more.onboarding.OnboardingScreen as OnboardingContent
-
-import androidx.navigation.NavController
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
+import ephyra.presentation.core.util.collectAsState
+import ephyra.feature.more.onboarding.OnboardingScreen as OnboardingContent
 
 @Composable
 fun OnboardingScreen(

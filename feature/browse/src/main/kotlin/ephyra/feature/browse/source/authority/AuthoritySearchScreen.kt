@@ -59,8 +59,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import ephyra.domain.manga.interactor.FindContentSource
 import ephyra.domain.manga.model.ContentType
@@ -78,7 +79,6 @@ import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.theme.MotionTokens
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
-import androidx.navigation.NavController
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 
@@ -635,7 +635,11 @@ private fun DiscoverDetailSheet(
                 Spacer(Modifier.width(8.dp))
                 Text(
                     stringResource(
-                        if (isAdded) ephyra.app.core.common.R.string.discover_added else ephyra.app.core.common.R.string.discover_add,
+                        if (isAdded) {
+                            ephyra.app.core.common.R.string.discover_added
+                        } else {
+                            ephyra.app.core.common.R.string.discover_add
+                        },
                     ),
                 )
             }

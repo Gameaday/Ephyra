@@ -152,7 +152,11 @@ private fun SourcePinButton(
             alpha = SECONDARY_ALPHA,
         )
     }
-    val description = if (isPinned) ephyra.app.core.common.R.string.action_unpin else ephyra.app.core.common.R.string.action_pin
+    val description = if (isPinned) {
+        ephyra.app.core.common.R.string.action_unpin
+    } else {
+        ephyra.app.core.common.R.string.action_pin
+    }
     IconButton(onClick = onClick) {
         Icon(
             imageVector = icon,
@@ -175,7 +179,11 @@ fun SourceOptionsDialog(
         },
         text = {
             Column {
-                val textId = if (Pin.Pinned in source.pin) ephyra.app.core.common.R.string.action_unpin else ephyra.app.core.common.R.string.action_pin
+                val textId = if (Pin.Pinned in source.pin) {
+                    ephyra.app.core.common.R.string.action_unpin
+                } else {
+                    ephyra.app.core.common.R.string.action_pin
+                }
                 Text(
                     text = stringResource(textId),
                     modifier = Modifier

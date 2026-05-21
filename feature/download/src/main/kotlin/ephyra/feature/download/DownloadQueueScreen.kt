@@ -68,295 +68,338 @@ fun DownloadQueueScreen(
     navController: NavController = LocalNavController.current,
 ) {
     val screenModel = hiltViewModel<DownloadQueueScreenModel>()
-        val downloadList by screenModel.state.collectAsStateWithLifecycle()
-        val downloadCount by remember { derivedStateOf { downloadList.size } }
+    val downloadList by screenModel.state.collectAsStateWithLifecycle()
+    val downloadCount by remember { derivedStateOf { downloadList.size } }
 
-        val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
-        var fabExpanded by remember { mutableStateOf(true) }
-        val nestedScrollConnection = remember {
-            object : NestedScrollConnection {
-                override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                    fabExpanded = available.y >= 0
-                    return scrollBehavior.nestedScrollConnection.onPreScroll(available, source)
-                }
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
+    var fabExpanded by remember { mutableStateOf(true) }
+    val nestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                fabExpanded = available.y >= 0
+                return scrollBehavior.nestedScrollConnection.onPreScroll(available, source)
+            }
 
-                override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
-                    return scrollBehavior.nestedScrollConnection.onPostScroll(consumed, available, source)
-                }
+            override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+                return scrollBehavior.nestedScrollConnection.onPostScroll(consumed, available, source)
+            }
 
-                override suspend fun onPreFling(available: Velocity): Velocity {
-                    return scrollBehavior.nestedScrollConnection.onPreFling(available)
-                }
+            override suspend fun onPreFling(available: Velocity): Velocity {
+                return scrollBehavior.nestedScrollConnection.onPreFling(available)
+            }
 
-                override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
-                    return scrollBehavior.nestedScrollConnection.onPostFling(consumed, available)
-                }
+            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
+                return scrollBehavior.nestedScrollConnection.onPostFling(consumed, available)
+            }
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            AppBar(
+                titleContent = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = stringResource(ephyra.app.core.common.R.string.label_download_queue),
+                            maxLines = 1,
+                            modifier = Modifier.weight(1f, false),
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        if (downloadCount > 0) {
+                            val pillAlpha = if (isSystemInDarkTheme()) 0.12f else 0.08f
+                            Pill(
+                                text = "$downloadCount",
+                                modifier = Modifier.padding(start = 4.dp),
+                                color = MaterialTheme.colorScheme.onBackground
+                                    .copy(alpha = pillAlpha),
+                                fontSize = 14.sp,
+                            )
+                        }
+                    }
+                },
+                navigateUp = { navController.popBackStack() },
+                actions = {
+                    if (downloadList.isNotEmpty()) {
+                        var sortExpanded by remember { mutableStateOf(false) }
+                        val onDismissRequest = { sortExpanded = false }
+                        DropdownMenu(
+                            expanded = sortExpanded,
+                            onDismissRequest = onDismissRequest,
+                        ) {
+                            NestedMenuItem(
+                                text = {
+                                    Text(
+                                        text = stringResource(
+                                            ephyra.app.core.common.R.string.action_order_by_upload_date,
+                                        ),
+                                    )
+                                },
+                                children = { closeMenu ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = stringResource(
+                                                    ephyra.app.core.common.R.string.action_newest,
+                                                ),
+                                            )
+                                        },
+                                        onClick = {
+                                            screenModel.reorderQueue(
+                                                { it.chapter.dateUpload },
+                                                true,
+                                            )
+                                            closeMenu()
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = stringResource(
+                                                    ephyra.app.core.common.R.string.action_oldest,
+                                                ),
+                                            )
+                                        },
+                                        onClick = {
+                                            screenModel.reorderQueue(
+                                                { it.chapter.dateUpload },
+                                                false,
+                                            )
+                                            closeMenu()
+                                        },
+                                    )
+                                },
+                            )
+                            NestedMenuItem(
+                                text = {
+                                    Text(
+                                        text = stringResource(
+                                            ephyra.app.core.common.R.string.action_order_by_chapter_number,
+                                        ),
+                                    )
+                                },
+                                children = { closeMenu ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = stringResource(
+                                                    ephyra.app.core.common.R.string.action_asc,
+                                                ),
+                                            )
+                                        },
+                                        onClick = {
+                                            screenModel.reorderQueue(
+                                                { it.chapter.chapterNumber },
+                                                false,
+                                            )
+                                            closeMenu()
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = stringResource(
+                                                    ephyra.app.core.common.R.string.action_desc,
+                                                ),
+                                            )
+                                        },
+                                        onClick = {
+                                            screenModel.reorderQueue(
+                                                { it.chapter.chapterNumber },
+                                                true,
+                                            )
+                                            closeMenu()
+                                        },
+                                    )
+                                },
+                            )
+                        }
+
+                        AppBarActions(
+                            persistentListOf(
+                                AppBar.Action(
+                                    title = stringResource(ephyra.app.core.common.R.string.action_sort),
+                                    icon = Icons.AutoMirrored.Outlined.Sort,
+                                    onClick = { sortExpanded = true },
+                                ),
+                                AppBar.OverflowAction(
+                                    title = stringResource(ephyra.app.core.common.R.string.action_cancel_all),
+                                    onClick = { screenModel.onEvent(DownloadQueueScreenEvent.ClearQueue) },
+                                ),
+                            ),
+                        )
+                    }
+                },
+                scrollBehavior = scrollBehavior,
+            )
+        },
+        floatingActionButton = {
+            val isRunning by screenModel.isDownloaderRunning.collectAsStateWithLifecycle()
+            ExtendedFloatingActionButton(
+                text = {
+                    val id = if (isRunning) {
+                        ephyra.app.core.common.R.string.action_pause
+                    } else {
+                        ephyra.app.core.common.R.string.action_resume
+                    }
+                    Text(text = stringResource(id))
+                },
+                icon = {
+                    val icon = if (isRunning) Icons.Outlined.Pause else Icons.Filled.PlayArrow
+                    Icon(imageVector = icon, contentDescription = null)
+                },
+                onClick = {
+                    val event = if (isRunning) {
+                        DownloadQueueScreenEvent
+                            .PauseDownloads
+                    } else {
+                        DownloadQueueScreenEvent
+                            .StartDownloads
+                    }
+                    screenModel.onEvent(event)
+                },
+                expanded = fabExpanded,
+                modifier = Modifier, // TODO: Add animation if needed
+            )
+        },
+    ) { contentPadding ->
+        if (downloadList.isEmpty()) {
+            EmptyScreen(
+                stringRes = ephyra.app.core.common.R.string.information_no_downloads,
+                modifier = Modifier.padding(contentPadding),
+            )
+            return@Scaffold
+        }
+
+        val listState = rememberLazyListState()
+
+        // Flatten: for display, group by source with a header before each group
+        val flatItems = remember(downloadList) {
+            buildList {
+                downloadList
+                    .groupBy { it.source.id }
+                    .forEach { (_, group) ->
+                        add(DownloadListDisplayItem.Header(group.first().source.name, group.size))
+                        group.forEach { add(DownloadListDisplayItem.Item(it)) }
+                    }
             }
         }
 
-        Scaffold(
-            topBar = {
-                AppBar(
-                    titleContent = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = stringResource(ephyra.app.core.common.R.string.label_download_queue),
-                                maxLines = 1,
-                                modifier = Modifier.weight(1f, false),
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            if (downloadCount > 0) {
-                                val pillAlpha = if (isSystemInDarkTheme()) 0.12f else 0.08f
-                                Pill(
-                                    text = "$downloadCount",
-                                    modifier = Modifier.padding(start = 4.dp),
-                                    color = MaterialTheme.colorScheme.onBackground
-                                        .copy(alpha = pillAlpha),
-                                    fontSize = 14.sp,
-                                )
-                            }
-                        }
-                    },
-                    navigateUp = { navController.popBackStack() },
-                    actions = {
-                        if (downloadList.isNotEmpty()) {
-                            var sortExpanded by remember { mutableStateOf(false) }
-                            val onDismissRequest = { sortExpanded = false }
-                            DropdownMenu(
-                                expanded = sortExpanded,
-                                onDismissRequest = onDismissRequest,
-                            ) {
-                                NestedMenuItem(
-                                    text = { Text(text = stringResource(ephyra.app.core.common.R.string.action_order_by_upload_date)) },
-                                    children = { closeMenu ->
-                                        DropdownMenuItem(
-                                            text = { Text(text = stringResource(ephyra.app.core.common.R.string.action_newest)) },
-                                            onClick = {
-                                                screenModel.reorderQueue(
-                                                    { it.chapter.dateUpload },
-                                                    true,
-                                                )
-                                                closeMenu()
-                                            },
-                                        )
-                                        DropdownMenuItem(
-                                            text = { Text(text = stringResource(ephyra.app.core.common.R.string.action_oldest)) },
-                                            onClick = {
-                                                screenModel.reorderQueue(
-                                                    { it.chapter.dateUpload },
-                                                    false,
-                                                )
-                                                closeMenu()
-                                            },
-                                        )
-                                    },
-                                )
-                                NestedMenuItem(
-                                    text = { Text(text = stringResource(ephyra.app.core.common.R.string.action_order_by_chapter_number)) },
-                                    children = { closeMenu ->
-                                        DropdownMenuItem(
-                                            text = { Text(text = stringResource(ephyra.app.core.common.R.string.action_asc)) },
-                                            onClick = {
-                                                screenModel.reorderQueue(
-                                                    { it.chapter.chapterNumber },
-                                                    false,
-                                                )
-                                                closeMenu()
-                                            },
-                                        )
-                                        DropdownMenuItem(
-                                            text = { Text(text = stringResource(ephyra.app.core.common.R.string.action_desc)) },
-                                            onClick = {
-                                                screenModel.reorderQueue(
-                                                    { it.chapter.chapterNumber },
-                                                    true,
-                                                )
-                                                closeMenu()
-                                            },
-                                        )
-                                    },
-                                )
-                            }
+        // Only item rows are reorderable (not headers); track by chapter id
+        val reorderableState = rememberReorderableLazyListState(listState) { from, to ->
+            // Only allow reordering item rows (not headers)
+            val fromItem =
+                flatItems.getOrNull(from.index) as? DownloadListDisplayItem.Item
+                    ?: return@rememberReorderableLazyListState
+            val toItem =
+                flatItems.getOrNull(to.index) as? DownloadListDisplayItem.Item
+                    ?: return@rememberReorderableLazyListState
 
-                            AppBarActions(
-                                persistentListOf(
-                                    AppBar.Action(
-                                        title = stringResource(ephyra.app.core.common.R.string.action_sort),
-                                        icon = Icons.AutoMirrored.Outlined.Sort,
-                                        onClick = { sortExpanded = true },
-                                    ),
-                                    AppBar.OverflowAction(
-                                        title = stringResource(ephyra.app.core.common.R.string.action_cancel_all),
-                                        onClick = { screenModel.onEvent(DownloadQueueScreenEvent.ClearQueue) },
-                                    ),
-                                ),
-                            )
-                        }
-                    },
-                    scrollBehavior = scrollBehavior,
-                )
-            },
-            floatingActionButton = {
-                val isRunning by screenModel.isDownloaderRunning.collectAsStateWithLifecycle()
-                ExtendedFloatingActionButton(
-                    text = {
-                        val id = if (isRunning) ephyra.app.core.common.R.string.action_pause else ephyra.app.core.common.R.string.action_resume
-                        Text(text = stringResource(id))
-                    },
-                    icon = {
-                        val icon = if (isRunning) Icons.Outlined.Pause else Icons.Filled.PlayArrow
-                        Icon(imageVector = icon, contentDescription = null)
-                    },
-                    onClick = {
-                        if (isRunning) {
-                            screenModel.onEvent(DownloadQueueScreenEvent.PauseDownloads)
-                        } else {
-                            screenModel.onEvent(DownloadQueueScreenEvent.StartDownloads)
-                        }
-                    },
-                    expanded = fabExpanded,
-                    modifier = Modifier, // TODO: Add animation if needed
-                )
-            },
-        ) { contentPadding ->
-            if (downloadList.isEmpty()) {
-                EmptyScreen(
-                    stringRes = ephyra.app.core.common.R.string.information_no_downloads,
-                    modifier = Modifier.padding(contentPadding),
-                )
-                return@Scaffold
+            // Compute new queue order from current flat item list, with from/to swapped
+            val downloads = flatItems
+                .filterIsInstance<DownloadListDisplayItem.Item>()
+                .map { it.download }
+                .toMutableList()
+            val fromIdx = downloads.indexOf(fromItem.download)
+            val toIdx = downloads.indexOf(toItem.download)
+            if (fromIdx != -1 && toIdx != -1) {
+                downloads.add(toIdx, downloads.removeAt(fromIdx))
+                screenModel.onEvent(DownloadQueueScreenEvent.Reorder(downloads))
             }
+        }
 
-            val listState = rememberLazyListState()
+        LazyColumn(
+            state = listState,
+            contentPadding = contentPadding,
+            modifier = Modifier.nestedScroll(nestedScrollConnection),
+        ) {
+            itemsIndexed(
+                items = flatItems,
+                key = { _, item ->
+                    when (item) {
+                        is DownloadListDisplayItem.Header -> "header_${item.sourceName}"
+                        is DownloadListDisplayItem.Item -> item.download.chapter.id
+                    }
+                },
+            ) { index, displayItem ->
+                when (displayItem) {
+                    is DownloadListDisplayItem.Header -> {
+                        if (index > 0) HorizontalDivider()
+                        Text(
+                            text = "${displayItem.sourceName} (${displayItem.count})",
+                            style = MaterialTheme.typography.labelLarge,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
 
-            // Flatten: for display, group by source with a header before each group
-            val flatItems = remember(downloadList) {
-                buildList {
-                    downloadList
-                        .groupBy { it.source.id }
-                        .forEach { (_, group) ->
-                            add(DownloadListDisplayItem.Header(group.first().source.name, group.size))
-                            group.forEach { add(DownloadListDisplayItem.Item(it)) }
-                        }
-                }
-            }
-
-            // Only item rows are reorderable (not headers); track by chapter id
-            val reorderableState = rememberReorderableLazyListState(listState) { from, to ->
-                // Only allow reordering item rows (not headers)
-                val fromItem =
-                    flatItems.getOrNull(from.index) as? DownloadListDisplayItem.Item
-                        ?: return@rememberReorderableLazyListState
-                val toItem =
-                    flatItems.getOrNull(to.index) as? DownloadListDisplayItem.Item
-                        ?: return@rememberReorderableLazyListState
-
-                // Compute new queue order from current flat item list, with from/to swapped
-                val downloads = flatItems
-                    .filterIsInstance<DownloadListDisplayItem.Item>()
-                    .map { it.download }
-                    .toMutableList()
-                val fromIdx = downloads.indexOf(fromItem.download)
-                val toIdx = downloads.indexOf(toItem.download)
-                if (fromIdx != -1 && toIdx != -1) {
-                    downloads.add(toIdx, downloads.removeAt(fromIdx))
-                    screenModel.onEvent(DownloadQueueScreenEvent.Reorder(downloads))
-                }
-            }
-
-            LazyColumn(
-                state = listState,
-                contentPadding = contentPadding,
-                modifier = Modifier.nestedScroll(nestedScrollConnection),
-            ) {
-                itemsIndexed(
-                    items = flatItems,
-                    key = { _, item ->
-                        when (item) {
-                            is DownloadListDisplayItem.Header -> "header_${item.sourceName}"
-                            is DownloadListDisplayItem.Item -> item.download.chapter.id
-                        }
-                    },
-                ) { index, displayItem ->
-                    when (displayItem) {
-                        is DownloadListDisplayItem.Header -> {
-                            if (index > 0) HorizontalDivider()
-                            Text(
-                                text = "${displayItem.sourceName} (${displayItem.count})",
-                                style = MaterialTheme.typography.labelLarge,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                                color = MaterialTheme.colorScheme.primary,
+                    is DownloadListDisplayItem.Item -> {
+                        ReorderableItem(reorderableState, key = displayItem.download.chapter.id) { isDragging ->
+                            DownloadQueueItem(
+                                download = displayItem.download,
+                                isDragging = isDragging,
+                                onMoveToTop = {
+                                    val downloads = downloadList.toMutableList()
+                                    val idx = downloads.indexOf(displayItem.download)
+                                    if (idx > 0) {
+                                        downloads.add(0, downloads.removeAt(idx))
+                                        screenModel.onEvent(DownloadQueueScreenEvent.Reorder(downloads))
+                                    }
+                                },
+                                onMoveToBottom = {
+                                    val downloads = downloadList.toMutableList()
+                                    val idx = downloads.indexOf(displayItem.download)
+                                    if (idx < downloads.lastIndex) {
+                                        downloads.add(downloads.removeAt(idx))
+                                        screenModel.onEvent(DownloadQueueScreenEvent.Reorder(downloads))
+                                    }
+                                },
+                                onMoveSeriesTop = {
+                                    val mangaId = displayItem.download.manga.id
+                                    val (series, others) = downloadList.partition { it.manga.id == mangaId }
+                                    screenModel.onEvent(DownloadQueueScreenEvent.Reorder(series + others))
+                                },
+                                onMoveSeriesBottom = {
+                                    val mangaId = displayItem.download.manga.id
+                                    val (series, others) = downloadList.partition { it.manga.id == mangaId }
+                                    screenModel.onEvent(DownloadQueueScreenEvent.Reorder(others + series))
+                                },
+                                onCancel = {
+                                    screenModel.onEvent(
+                                        DownloadQueueScreenEvent.Cancel(listOf(displayItem.download)),
+                                    )
+                                },
+                                onCancelSeries = {
+                                    val mangaId = displayItem.download.manga.id
+                                    screenModel.onEvent(
+                                        DownloadQueueScreenEvent.Cancel(
+                                            downloadList.filter {
+                                                it.manga.id ==
+                                                    mangaId
+                                            },
+                                        ),
+                                    )
+                                },
+                                dragHandle = {
+                                    IconButton(
+                                        onClick = { /* Drag handle — touch events handled by reorderable */ },
+                                        modifier = Modifier.draggableHandle(),
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.DragHandle,
+                                            contentDescription = null,
+                                        )
+                                    }
+                                },
                             )
-                        }
-
-                        is DownloadListDisplayItem.Item -> {
-                            ReorderableItem(reorderableState, key = displayItem.download.chapter.id) { isDragging ->
-                                DownloadQueueItem(
-                                    download = displayItem.download,
-                                    isDragging = isDragging,
-                                    onMoveToTop = {
-                                        val downloads = downloadList.toMutableList()
-                                        val idx = downloads.indexOf(displayItem.download)
-                                        if (idx > 0) {
-                                            downloads.add(0, downloads.removeAt(idx))
-                                            screenModel.onEvent(DownloadQueueScreenEvent.Reorder(downloads))
-                                        }
-                                    },
-                                    onMoveToBottom = {
-                                        val downloads = downloadList.toMutableList()
-                                        val idx = downloads.indexOf(displayItem.download)
-                                        if (idx < downloads.lastIndex) {
-                                            downloads.add(downloads.removeAt(idx))
-                                            screenModel.onEvent(DownloadQueueScreenEvent.Reorder(downloads))
-                                        }
-                                    },
-                                    onMoveSeriesTop = {
-                                        val mangaId = displayItem.download.manga.id
-                                        val (series, others) = downloadList.partition { it.manga.id == mangaId }
-                                        screenModel.onEvent(DownloadQueueScreenEvent.Reorder(series + others))
-                                    },
-                                    onMoveSeriesBottom = {
-                                        val mangaId = displayItem.download.manga.id
-                                        val (series, others) = downloadList.partition { it.manga.id == mangaId }
-                                        screenModel.onEvent(DownloadQueueScreenEvent.Reorder(others + series))
-                                    },
-                                    onCancel = {
-                                        screenModel.onEvent(
-                                            DownloadQueueScreenEvent.Cancel(listOf(displayItem.download)),
-                                        )
-                                    },
-                                    onCancelSeries = {
-                                        val mangaId = displayItem.download.manga.id
-                                        screenModel.onEvent(
-                                            DownloadQueueScreenEvent.Cancel(
-                                                downloadList.filter {
-                                                    it.manga.id ==
-                                                        mangaId
-                                                },
-                                            ),
-                                        )
-                                    },
-                                    dragHandle = {
-                                        IconButton(
-                                            onClick = { /* Drag handle — touch events handled by reorderable */ },
-                                            modifier = Modifier.draggableHandle(),
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Outlined.DragHandle,
-                                                contentDescription = null,
-                                            )
-                                        }
-                                    },
-                                )
-                            }
                         }
                     }
                 }
             }
         }
     }
+}
 
 private sealed interface DownloadListDisplayItem {
     data class Header(val sourceName: String, val count: Int) : DownloadListDisplayItem
@@ -451,14 +494,26 @@ private fun DownloadQueueItem(
                     },
                 )
                 DropdownMenuItem(
-                    text = { Text(stringResource(ephyra.app.core.common.R.string.action_move_to_bottom)) },
+                    text = {
+                        Text(
+                            stringResource(
+                                ephyra.app.core.common.R.string.action_move_to_bottom,
+                            ),
+                        )
+                    },
                     onClick = {
                         onMoveToBottom()
                         menuExpanded = false
                     },
                 )
                 DropdownMenuItem(
-                    text = { Text(stringResource(ephyra.app.core.common.R.string.action_move_to_bottom_all_for_series)) },
+                    text = {
+                        Text(
+                            stringResource(
+                                ephyra.app.core.common.R.string.action_move_to_bottom_all_for_series,
+                            ),
+                        )
+                    },
                     onClick = {
                         onMoveSeriesBottom()
                         menuExpanded = false

@@ -188,7 +188,9 @@ fun TrackerSearch(
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.VisibilityOff,
-                                contentDescription = stringResource(ephyra.app.core.common.R.string.action_toggle_private_on),
+                                contentDescription = stringResource(
+                                    ephyra.app.core.common.R.string.action_toggle_private_on,
+                                ),
                             )
                         }
                     }
