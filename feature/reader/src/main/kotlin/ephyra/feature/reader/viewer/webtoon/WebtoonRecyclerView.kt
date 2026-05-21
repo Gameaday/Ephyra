@@ -74,6 +74,10 @@ class WebtoonRecyclerView @JvmOverloads constructor(
         return super.onTouchEvent(e)
     }
 
+    override fun performClick(): Boolean {
+        return super.performClick()
+    }
+
     override fun onScrolled(dx: Int, dy: Int) {
         super.onScrolled(dx, dy)
         val layoutManager = layoutManager

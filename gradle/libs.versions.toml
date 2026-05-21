@@ -33,6 +33,7 @@ quickjs-android = { group = "com.github.zhanghai.quickjs-java", name = "quickjs-
 jsoup = "org.jsoup:jsoup:1.22.2"
 unifile = "com.github.tachiyomiorg:unifile:e0def6b3dc"
 libarchive = "me.zhanghai.android.libarchive:library:1.1.6"
+compose-runtime = "androidx.compose.runtime:runtime:1.6.7"
 
 sqlite-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "sqlite" }
 sqlite-ktx = { module = "androidx.sqlite:sqlite-ktx", version.ref = "sqlite" }

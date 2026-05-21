@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
 
     <!--============-->
     <!-- Base Theme -->
@@ -8,7 +8,7 @@
     <!--== Theme Base ==-->
     <style name="Base.Theme.Tachiyomi" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Disallow "Force dark theme" -->
-        <item name="android:forceDarkAllowed" tools:targetApi="Q">false</item>
+        <item name="android:forceDarkAllowed">false</item>
 
         <!-- Theme Colors -->
         <item name="colorPrimary">@color/tachiyomi_primary</item>
@@ -58,11 +58,12 @@
 
         <!-- Themes -->
         <item name="android:windowLightStatusBar">@bool/lightStatusBar</item>
+        <item name="android:windowLightNavigationBar">@bool/lightNavigationBar</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@color/amoled_surface</item>
-        <item name="android:navigationBarDividerColor" tools:targetApi="o_mr1">@null</item>
-        <item name="android:enforceNavigationBarContrast" tools:targetApi="Q">false</item>
-        <item name="android:enforceStatusBarContrast" tools:targetApi="Q">false</item>
+        <item name="android:navigationBarColor">?attr/colorSurface</item>
+        <item name="android:navigationBarDividerColor">@null</item>
+        <item name="android:enforceNavigationBarContrast">false</item>
+        <item name="android:enforceStatusBarContrast">false</item>
         <item name="android:itemTextAppearance">@style/TextAppearance.Widget.Menu</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.Tachiyomi.MaterialAlertDialog
         </item>
@@ -709,7 +710,7 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>
-        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
     </style>
 
 </resources>

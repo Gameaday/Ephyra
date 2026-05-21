@@ -44,7 +44,7 @@ class StartupFailureActivity : AppCompatActivity() {
         }
 
         val titleText = TextView(this).apply {
-            text = "App failed to start"
+            text = getString(ephyra.app.core.common.R.string.startup_failure_title)
             textSize = 22f
             setTypeface(null, android.graphics.Typeface.BOLD)
             val bottomMargin = (8 * resources.displayMetrics.density).toInt()
@@ -55,8 +55,7 @@ class StartupFailureActivity : AppCompatActivity() {
         }
 
         val subtitleText = TextView(this).apply {
-            text = "A critical dependency could not be initialised. " +
-                "Please report this error or try reinstalling the app."
+            text = getString(ephyra.app.core.common.R.string.startup_failure_message)
             textSize = 14f
             val bottomMargin = (16 * resources.displayMetrics.density).toInt()
             layoutParams = android.widget.LinearLayout.LayoutParams(
@@ -78,7 +77,7 @@ class StartupFailureActivity : AppCompatActivity() {
         }
 
         val restartButton = Button(this).apply {
-            text = "Restart App"
+            text = getString(ephyra.app.core.common.R.string.action_restart_app)
             setOnClickListener {
                 val restart = Intent(this@StartupFailureActivity, MainActivity::class.java)
                     .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)

@@ -5,9 +5,33 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased] — 2026-05-18
+## [Unreleased]
 
 ### 🏗️ Architecture
+
+- **Transition to Hilt**: Fully migrated from Koin to Hilt for Dependency Injection across all modules.
+- **Voyager Purged**: Removed Voyager navigation library in favor of official Jetpack Navigation Compose.
+- **Composable Screens**: All navigation-level screens are now standard @Composable functions, improving testability and standard Android tool support.
+- **Hilt ViewModels**: Standardized on `@HiltViewModel` for state management, eliminating all remaining Voyager `ScreenModel` dependencies.
+- **CoreContainer Modernization**: Refactored `CoreContainer` as a Hilt-backed service locator to bridge legacy extension points while maintaining compile-time safety for the internal app.
+
+### 🔧 Build & Performance
+
+- **Non-Transitive R Classes**: Enabled `android.nonTransitiveRClass=true` globally to reduce build times and APK size.
+- **Gradle 10 Readiness**: Enabled Configuration Cache and Configure-on-demand for significantly faster incremental builds.
+- **Resource Optimization**: Consolidated redundant resource folders (v27, v31, v33) into default directories, leveraging `minSdk 34`.
+- **Lint Hardening**: Cleared hundreds of lint warnings, including MissingPermission, PluralsCandidate, and ObsoleteSdkInt.
+- **Coroutines Cleanup**: Purged delicate top-level `launchIO`/`launchUI` globals in favor of structured concurrency and explicit scopes.
+
+### 🛡️ Security & Reliability
+
+- **Intent Sanitization**: Implemented `IntentSanitizer` for deep-link handling to prevent unsafe intent launch vulnerabilities.
+- **Safe Notifications**: Added runtime permission checks for `POST_NOTIFICATIONS` in all app-facing notifiers.
+- **UDF Compliance**: Verified all major features follow strict Unidirectional Data Flow patterns.
+
+---
+
+## [0.20.0] — 2026-05-18
 
 - **Compile-Time Deterministic DI**: Removed Koin and Koin Annotations from the dependency
   graph. All singletons are now wired explicitly via `AppDependencyContainer` and `CoreContainer`,

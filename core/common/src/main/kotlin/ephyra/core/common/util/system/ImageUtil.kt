@@ -17,7 +17,11 @@ import androidx.core.graphics.alpha
 import androidx.core.graphics.applyCanvas
 import androidx.core.graphics.blue
 import androidx.core.graphics.createBitmap
+import androidx.core.graphics.drawable.toDrawable
 import androidx.core.graphics.get
+import androidx.core.graphics.green
+import androidx.core.graphics.red
+import androidx.core.graphics.scale
 import androidx.core.graphics.green
 import androidx.core.graphics.red
 import com.hippo.unifile.UniFile
@@ -581,10 +585,10 @@ object ImageUtil {
         }
 
         val whiteColor = Color.WHITE
-        if (image == null) return ColorDrawable(whiteColor)
+        if (image == null) return whiteColor.toDrawable()
         if (image.width < 50 || image.height < 50) {
             image.recycle()
-            return ColorDrawable(whiteColor)
+            return whiteColor.toDrawable()
         }
 
         val top = 5
@@ -628,7 +632,7 @@ object ImageUtil {
         }
         if (isNotWhiteAndCloseTo.all { it }) {
             image.recycle()
-            return ColorDrawable(topLeftPixel)
+            return topLeftPixel.toDrawable()
         }
 
         val cornerPixels = listOf(topLeftPixel, topRightPixel, botLeftPixel, botRightPixel)
@@ -747,8 +751,8 @@ object ImageUtil {
         val isLandscape = context.resources.configuration?.orientation == Configuration.ORIENTATION_LANDSCAPE
         if (isLandscape) {
             return when {
-                darkBG -> ColorDrawable(blackColor)
-                else -> ColorDrawable(whiteColor)
+                darkBG -> blackColor.toDrawable()
+                else -> whiteColor.toDrawable()
             }
         }
 
@@ -768,7 +772,7 @@ object ImageUtil {
             }
 
             darkBG -> {
-                return ColorDrawable(blackColor)
+                return blackColor.toDrawable()
             }
 
             topIsBlackStreak ||
@@ -790,7 +794,7 @@ object ImageUtil {
             }
 
             else -> {
-                return ColorDrawable(whiteColor)
+                return whiteColor.toDrawable()
             }
         }
 
@@ -855,7 +859,7 @@ object ImageUtil {
         // caps the subsample so we never get a 0×0 result.
         val decodeOpts = BitmapFactory.Options().apply { inSampleSize = DHASH_SAMPLE_SIZE }
         val coarse = BitmapFactory.decodeStream(imageStream, null, decodeOpts) ?: return null
-        val scaled = Bitmap.createScaledBitmap(coarse, DHASH_WIDTH, DHASH_HEIGHT, true)
+        val scaled = coarse.scale(DHASH_WIDTH, DHASH_HEIGHT, true)
         if (scaled !== coarse) coarse.recycle()
 
         var hash = 0L
