@@ -45,6 +45,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -93,7 +94,7 @@ fun EditMetadataDialog(
     var editAuthor by remember { mutableStateOf(author ?: "") }
     var editArtist by remember { mutableStateOf(artist ?: "") }
     var editDescription by remember { mutableStateOf(description ?: "") }
-    var editStatus by remember { mutableStateOf(status) }
+    var editStatus by remember { mutableLongStateOf(status) }
     var editGenres by remember { mutableStateOf(genres) }
     var newGenre by remember { mutableStateOf("") }
 

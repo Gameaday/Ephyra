@@ -48,7 +48,8 @@ import dagger.hilt.android.AndroidEntryPoint
 import ephyra.core.common.Constants
 import ephyra.core.common.notification.NotificationManager
 import ephyra.core.common.util.lang.launchNonCancellable
-import ephyra.core.common.util.lang.withUIContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.reader.model.ReaderOrientation
@@ -172,7 +173,7 @@ class ReaderActivity : BaseActivity() {
                 val initResult = viewModel.init(manga, chapter)
                 if (!initResult.getOrDefault(false)) {
                     val exception = initResult.exceptionOrNull() ?: IllegalStateException("Unknown error")
-                    withUIContext {
+                    withContext(Dispatchers.Main) {
                         setInitialChapterError(exception)
                     }
                 }

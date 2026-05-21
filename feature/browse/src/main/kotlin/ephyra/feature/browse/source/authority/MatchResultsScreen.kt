@@ -47,6 +47,7 @@ import ephyra.domain.manga.model.Manga
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding
+import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.ui.navigation.LocalNavController
@@ -262,8 +263,9 @@ private fun SummaryCard(
                     tint = MaterialTheme.colorScheme.primary,
                 )
                 Text(
-                    text = stringResource(
-                        ephyra.app.core.common.R.string.match_results_summary,
+                    text = pluralStringResource(
+                        ephyra.app.core.common.R.plurals.match_results_summary,
+                        count = totalFavorites,
                         totalLinked,
                         totalFavorites,
                     ),
@@ -288,20 +290,14 @@ private fun SummaryCard(
                 if (mangaCount >
                     0
                 ) {
-                    parts.add(stringResource(ephyra.app.core.common.R.string.match_results_count_manga, mangaCount))
+                    parts.add(pluralStringResource(ephyra.app.core.common.R.plurals.match_results_count_manga, count = mangaCount, mangaCount))
                 }
-                if (novelCount >
-                    0
-                ) {
                     parts.add(
-                        stringResource(ephyra.app.core.common.R.string.match_results_count_novels, novelCount),
+                        pluralStringResource(ephyra.app.core.common.R.plurals.match_results_count_novels, count = novelCount, novelCount),
                     )
-                }
                 val otherCount = totalFavorites - mangaCount - novelCount
-                if (otherCount >
-                    0
-                ) {
-                    parts.add(stringResource(ephyra.app.core.common.R.string.match_results_count_other, otherCount))
+                if (otherCount > 0) {
+                    parts.add(pluralStringResource(ephyra.app.core.common.R.plurals.match_results_count_other, count = otherCount, otherCount))
                 }
                 Text(
                     text = parts.joinToString(" • "),
@@ -312,7 +308,7 @@ private fun SummaryCard(
             if (unlinkedCount > 0) {
                 Spacer(modifier = Modifier.height(MaterialTheme.padding.extraSmall))
                 Text(
-                    text = stringResource(ephyra.app.core.common.R.string.match_results_unlinked_count, unlinkedCount),
+                    text = pluralStringResource(ephyra.app.core.common.R.plurals.match_results_unlinked_count, count = unlinkedCount, unlinkedCount),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.error,
                 )

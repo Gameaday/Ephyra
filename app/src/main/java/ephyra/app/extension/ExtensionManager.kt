@@ -9,7 +9,8 @@ import ephyra.app.extension.util.ExtensionInstallReceiver
 import ephyra.app.extension.util.ExtensionInstaller
 import ephyra.app.extension.util.ExtensionLoader
 import ephyra.core.common.core.security.SecurityPreferences
-import ephyra.core.common.util.lang.withUIContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.extension.interactor.TrustExtension
 import ephyra.domain.extension.model.Extension
@@ -154,7 +155,7 @@ class ExtensionManager(
             api.findExtensions()
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e)
-            withUIContext { context.toast(ephyra.app.core.common.R.string.extension_api_error) }
+            withContext(Dispatchers.Main) { context.toast(ephyra.app.core.common.R.string.extension_api_error) }
             return
         }
 

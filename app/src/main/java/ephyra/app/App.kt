@@ -30,7 +30,6 @@ import ephyra.app.crash.GlobalExceptionHandler
 import ephyra.app.di.initializeCoreContainer
 import ephyra.app.util.system.animatorDurationScale
 import ephyra.app.util.system.cancelNotification
-import ephyra.app.util.system.isDebugBuildType
 import ephyra.app.util.system.notify
 import ephyra.core.common.core.security.PrivacyPreferences
 import ephyra.core.common.core.security.SecurityPreferences
@@ -141,22 +140,24 @@ class App :
             .onEach { enabled ->
                 if (enabled) {
                     disableIncognitoReceiver.register()
-                    notify(
-                        Notifications.ID_INCOGNITO_MODE,
-                        Notifications.CHANNEL_INCOGNITO_MODE,
-                    ) {
-                        setContentTitle(this@App.getString(ephyra.app.core.common.R.string.pref_incognito_mode))
-                        setContentText(this@App.getString(ephyra.app.core.common.R.string.notification_incognito_text))
-                        setSmallIcon(R.drawable.ic_glasses_24dp)
-                        setOngoing(true)
+                    if (ContextCompat.checkSelfPermission(this@App, android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                        notify(
+                            Notifications.ID_INCOGNITO_MODE,
+                            Notifications.CHANNEL_INCOGNITO_MODE,
+                        ) {
+                            setContentTitle(this@App.getString(ephyra.app.core.common.R.string.pref_incognito_mode))
+                            setContentText(this@App.getString(ephyra.app.core.common.R.string.notification_incognito_text))
+                            setSmallIcon(R.drawable.ic_glasses_24dp)
+                            setOngoing(true)
 
-                        val pendingIntent = PendingIntent.getBroadcast(
-                            this@App,
-                            0,
-                            Intent(ACTION_DISABLE_INCOGNITO_MODE).setPackage(BuildConfig.APPLICATION_ID),
-                            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE,
-                        )
-                        setContentIntent(pendingIntent)
+                            val pendingIntent = PendingIntent.getBroadcast(
+                                this@App,
+                                0,
+                                Intent(ACTION_DISABLE_INCOGNITO_MODE).setPackage(BuildConfig.APPLICATION_ID),
+                                PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE,
+                            )
+                            setContentIntent(pendingIntent)
+                        }
                     }
                 } else {
                     disableIncognitoReceiver.unregister()
@@ -211,11 +212,10 @@ class App :
             old = preference.get(),
             new = BuildConfig.VERSION_CODE,
             migrations = migrations,
-            onMigrationComplete = {
-                logcat { "Updating last version to ${BuildConfig.VERSION_CODE}" }
-                preference.set(BuildConfig.VERSION_CODE)
-            },
-        )
+        ) {
+            logcat { "Updating last version to ${BuildConfig.VERSION_CODE}" }
+            preference.set(BuildConfig.VERSION_CODE)
+        }
     }
 
     override fun newImageLoader(context: Context): ImageLoader {
@@ -278,9 +278,9 @@ class App :
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
         val cache = SingletonImageLoader.get(this).memoryCache ?: return
-        if (level >= ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN) {
+        if (level >= TRIM_MEMORY_UI_HIDDEN) {
             cache.clear()
-        } else if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
+        } else if (level >= TRIM_MEMORY_RUNNING_LOW) {
             cache.trimToSize(cache.maxSize / 2)
         }
     }
@@ -290,8 +290,8 @@ class App :
             // Override the value passed as X-Requested-With in WebView requests
             val stackTrace = Looper.getMainLooper().thread.stackTrace
             val isChromiumCall = stackTrace.any { trace ->
-                trace.className.lowercase() in setOf("org.chromium.base.buildinfo", "org.chromium.base.apkinfo") &&
-                    trace.methodName.lowercase() in setOf("getall", "getpackagename", "<init>")
+                (trace.className.lowercase() in setOf("org.chromium.base.buildinfo", "org.chromium.base.apkinfo")) &&
+                    (trace.methodName.lowercase() in setOf("getall", "getpackagename", "<init>"))
             }
 
             if (isChromiumCall) return WebViewUtil.spoofedPackageName(applicationContext)
@@ -313,7 +313,7 @@ class App :
         private var registered = false
 
         override fun onReceive(context: Context, intent: Intent) {
-            basePreferences.incognitoMode().set(false)
+            basePreferences.incognitoMode().set(value = false)
         }
 
         fun register() {

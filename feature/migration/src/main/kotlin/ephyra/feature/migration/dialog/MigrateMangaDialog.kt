@@ -22,7 +22,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.util.lang.launchIO
-import ephyra.core.common.util.lang.withUIContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.hasCustomCover
@@ -113,7 +114,7 @@ fun MigrateMangaDialog(
                     onClick = {
                         scope.launchIO {
                             screenModel.migrateManga(replace = false)
-                            withUIContext { onComplete() }
+                            withContext(Dispatchers.Main) { onComplete() }
                         }
                     },
                 ) {
@@ -123,7 +124,7 @@ fun MigrateMangaDialog(
                     onClick = {
                         scope.launchIO {
                             screenModel.migrateManga(replace = true)
-                            withUIContext { onComplete() }
+                            withContext(Dispatchers.Main) { onComplete() }
                         }
                     },
                 ) {

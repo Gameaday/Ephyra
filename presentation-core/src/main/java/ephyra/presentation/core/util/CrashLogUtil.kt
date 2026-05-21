@@ -3,7 +3,8 @@ package ephyra.presentation.core.util
 import android.content.Context
 import android.os.Build
 import ephyra.core.common.util.lang.withNonCancellableContext
-import ephyra.core.common.util.lang.withUIContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import ephyra.core.common.util.storage.getUriCompat
 import ephyra.core.common.util.system.WebViewUtil
 import ephyra.domain.extension.service.ExtensionManager
@@ -32,7 +33,7 @@ class CrashLogUtil(
             val uri = file.getUriCompat(context)
             context.startActivity(uri.toShareIntent(context, "text/plain"))
         } catch (e: Throwable) {
-            withUIContext { context.toast("Failed to get logs") }
+            withContext(Dispatchers.Main) { context.toast("Failed to get logs") }
         }
     }
 
@@ -44,12 +45,7 @@ class CrashLogUtil(
             null
         }
         val versionName = packageInfo?.versionName ?: "Unknown"
-        val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            packageInfo?.longVersionCode?.toString() ?: "Unknown"
-        } else {
-            @Suppress("DEPRECATION")
-            packageInfo?.versionCode?.toString() ?: "Unknown"
-        }
+        val versionCode = packageInfo?.longVersionCode?.toString() ?: "Unknown"
 
         return """
             App ID: ${context.packageName}

@@ -73,6 +73,7 @@ import ephyra.presentation.core.components.AdaptiveSheet
 import ephyra.presentation.core.components.ScrollbarLazyColumn
 import ephyra.presentation.core.components.TabContent
 import ephyra.presentation.core.components.material.padding
+import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.LoadingScreen
@@ -325,13 +326,18 @@ private fun DiscoverContent(
                 state.contentTypeFilter != ContentType.UNKNOWN &&
                 displayResults.size != state.results.size
             ) {
-                stringResource(
-                    ephyra.app.core.common.R.string.discover_result_count_filtered,
+                pluralStringResource(
+                    ephyra.app.core.common.R.plurals.discover_result_count_filtered,
+                    count = displayResults.size,
                     displayResults.size,
                     state.results.size,
                 )
             } else {
-                stringResource(ephyra.app.core.common.R.string.discover_result_count, displayResults.size)
+                pluralStringResource(
+                    ephyra.app.core.common.R.plurals.discover_result_count,
+                    count = displayResults.size,
+                    displayResults.size,
+                )
             }
             Text(
                 text = countText,
@@ -755,8 +761,9 @@ private fun MergeWithExistingDialog(
                                         overflow = TextOverflow.Ellipsis,
                                     )
                                     Text(
-                                        text = stringResource(
-                                            ephyra.app.core.common.R.string.discover_merge_chapters,
+                                        text = pluralStringResource(
+                                            ephyra.app.core.common.R.plurals.discover_merge_chapters,
+                                            count = candidate.chapterCount.toInt(),
                                             candidate.chapterCount,
                                         ),
                                         style = MaterialTheme.typography.bodySmall,
@@ -848,8 +855,9 @@ private fun FindSourceDialog(
                                             overflow = TextOverflow.Ellipsis,
                                         )
                                         val chapterText = when {
-                                            match.chapterCount > 0 -> stringResource(
-                                                ephyra.app.core.common.R.string.discover_find_source_chapters,
+                                            match.chapterCount > 0 -> pluralStringResource(
+                                                ephyra.app.core.common.R.plurals.discover_find_source_chapters,
+                                                count = match.chapterCount,
                                                 match.chapterCount,
                                             )
 

@@ -139,14 +139,14 @@ private fun HistoryScreenContent(
             when (item) {
                 is HistoryUiModel.Header -> {
                     ListGroupHeader(
-                        modifier = Modifier.Companion.animateItemFastScroll(),
+                        modifier = Modifier.animateItemFastScroll(),
                         text = relativeDateText(item.date),
                     )
                 }
                 is HistoryUiModel.Item -> {
                     val value = item.item
                     HistoryItem(
-                        modifier = Modifier.Companion.animateItemFastScroll(),
+                        modifier = Modifier.animateItemFastScroll(),
                         history = value,
                         onClickCover = { onClickCover(value) },
                         onClickResume = { onClickResume(value) },
@@ -177,7 +177,7 @@ fun HistoryTabScreen(
         state = state,
         snackbarHostState = snackbarHostState,
         onSearchQueryChange = { screenModel.onEvent(HistoryScreenEvent.UpdateSearchQuery(it)) },
-        onClickCover = { navController.navigate(ScreenRoutes.MangaDetails.createRoute(it, false)) },
+        onClickCover = { navController.navigate(ScreenRoutes.MangaDetails.createRoute(it, fromSource = false)) },
         onClickResume = { mangaId, chapterId ->
             screenModel.onEvent(HistoryScreenEvent.GetNextChapterForManga(mangaId, chapterId))
         },

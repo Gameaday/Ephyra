@@ -9,6 +9,7 @@ import ephyra.app.R
 import ephyra.app.data.notification.NotificationReceiver
 import ephyra.app.ui.main.MainActivity
 import ephyra.core.common.Constants
+import ephyra.core.common.i18n.pluralStringResource
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.system.cancelNotification
 import ephyra.core.common.util.system.notificationBuilder
@@ -82,8 +83,9 @@ class MatchUnlinkedNotifier(private val context: Context) {
         val unmatched = result.total - totalResolved
 
         val text = if (totalResolved > 0) {
-            context.stringResource(
-                ephyra.app.core.common.R.string.tracker_match_all_result_detail,
+            context.pluralStringResource(
+                ephyra.app.core.common.R.plurals.tracker_match_all_result_detail,
+                count = totalResolved,
                 totalResolved,
                 result.linked,
                 result.matched,
@@ -92,8 +94,9 @@ class MatchUnlinkedNotifier(private val context: Context) {
         } else if (result.total == 0) {
             context.stringResource(ephyra.app.core.common.R.string.tracker_match_all_none)
         } else {
-            context.stringResource(
-                ephyra.app.core.common.R.string.tracker_match_all_no_matches_detail,
+            context.pluralStringResource(
+                ephyra.app.core.common.R.plurals.tracker_match_all_no_matches_detail,
+                count = result.total,
                 result.total,
             )
         }

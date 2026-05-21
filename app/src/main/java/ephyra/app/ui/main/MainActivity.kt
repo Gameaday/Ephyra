@@ -1,7 +1,6 @@
 package ephyra.app.ui.main
 
 import android.app.SearchManager
-import android.app.assist.AssistContent
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -15,7 +14,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
@@ -81,6 +79,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration.Companion.seconds
 import logcat.LogPriority
 import javax.inject.Inject
 
@@ -140,18 +139,18 @@ class MainActivity : BaseActivity(), AppReadySignal {
             ) {
                 var didMigration by remember { mutableStateOf<Boolean?>(null) }
                 LaunchedEffect(Unit) {
-                    try {
-                        val result = withTimeoutOrNull(MIGRATION_TIMEOUT_MS) {
+                    val result = try {
+                        withTimeoutOrNull(MIGRATION_TIMEOUT_MS) {
                             Migrator.awaitAndRelease()
                         }
-                        didMigration = result ?: false
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
                         StartupTracker.recordError(StartupTracker.Phase.MIGRATOR_COMPLETE, e)
                         Migrator.release()
-                        didMigration = false
+                        false
                     }
+                    didMigration = result ?: false
                     StartupTracker.complete(StartupTracker.Phase.MIGRATOR_COMPLETE)
                 }
 
@@ -430,9 +429,9 @@ class MainActivity : BaseActivity(), AppReadySignal {
                 CheckForUpdates()
                 ShowOnboarding()
 
-                var showChangelog by remember { mutableStateOf(false) }
+                var showChangelog by remember { mutableStateOf(value = false) }
                 LaunchedEffect(didMigration) {
-                    if (didMigration == true && !BuildConfig.DEBUG) showChangelog = true
+                    if ((didMigration == true) && !BuildConfig.DEBUG) showChangelog = true
                 }
                 if (showChangelog) {
                     AlertDialog(
@@ -467,7 +466,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
         val startTime = System.currentTimeMillis()
         splashScreen?.setKeepOnScreenCondition {
             val elapsed = System.currentTimeMillis() - startTime
-            elapsed <= SPLASH_MIN_DURATION || (!ready && elapsed <= SPLASH_MAX_DURATION)
+            (elapsed <= SPLASH_MIN_DURATION) || (!ready && (elapsed <= SPLASH_MAX_DURATION))
         }
     }
 
@@ -490,8 +489,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
         LaunchedEffect(Unit) {
             if (updaterEnabled) {
                 try {
-                    val result = appUpdateChecker.checkForUpdate(context)
-                    // TODO: handle result
+                    appUpdateChecker.checkForUpdate(context)
                 } catch (e: Exception) {
                     logcat(LogPriority.ERROR, e)
                 }
@@ -530,7 +528,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
             Constants.SHORTCUT_LIBRARY -> HomeScreen.Tab.Library()
             Constants.SHORTCUT_MANGA -> {
                 val idToOpen = intent.extras?.getLong(Constants.MANGA_EXTRA) ?: return false
-                navController.popBackStack(navController.graph.findStartDestination().id, false)
+                navController.popBackStack(navController.graph.findStartDestination().id, inclusive = false)
                 HomeScreen.Tab.Library(idToOpen)
             }
             Constants.SHORTCUT_UPDATES -> HomeScreen.Tab.Updates
@@ -538,13 +536,13 @@ class MainActivity : BaseActivity(), AppReadySignal {
             Constants.SHORTCUT_SOURCES -> HomeScreen.Tab.Browse(false)
             Constants.SHORTCUT_EXTENSIONS -> HomeScreen.Tab.Browse(true)
             Constants.SHORTCUT_DOWNLOADS -> {
-                navController.popBackStack(navController.graph.findStartDestination().id, false)
+                navController.popBackStack(navController.graph.findStartDestination().id, inclusive = false)
                 HomeScreen.Tab.More(toDownloads = true)
             }
             Intent.ACTION_SEARCH, Intent.ACTION_SEND, "com.google.android.gms.actions.SEARCH_ACTION" -> {
                 val query = intent.getStringExtra(SearchManager.QUERY) ?: intent.getStringExtra(Intent.EXTRA_TEXT)
                 if (!query.isNullOrEmpty()) {
-                    navController.popBackStack(navController.graph.findStartDestination().id, false)
+                    navController.popBackStack(navController.graph.findStartDestination().id, inclusive = false)
                     navController.navigate(ScreenRoutes.GlobalSearch.createRoute(query))
                 }
                 null
@@ -562,11 +560,8 @@ class MainActivity : BaseActivity(), AppReadySignal {
     }
 
     companion object {
-        const val INTENT_SEARCH = "ephyra.app.SEARCH"
-        const val INTENT_SEARCH_QUERY = "query"
-        const val INTENT_SEARCH_FILTER = "filter"
         private const val SPLASH_MIN_DURATION = 500
         private const val SPLASH_MAX_DURATION = 3000
-        private const val MIGRATION_TIMEOUT_MS = 30_000L
+        private val MIGRATION_TIMEOUT_MS = 30.seconds
     }
 }

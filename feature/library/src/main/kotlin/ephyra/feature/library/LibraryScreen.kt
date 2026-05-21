@@ -24,7 +24,6 @@ import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.lang.launchIO
 import ephyra.domain.category.model.Category
 import ephyra.domain.library.model.LibraryManga
-import ephyra.domain.library.service.LibraryUpdateScheduler
 import ephyra.domain.manga.model.Manga
 import ephyra.feature.library.presentation.DeleteLibraryMangaDialog
 import ephyra.feature.library.presentation.LibrarySettingsDialog
@@ -38,7 +37,6 @@ import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.EmptyScreenAction
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.ui.AppReadySignal
-import ephyra.presentation.core.ui.BottomNavController
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.NavigationEvents
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
@@ -97,9 +95,7 @@ fun LibraryScreen(
                     scope.launch {
                         val randomItem = screenModel.getRandomLibraryItemForCurrentCategory()
                         if (randomItem != null) {
-                            navController.navigate(
-                                ScreenRoutes.MangaDetails.createRoute(randomItem.libraryManga.manga.id, false),
-                            )
+                            navController.navigate(ScreenRoutes.MangaDetails.createRoute(randomItem.libraryManga.manga.id, fromSource = false))
                         } else {
                             snackbarHostState.showSnackbar(
                                 context.stringResource(ephyra.app.core.common.R.string.information_no_entries_found),
@@ -117,14 +113,13 @@ fun LibraryScreen(
             LibraryBottomActionMenu(
                 visible = state.selectionMode,
                 onChangeCategoryClicked = { screenModel.openChangeCategoryDialog() },
-                onMarkAsReadClicked = { screenModel.markReadSelection(true) },
-                onMarkAsUnreadClicked = { screenModel.markReadSelection(false) },
+                onMarkAsReadClicked = { screenModel.markReadSelection(read = true) },
+                onMarkAsUnreadClicked = { screenModel.markReadSelection(read = false) },
                 onDownloadClicked = { action: DownloadAction ->
                     screenModel.performDownloadAction(action)
                 }.takeIf { state.selectedManga.fastAll { !it.isLocal() } },
                 onDeleteClicked = { screenModel.openDeleteMangaDialog() },
                 onMigrateClicked = {
-                    val selection = state.selection
                     screenModel.clearSelection()
                     // TODO: MigrationConfigScreen doesn't have a route yet
                     // navController.navigate(...)
@@ -243,7 +238,7 @@ fun LibraryScreen(
         null -> {}
     }
 
-    BackHandler(enabled = state.selectionMode || state.searchQuery != null) {
+    BackHandler(enabled = state.selectionMode || (state.searchQuery != null)) {
         when {
             state.selectionMode -> screenModel.clearSelection()
             state.searchQuery != null -> screenModel.search(null)
@@ -261,9 +256,9 @@ fun LibraryScreen(
         }
     }
 
-    LaunchedEffect(searchQuery) {
-        if (searchQuery != null) {
-            screenModel.search(searchQuery)
+    searchQuery?.let {
+        LaunchedEffect(it) {
+            screenModel.search(it)
         }
     }
 

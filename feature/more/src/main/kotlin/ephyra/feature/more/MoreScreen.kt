@@ -1,6 +1,5 @@
 package ephyra.feature.more
 
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -73,7 +72,7 @@ fun MoreTabScreen(
         onClickStats = { navController.navigate(ScreenRoutes.Stats.route) },
         onClickDataAndStorage = { navController.navigate(ScreenRoutes.Settings.route) }, // TODO: sub-route
         onClickSettings = { navController.navigate(ScreenRoutes.Settings.route) },
-        onClickAbout = { navController.navigate(ScreenRoutes.Settings.route) }, // TODO: sub-route
+        onClickAbout = { navController.navigate(ScreenRoutes.About.route) },
     )
 
     LaunchedEffect(Unit) {
@@ -84,7 +83,7 @@ fun MoreTabScreen(
 @HiltViewModel
 class MoreScreenModel @Inject constructor(
     private val downloadManager: DownloadManager,
-    private val preferences: BasePreferences,
+    preferences: BasePreferences,
 ) : ViewModel() {
 
     var downloadedOnly by preferences.downloadedOnly().asState(viewModelScope)

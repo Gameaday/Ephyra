@@ -74,8 +74,8 @@ fun CategoryScreen(
 
     LaunchedEffect(Unit) {
         screenModel.events.collectLatest { event ->
-            if (event is CategoryEvent.LocalizedMessage) {
-                context.toast(event.stringRes)
+            (event as? CategoryEvent.LocalizedMessage)?.let {
+                context.toast(it.stringRes)
             }
         }
     }

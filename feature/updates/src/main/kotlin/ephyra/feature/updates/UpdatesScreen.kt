@@ -48,7 +48,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filter
 import java.time.LocalDate
 import kotlin.collections.isNotEmpty
-import kotlin.compareTo
 
 @Composable
 fun UpdateScreen(

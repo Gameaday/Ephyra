@@ -279,7 +279,7 @@ internal class HttpPageLoader(
             // resolved: nothing changed during this session that the cache doesn't already
             // reflect, so the disk write would be redundant.
             if (cacheHadMissingImageUrls) {
-                launchIO {
+                scope.launchIO {
                     try {
                         // Convert to pages without reader information
                         val pagesToSave = pages.map { Page(it.index, it.url, it.imageUrl) }

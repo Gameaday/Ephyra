@@ -44,7 +44,6 @@ import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.ifSourcesLoaded
 import ephyra.presentation.core.util.isTabletUi
 import ephyra.presentation.core.util.system.copyToClipboard
-import ephyra.presentation.core.util.system.openInBrowser
 import ephyra.presentation.core.util.system.toShareIntent
 import ephyra.presentation.core.util.system.toast
 import ephyra.source.local.isLocalOrStub
@@ -120,7 +119,6 @@ fun MangaDetailsScreen(
         onWebViewClicked = if (isHttpSource) {
             {
                 openMangaInWebView(
-                    context,
                     navController,
                     screenModel.manga,
                     screenModel.source,
@@ -152,7 +150,6 @@ fun MangaDetailsScreen(
                 performGenreSearch(
                     navController,
                     it,
-                    screenModel.source!!,
                 )
             }
         },
@@ -199,9 +196,7 @@ fun MangaDetailsScreen(
         onEditNotesClicked = {
             navController.navigate(ScreenRoutes.MangaNotes.createRoute(successState.manga.id))
         },
-        onEditMetadataClicked = if (successState.manga.favorite ||
-            successState.manga.canonicalId != null
-        ) {
+        onEditMetadataClicked = if (successState.manga.favorite || (successState.manga.canonicalId != null)) {
             { screenModel.onEvent(MangaScreenEvent.ShowEditMetadataDialog) }
         } else {
             null
@@ -218,7 +213,7 @@ fun MangaDetailsScreen(
         onInvertSelection = { screenModel.onEvent(MangaScreenEvent.InvertSelection) },
     )
 
-    var showScanlatorsDialog by remember { mutableStateOf(false) }
+    var showScanlatorsDialog by remember { mutableStateOf(value = false) }
 
     val onDismissRequest = { screenModel.onEvent(MangaScreenEvent.DismissDialog) }
     when (val dialog = successState.dialog) {
@@ -239,7 +234,7 @@ fun MangaDetailsScreen(
             DeleteChaptersDialog(
                 onDismissRequest = onDismissRequest,
                 onConfirm = {
-                    screenModel.onEvent(MangaScreenEvent.ToggleAllSelection(false))
+                    screenModel.onEvent(MangaScreenEvent.ToggleAllSelection(selected = false))
                     screenModel.onEvent(MangaScreenEvent.DeleteChapters(dialog.chapters))
                 },
             )
@@ -310,7 +305,7 @@ fun MangaDetailsScreen(
                     if (it == null) return@rememberLauncherForActivityResult
                     sm.onEvent(MangaCoverScreenEvent.EditCover(it))
                 }
-                var showCoverSearch by remember { mutableStateOf(false) }
+                var showCoverSearch by remember { mutableStateOf(value = false) }
                 if (showCoverSearch) {
                     val coverSearchSm = hiltViewModel<CoverSearchScreenModel>()
                     LaunchedEffect(manga!!.title, successState.source.id) {
@@ -427,39 +422,39 @@ fun MangaDetailsScreen(
 }
 
 private fun continueReading(context: Context, unreadChapter: Chapter?) {
-    if (unreadChapter != null) openChapter(context, unreadChapter)
+    unreadChapter?.let { openChapter(context, it) }
 }
 
 private fun openChapter(context: Context, chapter: Chapter) {
     context.startActivity(ReaderActivity.newIntent(context, chapter.mangaId, chapter.id))
 }
 
-private fun getMangaUrl(manga_: Manga?, source_: Source?): String? {
-    val manga = manga_ ?: return null
-    val source = source_ as? HttpSource ?: return null
+private fun getMangaUrl(manga: Manga?, source: Source?): String? {
+    val m = manga ?: return null
+    val s = source as? HttpSource ?: return null
 
     return try {
-        source.getMangaUrl(manga.toSManga())
-    } catch (e: Exception) {
+        s.getMangaUrl(m.toSManga())
+    } catch (_: Exception) {
         null
     }
 }
 
-private fun openMangaInWebView(context: Context, navController: NavController, manga_: Manga?, source_: Source?) {
-    getMangaUrl(manga_, source_)?.let { url ->
+private fun openMangaInWebView(navController: NavController, manga: Manga?, source: Source?) {
+    getMangaUrl(manga, source)?.let { url ->
         navController.navigate(
             ScreenRoutes.WebView.createRoute(
                 url = url,
-                title = manga_?.title,
-                sourceId = source_?.id,
+                title = manga?.title,
+                sourceId = source?.id,
             ),
         )
     }
 }
 
-private fun shareManga(context: Context, manga_: Manga?, source_: Source?) {
+private fun shareManga(context: Context, manga: Manga?, source: Source?) {
     try {
-        getMangaUrl(manga_, source_)?.let { url ->
+        getMangaUrl(manga, source)?.let { url ->
             val intent = url.toUri().toShareIntent(context, type = "text/plain")
             context.startActivity(intent)
         }
@@ -468,7 +463,7 @@ private fun shareManga(context: Context, manga_: Manga?, source_: Source?) {
     }
 }
 
-private suspend fun performSearch(
+private fun performSearch(
     navController: NavController,
     query: String,
     global: Boolean,
@@ -481,10 +476,9 @@ private suspend fun performSearch(
     navController.navigate(ScreenRoutes.GlobalSearch.createRoute(query))
 }
 
-private suspend fun performGenreSearch(
+private fun performGenreSearch(
     navController: NavController,
     genreName: String,
-    source: Source,
 ) {
     // TODO: implement logic to pass genre search query back if needed
     performSearch(
@@ -494,9 +488,9 @@ private suspend fun performGenreSearch(
     )
 }
 
-private fun copyMangaUrl(context: Context, manga_: Manga?, source_: Source?) {
-    val manga = manga_ ?: return
-    val source = source_ as? HttpSource ?: return
-    val url = source.getMangaUrl(manga.toSManga())
+private fun copyMangaUrl(context: Context, manga: Manga?, source: Source?) {
+    val m = manga ?: return
+    val s = source as? HttpSource ?: return
+    val url = s.getMangaUrl(m.toSManga())
     context.copyToClipboard(url, url)
 }
