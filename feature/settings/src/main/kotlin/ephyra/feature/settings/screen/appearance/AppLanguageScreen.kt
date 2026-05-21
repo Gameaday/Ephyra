@@ -21,78 +21,77 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.os.LocaleListCompat
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.system.LocaleHelper
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
-import ephyra.presentation.core.util.Screen
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import org.xmlpull.v1.XmlPullParser
 
-class AppLanguageScreen : Screen() {
+import androidx.navigation.NavController
+import ephyra.presentation.core.ui.navigation.LocalNavController
 
-    @Composable
-    override fun Content() {
-        val context = LocalContext.current
-        val navigator = LocalNavigator.currentOrThrow
+@Composable
+fun AppLanguageScreen(
+    navController: NavController = LocalNavController.current,
+) {
+    val context = LocalContext.current
 
-        val langs = remember { getLangs(context) }
-        var currentLanguage by remember {
-            mutableStateOf(AppCompatDelegate.getApplicationLocales().get(0)?.toLanguageTag() ?: "")
+    val langs = remember { getLangs(context) }
+    var currentLanguage by remember {
+        mutableStateOf(AppCompatDelegate.getApplicationLocales().get(0)?.toLanguageTag() ?: "")
+    }
+
+    LaunchedEffect(currentLanguage) {
+        val locale = if (currentLanguage.isEmpty()) {
+            LocaleListCompat.getEmptyLocaleList()
+        } else {
+            LocaleListCompat.forLanguageTags(currentLanguage)
         }
+        AppCompatDelegate.setApplicationLocales(locale)
+    }
 
-        LaunchedEffect(currentLanguage) {
-            val locale = if (currentLanguage.isEmpty()) {
-                LocaleListCompat.getEmptyLocaleList()
-            } else {
-                LocaleListCompat.forLanguageTags(currentLanguage)
-            }
-            AppCompatDelegate.setApplicationLocales(locale)
-        }
-
-        Scaffold(
-            topBar = { scrollBehavior ->
-                AppBar(
-                    title = stringResource(ephyra.app.core.common.R.string.pref_app_language),
-                    navigateUp = navigator::pop,
-                    scrollBehavior = scrollBehavior,
+    Scaffold(
+        topBar = { scrollBehavior ->
+            AppBar(
+                title = stringResource(ephyra.app.core.common.R.string.pref_app_language),
+                navigateUp = { navController.popBackStack() },
+                scrollBehavior = scrollBehavior,
+            )
+        },
+    ) { contentPadding ->
+        LazyColumn(
+            modifier = Modifier.padding(contentPadding),
+        ) {
+            items(langs, key = { it.langTag }) {
+                ListItem(
+                    modifier = Modifier.clickable {
+                        currentLanguage = it.langTag
+                    },
+                    headlineContent = { Text(it.displayName) },
+                    supportingContent = {
+                        it.localizedDisplayName?.let {
+                            Text(it)
+                        }
+                    },
+                    trailingContent = {
+                        if (currentLanguage == it.langTag) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    },
                 )
-            },
-        ) { contentPadding ->
-            LazyColumn(
-                modifier = Modifier.padding(contentPadding),
-            ) {
-                items(langs, key = { it.langTag }) {
-                    ListItem(
-                        modifier = Modifier.clickable {
-                            currentLanguage = it.langTag
-                        },
-                        headlineContent = { Text(it.displayName) },
-                        supportingContent = {
-                            it.localizedDisplayName?.let {
-                                Text(it)
-                            }
-                        },
-                        trailingContent = {
-                            if (currentLanguage == it.langTag) {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                )
-                            }
-                        },
-                    )
-                }
             }
         }
     }
+}
 
-    private fun getLangs(context: Context): ImmutableList<Language> {
+private fun getLangs(context: Context): ImmutableList<Language> {
         val langs = mutableListOf<Language>()
         val parser = context.resources.getXml(
             context.resources.getIdentifier("locales_config", "xml", context.packageName),
@@ -124,4 +123,3 @@ class AppLanguageScreen : Screen() {
         val displayName: String,
         val localizedDisplayName: String?,
     )
-}

@@ -40,8 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
+import androidx.navigation.NavController
 import ephyra.core.common.util.system.LocaleHelper
 import ephyra.domain.extension.model.Extension
 import ephyra.domain.extension.model.InstallStep
@@ -60,7 +59,8 @@ import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.EmptyScreenAction
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.theme.header
-import ephyra.presentation.core.ui.ExtensionReposScreenFactory
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.animateItemFastScroll
 import ephyra.presentation.core.util.plus
 import ephyra.presentation.core.util.rememberRequestPackageInstallsPermissionState
@@ -83,10 +83,8 @@ fun ExtensionScreen(
     onOpenExtension: (Extension.Installed) -> Unit,
     onClickUpdateAll: () -> Unit,
     onRefresh: () -> Unit,
+    navController: NavController = LocalNavController.current,
 ) {
-    val navigator = LocalNavigator.currentOrThrow
-    val extensionReposFactory = remember { ephyra.core.common.di.CoreContainer.get<ExtensionReposScreenFactory>() }
-
     PullRefresh(
         refreshing = state.isRefreshing,
         onRefresh = onRefresh,
@@ -107,7 +105,7 @@ fun ExtensionScreen(
                         EmptyScreenAction(
                             stringRes = ephyra.app.core.common.R.string.label_extension_repos,
                             icon = Icons.Outlined.Settings,
-                            onClick = { navigator.push(extensionReposFactory.create(null)) },
+                            onClick = { navController.navigate(ScreenRoutes.ExtensionRepos.route) },
                         ),
                     ),
                 )

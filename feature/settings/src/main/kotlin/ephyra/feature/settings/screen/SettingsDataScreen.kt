@@ -40,8 +40,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
+import androidx.navigation.NavController
 import com.hippo.unifile.UniFile
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.storage.displayablePath
@@ -58,13 +57,13 @@ import ephyra.domain.manga.interactor.GetFavorites
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.storage.service.StoragePreferences
 import ephyra.feature.settings.Preference
-import ephyra.feature.settings.screen.data.CreateBackupScreen
-import ephyra.feature.settings.screen.data.RestoreBackupScreen
 import ephyra.feature.settings.screen.data.StorageInfo
 import ephyra.feature.settings.widget.BasePreferenceWidget
 import ephyra.feature.settings.widget.PrefsHorizontalPadding
 import ephyra.presentation.core.components.material.TextButton
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.core.util.relativeTimeSpanString
 import ephyra.presentation.core.util.system.toast
@@ -98,12 +97,18 @@ object SettingsDataScreen : SearchableSettings {
     @Composable
     override fun getPreferences(): List<Preference> {
         val screenModel = hiltViewModel<SettingsDataScreenModel>()
+        val navController = LocalNavController.current
 
         return persistentListOf(
             getStorageLocationPref(storagePreferences = screenModel.storagePreferences),
             Preference.PreferenceItem.InfoPreference(stringResource(ephyra.app.core.common.R.string.pref_storage_location_info)),
 
-            getBackupAndRestoreGroup(backupPreferences = screenModel.backupPreferences),
+            getBackupAndRestoreGroup(
+                backupPreferences = screenModel.backupPreferences,
+                backupScheduler = screenModel.backupScheduler,
+                restoreScheduler = screenModel.restoreScheduler,
+                navController = navController,
+            ),
             getDataGroup(
                 libraryPreferences = screenModel.libraryPreferences,
                 chapterCache = screenModel.chapterCache,
@@ -182,11 +187,13 @@ object SettingsDataScreen : SearchableSettings {
     }
 
     @Composable
-    private fun getBackupAndRestoreGroup(backupPreferences: BackupPreferences): Preference.PreferenceGroup {
+    private fun getBackupAndRestoreGroup(
+        backupPreferences: BackupPreferences,
+        backupScheduler: BackupScheduler,
+        restoreScheduler: RestoreScheduler,
+        navController: NavController,
+    ): Preference.PreferenceGroup {
         val context = LocalContext.current
-        val navigator = LocalNavigator.currentOrThrow
-        val backupScheduler = remember { ephyra.core.common.di.CoreContainer.get<BackupScheduler>() }
-        val restoreScheduler = remember { ephyra.core.common.di.CoreContainer.get<RestoreScheduler>() }
 
         val lastAutoBackup by backupPreferences.lastAutoBackupTimestamp().collectAsState()
 
@@ -203,7 +210,7 @@ object SettingsDataScreen : SearchableSettings {
                 return@rememberLauncherForActivityResult
             }
 
-            navigator.push(RestoreBackupScreen(it.toString()))
+            navController.navigate(ScreenRoutes.RestoreBackup.route + "?uri=${it}")
         }
 
         return Preference.PreferenceGroup(
@@ -224,7 +231,7 @@ object SettingsDataScreen : SearchableSettings {
                                 SegmentedButton(
                                     modifier = Modifier.fillMaxHeight(),
                                     checked = false,
-                                    onCheckedChange = { navigator.push(CreateBackupScreen()) },
+                                    onCheckedChange = { navController.navigate(ScreenRoutes.CreateBackup.route) },
                                     shape = SegmentedButtonDefaults.itemShape(0, 2),
                                 ) {
                                     Text(stringResource(ephyra.app.core.common.R.string.pref_create_backup))

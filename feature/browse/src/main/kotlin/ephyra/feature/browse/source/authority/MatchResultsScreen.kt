@@ -41,8 +41,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
 import coil3.compose.AsyncImage
 import ephyra.domain.manga.model.Manga
 import ephyra.feature.manga.MangaScreen
@@ -51,45 +49,50 @@ import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.LoadingScreen
-import ephyra.presentation.core.util.Screen
 import ephyra.presentation.core.util.system.openInBrowser
 
 /**
  * Screen showing the results of authority matching.
  * Displays recently linked manga and still-unlinked items with retry actions.
  */
-class MatchResultsScreen : Screen() {
+import androidx.navigation.NavController
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
 
-    @Composable
-    override fun Content() {
-        val navigator = LocalNavigator.currentOrThrow
-        val screenModel = hiltViewModel<MatchResultsScreenModel>()
-        val state by screenModel.state.collectAsStateWithLifecycle()
+/**
+ * Screen showing the results of authority matching.
+ * Displays recently linked manga and still-unlinked items with retry actions.
+ */
+@Composable
+fun MatchResultsScreen(
+    navController: NavController = LocalNavController.current,
+) {
+    val screenModel = hiltViewModel<MatchResultsScreenModel>()
+    val state by screenModel.state.collectAsStateWithLifecycle()
 
-        Scaffold(
-            topBar = { scrollBehavior ->
-                AppBar(
-                    title = stringResource(ephyra.app.core.common.R.string.match_results_title),
-                    navigateUp = navigator::pop,
-                    scrollBehavior = scrollBehavior,
-                )
-            },
-        ) { paddingValues ->
-            if (state.isLoading) {
-                LoadingScreen()
-                return@Scaffold
-            }
-
-            MatchResultsContent(
-                state = state,
-                onRetrySingle = screenModel::retrySingle,
-                onRetryAll = screenModel::retryAll,
-                onOpenManga = { manga ->
-                    navigator.push(MangaScreen(manga.id))
-                },
-                contentPadding = paddingValues,
+    Scaffold(
+        topBar = { scrollBehavior ->
+            AppBar(
+                title = stringResource(ephyra.app.core.common.R.string.match_results_title),
+                navigateUp = { navController.popBackStack() },
+                scrollBehavior = scrollBehavior,
             )
+        },
+    ) { paddingValues ->
+        if (state.isLoading) {
+            LoadingScreen()
+            return@Scaffold
         }
+
+        MatchResultsContent(
+            state = state,
+            onRetrySingle = screenModel::retrySingle,
+            onRetryAll = screenModel::retryAll,
+            onOpenManga = { manga ->
+                navController.navigate(ScreenRoutes.MangaDetails.createRoute(manga.id, true))
+            },
+            contentPadding = paddingValues,
+        )
     }
 }
 

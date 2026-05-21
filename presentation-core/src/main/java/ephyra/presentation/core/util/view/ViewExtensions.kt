@@ -21,19 +21,33 @@ import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
 import ephyra.core.common.core.security.PrivacyPreferences
 import ephyra.domain.ui.UiPreferences
 import ephyra.presentation.core.util.LocalPrivacyPreferences
 import ephyra.presentation.core.util.LocalUiPreferences
 import ephyra.presentation.theme.TachiyomiTheme
 
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface ViewExtensionsEntryPoint {
+    fun uiPreferences(): UiPreferences
+    fun privacyPreferences(): PrivacyPreferences
+}
+
 inline fun ComponentActivity.setComposeContent(
     parent: CompositionContext? = null,
     crossinline content: @Composable () -> Unit,
 ) {
     setContent(parent) {
-        val uiPreferences = androidx.compose.runtime.remember { ephyra.core.common.di.CoreContainer.get<UiPreferences>() }
-        val privacyPreferences = androidx.compose.runtime.remember { ephyra.core.common.di.CoreContainer.get<PrivacyPreferences>() }
+        val entryPoint = androidx.compose.runtime.remember {
+            EntryPointAccessors.fromApplication(applicationContext, ViewExtensionsEntryPoint::class.java)
+        }
+        val uiPreferences = entryPoint.uiPreferences()
+        val privacyPreferences = entryPoint.privacyPreferences()
         CompositionLocalProvider(
             LocalUiPreferences provides uiPreferences,
             LocalPrivacyPreferences provides privacyPreferences,
@@ -55,8 +69,11 @@ fun ComposeView.setComposeContent(
 ) {
     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
     setContent {
-        val uiPreferences = androidx.compose.runtime.remember { ephyra.core.common.di.CoreContainer.get<UiPreferences>() }
-        val privacyPreferences = androidx.compose.runtime.remember { ephyra.core.common.di.CoreContainer.get<PrivacyPreferences>() }
+        val entryPoint = androidx.compose.runtime.remember {
+            EntryPointAccessors.fromApplication(context.applicationContext, ViewExtensionsEntryPoint::class.java)
+        }
+        val uiPreferences = entryPoint.uiPreferences()
+        val privacyPreferences = entryPoint.privacyPreferences()
         CompositionLocalProvider(
             LocalUiPreferences provides uiPreferences,
             LocalPrivacyPreferences provides privacyPreferences,

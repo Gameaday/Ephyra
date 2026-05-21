@@ -20,15 +20,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.presentation.components.AppBar
 import ephyra.presentation.manga.components.BaseMangaListItem
-import ephyra.presentation.util.Screen
-import ephyra.feature.manga.MangaScreen
 import ephyra.presentation.core.util.system.toast
 import kotlinx.coroutines.flow.collectLatest
-import ephyra.presentation.core.ui.MigrationConfigScreenFactory
 import ephyra.domain.manga.model.Manga
 import ephyra.presentation.core.components.FastScrollLazyColumn
 import ephyra.presentation.core.components.material.Scaffold
@@ -38,97 +33,98 @@ import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.util.selectedBackground
 import ephyra.presentation.core.util.shouldExpandFAB
 
-data class MigrateMangaScreen(
-    private val sourceId: Long,
-) : Screen() {
+import androidx.navigation.NavController
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
 
-    @Composable
-    override fun Content() {
-        val context = LocalContext.current
-        val navigator = LocalNavigator.currentOrThrow
-        val screenModel = hiltViewModel<MigrateMangaScreenModel>()
+@Composable
+fun MigrateMangaScreen(
+    sourceId: Long,
+    navController: NavController = LocalNavController.current,
+) {
+    val context = LocalContext.current
+    val screenModel = hiltViewModel<MigrateMangaScreenModel>()
 
-        LaunchedEffect(sourceId) {
-            screenModel.init(sourceId)
-        }
+    LaunchedEffect(sourceId) {
+        screenModel.init(sourceId)
+    }
 
-        val state by screenModel.state.collectAsStateWithLifecycle()
+    val state by screenModel.state.collectAsStateWithLifecycle()
 
-        if (state.isLoading) {
-            LoadingScreen()
-            return
-        }
+    if (state.isLoading) {
+        LoadingScreen()
+        return
+    }
 
-        BackHandler(enabled = state.selectionMode) {
-            screenModel.onEvent(MigrateMangaScreenEvent.ClearSelection)
-        }
+    BackHandler(enabled = state.selectionMode) {
+        screenModel.onEvent(MigrateMangaScreenEvent.ClearSelection)
+    }
 
-        val lazyListState = rememberLazyListState()
+    val lazyListState = rememberLazyListState()
 
-        Scaffold(
-            topBar = { scrollBehavior ->
-                AppBar(
-                    title = state.source!!.name,
-                    navigateUp = {
-                        if (state.selectionMode) {
-                            screenModel.onEvent(MigrateMangaScreenEvent.ClearSelection)
-                        } else {
-                            navigator.pop()
-                        }
-                    },
-                    scrollBehavior = scrollBehavior,
-                )
-            },
-            floatingActionButton = {
-                SmallExtendedFloatingActionButton(
-                    text = { Text(text = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_continueButtonText)) },
-                    icon = {
-                        Icon(imageVector = Icons.AutoMirrored.Outlined.ArrowForward, contentDescription = null)
-                    },
-                    onClick = {
-                        val selection = state.selection
+    Scaffold(
+        topBar = { scrollBehavior ->
+            AppBar(
+                title = state.source!!.name,
+                navigateUp = {
+                    if (state.selectionMode) {
                         screenModel.onEvent(MigrateMangaScreenEvent.ClearSelection)
-                        val migrationConfigScreenFactory = ephyra.core.common.di.CoreContainer.get<MigrationConfigScreenFactory>()
-                        navigator.push(migrationConfigScreenFactory.create(selection))
-                    },
-                    expanded = lazyListState.shouldExpandFAB(),
-                    modifier = Modifier.animateFloatingActionButton(
-                        visible = state.selectionMode,
-                        alignment = Alignment.BottomEnd,
-                    ),
-                )
-            },
-        ) { contentPadding ->
-            if (state.isEmpty) {
-                EmptyScreen(
-                    stringRes = ephyra.app.core.common.R.string.empty_screen,
-                    modifier = Modifier.padding(contentPadding),
-                )
-                return@Scaffold
-            }
-
-            MigrateMangaContent(
-                lazyListState = lazyListState,
-                contentPadding = contentPadding,
-                state = state,
-                onClickItem = { screenModel.onEvent(MigrateMangaScreenEvent.ToggleSelection(it)) },
-                onClickCover = { navigator.push(MangaScreen(it.id)) },
+                    } else {
+                        navController.popBackStack()
+                    }
+                },
+                scrollBehavior = scrollBehavior,
             )
+        },
+        floatingActionButton = {
+            SmallExtendedFloatingActionButton(
+                text = { Text(text = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_continueButtonText)) },
+                icon = {
+                    Icon(imageVector = Icons.AutoMirrored.Outlined.ArrowForward, contentDescription = null)
+                },
+                onClick = {
+                    val selection = state.selection
+                    screenModel.onEvent(MigrateMangaScreenEvent.ClearSelection)
+                    navController.navigate(ScreenRoutes.MigrationConfig.createRoute(selection))
+                },
+                expanded = lazyListState.shouldExpandFAB(),
+                modifier = Modifier.animateFloatingActionButton(
+                    visible = state.selectionMode,
+                    alignment = Alignment.BottomEnd,
+                ),
+            )
+        },
+    ) { contentPadding ->
+        if (state.isEmpty) {
+            EmptyScreen(
+                stringRes = ephyra.app.core.common.R.string.empty_screen,
+                modifier = Modifier.padding(contentPadding),
+            )
+            return@Scaffold
         }
 
-        LaunchedEffect(Unit) {
-            screenModel.events.collectLatest { event ->
-                when (event) {
-                    MigrationMangaEvent.FailedFetchingFavorites -> {
-                        context.toast(ephyra.app.core.common.R.string.internal_error)
-                    }
+        MigrateMangaContent(
+            lazyListState = lazyListState,
+            contentPadding = contentPadding,
+            state = state,
+            onClickItem = { screenModel.onEvent(MigrateMangaScreenEvent.ToggleSelection(it)) },
+            onClickCover = { navController.navigate(ScreenRoutes.MangaDetails.createRoute(it.id, true)) },
+        )
+    }
+
+    LaunchedEffect(Unit) {
+        screenModel.events.collectLatest { event ->
+            when (event) {
+                MigrationMangaEvent.FailedFetchingFavorites -> {
+                    context.toast(ephyra.app.core.common.R.string.internal_error)
                 }
             }
         }
     }
+}
 
-    @Composable
-    private fun MigrateMangaContent(
+@Composable
+private fun MigrateMangaContent(
         lazyListState: LazyListState,
         contentPadding: PaddingValues,
         state: MigrateMangaScreenModel.State,
@@ -165,4 +161,3 @@ data class MigrateMangaScreen(
             onClickCover = { onClickCover(manga) },
         )
     }
-}

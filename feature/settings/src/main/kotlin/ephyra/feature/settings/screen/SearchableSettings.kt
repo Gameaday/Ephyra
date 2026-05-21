@@ -3,12 +3,11 @@ package ephyra.feature.settings.screen
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
-import cafe.adriel.voyager.core.screen.Screen
 import ephyra.feature.settings.Preference
 import ephyra.feature.settings.PreferenceScaffold
 import ephyra.presentation.core.util.LocalBackPress
 
-interface SearchableSettings : Screen {
+interface SearchableSettings {
 
     @Composable
     @ReadOnlyComposable
@@ -22,7 +21,7 @@ interface SearchableSettings : Screen {
     }
 
     @Composable
-    override fun Content() {
+    fun Content() {
         val handleBack = LocalBackPress.current
         PreferenceScaffold(
             titleRes = getTitleRes(),

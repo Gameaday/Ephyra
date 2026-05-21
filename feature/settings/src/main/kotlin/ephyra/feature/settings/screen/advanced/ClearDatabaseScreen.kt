@@ -38,8 +38,6 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.launchUI
 import ephyra.core.common.util.lang.toLong
@@ -65,132 +63,134 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 
-class ClearDatabaseScreen : Screen() {
+import androidx.navigation.NavController
+import ephyra.presentation.core.ui.navigation.LocalNavController
 
-    @Composable
-    override fun Content() {
-        val context = LocalContext.current
-        val navigator = LocalNavigator.currentOrThrow
-        val model = hiltViewModel<ClearDatabaseScreenModel>()
-        val state by model.state.collectAsStateWithLifecycle()
-        val scope = rememberCoroutineScope()
+@Composable
+fun ClearDatabaseScreen(
+    navController: NavController = LocalNavController.current,
+) {
+    val context = LocalContext.current
+    val model = hiltViewModel<ClearDatabaseScreenModel>()
+    val state by model.state.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
 
-        when (val s = state) {
-            is ClearDatabaseScreenModel.State.Loading -> LoadingScreen()
-            is ClearDatabaseScreenModel.State.Ready -> {
-                if (s.showConfirmation) {
-                    var keepReadManga by remember { mutableStateOf(true) }
-                    AlertDialog(
-                        title = {
-                            Text(text = stringResource(ephyra.app.core.common.R.string.are_you_sure))
-                        },
-                        text = {
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
-                            ) {
-                                Text(text = stringResource(ephyra.app.core.common.R.string.clear_database_text))
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.extraSmall),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Text(
-                                        text = stringResource(ephyra.app.core.common.R.string.clear_db_exclude_read),
-                                        modifier = Modifier.weight(1f),
-                                    )
-                                    Switch(
-                                        checked = keepReadManga,
-                                        onCheckedChange = { keepReadManga = it },
-                                    )
-                                }
-                                if (!keepReadManga) {
-                                    Text(
-                                        text = stringResource(ephyra.app.core.common.R.string.clear_database_history_warning),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.error,
-                                    )
-                                }
-                            }
-                        },
-                        onDismissRequest = model::hideConfirmation,
-                        confirmButton = {
-                            TextButton(
-                                onClick = {
-                                    scope.launchUI {
-                                        model.removeMangaBySourceId(keepReadManga)
-                                        model.clearSelection()
-                                        model.hideConfirmation()
-                                        context.toast(ephyra.app.core.common.R.string.clear_database_completed)
-                                    }
-                                },
-                            ) {
-                                Text(text = stringResource(ephyra.app.core.common.R.string.action_ok))
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = model::hideConfirmation) {
-                                Text(text = stringResource(ephyra.app.core.common.R.string.action_cancel))
-                            }
-                        },
-                    )
-                }
-
-                Scaffold(
-                    topBar = { scrollBehavior ->
-                        AppBar(
-                            title = stringResource(ephyra.app.core.common.R.string.pref_clear_database),
-                            navigateUp = navigator::pop,
-                            actions = {
-                                if (s.items.isNotEmpty()) {
-                                    AppBarActions(
-                                        actions = persistentListOf(
-                                            AppBar.Action(
-                                                title = stringResource(ephyra.app.core.common.R.string.action_select_all),
-                                                icon = Icons.Outlined.SelectAll,
-                                                onClick = model::selectAll,
-                                            ),
-                                            AppBar.Action(
-                                                title = stringResource(ephyra.app.core.common.R.string.action_select_inverse),
-                                                icon = Icons.Outlined.FlipToBack,
-                                                onClick = model::invertSelection,
-                                            ),
-                                        ),
-                                    )
-                                }
-                            },
-                            scrollBehavior = scrollBehavior,
-                        )
+    when (val s = state) {
+        is ClearDatabaseScreenModel.State.Loading -> LoadingScreen()
+        is ClearDatabaseScreenModel.State.Ready -> {
+            if (s.showConfirmation) {
+                var keepReadManga by remember { mutableStateOf(true) }
+                AlertDialog(
+                    title = {
+                        Text(text = stringResource(ephyra.app.core.common.R.string.are_you_sure))
                     },
-                ) { contentPadding ->
-                    if (s.items.isEmpty()) {
-                        EmptyScreen(
-                            message = stringResource(ephyra.app.core.common.R.string.database_clean),
-                            modifier = Modifier.padding(contentPadding),
-                        )
-                    } else {
-                        LazyColumnWithAction(
-                            contentPadding = contentPadding,
-                            actionLabel = stringResource(ephyra.app.core.common.R.string.action_delete),
-                            actionEnabled = s.selection.isNotEmpty(),
-                            onClickAction = model::showConfirmation,
+                    text = {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
                         ) {
-                            items(s.items, key = { it.id }) { sourceWithCount ->
-                                ClearDatabaseItem(
-                                    source = sourceWithCount.source,
-                                    count = sourceWithCount.count,
-                                    isSelected = s.selection.contains(sourceWithCount.id),
-                                    onClickSelect = { model.toggleSelection(sourceWithCount.source) },
+                            Text(text = stringResource(ephyra.app.core.common.R.string.clear_database_text))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.extraSmall),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = stringResource(ephyra.app.core.common.R.string.clear_db_exclude_read),
+                                    modifier = Modifier.weight(1f),
+                                )
+                                Switch(
+                                    checked = keepReadManga,
+                                    onCheckedChange = { keepReadManga = it },
                                 )
                             }
+                            if (!keepReadManga) {
+                                Text(
+                                    text = stringResource(ephyra.app.core.common.R.string.clear_database_history_warning),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            }
+                        }
+                    },
+                    onDismissRequest = model::hideConfirmation,
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                scope.launchUI {
+                                    model.removeMangaBySourceId(keepReadManga)
+                                    model.clearSelection()
+                                    model.hideConfirmation()
+                                    context.toast(ephyra.app.core.common.R.string.clear_database_completed)
+                                }
+                            },
+                        ) {
+                            Text(text = stringResource(ephyra.app.core.common.R.string.action_ok))
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = model::hideConfirmation) {
+                            Text(text = stringResource(ephyra.app.core.common.R.string.action_cancel))
+                        }
+                    },
+                )
+            }
+
+            Scaffold(
+                topBar = { scrollBehavior ->
+                    AppBar(
+                        title = stringResource(ephyra.app.core.common.R.string.pref_clear_database),
+                        navigateUp = { navController.popBackStack() },
+                        actions = {
+                            if (s.items.isNotEmpty()) {
+                                AppBarActions(
+                                    actions = persistentListOf(
+                                        AppBar.Action(
+                                            title = stringResource(ephyra.app.core.common.R.string.action_select_all),
+                                            icon = Icons.Outlined.SelectAll,
+                                            onClick = model::selectAll,
+                                        ),
+                                        AppBar.Action(
+                                            title = stringResource(ephyra.app.core.common.R.string.action_select_inverse),
+                                            icon = Icons.Outlined.FlipToBack,
+                                            onClick = model::invertSelection,
+                                        ),
+                                    ),
+                                )
+                            }
+                        },
+                        scrollBehavior = scrollBehavior,
+                    )
+                },
+            ) { contentPadding ->
+                if (s.items.isEmpty()) {
+                    EmptyScreen(
+                        message = stringResource(ephyra.app.core.common.R.string.database_clean),
+                        modifier = Modifier.padding(contentPadding),
+                    )
+                } else {
+                    LazyColumnWithAction(
+                        contentPadding = contentPadding,
+                        actionLabel = stringResource(ephyra.app.core.common.R.string.action_delete),
+                        actionEnabled = s.selection.isNotEmpty(),
+                        onClickAction = model::showConfirmation,
+                    ) {
+                        items(s.items, key = { it.id }) { sourceWithCount ->
+                            ClearDatabaseItem(
+                                source = sourceWithCount.source,
+                                count = sourceWithCount.count,
+                                isSelected = s.selection.contains(sourceWithCount.id),
+                                onClickSelect = { model.toggleSelection(sourceWithCount.source) },
+                            )
                         }
                     }
                 }
             }
         }
     }
+}
 
-    @Composable
-    private fun ClearDatabaseItem(
+@Composable
+private fun ClearDatabaseItem(
         source: Source,
         count: Long,
         isSelected: Boolean,

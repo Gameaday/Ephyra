@@ -1,9 +1,7 @@
 package ephyra.feature.security
 
 import android.os.Bundle
-import androidx.biometric.BiometricPrompt
-import androidx.core.app.ActivityCompat.finishAffinity
-import androidx.fragment.app.FragmentActivity
+import androidx.bmt.android.AndroidEntryPoint
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.system.logcat
 import ephyra.presentation.core.ui.activity.BaseActivity
@@ -15,6 +13,7 @@ import logcat.LogPriority
 /**
  * Blank activity with a BiometricPrompt.
  */
+@AndroidEntryPoint
 class UnlockActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {

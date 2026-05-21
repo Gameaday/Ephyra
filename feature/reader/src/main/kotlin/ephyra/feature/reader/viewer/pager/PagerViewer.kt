@@ -15,6 +15,7 @@ import ephyra.core.common.util.system.ImageUtil
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.reader.service.ReaderPreferences
+import ephyra.domain.ui.UiPreferences
 import ephyra.feature.reader.R
 import ephyra.feature.reader.ReaderActivity
 import ephyra.feature.reader.model.ChapterTransition
@@ -42,6 +43,7 @@ abstract class PagerViewer(
     val activity: ReaderActivity,
     val downloadManager: DownloadManager,
     val readerPreferences: ReaderPreferences,
+    val uiPreferences: UiPreferences,
 ) : Viewer {
 
     private val scope = MainScope()

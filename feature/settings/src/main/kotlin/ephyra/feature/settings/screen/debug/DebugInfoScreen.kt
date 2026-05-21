@@ -7,64 +7,67 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.platform.LocalContext
 import androidx.profileinstaller.ProfileVerifier
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.WebViewUtil
 import ephyra.feature.settings.Preference
 import ephyra.feature.settings.PreferenceScaffold
 import ephyra.feature.settings.screen.about.AboutScreen
-import ephyra.presentation.core.util.Screen
 import kotlinx.collections.immutable.mutate
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.guava.await
 
-class DebugInfoScreen : Screen() {
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
+import ephyra.feature.settings.screen.about.AboutScreenModel
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
 
-    @Composable
-    override fun Content() {
-        val navigator = LocalNavigator.currentOrThrow
-        PreferenceScaffold(
-            titleRes = ephyra.app.core.common.R.string.pref_debug_info,
-            onBackPressed = navigator::pop,
-            itemsProvider = {
-                listOf(
-                    Preference.PreferenceItem.TextPreference(
-                        title = WorkerInfoScreen.TITLE,
-                        onClick = { navigator.push(WorkerInfoScreen()) },
-                    ),
-                    Preference.PreferenceItem.TextPreference(
-                        title = BackupSchemaScreen.TITLE,
-                        onClick = { navigator.push(BackupSchemaScreen()) },
-                    ),
-                    getAppInfoGroup(),
-                    getDeviceInfoGroup(),
-                )
-            },
-        )
-    }
+@Composable
+fun DebugInfoScreen(
+    navController: NavController = LocalNavController.current,
+) {
+    val aboutModel = hiltViewModel<AboutScreenModel>()
+    PreferenceScaffold(
+        titleRes = ephyra.app.core.common.R.string.pref_debug_info,
+        onBackPressed = { navController.popBackStack() },
+        itemsProvider = {
+            listOf(
+                Preference.PreferenceItem.TextPreference(
+                    title = WorkerInfoScreen.TITLE,
+                    onClick = { navController.navigate(ScreenRoutes.WorkerInfo.route) },
+                ),
+                Preference.PreferenceItem.TextPreference(
+                    title = BackupSchemaScreen.TITLE,
+                    onClick = { navController.navigate(ScreenRoutes.BackupSchema.route) },
+                ),
+                getAppInfoGroup(aboutModel),
+                getDeviceInfoGroup(),
+            )
+        },
+    )
+}
 
-    @Composable
-    private fun getAppInfoGroup(): Preference.PreferenceGroup {
-        return Preference.PreferenceGroup(
-            title = "App info",
-            preferenceItems = persistentListOf(
-                Preference.PreferenceItem.TextPreference(
-                    title = "Version",
-                    subtitle = AboutScreen.getVersionName(false),
-                ),
-                Preference.PreferenceItem.TextPreference(
-                    title = "Build time",
-                    subtitle = AboutScreen.getFormattedBuildTime(),
-                ),
-                getProfileVerifierPreference(),
-                Preference.PreferenceItem.TextPreference(
-                    title = "WebView version",
-                    subtitle = getWebViewVersion(),
-                ),
+@Composable
+private fun getAppInfoGroup(aboutModel: AboutScreenModel): Preference.PreferenceGroup {
+    return Preference.PreferenceGroup(
+        title = "App info",
+        preferenceItems = persistentListOf(
+            Preference.PreferenceItem.TextPreference(
+                title = "Version",
+                subtitle = aboutModel.getVersionName(false),
             ),
-        )
-    }
+            Preference.PreferenceItem.TextPreference(
+                title = "Build time",
+                subtitle = aboutModel.appInfo.buildTime,
+            ),
+            getProfileVerifierPreference(),
+            Preference.PreferenceItem.TextPreference(
+                title = "WebView version",
+                subtitle = getWebViewVersion(),
+            ),
+        ),
+    )
+}
 
     @Composable
     @ReadOnlyComposable

@@ -18,7 +18,6 @@ dependencies {
     api(projects.feature.manga)
 
     implementation(libs.logcat)
-    implementation(libs.bundles.voyager)
 
     testImplementation(libs.bundles.test)
 }

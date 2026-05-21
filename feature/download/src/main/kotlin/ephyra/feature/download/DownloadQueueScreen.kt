@@ -47,8 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
+import androidx.navigation.NavController
 import ephyra.domain.download.model.Download
 import ephyra.presentation.core.components.Pill
 import ephyra.presentation.core.components.material.AppBar
@@ -58,18 +57,17 @@ import ephyra.presentation.core.components.material.NestedMenuItem
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.EmptyScreen
-import ephyra.presentation.core.util.Screen
+import ephyra.presentation.core.ui.navigation.LocalNavController
 import kotlinx.collections.immutable.persistentListOf
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
-object DownloadQueueScreen : Screen() {
-
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    override fun Content() {
-        val navigator = LocalNavigator.currentOrThrow
-        val screenModel = hiltViewModel<DownloadQueueScreenModel>()
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DownloadQueueScreen(
+    navController: NavController = LocalNavController.current,
+) {
+    val screenModel = hiltViewModel<DownloadQueueScreenModel>()
         val downloadList by screenModel.state.collectAsStateWithLifecycle()
         val downloadCount by remember { derivedStateOf { downloadList.size } }
 
@@ -119,7 +117,7 @@ object DownloadQueueScreen : Screen() {
                             }
                         }
                     },
-                    navigateUp = navigator::pop,
+                    navigateUp = { navController.popBackStack() },
                     actions = {
                         if (downloadList.isNotEmpty()) {
                             var sortExpanded by remember { mutableStateOf(false) }
@@ -359,7 +357,6 @@ object DownloadQueueScreen : Screen() {
             }
         }
     }
-}
 
 private sealed interface DownloadListDisplayItem {
     data class Header(val sourceName: String, val count: Int) : DownloadListDisplayItem

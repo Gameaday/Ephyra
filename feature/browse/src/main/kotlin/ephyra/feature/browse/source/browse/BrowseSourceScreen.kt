@@ -31,32 +31,26 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import ephyra.core.common.Constants
 import ephyra.core.common.util.lang.launchIO
 import ephyra.domain.source.model.StubSource
-import ephyra.feature.browse.extension.details.SourcePreferencesScreen
 import ephyra.feature.browse.presentation.BrowseSourceContent
 import ephyra.feature.browse.presentation.MissingSourceScreen
 import ephyra.feature.browse.presentation.components.BrowseSourceToolbar
 import ephyra.feature.browse.presentation.components.RemoveMangaDialog
 import ephyra.feature.browse.source.browse.BrowseSourceScreenModel.Listing
-import ephyra.feature.category.CategoryScreen
-import ephyra.feature.category.components.ChangeCategoryDialog
-import ephyra.feature.manga.MangaScreen
+import ephyra.feature.category.presentation.components.ChangeCategoryDialog
 import ephyra.feature.manga.presentation.DuplicateMangaDialog
 import ephyra.feature.migration.dialog.MigrateMangaDialog
-import ephyra.feature.webview.WebViewScreen
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.LoadingScreen
-import ephyra.presentation.core.ui.SearchableScreen
-import ephyra.presentation.core.util.AssistContentScreen
-import ephyra.presentation.core.util.Screen
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.collectAsLazyPagingItems
 import ephyra.presentation.core.util.ifSourcesLoaded
 import ephyra.source.local.LocalSource
@@ -66,92 +60,82 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 
-data class BrowseSourceScreen(
-    val sourceId: Long,
-    private val listingQuery: String?,
-) : Screen(), AssistContentScreen, SearchableScreen {
+@Composable
+fun BrowseSourceScreen(
+    sourceId: Long,
+    listingQuery: String?,
+    navController: NavController = LocalNavController.current,
+) {
+    if (!ifSourcesLoaded()) {
+        LoadingScreen()
+        return
+    }
 
-    private var assistUrl: String? = null
+    val screenModel = hiltViewModel<BrowseSourceScreenModel>()
+    LaunchedEffect(sourceId, listingQuery) {
+        screenModel.init(sourceId, listingQuery)
+    }
 
-    override fun onProvideAssistUrl() = assistUrl
+    val source = screenModel.source
+    if (source == null) {
+        LoadingScreen()
+        return
+    }
 
-    @Composable
-    override fun Content() {
-        if (!ifSourcesLoaded()) {
-            LoadingScreen()
-            return
+    val state by screenModel.state.collectAsStateWithLifecycle()
+
+    val navigateUp: () -> Unit = {
+        when {
+            !state.isUserQuery && state.toolbarQuery != null ->
+                screenModel.onEvent(BrowseSourceScreenEvent.SetToolbarQuery(null))
+            else -> navController.popBackStack()
         }
+    }
 
-        val screenModel = hiltViewModel<BrowseSourceScreenModel>()
-        LaunchedEffect(sourceId, listingQuery) {
-            screenModel.init(sourceId, listingQuery)
-        }
+    if (source is StubSource) {
+        MissingSourceScreen(
+            source = source,
+            navigateUp = navigateUp,
+        )
+        return
+    }
 
-        val source = screenModel.source
-        if (source == null) {
-            LoadingScreen()
-            return
-        }
+    val scope = rememberCoroutineScope()
+    val haptic = LocalHapticFeedback.current
+    val uriHandler = LocalUriHandler.current
+    val snackbarHostState = remember { SnackbarHostState() }
 
-        val state by screenModel.state.collectAsStateWithLifecycle()
+    val onHelpClick = { uriHandler.openUri(LocalSource.HELP_URL) }
+    val onWebViewClick = f@{
+        val httpSource = source as? HttpSource ?: return@f
+        navController.navigate(
+            ScreenRoutes.WebView.createRoute(
+                url = httpSource.baseUrl,
+                title = httpSource.name,
+                sourceId = httpSource.id,
+            ),
+        )
+    }
 
-        val navigator = LocalNavigator.currentOrThrow
-        val navigateUp: () -> Unit = {
-            when {
-                !state.isUserQuery && state.toolbarQuery != null ->
-                    screenModel.onEvent(BrowseSourceScreenEvent.SetToolbarQuery(null))
-                else -> navigator.pop()
-            }
-        }
-
-        if (source is StubSource) {
-            MissingSourceScreen(
-                source = source,
-                navigateUp = navigateUp,
-            )
-            return
-        }
-
-        val scope = rememberCoroutineScope()
-        val haptic = LocalHapticFeedback.current
-        val uriHandler = LocalUriHandler.current
-        val snackbarHostState = remember { SnackbarHostState() }
-
-        val onHelpClick = { uriHandler.openUri(LocalSource.HELP_URL) }
-        val onWebViewClick = f@{
-            val httpSource = source as? HttpSource ?: return@f
-            navigator.push(
-                WebViewScreen(
-                    url = httpSource.baseUrl,
-                    initialTitle = httpSource.name,
-                    sourceId = httpSource.id,
-                ),
-            )
-        }
-
-        LaunchedEffect(source) {
-            assistUrl = (source as? HttpSource)?.baseUrl
-        }
-
-        Scaffold(
-            topBar = {
-                Column(
-                    modifier = Modifier
-                        .background(MaterialTheme.colorScheme.surface)
-                        .pointerInput(Unit) {},
-                ) {
-                    BrowseSourceToolbar(
-                        searchQuery = state.toolbarQuery,
-                        onSearchQueryChange = { screenModel.onEvent(BrowseSourceScreenEvent.SetToolbarQuery(it)) },
-                        source = source,
-                        displayMode = screenModel.displayMode,
-                        onDisplayModeChange = { screenModel.displayMode = it },
-                        navigateUp = navigateUp,
-                        onWebViewClick = onWebViewClick,
-                        onHelpClick = onHelpClick,
-                        onSettingsClick = { navigator.push(SourcePreferencesScreen(sourceId)) },
-                        onSearch = { screenModel.onEvent(BrowseSourceScreenEvent.Search(it)) },
-                    )
+    Scaffold(
+        topBar = {
+            Column(
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.surface)
+                    .pointerInput(Unit) {},
+            ) {
+                BrowseSourceToolbar(
+                    searchQuery = state.toolbarQuery,
+                    onSearchQueryChange = { screenModel.onEvent(BrowseSourceScreenEvent.SetToolbarQuery(it)) },
+                    source = source,
+                    displayMode = screenModel.displayMode,
+                    onDisplayModeChange = { screenModel.displayMode = it },
+                    navigateUp = navigateUp,
+                    onWebViewClick = onWebViewClick,
+                    onHelpClick = onHelpClick,
+                    onSettingsClick = { /* TODO: navController.navigate(ScreenRoutes.SourcePreferences.createRoute(sourceId)) */ },
+                    onSearch = { screenModel.onEvent(BrowseSourceScreenEvent.Search(it)) },
+                )
 
                     Row(
                         modifier = Modifier
@@ -231,7 +215,7 @@ data class BrowseSourceScreen(
                 onWebViewClick = onWebViewClick,
                 onHelpClick = { uriHandler.openUri(Constants.URL_HELP) },
                 onLocalSourceHelpClick = onHelpClick,
-                onMangaClick = { navigator.push((MangaScreen(it.id, true))) },
+                onMangaClick = { navController.navigate(ScreenRoutes.MangaDetails.createRoute(it.id, true)) },
                 onMangaLongClick = { manga ->
                     scope.launchIO {
                         val duplicates = screenModel.getDuplicateLibraryManga(manga)
@@ -273,7 +257,7 @@ data class BrowseSourceScreen(
                     duplicates = dialog.duplicates,
                     onDismissRequest = onDismissRequest,
                     onConfirm = { screenModel.onEvent(BrowseSourceScreenEvent.AddFavorite(dialog.manga)) },
-                    onOpenManga = { navigator.push(MangaScreen(it.id)) },
+                    onOpenManga = { navController.navigate(ScreenRoutes.MangaDetails.createRoute(it.id, false)) },
                     onMigrate = {
                         screenModel.onEvent(
                             BrowseSourceScreenEvent.SetDialog(BrowseSourceScreenModel.Dialog.Migrate(dialog.manga, it)),
@@ -286,7 +270,7 @@ data class BrowseSourceScreen(
                 MigrateMangaDialog(
                     current = dialog.current,
                     target = dialog.target,
-                    onClickTitle = { navigator.push(MangaScreen(dialog.current.id)) },
+                    onClickTitle = { navController.navigate(ScreenRoutes.MangaDetails.createRoute(dialog.current.id, false)) },
                     onDismissRequest = onDismissRequest,
                 )
             }
@@ -305,7 +289,7 @@ data class BrowseSourceScreen(
                 ChangeCategoryDialog(
                     initialSelection = dialog.initialSelection,
                     onDismissRequest = onDismissRequest,
-                    onEditCategories = { navigator.push(CategoryScreen()) },
+                    onEditCategories = { navController.navigate(ScreenRoutes.Category.route) },
                     onConfirm = { include, _ ->
                         screenModel.onEvent(BrowseSourceScreenEvent.ChangeMangaFavorite(dialog.manga))
                         screenModel.onEvent(BrowseSourceScreenEvent.MoveMangaToCategories(dialog.manga, include))
@@ -326,16 +310,11 @@ data class BrowseSourceScreen(
                 }
         }
     }
+}
 
-    override suspend fun search(query: String) = queryEvent.send(SearchType.Text(query))
-    override suspend fun searchGenre(name: String) = queryEvent.send(SearchType.Genre(name))
+private val queryEvent = Channel<SearchType>()
 
-    companion object {
-        private val queryEvent = Channel<SearchType>()
-    }
-
-    sealed class SearchType(val txt: String) {
-        class Text(txt: String) : SearchType(txt)
-        class Genre(txt: String) : SearchType(txt)
-    }
+sealed class SearchType(val txt: String) {
+    class Text(txt: String) : SearchType(txt)
+    class Genre(txt: String) : SearchType(txt)
 }

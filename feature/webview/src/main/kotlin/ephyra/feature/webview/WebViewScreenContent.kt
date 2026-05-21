@@ -34,7 +34,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
-import cafe.adriel.voyager.core.stack.mutableStateStackOf
+import androidx.compose.runtime.mutableStateListOf
 import com.kevinnzou.web.AccompanistWebChromeClient
 import com.kevinnzou.web.AccompanistWebViewClient
 import com.kevinnzou.web.LoadingState
@@ -79,7 +79,7 @@ fun WebViewScreenContent(
     val coroutineScope = rememberCoroutineScope()
 
     val windowStack = remember {
-        mutableStateStackOf(
+        mutableStateListOf(
             WebViewWindow(
                 WebContent.Url(url = url, additionalHttpHeaders = headers),
                 WebViewNavigator(coroutineScope),
@@ -87,7 +87,7 @@ fun WebViewScreenContent(
         )
     }
 
-    val currentWindow = windowStack.lastItemOrNull!!
+    val currentWindow = windowStack.last()
     val navigator = currentWindow.navigator
 
     val uriHandler = LocalUriHandler.current
@@ -158,7 +158,7 @@ fun WebViewScreenContent(
             ): Boolean {
                 // if it wasn't initiated by a user gesture, we should ignore it like a normal browser would
                 if (isUserGesture) {
-                    windowStack.push(WebViewWindow(resultMsg, WebViewNavigator(coroutineScope)))
+                    windowStack.add(WebViewWindow(resultMsg, WebViewNavigator(coroutineScope)))
                     return true
                 }
                 return false
@@ -178,7 +178,7 @@ fun WebViewScreenContent(
             if (windowStack.size == 1) {
                 onNavigateUp()
             } else {
-                windowStack.pop()
+                windowStack.removeAt(windowStack.lastIndex)
             }
         }
     }
@@ -305,7 +305,7 @@ fun WebViewScreenContent(
                     }
                 },
                 onDispose = { webView ->
-                    val window = windowStack.items.find { it.webView == webView }
+                    val window = windowStack.find { it.webView == webView }
                     if (window == null) {
                         webView.destroy()
                     } else {

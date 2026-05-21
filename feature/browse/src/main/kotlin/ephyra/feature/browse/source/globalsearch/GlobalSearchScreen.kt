@@ -2,76 +2,75 @@ package ephyra.feature.browse.source.globalsearch
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.hilt.navigation.compose.hiltViewModel
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import ephyra.core.util.ifSourcesLoaded
-import ephyra.feature.browse.presentation.GlobalSearchScreen
-import ephyra.presentation.util.Screen
-import ephyra.feature.browse.source.browse.BrowseSourceScreen
-import ephyra.feature.manga.MangaScreen
 import ephyra.presentation.core.screens.LoadingScreen
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
 
-class GlobalSearchScreen(
-    val searchQuery: String = "",
-    private val extensionFilter: String? = null,
-) : Screen() {
+import androidx.navigation.NavController
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
 
-    @Composable
-    override fun Content() {
-        if (!ifSourcesLoaded()) {
-            LoadingScreen()
-            return
-        }
+@Composable
+fun GlobalSearchScreen(
+    searchQuery: String = "",
+    extensionFilter: String? = null,
+    navController: NavController = LocalNavController.current,
+) {
+    if (!ifSourcesLoaded()) {
+        LoadingScreen()
+        return
+    }
 
-        val navigator = LocalNavigator.currentOrThrow
+    val screenModel = hiltViewModel<GlobalSearchScreenModel>()
+    LaunchedEffect(searchQuery, extensionFilter) {
+        screenModel.init(searchQuery, extensionFilter)
+    }
+    val state by screenModel.state.collectAsStateWithLifecycle()
+    var showSingleLoadingScreen by remember {
+        mutableStateOf(searchQuery.isNotEmpty() && !extensionFilter.isNullOrEmpty() && state.total == 1)
+    }
 
-        val screenModel = hiltViewModel<GlobalSearchScreenModel>()
-        LaunchedEffect(searchQuery, extensionFilter) {
-            screenModel.init(searchQuery, extensionFilter)
-        }
-        val state by screenModel.state.collectAsStateWithLifecycle()
-        var showSingleLoadingScreen by remember {
-            mutableStateOf(searchQuery.isNotEmpty() && !extensionFilter.isNullOrEmpty() && state.total == 1)
-        }
+    if (showSingleLoadingScreen) {
+        LoadingScreen()
 
-        if (showSingleLoadingScreen) {
-            LoadingScreen()
-
-            LaunchedEffect(state.items) {
-                when (val result = state.items.values.singleOrNull()) {
-                    SearchItemResult.Loading -> return@LaunchedEffect
-                    is SearchItemResult.Success -> {
-                        val manga = result.result.singleOrNull()
-                        if (manga != null) {
-                            navigator.replace(MangaScreen(manga.id, true))
-                        } else {
-                            showSingleLoadingScreen = false
+        LaunchedEffect(state.items) {
+            when (val result = state.items.values.singleOrNull()) {
+                SearchItemResult.Loading -> return@LaunchedEffect
+                is SearchItemResult.Success -> {
+                    val manga = result.result.singleOrNull()
+                    if (manga != null) {
+                        navController.navigate(ScreenRoutes.MangaDetails.createRoute(manga.id, true)) {
+                            popUpTo(navController.currentBackStackEntry?.destination?.id ?: -1) { inclusive = true }
                         }
+                    } else {
+                        showSingleLoadingScreen = false
                     }
-                    else -> showSingleLoadingScreen = false
                 }
+                else -> showSingleLoadingScreen = false
             }
-        } else {
-            GlobalSearchScreen(
-                state = state,
-                navigateUp = navigator::pop,
-                onChangeSearchQuery = { screenModel.onEvent(SearchScreenEvent.UpdateSearchQuery(it)) },
-                onSearch = { screenModel.onEvent(SearchScreenEvent.Search) },
-                getManga = { screenModel.getManga(it) },
-                onChangeSearchFilter = { screenModel.onEvent(SearchScreenEvent.SetSourceFilter(it)) },
-                onToggleResults = { screenModel.onEvent(SearchScreenEvent.ToggleFilterResults) },
-                onClickSource = {
-                    navigator.push(BrowseSourceScreen(it.id, state.searchQuery))
-                },
-                onClickItem = { navigator.push(MangaScreen(it.id, true)) },
-                onLongClickItem = { navigator.push(MangaScreen(it.id, true)) },
-            )
         }
+    } else {
+        ephyra.feature.browse.presentation.GlobalSearchScreen(
+            state = state,
+            navigateUp = { navController.popBackStack() },
+            onChangeSearchQuery = { screenModel.onEvent(SearchScreenEvent.UpdateSearchQuery(it)) },
+            onSearch = { screenModel.onEvent(SearchScreenEvent.Search) },
+            getManga = { screenModel.getManga(it) },
+            onChangeSearchFilter = { screenModel.onEvent(SearchScreenEvent.SetSourceFilter(it)) },
+            onToggleResults = { screenModel.onEvent(SearchScreenEvent.ToggleFilterResults) },
+            onClickSource = {
+                navController.navigate(ScreenRoutes.BrowseSource.createRoute(it.id, state.searchQuery))
+            },
+            onClickItem = { navController.navigate(ScreenRoutes.MangaDetails.createRoute(it.id, true)) },
+            onLongClickItem = { navController.navigate(ScreenRoutes.MangaDetails.createRoute(it.id, true)) },
+        )
     }
 }

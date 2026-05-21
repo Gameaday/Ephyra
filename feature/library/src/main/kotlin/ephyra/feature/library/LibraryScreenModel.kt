@@ -36,6 +36,7 @@ import ephyra.domain.library.model.LibraryManga
 import ephyra.domain.library.model.LibrarySort
 import ephyra.domain.library.model.sort
 import ephyra.domain.library.service.LibraryPreferences
+import ephyra.domain.library.service.LibraryUpdateScheduler
 import ephyra.domain.manga.interactor.GetLibraryManga
 import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.ContentType
@@ -49,6 +50,7 @@ import ephyra.domain.track.model.Track
 import ephyra.domain.track.service.TrackerManager
 import ephyra.feature.library.presentation.components.LibraryToolbarTitle
 import ephyra.presentation.core.components.SEARCH_DEBOUNCE_MILLIS
+import ephyra.presentation.core.ui.MigrationConfigScreenFactory
 import ephyra.presentation.core.util.PreferenceMutableState
 import ephyra.presentation.core.util.asState
 import ephyra.presentation.core.util.manga.DownloadAction
@@ -93,6 +95,8 @@ class LibraryScreenModel @Inject constructor(
     private val downloadManager: DownloadManager,
     private val downloadCache: DownloadCache,
     private val trackerManager: TrackerManager,
+    val libraryUpdateScheduler: LibraryUpdateScheduler,
+    val migrationConfigScreenFactory: MigrationConfigScreenFactory,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(State())

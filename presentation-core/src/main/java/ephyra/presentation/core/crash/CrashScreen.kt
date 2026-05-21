@@ -14,11 +14,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import dagger.hilt.android.EntryPointAccessors
 import ephyra.domain.extension.service.ExtensionManager
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.InfoScreen
 import ephyra.presentation.core.util.CrashLogUtil
+import ephyra.presentation.core.util.SourceUtilEntryPoint
 import ephyra.presentation.theme.TachiyomiPreviewTheme
 import kotlinx.coroutines.launch
 
@@ -29,7 +31,9 @@ fun CrashScreen(
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    val extensionManager = androidx.compose.runtime.remember { ephyra.core.common.di.CoreContainer.get<ExtensionManager>() }
+    val extensionManager = androidx.compose.runtime.remember {
+        EntryPointAccessors.fromApplication(context.applicationContext, SourceUtilEntryPoint::class.java).extensionManager()
+    }
 
     InfoScreen(
         icon = Icons.Outlined.BugReport,

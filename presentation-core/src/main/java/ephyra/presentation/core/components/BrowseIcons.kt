@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
@@ -24,6 +25,8 @@ import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
+import dagger.hilt.android.EntryPointAccessors
+import ephyra.presentation.core.util.SourceUtilEntryPoint
 import coil3.compose.AsyncImage
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.domain.extension.model.Extension
@@ -43,7 +46,10 @@ fun SourceIcon(
     source: Source,
     modifier: Modifier = Modifier,
 ) {
-    val extensionManager = ephyra.core.common.di.CoreContainer.get<ExtensionManager>()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val extensionManager = remember {
+        EntryPointAccessors.fromApplication(context.applicationContext, SourceUtilEntryPoint::class.java).extensionManager()
+    }
     val icon = source.icon(extensionManager)
 
     when {
@@ -101,7 +107,10 @@ fun ExtensionIcon(
         }
 
         is Extension.Installed -> {
-            val extensionManager = ephyra.core.common.di.CoreContainer.get<ExtensionManager>()
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val extensionManager = remember {
+                EntryPointAccessors.fromApplication(context.applicationContext, SourceUtilEntryPoint::class.java).extensionManager()
+            }
             val icon by extension.getIcon(extensionManager, density)
             when (icon) {
                 Result.Loading -> Box(modifier = modifier)

@@ -20,7 +20,6 @@ import androidx.compose.ui.util.fastForEach
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.core.screen.Screen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -53,7 +52,7 @@ private fun MigrationFlag.getLabel(): Int {
 }
 
 @Composable
-fun Screen.MigrateMangaDialog(
+fun MigrateMangaDialog(
     current: Manga,
     target: Manga,
     onClickTitle: () -> Unit,

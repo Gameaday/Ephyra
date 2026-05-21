@@ -12,61 +12,58 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.domain.backup.model.Backup
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
-import ephyra.presentation.core.util.Screen
 import ephyra.presentation.core.util.system.copyToClipboard
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.serialization.protobuf.schema.ProtoBufSchemaGenerator
 
-class BackupSchemaScreen : Screen() {
+import androidx.navigation.NavController
+import ephyra.presentation.core.ui.navigation.LocalNavController
 
-    companion object {
-        const val TITLE = "Backup file schema"
-    }
+@Composable
+fun BackupSchemaScreen(
+    navController: NavController = LocalNavController.current,
+) {
+    val context = LocalContext.current
+    val schema = remember { ProtoBufSchemaGenerator.generateSchemaText(Backup.serializer().descriptor) }
 
-    @Composable
-    override fun Content() {
-        val context = LocalContext.current
-        val navigator = LocalNavigator.currentOrThrow
-
-        val schema = remember { ProtoBufSchemaGenerator.generateSchemaText(Backup.serializer().descriptor) }
-
-        Scaffold(
-            topBar = {
-                AppBar(
-                    title = TITLE,
-                    navigateUp = navigator::pop,
-                    actions = {
-                        AppBarActions(
-                            persistentListOf(
-                                AppBar.Action(
-                                    title = stringResource(ephyra.app.core.common.R.string.action_copy_to_clipboard),
-                                    icon = Icons.Default.ContentCopy,
-                                    onClick = {
-                                        context.copyToClipboard(TITLE, schema)
-                                    },
-                                ),
+    Scaffold(
+        topBar = {
+            AppBar(
+                title = BackupSchemaScreen.TITLE,
+                navigateUp = { navController.popBackStack() },
+                actions = {
+                    AppBarActions(
+                        persistentListOf(
+                            AppBar.Action(
+                                title = stringResource(ephyra.app.core.common.R.string.action_copy_to_clipboard),
+                                icon = Icons.Default.ContentCopy,
+                                onClick = {
+                                    context.copyToClipboard(BackupSchemaScreen.TITLE, schema)
+                                },
                             ),
-                        )
-                    },
-                    scrollBehavior = it,
-                )
-            },
-        ) { contentPadding ->
-            Text(
-                text = schema,
-                modifier = Modifier
-                    .verticalScroll(rememberScrollState())
-                    .padding(contentPadding)
-                    .padding(16.dp),
-                fontFamily = FontFamily.Monospace,
+                        ),
+                    )
+                },
+                scrollBehavior = it,
             )
-        }
+        },
+    ) { contentPadding ->
+        Text(
+            text = schema,
+            modifier = Modifier
+                .verticalScroll(rememberScrollState())
+                .padding(contentPadding)
+                .padding(16.dp),
+            fontFamily = FontFamily.Monospace,
+        )
     }
+}
+
+object BackupSchemaScreen {
+    const val TITLE = "Backup file schema"
 }

@@ -33,27 +33,20 @@ A cornerstone of the future roadmap is the complete replacement of SQLDelight wi
   - **Reduced Manual Friction**: Shifts the burden of writing manual SQL for basic operations back
     to the compiler.
 
-### 3. Dependency Inversion over Service Location
+### 3. Dependency Injection: Compile-Time Determinism
 
-The codebase is transitioning from **Injekt** (a Service Locator) to **Koin** (true Dependency
-Injection).
+The codebase has transitioned to **Hilt (Dagger)** for true Dependency Injection.
 
-- **Refactoring by Intent**: Architecture now enforces **Constructor Injection** instead of global
-  getters.
-- **The Power of Scope**: By utilizing Koin Scopes, dependencies are tied to the lifecycle of a
-  specific feature or screen (like a `MangaId` scope). This eliminates the boilerplate of passing
-  primitive IDs through long chains and ensures memory is reclaimed immediately when the user
-  navigates away.
+- **Refactoring by Intent**: Architecture now enforces **Constructor Injection** and static graph validation. Service locators (Injekt) and runtime reflective registries (Koin) are strictly prohibited for internal code.
+- **Hilt-Backed Bridge**: A temporary `CoreContainer` shim provides dependencies to legacy components (like Voyager screens) during the incremental migration, but all new features must be 100% Hilt-native.
+- **The Power of Compile-Time Safety**: By utilizing Dagger's static analysis, we ensure that missing dependencies are caught at build time, preventing runtime crashes and making the dependency graph transparent.
 
 ### 4. Unidirectional Data Flow (UDF)
 
-To eliminate "Main Thread Jank" and race conditions, the UI paradigm follows strict **Unidirectional
-Data Flow**.
+To eliminate "Main Thread Jank" and race conditions, the UI paradigm follows strict **Unidirectional Data Flow**.
 
-- **The Decision**: Every `ScreenModel` is mandated to emit a single, immutable `ViewState` object
-  and receive a single stream of `Events` or `Intents`.
-- **The Rationale**: Standardizing state management ensures UI recompositions are predictable and
-  performant. It prevents bugs where multiple independent data streams fall out of sync.
+- **The Decision**: Every `ViewModel` is mandated to emit a single, immutable `ViewState` object (typically via `StateFlow`) and receive discrete `Intent` or `Event` models.
+- **The Rationale**: Standardizing state management ensures UI recompositions are predictable and performant. It prevents bugs where multiple independent data streams fall out of sync. This pattern is enforced in our Hilt-annotated ViewModels.
 
 ### 5. Asynchronous Data Persistence
 
@@ -95,10 +88,10 @@ tool.
 | Aspect               | Choice                                                                  |
 |----------------------|-------------------------------------------------------------------------|
 | Identity             | Canonical ID from tracker (`al:21`, `mal:30013`, `mu:12345`)            |
-| Dependency Injection | Koin (Constructor Injection)                                            |
+| Dependency Injection | Hilt (Dagger) - Compile-time static graph                               |
 | Database Engine      | Room (Flow-based Observability)                                         |
-| State Management     | Unidirectional Data Flow (ViewState/Event)                              |
+| Navigation           | Jetpack Navigation Compose (replacing Voyager)                          |
+| State Management     | Unidirectional Data Flow (ViewModel + ViewState/Event)                  |
 | Persistence          | AndroidX DataStore (Asynchronous)                                       |
 | Business Logic       | Domain Interactors (Use-Cases)                                          |
-| Extension API        | Legacy Compatibility Bridge (`eu.kanade.*`)                             |
-| Search               | 4-tier: canonical ID (free) → title (1 call) → alt titles → deep search |
+| Extension API        | Legacy Compatibility Bridge (`eu.kanade.*` + Injekt shim)               |

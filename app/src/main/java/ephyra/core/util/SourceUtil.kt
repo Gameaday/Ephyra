@@ -1,11 +1,25 @@
 package ephyra.core.util
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
 import ephyra.domain.source.service.SourceManager
+
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface SourceUtilEntryPoint {
+    fun sourceManager(): SourceManager
+}
 
 @Composable
 fun ifSourcesLoaded(): Boolean {
-    val sourceManager = androidx.compose.runtime.remember { ephyra.core.common.di.CoreContainer.get<SourceManager>() }
+    val context = LocalContext.current
+    val sourceManager = androidx.compose.runtime.remember {
+        EntryPointAccessors.fromApplication(context.applicationContext, SourceUtilEntryPoint::class.java).sourceManager()
+    }
     return sourceManager.isInitialized.collectAsStateWithLifecycle().value
 }

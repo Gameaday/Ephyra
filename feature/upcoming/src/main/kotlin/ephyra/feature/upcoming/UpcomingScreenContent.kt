@@ -20,8 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
+import androidx.navigation.NavController
 import ephyra.core.common.Constants
 import ephyra.domain.manga.model.Manga
 import ephyra.feature.upcoming.components.UpcomingItem
@@ -33,6 +32,7 @@ import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.components.relativeDateText
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.util.isTabletUi
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
@@ -45,6 +45,7 @@ fun UpcomingScreenContent(
     state: UpcomingScreenModel.State,
     setSelectedYearMonth: (YearMonth) -> Unit,
     onClickUpcoming: (manga: Manga) -> Unit,
+    navController: NavController = LocalNavController.current,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -57,7 +58,7 @@ fun UpcomingScreenContent(
         }
     }
     Scaffold(
-        topBar = { UpcomingToolbar() },
+        topBar = { UpcomingToolbar(navController) },
         modifier = modifier,
     ) { paddingValues ->
         if (isTabletUi()) {
@@ -87,13 +88,12 @@ fun UpcomingScreenContent(
 }
 
 @Composable
-private fun UpcomingToolbar() {
-    val navigator = LocalNavigator.currentOrThrow
+private fun UpcomingToolbar(navController: NavController) {
     val uriHandler = LocalUriHandler.current
 
     AppBar(
         title = stringResource(ephyra.app.core.common.R.string.label_upcoming),
-        navigateUp = navigator::pop,
+        navigateUp = { navController.popBackStack() },
         actions = {
             IconButton(onClick = { uriHandler.openUri(Constants.URL_HELP_UPCOMING) }) {
                 Icon(

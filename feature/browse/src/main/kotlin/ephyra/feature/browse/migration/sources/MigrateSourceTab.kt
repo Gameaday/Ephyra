@@ -5,22 +5,21 @@ import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
-import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import ephyra.feature.browse.migration.manga.MigrateMangaScreen
 import ephyra.feature.browse.presentation.MigrateSourceScreen
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.TabContent
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import kotlinx.collections.immutable.persistentListOf
 
 @Composable
-fun Screen.migrateSourceTab(): TabContent {
+fun migrateSourceTab(navController: NavController = LocalNavController.current): TabContent {
     val uriHandler = LocalUriHandler.current
-    val navigator = LocalNavigator.currentOrThrow
     val screenModel = hiltViewModel<MigrateSourceScreenModel>()
     val state by screenModel.state.collectAsStateWithLifecycle()
 
@@ -40,7 +39,7 @@ fun Screen.migrateSourceTab(): TabContent {
                 state = state,
                 contentPadding = contentPadding,
                 onClickItem = { source ->
-                    navigator.push(MigrateMangaScreen(source.id))
+                    navController.navigate(ScreenRoutes.MigrateManga.createRoute(source.id))
                 },
                 onToggleSortingDirection = { screenModel.onEvent(MigrateSourceScreenEvent.ToggleSortingDirection) },
                 onToggleSortingMode = { screenModel.onEvent(MigrateSourceScreenEvent.ToggleSortingMode) },

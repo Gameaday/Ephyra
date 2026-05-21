@@ -31,7 +31,7 @@ object SettingsSecurityScreen : SearchableSettings {
         val screenModel = hiltViewModel<SettingsSecurityScreenModel>()
         val securityPreferences = screenModel.securityPreferences
         val privacyPreferences = screenModel.privacyPreferences
-        val appInfo = remember { ephyra.core.common.di.CoreContainer.get<AppInfo>() }
+        val appInfo = screenModel.appInfo
 
         return buildList(2) {
             add(getSecurityGroup(securityPreferences))

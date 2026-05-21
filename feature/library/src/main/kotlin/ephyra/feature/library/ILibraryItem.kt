@@ -17,7 +17,7 @@ interface ILibraryItem {
     // Rich optional metadata for display badges
     val canonicalId: String?
     val coverLastModified: Long
-    val sourceStatus: Long
+    val sourceStatus: Int
 
     fun matches(constraint: String): Boolean
 }

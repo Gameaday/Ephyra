@@ -61,8 +61,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
 import coil3.compose.AsyncImage
 import ephyra.domain.manga.interactor.FindContentSource
 import ephyra.domain.manga.model.ContentType
@@ -78,9 +76,11 @@ import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.theme.MotionTokens
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
+import androidx.navigation.NavController
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
-import cafe.adriel.voyager.core.screen.Screen as VoyagerScreen
 
 /**
  * Creates the Search sub-tab inside the top-level Discover tab.
@@ -92,8 +92,7 @@ import cafe.adriel.voyager.core.screen.Screen as VoyagerScreen
  * alongside the search.
  */
 @Composable
-fun VoyagerScreen.discoverTab(): TabContent {
-    val navigator = LocalNavigator.currentOrThrow
+fun discoverTab(navController: NavController = LocalNavController.current): TabContent {
     val screenModel = hiltViewModel<AuthoritySearchScreenModel>()
     val state by screenModel.state.collectAsStateWithLifecycle()
 
@@ -139,8 +138,8 @@ fun VoyagerScreen.discoverTab(): TabContent {
                     isSearching = sourcePrompt.isSearching,
                     onSelectSource = { match ->
                         screenModel.onEvent(AuthoritySearchScreenEvent.DismissSourcePrompt)
-                        navigator.push(
-                            ephyra.feature.browse.source.browse.BrowseSourceScreen(
+                        navController.navigate(
+                            ScreenRoutes.BrowseSource.createRoute(
                                 match.sourceId,
                                 match.manga.title,
                             ),
@@ -148,7 +147,7 @@ fun VoyagerScreen.discoverTab(): TabContent {
                     },
                     onManualSearch = {
                         screenModel.onEvent(AuthoritySearchScreenEvent.DismissSourcePrompt)
-                        navigator.push(GlobalSearchScreen(sourcePrompt.title))
+                        navController.navigate(ScreenRoutes.GlobalSearch.createRoute(sourcePrompt.title))
                     },
                     onDismiss = { screenModel.onEvent(AuthoritySearchScreenEvent.DismissSourcePrompt) },
                 )

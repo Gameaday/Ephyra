@@ -7,7 +7,6 @@ shizuku_version = "13.1.5"
 sqldelight = "2.3.2"
 sqlite = "2.6.2"
 datastore = "1.2.1"
-voyager = "1.1.0-beta03"
 spotless = "8.4.0"
 navigation = "2.8.8"
 ktlint-core = "1.8.0"
@@ -15,11 +14,6 @@ firebase-bom = "34.13.0"
 markdown = "0.40.2"
 junit = "6.0.3"
 materialKolor = "5.0.0-alpha07"
-
-# Koin 4.2.0 Ecosystem (Native Plugin path)
-koin = "4.2.1"
-koin_annotations = "4.2.1"
-koin_compiler_plugin = "0.6.2"
 
 # Compiler Tools
 hilt = "2.54"
@@ -46,17 +40,6 @@ sqlite-android = "com.github.requery:sqlite-android:3.49.0"
 
 preferencektx = "androidx.preference:preference-ktx:1.2.1"
 datastore = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
-
-injekt = "com.github.ephyraapp:injekt:91edab2317"
-
-# Koin Libraries
-koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
-koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
-koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koin" }
-koin-annotations = { module = "io.insert-koin:koin-annotations", version.ref = "koin_annotations" }
-koin-androidx-workmanager = { module = "io.insert-koin:koin-androidx-workmanager", version.ref = "koin" }
-koin-test = { module = "io.insert-koin:koin-test", version.ref = "koin" }
-koin-test-junit5 = { module = "io.insert-koin:koin-test-junit5", version.ref = "koin" }
 
 # Coil
 coil-bom = { module = "io.coil-kt.coil3:coil-bom", version = "3.4.0" }
@@ -105,11 +88,6 @@ junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher
 kotest-assertions = "io.kotest:kotest-assertions-core:6.1.11"
 mockk = "io.mockk:mockk:1.14.9"
 
-voyager-navigator = { module = "cafe.adriel.voyager:voyager-navigator", version.ref = "voyager" }
-voyager-screenmodel = { module = "cafe.adriel.voyager:voyager-screenmodel", version.ref = "voyager" }
-voyager-tab-navigator = { module = "cafe.adriel.voyager:voyager-tab-navigator", version.ref = "voyager" }
-voyager-transitions = { module = "cafe.adriel.voyager:voyager-transitions", version.ref = "voyager" }
-
 spotless-gradle = { group = "com.diffplug.spotless", name = "spotless-plugin-gradle", version.ref = "spotless" }
 ktlint-core = { module = "com.pinterest.ktlint:ktlint-cli", version.ref = "ktlint-core" }
 
@@ -136,8 +114,6 @@ firebase-crashlytics = { id = "com.google.firebase.crashlytics", version = "3.0.
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 
-# THE KEY: Modern Koin Native Compiler Plugin
-koin-compiler = { id = "io.insert-koin.compiler.plugin", version.ref = "koin_compiler_plugin" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 
 [bundles]
@@ -146,7 +122,6 @@ sqlite = ["sqlite-framework", "sqlite-ktx", "sqlite-android"]
 coil = ["coil-core", "coil-gif", "coil-compose", "coil-network-okhttp"]
 shizuku = ["shizuku-api", "shizuku-provider"]
 sqldelight = ["sqldelight-android-driver", "sqldelight-coroutines", "sqldelight-android-paging"]
-voyager = ["voyager-navigator", "voyager-screenmodel", "voyager-tab-navigator", "voyager-transitions"]
 room = ["room-runtime", "room-ktx", "room-paging"]
 paging = ["paging-runtime", "paging-compose", "paging-common"]
 js-engine = ["quickjs-android"]

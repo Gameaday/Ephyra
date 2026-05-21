@@ -27,8 +27,6 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.domain.backup.model.RestoreOptions
 import ephyra.domain.backup.service.BackupFileValidator
@@ -41,75 +39,74 @@ import ephyra.presentation.core.components.WarningBanner
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
-import ephyra.presentation.core.util.Screen
 import kotlinx.coroutines.flow.update
 import androidx.compose.runtime.LaunchedEffect
 
-class RestoreBackupScreen(
-    private val uri: String,
-) : Screen() {
+import androidx.navigation.NavController
+import ephyra.presentation.core.ui.navigation.LocalNavController
 
-    @Composable
-    override fun Content() {
-        val context = LocalContext.current
-        val navigator = LocalNavigator.currentOrThrow
-        val model = hiltViewModel<RestoreBackupViewModel>()
-        val state by model.state.collectAsStateWithLifecycle()
+@Composable
+fun RestoreBackupScreen(
+    uri: String,
+    navController: NavController = LocalNavController.current,
+) {
+    val model = hiltViewModel<RestoreBackupViewModel>()
+    val state by model.state.collectAsStateWithLifecycle()
 
-        LaunchedEffect(uri) {
-            model.initialize(uri)
-        }
+    LaunchedEffect(uri) {
+        model.initialize(uri)
+    }
 
-        Scaffold(
-            topBar = {
-                AppBar(
-                    title = stringResource(ephyra.app.core.common.R.string.pref_restore_backup),
-                    navigateUp = navigator::pop,
-                    scrollBehavior = it,
-                )
+    Scaffold(
+        topBar = {
+            AppBar(
+                title = stringResource(ephyra.app.core.common.R.string.pref_restore_backup),
+                navigateUp = { navController.popBackStack() },
+                scrollBehavior = it,
+            )
+        },
+    ) { contentPadding ->
+        LazyColumnWithAction(
+            contentPadding = contentPadding,
+            actionLabel = stringResource(ephyra.app.core.common.R.string.action_restore),
+            actionEnabled = state.canRestore && state.options.canRestore(),
+            onClickAction = {
+                model.startRestore()
+                navController.popBackStack()
             },
-        ) { contentPadding ->
-            LazyColumnWithAction(
-                contentPadding = contentPadding,
-                actionLabel = stringResource(ephyra.app.core.common.R.string.action_restore),
-                actionEnabled = state.canRestore && state.options.canRestore(),
-                onClickAction = {
-                    model.startRestore()
-                    navigator.pop()
-                },
-            ) {
-                if (DeviceUtil.isMiui && DeviceUtil.isMiuiOptimizationDisabled()) {
-                    item {
-                        WarningBanner(stringResource(ephyra.app.core.common.R.string.restore_miui_warning))
-                    }
+        ) {
+            if (DeviceUtil.isMiui && DeviceUtil.isMiuiOptimizationDisabled()) {
+                item {
+                    WarningBanner(stringResource(ephyra.app.core.common.R.string.restore_miui_warning))
                 }
+            }
 
-                if (state.canRestore) {
-                    item {
-                        SectionCard {
-                            RestoreOptions.options.forEach { option ->
-                                LabeledCheckbox(
-                                    label = stringResource(option.label),
-                                    checked = option.getter(state.options),
-                                    onCheckedChange = {
-                                        model.toggle(option.setter, it)
-                                    },
-                                )
-                            }
+            if (state.canRestore) {
+                item {
+                    SectionCard {
+                        RestoreOptions.options.forEach { option ->
+                            LabeledCheckbox(
+                                label = stringResource(option.label),
+                                checked = option.getter(state.options),
+                                onCheckedChange = {
+                                    model.toggle(option.setter, it)
+                                },
+                            )
                         }
                     }
                 }
+            }
 
-                if (state.error != null) {
-                    errorMessageItem(state.error)
-                }
+            if (state.error != null) {
+                errorMessageItem(state.error)
             }
         }
     }
+}
 
-    private fun LazyListScope.errorMessageItem(
-        error: Any?,
-    ) {
+private fun LazyListScope.errorMessageItem(
+    error: Any?,
+) {
         item {
             SectionCard {
                 Column(

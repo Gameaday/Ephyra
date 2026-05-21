@@ -17,8 +17,6 @@ dependencies {
     implementation(projects.presentationCore)
     implementation(projects.feature.category)
 
-    implementation(libs.bundles.voyager)
-
     // External dependencies
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

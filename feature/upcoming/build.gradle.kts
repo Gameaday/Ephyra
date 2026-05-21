@@ -26,7 +26,6 @@ dependencies {
     // Third-party libraries
     implementation(libs.logcat)
     implementation(libs.compose.grid)
-    api(libs.bundles.voyager)
 
     // Dependency Injection (Hilt & Koin)
     api(libs.koin.core)

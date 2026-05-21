@@ -28,6 +28,10 @@ import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.size.Precision
 import coil3.size.Scale
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
 import ephyra.core.common.core.security.SecurityPreferences
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.dpToPx
@@ -45,11 +49,21 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.map
 import java.time.Instant
 import java.time.ZonedDateTime
+
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface WidgetEntryPoint {
+    fun getUpdates(): GetUpdates
+    fun securityPreferences(): SecurityPreferences
+}
+
 abstract class BaseUpdatesGridGlanceWidget : GlanceAppWidget() {
 
     private val widgetContext: Application = ephyra.core.common.di.CoreContainer.applicationContext as Application
-    private val getUpdates: GetUpdates = ephyra.core.common.di.CoreContainer.get()
-    private val preferences: SecurityPreferences = ephyra.core.common.di.CoreContainer.get()
+    private val entryPoint = EntryPointAccessors.fromApplication(widgetContext, WidgetEntryPoint::class.java)
+
+    private val getUpdates: GetUpdates = entryPoint.getUpdates()
+    private val preferences: SecurityPreferences = entryPoint.securityPreferences()
 
     override val sizeMode = SizeMode.Exact
 

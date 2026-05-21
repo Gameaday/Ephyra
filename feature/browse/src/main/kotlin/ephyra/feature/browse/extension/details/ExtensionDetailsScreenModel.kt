@@ -2,8 +2,13 @@ package ephyra.feature.browse.extension.details
 
 import android.content.Context
 import androidx.compose.runtime.Immutable
-import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import ephyra.core.common.util.system.LocaleHelper
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.extension.interactor.ExtensionSourceItem
@@ -20,6 +25,9 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -29,22 +37,32 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import okhttp3.HttpUrl.Companion.toHttpUrl
-class ExtensionDetailsScreenModel(
-    pkgName: String,
-    private val context: Context,
+
+@HiltViewModel(assistedFactory = ExtensionDetailsScreenModel.Factory::class)
+class ExtensionDetailsScreenModel @AssistedInject constructor(
+    @Assisted private val pkgName: String,
+    @ApplicationContext private val context: Context,
     private val network: NetworkHelper,
     private val extensionManager: ExtensionManager,
     private val getExtensionSources: GetExtensionSources,
     private val toggleSource: ToggleSource,
     private val toggleIncognito: ToggleIncognito,
     private val preferences: SourcePreferences,
-) : StateScreenModel<ExtensionDetailsScreenModel.State>(State()) {
+) : ViewModel() {
+
+    private val _state = MutableStateFlow(State())
+    val state: StateFlow<State> = _state.asStateFlow()
 
     private val _events: Channel<ExtensionDetailsEvent> = Channel()
     val events: Flow<ExtensionDetailsEvent> = _events.receiveAsFlow()
 
+    @AssistedFactory
+    interface Factory {
+        fun create(pkgName: String): ExtensionDetailsScreenModel
+    }
+
     init {
-        screenModelScope.launch {
+        viewModelScope.launch {
             launch {
                 extensionManager.installedExtensionsFlow
                     .map { it.firstOrNull { extension -> extension.pkgName == pkgName } }
@@ -53,7 +71,7 @@ class ExtensionDetailsScreenModel(
                             _events.send(ExtensionDetailsEvent.Uninstalled)
                             return@collectLatest
                         }
-                        mutableState.update { state ->
+                        _state.update { state ->
                             state.copy(extension = extension)
                         }
                     }
@@ -75,10 +93,10 @@ class ExtensionDetailsScreenModel(
                         }
                         .catch { throwable ->
                             logcat(LogPriority.ERROR, throwable)
-                            mutableState.update { it.copy(_sources = persistentListOf()) }
+                            _state.update { it.copy(_sources = persistentListOf()) }
                         }
                         .collectLatest { sources ->
-                            mutableState.update { it.copy(_sources = sources.toImmutableList()) }
+                            _state.update { it.copy(_sources = sources.toImmutableList()) }
                         }
                 }
             }
@@ -88,7 +106,7 @@ class ExtensionDetailsScreenModel(
                     .map { pkgName in it }
                     .distinctUntilChanged()
                     .collectLatest { isIncognito ->
-                        mutableState.update { it.copy(isIncognito = isIncognito) }
+                        _state.update { it.copy(isIncognito = isIncognito) }
                     }
             }
         }
@@ -130,21 +148,21 @@ class ExtensionDetailsScreenModel(
     }
 
     private fun toggleSource(sourceId: Long) {
-        screenModelScope.launch {
+        viewModelScope.launch {
             toggleSource.await(sourceId)
         }
     }
 
     private fun toggleSources(enable: Boolean) {
         val sourceIds = state.value.extension?.sources?.map { it.id } ?: return
-        screenModelScope.launch {
+        viewModelScope.launch {
             toggleSource.await(sourceIds, enable)
         }
     }
 
     private fun toggleIncognito(enable: Boolean) {
         val packageName = state.value.extension?.pkgName ?: return
-        screenModelScope.launch {
+        viewModelScope.launch {
             toggleIncognito.await(packageName, enable)
         }
     }

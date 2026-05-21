@@ -101,19 +101,6 @@ class NavigatorExtensionsTest {
         assertNotNull(method) { "ephyra.presentation.core.util.Tab must declare onReselect" }
     }
 
-    /**
-     * [Tab.onReselect] takes a single [cafe.adriel.voyager.navigator.Navigator] parameter.
-     */
-    @Test
-    fun `Tab onReselect accepts a Navigator parameter`() {
-        val method = Tab::class.java.methods.firstOrNull { it.name == "onReselect" }
-        assertNotNull(method) { "Tab must declare onReselect" }
-        // Kotlin suspend functions receive a Continuation as the last parameter at the JVM level
-        assertTrue(method!!.parameterCount >= 1) {
-            "onReselect must accept at least a Navigator parameter (plus Kotlin continuation)"
-        }
-    }
-
     // ── AssistContentScreen interface ─────────────────────────────────────────
 
     /**
@@ -179,20 +166,6 @@ class NavigatorExtensionsTest {
         // If LocalBackPress does not exist this reference will not compile.
         val local = LocalBackPress
         assertNotNull(local) { "LocalBackPress composition local must be declared" }
-    }
-
-    // ── Tab interface extends Voyager Tab ─────────────────────────────────────
-
-    /**
-     * [Tab] must extend [cafe.adriel.voyager.navigator.tab.Tab] so that Voyager's
-     * tab navigation machinery accepts Ephyra screen-model tabs.
-     */
-    @Test
-    fun `ephyra Tab interface extends Voyager Tab interface`() {
-        val voyagerTabInterface = cafe.adriel.voyager.navigator.tab.Tab::class.java
-        assertTrue(voyagerTabInterface.isAssignableFrom(Tab::class.java)) {
-            "ephyra.presentation.core.util.Tab must extend cafe.adriel.voyager.navigator.tab.Tab"
-        }
     }
 
     // ── Default Tab onReselect is a no-op ────────────────────────────────────

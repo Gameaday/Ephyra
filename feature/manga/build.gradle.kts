@@ -20,10 +20,9 @@ dependencies {
     implementation(projects.feature.webview)
     implementation(projects.feature.category)
     implementation(projects.feature.settings)
-    implementation(projects.feature.migration)
+    api(projects.feature.migration)
 
     implementation(libs.logcat)
-    implementation(libs.bundles.voyager)
     implementation(libs.navigation.compose)
     implementation(libs.hilt.navigation.compose)
     implementation(libs.bundles.markdown)

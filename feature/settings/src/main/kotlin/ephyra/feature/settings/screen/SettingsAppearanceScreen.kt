@@ -9,17 +9,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
+import androidx.navigation.NavController
 import ephyra.domain.ui.UiPreferences
 import ephyra.domain.ui.model.TabletUiMode
 import ephyra.domain.ui.model.ThemeMode
 import ephyra.domain.ui.model.setAppCompatDelegateThemeMode
 import ephyra.feature.settings.Preference
-import ephyra.feature.settings.screen.appearance.AppLanguageScreen
 import ephyra.feature.settings.widget.AppThemeModePreferenceWidget
 import ephyra.feature.settings.widget.AppThemePreferenceWidget
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.core.util.system.toast
 import kotlinx.collections.immutable.persistentListOf
@@ -36,10 +36,11 @@ object SettingsAppearanceScreen : SearchableSettings {
     override fun getPreferences(): List<Preference> {
         val screenModel = hiltViewModel<SettingsAppearanceScreenModel>()
         val uiPreferences = screenModel.uiPreferences
+        val navController = LocalNavController.current
 
         return listOf(
             getThemeGroup(uiPreferences = uiPreferences),
-            getDisplayGroup(uiPreferences = uiPreferences),
+            getDisplayGroup(uiPreferences = uiPreferences, navController = navController),
         )
     }
 
@@ -96,9 +97,9 @@ object SettingsAppearanceScreen : SearchableSettings {
     @Composable
     private fun getDisplayGroup(
         uiPreferences: UiPreferences,
+        navController: NavController,
     ): Preference.PreferenceGroup {
         val context = LocalContext.current
-        val navigator = LocalNavigator.currentOrThrow
 
         val now = remember { LocalDate.now() }
 
@@ -112,7 +113,7 @@ object SettingsAppearanceScreen : SearchableSettings {
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.TextPreference(
                     title = stringResource(ephyra.app.core.common.R.string.pref_app_language),
-                    onClick = { navigator.push(AppLanguageScreen()) },
+                    onClick = { navController.navigate(ScreenRoutes.AppLanguage.route) },
                 ),
                 Preference.PreferenceItem.ListPreference(
                     preference = uiPreferences.tabletUiMode(),

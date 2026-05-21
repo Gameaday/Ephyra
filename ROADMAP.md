@@ -11,7 +11,7 @@ This document serves as the authoritative guide for our target architectural sta
 We prioritize native, mature Android solutions to drastically reduce maintenance overhead and maximize development speed.
 
 ### 1. 100% Android Exclusive
-- **No Kotlin Multiplatform (KMP)**: All modules are standard Android modules (`com.android.application` or `com.android.library`). 
+- **No Kotlin Multiplatform (KMP)**: All modules are standard Android modules (`com.android.application` or `com.android.library`).
 - **Simplified Source Sets**: We do not use `commonMain` or `androidMain`. All code resides in standard `src/main/` directories.
 
 ### 2. 100% Compile-Time Determinism
@@ -56,13 +56,32 @@ We are currently executing a phased transition to reach the target state describ
 - Migrate all `commonMain/moko-resources` XML definitions directly to standard Android `src/main/res/values/strings.xml` structures.
 - Systematically replace all class types (`StringResource`, `PluralsResource`) and imports with native Android resource `Int` IDs (`@StringRes`, `@PluralsRes`).
 
-### Phase 4: Navigation & State Modernization [IN PROGRESS]
-- Replace Voyager `Screen` objects with Jetpack Navigation Compose graphs.
-- Convert `ScreenModel` implementations to `ViewModel` with `@HiltViewModel`.
+### Phase 4: Navigation & State Modernization [COMPLETE]
+- [x] Integrate Jetpack Navigation `NavHost` in `MainActivity`.
+- [x] Decommission Voyager `TabNavigator` in `HomeScreen`:
+    - [x] Map `LibraryTab`, `UpdatesTab`, `HistoryTab`, `BrowseTab`, `MoreTab` to Jetpack Navigation routes.
+    - [x] Implement a Hilt-aware `BottomNavigationBar` that interacts with `NavController`.
+- [x] Migrate `Screen` objects to Composable functions:
+    - [x] `LibraryTab` -> `LibraryScreen` (Composable)
+    - [x] `UpdatesTab` -> `UpdatesScreen` (Composable)
+    - [x] `HistoryTab` -> `HistoryScreen` (Composable)
+    - [x] `BrowseTab` -> `BrowseScreen` (Composable)
+    - [x] `MoreTab` -> `MoreScreen` (Composable)
+- [x] Complete `ScreenModel` to `ViewModel` conversion:
+    - [x] Remove `cafe.adriel.voyager.core.model.StateScreenModel` from all classes.
+    - [x] Replace `screenModelScope` with `viewModelScope`.
+    - [x] Standardize on `StateFlow<ViewState>` and `onEvent(Intent)` pattern.
+    - [x] Key targets: `DeepLinkScreenModel`, `MigrationListScreenModel`, `CoverSearchScreenModel`.
 
-### Phase 5: Database & Persistence [UPCOMING]
-- Standardize on Room (SQLite) for structured relational data.
-- Standardize on DataStore (Preferences) for key-value configuration.
+### Phase 5: Database & Persistence [IN PROGRESS]
+- [x] Initialize Room (`EphyraDatabase.kt`).
+- [ ] Progressively migrate SQLDelight `.sq` definitions to Room:
+    - [ ] `mangas.sq` -> `MangaEntity` & `MangaDao`.
+    - [ ] `chapters.sq` -> `ChapterEntity` & `ChapterDao`.
+    - [ ] `history.sq` -> `HistoryEntity` & `HistoryDao`.
+    - [ ] `categories.sq` -> `CategoryEntity` & `CategoryDao`.
+- [ ] Replace `SQLDelight` drivers with Room in all Repositories.
+- [ ] Standardize on DataStore (Preferences) for all key-value configuration, removing legacy `SharedPreferences` wrappers where they remain.
 
 ### Phase 6: UI & Feature Parity
 - **Settings**: Implement `PreferenceFragmentCompat` styled with Material 3.
@@ -70,11 +89,11 @@ We are currently executing a phased transition to reach the target state describ
 - **Reader**: Implement "Two-Handed" reading gesture (swipe bottom for next page).
 
 ### Phase 7: Remote Content Retrieval & Management
-- Add Remote Content Source Manager 
-- Add Remote Tracking Service Manager 
+- Add Remote Content Source Manager
+- Add Remote Tracking Service Manager
 - Add Remote Content Scanner
 - Add Remote Content Search
-- Add Local Content Manager 
+- Add Local Content Manager
 - Add Local Content Scanner
 - Add Local Content Search
 - Add Merge Content
@@ -91,16 +110,14 @@ We are currently executing a phased transition to reach the target state describ
 - Enforce `sealed class Result` wrappers to handle remote/local data operations explicitly.
 
 ### Phase 9: Advanced Features & Polish
-- Add Migration tools (Tachiyomi and Mihon)
-- Improve performance and memory usage
-- Improve battery efficiency
-- Add support for more content types
-- Add support for more tracking services
-- Add support for more content sources
-- Add support for more content formats
-- Add support for more content encodings
-- Add support for more content protocols
-- Add support for more content providers
+- [ ] Add Migration tools (Tachiyomi and Mihon).
+- [ ] Implement **AniList Reading List Import** (parity with MAL import).
+- [ ] Implement **Two-way Tracker Sync**: push library additions back to AniList/MAL.
+- [ ] Implement **Collections**: custom, smart, and auto-generated groups (beyond categories).
+- [ ] Implement **Personal Notes Sharing**: export manga cards with user-written notes.
+- [ ] Improve performance and memory usage.
+- [ ] Improve battery efficiency.
+- [ ] Add support for more content types and tracking services.
 
 ### Phase 10: Improve app polish
 - improve ui and user experience
@@ -112,36 +129,24 @@ We are currently executing a phased transition to reach the target state describ
 - improve app accessibility
 - improve app test coverage
 
-### Phase 11: Refine app architecture and organization
-- improve app architecture
-- improve app organization and heirachy
-- ensure 100% compile time determinism
-- ensure 100% jetpack native 
-
-#### Long Term Goals
-- release app to play store
-- maintain app
-- include other platform ports
-- include media manager and organizer
-- improve cross-platform features and parity
-- improve android native integrations
-- add desktop mode support
-- add tablet mode support
-- add chromeos support
-- add Wear OS support
-- add Android TV support
-- improve support for other platforms
-- improve support for other content types
-- improve support for other tracking services
-- improve support for other content sources
-- improve support for other content formats
-- improve support for other content encodings
-- improve support for other content protocols
-- improve support for other content providers
-
+### Phase 11: Refine app architecture and organization [IN PROGRESS]
+- [ ] Deprecate and remove `CoreContainer` compat-shim once all consumers are Hilt-native.
+- [x] Remove Voyager, Koin, and Injekt from `libs.versions.toml` and build scripts.
+- [ ] Remove SQLDelight from the build system once Room migration is 100% complete.
+- [x] Ensure 100% compile time determinism via Hilt.
+- [x] Ensure 100% Jetpack Navigation & Compose coverage.
 
 ### Phase 12: Release
-- release app to play store
+- Release app to Play Store.
+
+---
+
+## 📋 Immediate TODO List (High Priority)
+
+1. **Finish Navigation Bridge**: Move `HomeScreen` tabs into the main `NavHost`.
+2. **State Holder Purge**: Refactor `DeepLinkScreenModel` and `MigrationListScreenModel` to remove Voyager imports.
+3. **Manga Entity Migration**: Create the Room equivalent for `mangas.sq` to begin the persistence transition.
+4. **Cleanup libs**: Scan for unused Koin modules and delete them.
 
 
 

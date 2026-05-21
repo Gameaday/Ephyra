@@ -1,6 +1,5 @@
 package ephyra.feature.settings.screen.about
 
-import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -14,23 +13,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
-import ephyra.core.common.util.lang.launchUI
-import ephyra.core.common.util.lang.toDateTimestampString
+import androidx.navigation.NavController
 import ephyra.core.common.util.system.logcat
-import ephyra.domain.extension.service.ExtensionManager
-import ephyra.domain.release.interactor.GetApplicationRelease
-import ephyra.domain.ui.UiPreferences
 import ephyra.feature.settings.widget.TextPreferenceWidget
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.LinkIcon
@@ -41,163 +30,127 @@ import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.icons.CustomIcons
 import ephyra.presentation.core.icons.Discord
 import ephyra.presentation.core.icons.Github
-import ephyra.presentation.core.ui.AppInfo
-import ephyra.presentation.core.ui.NewUpdateScreenFactory
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.CrashLogUtil
-import ephyra.presentation.core.util.LocalBackPress
-import ephyra.presentation.core.util.Screen
 import ephyra.presentation.core.util.system.copyToClipboard
 import ephyra.presentation.core.util.system.toast
 import kotlinx.coroutines.flow.collectLatest
 import logcat.LogPriority
 
-object AboutScreen : Screen() {
+@Composable
+fun AboutScreen(
+    navController: NavController = LocalNavController.current,
+) {
+    val screenModel = hiltViewModel<AboutScreenModel>()
+    val state by screenModel.state.collectAsState()
 
-    @Composable
-    override fun Content() {
-        val screenModel = hiltViewModel<AboutScreenModel>()
-        val state by screenModel.state.collectAsState()
-        val appInfo = remember { ephyra.core.common.di.CoreContainer.get<AppInfo>() }
-        val newUpdateScreenFactory = remember { ephyra.core.common.di.CoreContainer.get<NewUpdateScreenFactory>() }
-        val extensionManager = remember { ephyra.core.common.di.CoreContainer.get<ExtensionManager>() }
+    val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
 
-        val context = LocalContext.current
-        val uriHandler = LocalUriHandler.current
-        val handleBack = LocalBackPress.current
-        val navigator = LocalNavigator.currentOrThrow
-
-        LaunchedEffect(Unit) {
-            screenModel.events.collectLatest { event ->
-                when (event) {
-                    is AboutEvent.NewUpdate -> {
-                        val updateScreen = newUpdateScreenFactory.create(
-                            versionName = event.result.release.version,
-                            changelogInfo = event.result.release.info,
-                            releaseLink = event.result.release.releaseLink,
-                            downloadLink = event.result.release.downloadLink,
-                        )
-                        navigator.push(updateScreen)
-                    }
-
-                    is AboutEvent.UpdateError -> {
-                        context.toast(event.error.message)
-                        logcat(LogPriority.ERROR, event.error)
-                    }
-                }
-            }
-        }
-
-        Scaffold(
-            topBar = { scrollBehavior ->
-                AppBar(
-                    title = stringResource(ephyra.app.core.common.R.string.pref_category_about),
-                    navigateUp = if (handleBack != null) handleBack::invoke else null,
-                    scrollBehavior = scrollBehavior,
-                )
-            },
-        ) { contentPadding ->
-            ScrollbarLazyColumn(
-                contentPadding = contentPadding,
-            ) {
-                item {
-                    LogoHeader()
+    LaunchedEffect(Unit) {
+        screenModel.events.collectLatest { event ->
+            when (event) {
+                is AboutEvent.NewUpdate -> {
+                    // TODO: handle new update navigation
                 }
 
-                item {
-                    TextPreferenceWidget(
-                        title = stringResource(ephyra.app.core.common.R.string.version),
-                        subtitle = screenModel.getVersionName(withBuildDate = true),
-                        onPreferenceClick = {
-                            val deviceInfo = CrashLogUtil(context, extensionManager).getDebugInfo()
-                            context.copyToClipboard("Debug information", deviceInfo)
-                        },
-                    )
-                }
-
-                if (appInfo.updaterEnabled) {
-                    item {
-                        TextPreferenceWidget(
-                            title = stringResource(ephyra.app.core.common.R.string.check_for_updates),
-                            widget = {
-                                AnimatedVisibility(visible = state.isCheckingUpdates) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(28.dp),
-                                        strokeWidth = 3.dp,
-                                    )
-                                }
-                            },
-                            onPreferenceClick = { screenModel.checkVersion() },
-                        )
-                    }
-                }
-
-                if (!appInfo.isDebug) {
-                    item {
-                        TextPreferenceWidget(
-                            title = stringResource(ephyra.app.core.common.R.string.whats_new),
-                            onPreferenceClick = { uriHandler.openUri(appInfo.releaseUrl) },
-                        )
-                    }
-                }
-
-                item {
-                    TextPreferenceWidget(
-                        title = stringResource(ephyra.app.core.common.R.string.licenses),
-                        onPreferenceClick = { navigator.push(OpenSourceLicensesScreen()) },
-                    )
-                }
-
-                item {
-                    TextPreferenceWidget(
-                        title = stringResource(ephyra.app.core.common.R.string.privacy_policy),
-                        onPreferenceClick = {
-                            uriHandler.openUri("https://github.com/Gameaday/Ephyra/blob/main/PRIVACY.md")
-                        },
-                    )
-                }
-
-                item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.Center,
-                    ) {
-                        LinkIcon(
-                            label = stringResource(ephyra.app.core.common.R.string.website),
-                            icon = Icons.Outlined.Public,
-                            url = "https://github.com/Gameaday/Ephyra",
-                        )
-                        LinkIcon(
-                            label = "GitHub",
-                            icon = CustomIcons.Github,
-                            url = "https://github.com/Gameaday/Ephyra",
-                        )
-                    }
+                is AboutEvent.UpdateError -> {
+                    context.toast(event.error.message)
+                    logcat(LogPriority.ERROR, event.error)
                 }
             }
         }
     }
 
-    @Composable
-    fun getVersionName(withBuildDate: Boolean): String {
-        val screenModel = hiltViewModel<AboutScreenModel>()
-        return screenModel.getVersionName(withBuildDate)
-    }
-
-    @Composable
-    fun getFormattedBuildTime(): String {
-        val appInfo = remember { ephyra.core.common.di.CoreContainer.get<AppInfo>() }
-        val uiPreferences = remember { ephyra.core.common.di.CoreContainer.get<UiPreferences>() }
-        return try {
-            val fmt = uiPreferences.dateFormat().getSync()
-            val dt = java.time.LocalDateTime.ofInstant(
-                java.time.Instant.parse(appInfo.buildTime),
-                java.time.ZoneId.systemDefault(),
+    Scaffold(
+        topBar = { scrollBehavior ->
+            AppBar(
+                title = stringResource(ephyra.app.core.common.R.string.pref_category_about),
+                navigateUp = { navController.popBackStack() },
+                scrollBehavior = scrollBehavior,
             )
-            dt.toDateTimestampString(UiPreferences.dateFormat(fmt))
-        } catch (e: Exception) {
-            appInfo.buildTime
+        },
+    ) { contentPadding ->
+        ScrollbarLazyColumn(
+            contentPadding = contentPadding,
+        ) {
+            item {
+                LogoHeader()
+            }
+
+            item {
+                TextPreferenceWidget(
+                    title = stringResource(ephyra.app.core.common.R.string.version),
+                    subtitle = screenModel.getVersionName(withBuildDate = true),
+                    onPreferenceClick = {
+                        val deviceInfo = CrashLogUtil(context, screenModel.extensionManager).getDebugInfo()
+                        context.copyToClipboard("Debug information", deviceInfo)
+                    },
+                )
+            }
+
+            if (screenModel.appInfo.updaterEnabled) {
+                item {
+                    TextPreferenceWidget(
+                        title = stringResource(ephyra.app.core.common.R.string.check_for_updates),
+                        widget = {
+                            AnimatedVisibility(visible = state.isCheckingUpdates) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(28.dp),
+                                    strokeWidth = 3.dp,
+                                )
+                            }
+                        },
+                        onPreferenceClick = { screenModel.checkVersion() },
+                    )
+                }
+            }
+
+            if (!screenModel.appInfo.isDebug) {
+                item {
+                    TextPreferenceWidget(
+                        title = stringResource(ephyra.app.core.common.R.string.whats_new),
+                        onPreferenceClick = { uriHandler.openUri(screenModel.appInfo.releaseUrl) },
+                    )
+                }
+            }
+
+            item {
+                TextPreferenceWidget(
+                    title = stringResource(ephyra.app.core.common.R.string.licenses),
+                    onPreferenceClick = { navController.navigate(ScreenRoutes.OpenSourceLicenses.route) },
+                )
+            }
+
+            item {
+                TextPreferenceWidget(
+                    title = stringResource(ephyra.app.core.common.R.string.privacy_policy),
+                    onPreferenceClick = {
+                        uriHandler.openUri("https://github.com/Gameaday/Ephyra/blob/main/PRIVACY.md")
+                    },
+                )
+            }
+
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    LinkIcon(
+                        label = stringResource(ephyra.app.core.common.R.string.website),
+                        icon = Icons.Outlined.Public,
+                        url = "https://github.com/Gameaday/Ephyra",
+                    )
+                    LinkIcon(
+                        label = "GitHub",
+                        icon = CustomIcons.Github,
+                        url = "https://github.com/Gameaday/Ephyra",
+                    )
+                }
+            }
         }
     }
 }

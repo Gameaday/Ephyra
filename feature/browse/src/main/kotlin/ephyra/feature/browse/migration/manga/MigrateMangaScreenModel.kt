@@ -10,6 +10,7 @@ import ephyra.core.common.utils.mutate
 import ephyra.domain.manga.interactor.GetFavorites
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.service.SourceManager
+import ephyra.presentation.core.ui.MigrationConfigScreenFactory
 import eu.kanade.tachiyomi.source.Source
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf

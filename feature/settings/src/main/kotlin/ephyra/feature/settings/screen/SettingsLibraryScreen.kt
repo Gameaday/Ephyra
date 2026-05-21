@@ -13,9 +13,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.util.fastMap
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.Navigator
-import cafe.adriel.voyager.navigator.currentOrThrow
+import androidx.navigation.NavController
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.core.common.util.system.ImageFormat
 import ephyra.domain.category.interactor.ResetCategoryFlags
 import ephyra.domain.category.model.Category
@@ -52,15 +52,20 @@ object SettingsLibraryScreen : SearchableSettings {
     override fun getPreferences(): List<Preference> {
         val screenModel = hiltViewModel<SettingsLibraryScreenModel>()
         val allCategories by screenModel.getCategories().collectAsState(emptyList())
+        val navController = LocalNavController.current
 
         return listOf(
             getCategoriesGroup(
-                navigator = LocalNavigator.currentOrThrow,
+                navController = navController,
                 allCategories = allCategories,
                 libraryPreferences = screenModel.libraryPreferences,
                 resetCategoryFlags = screenModel.resetCategoryFlags,
             ),
-            getGlobalUpdateGroup(allCategories, screenModel.libraryPreferences),
+            getGlobalUpdateGroup(
+                allCategories = allCategories,
+                libraryPreferences = screenModel.libraryPreferences,
+                scheduler = screenModel.libraryUpdateScheduler,
+            ),
             getCoverQualityGroup(screenModel.libraryPreferences),
             getBehaviorGroup(screenModel.libraryPreferences),
         )
@@ -68,7 +73,7 @@ object SettingsLibraryScreen : SearchableSettings {
 
     @Composable
     private fun getCategoriesGroup(
-        navigator: Navigator,
+        navController: NavController,
         allCategories: List<Category>,
         libraryPreferences: LibraryPreferences,
         resetCategoryFlags: ResetCategoryFlags,
@@ -92,7 +97,7 @@ object SettingsLibraryScreen : SearchableSettings {
                         count = userCategoriesCount,
                         userCategoriesCount,
                     ),
-                    onClick = { navigator.push(CategoryScreen()) },
+                    onClick = { navController.navigate(ScreenRoutes.Category.route) },
                 ),
                 Preference.PreferenceItem.ListPreference(
                     preference = libraryPreferences.defaultCategory(),
@@ -119,9 +124,9 @@ object SettingsLibraryScreen : SearchableSettings {
     private fun getGlobalUpdateGroup(
         allCategories: List<Category>,
         libraryPreferences: LibraryPreferences,
+        scheduler: LibraryUpdateScheduler,
     ): Preference.PreferenceGroup {
         val context = LocalContext.current
-        val scheduler = remember { ephyra.core.common.di.CoreContainer.get<LibraryUpdateScheduler>() }
 
         val autoUpdateIntervalPref = libraryPreferences.autoUpdateInterval()
         val autoUpdateCategoriesPref = libraryPreferences.updateCategories()

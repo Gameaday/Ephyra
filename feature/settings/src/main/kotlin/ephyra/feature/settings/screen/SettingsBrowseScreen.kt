@@ -8,8 +8,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
+import androidx.navigation.NavController
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.core.common.i18n.stringResource
 import ephyra.domain.source.service.SourcePreferences
 import ephyra.feature.settings.Preference
@@ -29,7 +30,7 @@ object SettingsBrowseScreen : SearchableSettings {
     @Composable
     override fun getPreferences(): List<Preference> {
         val context = LocalContext.current
-        val navigator = LocalNavigator.currentOrThrow
+        val navController = LocalNavController.current
 
         val screenModel = hiltViewModel<SettingsBrowseScreenModel>()
         val reposCount by screenModel.getExtensionRepoCount().collectAsState(0)
@@ -46,7 +47,7 @@ object SettingsBrowseScreen : SearchableSettings {
                         title = stringResource(ephyra.app.core.common.R.string.label_extension_repos),
                         subtitle = pluralStringResource(ephyra.app.core.common.R.plurals.num_repos, reposCount, reposCount),
                         onClick = {
-                            navigator.push(ExtensionReposScreen())
+                            navController.navigate(ScreenRoutes.ExtensionRepos.route)
                         },
                     ),
                 ),

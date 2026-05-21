@@ -28,8 +28,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import androidx.hilt.navigation.compose.hiltViewModel
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.core.common.util.lang.toDateTimestampString
 import ephyra.core.common.util.system.workManager
 import ephyra.domain.ui.UiPreferences
@@ -37,7 +35,6 @@ import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
-import ephyra.presentation.core.util.Screen
 import ephyra.presentation.core.util.system.copyToClipboard
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.SharingStarted
@@ -47,62 +44,64 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 
-class WorkerInfoScreen : Screen() {
+import androidx.navigation.NavController
+import ephyra.presentation.core.ui.navigation.LocalNavController
 
-    companion object {
-        const val TITLE = "Worker info"
-    }
+@Composable
+fun WorkerInfoScreen(
+    navController: NavController = LocalNavController.current,
+) {
+    val context = LocalContext.current
 
-    @Composable
-    override fun Content() {
-        val context = LocalContext.current
-        val navigator = LocalNavigator.currentOrThrow
+    val screenModel = hiltViewModel<WorkerInfoScreenModel>()
+    val enqueued by screenModel.enqueued.collectAsState()
+    val finished by screenModel.finished.collectAsState()
+    val running by screenModel.running.collectAsState()
 
-        val screenModel = hiltViewModel<WorkerInfoScreenModel>()
-        val enqueued by screenModel.enqueued.collectAsState()
-        val finished by screenModel.finished.collectAsState()
-        val running by screenModel.running.collectAsState()
-
-        Scaffold(
-            topBar = {
-                AppBar(
-                    title = TITLE,
-                    navigateUp = navigator::pop,
-                    actions = {
-                        AppBarActions(
-                            persistentListOf(
-                                AppBar.Action(
-                                    title = stringResource(ephyra.app.core.common.R.string.action_copy_to_clipboard),
-                                    icon = Icons.Default.ContentCopy,
-                                    onClick = {
-                                        context.copyToClipboard(TITLE, enqueued + finished + running)
-                                    },
-                                ),
+    Scaffold(
+        topBar = {
+            AppBar(
+                title = WorkerInfoScreen.TITLE,
+                navigateUp = { navController.popBackStack() },
+                actions = {
+                    AppBarActions(
+                        persistentListOf(
+                            AppBar.Action(
+                                title = stringResource(ephyra.app.core.common.R.string.action_copy_to_clipboard),
+                                icon = Icons.Default.ContentCopy,
+                                onClick = {
+                                    context.copyToClipboard(WorkerInfoScreen.TITLE, enqueued + finished + running)
+                                },
                             ),
-                        )
-                    },
-                    scrollBehavior = it,
-                )
-            },
-        ) { contentPadding ->
-            LazyColumn(
-                contentPadding = contentPadding + PaddingValues(horizontal = 16.dp),
-                modifier = Modifier.horizontalScroll(rememberScrollState()),
-            ) {
-                item { SectionTitle(title = "Enqueued") }
-                item { SectionText(text = enqueued) }
+                        ),
+                    )
+                },
+                scrollBehavior = it,
+            )
+        },
+    ) { contentPadding ->
+        LazyColumn(
+            contentPadding = contentPadding + PaddingValues(horizontal = 16.dp),
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+        ) {
+            item { SectionTitle(title = "Enqueued") }
+            item { SectionText(text = enqueued) }
 
-                item { SectionTitle(title = "Finished") }
-                item { SectionText(text = finished) }
+            item { SectionTitle(title = "Finished") }
+            item { SectionText(text = finished) }
 
-                item { SectionTitle(title = "Running") }
-                item { SectionText(text = running) }
-            }
+            item { SectionTitle(title = "Running") }
+            item { SectionText(text = running) }
         }
     }
+}
 
-    @Composable
-    private fun SectionTitle(title: String) {
+object WorkerInfoScreen {
+    const val TITLE = "Worker info"
+}
+
+@Composable
+private fun SectionTitle(title: String) {
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,

@@ -3,9 +3,6 @@ package ephyra.presentation.core.components
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.AnchoredDraggableDefaults
 import androidx.compose.foundation.gestures.AnchoredDraggableState
@@ -48,55 +45,13 @@ import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import cafe.adriel.voyager.core.annotation.InternalVoyagerApi
-import cafe.adriel.voyager.core.lifecycle.DisposableEffectIgnoringConfiguration
-import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.navigator.Navigator
 import ephyra.presentation.core.theme.MotionTokens
-import ephyra.presentation.core.util.ScreenTransition
 import ephyra.presentation.core.util.isTabletUi
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
-
-@OptIn(InternalVoyagerApi::class)
-@Composable
-fun NavigatorAdaptiveSheet(
-    screen: Screen,
-    enableSwipeDismiss: (Navigator) -> Boolean = { true },
-    onDismissRequest: () -> Unit,
-) {
-    Navigator(
-        screen = screen,
-        content = { sheetNavigator ->
-            AdaptiveSheet(
-                onDismissRequest = onDismissRequest,
-                enableSwipeDismiss = enableSwipeDismiss(sheetNavigator),
-            ) {
-                ScreenTransition(
-                    navigator = sheetNavigator,
-                    transition = {
-                        fadeIn(animationSpec = tween(220, delayMillis = 90)) togetherWith
-                            fadeOut(animationSpec = tween(90))
-                    },
-                )
-            }
-
-            // Make sure screens are disposed no matter what
-            if (sheetNavigator.parent?.disposeBehavior?.disposeNestedNavigators == false) {
-                DisposableEffectIgnoringConfiguration {
-                    onDispose {
-                        sheetNavigator.items
-                            .asReversed()
-                            .forEach(sheetNavigator::dispose)
-                    }
-                }
-            }
-        },
-    )
-}
 
 /**
  * Sheet with adaptive position aligned to bottom on small screen, otherwise aligned to center

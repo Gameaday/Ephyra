@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.toDateTimestampString
+import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.release.interactor.GetApplicationRelease
 import ephyra.domain.ui.UiPreferences
 import ephyra.presentation.core.ui.AppInfo
@@ -23,8 +24,9 @@ import javax.inject.Inject
 @HiltViewModel
 class AboutScreenModel @Inject constructor(
     private val getApplicationRelease: GetApplicationRelease,
-    private val uiPreferences: UiPreferences,
-    private val appInfo: AppInfo,
+    val uiPreferences: UiPreferences,
+    val appInfo: AppInfo,
+    val extensionManager: ExtensionManager,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AboutScreenState())

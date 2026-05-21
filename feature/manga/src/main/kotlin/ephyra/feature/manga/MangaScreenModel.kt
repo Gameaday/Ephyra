@@ -38,6 +38,7 @@ import ephyra.domain.manga.model.toSManga
 import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.domain.source.service.SourceManager
 import ephyra.feature.manga.presentation.components.ChapterDownloadAction
+import ephyra.presentation.core.ui.AppInfo
 import ephyra.presentation.core.util.asState
 import ephyra.presentation.core.util.manga.DownloadAction
 import ephyra.presentation.core.util.manga.removeCovers
@@ -72,15 +73,16 @@ class MangaScreenModel @Inject constructor(
     private val getAvailableScanlators: GetAvailableScanlators,
     private val getExcludedScanlators: GetExcludedScanlators,
     private val getCategories: GetCategories,
-    private val sourceManager: SourceManager,
+    val sourceManager: SourceManager,
     private val mangaInfoInteractor: ephyra.feature.manga.interactor.MangaInfoInteractor,
     private val mangaChapterInteractor: ephyra.feature.manga.interactor.MangaChapterInteractor,
     private val mangaTrackInteractor: ephyra.feature.manga.interactor.MangaTrackInteractor,
     private val syncJellyfin: ephyra.domain.jellyfin.interactor.SyncJellyfin,
-    private val libraryPreferences: LibraryPreferences,
-    private val readerPreferences: ReaderPreferences,
-    private val basePreferences: ephyra.domain.base.BasePreferences,
-    private val coverCache: ephyra.domain.manga.service.CoverCache,
+    val libraryPreferences: LibraryPreferences,
+    val readerPreferences: ReaderPreferences,
+    val basePreferences: ephyra.domain.base.BasePreferences,
+    val coverCache: ephyra.domain.manga.service.CoverCache,
+    val appInfo: AppInfo,
     val snackbarHostState: SnackbarHostState = SnackbarHostState(),
 ) : ViewModel() {
 

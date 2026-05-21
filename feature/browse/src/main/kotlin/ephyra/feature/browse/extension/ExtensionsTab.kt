@@ -10,28 +10,26 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
+import androidx.navigation.NavController
 import ephyra.domain.extension.model.Extension
-import ephyra.feature.browse.extension.details.ExtensionDetailsScreen
 import ephyra.feature.browse.presentation.ExtensionScreen
-import ephyra.feature.webview.WebViewScreen
-import ephyra.core.common.di.CoreContainer
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.TabContent
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.ExtensionReposScreenFactory
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.system.isPackageInstalled
 import kotlinx.collections.immutable.persistentListOf
 
 @Composable
 fun extensionsTab(
     extensionsScreenModel: ExtensionsScreenModel,
+    navController: NavController = LocalNavController.current,
 ): TabContent {
-    val navigator = LocalNavigator.currentOrThrow
     val context = LocalContext.current
-    val extensionReposFactory = CoreContainer.get<ExtensionReposScreenFactory>()
 
     val state by extensionsScreenModel.state.collectAsStateWithLifecycle()
     var privateExtensionToUninstall by remember { mutableStateOf<Extension?>(null) }
@@ -43,11 +41,11 @@ fun extensionsTab(
         actions = persistentListOf(
             AppBar.OverflowAction(
                 title = stringResource(ephyra.app.core.common.R.string.action_filter),
-                onClick = { navigator.push(ExtensionFilterScreen()) },
+                onClick = { navController.navigate(ScreenRoutes.ExtensionFilter.route) },
             ),
             AppBar.OverflowAction(
                 title = stringResource(ephyra.app.core.common.R.string.label_extension_repos),
-                onClick = { navigator.push(extensionReposFactory.create(null)) },
+                onClick = { navController.navigate(ScreenRoutes.ExtensionRepos.route) },
             ),
         ),
         content = { contentPadding, _ ->
@@ -75,21 +73,22 @@ fun extensionsTab(
                 onClickUpdateAll = extensionsScreenModel::updateAllExtensions,
                 onOpenWebView = { extension ->
                     extension.sources.getOrNull(0)?.let {
-                        navigator.push(
-                            WebViewScreen(
+                        navController.navigate(
+                            ScreenRoutes.WebView.createRoute(
                                 url = it.baseUrl,
-                                initialTitle = it.name,
+                                title = it.name,
                                 sourceId = it.id,
                             ),
                         )
                     }
                 },
                 onInstallExtension = extensionsScreenModel::installExtension,
-                onOpenExtension = { navigator.push(ExtensionDetailsScreen(it.pkgName)) },
+                onOpenExtension = { navController.navigate(ScreenRoutes.ExtensionDetails.createRoute(it.pkgName)) },
                 onTrustExtension = { extensionsScreenModel.trustExtension(it) },
                 onUninstallExtension = { extensionsScreenModel.uninstallExtension(it) },
                 onUpdateExtension = extensionsScreenModel::updateExtension,
                 onRefresh = extensionsScreenModel::findAvailableExtensions,
+                extensionReposFactory = extensionsScreenModel.extensionReposFactory,
             )
 
             privateExtensionToUninstall?.let { extension ->

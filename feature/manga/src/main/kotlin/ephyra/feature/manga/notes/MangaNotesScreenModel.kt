@@ -6,15 +6,18 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import ephyra.core.common.util.lang.launchNonCancellable
+import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.interactor.UpdateMangaNotes
 import ephyra.domain.manga.model.Manga
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 @HiltViewModel
 class MangaNotesScreenModel @Inject constructor(
+    private val getManga: GetManga,
     private val updateMangaNotes: UpdateMangaNotes,
 ) : ViewModel() {
 
@@ -23,10 +26,15 @@ class MangaNotesScreenModel @Inject constructor(
 
     private var isInitialized = false
 
-    fun init(manga: Manga) {
+    fun init(mangaId: Long) {
         if (isInitialized) return
         isInitialized = true
-        _state.value = MangaNotesState(manga, manga.notes)
+        viewModelScope.launch {
+            val manga = getManga.await(mangaId)
+            if (manga != null) {
+                _state.value = MangaNotesState(manga, manga.notes ?: "")
+            }
+        }
     }
 
     fun updateNotes(content: String) {
