@@ -4,14 +4,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import ephyra.core.common.i18n.stringResource
 import ephyra.feature.browse.presentation.ExtensionFilterScreen
 import ephyra.presentation.core.screens.LoadingScreen
-import kotlinx.coroutines.flow.collectLatest
-import androidx.navigation.NavController
 import ephyra.presentation.core.ui.navigation.LocalNavController
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun ExtensionFilterScreen(

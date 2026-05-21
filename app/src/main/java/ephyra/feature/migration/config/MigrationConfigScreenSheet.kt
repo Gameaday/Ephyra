@@ -128,12 +128,22 @@ fun MigrationConfigScreenSheet(
                     },
                 )
                 MigrationSheetDividerItem()
+                val additionalSearchQueryLabel =
+                    ephyra.app.core.common.R.string.migrationConfigScreen_additionalSearchQueryLabel
+                val additionalSearchQuerySupportingText =
+                    ephyra.app.core.common.R.string.migrationConfigScreen_additionalSearchQuerySupportingText
                 OutlinedTextField(
                     value = extraSearchQuery,
                     onValueChange = { extraSearchQuery = it },
-                    label = { Text(stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_additionalSearchQueryLabel)) },
+                    label = {
+                        Text(
+                            stringResource(additionalSearchQueryLabel),
+                        )
+                    },
                     supportingText = {
-                        Text(stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_additionalSearchQuerySupportingText))
+                        Text(
+                            stringResource(additionalSearchQuerySupportingText),
+                        )
                     },
                     singleLine = true,
                     modifier = Modifier
@@ -144,25 +154,39 @@ fun MigrationConfigScreenSheet(
                         ),
                 )
                 MigrationSheetSwitchItem(
-                    title = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_hideUnmatchedTitle),
+                    title = stringResource(
+                        ephyra.app.core.common.R.string.migrationConfigScreen_hideUnmatchedTitle,
+                    ),
                     subtitle = null,
                     preference = preferences.migrationHideUnmatched(),
                 )
                 MigrationSheetSwitchItem(
-                    title = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_hideWithoutUpdatesTitle),
-                    subtitle = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_hideWithoutUpdatesSubtitle),
+                    title = stringResource(
+                        ephyra.app.core.common.R.string.migrationConfigScreen_hideWithoutUpdatesTitle,
+                    ),
+                    subtitle = stringResource(
+                        ephyra.app.core.common.R.string.migrationConfigScreen_hideWithoutUpdatesSubtitle,
+                    ),
                     preference = preferences.migrationHideWithoutUpdates(),
                 )
                 MigrationSheetDividerItem()
-                MigrationSheetWarningItem(stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_enhancedOptionsWarning))
+                MigrationSheetWarningItem(
+                    stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_enhancedOptionsWarning),
+                )
                 MigrationSheetSwitchItem(
                     title = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_deepSearchModeTitle),
-                    subtitle = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_deepSearchModeSubtitle),
+                    subtitle = stringResource(
+                        ephyra.app.core.common.R.string.migrationConfigScreen_deepSearchModeSubtitle,
+                    ),
                     preference = preferences.migrationDeepSearchMode(),
                 )
                 MigrationSheetSwitchItem(
-                    title = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_prioritizeByChaptersTitle),
-                    subtitle = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_prioritizeByChaptersSubtitle),
+                    title = stringResource(
+                        ephyra.app.core.common.R.string.migrationConfigScreen_prioritizeByChaptersTitle,
+                    ),
+                    subtitle = stringResource(
+                        ephyra.app.core.common.R.string.migrationConfigScreen_prioritizeByChaptersSubtitle,
+                    ),
                     preference = preferences.migrationPrioritizeByChapters(),
                 )
             }

@@ -1,6 +1,5 @@
 package ephyra.domain.reader.model
 
-
 enum class ReadingMode(
     val stringRes: Int,
     val flagValue: Int,

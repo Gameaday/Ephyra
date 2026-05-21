@@ -1,6 +1,5 @@
 package ephyra.domain.reader.model
 
-
 /**
  * Screen orientation modes for the reader.
  *

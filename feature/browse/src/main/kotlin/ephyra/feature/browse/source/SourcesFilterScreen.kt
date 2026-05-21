@@ -4,14 +4,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import ephyra.feature.browse.presentation.SourcesFilterScreen
 import ephyra.presentation.core.screens.LoadingScreen
-import ephyra.presentation.core.util.system.toast
-
-import androidx.navigation.NavController
 import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.util.system.toast
 
 @Composable
 fun SourcesFilterScreen(

@@ -25,14 +25,14 @@ import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
-import dagger.hilt.android.EntryPointAccessors
-import ephyra.presentation.core.util.SourceUtilEntryPoint
 import coil3.compose.AsyncImage
+import dagger.hilt.android.EntryPointAccessors
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.domain.extension.model.Extension
 import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.source.model.Source
 import ephyra.presentation.core.R
+import ephyra.presentation.core.util.SourceUtilEntryPoint
 import ephyra.presentation.core.util.rememberResourceBitmapPainter
 import ephyra.presentation.core.util.system.icon
 import ephyra.source.local.isLocal
@@ -48,7 +48,10 @@ fun SourceIcon(
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val extensionManager = remember {
-        EntryPointAccessors.fromApplication(context.applicationContext, SourceUtilEntryPoint::class.java).extensionManager()
+        EntryPointAccessors.fromApplication(
+            context.applicationContext,
+            SourceUtilEntryPoint::class.java,
+        ).extensionManager()
     }
     val icon = source.icon(extensionManager)
 
@@ -109,7 +112,10 @@ fun ExtensionIcon(
         is Extension.Installed -> {
             val context = androidx.compose.ui.platform.LocalContext.current
             val extensionManager = remember {
-                EntryPointAccessors.fromApplication(context.applicationContext, SourceUtilEntryPoint::class.java).extensionManager()
+                EntryPointAccessors.fromApplication(
+                    context.applicationContext,
+                    SourceUtilEntryPoint::class.java,
+                ).extensionManager()
             }
             val icon by extension.getIcon(extensionManager, density)
             when (icon) {

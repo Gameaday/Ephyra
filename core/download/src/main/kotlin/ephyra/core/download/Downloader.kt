@@ -594,7 +594,12 @@ class Downloader(
         try {
             val filenamePrefix = "%03d".format(Locale.ENGLISH, page.number)
             val imageFile = tmpDir.listFiles()?.firstOrNull { it.name.orEmpty().startsWith(filenamePrefix) }
-                ?: error(context.stringResource(ephyra.app.core.common.R.string.download_notifier_split_page_not_found, page.number))
+                ?: error(
+                    context.stringResource(
+                        ephyra.app.core.common.R.string.download_notifier_split_page_not_found,
+                        page.number,
+                    ),
+                )
 
             // If the original page was previously split, then skip
             if (imageFile.name.orEmpty().startsWith("${filenamePrefix}__")) return

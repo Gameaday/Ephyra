@@ -133,184 +133,188 @@ fun BrowseSourceScreen(
                     navigateUp = navigateUp,
                     onWebViewClick = onWebViewClick,
                     onHelpClick = onHelpClick,
-                    onSettingsClick = { /* TODO: navController.navigate(ScreenRoutes.SourcePreferences.createRoute(sourceId)) */ },
+                    onSettingsClick = {
+                        /* TODO: navController.navigate(ScreenRoutes.SourcePreferences.createRoute(sourceId)) */
+                    },
                     onSearch = { screenModel.onEvent(BrowseSourceScreenEvent.Search(it)) },
                 )
 
-                    Row(
-                        modifier = Modifier
-                            .horizontalScroll(rememberScrollState())
-                            .padding(horizontal = MaterialTheme.padding.small),
-                        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
-                    ) {
+                Row(
+                    modifier = Modifier
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = MaterialTheme.padding.small),
+                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
+                ) {
+                    FilterChip(
+                        selected = state.listing == Listing.Popular,
+                        onClick = {
+                            screenModel.onEvent(BrowseSourceScreenEvent.ResetFilters)
+                            screenModel.onEvent(BrowseSourceScreenEvent.SetListing(Listing.Popular))
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Outlined.Favorite,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(FilterChipDefaults.IconSize),
+                            )
+                        },
+                        label = {
+                            Text(text = stringResource(ephyra.app.core.common.R.string.popular))
+                        },
+                    )
+                    if ((source as CatalogueSource).supportsLatest) {
                         FilterChip(
-                            selected = state.listing == Listing.Popular,
+                            selected = state.listing == Listing.Latest,
                             onClick = {
                                 screenModel.onEvent(BrowseSourceScreenEvent.ResetFilters)
-                                screenModel.onEvent(BrowseSourceScreenEvent.SetListing(Listing.Popular))
+                                screenModel.onEvent(BrowseSourceScreenEvent.SetListing(Listing.Latest))
                             },
                             leadingIcon = {
                                 Icon(
-                                    imageVector = Icons.Outlined.Favorite,
+                                    imageVector = Icons.Outlined.NewReleases,
                                     contentDescription = null,
                                     modifier = Modifier
                                         .size(FilterChipDefaults.IconSize),
                                 )
                             },
                             label = {
-                                Text(text = stringResource(ephyra.app.core.common.R.string.popular))
+                                Text(text = stringResource(ephyra.app.core.common.R.string.latest))
                             },
                         )
-                        if ((source as CatalogueSource).supportsLatest) {
-                            FilterChip(
-                                selected = state.listing == Listing.Latest,
-                                onClick = {
-                                    screenModel.onEvent(BrowseSourceScreenEvent.ResetFilters)
-                                    screenModel.onEvent(BrowseSourceScreenEvent.SetListing(Listing.Latest))
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Outlined.NewReleases,
-                                        contentDescription = null,
-                                        modifier = Modifier
-                                            .size(FilterChipDefaults.IconSize),
-                                    )
-                                },
-                                label = {
-                                    Text(text = stringResource(ephyra.app.core.common.R.string.latest))
-                                },
-                            )
-                        }
-                        if (state.filters.isNotEmpty()) {
-                            FilterChip(
-                                selected = state.listing is Listing.Search,
-                                onClick = { screenModel.onEvent(BrowseSourceScreenEvent.OpenFilterSheet) },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Outlined.FilterList,
-                                        contentDescription = null,
-                                        modifier = Modifier
-                                            .size(FilterChipDefaults.IconSize),
-                                    )
-                                },
-                                label = {
-                                    Text(text = stringResource(ephyra.app.core.common.R.string.action_filter))
-                                },
-                            )
-                        }
                     }
+                    if (state.filters.isNotEmpty()) {
+                        FilterChip(
+                            selected = state.listing is Listing.Search,
+                            onClick = { screenModel.onEvent(BrowseSourceScreenEvent.OpenFilterSheet) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.FilterList,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(FilterChipDefaults.IconSize),
+                                )
+                            },
+                            label = {
+                                Text(text = stringResource(ephyra.app.core.common.R.string.action_filter))
+                            },
+                        )
+                    }
+                }
 
-                    HorizontalDivider()
+                HorizontalDivider()
+            }
+        },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+    ) { paddingValues ->
+        BrowseSourceContent(
+            source = source,
+            mangaList = screenModel.mangaPagerFlowFlow.collectAsLazyPagingItems(),
+            columns = screenModel.getColumnsPreference(LocalConfiguration.current.orientation),
+            displayMode = screenModel.displayMode,
+            snackbarHostState = snackbarHostState,
+            contentPadding = paddingValues,
+            onWebViewClick = onWebViewClick,
+            onHelpClick = { uriHandler.openUri(Constants.URL_HELP) },
+            onLocalSourceHelpClick = onHelpClick,
+            onMangaClick = { navController.navigate(ScreenRoutes.MangaDetails.createRoute(it.id, true)) },
+            onMangaLongClick = { manga ->
+                scope.launchIO {
+                    val duplicates = screenModel.getDuplicateLibraryManga(manga)
+                    when {
+                        manga.favorite ->
+                            screenModel.onEvent(
+                                BrowseSourceScreenEvent.SetDialog(
+                                    BrowseSourceScreenModel.Dialog.RemoveManga(manga),
+                                ),
+                            )
+                        duplicates.isNotEmpty() ->
+                            screenModel.onEvent(
+                                BrowseSourceScreenEvent.SetDialog(
+                                    BrowseSourceScreenModel.Dialog.AddDuplicateManga(manga, duplicates),
+                                ),
+                            )
+                        else -> screenModel.onEvent(BrowseSourceScreenEvent.AddFavorite(manga))
+                    }
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 }
             },
-            snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
-        ) { paddingValues ->
-            BrowseSourceContent(
-                source = source,
-                mangaList = screenModel.mangaPagerFlowFlow.collectAsLazyPagingItems(),
-                columns = screenModel.getColumnsPreference(LocalConfiguration.current.orientation),
-                displayMode = screenModel.displayMode,
-                snackbarHostState = snackbarHostState,
-                contentPadding = paddingValues,
-                onWebViewClick = onWebViewClick,
-                onHelpClick = { uriHandler.openUri(Constants.URL_HELP) },
-                onLocalSourceHelpClick = onHelpClick,
-                onMangaClick = { navController.navigate(ScreenRoutes.MangaDetails.createRoute(it.id, true)) },
-                onMangaLongClick = { manga ->
-                    scope.launchIO {
-                        val duplicates = screenModel.getDuplicateLibraryManga(manga)
-                        when {
-                            manga.favorite ->
-                                screenModel.onEvent(
-                                    BrowseSourceScreenEvent.SetDialog(
-                                        BrowseSourceScreenModel.Dialog.RemoveManga(manga),
-                                    ),
-                                )
-                            duplicates.isNotEmpty() ->
-                                screenModel.onEvent(
-                                    BrowseSourceScreenEvent.SetDialog(
-                                        BrowseSourceScreenModel.Dialog.AddDuplicateManga(manga, duplicates),
-                                    ),
-                                )
-                            else -> screenModel.onEvent(BrowseSourceScreenEvent.AddFavorite(manga))
-                        }
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    }
+        )
+    }
+
+    val onDismissRequest = { screenModel.onEvent(BrowseSourceScreenEvent.SetDialog(null)) }
+    when (val dialog = state.dialog) {
+        is BrowseSourceScreenModel.Dialog.Filter -> {
+            SourceFilterDialog(
+                onDismissRequest = onDismissRequest,
+                filters = state.filters,
+                onReset = { screenModel.onEvent(BrowseSourceScreenEvent.ResetFilters) },
+                onFilter = { screenModel.onEvent(BrowseSourceScreenEvent.Search(filters = state.filters)) },
+                onUpdate = { screenModel.onEvent(BrowseSourceScreenEvent.SetFilters(it)) },
+            )
+        }
+
+        is BrowseSourceScreenModel.Dialog.AddDuplicateManga -> {
+            DuplicateMangaDialog(
+                duplicates = dialog.duplicates,
+                onDismissRequest = onDismissRequest,
+                onConfirm = { screenModel.onEvent(BrowseSourceScreenEvent.AddFavorite(dialog.manga)) },
+                onOpenManga = { navController.navigate(ScreenRoutes.MangaDetails.createRoute(it.id, false)) },
+                onMigrate = {
+                    screenModel.onEvent(
+                        BrowseSourceScreenEvent.SetDialog(BrowseSourceScreenModel.Dialog.Migrate(dialog.manga, it)),
+                    )
+                },
+                sourceManager = screenModel.sourceManager,
+            )
+        }
+
+        is BrowseSourceScreenModel.Dialog.Migrate -> {
+            MigrateMangaDialog(
+                current = dialog.current,
+                target = dialog.target,
+                onClickTitle = {
+                    navController.navigate(ScreenRoutes.MangaDetails.createRoute(dialog.current.id, false))
+                },
+                onDismissRequest = onDismissRequest,
+            )
+        }
+
+        is BrowseSourceScreenModel.Dialog.RemoveManga -> {
+            RemoveMangaDialog(
+                onDismissRequest = onDismissRequest,
+                onConfirm = {
+                    screenModel.onEvent(BrowseSourceScreenEvent.ChangeMangaFavorite(dialog.manga))
+                },
+                mangaToRemove = dialog.manga,
+            )
+        }
+
+        is BrowseSourceScreenModel.Dialog.ChangeMangaCategory -> {
+            ChangeCategoryDialog(
+                initialSelection = dialog.initialSelection,
+                onDismissRequest = onDismissRequest,
+                onEditCategories = { navController.navigate(ScreenRoutes.Category.route) },
+                onConfirm = { include, _ ->
+                    screenModel.onEvent(BrowseSourceScreenEvent.ChangeMangaFavorite(dialog.manga))
+                    screenModel.onEvent(BrowseSourceScreenEvent.MoveMangaToCategories(dialog.manga, include))
                 },
             )
         }
 
-        val onDismissRequest = { screenModel.onEvent(BrowseSourceScreenEvent.SetDialog(null)) }
-        when (val dialog = state.dialog) {
-            is BrowseSourceScreenModel.Dialog.Filter -> {
-                SourceFilterDialog(
-                    onDismissRequest = onDismissRequest,
-                    filters = state.filters,
-                    onReset = { screenModel.onEvent(BrowseSourceScreenEvent.ResetFilters) },
-                    onFilter = { screenModel.onEvent(BrowseSourceScreenEvent.Search(filters = state.filters)) },
-                    onUpdate = { screenModel.onEvent(BrowseSourceScreenEvent.SetFilters(it)) },
-                )
-            }
-
-            is BrowseSourceScreenModel.Dialog.AddDuplicateManga -> {
-                DuplicateMangaDialog(
-                    duplicates = dialog.duplicates,
-                    onDismissRequest = onDismissRequest,
-                    onConfirm = { screenModel.onEvent(BrowseSourceScreenEvent.AddFavorite(dialog.manga)) },
-                    onOpenManga = { navController.navigate(ScreenRoutes.MangaDetails.createRoute(it.id, false)) },
-                    onMigrate = {
-                        screenModel.onEvent(
-                            BrowseSourceScreenEvent.SetDialog(BrowseSourceScreenModel.Dialog.Migrate(dialog.manga, it)),
-                        )
-                    },
-                    sourceManager = screenModel.sourceManager,
-                )
-            }
-
-            is BrowseSourceScreenModel.Dialog.Migrate -> {
-                MigrateMangaDialog(
-                    current = dialog.current,
-                    target = dialog.target,
-                    onClickTitle = { navController.navigate(ScreenRoutes.MangaDetails.createRoute(dialog.current.id, false)) },
-                    onDismissRequest = onDismissRequest,
-                )
-            }
-
-            is BrowseSourceScreenModel.Dialog.RemoveManga -> {
-                RemoveMangaDialog(
-                    onDismissRequest = onDismissRequest,
-                    onConfirm = {
-                        screenModel.onEvent(BrowseSourceScreenEvent.ChangeMangaFavorite(dialog.manga))
-                    },
-                    mangaToRemove = dialog.manga,
-                )
-            }
-
-            is BrowseSourceScreenModel.Dialog.ChangeMangaCategory -> {
-                ChangeCategoryDialog(
-                    initialSelection = dialog.initialSelection,
-                    onDismissRequest = onDismissRequest,
-                    onEditCategories = { navController.navigate(ScreenRoutes.Category.route) },
-                    onConfirm = { include, _ ->
-                        screenModel.onEvent(BrowseSourceScreenEvent.ChangeMangaFavorite(dialog.manga))
-                        screenModel.onEvent(BrowseSourceScreenEvent.MoveMangaToCategories(dialog.manga, include))
-                    },
-                )
-            }
-
-            else -> {}
-        }
-
-        LaunchedEffect(Unit) {
-            queryEvent.receiveAsFlow()
-                .collectLatest {
-                    when (it) {
-                        is SearchType.Genre -> screenModel.onEvent(BrowseSourceScreenEvent.SearchGenre(it.txt))
-                        is SearchType.Text -> screenModel.onEvent(BrowseSourceScreenEvent.Search(it.txt))
-                    }
-                }
-        }
+        else -> {}
     }
+
+    LaunchedEffect(Unit) {
+        queryEvent.receiveAsFlow()
+            .collectLatest {
+                when (it) {
+                    is SearchType.Genre -> screenModel.onEvent(BrowseSourceScreenEvent.SearchGenre(it.txt))
+                    is SearchType.Text -> screenModel.onEvent(BrowseSourceScreenEvent.Search(it.txt))
+                }
+            }
+    }
+}
 
 private val queryEvent = Channel<SearchType>()
 

@@ -25,54 +25,57 @@ import coil3.request.bitmapConfig
 import coil3.request.crossfade
 import coil3.util.DebugLogger
 import dagger.hilt.android.HiltAndroidApp
-import ephyra.core.common.core.security.PrivacyPreferences
-import ephyra.core.common.core.security.SecurityPreferences
 import ephyra.app.crash.CrashActivity
 import ephyra.app.crash.GlobalExceptionHandler
+import ephyra.app.di.initializeCoreContainer
+import ephyra.app.util.system.animatorDurationScale
+import ephyra.app.util.system.cancelNotification
+import ephyra.app.util.system.isDebugBuildType
+import ephyra.app.util.system.notify
+import ephyra.core.common.core.security.PrivacyPreferences
+import ephyra.core.common.core.security.SecurityPreferences
+import ephyra.core.common.di.CoreContainer
+import ephyra.core.common.preference.Preference
+import ephyra.core.common.preference.PreferenceStore
+import ephyra.core.common.util.system.DeviceUtil
+import ephyra.core.common.util.system.GLUtil
+import ephyra.core.common.util.system.ImageUtil
+import ephyra.core.common.util.system.WebViewUtil
+import ephyra.core.common.util.system.logcat
+import ephyra.core.migration.Migrator
+import ephyra.core.migration.migrations.migrations
 import ephyra.data.cache.CoverCache
 import ephyra.data.coil.BufferedSourceFetcher
 import ephyra.data.coil.MangaCoverFetcher
 import ephyra.data.coil.MangaCoverKeyer
 import ephyra.data.coil.MangaKeyer
-import ephyra.domain.source.service.SourceManager
 import ephyra.data.notification.Notifications
-import ephyra.presentation.core.ui.delegate.SecureActivityDelegateState
-import ephyra.core.common.util.system.DeviceUtil
-import ephyra.core.common.util.system.GLUtil
-import ephyra.core.common.util.system.WebViewUtil
-import ephyra.core.common.preference.Preference
-import ephyra.core.migration.migrations.migrations
-import ephyra.app.util.system.animatorDurationScale
-import ephyra.app.util.system.cancelNotification
-import ephyra.app.util.system.isDebugBuildType
-import ephyra.app.util.system.notify
-import ephyra.core.common.preference.PreferenceStore
-import ephyra.core.common.util.system.ImageUtil
-import ephyra.core.common.util.system.logcat
-import ephyra.core.migration.Migrator
 import ephyra.domain.base.BasePreferences
+import ephyra.domain.source.service.SourceManager
 import ephyra.domain.ui.UiPreferences
 import ephyra.domain.ui.model.setAppCompatDelegateThemeMode
 import ephyra.domain.updates.interactor.GetUpdates
 import ephyra.presentation.core.data.coil.TachiyomiImageDecoder
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.ui.delegate.SecureActivityDelegateState
 import ephyra.presentation.widget.WidgetManager
 import ephyra.telemetry.TelemetryConfig
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.NetworkPreferences
-import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import logcat.AndroidLogcatLogger
 import logcat.LogPriority
 import logcat.LogcatLogger
-
-import ephyra.core.common.di.CoreContainer
-import ephyra.app.di.initializeCoreContainer
+import javax.inject.Inject
 
 @HiltAndroidApp
-class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factory, androidx.work.Configuration.Provider {
+class App :
+    Application(),
+    DefaultLifecycleObserver,
+    SingletonImageLoader.Factory,
+    androidx.work.Configuration.Provider {
 
     @Inject
     lateinit var basePreferences: BasePreferences

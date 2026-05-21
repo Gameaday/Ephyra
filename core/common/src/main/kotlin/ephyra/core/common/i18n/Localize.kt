@@ -1,8 +1,8 @@
 package ephyra.core.common.i18n
 
 import android.content.Context
-import androidx.annotation.StringRes
 import androidx.annotation.PluralsRes
+import androidx.annotation.StringRes
 
 fun Context.stringResource(@StringRes resource: Int): String {
     return getString(resource)

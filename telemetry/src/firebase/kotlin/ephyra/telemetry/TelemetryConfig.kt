@@ -9,6 +9,7 @@ object TelemetryConfig {
     // @Volatile ensures writes from the background init() coroutine are immediately
     // visible to the main-thread setAnalyticsEnabled / setCrashlyticsEnabled calls.
     @Volatile private var analytics: FirebaseAnalytics? = null
+
     @Volatile private var crashlytics: FirebaseCrashlytics? = null
 
     fun init(context: Context) {

@@ -61,7 +61,10 @@ fun SourcePreferencesScreen(
 
     Scaffold(
         topBar = {
-            val sourceManager = EntryPointAccessors.fromApplication(context.applicationContext, SourceUtilEntryPoint::class.java).sourceManager()
+            val sourceManager = EntryPointAccessors.fromApplication(
+                context.applicationContext,
+                SourceUtilEntryPoint::class.java,
+            ).sourceManager()
             AppBar(
                 title = sourceManager.getOrStub(sourceId).toString(),
                 navigateUp = { navController.popBackStack() },
@@ -123,6 +126,7 @@ private fun FragmentManager.onContainerAvailable(view: FragmentContainerView) {
 @AndroidEntryPoint
 class SourcePreferencesFragment : PreferenceFragmentCompat() {
     @Inject lateinit var sourceManager: SourceManager
+
     @Inject lateinit var basePreferences: BasePreferences
 
     override fun getContext(): Context? {

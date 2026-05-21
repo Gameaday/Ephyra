@@ -56,7 +56,11 @@ fun MigrationMangaDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(text = stringResource(ephyra.app.core.common.R.string.migrationListScreen_migrateDialog_cancelLabel))
+                Text(
+                    text = stringResource(
+                        ephyra.app.core.common.R.string.migrationListScreen_migrateDialog_cancelLabel,
+                    ),
+                )
             }
         },
     )

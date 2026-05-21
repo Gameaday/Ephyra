@@ -1,6 +1,5 @@
 package ephyra.domain.ui.model
 
-
 enum class AppTheme(val titleRes: Int?) {
     DEFAULT(ephyra.app.core.common.R.string.label_default),
     MONET(ephyra.app.core.common.R.string.theme_monet),

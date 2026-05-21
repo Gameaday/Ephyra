@@ -24,8 +24,8 @@ spotless {
         target("**/*.kt", "**/*.kts")
         targetExclude("**/build/**/*.kt")
 
-        val ktlintLib = libs.findLibrary("ktlint-core").get().get()
-        ktlint(ktlintLib.versionConstraint.requiredVersion)
+        val ktlintVersion = libs.findVersion("ktlint-core").get().requiredVersion
+        ktlint(ktlintVersion)
 
         trimTrailingWhitespace()
         endWithNewline()

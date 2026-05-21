@@ -1,5 +1,6 @@
 package eu.kanade.tachiyomi.source.online
 
+import ephyra.core.common.di.CoreContainer
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.awaitSuccess
@@ -14,7 +15,6 @@ import okhttp3.Headers
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
-import ephyra.core.common.di.CoreContainer
 import java.net.URI
 import java.net.URISyntaxException
 import java.security.MessageDigest

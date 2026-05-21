@@ -32,6 +32,4 @@ dependencies {
     // SQLDelight
     implementation(libs.sqldelight.android.driver)
     implementation(libs.sqldelight.coroutines)
-
-
 }

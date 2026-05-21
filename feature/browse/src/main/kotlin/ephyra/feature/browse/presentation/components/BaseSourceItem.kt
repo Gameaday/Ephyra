@@ -11,9 +11,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import ephyra.core.common.util.system.LocaleHelper
 import ephyra.domain.source.model.Source
+import ephyra.presentation.core.components.SourceIcon
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.util.secondaryItemAlpha
-import ephyra.presentation.core.components.SourceIcon
 
 @Composable
 fun BaseSourceItem(

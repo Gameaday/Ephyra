@@ -39,8 +39,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import ephyra.domain.manga.model.Manga
 import ephyra.presentation.core.components.AppBar
@@ -48,15 +49,9 @@ import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.LoadingScreen
-import ephyra.presentation.core.util.system.openInBrowser
-
-/**
- * Screen showing the results of authority matching.
- * Displays recently linked manga and still-unlinked items with retry actions.
- */
-import androidx.navigation.NavController
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
+import ephyra.presentation.core.util.system.openInBrowser
 
 /**
  * Screen showing the results of authority matching.
@@ -267,7 +262,11 @@ private fun SummaryCard(
                     tint = MaterialTheme.colorScheme.primary,
                 )
                 Text(
-                    text = stringResource(ephyra.app.core.common.R.string.match_results_summary, totalLinked, totalFavorites),
+                    text = stringResource(
+                        ephyra.app.core.common.R.string.match_results_summary,
+                        totalLinked,
+                        totalFavorites,
+                    ),
                     style = MaterialTheme.typography.titleMedium,
                 )
             }
@@ -286,10 +285,24 @@ private fun SummaryCard(
             if (mangaCount > 0 || novelCount > 0) {
                 Spacer(modifier = Modifier.height(MaterialTheme.padding.extraSmall))
                 val parts = mutableListOf<String>()
-                if (mangaCount > 0) parts.add(stringResource(ephyra.app.core.common.R.string.match_results_count_manga, mangaCount))
-                if (novelCount > 0) parts.add(stringResource(ephyra.app.core.common.R.string.match_results_count_novels, novelCount))
+                if (mangaCount >
+                    0
+                ) {
+                    parts.add(stringResource(ephyra.app.core.common.R.string.match_results_count_manga, mangaCount))
+                }
+                if (novelCount >
+                    0
+                ) {
+                    parts.add(
+                        stringResource(ephyra.app.core.common.R.string.match_results_count_novels, novelCount),
+                    )
+                }
                 val otherCount = totalFavorites - mangaCount - novelCount
-                if (otherCount > 0) parts.add(stringResource(ephyra.app.core.common.R.string.match_results_count_other, otherCount))
+                if (otherCount >
+                    0
+                ) {
+                    parts.add(stringResource(ephyra.app.core.common.R.string.match_results_count_other, otherCount))
+                }
                 Text(
                     text = parts.joinToString(" • "),
                     style = MaterialTheme.typography.labelMedium,
@@ -357,9 +370,15 @@ private fun UnlinkedMangaItem(
                 )
                 // Show content type when known
                 val contentTypeLabel = when (manga.contentType) {
-                    ephyra.domain.manga.model.ContentType.MANGA -> stringResource(ephyra.app.core.common.R.string.content_type_manga)
-                    ephyra.domain.manga.model.ContentType.NOVEL -> stringResource(ephyra.app.core.common.R.string.content_type_novel)
-                    ephyra.domain.manga.model.ContentType.BOOK -> stringResource(ephyra.app.core.common.R.string.content_type_book)
+                    ephyra.domain.manga.model.ContentType.MANGA -> stringResource(
+                        ephyra.app.core.common.R.string.content_type_manga,
+                    )
+                    ephyra.domain.manga.model.ContentType.NOVEL -> stringResource(
+                        ephyra.app.core.common.R.string.content_type_novel,
+                    )
+                    ephyra.domain.manga.model.ContentType.BOOK -> stringResource(
+                        ephyra.app.core.common.R.string.content_type_book,
+                    )
                     else -> null
                 }
                 if (contentTypeLabel != null && !hasFailed && !isMatching) {

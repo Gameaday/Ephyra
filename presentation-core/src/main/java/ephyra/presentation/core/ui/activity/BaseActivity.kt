@@ -43,9 +43,14 @@ open class BaseActivity :
     }
 
     override fun attachBaseContext(newBase: Context) {
-        super.attachBaseContext(newBase.prepareTabletUiContext(
-            EntryPointAccessors.fromApplication(newBase.applicationContext, BaseActivityEntryPoint::class.java).uiPreferences()
-        ))
+        super.attachBaseContext(
+            newBase.prepareTabletUiContext(
+                EntryPointAccessors.fromApplication(
+                    newBase.applicationContext,
+                    BaseActivityEntryPoint::class.java,
+                ).uiPreferences(),
+            ),
+        )
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

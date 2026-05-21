@@ -2,14 +2,14 @@ package ephyra.feature.browse.migration.search
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
-import ephyra.feature.browse.presentation.MigrateSearchScreen
-import ephyra.feature.browse.source.globalsearch.SearchScreenModel
-import ephyra.feature.browse.source.globalsearch.SearchScreenEvent
-import ephyra.feature.migration.dialog.MigrateMangaDialog
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import ephyra.feature.browse.presentation.MigrateSearchScreen
+import ephyra.feature.browse.source.globalsearch.SearchScreenEvent
+import ephyra.feature.browse.source.globalsearch.SearchScreenModel
+import ephyra.feature.migration.dialog.MigrateMangaDialog
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 

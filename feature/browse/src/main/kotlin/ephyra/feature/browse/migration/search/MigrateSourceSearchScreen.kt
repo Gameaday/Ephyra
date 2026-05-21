@@ -17,8 +17,9 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import ephyra.core.common.Constants
 import ephyra.domain.manga.model.Manga
 import ephyra.feature.browse.presentation.BrowseSourceContent
@@ -30,15 +31,13 @@ import ephyra.presentation.core.components.SearchToolbar
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.LoadingScreen
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.collectAsLazyPagingItems
 import ephyra.presentation.core.util.ifSourcesLoaded
 import ephyra.source.local.LocalSource
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.launch
-
-import androidx.navigation.NavController
-import ephyra.presentation.core.ui.navigation.LocalNavController
-import ephyra.presentation.core.ui.navigation.ScreenRoutes
 
 @Composable
 fun MigrateSourceSearchScreen(

@@ -1,13 +1,13 @@
 package ephyra.feature.browse.source.globalsearch
 
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.interactor.NetworkToLocalManga
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
 import eu.kanade.tachiyomi.source.CatalogueSource
+import javax.inject.Inject
 
 @HiltViewModel
 class GlobalSearchScreenModel @Inject constructor(

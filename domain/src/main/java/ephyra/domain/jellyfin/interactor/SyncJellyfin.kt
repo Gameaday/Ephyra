@@ -1,21 +1,21 @@
 package ephyra.domain.jellyfin.interactor
 
-import ephyra.domain.manga.model.Manga
 import ephyra.domain.chapter.model.Chapter
+import ephyra.domain.manga.model.Manga
 
 interface SyncJellyfin {
 
     enum class SyncAction {
         SYNC_ALL_TO_JELLYFIN,
         SYNC_READ_TO_JELLYFIN,
-        SYNC_UNREAD_TO_JELLYFIN
+        SYNC_UNREAD_TO_JELLYFIN,
     }
 
     suspend fun syncToJellyfin(
         manga: Manga,
         chapters: List<Chapter>,
         downloadStates: Map<Long, Boolean>,
-        syncAction: SyncAction
+        syncAction: SyncAction,
     )
 
     suspend fun pushMetadataToJellyfinIfLinked(manga: Manga)

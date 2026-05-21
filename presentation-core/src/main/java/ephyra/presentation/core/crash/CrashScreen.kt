@@ -32,13 +32,19 @@ fun CrashScreen(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val extensionManager = androidx.compose.runtime.remember {
-        EntryPointAccessors.fromApplication(context.applicationContext, SourceUtilEntryPoint::class.java).extensionManager()
+        EntryPointAccessors.fromApplication(
+            context.applicationContext,
+            SourceUtilEntryPoint::class.java,
+        ).extensionManager()
     }
 
     InfoScreen(
         icon = Icons.Outlined.BugReport,
         headingText = stringResource(ephyra.app.core.common.R.string.crash_screen_title),
-        subtitleText = stringResource(ephyra.app.core.common.R.string.crash_screen_description, stringResource(ephyra.app.core.common.R.string.app_name)),
+        subtitleText = stringResource(
+            ephyra.app.core.common.R.string.crash_screen_description,
+            stringResource(ephyra.app.core.common.R.string.app_name),
+        ),
         acceptText = stringResource(ephyra.app.core.common.R.string.pref_dump_crash_logs),
         onAcceptClick = {
             scope.launch {

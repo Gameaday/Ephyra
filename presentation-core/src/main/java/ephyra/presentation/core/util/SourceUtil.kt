@@ -21,7 +21,10 @@ interface SourceUtilEntryPoint {
 fun ifSourcesLoaded(): Boolean {
     val context = LocalContext.current
     val sourceManager = androidx.compose.runtime.remember {
-        EntryPointAccessors.fromApplication(context.applicationContext, SourceUtilEntryPoint::class.java).sourceManager()
+        EntryPointAccessors.fromApplication(
+            context.applicationContext,
+            SourceUtilEntryPoint::class.java,
+        ).sourceManager()
     }
     return sourceManager.isInitialized.collectAsStateWithLifecycle().value
 }

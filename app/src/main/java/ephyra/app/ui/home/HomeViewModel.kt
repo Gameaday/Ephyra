@@ -40,7 +40,9 @@ class HomeViewModel @Inject constructor(
     val extensionsBadgeCount: StateFlow<Int> = sourcePreferences.extensionUpdatesCount().changes()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
-    private fun <T> ephyra.core.common.preference.Preference<T>.asState(scope: kotlinx.coroutines.CoroutineScope): StateFlow<T> {
+    private fun <T> ephyra.core.common.preference.Preference<T>.asState(
+        scope: kotlinx.coroutines.CoroutineScope,
+    ): StateFlow<T> {
         return changes().stateIn(scope, SharingStarted.WhileSubscribed(5000), getSync())
     }
 }

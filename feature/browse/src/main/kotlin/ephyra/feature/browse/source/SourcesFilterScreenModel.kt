@@ -4,21 +4,21 @@ import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import ephyra.domain.source.interactor.GetLanguagesWithSources
 import ephyra.domain.source.interactor.ToggleLanguage
 import ephyra.domain.source.interactor.ToggleSource
 import ephyra.domain.source.model.Source
 import ephyra.domain.source.service.SourcePreferences
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.SortedMap
+import javax.inject.Inject
 
 @HiltViewModel
 class SourcesFilterScreenModel @Inject constructor(

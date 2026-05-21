@@ -157,7 +157,11 @@ class ReaderPreferences(
         NONE(ephyra.app.core.common.R.string.tapping_inverted_none),
         HORIZONTAL(ephyra.app.core.common.R.string.tapping_inverted_horizontal, shouldInvertHorizontal = true),
         VERTICAL(ephyra.app.core.common.R.string.tapping_inverted_vertical, shouldInvertVertical = true),
-        BOTH(ephyra.app.core.common.R.string.tapping_inverted_both, shouldInvertHorizontal = true, shouldInvertVertical = true),
+        BOTH(
+            ephyra.app.core.common.R.string.tapping_inverted_both,
+            shouldInvertHorizontal = true,
+            shouldInvertVertical = true,
+        ),
     }
 
     enum class ReaderHideThreshold(val threshold: Int) {
