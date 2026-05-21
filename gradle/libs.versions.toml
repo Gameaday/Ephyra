@@ -16,7 +16,7 @@ junit = "6.0.3"
 materialKolor = "5.0.0-alpha07"
 
 # Compiler Tools
-hilt = "2.54"
+hilt = "2.59.2"
 ksp = "2.3.7"
 room = "2.8.4"
 paging = "3.5.0"
