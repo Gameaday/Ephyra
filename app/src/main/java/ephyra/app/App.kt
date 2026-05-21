@@ -37,6 +37,7 @@ import ephyra.core.common.core.security.SecurityPreferences
 import ephyra.core.common.di.CoreContainer
 import ephyra.core.common.preference.Preference
 import ephyra.core.common.preference.PreferenceStore
+import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.GLUtil
 import ephyra.core.common.util.system.ImageUtil
@@ -106,6 +107,9 @@ class App :
 
     @Inject
     lateinit var sourceManager: SourceManager
+
+    @Volatile
+    private var verboseLoggingEnabled = false
 
     override val workManagerConfiguration: androidx.work.Configuration
         get() = androidx.work.Configuration.Builder()
@@ -179,29 +183,32 @@ class App :
             .onEach { ImageUtil.hardwareBitmapThreshold = it }
             .launchIn(scope)
 
-        setAppCompatDelegateThemeMode(uiPreferences.themeMode().getSync())
+        scope.launchIO {
+            verboseLoggingEnabled = networkPreferences.verboseLogging().get()
+            setAppCompatDelegateThemeMode(uiPreferences.themeMode().get())
 
-        // Updates widget update
-        WidgetManager(getUpdates, securityPreferences).apply { init(scope) }
+            // Updates widget update
+            WidgetManager(getUpdates, securityPreferences).apply { init(scope) }
 
-        if (!LogcatLogger.isInstalled) {
-            val minLogPriority = when {
-                networkPreferences.verboseLogging().getSync() -> LogPriority.VERBOSE
-                BuildConfig.DEBUG -> LogPriority.DEBUG
-                else -> LogPriority.INFO
+            if (!LogcatLogger.isInstalled) {
+                val minLogPriority = when {
+                    verboseLoggingEnabled -> LogPriority.VERBOSE
+                    BuildConfig.DEBUG -> LogPriority.DEBUG
+                    else -> LogPriority.INFO
+                }
+                LogcatLogger.install()
+                LogcatLogger.loggers += AndroidLogcatLogger(minLogPriority)
             }
-            LogcatLogger.install()
-            LogcatLogger.loggers += AndroidLogcatLogger(minLogPriority)
-        }
 
-        initializeMigrator()
+            initializeMigrator()
+        }
     }
 
-    private fun initializeMigrator() {
+    private suspend fun initializeMigrator() {
         val preference = preferenceStore.getInt(Preference.appStateKey("last_version_code"), 0)
-        logcat { "Migration from ${preference.getSync()} to ${BuildConfig.VERSION_CODE}" }
+        logcat { "Migration from ${preference.get()} to ${BuildConfig.VERSION_CODE}" }
         Migrator.initialize(
-            old = preference.getSync(),
+            old = preference.get(),
             new = BuildConfig.VERSION_CODE,
             migrations = migrations,
             onMigrationComplete = {
@@ -241,7 +248,7 @@ class App :
             // This eliminates the CPU→GPU upload on every render frame for covers and browse
             // images. getBitmapOrNull() handles the soft-copy needed for compress/notifications.
             if (!lowRam) bitmapConfig(Bitmap.Config.HARDWARE)
-            if (networkPreferences.verboseLogging().getSync()) logger(DebugLogger())
+            if (verboseLoggingEnabled) logger(DebugLogger())
 
             // Coil spawns a new thread for every image load by default
             fetcherCoroutineContext(Dispatchers.IO.limitedParallelism(8))

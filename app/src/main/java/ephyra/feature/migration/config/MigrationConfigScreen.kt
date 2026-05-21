@@ -64,6 +64,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.runBlocking
 import sh.calvin.reorderable.ReorderableCollectionItemScope
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.ReorderableLazyListState
@@ -407,8 +408,8 @@ class MigrationConfigScreenModel @Inject constructor(
     }
 
     fun toggleSelection(config: SelectionConfig) {
-        val pinnedSources = sourcePreferences.pinnedSources().getSync().mapNotNull { it.toLongOrNull() }
-        val disabledSources = sourcePreferences.disabledSources().getSync().mapNotNull { it.toLongOrNull() }
+        val pinnedSources = runBlocking { sourcePreferences.pinnedSources().get() }.mapNotNull { it.toLongOrNull() }
+        val disabledSources = runBlocking { sourcePreferences.disabledSources().get() }.mapNotNull { it.toLongOrNull() }
         val isSelected: (Long) -> Boolean = {
             when (config) {
                 SelectionConfig.All -> true

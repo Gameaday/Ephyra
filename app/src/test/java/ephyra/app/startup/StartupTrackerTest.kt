@@ -37,11 +37,11 @@ class StartupTrackerTest {
 
     @Test
     fun `complete is idempotent — duplicate calls do not duplicate entries`() {
-        StartupTracker.complete(StartupTracker.Phase.KOIN_INITIALIZED)
+        StartupTracker.complete(StartupTracker.Phase.MIGRATOR_STARTED)
         val firstSnapshot = StartupTracker.completedPhases.toList()
 
         // Call complete() a second time for the same phase
-        StartupTracker.complete(StartupTracker.Phase.KOIN_INITIALIZED)
+        StartupTracker.complete(StartupTracker.Phase.MIGRATOR_STARTED)
         val secondSnapshot = StartupTracker.completedPhases.toList()
 
         assertEquals(1, firstSnapshot.size)
@@ -75,14 +75,14 @@ class StartupTrackerTest {
         StartupTracker.complete(StartupTracker.Phase.APP_CREATED)
         assertEquals(1, StartupTracker.completedPhases.size)
 
-        StartupTracker.complete(StartupTracker.Phase.KOIN_INITIALIZED)
+        StartupTracker.complete(StartupTracker.Phase.MIGRATOR_STARTED)
         assertEquals(2, StartupTracker.completedPhases.size)
     }
 
     @Test
     fun `completedPhases returns entries sorted by timestamp`() {
         // Complete phases out of their declared enum order
-        StartupTracker.complete(StartupTracker.Phase.KOIN_INITIALIZED)
+        StartupTracker.complete(StartupTracker.Phase.MIGRATOR_STARTED)
         Thread.sleep(2) // guarantee different wall-clock timestamps
         StartupTracker.complete(StartupTracker.Phase.APP_CREATED)
 
@@ -132,7 +132,7 @@ class StartupTrackerTest {
         val second = IllegalStateException("second")
 
         StartupTracker.recordError(StartupTracker.Phase.APP_CREATED, first)
-        StartupTracker.recordError(StartupTracker.Phase.KOIN_INITIALIZED, second)
+        StartupTracker.recordError(StartupTracker.Phase.MIGRATOR_STARTED, second)
 
         assertEquals("second", StartupTracker.lastError!!.message) {
             "recordError must overwrite the previously stored error"
@@ -141,9 +141,9 @@ class StartupTrackerTest {
 
     @Test
     fun `recordError does not mark the phase as complete`() {
-        StartupTracker.recordError(StartupTracker.Phase.KOIN_INITIALIZED, RuntimeException())
+        StartupTracker.recordError(StartupTracker.Phase.MIGRATOR_STARTED, RuntimeException())
 
-        assertFalse(StartupTracker.isComplete(StartupTracker.Phase.KOIN_INITIALIZED)) {
+        assertFalse(StartupTracker.isComplete(StartupTracker.Phase.MIGRATOR_STARTED)) {
             "recordError must not implicitly complete the phase"
         }
     }

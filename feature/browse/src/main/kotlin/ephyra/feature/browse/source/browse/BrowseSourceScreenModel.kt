@@ -51,6 +51,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Instant
 import javax.inject.Inject
+import kotlinx.coroutines.runBlocking
 import eu.kanade.tachiyomi.source.model.Filter as SourceModelFilter
 
 @HiltViewModel
@@ -115,7 +116,7 @@ class BrowseSourceScreenModel @Inject constructor(
         }
     }
 
-    private val hideInLibraryItems = sourcePreferences.hideInLibraryItems().getSync()
+    private val hideInLibraryItems = runBlocking { sourcePreferences.hideInLibraryItems().get() }
     val mangaPagerFlowFlow = state.map { it.listing }
         .distinctUntilChanged()
         .map { listing ->
@@ -136,11 +137,13 @@ class BrowseSourceScreenModel @Inject constructor(
 
     fun getColumnsPreference(orientation: Int): GridCells {
         val isLandscape = orientation == Configuration.ORIENTATION_LANDSCAPE
-        val columns = if (isLandscape) {
-            libraryPreferences.landscapeColumns()
-        } else {
-            libraryPreferences.portraitColumns()
-        }.getSync()
+        val columns = runBlocking {
+            if (isLandscape) {
+                libraryPreferences.landscapeColumns().get()
+            } else {
+                libraryPreferences.portraitColumns().get()
+            }
+        }
         return if (columns == 0) GridCells.Adaptive(128.dp) else GridCells.Fixed(columns)
     }
 

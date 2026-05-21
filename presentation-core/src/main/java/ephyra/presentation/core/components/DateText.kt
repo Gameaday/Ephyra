@@ -9,6 +9,7 @@ import ephyra.presentation.core.i18n.stringResource
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import kotlinx.coroutines.runBlocking
 
 @Composable
 fun relativeDateText(
@@ -31,9 +32,13 @@ fun relativeDateText(
 
     val preferences = ephyra.presentation.core.util.LocalUiPreferences.current
 
-    val relativeTime = remember { preferences.relativeTime().getSync() }
+    val relativeTime = remember {
+        runBlocking { preferences.relativeTime().get() }
+    }
 
-    val dateFormat = remember { UiPreferences.dateFormat(preferences.dateFormat().getSync()) }
+    val dateFormat = remember {
+        UiPreferences.dateFormat(runBlocking { preferences.dateFormat().get() })
+    }
 
     return localDate?.toRelativeString(
         context = context,

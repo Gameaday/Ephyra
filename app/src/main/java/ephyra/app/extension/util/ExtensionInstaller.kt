@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import logcat.LogPriority
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -102,7 +103,7 @@ class ExtensionInstaller(
      * @param tempFile The file of the extension to install. Delete after use.
      */
     private fun installApk(downloadId: Long, tempFile: File) {
-        when (val installer = extensionInstaller.getSync()) {
+        when (val installer = runBlocking { extensionInstaller.get() }) {
             BasePreferences.ExtensionInstaller.LEGACY -> {
                 val intent = Intent(context, ExtensionInstallActivity::class.java)
                     .setDataAndType(tempFile.getUriCompat(context), APK_MIME)

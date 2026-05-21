@@ -52,11 +52,13 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import logcat.LogPriority
 import java.time.ZonedDateTime
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class UpdatesScreenModel @Inject constructor(
     private val sourceManager: SourceManager,
