@@ -171,23 +171,13 @@ class NavigatorExtensionsTest {
     // ── Default Tab onReselect is a no-op ────────────────────────────────────
 
     /**
-     * Verifies the default [Tab.onReselect] no-op via reflection: the method must exist,
-     * be non-abstract, and its default implementation must complete without throwing.
-     *
-     * We test via reflection to avoid requiring a fully composed Tab (Content() is
-     * @Composable and requires a live Compose runtime).
+     * Verifies the default [Tab.onReselect] no-op by instantiating the interface without
+     * overriding the method and calling it directly.
      */
     @Test
     fun `Tab onReselect method is non-abstract (has a default body)`() {
-        val method = Tab::class.java.methods.firstOrNull { it.name == "onReselect" }
-        assertNotNull(method) { "Tab must declare onReselect" }
+        val tab = object : Tab {}
 
-        // In Kotlin, an interface method with a default body is compiled as a default
-        // JVM interface method (JVM 8+). Checking it is NOT abstract confirms the default body.
-        val javaMethod = method!!
-        assertFalse(
-            java.lang.reflect.Modifier.isAbstract(javaMethod.modifiers),
-            "Tab.onReselect should have a default (non-abstract) implementation",
-        )
+        tab.onReselect()
     }
 }
