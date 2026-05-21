@@ -23,6 +23,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -34,7 +35,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.runtime.mutableStateListOf
 import com.kevinnzou.web.AccompanistWebChromeClient
 import com.kevinnzou.web.AccompanistWebViewClient
 import com.kevinnzou.web.LoadingState
@@ -239,7 +239,9 @@ fun WebViewScreenContent(
                                         add(
                                             0,
                                             AppBar.Action(
-                                                title = stringResource(ephyra.app.core.common.R.string.action_webview_close_tab),
+                                                title = stringResource(
+                                                    ephyra.app.core.common.R.string.action_webview_close_tab,
+                                                ),
                                                 icon = ImageVector.vectorResource(R.drawable.ic_tab_close_24px),
                                                 onClick = popState,
                                             ),

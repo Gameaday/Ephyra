@@ -238,6 +238,11 @@ abstract class SearchScreenModel(
         stateMutable.update { it.copy(dialog = null) }
     }
 
+    // Allow subclasses to update the internal state safely
+    protected fun updateState(transform: (State) -> State) {
+        stateMutable.update { transform(it) }
+    }
+
     @Immutable
     data class State(
         val from: Manga? = null,

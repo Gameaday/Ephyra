@@ -5,10 +5,6 @@ import androidx.compose.ui.util.fastFilter
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import ephyra.core.common.util.fastCountNot
 import ephyra.core.common.util.lang.launchIO
 import ephyra.domain.download.service.DownloadManager
@@ -26,7 +22,11 @@ import ephyra.domain.track.service.TrackerManager
 import ephyra.feature.stats.data.StatsData
 import ephyra.source.local.isLocal
 import eu.kanade.tachiyomi.source.model.SManga
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import javax.inject.Inject
 
 @HiltViewModel
 class StatsScreenModel @Inject constructor(

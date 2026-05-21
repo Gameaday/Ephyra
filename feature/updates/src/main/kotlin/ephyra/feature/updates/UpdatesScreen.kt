@@ -25,6 +25,7 @@ import androidx.compose.ui.util.fastAny
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import ephyra.core.common.i18n.stringResource
 import ephyra.domain.download.model.Download
 import ephyra.feature.manga.presentation.components.ChapterDownloadAction
 import ephyra.feature.manga.presentation.components.MangaBottomActionMenu
@@ -34,7 +35,6 @@ import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.FastScrollLazyColumn
 import ephyra.presentation.core.components.material.PullRefresh
 import ephyra.presentation.core.components.material.Scaffold
-import ephyra.core.common.i18n.stringResource
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.LoadingScreen
@@ -246,7 +246,9 @@ fun UpdatesScreen(
         snackbarHostState = screenModel.snackbarHostState,
         lastUpdated = screenModel.lastUpdated,
         isRefreshing = state.isLibraryUpdating,
-        onClickCover = { item -> navController.navigate(ScreenRoutes.MangaDetails.createRoute(item.update.mangaId, false)) },
+        onClickCover = { item ->
+            navController.navigate(ScreenRoutes.MangaDetails.createRoute(item.update.mangaId, false))
+        },
         onSelectAll = { screenModel.onEvent(UpdatesScreenEvent.ToggleAllSelection(it)) },
         onInvertSelection = { screenModel.onEvent(UpdatesScreenEvent.InvertSelection) },
         onUpdateLibrary = { screenModel.onEvent(UpdatesScreenEvent.UpdateLibrary) },

@@ -46,7 +46,7 @@ class MigrateSearchScreenModel @Inject constructor(
         isInitialized = true
         viewModelScope.launch {
             val manga = getManga.await(mangaId)!!
-            _state.update {
+            updateState {
                 it.copy(
                     from = manga,
                     searchQuery = manga.title,
