@@ -101,7 +101,9 @@ object SettingsDataScreen : SearchableSettings {
 
         return persistentListOf(
             getStorageLocationPref(storagePreferences = screenModel.storagePreferences),
-            Preference.PreferenceItem.InfoPreference(stringResource(ephyra.app.core.common.R.string.pref_storage_location_info)),
+            Preference.PreferenceItem.InfoPreference(
+                stringResource(ephyra.app.core.common.R.string.pref_storage_location_info),
+            ),
 
             getBackupAndRestoreGroup(
                 backupPreferences = screenModel.backupPreferences,
@@ -201,7 +203,10 @@ object SettingsDataScreen : SearchableSettings {
             object : ActivityResultContracts.GetContent() {
                 override fun createIntent(context: Context, input: String): Intent {
                     val intent = super.createIntent(context, input)
-                    return Intent.createChooser(intent, context.stringResource(ephyra.app.core.common.R.string.file_select_backup))
+                    return Intent.createChooser(
+                        intent,
+                        context.stringResource(ephyra.app.core.common.R.string.file_select_backup),
+                    )
                 }
             },
         ) {
@@ -210,7 +215,7 @@ object SettingsDataScreen : SearchableSettings {
                 return@rememberLauncherForActivityResult
             }
 
-            navController.navigate(ScreenRoutes.RestoreBackup.route + "?uri=${it}")
+            navController.navigate(ScreenRoutes.RestoreBackup.route + "?uri=$it")
         }
 
         return Preference.PreferenceGroup(
@@ -279,7 +284,10 @@ object SettingsDataScreen : SearchableSettings {
                 ),
                 Preference.PreferenceItem.InfoPreference(
                     stringResource(ephyra.app.core.common.R.string.backup_info) + "\n\n" +
-                        stringResource(ephyra.app.core.common.R.string.last_auto_backup_info, relativeTimeSpanString(lastAutoBackup)),
+                        stringResource(
+                            ephyra.app.core.common.R.string.last_auto_backup_info,
+                            relativeTimeSpanString(lastAutoBackup),
+                        ),
                 ),
             ),
         )
@@ -294,7 +302,9 @@ object SettingsDataScreen : SearchableSettings {
         val scope = rememberCoroutineScope()
 
         var cacheReadableSizeSema by remember { mutableIntStateOf(0) }
-        var cacheReadableSize by remember { mutableStateOf(context.stringResource(ephyra.app.core.common.R.string.calculating)) }
+        var cacheReadableSize by remember {
+            mutableStateOf(context.stringResource(ephyra.app.core.common.R.string.calculating))
+        }
         LaunchedEffect(cacheReadableSizeSema) {
             cacheReadableSize = chapterCache.getReadableSize()
         }
@@ -322,12 +332,19 @@ object SettingsDataScreen : SearchableSettings {
                             try {
                                 val deletedFiles = chapterCache.clear()
                                 withContext(Dispatchers.Main) {
-                                    context.toast(context.stringResource(ephyra.app.core.common.R.string.cache_deleted, deletedFiles))
+                                    context.toast(
+                                        context.stringResource(
+                                            ephyra.app.core.common.R.string.cache_deleted,
+                                            deletedFiles,
+                                        ),
+                                    )
                                     cacheReadableSizeSema++
                                 }
                             } catch (e: Throwable) {
                                 logcat(LogPriority.ERROR, e)
-                                withContext(Dispatchers.Main) { context.toast(ephyra.app.core.common.R.string.cache_delete_error) }
+                                withContext(Dispatchers.Main) {
+                                    context.toast(ephyra.app.core.common.R.string.cache_delete_error)
+                                }
                             }
                         }
                     },

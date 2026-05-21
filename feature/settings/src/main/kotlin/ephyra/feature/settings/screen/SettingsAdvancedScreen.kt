@@ -154,7 +154,9 @@ object SettingsAdvancedScreen : SearchableSettings {
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.TextPreference(
                     title = stringResource(ephyra.app.core.common.R.string.pref_disable_battery_optimization),
-                    subtitle = stringResource(ephyra.app.core.common.R.string.pref_disable_battery_optimization_summary),
+                    subtitle = stringResource(
+                        ephyra.app.core.common.R.string.pref_disable_battery_optimization_summary,
+                    ),
                     onClick = {
                         val packageName: String = context.packageName
                         if (!context.powerManager.isIgnoringBatteryOptimizations(packageName)) {
@@ -167,7 +169,9 @@ object SettingsAdvancedScreen : SearchableSettings {
                                 }
                                 context.startActivity(intent)
                             } catch (e: ActivityNotFoundException) {
-                                context.toast(ephyra.app.core.common.R.string.battery_optimization_setting_activity_not_found)
+                                context.toast(
+                                    ephyra.app.core.common.R.string.battery_optimization_setting_activity_not_found,
+                                )
                             }
                         } else {
                             context.toast(ephyra.app.core.common.R.string.battery_optimization_disabled)
@@ -341,7 +345,9 @@ object SettingsAdvancedScreen : SearchableSettings {
                 Preference.PreferenceItem.SwitchPreference(
                     preference = libraryPreferences.disallowNonAsciiFilenames(),
                     title = stringResource(ephyra.app.core.common.R.string.pref_disallow_non_ascii_filenames),
-                    subtitle = stringResource(ephyra.app.core.common.R.string.pref_disallow_non_ascii_filenames_details),
+                    subtitle = stringResource(
+                        ephyra.app.core.common.R.string.pref_disallow_non_ascii_filenames_details,
+                    ),
                 ),
             ),
         )
@@ -369,7 +375,10 @@ object SettingsAdvancedScreen : SearchableSettings {
                     entries = GLUtil.CUSTOM_TEXTURE_LIMIT_OPTIONS
                         .mapIndexed { index, option ->
                             val display = if (index == 0) {
-                                stringResource(ephyra.app.core.common.R.string.pref_hardware_bitmap_threshold_default, option)
+                                stringResource(
+                                    ephyra.app.core.common.R.string.pref_hardware_bitmap_threshold_default,
+                                    option,
+                                )
                             } else {
                                 option.toString()
                             }
@@ -379,14 +388,19 @@ object SettingsAdvancedScreen : SearchableSettings {
                         .toImmutableMap(),
                     title = stringResource(ephyra.app.core.common.R.string.pref_hardware_bitmap_threshold),
                     subtitleProvider = { value, options ->
-                        stringResource(ephyra.app.core.common.R.string.pref_hardware_bitmap_threshold_summary, options[value].orEmpty())
+                        stringResource(
+                            ephyra.app.core.common.R.string.pref_hardware_bitmap_threshold_summary,
+                            options[value].orEmpty(),
+                        )
                     },
                     enabled = GLUtil.DEVICE_TEXTURE_LIMIT > GLUtil.SAFE_TEXTURE_LIMIT,
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = basePreferences.alwaysDecodeLongStripWithSSIV(),
                     title = stringResource(ephyra.app.core.common.R.string.pref_always_decode_long_strip_with_ssiv_2),
-                    subtitle = stringResource(ephyra.app.core.common.R.string.pref_always_decode_long_strip_with_ssiv_summary),
+                    subtitle = stringResource(
+                        ephyra.app.core.common.R.string.pref_always_decode_long_strip_with_ssiv_summary,
+                    ),
                 ),
                 Preference.PreferenceItem.TextPreference(
                     title = stringResource(ephyra.app.core.common.R.string.pref_display_profile),
@@ -415,7 +429,11 @@ object SettingsAdvancedScreen : SearchableSettings {
             AlertDialog(
                 onDismissRequest = dismiss,
                 title = { Text(text = stringResource(ephyra.app.core.common.R.string.ext_installer_shizuku)) },
-                text = { Text(text = stringResource(ephyra.app.core.common.R.string.ext_installer_shizuku_unavailable_dialog)) },
+                text = {
+                    Text(
+                        text = stringResource(ephyra.app.core.common.R.string.ext_installer_shizuku_unavailable_dialog),
+                    )
+                },
                 dismissButton = {
                     TextButton(onClick = dismiss) {
                         Text(text = stringResource(ephyra.app.core.common.R.string.action_cancel))

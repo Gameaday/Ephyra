@@ -131,7 +131,9 @@ object SettingsAppearanceScreen : SearchableSettings {
                     entries = DateFormats
                         .associateWith {
                             val formattedDate = UiPreferences.dateFormat(it).format(now)
-                            "${it.ifEmpty { stringResource(ephyra.app.core.common.R.string.label_default) }} ($formattedDate)"
+                            "${it.ifEmpty {
+                                stringResource(ephyra.app.core.common.R.string.label_default)
+                            }} ($formattedDate)"
                         }
                         .toImmutableMap(),
                     title = stringResource(ephyra.app.core.common.R.string.pref_date_format),

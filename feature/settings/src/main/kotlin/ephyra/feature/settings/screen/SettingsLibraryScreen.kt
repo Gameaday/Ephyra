@@ -14,8 +14,6 @@ import androidx.compose.ui.util.fastMap
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import ephyra.presentation.core.ui.navigation.LocalNavController
-import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.core.common.util.system.ImageFormat
 import ephyra.domain.category.interactor.ResetCategoryFlags
 import ephyra.domain.category.model.Category
@@ -36,6 +34,8 @@ import ephyra.feature.settings.Preference
 import ephyra.feature.settings.widget.TriStateListDialog
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.collectAsState
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
@@ -178,7 +178,8 @@ object SettingsLibraryScreen : SearchableSettings {
                     preference = libraryPreferences.autoUpdateDeviceRestrictions(),
                     entries = persistentMapOf(
                         DEVICE_ONLY_ON_WIFI to stringResource(ephyra.app.core.common.R.string.connected_to_wifi),
-                        DEVICE_NETWORK_NOT_METERED to stringResource(ephyra.app.core.common.R.string.network_not_metered),
+                        DEVICE_NETWORK_NOT_METERED to
+                            stringResource(ephyra.app.core.common.R.string.network_not_metered),
                         DEVICE_CHARGING to stringResource(ephyra.app.core.common.R.string.charging),
                     ),
                     title = stringResource(ephyra.app.core.common.R.string.pref_library_update_restriction),
@@ -203,15 +204,20 @@ object SettingsLibraryScreen : SearchableSettings {
                 Preference.PreferenceItem.SwitchPreference(
                     preference = libraryPreferences.autoUpdateMetadata(),
                     title = stringResource(ephyra.app.core.common.R.string.pref_library_update_refresh_metadata),
-                    subtitle = stringResource(ephyra.app.core.common.R.string.pref_library_update_refresh_metadata_summary),
+                    subtitle = stringResource(
+                        ephyra.app.core.common.R.string.pref_library_update_refresh_metadata_summary,
+                    ),
                 ),
                 Preference.PreferenceItem.MultiSelectListPreference(
                     preference = libraryPreferences.autoUpdateMangaRestrictions(),
                     entries = persistentMapOf(
-                        MANGA_HAS_UNREAD to stringResource(ephyra.app.core.common.R.string.pref_update_only_completely_read),
+                        MANGA_HAS_UNREAD to
+                            stringResource(ephyra.app.core.common.R.string.pref_update_only_completely_read),
                         MANGA_NON_READ to stringResource(ephyra.app.core.common.R.string.pref_update_only_started),
-                        MANGA_NON_COMPLETED to stringResource(ephyra.app.core.common.R.string.pref_update_only_non_completed),
-                        MANGA_OUTSIDE_RELEASE_PERIOD to stringResource(ephyra.app.core.common.R.string.pref_update_only_in_release_period),
+                        MANGA_NON_COMPLETED to
+                            stringResource(ephyra.app.core.common.R.string.pref_update_only_non_completed),
+                        MANGA_OUTSIDE_RELEASE_PERIOD to
+                            stringResource(ephyra.app.core.common.R.string.pref_update_only_in_release_period),
                     ),
                     title = stringResource(ephyra.app.core.common.R.string.pref_library_update_smart_update),
                 ),
@@ -284,7 +290,9 @@ object SettingsLibraryScreen : SearchableSettings {
                     preference = libraryPreferences.markDuplicateReadChapterAsRead(),
                     entries = persistentMapOf(
                         MARK_DUPLICATE_CHAPTER_READ_EXISTING to
-                            stringResource(ephyra.app.core.common.R.string.pref_mark_duplicate_read_chapter_read_existing),
+                            stringResource(
+                                ephyra.app.core.common.R.string.pref_mark_duplicate_read_chapter_read_existing,
+                            ),
                         MARK_DUPLICATE_CHAPTER_READ_NEW to
                             stringResource(ephyra.app.core.common.R.string.pref_mark_duplicate_read_chapter_read_new),
                     ),

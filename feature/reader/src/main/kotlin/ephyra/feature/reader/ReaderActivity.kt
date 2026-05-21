@@ -21,6 +21,7 @@ import android.view.View.LAYER_TYPE_HARDWARE
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -43,6 +44,7 @@ import androidx.lifecycle.lifecycleScope
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 import com.google.android.material.transition.platform.MaterialContainerTransform
 import com.hippo.unifile.UniFile
+import dagger.hilt.android.AndroidEntryPoint
 import ephyra.core.common.Constants
 import ephyra.core.common.notification.NotificationManager
 import ephyra.core.common.util.lang.launchNonCancellable
@@ -93,10 +95,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import logcat.LogPriority
-import dagger.hilt.android.AndroidEntryPoint
-import androidx.activity.viewModels
-import javax.inject.Inject
 import java.io.ByteArrayOutputStream
+import javax.inject.Inject
 import ephyra.presentation.core.R as CoreR
 
 @AndroidEntryPoint
@@ -114,8 +114,11 @@ class ReaderActivity : BaseActivity() {
     }
 
     @Inject lateinit var readerPreferences: ReaderPreferences
+
     @Inject lateinit var preferences: BasePreferences
+
     @Inject lateinit var navigator: AppNavigator
+
     @Inject lateinit var notificationManager: NotificationManager
 
     lateinit var binding: ReaderActivityBinding

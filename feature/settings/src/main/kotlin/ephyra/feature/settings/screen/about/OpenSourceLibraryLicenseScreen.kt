@@ -7,24 +7,23 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.text.HtmlCompat
+import androidx.navigation.NavController
 import com.google.android.material.textview.MaterialTextView
+import com.mikepenz.aboutlibraries.ui.compose.android.produceLibraries
+import com.mikepenz.aboutlibraries.ui.compose.util.htmlReadyLicenseContent
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
-import kotlinx.collections.immutable.persistentListOf
-
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.platform.LocalContext
-import androidx.navigation.NavController
-import com.mikepenz.aboutlibraries.ui.compose.android.produceLibraries
-import com.mikepenz.aboutlibraries.ui.compose.util.htmlReadyLicenseContent
 import ephyra.presentation.core.ui.navigation.LocalNavController
+import kotlinx.collections.immutable.persistentListOf
 
 @Composable
 fun OpenSourceLibraryLicenseScreen(
@@ -85,4 +84,3 @@ private fun HtmlLicenseText(html: String) {
         },
     )
 }
-

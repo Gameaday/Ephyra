@@ -70,7 +70,10 @@ fun SettingsScreen(
 }
 
 enum class SettingsDetail {
-    Appearance, About, Data, Tracking
+    Appearance,
+    About,
+    Data,
+    Tracking,
 }
 
 object SettingsScreen {

@@ -10,14 +10,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.domain.backup.model.BackupOptions
 import ephyra.domain.backup.service.BackupScheduler
@@ -28,12 +25,14 @@ import ephyra.presentation.core.components.SectionCard
 import ephyra.presentation.core.components.WarningBanner
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.util.system.toast
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-
-import androidx.navigation.NavController
-import ephyra.presentation.core.ui.navigation.LocalNavController
+import javax.inject.Inject
 
 @Composable
 fun CreateBackupScreen(
@@ -105,21 +104,21 @@ fun CreateBackupScreen(
 
 @Composable
 private fun Options(
-        options: ImmutableList<BackupOptions.Entry>,
-        state: CreateBackupViewModel.State,
-        model: CreateBackupViewModel,
-    ) {
-        options.forEach { option ->
-            LabeledCheckbox(
-                label = stringResource(option.label),
-                checked = option.getter(state.options),
-                onCheckedChange = {
-                    model.toggle(option.setter, it)
-                },
-                enabled = option.enabled(state.options),
-            )
-        }
+    options: ImmutableList<BackupOptions.Entry>,
+    state: CreateBackupViewModel.State,
+    model: CreateBackupViewModel,
+) {
+    options.forEach { option ->
+        LabeledCheckbox(
+            label = stringResource(option.label),
+            checked = option.getter(state.options),
+            onCheckedChange = {
+                model.toggle(option.setter, it)
+            },
+            enabled = option.enabled(state.options),
+        )
     }
+}
 
 @HiltViewModel
 class CreateBackupViewModel @Inject constructor(

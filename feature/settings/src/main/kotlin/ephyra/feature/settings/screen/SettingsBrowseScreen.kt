@@ -9,14 +9,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import ephyra.presentation.core.ui.navigation.LocalNavController
-import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.core.common.i18n.stringResource
 import ephyra.domain.source.service.SourcePreferences
 import ephyra.feature.settings.Preference
 import ephyra.feature.settings.screen.browse.ExtensionReposScreen
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.core.util.system.AuthenticatorUtil.authenticate
 import kotlinx.collections.immutable.persistentListOf
@@ -45,7 +45,11 @@ object SettingsBrowseScreen : SearchableSettings {
                     ),
                     Preference.PreferenceItem.TextPreference(
                         title = stringResource(ephyra.app.core.common.R.string.label_extension_repos),
-                        subtitle = pluralStringResource(ephyra.app.core.common.R.plurals.num_repos, reposCount, reposCount),
+                        subtitle = pluralStringResource(
+                            ephyra.app.core.common.R.plurals.num_repos,
+                            reposCount,
+                            reposCount,
+                        ),
                         onClick = {
                             navController.navigate(ScreenRoutes.ExtensionRepos.route)
                         },
@@ -61,11 +65,15 @@ object SettingsBrowseScreen : SearchableSettings {
                         subtitle = stringResource(ephyra.app.core.common.R.string.requires_app_restart),
                         onValueChanged = {
                             (context as FragmentActivity).authenticate(
-                                title = context.stringResource(ephyra.app.core.common.R.string.pref_category_nsfw_content),
+                                title = context.stringResource(
+                                    ephyra.app.core.common.R.string.pref_category_nsfw_content,
+                                ),
                             )
                         },
                     ),
-                    Preference.PreferenceItem.InfoPreference(stringResource(ephyra.app.core.common.R.string.parental_controls_info)),
+                    Preference.PreferenceItem.InfoPreference(
+                        stringResource(ephyra.app.core.common.R.string.parental_controls_info),
+                    ),
                 ),
             ),
         )

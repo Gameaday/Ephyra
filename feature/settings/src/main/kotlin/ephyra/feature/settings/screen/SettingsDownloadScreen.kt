@@ -245,13 +245,19 @@ object SettingsDownloadScreen : SearchableSettings {
                             if (it == 0) {
                                 stringResource(ephyra.app.core.common.R.string.disabled)
                             } else {
-                                pluralStringResource(ephyra.app.core.common.R.plurals.next_unread_chapters, count = it, it)
+                                pluralStringResource(
+                                    ephyra.app.core.common.R.plurals.next_unread_chapters,
+                                    count = it,
+                                    it,
+                                )
                             }
                         }
                         .toImmutableMap(),
                     title = stringResource(ephyra.app.core.common.R.string.auto_download_while_reading),
                 ),
-                Preference.PreferenceItem.InfoPreference(stringResource(ephyra.app.core.common.R.string.download_ahead_info)),
+                Preference.PreferenceItem.InfoPreference(
+                    stringResource(ephyra.app.core.common.R.string.download_ahead_info),
+                ),
             ),
         )
     }
@@ -400,7 +406,9 @@ object SettingsDownloadScreen : SearchableSettings {
                                 ) {
                                     Icon(
                                         imageVector = Icons.Outlined.Delete,
-                                        contentDescription = stringResource(ephyra.app.core.common.R.string.action_delete),
+                                        contentDescription = stringResource(
+                                            ephyra.app.core.common.R.string.action_delete,
+                                        ),
                                         tint = MaterialTheme.colorScheme.error,
                                     )
                                 }

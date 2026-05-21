@@ -6,21 +6,20 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import androidx.profileinstaller.ProfileVerifier
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.WebViewUtil
 import ephyra.feature.settings.Preference
 import ephyra.feature.settings.PreferenceScaffold
 import ephyra.feature.settings.screen.about.AboutScreen
-import kotlinx.collections.immutable.mutate
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.coroutines.guava.await
-
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
 import ephyra.feature.settings.screen.about.AboutScreenModel
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
+import kotlinx.collections.immutable.mutate
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.guava.await
 
 @Composable
 fun DebugInfoScreen(
@@ -141,4 +140,3 @@ private fun getDeviceInfoGroup(): Preference.PreferenceGroup {
         preferenceItems = items,
     )
 }
-

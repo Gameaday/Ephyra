@@ -29,15 +29,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastMap
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavController
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.launchUI
 import ephyra.core.common.util.lang.toLong
@@ -47,23 +44,25 @@ import ephyra.domain.manga.interactor.DeleteNonLibraryManga
 import ephyra.domain.source.interactor.GetSourcesWithNonLibraryManga
 import ephyra.domain.source.model.Source
 import ephyra.domain.source.model.SourceWithCount
-import ephyra.presentation.core.components.SourceIcon
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.LazyColumnWithAction
+import ephyra.presentation.core.components.SourceIcon
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.LoadingScreen
+import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.util.selectedBackground
 import ephyra.presentation.core.util.system.toast
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
-
-import androidx.navigation.NavController
-import ephyra.presentation.core.ui.navigation.LocalNavController
+import javax.inject.Inject
 
 @Composable
 fun ClearDatabaseScreen(
@@ -104,7 +103,9 @@ fun ClearDatabaseScreen(
                             }
                             if (!keepReadManga) {
                                 Text(
-                                    text = stringResource(ephyra.app.core.common.R.string.clear_database_history_warning),
+                                    text = stringResource(
+                                        ephyra.app.core.common.R.string.clear_database_history_warning,
+                                    ),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.error,
                                 )
@@ -149,7 +150,9 @@ fun ClearDatabaseScreen(
                                             onClick = model::selectAll,
                                         ),
                                         AppBar.Action(
-                                            title = stringResource(ephyra.app.core.common.R.string.action_select_inverse),
+                                            title = stringResource(
+                                                ephyra.app.core.common.R.string.action_select_inverse,
+                                            ),
                                             icon = Icons.Outlined.FlipToBack,
                                             onClick = model::invertSelection,
                                         ),
@@ -190,37 +193,37 @@ fun ClearDatabaseScreen(
 
 @Composable
 private fun ClearDatabaseItem(
-        source: Source,
-        count: Long,
-        isSelected: Boolean,
-        onClickSelect: () -> Unit,
+    source: Source,
+    count: Long,
+    isSelected: Boolean,
+    onClickSelect: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .selectedBackground(isSelected)
+            .clickable(onClick = onClickSelect)
+            .padding(horizontal = 8.dp)
+            .height(56.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
+        SourceIcon(source = source)
+        Column(
             modifier = Modifier
-                .selectedBackground(isSelected)
-                .clickable(onClick = onClickSelect)
-                .padding(horizontal = 8.dp)
-                .height(56.dp),
-            verticalAlignment = Alignment.CenterVertically,
+                .padding(start = 8.dp)
+                .weight(1f),
         ) {
-            SourceIcon(source = source)
-            Column(
-                modifier = Modifier
-                    .padding(start = 8.dp)
-                    .weight(1f),
-            ) {
-                Text(
-                    text = source.visualName,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(text = stringResource(ephyra.app.core.common.R.string.clear_database_source_item_count, count))
-            }
-            Checkbox(
-                checked = isSelected,
-                onCheckedChange = { onClickSelect() },
+            Text(
+                text = source.visualName,
+                style = MaterialTheme.typography.bodyMedium,
             )
+            Text(text = stringResource(ephyra.app.core.common.R.string.clear_database_source_item_count, count))
         }
+        Checkbox(
+            checked = isSelected,
+            onCheckedChange = { onClickSelect() },
+        )
     }
+}
 
 @HiltViewModel
 class ClearDatabaseScreenModel @Inject constructor(

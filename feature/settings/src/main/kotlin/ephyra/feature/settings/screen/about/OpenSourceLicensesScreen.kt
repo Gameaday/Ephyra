@@ -5,14 +5,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.NavController
 import com.mikepenz.aboutlibraries.ui.compose.android.produceLibraries
 import com.mikepenz.aboutlibraries.ui.compose.m3.LibrariesContainer
 import com.mikepenz.aboutlibraries.ui.compose.util.htmlReadyLicenseContent
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
-
-import androidx.navigation.NavController
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 

@@ -20,14 +20,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
-import androidx.work.WorkInfo
-import androidx.work.WorkQuery
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavController
+import androidx.work.WorkInfo
+import androidx.work.WorkQuery
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
-import androidx.hilt.navigation.compose.hiltViewModel
 import ephyra.core.common.util.lang.toDateTimestampString
 import ephyra.core.common.util.system.workManager
 import ephyra.domain.ui.UiPreferences
@@ -35,6 +35,7 @@ import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.util.system.copyToClipboard
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.SharingStarted
@@ -43,9 +44,7 @@ import kotlinx.coroutines.flow.stateIn
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
-
-import androidx.navigation.NavController
-import ephyra.presentation.core.ui.navigation.LocalNavController
+import javax.inject.Inject
 
 @Composable
 fun WorkerInfoScreen(
@@ -179,7 +178,6 @@ private operator fun PaddingValues.plus(other: PaddingValues): PaddingValues {
         start = this.calculateStartPadding(layoutDirection) + other.calculateStartPadding(layoutDirection),
         top = this.calculateTopPadding() + other.calculateTopPadding(),
         end = this.calculateEndPadding(layoutDirection) + other.calculateEndPadding(layoutDirection),
-        bottom = this.calculateBottomPadding() + other.calculateBottomPadding()
+        bottom = this.calculateBottomPadding() + other.calculateBottomPadding(),
     )
 }
-

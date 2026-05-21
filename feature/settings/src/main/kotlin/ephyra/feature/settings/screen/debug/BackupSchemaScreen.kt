@@ -12,17 +12,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import ephyra.domain.backup.model.Backup
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.util.system.copyToClipboard
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.serialization.protobuf.schema.ProtoBufSchemaGenerator
-
-import androidx.navigation.NavController
-import ephyra.presentation.core.ui.navigation.LocalNavController
 
 @Composable
 fun BackupSchemaScreen(

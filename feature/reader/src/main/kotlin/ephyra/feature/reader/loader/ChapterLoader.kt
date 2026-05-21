@@ -151,7 +151,9 @@ class ChapterLoader(
                 preProcessor = preProcessor,
             )
 
-            source is StubSource -> error(context.stringResource(ephyra.app.core.common.R.string.source_not_installed, source.toString()))
+            source is StubSource -> error(
+                context.stringResource(ephyra.app.core.common.R.string.source_not_installed, source.toString()),
+            )
             else -> error(context.stringResource(ephyra.app.core.common.R.string.loader_not_implemented_error))
         }
     }

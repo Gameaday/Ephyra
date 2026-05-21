@@ -64,8 +64,10 @@ object SettingsReaderScreen : SearchableSettings {
             Preference.PreferenceItem.ListPreference(
                 preference = readerPref.sliderNavMode(),
                 entries = persistentMapOf(
-                    ReaderPreferences.SLIDER_NAV_INSTANT to stringResource(ephyra.app.core.common.R.string.slider_nav_instant),
-                    ReaderPreferences.SLIDER_NAV_SMOOTH to stringResource(ephyra.app.core.common.R.string.slider_nav_smooth),
+                    ReaderPreferences.SLIDER_NAV_INSTANT to
+                        stringResource(ephyra.app.core.common.R.string.slider_nav_instant),
+                    ReaderPreferences.SLIDER_NAV_SMOOTH to
+                        stringResource(ephyra.app.core.common.R.string.slider_nav_smooth),
                 ),
                 title = stringResource(ephyra.app.core.common.R.string.pref_slider_nav_mode),
                 subtitle = stringResource(ephyra.app.core.common.R.string.pref_slider_nav_mode_subtitle),
@@ -149,7 +151,10 @@ object SettingsReaderScreen : SearchableSettings {
                     value = flashMillis / ReaderPreferences.MILLI_CONVERSION,
                     valueRange = 1..15,
                     title = stringResource(ephyra.app.core.common.R.string.pref_flash_duration),
-                    valueString = stringResource(ephyra.app.core.common.R.string.pref_flash_duration_summary, flashMillis),
+                    valueString = stringResource(
+                        ephyra.app.core.common.R.string.pref_flash_duration_summary,
+                        flashMillis,
+                    ),
                     enabled = flashPageState,
                     onValueChanged = { flashMillisPref.set(it * ReaderPreferences.MILLI_CONVERSION) },
                 ),
@@ -157,15 +162,21 @@ object SettingsReaderScreen : SearchableSettings {
                     value = flashInterval,
                     valueRange = 1..10,
                     title = stringResource(ephyra.app.core.common.R.string.pref_flash_page_interval),
-                    valueString = pluralStringResource(ephyra.app.core.common.R.plurals.pref_pages, flashInterval, flashInterval),
+                    valueString = pluralStringResource(
+                        ephyra.app.core.common.R.plurals.pref_pages,
+                        flashInterval,
+                        flashInterval,
+                    ),
                     enabled = flashPageState,
                     onValueChanged = { flashIntervalPref.set(it) },
                 ),
                 Preference.PreferenceItem.ListPreference(
                     preference = flashColorPref,
                     entries = persistentMapOf(
-                        ReaderPreferences.FlashColor.BLACK to stringResource(ephyra.app.core.common.R.string.pref_flash_style_black),
-                        ReaderPreferences.FlashColor.WHITE to stringResource(ephyra.app.core.common.R.string.pref_flash_style_white),
+                        ReaderPreferences.FlashColor.BLACK to
+                            stringResource(ephyra.app.core.common.R.string.pref_flash_style_black),
+                        ReaderPreferences.FlashColor.WHITE to
+                            stringResource(ephyra.app.core.common.R.string.pref_flash_style_white),
                         ReaderPreferences.FlashColor.WHITE_BLACK
                             to stringResource(ephyra.app.core.common.R.string.pref_flash_style_white_black),
                     ),
@@ -348,10 +359,14 @@ object SettingsReaderScreen : SearchableSettings {
                 Preference.PreferenceItem.ListPreference(
                     preference = readerPreferences.readerHideThreshold(),
                     entries = persistentMapOf(
-                        ReaderPreferences.ReaderHideThreshold.HIGHEST to stringResource(ephyra.app.core.common.R.string.pref_highest),
-                        ReaderPreferences.ReaderHideThreshold.HIGH to stringResource(ephyra.app.core.common.R.string.pref_high),
-                        ReaderPreferences.ReaderHideThreshold.LOW to stringResource(ephyra.app.core.common.R.string.pref_low),
-                        ReaderPreferences.ReaderHideThreshold.LOWEST to stringResource(ephyra.app.core.common.R.string.pref_lowest),
+                        ReaderPreferences.ReaderHideThreshold.HIGHEST to
+                            stringResource(ephyra.app.core.common.R.string.pref_highest),
+                        ReaderPreferences.ReaderHideThreshold.HIGH to
+                            stringResource(ephyra.app.core.common.R.string.pref_high),
+                        ReaderPreferences.ReaderHideThreshold.LOW to
+                            stringResource(ephyra.app.core.common.R.string.pref_low),
+                        ReaderPreferences.ReaderHideThreshold.LOWEST to
+                            stringResource(ephyra.app.core.common.R.string.pref_lowest),
                     ),
                     title = stringResource(ephyra.app.core.common.R.string.pref_hide_threshold),
                 ),
