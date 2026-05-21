@@ -167,7 +167,6 @@ private fun LazyListScope.errorMessageItem(
                 }
             }
         }
-    }
 }
 
 @HiltViewModel

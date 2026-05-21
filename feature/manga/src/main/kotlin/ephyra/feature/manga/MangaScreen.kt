@@ -21,8 +21,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.logcat
-import ephyra.core.util.ifSourcesLoaded
 import ephyra.domain.chapter.model.Chapter
+import ephyra.presentation.core.util.ifSourcesLoaded
+import kotlinx.collections.immutable.toImmutableList
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.hasCustomCover
 import ephyra.domain.manga.model.toSManga
@@ -39,7 +40,6 @@ import ephyra.feature.manga.presentation.components.ScanlatorFilterDialog
 import ephyra.feature.manga.presentation.components.SetIntervalDialog
 import ephyra.feature.migration.dialog.MigrateMangaDialog
 import ephyra.feature.reader.ReaderActivity
-import ephyra.presentation.core.components.NavigatorAdaptiveSheet
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
@@ -191,7 +191,7 @@ fun MangaDetailsScreen(
         null -> {}
         is MangaScreenModel.Dialog.ChangeCategory -> {
             ChangeCategoryDialog(
-                initialSelection = dialog.initialSelection,
+                initialSelection = dialog.initialSelection.toImmutableList(),
                 onDismissRequest = onDismissRequest,
                 onEditCategories = {
                     navController.navigate(ScreenRoutes.Category.route)

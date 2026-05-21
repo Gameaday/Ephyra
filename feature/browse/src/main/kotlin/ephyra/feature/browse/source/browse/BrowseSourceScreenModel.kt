@@ -55,7 +55,7 @@ import eu.kanade.tachiyomi.source.model.Filter as SourceModelFilter
 
 @HiltViewModel
 class BrowseSourceScreenModel @Inject constructor(
-    private val sourceManager: SourceManager,
+    val sourceManager: SourceManager,
     private val sourcePreferences: SourcePreferences,
     private val libraryPreferences: LibraryPreferences,
     private val coverCache: CoverCache,

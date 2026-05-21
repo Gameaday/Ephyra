@@ -433,3 +433,42 @@ class AuthoritySearchScreenModel @Inject constructor(
         )
     }
 }
+
+@Immutable
+data class AuthoritySearchState(
+    val availableTrackers: ImmutableList<Tracker> = persistentListOf(),
+    val selectedTracker: Tracker? = null,
+    val contentTypeFilter: ContentType = ContentType.UNKNOWN,
+    val query: String = "",
+    val isSearching: Boolean = false,
+    val results: ImmutableList<TrackSearch> = persistentListOf(),
+    val searchError: String? = null,
+    val addingCanonicalIds: Set<String> = emptySet(),
+    val addedCanonicalIds: Set<String> = emptySet(),
+    val mergePrompt: MergePromptInfo? = null,
+    val sourcePromptManga: SourcePromptInfo? = null,
+    val selectedResult: TrackSearch? = null,
+) {
+    val filteredResults: ImmutableList<TrackSearch>
+        get() = if (contentTypeFilter == ContentType.UNKNOWN) {
+            results
+        } else {
+            results.filter {
+                ContentType.fromPublishingType(it.publishing_type) == contentTypeFilter
+            }.toImmutableList()
+        }
+}
+
+data class MergePromptInfo(
+    val result: TrackSearch,
+    val canonicalId: String,
+    val tracker: Tracker,
+    val candidates: ImmutableList<MangaWithChapterCount>,
+)
+
+data class SourcePromptInfo(
+    val title: String,
+    val mangaId: Long,
+    val isSearching: Boolean,
+    val sourceMatches: ImmutableList<FindContentSource.SourceMatch> = persistentListOf(),
+)

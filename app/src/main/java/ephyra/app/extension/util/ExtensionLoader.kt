@@ -37,7 +37,7 @@ import java.io.File
  * extension will be used unless the version codes are different. In that case the
  * one with higher version code will be used.
  */
-internal class ExtensionLoader(
+class ExtensionLoader(
     private val preferences: SourcePreferences,
     private val trustExtension: TrustExtension,
 ) {

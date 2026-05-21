@@ -9,9 +9,13 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material3.Icon
-import androidx.compose.material3.SmallExtendedFloatingActionButton
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.animateFloatingActionButton
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -20,8 +24,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
-import ephyra.presentation.components.AppBar
-import ephyra.presentation.manga.components.BaseMangaListItem
+import ephyra.presentation.core.components.AppBar
+import ephyra.feature.manga.presentation.components.BaseMangaListItem
 import ephyra.presentation.core.util.system.toast
 import kotlinx.coroutines.flow.collectLatest
 import ephyra.domain.manga.model.Manga
@@ -77,22 +81,24 @@ fun MigrateMangaScreen(
             )
         },
         floatingActionButton = {
-            SmallExtendedFloatingActionButton(
-                text = { Text(text = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_continueButtonText)) },
-                icon = {
-                    Icon(imageVector = Icons.AutoMirrored.Outlined.ArrowForward, contentDescription = null)
-                },
-                onClick = {
-                    val selection = state.selection
-                    screenModel.onEvent(MigrateMangaScreenEvent.ClearSelection)
-                    navController.navigate(ScreenRoutes.MigrationConfig.createRoute(selection))
-                },
-                expanded = lazyListState.shouldExpandFAB(),
-                modifier = Modifier.animateFloatingActionButton(
-                    visible = state.selectionMode,
-                    alignment = Alignment.BottomEnd,
-                ),
-            )
+            AnimatedVisibility(
+                visible = state.selectionMode,
+                enter = scaleIn() + fadeIn(),
+                exit = scaleOut() + fadeOut(),
+            ) {
+                ExtendedFloatingActionButton(
+                    text = { Text(text = stringResource(ephyra.app.core.common.R.string.migrationConfigScreen_continueButtonText)) },
+                    icon = {
+                        Icon(imageVector = Icons.AutoMirrored.Outlined.ArrowForward, contentDescription = null)
+                    },
+                    onClick = {
+                        val selection = state.selection
+                        screenModel.onEvent(MigrateMangaScreenEvent.ClearSelection)
+                        navController.navigate(ScreenRoutes.MigrationConfig.createRoute(selection))
+                    },
+                    expanded = lazyListState.shouldExpandFAB(),
+                )
+            }
         },
     ) { contentPadding ->
         if (state.isEmpty) {

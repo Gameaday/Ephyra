@@ -309,7 +309,6 @@ fun MigrationConfigScreen(
             modifier = Modifier.clickable(onClick = onClick),
         )
     }
-}
 
 @HiltViewModel
 class MigrationConfigScreenModel @Inject constructor(

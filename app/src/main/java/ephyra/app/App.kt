@@ -25,19 +25,23 @@ import coil3.request.bitmapConfig
 import coil3.request.crossfade
 import coil3.util.DebugLogger
 import dagger.hilt.android.HiltAndroidApp
-import ephyra.app.core.security.PrivacyPreferences
-import ephyra.app.core.security.SecurityPreferences
+import ephyra.core.common.core.security.PrivacyPreferences
+import ephyra.core.common.core.security.SecurityPreferences
 import ephyra.app.crash.CrashActivity
 import ephyra.app.crash.GlobalExceptionHandler
-import ephyra.app.data.coil.BufferedSourceFetcher
-import ephyra.app.data.coil.MangaCoverFetcher
-import ephyra.app.data.coil.MangaCoverKeyer
-import ephyra.app.data.coil.MangaKeyer
-import ephyra.app.data.notification.Notifications
-import ephyra.app.ui.base.delegate.SecureActivityDelegate
-import ephyra.app.util.system.DeviceUtil
-import ephyra.app.util.system.GLUtil
-import ephyra.app.util.system.WebViewUtil
+import ephyra.data.cache.CoverCache
+import ephyra.data.coil.BufferedSourceFetcher
+import ephyra.data.coil.MangaCoverFetcher
+import ephyra.data.coil.MangaCoverKeyer
+import ephyra.data.coil.MangaKeyer
+import ephyra.domain.source.service.SourceManager
+import ephyra.data.notification.Notifications
+import ephyra.presentation.core.ui.delegate.SecureActivityDelegateState
+import ephyra.core.common.util.system.DeviceUtil
+import ephyra.core.common.util.system.GLUtil
+import ephyra.core.common.util.system.WebViewUtil
+import ephyra.core.common.preference.Preference
+import ephyra.core.migration.migrations.migrations
 import ephyra.app.util.system.animatorDurationScale
 import ephyra.app.util.system.cancelNotification
 import ephyra.app.util.system.isDebugBuildType
@@ -94,6 +98,12 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
     @Inject
     lateinit var uiPreferences: UiPreferences
 
+    @Inject
+    lateinit var coverCache: CoverCache
+
+    @Inject
+    lateinit var sourceManager: SourceManager
+
     override val workManagerConfiguration: androidx.work.Configuration
         get() = androidx.work.Configuration.Builder()
             .setWorkerFactory(ephyra.app.data.work.AppWorkerFactory())
@@ -104,7 +114,7 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
     @SuppressLint("LaunchActivityFromNotification")
     override fun onCreate() {
         initializeCoreContainer(this)
-        super.onCreate()
+        super<Application>.onCreate()
         TelemetryConfig.init(applicationContext)
 
         GlobalExceptionHandler.initialize(applicationContext, CrashActivity::class.java)
@@ -128,8 +138,8 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
                         Notifications.ID_INCOGNITO_MODE,
                         Notifications.CHANNEL_INCOGNITO_MODE,
                     ) {
-                        setContentTitle(stringResource(ephyra.app.core.common.R.string.pref_incognito_mode))
-                        setContentText(stringResource(ephyra.app.core.common.R.string.notification_incognito_text))
+                        setContentTitle(this@App.getString(ephyra.app.core.common.R.string.pref_incognito_mode))
+                        setContentText(this@App.getString(ephyra.app.core.common.R.string.notification_incognito_text))
                         setSmallIcon(R.drawable.ic_glasses_24dp)
                         setOngoing(true)
 
@@ -166,14 +176,14 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
             .onEach { ImageUtil.hardwareBitmapThreshold = it }
             .launchIn(scope)
 
-        setAppCompatDelegateThemeMode(uiPreferences.themeMode().get())
+        setAppCompatDelegateThemeMode(uiPreferences.themeMode().getSync())
 
         // Updates widget update
         WidgetManager(getUpdates, securityPreferences).apply { init(scope) }
 
         if (!LogcatLogger.isInstalled) {
             val minLogPriority = when {
-                networkPreferences.verboseLogging().get() -> LogPriority.VERBOSE
+                networkPreferences.verboseLogging().getSync() -> LogPriority.VERBOSE
                 BuildConfig.DEBUG -> LogPriority.DEBUG
                 else -> LogPriority.INFO
             }
@@ -186,9 +196,9 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
 
     private fun initializeMigrator() {
         val preference = preferenceStore.getInt(Preference.appStateKey("last_version_code"), 0)
-        logcat { "Migration from ${preference.get()} to ${BuildConfig.VERSION_CODE}" }
+        logcat { "Migration from ${preference.getSync()} to ${BuildConfig.VERSION_CODE}" }
         Migrator.initialize(
-            old = preference.get(),
+            old = preference.getSync(),
             new = BuildConfig.VERSION_CODE,
             migrations = migrations,
             onMigrationComplete = {
@@ -208,11 +218,11 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
                 add(TachiyomiImageDecoder.Factory())
                 // Fetcher.Factory
                 add(BufferedSourceFetcher.Factory())
-                add(MangaCoverFetcher.MangaCoverFactory(callFactoryLazy))
-                add(MangaCoverFetcher.MangaFactory(callFactoryLazy))
+                add(MangaCoverFetcher.MangaCoverFactory(callFactoryLazy, coverCache, sourceManager))
+                add(MangaCoverFetcher.MangaFactory(callFactoryLazy, coverCache, sourceManager))
                 // Keyer
-                add(MangaCoverKeyer())
-                add(MangaKeyer())
+                add(MangaCoverKeyer(coverCache))
+                add(MangaKeyer(coverCache))
             }
 
             memoryCache(
@@ -228,7 +238,7 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
             // This eliminates the CPU→GPU upload on every render frame for covers and browse
             // images. getBitmapOrNull() handles the soft-copy needed for compress/notifications.
             if (!lowRam) bitmapConfig(Bitmap.Config.HARDWARE)
-            if (networkPreferences.verboseLogging().get()) logger(DebugLogger())
+            if (networkPreferences.verboseLogging().getSync()) logger(DebugLogger())
 
             // Coil spawns a new thread for every image load by default
             fetcherCoroutineContext(Dispatchers.IO.limitedParallelism(8))
@@ -238,11 +248,11 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
     }
 
     override fun onStart(owner: LifecycleOwner) {
-        SecureActivityDelegate.onApplicationStart(basePreferences)
+        SecureActivityDelegateState.onApplicationStart(securityPreferences)
     }
 
     override fun onStop(owner: LifecycleOwner) {
-        SecureActivityDelegate.onApplicationStopped(basePreferences)
+        SecureActivityDelegateState.onApplicationStopped(securityPreferences)
     }
 
     /**

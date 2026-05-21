@@ -41,7 +41,7 @@ import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.NavigationEvents
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.animateItemFastScroll
-import ephyra.presentation.manga.DuplicateMangaDialog
+import ephyra.feature.manga.presentation.DuplicateMangaDialog
 import ephyra.presentation.theme.TachiyomiPreviewTheme
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.collectLatest
@@ -214,6 +214,7 @@ fun HistoryTabScreen(
                 onConfirm = { screenModel.onEvent(HistoryScreenEvent.AddFavorite(dialog.manga)) },
                 onOpenManga = { navController.navigate(ScreenRoutes.MangaDetails.createRoute(it.id, false)) },
                 onMigrate = { screenModel.onEvent(HistoryScreenEvent.ShowMigrateDialog(dialog.manga, it)) },
+                sourceManager = screenModel.sourceManager,
             )
         }
 
@@ -258,8 +259,11 @@ fun HistoryTabScreen(
                     snackbarHostState.showSnackbar(context.stringResource(ephyra.app.core.common.R.string.clear_history_completed))
 
                 is HistoryScreenModel.Event.OpenChapter -> {
-                    val intent = ReaderActivity.newIntent(context, e.chapter.mangaId, e.chapter.id)
-                    context.startActivity(intent)
+                    val chapter = e.chapter
+                    if (chapter != null) {
+                        val intent = ReaderActivity.newIntent(context, chapter.mangaId, chapter.id)
+                        context.startActivity(intent)
+                    }
                 }
             }
         }

@@ -50,7 +50,6 @@ import ephyra.domain.track.model.Track
 import ephyra.domain.track.service.TrackerManager
 import ephyra.feature.library.presentation.components.LibraryToolbarTitle
 import ephyra.presentation.core.components.SEARCH_DEBOUNCE_MILLIS
-import ephyra.presentation.core.ui.MigrationConfigScreenFactory
 import ephyra.presentation.core.util.PreferenceMutableState
 import ephyra.presentation.core.util.asState
 import ephyra.presentation.core.util.manga.DownloadAction
@@ -96,7 +95,6 @@ class LibraryScreenModel @Inject constructor(
     private val downloadCache: DownloadCache,
     private val trackerManager: TrackerManager,
     val libraryUpdateScheduler: LibraryUpdateScheduler,
-    val migrationConfigScreenFactory: MigrationConfigScreenFactory,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(State())
@@ -721,7 +719,7 @@ class LibraryScreenModel @Inject constructor(
         _state.update { it.copy(selection = setOf()) }
     }
 
-    fun toggleSelection(category: Category, manga: ILibraryItem) {
+    fun toggleSelection(category: Category, manga: LibraryManga) {
         _state.update { state ->
             val newSelection = state.selection.mutate { set ->
                 if (!set.remove(manga.id)) set.add(manga.id)
@@ -735,7 +733,7 @@ class LibraryScreenModel @Inject constructor(
      * Selects all mangas between and including the given manga and the last pressed manga from the
      * same category as the given manga
      */
-    fun toggleRangeSelection(category: Category, manga: ILibraryItem) {
+    fun toggleRangeSelection(category: Category, manga: LibraryManga) {
         _state.update { state ->
             val newSelection = state.selection.mutate { list ->
                 val lastSelected = list.lastOrNull()

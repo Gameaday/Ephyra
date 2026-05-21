@@ -93,8 +93,11 @@ internal fun Project.configureAndroid(commonExtension: CommonExtension) {
         compilerOptions {
             jvmTarget.set(AndroidConfig.JvmTarget)
             freeCompilerArgs.addAll(
+                "-language-version", "2.1",
+                "-api-version", "2.1",
                 "-Xcontext-parameters",
                 "-opt-in=kotlin.RequiresOptIn",
+                "-opt-in=kotlin.ExperimentalStdlibApi",
                 "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
             )
 

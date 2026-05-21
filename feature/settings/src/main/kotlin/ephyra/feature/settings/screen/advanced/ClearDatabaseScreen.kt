@@ -56,7 +56,6 @@ import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.LoadingScreen
-import ephyra.presentation.core.util.Screen
 import ephyra.presentation.core.util.selectedBackground
 import ephyra.presentation.core.util.system.toast
 import kotlinx.collections.immutable.persistentListOf
@@ -222,7 +221,6 @@ private fun ClearDatabaseItem(
             )
         }
     }
-}
 
 @HiltViewModel
 class ClearDatabaseScreenModel @Inject constructor(

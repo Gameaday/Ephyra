@@ -1,6 +1,6 @@
 package ephyra.app.extension.util
 
-import android.app.Activity
+import androidx.appcompat.app.AppCompatActivity
 import android.content.Intent
 import android.os.Bundle
 import ephyra.app.extension.ExtensionManager
@@ -16,7 +16,7 @@ import kotlin.time.Duration.Companion.seconds
  * with [startActivityForResult], which we need to update the UI.
  */
 @AndroidEntryPoint
-class ExtensionInstallActivity : Activity() {
+class ExtensionInstallActivity : AppCompatActivity() {
 
     @Inject lateinit var extensionManager: ExtensionManager
 

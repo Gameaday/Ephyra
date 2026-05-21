@@ -39,7 +39,7 @@ import ephyra.domain.extension.service.ExtensionManager as IExtensionManager
  * signature is trusted, otherwise the user will be prompted with a warning to trust it before being
  * loaded.
  */
-internal class ExtensionManager(
+class ExtensionManager(
     private val context: Context,
     private val preferences: SourcePreferences,
     private val trustExtension: TrustExtension,

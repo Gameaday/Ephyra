@@ -33,7 +33,5 @@ dependencies {
     implementation(libs.sqldelight.android.driver)
     implementation(libs.sqldelight.coroutines)
 
-    // Koin - Handled by the Compiler Plugin (no ksp line needed)
-    implementation(libs.koin.core)
-    implementation(libs.koin.annotations)
+
 }

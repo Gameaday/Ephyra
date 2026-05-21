@@ -40,7 +40,6 @@ dependencies {
     implementation(kotlinx.bundles.serialization)
     implementation(kotlinx.immutables)
 
-    api(libs.koin.core)
     api(kotlinx.coroutines.core)
 
     // room-ktx provides the withTransaction {} extension used by MangaRestorer.

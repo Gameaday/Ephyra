@@ -20,7 +20,7 @@ fun MangaNotesScreen(
     val state by screenModel.state.collectAsStateWithLifecycle()
 
     if (state != null) {
-        ephyra.presentation.manga.MangaNotesScreen(
+        ephyra.feature.manga.presentation.MangaNotesScreen(
             state = state!!,
             navigateUp = { navController.popBackStack() },
             onUpdate = screenModel::updateNotes,

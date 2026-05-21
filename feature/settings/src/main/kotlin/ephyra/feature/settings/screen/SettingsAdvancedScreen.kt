@@ -38,7 +38,6 @@ import ephyra.domain.manga.interactor.ResetViewerFlags
 import ephyra.feature.settings.Preference
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.AppInfo
-import ephyra.presentation.core.ui.OnboardingScreenFactory
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.CrashLogUtil
@@ -83,7 +82,6 @@ object SettingsAdvancedScreen : SearchableSettings {
         val context = LocalContext.current
         val navController = LocalNavController.current
         val appInfo = screenModel.appInfo
-        val onboardingScreenFactory = screenModel.onboardingScreenFactory
         val extensionManager: ExtensionManager = screenModel.extensionManager
 
         val basePreferences = screenModel.basePreferences

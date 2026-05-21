@@ -17,8 +17,6 @@ dependencies {
     implementation(libs.sqldelight.coroutines)
     implementation(libs.stringSimilarity)
 
-    api(libs.koin.core)
-    implementation(libs.koin.androidx.workmanager)
     api(kotlinx.coroutines.core)
 }
 // Suppress warnings for the following:

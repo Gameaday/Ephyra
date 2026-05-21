@@ -16,6 +16,7 @@ dependencies {
     api(projects.sourceApi)
     api(projects.presentationCore)
     api(projects.feature.manga)
+    api(projects.feature.category)
 
     implementation(libs.logcat)
 

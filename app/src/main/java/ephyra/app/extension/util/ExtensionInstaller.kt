@@ -30,7 +30,7 @@ import java.io.File
  *
  * @param context The application context.
  */
-internal class ExtensionInstaller(
+class ExtensionInstaller(
     private val context: Context,
     private val basePreferences: BasePreferences,
     private val networkHelper: NetworkHelper,

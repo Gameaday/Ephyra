@@ -102,21 +102,20 @@ object WorkerInfoScreen {
 
 @Composable
 private fun SectionTitle(title: String) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(vertical = 8.dp),
-        )
-    }
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleMedium,
+        modifier = Modifier.padding(vertical = 8.dp),
+    )
+}
 
-    @Composable
-    private fun SectionText(text: String) {
-        Text(
-            text = text,
-            softWrap = false,
-            fontFamily = FontFamily.Monospace,
-        )
-    }
+@Composable
+private fun SectionText(text: String) {
+    Text(
+        text = text,
+        softWrap = false,
+        fontFamily = FontFamily.Monospace,
+    )
 }
 
 @HiltViewModel

@@ -50,12 +50,12 @@ interface ScreenEntryPoint {
     fun setReadStatus(): ephyra.domain.chapter.interactor.SetReadStatus
     fun updateManga(): ephyra.domain.manga.interactor.UpdateManga
     fun setMangaCategories(): ephyra.domain.category.interactor.SetMangaCategories
-    fun downloadManager(): ephyra.feature.download.DownloadManager
-    fun downloadCache(): ephyra.app.data.download.DownloadCache
-    fun trackerManager(): ephyra.app.data.track.TrackerManager
+    fun downloadManager(): ephyra.core.download.DownloadManager
+    fun downloadCache(): ephyra.core.download.DownloadCache
+    fun trackerManager(): ephyra.domain.track.service.TrackerManager
     
     // Preferences / other dependencies
-    fun readerPreferences(): ephyra.feature.reader.setting.ReaderPreferences
+    fun readerPreferences(): ephyra.domain.reader.service.ReaderPreferences
     fun trackPreferences(): ephyra.domain.track.service.TrackPreferences
     fun downloadPreferences(): ephyra.domain.download.service.DownloadPreferences
     fun backupPreferences(): ephyra.domain.backup.service.BackupPreferences
@@ -65,7 +65,7 @@ interface ScreenEntryPoint {
     fun securityPreferences(): ephyra.core.common.core.security.SecurityPreferences
     fun backupScheduler(): ephyra.domain.backup.service.BackupScheduler
     fun restoreScheduler(): ephyra.domain.backup.service.RestoreScheduler
-    fun backupFileValidator(): ephyra.app.data.backup.BackupFileValidator
+    fun backupFileValidator(): ephyra.domain.backup.service.BackupFileValidator
     fun secureActivityDelegate(): ephyra.presentation.core.ui.delegate.SecureActivityDelegate
     fun themingDelegate(): ephyra.presentation.core.ui.delegate.ThemingDelegate
     
@@ -121,12 +121,12 @@ fun initializeCoreContainer(context: Context) {
     CoreContainer.register(ephyra.domain.chapter.interactor.SetReadStatus::class.java) { entryPoint.setReadStatus() }
     CoreContainer.register(ephyra.domain.manga.interactor.UpdateManga::class.java) { entryPoint.updateManga() }
     CoreContainer.register(ephyra.domain.category.interactor.SetMangaCategories::class.java) { entryPoint.setMangaCategories() }
-    CoreContainer.register(ephyra.feature.download.DownloadManager::class.java) { entryPoint.downloadManager() }
-    CoreContainer.register(ephyra.app.data.download.DownloadCache::class.java) { entryPoint.downloadCache() }
-    CoreContainer.register(ephyra.app.data.track.TrackerManager::class.java) { entryPoint.trackerManager() }
+    CoreContainer.register(ephyra.core.download.DownloadManager::class.java) { entryPoint.downloadManager() }
+    CoreContainer.register(ephyra.core.download.DownloadCache::class.java) { entryPoint.downloadCache() }
+    CoreContainer.register(ephyra.domain.track.service.TrackerManager::class.java) { entryPoint.trackerManager() }
     
     // Preferences / other dependencies
-    CoreContainer.register(ephyra.feature.reader.setting.ReaderPreferences::class.java) { entryPoint.readerPreferences() }
+    CoreContainer.register(ephyra.domain.reader.service.ReaderPreferences::class.java) { entryPoint.readerPreferences() }
     CoreContainer.register(ephyra.domain.track.service.TrackPreferences::class.java) { entryPoint.trackPreferences() }
     CoreContainer.register(ephyra.domain.download.service.DownloadPreferences::class.java) { entryPoint.downloadPreferences() }
     CoreContainer.register(ephyra.domain.backup.service.BackupPreferences::class.java) { entryPoint.backupPreferences() }
@@ -136,7 +136,7 @@ fun initializeCoreContainer(context: Context) {
     CoreContainer.register(ephyra.core.common.core.security.SecurityPreferences::class.java) { entryPoint.securityPreferences() }
     CoreContainer.register(ephyra.domain.backup.service.BackupScheduler::class.java) { entryPoint.backupScheduler() }
     CoreContainer.register(ephyra.domain.backup.service.RestoreScheduler::class.java) { entryPoint.restoreScheduler() }
-    CoreContainer.register(ephyra.app.data.backup.BackupFileValidator::class.java) { entryPoint.backupFileValidator() }
+    CoreContainer.register(ephyra.domain.backup.service.BackupFileValidator::class.java) { entryPoint.backupFileValidator() }
     CoreContainer.register(ephyra.presentation.core.ui.delegate.SecureActivityDelegate::class.java) { entryPoint.secureActivityDelegate() }
     CoreContainer.register(ephyra.presentation.core.ui.delegate.ThemingDelegate::class.java) { entryPoint.themingDelegate() }
     

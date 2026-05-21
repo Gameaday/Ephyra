@@ -263,6 +263,7 @@ fun BrowseSourceScreen(
                             BrowseSourceScreenEvent.SetDialog(BrowseSourceScreenModel.Dialog.Migrate(dialog.manga, it)),
                         )
                     },
+                    sourceManager = screenModel.sourceManager,
                 )
             }
 
@@ -310,7 +311,6 @@ fun BrowseSourceScreen(
                 }
         }
     }
-}
 
 private val queryEvent = Channel<SearchType>()
 

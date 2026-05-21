@@ -15,7 +15,6 @@ import ephyra.domain.extension.model.InstallStep
 import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.source.service.SourcePreferences
 import ephyra.presentation.core.components.SEARCH_DEBOUNCE_MILLIS
-import ephyra.presentation.core.ui.ExtensionReposScreenFactory
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -43,7 +42,6 @@ class ExtensionsScreenModel @Inject constructor(
     private val basePreferences: BasePreferences,
     private val extensionManager: ExtensionManager,
     private val getExtensions: GetExtensionsByType,
-    val extensionReposFactory: ExtensionReposScreenFactory,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<State>(State())

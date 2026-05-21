@@ -93,5 +93,5 @@ fun ExtensionReposScreen(
                 }
             }
         }
-    }
 }
+

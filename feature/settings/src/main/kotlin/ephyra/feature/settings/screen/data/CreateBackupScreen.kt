@@ -120,7 +120,6 @@ private fun Options(
             )
         }
     }
-}
 
 @HiltViewModel
 class CreateBackupViewModel @Inject constructor(

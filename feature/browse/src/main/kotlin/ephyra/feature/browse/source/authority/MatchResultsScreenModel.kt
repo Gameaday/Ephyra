@@ -132,3 +132,34 @@ class MatchResultsScreenModel @Inject constructor(
         private const val MAX_RECENTLY_LINKED = 50
     }
 }
+
+@Immutable
+data class MatchResultsState(
+    val isLoading: Boolean = false,
+    val unlinkedManga: ImmutableList<Manga> = persistentListOf(),
+    val recentlyLinked: ImmutableList<Manga> = persistentListOf(),
+    val totalFavorites: Int = 0,
+    val mangaCount: Int = 0,
+    val novelCount: Int = 0,
+    val matchingIds: Set<Long> = emptySet(),
+    val failedIds: Set<Long> = emptySet(),
+    val isRetryingAll: Boolean = false,
+    val retryAllProgress: Pair<Int, Int>? = null,
+) {
+    val totalLinked: Int get() = totalFavorites - unlinkedManga.size
+}
+
+data class AuthorityInfo(
+    val label: String,
+    val url: String?,
+) {
+    companion object {
+        fun from(canonicalId: String?): AuthorityInfo? {
+            if (canonicalId == null) return null
+            val label = CanonicalId.toLabel(canonicalId) ?: return null
+            val url = CanonicalId.toUrl(canonicalId)
+            return AuthorityInfo(label = label, url = url)
+        }
+    }
+}
+

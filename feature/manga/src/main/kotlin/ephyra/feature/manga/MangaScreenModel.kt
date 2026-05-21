@@ -150,6 +150,20 @@ class MangaScreenModel @Inject constructor(
                 }
             }.collect {}
         }
+
+        viewModelScope.launch {
+            mangaTrackInteractor.loggedInTrackersFlow()
+                .map { it.isNotEmpty() }
+                .distinctUntilChanged()
+                .collect { hasLoggedIn ->
+                    _state.update { state ->
+                        when (state) {
+                            is State.Loading -> state
+                            is State.Success -> state.copy(hasLoggedInTrackers = hasLoggedIn)
+                        }
+                    }
+                }
+        }
     }
 
     fun toggleFavorite() {
@@ -332,6 +346,7 @@ class MangaScreenModel @Inject constructor(
             val chapterSwipeEndAction: LibraryPreferences.ChapterSwipeAction =
                 LibraryPreferences.ChapterSwipeAction.ToggleBookmark,
             val dialog: Dialog? = null,
+            val hasLoggedInTrackers: Boolean = false,
         ) : State()
     }
 

@@ -10,10 +10,10 @@ import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import ephyra.app.data.backup.BackupNotifier
 import ephyra.app.data.backup.create.BackupCreateJob
-import ephyra.app.data.backup.create.BackupCreator
+import ephyra.data.backup.create.BackupCreator
 import ephyra.app.data.backup.restore.BackupRestoreJob
-import ephyra.app.data.backup.restore.BackupRestorer
-import ephyra.app.data.download.DownloadJob
+import ephyra.data.backup.restore.BackupRestorer
+import ephyra.core.download.DownloadJob
 import ephyra.app.data.library.LibraryUpdateJob
 import ephyra.app.data.library.LibraryUpdateNotifier
 import ephyra.app.data.library.MetadataUpdateJob
@@ -34,9 +34,9 @@ import ephyra.domain.storage.service.StorageManager
 import ephyra.domain.track.interactor.GetTracks
 import ephyra.domain.track.interactor.RefreshCanonicalMetadata
 import ephyra.domain.track.interactor.TrackChapter
-import ephyra.domain.track.service.DelayedTrackingUpdateJob
-import ephyra.domain.track.store.DelayedTrackingStore
-import ephyra.feature.download.DownloadManager
+import ephyra.app.track.DelayedTrackingUpdateJob
+import ephyra.domain.track.store.TrackingQueueStore
+import ephyra.core.download.DownloadManager
 import eu.kanade.tachiyomi.network.NetworkHelper
 
 /**
@@ -56,7 +56,7 @@ interface WorkerFactoryEntryPoint {
     fun downloadPreferences(): DownloadPreferences
     fun getTracks(): GetTracks
     fun trackChapter(): TrackChapter
-    fun delayedTrackingStore(): DelayedTrackingStore
+    fun trackingQueueStore(): TrackingQueueStore
     fun sourceManager(): SourceManager
     fun coverCache(): CoverCache
     fun getLibraryManga(): GetLibraryManga
@@ -94,16 +94,12 @@ class AppWorkerFactory : WorkerFactory() {
             BackupCreateJob::class.java.name -> BackupCreateJob(
                 appContext,
                 workerParameters,
-                entryPoint.backupCreator(),
-                entryPoint.storageManager(),
-                entryPoint.backupPreferences(),
-                entryPoint.backupNotifier()
+                entryPoint.backupCreator()
             )
             BackupRestoreJob::class.java.name -> BackupRestoreJob(
                 appContext,
                 workerParameters,
-                entryPoint.backupRestorer(),
-                entryPoint.backupNotifier()
+                entryPoint.backupRestorer()
             )
             DownloadJob::class.java.name -> DownloadJob(
                 appContext,
@@ -116,7 +112,7 @@ class AppWorkerFactory : WorkerFactory() {
                 workerParameters,
                 entryPoint.getTracks(),
                 entryPoint.trackChapter(),
-                entryPoint.delayedTrackingStore()
+                entryPoint.trackingQueueStore()
             )
             MetadataUpdateJob::class.java.name -> MetadataUpdateJob(
                 appContext,

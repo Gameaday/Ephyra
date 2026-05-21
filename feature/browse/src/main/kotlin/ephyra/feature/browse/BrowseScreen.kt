@@ -55,3 +55,7 @@ fun BrowseTabScreen(
         (context as? AppReadySignal)?.signalReady()
     }
 }
+
+object BrowseTab {
+    val switchToExtensionTabChannel = kotlinx.coroutines.channels.Channel<Unit>(capacity = 1)
+}

@@ -27,8 +27,5 @@ dependencies {
     implementation(libs.logcat)
     implementation(libs.compose.grid)
 
-    // Dependency Injection (Hilt & Koin)
-    api(libs.koin.core)
-    implementation(libs.koin.annotations)
     ksp(libs.hilt.compiler)
 }

@@ -76,13 +76,13 @@ fun OpenSourceLibraryLicenseScreen(
 
 @Composable
 private fun HtmlLicenseText(html: String) {
-        AndroidView(
-            factory = {
-                MaterialTextView(it)
-            },
-            update = {
-                it.text = HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_COMPACT)
-            },
-        )
-    }
+    AndroidView(
+        factory = {
+            MaterialTextView(it)
+        },
+        update = {
+            it.text = HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_COMPACT)
+        },
+    )
 }
+

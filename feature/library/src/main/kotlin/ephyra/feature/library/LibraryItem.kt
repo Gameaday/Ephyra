@@ -22,7 +22,7 @@ data class LibraryItem(
     override val genres: List<String>? = libraryManga.manga.genre
     override val canonicalId: String? = libraryManga.manga.canonicalId
     override val coverLastModified: Long = libraryManga.manga.coverLastModified
-    override val sourceStatus: Long = libraryManga.manga.sourceStatus
+    override val sourceStatus: Int = libraryManga.manga.sourceStatus
 
     /**
      * Checks if a query matches the manga

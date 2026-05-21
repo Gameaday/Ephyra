@@ -18,7 +18,6 @@ import ephyra.feature.browse.presentation.ExtensionScreen
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.TabContent
 import ephyra.presentation.core.i18n.stringResource
-import ephyra.presentation.core.ui.ExtensionReposScreenFactory
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.system.isPackageInstalled
@@ -88,7 +87,6 @@ fun extensionsTab(
                 onUninstallExtension = { extensionsScreenModel.uninstallExtension(it) },
                 onUpdateExtension = extensionsScreenModel::updateExtension,
                 onRefresh = extensionsScreenModel::findAvailableExtensions,
-                extensionReposFactory = extensionsScreenModel.extensionReposFactory,
             )
 
             privateExtensionToUninstall?.let { extension ->

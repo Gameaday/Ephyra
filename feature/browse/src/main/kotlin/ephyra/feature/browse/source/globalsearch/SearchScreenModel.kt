@@ -14,7 +14,6 @@ import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.toDomainManga
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
-import ephyra.presentation.core.util.ioCoroutineScope
 import eu.kanade.tachiyomi.source.CatalogueSource
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.mutate
@@ -179,7 +178,7 @@ abstract class SearchScreenModel(
             )
         }
 
-        searchJob = ioCoroutineScope.launch {
+        searchJob = viewModelScope.launchIO {
             sources.map { source ->
                 async {
                     if (state.value.items[source] !is SearchItemResult.Loading) {

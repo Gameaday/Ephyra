@@ -58,7 +58,7 @@ class HistoryScreenModel @Inject constructor(
     private val removeHistory: RemoveHistory,
     private val setMangaCategories: SetMangaCategories,
     private val updateManga: UpdateManga,
-    private val sourceManager: SourceManager,
+    val sourceManager: SourceManager,
     val snackbarHostState: SnackbarHostState = SnackbarHostState(),
 ) : ViewModel() {
 

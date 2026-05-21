@@ -26,6 +26,7 @@ dependencies {
     implementation(libs.navigation.compose)
     implementation(libs.hilt.navigation.compose)
     implementation(libs.bundles.markdown)
+    implementation(libs.swipe)
 
     testImplementation(libs.bundles.test)
 }
