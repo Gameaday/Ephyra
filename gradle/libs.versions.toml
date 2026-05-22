@@ -17,7 +17,7 @@ materialKolor = "5.0.0-alpha07"
 
 # Compiler Tools
 hilt = "2.59.2"
-ksp = "2.3.7"
+ksp = "2.3.8"
 room = "2.8.4"
 paging = "3.5.0"
 
