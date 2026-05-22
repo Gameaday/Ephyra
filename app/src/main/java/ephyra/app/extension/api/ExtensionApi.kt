@@ -24,7 +24,7 @@ import logcat.LogPriority
 import java.time.Instant
 import kotlin.time.Duration.Companion.days
 
-internal class ExtensionApi(
+class ExtensionApi(
     private val networkService: NetworkHelper,
     private val preferenceStore: PreferenceStore,
     private val getExtensionRepo: GetExtensionRepo,

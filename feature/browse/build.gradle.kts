@@ -11,15 +11,14 @@ android {
 
 dependencies {
     api(projects.core.common)
-    api(projects.domain)
+    api(projects.core.domain)
     api(projects.data)
     api(projects.sourceApi)
     api(projects.presentationCore)
     api(projects.feature.manga)
+    api(projects.feature.category)
 
     implementation(libs.logcat)
-    implementation(libs.bundles.voyager)
 
     testImplementation(libs.bundles.test)
 }
-

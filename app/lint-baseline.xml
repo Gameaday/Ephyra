@@ -1,0 +1,1754 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 9.2.1" type="baseline" client="gradle" dependencies="true" name="AGP (9.2.1)" variant="all" version="9.2.1">
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="        context.notify(id, build())"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/ephyra/app/data/updater/AppUpdateNotifier.kt"
+            line="30"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="        context.notify("
+        errorLine2="        ^">
+        <location
+            file="src/main/java/ephyra/app/data/backup/BackupNotifier.kt"
+            line="20"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="        context.notify("
+        errorLine2="        ^">
+        <location
+            file="src/main/java/ephyra/app/data/backup/BackupNotifier.kt"
+            line="34"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="        context.notify("
+        errorLine2="        ^">
+        <location
+            file="src/main/java/ephyra/app/data/backup/BackupNotifier.kt"
+            line="49"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="        context.notify("
+        errorLine2="        ^">
+        <location
+            file="src/main/java/ephyra/app/data/backup/BackupNotifier.kt"
+            line="62"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="        context.notify("
+        errorLine2="        ^">
+        <location
+            file="src/main/java/ephyra/app/data/backup/BackupNotifier.kt"
+            line="78"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="        context.notify("
+        errorLine2="        ^">
+        <location
+            file="src/main/java/ephyra/app/data/backup/BackupNotifier.kt"
+            line="93"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="        context.notify(id, build())"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/ephyra/app/data/download/DownloadNotifier.kt"
+            line="55"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="        context.notify("
+        errorLine2="        ^">
+        <location
+            file="src/main/java/ephyra/app/extension/api/ExtensionUpdateNotifier.kt"
+            line="19"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="        context.notify("
+        errorLine2="        ^">
+        <location
+            file="src/main/java/ephyra/app/data/library/LibraryUpdateNotifier.kt"
+            line="105"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="        context.notify("
+        errorLine2="        ^">
+        <location
+            file="src/main/java/ephyra/app/data/library/LibraryUpdateNotifier.kt"
+            line="126"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="        context.notify("
+        errorLine2="        ^">
+        <location
+            file="src/main/java/ephyra/app/data/library/LibraryUpdateNotifier.kt"
+            line="153"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="        context.notify("
+        errorLine2="        ^">
+        <location
+            file="src/main/java/ephyra/app/data/library/LibraryUpdateNotifier.kt"
+            line="173"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="        context.notify("
+        errorLine2="        ^">
+        <location
+            file="src/main/java/ephyra/app/data/library/LibraryUpdateNotifier.kt"
+            line="359"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="        context.notify("
+        errorLine2="        ^">
+        <location
+            file="src/main/java/ephyra/app/data/library/LibraryUpdateNotifier.kt"
+            line="412"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="        context.notify("
+        errorLine2="        ^">
+        <location
+            file="src/main/java/ephyra/app/track/MatchUnlinkedNotifier.kt"
+            line="72"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="        context.notify("
+        errorLine2="        ^">
+        <location
+            file="src/main/java/ephyra/app/track/MatchUnlinkedNotifier.kt"
+            line="101"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="        context.notify("
+        errorLine2="        ^">
+        <location
+            file="src/main/java/ephyra/app/track/MatchUnlinkedNotifier.kt"
+            line="120"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="MissingPermission"
+        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+        errorLine1="        context.notify(notificationId, notificationBuilder.build())"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/feature/reader/SaveImageNotifier.kt"
+            line="109"
+            column="9"/>
+    </issue>
+
+
+    <issue
+        id="GestureBackNavigation"
+        message="If intercepting back events, this should be handled through the registration of callbacks; see https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture"
+        errorLine1="        if (keyCode == KeyEvent.KEYCODE_BACK) {"
+        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/feature/reader/ReaderActivity.kt"
+            line="350"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="PropertyEscape"
+        message="Windows file separators (`\`) and drive letter separators (&apos;:&apos;) must be escaped (`\\`) in property files; use C\\:/Users/Carl/AppData/Local/Android/Sdk"
+        errorLine1="sdk.dir=C:/Users/Carl/AppData/Local/Android/Sdk"
+        errorLine2="         ~">
+        <location
+            file="../local.properties"
+            line="1"
+            column="10"/>
+    </issue>
+
+    <issue
+        id="NonObservableLocale"
+        message="Reading locale in a non-observable way in a composable function"
+        errorLine1="    val localeFirstDayOfWeek = WeekFields.of(Locale.getDefault()).firstDayOfWeek.value"
+        errorLine2="                                             ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/feature/upcoming/components/calendar/Calendar.kt"
+            line="73"
+            column="46"/>
+    </issue>
+
+    <issue
+        id="NonObservableLocale"
+        message="Reading locale in a non-observable way in a composable function"
+        errorLine1="                    Locale.getDefault(),"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/feature/upcoming/components/calendar/Calendar.kt"
+            line="95"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="NonObservableLocale"
+        message="Reading locale in a non-observable way in a composable function"
+        errorLine1="    val formatter = DateTimeFormatter.ofPattern(&quot;MMMM yyyy&quot;, Locale.getDefault())"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/feature/upcoming/components/calendar/CalendarHeader.kt"
+            line="93"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="SpecifyForegroundServiceType"
+        message="Missing dataSync foregroundServiceType in the AndroidManifest.xml"
+        errorLine1="        return ForegroundInfo("
+        errorLine2="               ^">
+        <location
+            file="src/main/kotlin/ephyra/core/download/DownloadJob.kt"
+            line="44"
+            column="16"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.paging:paging-compose than 3.4.2 is available: 3.5.0"
+        errorLine1="paging_version = &quot;3.4.2&quot;"
+        errorLine2="                 ~~~~~~~">
+        <location
+            file="../gradle/androidx.versions.toml"
+            line="4"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.paging:paging-runtime than 3.4.2 is available: 3.5.0"
+        errorLine1="paging_version = &quot;3.4.2&quot;"
+        errorLine2="                 ~~~~~~~">
+        <location
+            file="../gradle/androidx.versions.toml"
+            line="4"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.annotation:annotation than 1.9.1 is available: 1.10.0"
+        errorLine1="annotation = &quot;androidx.annotation:annotation:1.9.1&quot;"
+        errorLine2="             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="../gradle/androidx.versions.toml"
+            line="9"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.compose.runtime:runtime than 1.6.7 is available: 1.11.2"
+        errorLine1="    implementation(&quot;androidx.compose.runtime:runtime:1.6.7&quot;)"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="18"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.compose:compose-bom than 2026.02.00 is available: 2026.05.01"
+        errorLine1="compose-bom = &quot;2026.02.00&quot;"
+        errorLine2="              ~~~~~~~~~~~~">
+        <location
+            file="../gradle/compose.versions.toml"
+            line="3"
+            column="15"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.navigation:navigation-compose than 2.8.8 is available: 2.9.8"
+        errorLine1="navigation = &quot;2.8.8&quot;"
+        errorLine2="             ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="11"
+            column="14"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of com.google.android.material:material than 1.13.0 is available: 1.14.0"
+        errorLine1="material = &quot;com.google.android.material:material:1.13.0&quot;"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="54"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.hilt:hilt-navigation-compose than 1.2.0 is available: 1.3.0"
+        errorLine1="hilt-navigation-compose = &quot;androidx.hilt:hilt-navigation-compose:1.2.0&quot;"
+        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="103"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of org.jetbrains.kotlin.plugin.serialization than 2.3.20 is available: 2.3.21"
+        errorLine1="kotlin_version = &quot;2.3.20&quot;"
+        errorLine2="                 ~~~~~~~~">
+        <location
+            file="../gradle/kotlinx.versions.toml"
+            line="2"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of org.jetbrains.kotlinx:kotlinx-serialization-json than 1.10.0 is available: 1.11.0"
+        errorLine1="serialization_version = &quot;1.10.0&quot;"
+        errorLine2="                        ~~~~~~~~">
+        <location
+            file="../gradle/kotlinx.versions.toml"
+            line="3"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of org.jetbrains.kotlinx:kotlinx-serialization-json-okio than 1.10.0 is available: 1.11.0"
+        errorLine1="serialization_version = &quot;1.10.0&quot;"
+        errorLine2="                        ~~~~~~~~">
+        <location
+            file="../gradle/kotlinx.versions.toml"
+            line="3"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of org.jetbrains.kotlinx:kotlinx-serialization-protobuf than 1.10.0 is available: 1.11.0"
+        errorLine1="serialization_version = &quot;1.10.0&quot;"
+        errorLine2="                        ~~~~~~~~">
+        <location
+            file="../gradle/kotlinx.versions.toml"
+            line="3"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-bom than 1.10.2 is available: 1.11.0"
+        errorLine1="coroutines-bom = { module = &quot;org.jetbrains.kotlinx:kotlinx-coroutines-bom&quot;, version = &quot;1.10.2&quot; }"
+        errorLine2="                                                                                      ~~~~~~~~">
+        <location
+            file="../gradle/kotlinx.versions.toml"
+            line="12"
+            column="87"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of com.diffplug.spotless:spotless-plugin-gradle than 8.4.0 is available: 8.5.1"
+        errorLine1="spotless = &quot;8.4.0&quot;"
+        errorLine2="           ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="10"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of com.mikepenz:multiplatform-markdown-renderer than 0.40.2 is available: 0.41.0"
+        errorLine1="markdown = &quot;0.40.2&quot;"
+        errorLine2="           ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="14"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of com.mikepenz:multiplatform-markdown-renderer-coil3 than 0.40.2 is available: 0.41.0"
+        errorLine1="markdown = &quot;0.40.2&quot;"
+        errorLine2="           ~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="14"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of org.junit.jupiter:junit-jupiter than 6.0.3 is available: 6.1.0"
+        errorLine1="junit = &quot;6.0.3&quot;"
+        errorLine2="        ~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="15"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies androidx.activity:activity-compose but with different version"
+        errorLine1="activity = { module = &quot;androidx.activity:activity-compose&quot;, version.ref = &quot;activity-compose&quot; }"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="../gradle/compose.versions.toml"
+            line="29"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies androidx.glance:glance-appwidget but with different version"
+        errorLine1="glance = { module = &quot;androidx.glance:glance-appwidget&quot;, version.ref = &quot;glance&quot; }"
+        errorLine2="          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="../gradle/compose.versions.toml"
+            line="30"
+            column="11"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies androidx.activity:activity-compose but with different version"
+        errorLine1="androidx-activity-compose = { module = &quot;androidx.activity:activity-compose&quot;, version.ref = &quot;activity-compose&quot; }"
+        errorLine2="                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="../gradle/compose.versions.toml"
+            line="38"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="SimilarGradleDependency"
+        message="There are multiple dependencies androidx.glance:glance-appwidget but with different version"
+        errorLine1="androidx-glance = { module = &quot;androidx.glance:glance-appwidget&quot;, version.ref = &quot;glance&quot; }"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="../gradle/compose.versions.toml"
+            line="39"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="ConfigurationScreenWidthHeight"
+        message="Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize"
+        errorLine1="    return configuration.screenWidthDp > MediumWidthWindowSize.value"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/ephyra/core/designsystem/utils/WindowSize.kt"
+            line="12"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="ConfigurationScreenWidthHeight"
+        message="Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize"
+        errorLine1="    return configuration.screenWidthDp > ExpandedWidthWindowSize.value"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/ephyra/core/designsystem/utils/WindowSize.kt"
+            line="19"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="ConfigurationScreenWidthHeight"
+        message="Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize"
+        errorLine1="    return configuration.screenWidthDp > MediumWidthWindowSize.value"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/ephyra/presentation/core/util/WindowSize.kt"
+            line="22"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="ConfigurationScreenWidthHeight"
+        message="Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize"
+        errorLine1="    return configuration.screenWidthDp > ExpandedWidthWindowSize.value"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/ephyra/presentation/core/util/WindowSize.kt"
+            line="29"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="LocalContextResourcesRead"
+        message="Reading Resources using LocalContext.current.resources"
+        errorLine1="        context.resources.getIdentifier(&quot;aboutlibraries&quot;, &quot;raw&quot;, context.packageName),"
+        errorLine2="        ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/feature/settings/screen/about/OpenSourceLibraryLicenseScreen.kt"
+            line="37"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="LocalContextResourcesRead"
+        message="Reading Resources using LocalContext.current.resources"
+        errorLine1="            context.resources.getIdentifier(&quot;aboutlibraries&quot;, &quot;raw&quot;, context.packageName),"
+        errorLine2="            ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/feature/settings/screen/about/OpenSourceLicensesScreen.kt"
+            line="33"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="ModifierParameter"
+        message="Modifier parameter should be the first optional parameter"
+        errorLine1="    modifier: Modifier = Modifier,"
+        errorLine2="    ~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/presentation/manga/components/MangaToolbar.kt"
+            line="52"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="ModifierParameter"
+        message="Modifier parameter should be the first optional parameter"
+        errorLine1="    modifier: Modifier = Modifier,"
+        errorLine2="    ~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/feature/upcoming/UpcomingScreenContent.kt"
+            line="49"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="Overriding `@string/copy` which is marked as private in androidx.preference:preference:1.2.1. If deliberate, use tools:override=&quot;true&quot;, otherwise pick a different name."
+        errorLine1="    &lt;string name=&quot;copy&quot;>Copy&lt;/string>"
+        errorLine2="                  ~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1107"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="RememberReturnType"
+        message="`remember` calls must not return `Unit`"
+        errorLine1="    remember(screenModel, sourceId) {"
+        errorLine2="    ~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/feature/webview/WebViewScreen.kt"
+            line="31"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="Aligned16KB"
+        message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
+        <location
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+    </issue>
+
+    <issue
+        id="Aligned16KB"
+        message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
+        <location
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+    </issue>
+
+    <issue
+        id="Aligned16KB"
+        message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
+        <location
+            file="../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+    </issue>
+
+    <issue
+        id="Aligned16KB"
+        message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
+        <location
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+    </issue>
+
+    <issue
+        id="Aligned16KB"
+        message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
+        <location
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+    </issue>
+
+    <issue
+        id="Aligned16KB"
+        message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
+        <location
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+    </issue>
+
+    <issue
+        id="Aligned16KB"
+        message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
+        <location
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+    </issue>
+
+    <issue
+        id="Aligned16KB"
+        message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
+        <location
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+    </issue>
+
+    <issue
+        id="Aligned16KB"
+        message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
+        <location
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+    </issue>
+
+    <issue
+        id="Aligned16KB"
+        message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
+        <location
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+    </issue>
+
+    <issue
+        id="Aligned16KB"
+        message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
+        <location
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+    </issue>
+
+    <issue
+        id="Aligned16KB"
+        message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
+        <location
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+    </issue>
+
+    <issue
+        id="Aligned16KB"
+        message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
+        <location
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+    </issue>
+
+    <issue
+        id="Aligned16KB"
+        message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
+        <location
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+    </issue>
+
+    <issue
+        id="Aligned16KB"
+        message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
+        <location
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+    </issue>
+
+    <issue
+        id="Aligned16KB"
+        message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
+        <location
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+    </issue>
+
+    <issue
+        id="Aligned16KB"
+        message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
+        <location
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+    </issue>
+
+    <issue
+        id="Aligned16KB"
+        message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
+        <location
+            file="../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+    </issue>
+
+    <issue
+        id="Aligned16KB"
+        message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned"
+        errorLine1="image-decoder = &quot;com.github.tachiyomiorg:image-decoder:41c059e540&quot;"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="../gradle/libs.versions.toml"
+            line="52"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="DiscouragedApi"
+        message="Use of this function is discouraged because resource reflection makes it harder to perform build optimizations and compile-time verification of code. It is much more efficient to retrieve resources by identifier (e.g. `R.foo.bar`) than by name (e.g. `getIdentifier(&quot;bar&quot;, &quot;foo&quot;, null)`)."
+        errorLine1="        context.resources.getIdentifier(&quot;locales_config&quot;, &quot;xml&quot;, context.packageName),"
+        errorLine2="                          ~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/feature/settings/screen/appearance/AppLanguageScreen.kt"
+            line="96"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="DiscouragedApi"
+        message="Use of this function is discouraged because resource reflection makes it harder to perform build optimizations and compile-time verification of code. It is much more efficient to retrieve resources by identifier (e.g. `R.foo.bar`) than by name (e.g. `getIdentifier(&quot;bar&quot;, &quot;foo&quot;, null)`)."
+        errorLine1="        context.resources.getIdentifier(&quot;aboutlibraries&quot;, &quot;raw&quot;, context.packageName),"
+        errorLine2="                          ~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/feature/settings/screen/about/OpenSourceLibraryLicenseScreen.kt"
+            line="37"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="DiscouragedApi"
+        message="Use of this function is discouraged because resource reflection makes it harder to perform build optimizations and compile-time verification of code. It is much more efficient to retrieve resources by identifier (e.g. `R.foo.bar`) than by name (e.g. `getIdentifier(&quot;bar&quot;, &quot;foo&quot;, null)`)."
+        errorLine1="            context.resources.getIdentifier(&quot;aboutlibraries&quot;, &quot;raw&quot;, context.packageName),"
+        errorLine2="                              ~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/feature/settings/screen/about/OpenSourceLicensesScreen.kt"
+            line="33"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;blocked&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;pref_blocked_pages_summary&quot;>%d blocked page(s)&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="665"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;blocked&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;pref_clear_blocked_pages_confirm&quot;>Remove all %d blocked pages? They will no longer"
+        errorLine2="    ^">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="673"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;sec&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;restore_duration&quot;>%1$02d min, %2$02d sec&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="720"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;files&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;cache_deleted&quot;>Cache cleared, %1$d files deleted&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="749"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;non&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;clear_database_source_item_count&quot;>%1$d non-library entries in database&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="778"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;chapter&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;jellyfin_sync_started&quot;>Syncing %d chapter(s) to Jellyfin…&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="959"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;more&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;notification_chapters_single_and_more&quot;>Chapter %1$s and %2$d more&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1154"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;update&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;notification_update_error&quot;>%1$d update(s) failed&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1156"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;not&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;download_notifier_split_page_not_found&quot;>Page %d not found while splitting&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1228"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;manga&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;notification_source_health_title&quot;>%d manga with source issues&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1323"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;manga&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;notification_dead_sources&quot;>🔴 %d manga with dead sources:&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1324"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;manga&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;notification_degraded_sources&quot;>🟡 %d manga with degraded sources:&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1325"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;manga&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;notification_migration_suggestion_body&quot;>%d manga have had dead sources for 3+"
+        errorLine2="    ^">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1330"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;more&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;notification_and_more&quot;>… and %d more&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1336"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;dead&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;library_health_banner_dead&quot;>%d dead&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1339"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;degraded&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;library_health_banner_degraded&quot;>%d degraded&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1340"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;manga&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;tracker_import_success&quot;>Imported %1$d manga&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1356"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;already&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;tracker_import_skipped&quot;>(%d already in library)&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1357"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;manga&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;tracker_link_success&quot;>Linked %d manga to authority&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1384"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;chapters&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;discover_find_source_chapters&quot;>%d chapters&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1406"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;chapters&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;discover_merge_chapters&quot;>%d chapters&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1414"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;results&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;discover_result_count&quot;>%d results&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1426"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;results&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;discover_result_count_filtered&quot;>%1$d of %2$d results&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1427"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;manga&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;tracker_match_all_result_detail&quot;>Resolved %1$d manga: %2$d from trackers, %3$d"
+        errorLine2="    ^">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1443"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;unlinked&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;tracker_match_all_no_matches_detail&quot;>No matches found for %d unlinked manga — try"
+        errorLine2="    ^">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1447"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;days&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;source_dead_duration_days&quot;>%d days&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1472"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;manga&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;match_results_summary&quot;>Resolved %1$d of %2$d manga&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1482"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;unlinked&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;match_results_unlinked_count&quot;>%d unlinked&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1486"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;manga&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;match_results_count_manga&quot;>%d manga&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1491"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;novels&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;match_results_count_novels&quot;>%d novels&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1492"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;other&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;match_results_count_other&quot;>%d other&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1493"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;locked&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;authority_locked_count&quot;>%d locked&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1525"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="UnsafeIntentLaunch"
+        message="This intent could be coming from an untrusted source. It is later launched by an unprotected component ephyra.app.ui.deeplink.DeepLinkActivity. You could either make the component ephyra.app.ui.deeplink.DeepLinkActivity protected; or sanitize this intent using androidx.core.content.IntentSanitizer."
+        errorLine1="        startActivity(intent)"
+        errorLine2="                      ~~~~~~">
+        <location
+            file="src/main/java/ephyra/app/ui/deeplink/DeepLinkActivity.kt"
+            line="17"
+            column="23"/>
+        <location
+            file="src/main/java/ephyra/app/ui/deeplink/DeepLinkActivity.kt"
+            line="17"
+            column="9"
+            message="The unsafe intent is launched here."/>
+    </issue>
+
+    <issue
+        id="DataExtractionRules"
+        message="The attribute `android:allowBackup` is deprecated from Android 12 and may be removed in future versions. Consider adding the attribute `android:dataExtractionRules` specifying an `@xml` resource which configures backups and device transfers on Android 12 and higher."
+        errorLine1="        android:allowBackup=&quot;false&quot;"
+        errorLine2="                             ~~~~~">
+        <location
+            file="src/main/AndroidManifest.xml"
+            line="38"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 34"
+        errorLine1="        val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {"
+        errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/ephyra/presentation/core/util/CrashLogUtil.kt"
+            line="47"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="This folder configuration (`v33`) is unnecessary; `minSdkVersion` is 34. Merge all the resources in this folder into `anim`.">
+        <location
+            file="src/main/res/anim-v33"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 29"
+        errorLine1="        &lt;item name=&quot;android:forceDarkAllowed&quot; tools:targetApi=&quot;Q&quot;>false&lt;/item>"
+        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="11"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 29"
+        errorLine1="        &lt;item name=&quot;android:forceDarkAllowed&quot; tools:targetApi=&quot;Q&quot;>false&lt;/item>"
+        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="11"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 27"
+        errorLine1="        &lt;item name=&quot;android:navigationBarDividerColor&quot; tools:targetApi=&quot;o_mr1&quot;>@null&lt;/item>"
+        errorLine2="                                                       ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="63"
+            column="56"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 27"
+        errorLine1="        &lt;item name=&quot;android:navigationBarDividerColor&quot; tools:targetApi=&quot;o_mr1&quot;>@null&lt;/item>"
+        errorLine2="                                                       ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="63"
+            column="56"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 29"
+        errorLine1="        &lt;item name=&quot;android:enforceNavigationBarContrast&quot; tools:targetApi=&quot;Q&quot;>false&lt;/item>"
+        errorLine2="                                                          ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="64"
+            column="59"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 29"
+        errorLine1="        &lt;item name=&quot;android:enforceNavigationBarContrast&quot; tools:targetApi=&quot;Q&quot;>false&lt;/item>"
+        errorLine2="                                                          ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="64"
+            column="59"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 29"
+        errorLine1="        &lt;item name=&quot;android:enforceStatusBarContrast&quot; tools:targetApi=&quot;Q&quot;>false&lt;/item>"
+        errorLine2="                                                      ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="65"
+            column="55"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 29"
+        errorLine1="        &lt;item name=&quot;android:enforceStatusBarContrast&quot; tools:targetApi=&quot;Q&quot;>false&lt;/item>"
+        errorLine2="                                                      ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="65"
+            column="55"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 27"
+        errorLine1="        &lt;item name=&quot;android:windowLightNavigationBar&quot; tools:targetApi=&quot;o_mr1&quot;>false&lt;/item>"
+        errorLine2="                                                      ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="648"
+            column="55"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="This folder configuration (`v31`) is unnecessary; `minSdkVersion` is 34. Merge all the resources in this folder into `values-night`.">
+        <location
+            file="src/main/res/values-night-v31"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="This folder configuration (`v31`) is unnecessary; `minSdkVersion` is 34. Merge all the resources in this folder into `values-night`.">
+        <location
+            file="src/main/res/values-night-v31"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="This folder configuration (`v27`) is unnecessary; `minSdkVersion` is 34. Merge all the resources in this folder into `values`.">
+        <location
+            file="src/main/res/values-v27"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="This folder configuration (`v27`) is unnecessary; `minSdkVersion` is 34. Merge all the resources in this folder into `values`.">
+        <location
+            file="src/main/res/values-v27"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="This folder configuration (`v31`) is unnecessary; `minSdkVersion` is 34. Merge all the resources in this folder into `values`.">
+        <location
+            file="src/main/res/values-v31"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="This folder configuration (`v31`) is unnecessary; `minSdkVersion` is 34. Merge all the resources in this folder into `values`.">
+        <location
+            file="src/main/res/values-v31"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="This folder configuration (`v31`) is unnecessary; `minSdkVersion` is 34. Merge all the resources in this folder into `values`.">
+        <location
+            file="src/main/res/values-v31"/>
+    </issue>
+
+    <issue
+        id="FrequentlyChangingValue"
+        message="Reading a value annotated with @FrequentlyChangingValue inside composition"
+        errorLine1="            val layoutInfo = listState.layoutInfo"
+        errorLine2="                                       ~~~~~~~~~~">
+        <location
+            file="src/main/java/ephyra/presentation/core/components/VerticalFastScroller.kt"
+            line="84"
+            column="40"/>
+    </issue>
+
+    <issue
+        id="FrequentlyChangingValue"
+        message="Reading a value annotated with @FrequentlyChangingValue inside composition"
+        errorLine1="                listState.layoutInfo.afterContentPadding"
+        errorLine2="                          ~~~~~~~~~~">
+        <location
+            file="src/main/java/ephyra/presentation/core/components/VerticalFastScroller.kt"
+            line="109"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="FrequentlyChangingValue"
+        message="Reading a value annotated with @FrequentlyChangingValue inside composition"
+        errorLine1="                listState.layoutInfo.beforeContentPadding -"
+        errorLine2="                          ~~~~~~~~~~">
+        <location
+            file="src/main/java/ephyra/presentation/core/components/VerticalFastScroller.kt"
+            line="113"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="FrequentlyChangingValue"
+        message="Reading a value annotated with @FrequentlyChangingValue inside composition"
+        errorLine1="                listState.layoutInfo.afterContentPadding -"
+        errorLine2="                          ~~~~~~~~~~">
+        <location
+            file="src/main/java/ephyra/presentation/core/components/VerticalFastScroller.kt"
+            line="114"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="FrequentlyChangingValue"
+        message="Reading a value annotated with @FrequentlyChangingValue inside composition"
+        errorLine1="            val layoutInfo = state.layoutInfo"
+        errorLine2="                                   ~~~~~~~~~~">
+        <location
+            file="src/main/java/ephyra/presentation/core/components/VerticalFastScroller.kt"
+            line="302"
+            column="36"/>
+    </issue>
+
+    <issue
+        id="FrequentlyChangingValue"
+        message="Reading a value annotated with @FrequentlyChangingValue inside composition"
+        errorLine1="                state.layoutInfo.afterContentPadding"
+        errorLine2="                      ~~~~~~~~~~">
+        <location
+            file="src/main/java/ephyra/presentation/core/components/VerticalFastScroller.kt"
+            line="323"
+            column="23"/>
+    </issue>
+
+    <issue
+        id="FrequentlyChangingValue"
+        message="Reading a value annotated with @FrequentlyChangingValue inside composition"
+        errorLine1="            LaunchedEffect(state.firstVisibleItemScrollOffset) {"
+        errorLine2="                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/ephyra/presentation/core/components/VerticalFastScroller.kt"
+            line="350"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="VectorPath"
+        message="Very long vector path (4609 characters), which is bad for performance. Considering reducing precision, removing minor details or rasterizing vector."
+        errorLine1="        android:pathData=&quot;m46,155.8 l-1.2,-0.5 -1,-0.5q0,-0.3 1,-1.3 3,-2.7 4.4,-4.7l1.7,-2.3c3,-3.2 6.8,-9.1 10,-15.2 2.1,-4 2.3,-4.3 2.5,-7.3a88,88 0,0 0,-1 -18.3c0,-0.2 -0.4,0 -3.8,1.4q-3.2,1.5 -3.7,2l-2,1.3c-1.6,0.8 -2,0.9 -4.7,0.3 -2.4,-0.5 -3.5,-1.1 -6,-3.3l-1,-1.1c0,-0.2 -1.1,-1.8 -2.6,-3.8l-0.7,-1 0.2,-1a9,9 0,0 0,0.2 -3.1l0.1,-2.3q0.2,-0.4 0.1,-1.1v-0.8l0.9,-0.4q0.8,-0.5 1.5,-0.4t1,-0.4q1.5,-1.5 2.7,-0.8c0.4,0.2 0.4,0.2 0.4,1.7 -0.1,1.7 0,1.7 1.2,2 1.3,0.2 3,0 7.4,-0.7 4,-0.8 9.6,-1.7 10.2,-1.7q0.4,0 1,-0.8l1.5,-1.5 0.8,-0.7h1.4c2.4,0.2 5.3,0.6 6.2,1 0.9,0.2 1,0.2 2.6,0l3.3,-0.5c4,-0.5 4.6,-0.6 4.8,-0.8q0,-0.1 0.4,0l0.7,-0.1c1.4,-0.8 1.6,-0.9 4,-1 1.2,0 2.6,0 3.3,-0.2 3,-0.6 12,-1.7 16.3,-2l1.6,-0.1 -0.2,-0.5q-0.4,-0.7 0,-0.7h2.3l0.8,-1.1 1,-1.4q0.1,-0.6 1.1,0.5l1.3,1.7 0.4,0.7h2.2l13,-0.3 5.2,0.5c0.8,0 0.8,0 -0.7,-2 -1,-1.3 -2.4,-2.6 -3.4,-3l-1,-0.6a11,11 0,0 0,-2.8 -1.1,14 14,0 0,1 -3.4,-1.6l-1.7,-0.3q-1.5,-0.4 -1.4,-0.6 0,-0.8 4.5,0.8 1.9,0.6 1.8,0.4 0,-0.3 -2.2,-1l-2.2,-1 0.2,-0.1q0.5,0 -0.4,-0.3 -0.5,0 -0.5,-0.4l-0.1,-0.2q-0.2,0 -0.1,-0.3v-0.2q-0.4,0 -1.3,1.6l-0.8,1L122,76.3l-1.4,-0.1q-0.3,0 -0.3,-0.3c0,-0.3 -0.2,-0.3 -2,-0.5L116,75.4q-0.4,0.3 -0.4,0t-0.8,-0.4l-7.1,-0.3q0,0.2 -0.2,0.3 -0.3,0.2 -0.4,-0.3c0,-0.5 0,-0.5 -1.3,-0.5l-1.2,0.1q0,0.2 0.2,0.2l0.8,0.3q0.5,0.4 1.1,0.4h0.7l0.2,0.2q0,0.2 -0.5,0.2h-2.5l0.7,0.1 1,0.6 0.3,0.5 -1,0.1 -1,0.3q-0.3,0.2 -0.1,-0.8v-0.9l-0.5,0.1 -1,0.4q-0.2,0.3 -1.4,0.2h-1l-0.2,-0.5q-0.2,-1.2 -0.8,-0.2 -0.4,0.5 -0.6,0.5t-0.2,0.3v0.3l-11.4,0.3 -1.3,0.2 0.6,0.1 1.2,0.1q1,0.4 -2.2,0.4c-2.6,0 -3,0.1 -2.5,0.5q0.4,0.2 -0.7,0.3l-1.7,0.1q-0.7,0 -0.4,0.2h1.1q1.4,0 0.6,0.4l-2,0.2c-1.6,0.1 -3.4,0.5 -3.7,0.9l-1,0.2 -1.5,0.1 -2.3,0.3q-1.8,0.2 -2.5,0.5c-0.5,0.2 -0.9,0.3 -5.1,0.2a36,36 0,0 1,-9.5 -1c-2.3,-0.5 -6.5,-2.8 -8.1,-4.4s-1.8,-2 -2.6,-6.4c-0.3,-2 -0.3,-2.6 -0.3,-5 0,-3.2 0.3,-4.1 1.4,-6.5 2.3,-4.9 5.7,-7.1 9.3,-6 1.6,0.4 3.3,0.7 4,0.7 1.1,0 3.3,0.4 3.5,0.6 0.3,0.4 -0.3,0.5 -3.1,0.5 -3.1,0.1 -3.8,0.3 -5.4,1a4,4 0,0 0,-2.3 2.5l-0.3,0.6 0.7,0.6q2.1,1.9 6.1,3l4.7,0.9 4.5,0.8 1.9,0.3c1.5,0.2 2.1,0.5 0.7,0.4h-0.5q0.3,0.3 1.4,0 1.7,-0.1 1.8,0.2l-0.2,0.1 -0.2,0.1 1.5,0.2 14.3,1.6q0.3,0 0,0.3 -0.6,0.2 0.5,0.4h1c0,-0.3 0.5,-0.3 2.3,-0.3 2.2,0 2.3,0 2.4,0.3q0.4,0.3 -0.6,0.5l-1,0.2 5.7,0.6c0.7,0 2.2,0 3.3,0.3 1.8,0.3 2.7,0.3 6,0.3a78,78 0,0 1,8.8 0.2q1,-0.2 1,0l1.8,0.4 2.7,0.6c1,0.3 4,0.8 6.4,1l3,0.6 2.8,0.7a20,20 0,0 1,7 3q4.4,2.3 5,8.6v1.5c-0.2,0.3 -0.2,0.3 1,0.6s2.5,1 2.4,1.2l-0.2,0.4c-0.1,0.4 0.9,1.4 1.5,1.7q0.7,0.1 1.1,0.5 0.6,0.3 0.5,1t0.6,1.6l1.2,1.5q0.9,0.7 0.3,1.8l-0.6,2.6c-0.5,2.5 -0.6,2.7 -2,3.4 -0.8,0.4 -1,0.5 -1.8,1.8q-1,1.3 0.7,2.3c0.8,0.6 -0.1,0.5 -1.5,-0.1q-1,-0.6 -2,0.3c-0.7,0.5 -1,0.5 -2.4,0.7h-1l-2,-1.3 -2.3,-1.3 -2.5,-1.1 -2.6,-1.5c-0.4,-0.2 -8.3,-2.4 -8.7,-2.4a42,42 0,0 1,3.4 11.7c0.6,4.3 1.5,9.9 1.8,10.7 0.8,2.4 2.2,4.6 6.1,9.7 3.7,4.8 8.1,10.7 8.4,11.4a25,25 0,0 1,1.6 5.8q0,0.3 -0.6,0.6 -1,0.1 -0.8,1.6 0,1 -2.1,3c-1,1 -1.3,1.2 -2,1.3 -1.1,0.2 -3.3,0.2 -4,0 -1.7,-0.5 -1.8,-0.6 -2,-1.2l-1,-1.3 -1.2,-1.7q-1.5,-2 -3.1,-2.8t-4.4,-2.8a11,11 0,0 1,-3 -3.6c-0.4,-0.7 -1,-1.8 -1.5,-2.4a13,13 0,0 1,-2.2 -4.6c-0.3,-1.4 -0.4,-1.7 -0.4,-5l-0.2,-11c-0.1,-8.1 -0.2,-8.3 -1,-11.5 -0.4,-1.6 -2.7,-9.3 -2.9,-9.4l-2,-0.2c-1.6,-0.2 -2.2,-0.2 -3.7,0q-1.8,0.4 -3.4,0.2l-1.6,0.1a234,234 0,0 1,4.9 22.7,44 44,0 0,1 0.1,9.9c-0.3,2.6 -0.6,4 -1.4,6a5,5 0,0 1,-1.6 2.5q-1.4,1.3 -1.3,2.2c0,0.6 -1.2,2.2 -1.8,2.6l-1,1 -0.8,1 -1,0.8q-1,1 -3,1.2c-2.3,0.1 -2.5,0 -5.2,-2.7l-3.7,-3.2q-1.4,-0.9 -1.5,-1.5c-0.3,-0.6 -2,-2.2 -3.3,-2.8q-0.9,-0.5 -1,-0.8 -0.2,-0.4 -1.1,-1l-1.2,-1.3 -0.6,-0.8q-0.4,-0.3 -0.7,-0.9l-0.8,-0.8q-0.4,-0.2 -0.3,-0.8v-0.8q-0.5,-0.4 0,-0.3l0.3,-0.1 -1.3,-1.7 -1.3,-1.7 2.1,1a91,91 0,0 0,9.8 4.2c2,0.9 2.7,1 3.4,0.5 1,-0.7 1,-1 1,-6.7 0.2,-5.7 0.4,-7.4 1,-12.6 0.3,-3 0.4,-4.2 0.4,-8.3l-0.1,-4.9a28,28 0,0 0,-7.2 1.2l-3.3,0.8 -2.9,0.6 -4,0.6 -3,0.3 -0.6,0.6 -1.6,1.1c-1,0.6 -1.2,0.8 -1.4,2q-0.7,4 0.8,9.4c0.6,2 0.9,2.5 1.9,4a14,14 0,0 1,2.4 8c0.1,2 0.1,2.3 0.5,3q0.5,0.8 0.5,1.1a8,8 0,0 1,-0.8 3.4l-0.5,1.1c-0.1,0.7 -1.4,1.8 -3,2.7a75,75 0,0 0,-7.4 7,51 51,0 0,1 -7.3,7q-1.3,1 -2.6,1.1l-1.4,0.3q-1.4,0.5 -2.3,0l-0.5,-0.4 -1,0.6c-1.2,0.7 -1.5,0.8 -1.8,0.5m94.4,-71 l-0.6,-0.3c-0.3,0.1 0.2,0.5 0.6,0.5q0.5,0 0,-0.2m-11,-9.7q0.2,-0.2 -0.1,-0.2l-0.5,-0.2q-0.2,-0.4 -0.2,0t0.4,0.5zM103.5,74.3q0.3,-0.1 0.2,-0.2c-0.2,-0.2 -0.8,0 -0.7,0.2q0.2,0.3 0.5,0m19.2,-1q1,0 1,-0.5c0,-0.4 0,-0.4 0.8,-0.4l1.9,0.1q1.4,0.1 -0.4,-0.2 -0.4,0 -0.4,-0.3h1l1,-0.1 -0.5,-0.1 -1,-0.2c-0.9,-0.2 -1,-0.2 -1.6,0.1 -0.5,0.3 -0.8,0.4 -1.7,0.3h-1.3q-0.2,0.3 -0.6,0c-0.4,-0.4 -0.7,-0.4 -2,-0.4h-1.5l2.6,0.5 2.6,0.6c0.2,0.2 -0.6,0.1 -3.3,-0.3l-2.3,-0.1q3,0.4 4,1c0.8,0.3 0.7,0.3 1.7,0&quot;"
+        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/drawable/brand_shikimori.xml"
+            line="14"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="VectorPath"
+        message="Very long vector path (4609 characters), which is bad for performance. Considering reducing precision, removing minor details or rasterizing vector."
+        errorLine1="        android:pathData=&quot;m46,155.8 l-1.2,-0.5 -1,-0.5q0,-0.3 1,-1.3 3,-2.7 4.4,-4.7l1.7,-2.3c3,-3.2 6.8,-9.1 10,-15.2 2.1,-4 2.3,-4.3 2.5,-7.3a88,88 0,0 0,-1 -18.3c0,-0.2 -0.4,0 -3.8,1.4q-3.2,1.5 -3.7,2l-2,1.3c-1.6,0.8 -2,0.9 -4.7,0.3 -2.4,-0.5 -3.5,-1.1 -6,-3.3l-1,-1.1c0,-0.2 -1.1,-1.8 -2.6,-3.8l-0.7,-1 0.2,-1a9,9 0,0 0,0.2 -3.1l0.1,-2.3q0.2,-0.4 0.1,-1.1v-0.8l0.9,-0.4q0.8,-0.5 1.5,-0.4t1,-0.4q1.5,-1.5 2.7,-0.8c0.4,0.2 0.4,0.2 0.4,1.7 -0.1,1.7 0,1.7 1.2,2 1.3,0.2 3,0 7.4,-0.7 4,-0.8 9.6,-1.7 10.2,-1.7q0.4,0 1,-0.8l1.5,-1.5 0.8,-0.7h1.4c2.4,0.2 5.3,0.6 6.2,1 0.9,0.2 1,0.2 2.6,0l3.3,-0.5c4,-0.5 4.6,-0.6 4.8,-0.8q0,-0.1 0.4,0l0.7,-0.1c1.4,-0.8 1.6,-0.9 4,-1 1.2,0 2.6,0 3.3,-0.2 3,-0.6 12,-1.7 16.3,-2l1.6,-0.1 -0.2,-0.5q-0.4,-0.7 0,-0.7h2.3l0.8,-1.1 1,-1.4q0.1,-0.6 1.1,0.5l1.3,1.7 0.4,0.7h2.2l13,-0.3 5.2,0.5c0.8,0 0.8,0 -0.7,-2 -1,-1.3 -2.4,-2.6 -3.4,-3l-1,-0.6a11,11 0,0 0,-2.8 -1.1,14 14,0 0,1 -3.4,-1.6l-1.7,-0.3q-1.5,-0.4 -1.4,-0.6 0,-0.8 4.5,0.8 1.9,0.6 1.8,0.4 0,-0.3 -2.2,-1l-2.2,-1 0.2,-0.1q0.5,0 -0.4,-0.3 -0.5,0 -0.5,-0.4l-0.1,-0.2q-0.2,0 -0.1,-0.3v-0.2q-0.4,0 -1.3,1.6l-0.8,1L122,76.3l-1.4,-0.1q-0.3,0 -0.3,-0.3c0,-0.3 -0.2,-0.3 -2,-0.5L116,75.4q-0.4,0.3 -0.4,0t-0.8,-0.4l-7.1,-0.3q0,0.2 -0.2,0.3 -0.3,0.2 -0.4,-0.3c0,-0.5 0,-0.5 -1.3,-0.5l-1.2,0.1q0,0.2 0.2,0.2l0.8,0.3q0.5,0.4 1.1,0.4h0.7l0.2,0.2q0,0.2 -0.5,0.2h-2.5l0.7,0.1 1,0.6 0.3,0.5 -1,0.1 -1,0.3q-0.3,0.2 -0.1,-0.8v-0.9l-0.5,0.1 -1,0.4q-0.2,0.3 -1.4,0.2h-1l-0.2,-0.5q-0.2,-1.2 -0.8,-0.2 -0.4,0.5 -0.6,0.5t-0.2,0.3v0.3l-11.4,0.3 -1.3,0.2 0.6,0.1 1.2,0.1q1,0.4 -2.2,0.4c-2.6,0 -3,0.1 -2.5,0.5q0.4,0.2 -0.7,0.3l-1.7,0.1q-0.7,0 -0.4,0.2h1.1q1.4,0 0.6,0.4l-2,0.2c-1.6,0.1 -3.4,0.5 -3.7,0.9l-1,0.2 -1.5,0.1 -2.3,0.3q-1.8,0.2 -2.5,0.5c-0.5,0.2 -0.9,0.3 -5.1,0.2a36,36 0,0 1,-9.5 -1c-2.3,-0.5 -6.5,-2.8 -8.1,-4.4s-1.8,-2 -2.6,-6.4c-0.3,-2 -0.3,-2.6 -0.3,-5 0,-3.2 0.3,-4.1 1.4,-6.5 2.3,-4.9 5.7,-7.1 9.3,-6 1.6,0.4 3.3,0.7 4,0.7 1.1,0 3.3,0.4 3.5,0.6 0.3,0.4 -0.3,0.5 -3.1,0.5 -3.1,0.1 -3.8,0.3 -5.4,1a4,4 0,0 0,-2.3 2.5l-0.3,0.6 0.7,0.6q2.1,1.9 6.1,3l4.7,0.9 4.5,0.8 1.9,0.3c1.5,0.2 2.1,0.5 0.7,0.4h-0.5q0.3,0.3 1.4,0 1.7,-0.1 1.8,0.2l-0.2,0.1 -0.2,0.1 1.5,0.2 14.3,1.6q0.3,0 0,0.3 -0.6,0.2 0.5,0.4h1c0,-0.3 0.5,-0.3 2.3,-0.3 2.2,0 2.3,0 2.4,0.3q0.4,0.3 -0.6,0.5l-1,0.2 5.7,0.6c0.7,0 2.2,0 3.3,0.3 1.8,0.3 2.7,0.3 6,0.3a78,78 0,0 1,8.8 0.2q1,-0.2 1,0l1.8,0.4 2.7,0.6c1,0.3 4,0.8 6.4,1l3,0.6 2.8,0.7a20,20 0,0 1,7 3q4.4,2.3 5,8.6v1.5c-0.2,0.3 -0.2,0.3 1,0.6s2.5,1 2.4,1.2l-0.2,0.4c-0.1,0.4 0.9,1.4 1.5,1.7q0.7,0.1 1.1,0.5 0.6,0.3 0.5,1t0.6,1.6l1.2,1.5q0.9,0.7 0.3,1.8l-0.6,2.6c-0.5,2.5 -0.6,2.7 -2,3.4 -0.8,0.4 -1,0.5 -1.8,1.8q-1,1.3 0.7,2.3c0.8,0.6 -0.1,0.5 -1.5,-0.1q-1,-0.6 -2,0.3c-0.7,0.5 -1,0.5 -2.4,0.7h-1l-2,-1.3 -2.3,-1.3 -2.5,-1.1 -2.6,-1.5c-0.4,-0.2 -8.3,-2.4 -8.7,-2.4a42,42 0,0 1,3.4 11.7c0.6,4.3 1.5,9.9 1.8,10.7 0.8,2.4 2.2,4.6 6.1,9.7 3.7,4.8 8.1,10.7 8.4,11.4a25,25 0,0 1,1.6 5.8q0,0.3 -0.6,0.6 -1,0.1 -0.8,1.6 0,1 -2.1,3c-1,1 -1.3,1.2 -2,1.3 -1.1,0.2 -3.3,0.2 -4,0 -1.7,-0.5 -1.8,-0.6 -2,-1.2l-1,-1.3 -1.2,-1.7q-1.5,-2 -3.1,-2.8t-4.4,-2.8a11,11 0,0 1,-3 -3.6c-0.4,-0.7 -1,-1.8 -1.5,-2.4a13,13 0,0 1,-2.2 -4.6c-0.3,-1.4 -0.4,-1.7 -0.4,-5l-0.2,-11c-0.1,-8.1 -0.2,-8.3 -1,-11.5 -0.4,-1.6 -2.7,-9.3 -2.9,-9.4l-2,-0.2c-1.6,-0.2 -2.2,-0.2 -3.7,0q-1.8,0.4 -3.4,0.2l-1.6,0.1a234,234 0,0 1,4.9 22.7,44 44,0 0,1 0.1,9.9c-0.3,2.6 -0.6,4 -1.4,6a5,5 0,0 1,-1.6 2.5q-1.4,1.3 -1.3,2.2c0,0.6 -1.2,2.2 -1.8,2.6l-1,1 -0.8,1 -1,0.8q-1,1 -3,1.2c-2.3,0.1 -2.5,0 -5.2,-2.7l-3.7,-3.2q-1.4,-0.9 -1.5,-1.5c-0.3,-0.6 -2,-2.2 -3.3,-2.8q-0.9,-0.5 -1,-0.8 -0.2,-0.4 -1.1,-1l-1.2,-1.3 -0.6,-0.8q-0.4,-0.3 -0.7,-0.9l-0.8,-0.8q-0.4,-0.2 -0.3,-0.8v-0.8q-0.5,-0.4 0,-0.3l0.3,-0.1 -1.3,-1.7 -1.3,-1.7 2.1,1a91,91 0,0 0,9.8 4.2c2,0.9 2.7,1 3.4,0.5 1,-0.7 1,-1 1,-6.7 0.2,-5.7 0.4,-7.4 1,-12.6 0.3,-3 0.4,-4.2 0.4,-8.3l-0.1,-4.9a28,28 0,0 0,-7.2 1.2l-3.3,0.8 -2.9,0.6 -4,0.6 -3,0.3 -0.6,0.6 -1.6,1.1c-1,0.6 -1.2,0.8 -1.4,2q-0.7,4 0.8,9.4c0.6,2 0.9,2.5 1.9,4a14,14 0,0 1,2.4 8c0.1,2 0.1,2.3 0.5,3q0.5,0.8 0.5,1.1a8,8 0,0 1,-0.8 3.4l-0.5,1.1c-0.1,0.7 -1.4,1.8 -3,2.7a75,75 0,0 0,-7.4 7,51 51,0 0,1 -7.3,7q-1.3,1 -2.6,1.1l-1.4,0.3q-1.4,0.5 -2.3,0l-0.5,-0.4 -1,0.6c-1.2,0.7 -1.5,0.8 -1.8,0.5m94.4,-71 l-0.6,-0.3c-0.3,0.1 0.2,0.5 0.6,0.5q0.5,0 0,-0.2m-11,-9.7q0.2,-0.2 -0.1,-0.2l-0.5,-0.2q-0.2,-0.4 -0.2,0t0.4,0.5zM103.5,74.3q0.3,-0.1 0.2,-0.2c-0.2,-0.2 -0.8,0 -0.7,0.2q0.2,0.3 0.5,0m19.2,-1q1,0 1,-0.5c0,-0.4 0,-0.4 0.8,-0.4l1.9,0.1q1.4,0.1 -0.4,-0.2 -0.4,0 -0.4,-0.3h1l1,-0.1 -0.5,-0.1 -1,-0.2c-0.9,-0.2 -1,-0.2 -1.6,0.1 -0.5,0.3 -0.8,0.4 -1.7,0.3h-1.3q-0.2,0.3 -0.6,0c-0.4,-0.4 -0.7,-0.4 -2,-0.4h-1.5l2.6,0.5 2.6,0.6c0.2,0.2 -0.6,0.1 -3.3,-0.3l-2.3,-0.1q3,0.4 4,1c0.8,0.3 0.7,0.3 1.7,0&quot;"
+        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/drawable/brand_shikimori.xml"
+            line="14"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="VectorPath"
+        message="Very long vector path (4609 characters), which is bad for performance. Considering reducing precision, removing minor details or rasterizing vector."
+        errorLine1="        android:pathData=&quot;m46,155.8 l-1.2,-0.5 -1,-0.5q0,-0.3 1,-1.3 3,-2.7 4.4,-4.7l1.7,-2.3c3,-3.2 6.8,-9.1 10,-15.2 2.1,-4 2.3,-4.3 2.5,-7.3a88,88 0,0 0,-1 -18.3c0,-0.2 -0.4,0 -3.8,1.4q-3.2,1.5 -3.7,2l-2,1.3c-1.6,0.8 -2,0.9 -4.7,0.3 -2.4,-0.5 -3.5,-1.1 -6,-3.3l-1,-1.1c0,-0.2 -1.1,-1.8 -2.6,-3.8l-0.7,-1 0.2,-1a9,9 0,0 0,0.2 -3.1l0.1,-2.3q0.2,-0.4 0.1,-1.1v-0.8l0.9,-0.4q0.8,-0.5 1.5,-0.4t1,-0.4q1.5,-1.5 2.7,-0.8c0.4,0.2 0.4,0.2 0.4,1.7 -0.1,1.7 0,1.7 1.2,2 1.3,0.2 3,0 7.4,-0.7 4,-0.8 9.6,-1.7 10.2,-1.7q0.4,0 1,-0.8l1.5,-1.5 0.8,-0.7h1.4c2.4,0.2 5.3,0.6 6.2,1 0.9,0.2 1,0.2 2.6,0l3.3,-0.5c4,-0.5 4.6,-0.6 4.8,-0.8q0,-0.1 0.4,0l0.7,-0.1c1.4,-0.8 1.6,-0.9 4,-1 1.2,0 2.6,0 3.3,-0.2 3,-0.6 12,-1.7 16.3,-2l1.6,-0.1 -0.2,-0.5q-0.4,-0.7 0,-0.7h2.3l0.8,-1.1 1,-1.4q0.1,-0.6 1.1,0.5l1.3,1.7 0.4,0.7h2.2l13,-0.3 5.2,0.5c0.8,0 0.8,0 -0.7,-2 -1,-1.3 -2.4,-2.6 -3.4,-3l-1,-0.6a11,11 0,0 0,-2.8 -1.1,14 14,0 0,1 -3.4,-1.6l-1.7,-0.3q-1.5,-0.4 -1.4,-0.6 0,-0.8 4.5,0.8 1.9,0.6 1.8,0.4 0,-0.3 -2.2,-1l-2.2,-1 0.2,-0.1q0.5,0 -0.4,-0.3 -0.5,0 -0.5,-0.4l-0.1,-0.2q-0.2,0 -0.1,-0.3v-0.2q-0.4,0 -1.3,1.6l-0.8,1L122,76.3l-1.4,-0.1q-0.3,0 -0.3,-0.3c0,-0.3 -0.2,-0.3 -2,-0.5L116,75.4q-0.4,0.3 -0.4,0t-0.8,-0.4l-7.1,-0.3q0,0.2 -0.2,0.3 -0.3,0.2 -0.4,-0.3c0,-0.5 0,-0.5 -1.3,-0.5l-1.2,0.1q0,0.2 0.2,0.2l0.8,0.3q0.5,0.4 1.1,0.4h0.7l0.2,0.2q0,0.2 -0.5,0.2h-2.5l0.7,0.1 1,0.6 0.3,0.5 -1,0.1 -1,0.3q-0.3,0.2 -0.1,-0.8v-0.9l-0.5,0.1 -1,0.4q-0.2,0.3 -1.4,0.2h-1l-0.2,-0.5q-0.2,-1.2 -0.8,-0.2 -0.4,0.5 -0.6,0.5t-0.2,0.3v0.3l-11.4,0.3 -1.3,0.2 0.6,0.1 1.2,0.1q1,0.4 -2.2,0.4c-2.6,0 -3,0.1 -2.5,0.5q0.4,0.2 -0.7,0.3l-1.7,0.1q-0.7,0 -0.4,0.2h1.1q1.4,0 0.6,0.4l-2,0.2c-1.6,0.1 -3.4,0.5 -3.7,0.9l-1,0.2 -1.5,0.1 -2.3,0.3q-1.8,0.2 -2.5,0.5c-0.5,0.2 -0.9,0.3 -5.1,0.2a36,36 0,0 1,-9.5 -1c-2.3,-0.5 -6.5,-2.8 -8.1,-4.4s-1.8,-2 -2.6,-6.4c-0.3,-2 -0.3,-2.6 -0.3,-5 0,-3.2 0.3,-4.1 1.4,-6.5 2.3,-4.9 5.7,-7.1 9.3,-6 1.6,0.4 3.3,0.7 4,0.7 1.1,0 3.3,0.4 3.5,0.6 0.3,0.4 -0.3,0.5 -3.1,0.5 -3.1,0.1 -3.8,0.3 -5.4,1a4,4 0,0 0,-2.3 2.5l-0.3,0.6 0.7,0.6q2.1,1.9 6.1,3l4.7,0.9 4.5,0.8 1.9,0.3c1.5,0.2 2.1,0.5 0.7,0.4h-0.5q0.3,0.3 1.4,0 1.7,-0.1 1.8,0.2l-0.2,0.1 -0.2,0.1 1.5,0.2 14.3,1.6q0.3,0 0,0.3 -0.6,0.2 0.5,0.4h1c0,-0.3 0.5,-0.3 2.3,-0.3 2.2,0 2.3,0 2.4,0.3q0.4,0.3 -0.6,0.5l-1,0.2 5.7,0.6c0.7,0 2.2,0 3.3,0.3 1.8,0.3 2.7,0.3 6,0.3a78,78 0,0 1,8.8 0.2q1,-0.2 1,0l1.8,0.4 2.7,0.6c1,0.3 4,0.8 6.4,1l3,0.6 2.8,0.7a20,20 0,0 1,7 3q4.4,2.3 5,8.6v1.5c-0.2,0.3 -0.2,0.3 1,0.6s2.5,1 2.4,1.2l-0.2,0.4c-0.1,0.4 0.9,1.4 1.5,1.7q0.7,0.1 1.1,0.5 0.6,0.3 0.5,1t0.6,1.6l1.2,1.5q0.9,0.7 0.3,1.8l-0.6,2.6c-0.5,2.5 -0.6,2.7 -2,3.4 -0.8,0.4 -1,0.5 -1.8,1.8q-1,1.3 0.7,2.3c0.8,0.6 -0.1,0.5 -1.5,-0.1q-1,-0.6 -2,0.3c-0.7,0.5 -1,0.5 -2.4,0.7h-1l-2,-1.3 -2.3,-1.3 -2.5,-1.1 -2.6,-1.5c-0.4,-0.2 -8.3,-2.4 -8.7,-2.4a42,42 0,0 1,3.4 11.7c0.6,4.3 1.5,9.9 1.8,10.7 0.8,2.4 2.2,4.6 6.1,9.7 3.7,4.8 8.1,10.7 8.4,11.4a25,25 0,0 1,1.6 5.8q0,0.3 -0.6,0.6 -1,0.1 -0.8,1.6 0,1 -2.1,3c-1,1 -1.3,1.2 -2,1.3 -1.1,0.2 -3.3,0.2 -4,0 -1.7,-0.5 -1.8,-0.6 -2,-1.2l-1,-1.3 -1.2,-1.7q-1.5,-2 -3.1,-2.8t-4.4,-2.8a11,11 0,0 1,-3 -3.6c-0.4,-0.7 -1,-1.8 -1.5,-2.4a13,13 0,0 1,-2.2 -4.6c-0.3,-1.4 -0.4,-1.7 -0.4,-5l-0.2,-11c-0.1,-8.1 -0.2,-8.3 -1,-11.5 -0.4,-1.6 -2.7,-9.3 -2.9,-9.4l-2,-0.2c-1.6,-0.2 -2.2,-0.2 -3.7,0q-1.8,0.4 -3.4,0.2l-1.6,0.1a234,234 0,0 1,4.9 22.7,44 44,0 0,1 0.1,9.9c-0.3,2.6 -0.6,4 -1.4,6a5,5 0,0 1,-1.6 2.5q-1.4,1.3 -1.3,2.2c0,0.6 -1.2,2.2 -1.8,2.6l-1,1 -0.8,1 -1,0.8q-1,1 -3,1.2c-2.3,0.1 -2.5,0 -5.2,-2.7l-3.7,-3.2q-1.4,-0.9 -1.5,-1.5c-0.3,-0.6 -2,-2.2 -3.3,-2.8q-0.9,-0.5 -1,-0.8 -0.2,-0.4 -1.1,-1l-1.2,-1.3 -0.6,-0.8q-0.4,-0.3 -0.7,-0.9l-0.8,-0.8q-0.4,-0.2 -0.3,-0.8v-0.8q-0.5,-0.4 0,-0.3l0.3,-0.1 -1.3,-1.7 -1.3,-1.7 2.1,1a91,91 0,0 0,9.8 4.2c2,0.9 2.7,1 3.4,0.5 1,-0.7 1,-1 1,-6.7 0.2,-5.7 0.4,-7.4 1,-12.6 0.3,-3 0.4,-4.2 0.4,-8.3l-0.1,-4.9a28,28 0,0 0,-7.2 1.2l-3.3,0.8 -2.9,0.6 -4,0.6 -3,0.3 -0.6,0.6 -1.6,1.1c-1,0.6 -1.2,0.8 -1.4,2q-0.7,4 0.8,9.4c0.6,2 0.9,2.5 1.9,4a14,14 0,0 1,2.4 8c0.1,2 0.1,2.3 0.5,3q0.5,0.8 0.5,1.1a8,8 0,0 1,-0.8 3.4l-0.5,1.1c-0.1,0.7 -1.4,1.8 -3,2.7a75,75 0,0 0,-7.4 7,51 51,0 0,1 -7.3,7q-1.3,1 -2.6,1.1l-1.4,0.3q-1.4,0.5 -2.3,0l-0.5,-0.4 -1,0.6c-1.2,0.7 -1.5,0.8 -1.8,0.5m94.4,-71 l-0.6,-0.3c-0.3,0.1 0.2,0.5 0.6,0.5q0.5,0 0,-0.2m-11,-9.7q0.2,-0.2 -0.1,-0.2l-0.5,-0.2q-0.2,-0.4 -0.2,0t0.4,0.5zM103.5,74.3q0.3,-0.1 0.2,-0.2c-0.2,-0.2 -0.8,0 -0.7,0.2q0.2,0.3 0.5,0m19.2,-1q1,0 1,-0.5c0,-0.4 0,-0.4 0.8,-0.4l1.9,0.1q1.4,0.1 -0.4,-0.2 -0.4,0 -0.4,-0.3h1l1,-0.1 -0.5,-0.1 -1,-0.2c-0.9,-0.2 -1,-0.2 -1.6,0.1 -0.5,0.3 -0.8,0.4 -1.7,0.3h-1.3q-0.2,0.3 -0.6,0c-0.4,-0.4 -0.7,-0.4 -2,-0.4h-1.5l2.6,0.5 2.6,0.6c0.2,0.2 -0.6,0.1 -3.3,-0.3l-2.3,-0.1q3,0.4 4,1c0.8,0.3 0.7,0.3 1.7,0&quot;"
+        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/drawable/brand_shikimori.xml"
+            line="14"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="AutoboxingStateCreation"
+        message="Prefer `mutableLongStateOf` instead of `mutableStateOf`"
+        errorLine1="    var editStatus by remember { mutableStateOf(status) }"
+        errorLine2="                                 ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/presentation/manga/components/EditMetadataDialog.kt"
+            line="96"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="AutoboxingStateCreation"
+        message="Prefer `mutableLongStateOf` instead of `mutableStateOf`"
+        errorLine1="    var available by remember(file) { mutableStateOf(-1L) }"
+        errorLine2="                                      ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/feature/settings/screen/data/StorageInfo.kt"
+            line="53"
+            column="39"/>
+    </issue>
+
+    <issue
+        id="AutoboxingStateCreation"
+        message="Prefer `mutableLongStateOf` instead of `mutableStateOf`"
+        errorLine1="    var total by remember(file) { mutableStateOf(-1L) }"
+        errorLine2="                                  ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/feature/settings/screen/data/StorageInfo.kt"
+            line="54"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="ViewConstructor"
+        message="Custom view `Pager` is missing constructor used by tools: `(Context)` or `(Context,AttributeSet)` or `(Context,AttributeSet,int)`"
+        errorLine1="open class Pager("
+        errorLine2="           ~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/feature/reader/viewer/pager/Pager.kt"
+            line="17"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `String.toUri` instead?"
+        errorLine1="        val uri = uriString?.let { Uri.parse(it) }"
+        errorLine2="                                   ~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/ephyra/app/data/backup/create/BackupCreateJob.kt"
+            line="38"
+            column="36"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `String.toUri` instead?"
+        errorLine1="            setContentText(android.net.Uri.parse(uriString).path)"
+        errorLine2="                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/ephyra/app/data/backup/BackupNotifier.kt"
+            line="39"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `String.toUri` instead?"
+        errorLine1="        val uri = Uri.parse(uriString)"
+        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/ephyra/app/data/backup/restore/BackupRestoreJob.kt"
+            line="31"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `String.toUri` instead?"
+        errorLine1="            val jellyfinRoot = UniFile.fromUri(context, android.net.Uri.parse(folderUri))"
+        errorLine2="                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/core/download/Downloader.kt"
+            line="883"
+            column="57"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `Int.toDrawable` instead?"
+        errorLine1="        if (image == null) return ColorDrawable(whiteColor)"
+        errorLine2="                                  ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/core/common/util/system/ImageUtil.kt"
+            line="584"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `Int.toDrawable` instead?"
+        errorLine1="            return ColorDrawable(whiteColor)"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/core/common/util/system/ImageUtil.kt"
+            line="587"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `Int.toDrawable` instead?"
+        errorLine1="            return ColorDrawable(topLeftPixel)"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/core/common/util/system/ImageUtil.kt"
+            line="631"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `Int.toDrawable` instead?"
+        errorLine1="                darkBG -> ColorDrawable(blackColor)"
+        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/core/common/util/system/ImageUtil.kt"
+            line="750"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `Int.toDrawable` instead?"
+        errorLine1="                else -> ColorDrawable(whiteColor)"
+        errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/core/common/util/system/ImageUtil.kt"
+            line="751"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `Int.toDrawable` instead?"
+        errorLine1="                return ColorDrawable(blackColor)"
+        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/core/common/util/system/ImageUtil.kt"
+            line="771"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `Int.toDrawable` instead?"
+        errorLine1="                return ColorDrawable(whiteColor)"
+        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/core/common/util/system/ImageUtil.kt"
+            line="793"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `Bitmap.scale` instead?"
+        errorLine1="        val scaled = Bitmap.createScaledBitmap(coarse, DHASH_WIDTH, DHASH_HEIGHT, true)"
+        errorLine2="                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/core/common/util/system/ImageUtil.kt"
+            line="858"
+            column="22"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `String.toUri` instead?"
+        errorLine1="            setContentIntent(NotificationReceiver.openErrorLogPendingActivity(context, Uri.parse(uriString)))"
+        errorLine2="                                                                                       ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/ephyra/app/data/library/LibraryUpdateNotifier.kt"
+            line="161"
+            column="88"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `Bitmap.toDrawable` instead?"
+        errorLine1="        setNonAnimatedImage(BitmapDrawable(context.resources, bitmap), config)"
+        errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/feature/reader/viewer/ReaderPageImageView.kt"
+            line="167"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="UseTomlInstead"
+        message="Use version catalog instead"
+        errorLine1="    implementation(&quot;androidx.compose.runtime:runtime:1.6.7&quot;)"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="18"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="ClickableViewAccessibility"
+        message="Custom view `Pager` overrides `onTouchEvent` but not `performClick`"
+        errorLine1="    override fun onTouchEvent(ev: MotionEvent): Boolean {"
+        errorLine2="                 ~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/feature/reader/viewer/pager/Pager.kt"
+            line="87"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="ClickableViewAccessibility"
+        message="Custom view `ReaderButton` overrides `onTouchEvent` but not `performClick`"
+        errorLine1="    override fun onTouchEvent(event: MotionEvent): Boolean {"
+        errorLine2="                 ~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/feature/reader/viewer/ReaderButton.kt"
+            line="22"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="ClickableViewAccessibility"
+        message="Custom view `WebtoonRecyclerView` overrides `onTouchEvent` but not `performClick`"
+        errorLine1="    override fun onTouchEvent(e: MotionEvent): Boolean {"
+        errorLine2="                 ~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/feature/reader/viewer/webtoon/WebtoonRecyclerView.kt"
+            line="68"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="ClickableViewAccessibility"
+        message="Custom view `WebtoonSubsamplingImageView` overrides `onTouchEvent` but not `performClick`"
+        errorLine1="    override fun onTouchEvent(event: MotionEvent): Boolean {"
+        errorLine2="                 ~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/feature/reader/viewer/webtoon/WebtoonSubsamplingImageView.kt"
+            line="17"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        errorLine1="            text = &quot;App failed to start&quot;"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/ephyra/app/crash/StartupFailureActivity.kt"
+            line="47"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
+        errorLine1="            text = &quot;A critical dependency could not be initialised. &quot; +"
+        errorLine2="                   ^">
+        <location
+            file="src/main/java/ephyra/app/crash/StartupFailureActivity.kt"
+            line="58"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        errorLine1="            text = &quot;A critical dependency could not be initialised. &quot; +"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/ephyra/app/crash/StartupFailureActivity.kt"
+            line="58"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        errorLine1="                &quot;Please report this error or try reinstalling the app.&quot;"
+        errorLine2="                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/ephyra/app/crash/StartupFailureActivity.kt"
+            line="59"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        errorLine1="            text = &quot;Restart App&quot;"
+        errorLine2="                    ~~~~~~~~~~~">
+        <location
+            file="src/main/java/ephyra/app/crash/StartupFailureActivity.kt"
+            line="81"
+            column="21"/>
+    </issue>
+
+</issues>

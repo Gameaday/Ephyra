@@ -31,7 +31,12 @@ internal class GuidesStep(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
         ) {
-            Text(stringResource(ephyra.app.core.common.R.string.onboarding_guides_new_user, stringResource(ephyra.app.core.common.R.string.app_name)))
+            Text(
+                stringResource(
+                    ephyra.app.core.common.R.string.onboarding_guides_new_user,
+                    stringResource(ephyra.app.core.common.R.string.app_name),
+                ),
+            )
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = { handler.openUri(GETTING_STARTED_URL) },
@@ -44,7 +49,12 @@ internal class GuidesStep(
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
 
-            Text(stringResource(ephyra.app.core.common.R.string.onboarding_guides_returning_user, stringResource(ephyra.app.core.common.R.string.app_name)))
+            Text(
+                stringResource(
+                    ephyra.app.core.common.R.string.onboarding_guides_returning_user,
+                    stringResource(ephyra.app.core.common.R.string.app_name),
+                ),
+            )
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = onRestoreBackup,

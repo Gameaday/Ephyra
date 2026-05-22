@@ -11,16 +11,17 @@ android {
 
 dependencies {
     api(projects.core.common)
-    api(projects.domain)
+    api(projects.core.domain)
     api(projects.data)
     api(projects.sourceApi)
     api(projects.presentationCore)
-    api(projects.feature.manga) // Library needs to jump to MangaScreen
+    api(projects.feature.manga)
+    implementation(projects.feature.category)
+    implementation(projects.feature.browse)
+    implementation(projects.feature.reader)
 
     implementation(libs.logcat)
-    implementation(libs.bundles.voyager)
 
     ksp(libs.hilt.compiler)
     testImplementation(libs.bundles.test)
 }
-

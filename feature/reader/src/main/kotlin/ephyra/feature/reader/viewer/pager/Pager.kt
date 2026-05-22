@@ -14,8 +14,9 @@ import logcat.LogPriority
  * events in order to work with child views that need to disable touch events on this parent. The
  * pager can also be declared to be vertical by creating it with [isHorizontal] to false.
  */
-open class Pager(
+open class Pager @JvmOverloads constructor(
     context: Context,
+    attrs: android.util.AttributeSet? = null,
     isHorizontal: Boolean = true,
 ) : DirectionalViewPager(context, isHorizontal) {
 

@@ -2,17 +2,13 @@ package ephyra.feature.upcoming
 
 import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMapIndexedNotNull
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import ephyra.core.common.util.insertSeparatorsReversed
 import ephyra.core.common.util.lang.toLocalDate
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.upcoming.interactor.GetUpcomingManga
+import ephyra.presentation.core.udf.BaseUdfViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.persistentListOf
@@ -20,23 +16,20 @@ import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
+import javax.inject.Inject
 
 @HiltViewModel
 class UpcomingScreenModel @Inject constructor(
     private val getUpcomingManga: GetUpcomingManga,
-) : ViewModel() {
-
-    private val _state = MutableStateFlow(State())
-    val state: StateFlow<State> = _state.asStateFlow()
+) : BaseUdfViewModel<UpcomingScreenModel.State, UpcomingScreenEvent, UpcomingScreenEffect>(State()) {
 
     init {
         viewModelScope.launch {
             getUpcomingManga.subscribe().collectLatest {
-                _state.update { state ->
+                updateState { state ->
                     val upcomingItems = it.toUpcomingUIModels()
                     state.copy(
                         items = upcomingItems,
@@ -84,14 +77,19 @@ class UpcomingScreenModel @Inject constructor(
             .toImmutableMap()
     }
 
-    fun onEvent(event: UpcomingScreenEvent) {
+    override fun onEvent(event: UpcomingScreenEvent) {
         when (event) {
             is UpcomingScreenEvent.SetSelectedYearMonth -> setSelectedYearMonth(event.yearMonth)
+            is UpcomingScreenEvent.ClickUpcoming -> handleClickUpcoming(event.mangaId)
         }
     }
 
     private fun setSelectedYearMonth(yearMonth: YearMonth) {
-        _state.update { it.copy(selectedYearMonth = yearMonth) }
+        updateState { it.copy(selectedYearMonth = yearMonth) }
+    }
+
+    private fun handleClickUpcoming(mangaId: Long) {
+        emitEffect(UpcomingScreenEffect.NavigateToMangaDetails(mangaId))
     }
 
     data class State(

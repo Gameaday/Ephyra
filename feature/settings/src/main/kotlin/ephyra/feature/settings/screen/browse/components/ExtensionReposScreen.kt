@@ -43,7 +43,9 @@ fun ExtensionReposScreen(
                     IconButton(onClick = onClickRefresh) {
                         Icon(
                             imageVector = Icons.Outlined.Refresh,
-                            contentDescription = stringResource(resource = ephyra.app.core.common.R.string.action_webview_refresh),
+                            contentDescription = stringResource(
+                                resource = ephyra.app.core.common.R.string.action_webview_refresh,
+                            ),
                         )
                     }
                 },

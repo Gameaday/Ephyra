@@ -58,7 +58,10 @@ internal fun LazyListScope.updatesLastUpdatedItem(
                 .padding(horizontal = MaterialTheme.padding.medium, vertical = MaterialTheme.padding.small),
         ) {
             Text(
-                text = stringResource(ephyra.app.core.common.R.string.updates_last_update_info, relativeTimeSpanString(lastUpdated)),
+                text = stringResource(
+                    ephyra.app.core.common.R.string.updates_last_update_info,
+                    relativeTimeSpanString(lastUpdated),
+                ),
                 fontStyle = FontStyle.Italic,
             )
         }

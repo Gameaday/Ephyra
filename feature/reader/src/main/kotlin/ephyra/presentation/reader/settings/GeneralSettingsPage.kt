@@ -125,7 +125,11 @@ internal fun ColumnScope.GeneralPage(screenModel: ReaderSettingsScreenModel) {
             value = flashInterval,
             valueRange = 1..10,
             label = stringResource(ephyra.app.core.common.R.string.pref_flash_page_interval),
-            valueString = pluralStringResource(ephyra.app.core.common.R.plurals.pref_pages, flashInterval, flashInterval),
+            valueString = pluralStringResource(
+                ephyra.app.core.common.R.plurals.pref_pages,
+                flashInterval,
+                flashInterval,
+            ),
             onChange = {
                 flashIntervalPref.set(it)
             },

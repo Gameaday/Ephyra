@@ -204,9 +204,12 @@ class DownloadNotifier(
         // Create notification
         with(errorNotificationBuilder) {
             setContentTitle(
-                mangaTitle?.plus(": $chapter") ?: context.stringResource(ephyra.app.core.common.R.string.download_notifier_downloader_title),
+                mangaTitle?.plus(": $chapter")
+                    ?: context.stringResource(ephyra.app.core.common.R.string.download_notifier_downloader_title),
             )
-            setContentText(error ?: context.stringResource(ephyra.app.core.common.R.string.download_notifier_unknown_error))
+            setContentText(
+                error ?: context.stringResource(ephyra.app.core.common.R.string.download_notifier_unknown_error),
+            )
             setSmallIcon(R.drawable.ic_warning_white_24dp)
             clearActions()
             setContentIntent(NotificationHandler.openDownloadManagerPendingActivity(context))

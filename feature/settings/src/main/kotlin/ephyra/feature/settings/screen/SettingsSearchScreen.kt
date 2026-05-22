@@ -23,6 +23,7 @@ import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -49,108 +50,105 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
+import androidx.navigation.NavController
 import ephyra.feature.settings.Preference
 import ephyra.presentation.core.components.UpIcon
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.theme.MotionTokens
-import ephyra.presentation.core.util.Screen
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.runOnEnterKeyPressed
-import cafe.adriel.voyager.core.screen.Screen as VoyagerScreen
 
-class SettingsSearchScreen : Screen() {
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsSearchScreen(
+    navController: NavController = LocalNavController.current,
+) {
+    val softKeyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+    val focusRequester = remember { FocusRequester() }
+    val listState = rememberLazyListState()
 
-    @Composable
-    override fun Content() {
-        val navigator = LocalNavigator.currentOrThrow
-        val softKeyboardController = LocalSoftwareKeyboardController.current
-        val focusManager = LocalFocusManager.current
-        val focusRequester = remember { FocusRequester() }
-        val listState = rememberLazyListState()
-
-        // Hide keyboard on change screen
-        DisposableEffect(Unit) {
-            onDispose {
-                softKeyboardController?.hide()
-            }
+    // Hide keyboard on change screen
+    DisposableEffect(Unit) {
+        onDispose {
+            softKeyboardController?.hide()
         }
+    }
 
-        // Hide keyboard on outside text field is touched
-        LaunchedEffect(listState.isScrollInProgress) {
-            if (listState.isScrollInProgress) {
-                focusManager.clearFocus()
-            }
+    // Hide keyboard on outside text field is touched
+    LaunchedEffect(listState.isScrollInProgress) {
+        if (listState.isScrollInProgress) {
+            focusManager.clearFocus()
         }
+    }
 
-        // Request text field focus on launch
-        LaunchedEffect(focusRequester) {
-            focusRequester.requestFocus()
-        }
+    // Request text field focus on launch
+    LaunchedEffect(focusRequester) {
+        focusRequester.requestFocus()
+    }
 
-        val textFieldState = rememberTextFieldState()
-        Scaffold(
-            topBar = {
-                Column {
-                    TopAppBar(
-                        navigationIcon = {
-                            val canPop = remember { navigator.canPop }
-                            if (canPop) {
-                                IconButton(onClick = navigator::pop) {
-                                    UpIcon()
-                                }
-                            }
-                        },
-                        title = {
-                            BasicTextField(
-                                state = textFieldState,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .focusRequester(focusRequester)
-                                    .runOnEnterKeyPressed(action = focusManager::clearFocus),
-                                textStyle = MaterialTheme.typography.bodyLarge
-                                    .copy(color = MaterialTheme.colorScheme.onSurface),
-                                lineLimits = TextFieldLineLimits.SingleLine,
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                                onKeyboardAction = { focusManager.clearFocus() },
-                                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                                decorator = {
-                                    if (textFieldState.text.isEmpty()) {
-                                        Text(
-                                            text = stringResource(ephyra.app.core.common.R.string.action_search_settings),
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            style = MaterialTheme.typography.bodyLarge,
-                                        )
-                                    }
-                                    it()
-                                },
-                            )
-                        },
-                        actions = {
-                            if (textFieldState.text.isNotEmpty()) {
-                                IconButton(onClick = { textFieldState.clearText() }) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Close,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+    val textFieldState = rememberTextFieldState()
+    Scaffold(
+        topBar = {
+            Column {
+                TopAppBar(
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            UpIcon()
+                        }
+                    },
+                    title = {
+                        BasicTextField(
+                            state = textFieldState,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .focusRequester(focusRequester)
+                                .runOnEnterKeyPressed(action = focusManager::clearFocus),
+                            textStyle = MaterialTheme.typography.bodyLarge
+                                .copy(color = MaterialTheme.colorScheme.onSurface),
+                            lineLimits = TextFieldLineLimits.SingleLine,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                            onKeyboardAction = { focusManager.clearFocus() },
+                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                            decorator = {
+                                if (textFieldState.text.isEmpty()) {
+                                    Text(
+                                        text = stringResource(ephyra.app.core.common.R.string.action_search_settings),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        style = MaterialTheme.typography.bodyLarge,
                                     )
                                 }
+                                it()
+                            },
+                        )
+                    },
+                    actions = {
+                        if (textFieldState.text.isNotEmpty()) {
+                            IconButton(onClick = { textFieldState.clearText() }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Close,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                             }
-                        },
-                    )
-                    HorizontalDivider()
-                }
-            },
-        ) { contentPadding ->
-            SearchResult(
-                searchKey = textFieldState.text.toString(),
-                listState = listState,
-                contentPadding = contentPadding,
-            ) { result ->
-                SearchableSettings.highlightKey = result.highlightKey
-                navigator.replace(result.route)
+                        }
+                    },
+                )
+                HorizontalDivider()
+            }
+        },
+    ) { contentPadding ->
+        SearchResult(
+            searchKey = textFieldState.text.toString(),
+            listState = listState,
+            contentPadding = contentPadding,
+        ) { result ->
+            SearchableSettings.highlightKey = result.highlightKey
+            navController.navigate(result.route) {
+                popUpTo(ScreenRoutes.SettingsSearch.route) { inclusive = true }
             }
         }
     }
@@ -281,10 +279,10 @@ private fun SearchResult(
 
 @Composable
 private fun getIndex() = settingScreens
-    .map { screen ->
+    .map { (screen, route) ->
         SettingsData(
             title = stringResource(screen.getTitleRes()),
-            route = screen,
+            route = route,
             // key() isolates each screen's composable slot table so that conditional
             // composable calls inside getPreferences() (e.g. dialogs) don't shift
             // slots for subsequent screens and cause ClassCastExceptions.
@@ -307,25 +305,25 @@ private fun getLocalizedBreadcrumb(path: String, node: String?, isLtr: Boolean):
 }
 
 private val settingScreens = listOf(
-    SettingsAppearanceScreen,
-    SettingsLibraryScreen,
-    SettingsReaderScreen,
-    SettingsDownloadScreen,
-    SettingsTrackingScreen,
-    SettingsBrowseScreen,
-    SettingsDataScreen,
-    SettingsSecurityScreen,
-    SettingsAdvancedScreen,
+    SettingsAppearanceScreen to ScreenRoutes.SettingsAppearance.route,
+    SettingsLibraryScreen to ScreenRoutes.SettingsLibrary.route,
+    SettingsReaderScreen to ScreenRoutes.SettingsReader.route,
+    SettingsDownloadScreen to ScreenRoutes.SettingsDownloads.route,
+    SettingsTrackingScreen to ScreenRoutes.SettingsTracking.route,
+    SettingsBrowseScreen to ScreenRoutes.SettingsBrowse.route,
+    SettingsDataScreen to ScreenRoutes.SettingsData.route,
+    SettingsSecurityScreen to ScreenRoutes.SettingsSecurity.route,
+    SettingsAdvancedScreen to ScreenRoutes.SettingsAdvanced.route,
 )
 
 private data class SettingsData(
     val title: String,
-    val route: VoyagerScreen,
+    val route: String,
     val contents: List<Preference>,
 )
 
 private data class SearchResultItem(
-    val route: VoyagerScreen,
+    val route: String,
     val title: String,
     val breadcrumbs: String,
     val highlightKey: String,

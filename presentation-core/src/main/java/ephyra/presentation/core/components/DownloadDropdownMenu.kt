@@ -87,8 +87,10 @@ private fun DownloadDropdownMenuItems(
     val options = persistentListOf(
         DownloadAction.NEXT_1_CHAPTER to pluralStringResource(ephyra.app.core.common.R.plurals.download_amount, 1, 1),
         DownloadAction.NEXT_5_CHAPTERS to pluralStringResource(ephyra.app.core.common.R.plurals.download_amount, 5, 5),
-        DownloadAction.NEXT_10_CHAPTERS to pluralStringResource(ephyra.app.core.common.R.plurals.download_amount, 10, 10),
-        DownloadAction.NEXT_25_CHAPTERS to pluralStringResource(ephyra.app.core.common.R.plurals.download_amount, 25, 25),
+        DownloadAction.NEXT_10_CHAPTERS to
+            pluralStringResource(ephyra.app.core.common.R.plurals.download_amount, 10, 10),
+        DownloadAction.NEXT_25_CHAPTERS to
+            pluralStringResource(ephyra.app.core.common.R.plurals.download_amount, 25, 25),
         DownloadAction.UNREAD_CHAPTERS to stringResource(ephyra.app.core.common.R.string.download_unread),
         DownloadAction.BOOKMARKED_CHAPTERS to stringResource(ephyra.app.core.common.R.string.download_bookmarked),
     )

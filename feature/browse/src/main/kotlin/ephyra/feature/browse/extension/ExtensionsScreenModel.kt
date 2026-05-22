@@ -5,7 +5,6 @@ import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.system.LocaleHelper
 import ephyra.domain.base.BasePreferences
@@ -33,6 +32,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.TreeMap
+import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 
 @HiltViewModel
@@ -67,13 +67,19 @@ class ExtensionsScreenModel @Inject constructor(
                 buildMap {
                     val updates = _updates.mapNotNull { if (predicate(it)) mapper(it) else null }
                     if (updates.isNotEmpty()) {
-                        put(ExtensionUiModel.Header.Resource(ephyra.app.core.common.R.string.ext_updates_pending), updates)
+                        put(
+                            ExtensionUiModel.Header.Resource(ephyra.app.core.common.R.string.ext_updates_pending),
+                            updates,
+                        )
                     }
 
                     val installed = _installed.mapNotNull { if (predicate(it)) mapper(it) else null }
                     val untrusted = _untrusted.mapNotNull { if (predicate(it)) mapper(it) else null }
                     if (installed.isNotEmpty() || untrusted.isNotEmpty()) {
-                        put(ExtensionUiModel.Header.Resource(ephyra.app.core.common.R.string.ext_installed), installed + untrusted)
+                        put(
+                            ExtensionUiModel.Header.Resource(ephyra.app.core.common.R.string.ext_installed),
+                            installed + untrusted,
+                        )
                     }
 
                     val langGroups = TreeMap<String, MutableList<Extension.Available>>(LocaleHelper.comparator)

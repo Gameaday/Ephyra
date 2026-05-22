@@ -26,4 +26,8 @@ class ReaderButton @JvmOverloads constructor(
         }
         return super.onTouchEvent(event)
     }
+
+    override fun performClick(): Boolean {
+        return super.performClick()
+    }
 }

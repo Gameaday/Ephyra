@@ -98,7 +98,9 @@ fun BrowseSourceToolbar(
                 onDismissRequest = { selectingDisplayMode = false },
             ) {
                 RadioMenuItem(
-                    text = { Text(text = stringResource(ephyra.app.core.common.R.string.action_display_comfortable_grid)) },
+                    text = {
+                        Text(text = stringResource(ephyra.app.core.common.R.string.action_display_comfortable_grid))
+                    },
                     isChecked = displayMode == LibraryDisplayMode.ComfortableGrid,
                 ) {
                     selectingDisplayMode = false

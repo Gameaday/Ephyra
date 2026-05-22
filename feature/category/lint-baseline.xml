@@ -7429,13 +7429,6 @@
             line="548"/>
     </issue>
 
-    <issue
-        id="MissingTranslation"
-        message="&quot;ext_installer_legacy&quot; is not translated in &quot;ml&quot; (Malayalam), &quot;mr&quot; (Marathi), &quot;am&quot; (Amharic), &quot;my&quot; (Burmese), &quot;sdh&quot;, &quot;nn&quot; (Norwegian Nynorsk), &quot;jv&quot; (Javanese), &quot;ka&quot; (Georgian), &quot;sah&quot; (Yakut), &quot;km&quot; (Khmer), &quot;kn&quot; (Kannada), &quot;te&quot; (Telugu), &quot;da&quot; (Danish)">
-        <location
-            file="build/generated/moko-resources/androidMain/res/values/multiplatform_strings.xml"
-            line="549"/>
-    </issue>
 
     <issue
         id="MissingTranslation"
@@ -13447,13 +13440,6 @@
             line="21"/>
     </issue>
 
-    <issue
-        id="RequestInstallPackagesPolicy"
-        message="`REQUEST_INSTALL_PACKAGES` is restricted to specific core functionalities and must be user-initiated. No self-updates, unauthorized installs, or APK bundling.">
-        <location
-            file="src/main/java/ephyra/app/extension/util/ExtensionInstallActivity.kt"
-            line="30"/>
-    </issue>
 
     <issue
         id="ObsoleteSdkInt"

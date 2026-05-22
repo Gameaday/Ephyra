@@ -45,6 +45,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -93,7 +94,7 @@ fun EditMetadataDialog(
     var editAuthor by remember { mutableStateOf(author ?: "") }
     var editArtist by remember { mutableStateOf(artist ?: "") }
     var editDescription by remember { mutableStateOf(description ?: "") }
-    var editStatus by remember { mutableStateOf(status) }
+    var editStatus by remember { mutableLongStateOf(status) }
     var editGenres by remember { mutableStateOf(genres) }
     var newGenre by remember { mutableStateOf("") }
 
@@ -153,13 +154,18 @@ fun EditMetadataDialog(
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Verified,
-                                contentDescription = stringResource(ephyra.app.core.common.R.string.authority_badge_description),
+                                contentDescription = stringResource(
+                                    ephyra.app.core.common.R.string.authority_badge_description,
+                                ),
                                 modifier = Modifier.size(18.dp),
                                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
                             )
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
-                                text = stringResource(ephyra.app.core.common.R.string.edit_metadata_linked_to, authorityLabel),
+                                text = stringResource(
+                                    ephyra.app.core.common.R.string.edit_metadata_linked_to,
+                                    authorityLabel,
+                                ),
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                                 modifier = Modifier.weight(1f),
@@ -171,7 +177,9 @@ fun EditMetadataDialog(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Outlined.LinkOff,
-                                        contentDescription = stringResource(ephyra.app.core.common.R.string.edit_metadata_unlink),
+                                        contentDescription = stringResource(
+                                            ephyra.app.core.common.R.string.edit_metadata_unlink,
+                                        ),
                                         modifier = Modifier.size(16.dp),
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
@@ -203,7 +211,9 @@ fun EditMetadataDialog(
                         TextButton(onClick = { onSetAllLocks(LockedField.ALL) }) {
                             Icon(
                                 imageVector = Icons.Outlined.Lock,
-                                contentDescription = stringResource(ephyra.app.core.common.R.string.metadata_locks_lock_all),
+                                contentDescription = stringResource(
+                                    ephyra.app.core.common.R.string.metadata_locks_lock_all,
+                                ),
                                 modifier = Modifier.size(16.dp),
                             )
                             Spacer(modifier = Modifier.width(4.dp))
@@ -212,7 +222,9 @@ fun EditMetadataDialog(
                         TextButton(onClick = { onSetAllLocks(LockedField.NONE) }) {
                             Icon(
                                 imageVector = Icons.Outlined.LockOpen,
-                                contentDescription = stringResource(ephyra.app.core.common.R.string.metadata_locks_unlock_all),
+                                contentDescription = stringResource(
+                                    ephyra.app.core.common.R.string.metadata_locks_unlock_all,
+                                ),
                                 modifier = Modifier.size(16.dp),
                             )
                             Spacer(modifier = Modifier.width(4.dp))
@@ -454,7 +466,9 @@ private fun StatusDropdown(
                             Spacer(modifier = Modifier.width(4.dp))
                             Icon(
                                 imageVector = Icons.Outlined.Lock,
-                                contentDescription = stringResource(ephyra.app.core.common.R.string.metadata_lock_field),
+                                contentDescription = stringResource(
+                                    ephyra.app.core.common.R.string.metadata_lock_field,
+                                ),
                                 modifier = Modifier.size(14.dp),
                                 tint = MaterialTheme.colorScheme.primary,
                             )
@@ -577,7 +591,10 @@ private fun GenreEditor(
                     trailingIcon = {
                         Icon(
                             imageVector = Icons.Outlined.Close,
-                            contentDescription = stringResource(ephyra.app.core.common.R.string.action_remove_genre, genre),
+                            contentDescription = stringResource(
+                                ephyra.app.core.common.R.string.action_remove_genre,
+                                genre,
+                            ),
                             modifier = Modifier
                                 .size(16.dp)
                                 .clickable { onRemoveGenre(genre) },

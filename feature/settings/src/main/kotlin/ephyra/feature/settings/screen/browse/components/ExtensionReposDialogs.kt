@@ -57,7 +57,12 @@ fun ExtensionRepoCreateDialog(
         },
         text = {
             Column {
-                Text(text = stringResource(ephyra.app.core.common.R.string.action_add_repo_message, stringResource(ephyra.app.core.common.R.string.app_name)))
+                Text(
+                    text = stringResource(
+                        ephyra.app.core.common.R.string.action_add_repo_message,
+                        stringResource(ephyra.app.core.common.R.string.app_name),
+                    ),
+                )
 
                 OutlinedTextField(
                     modifier = Modifier
@@ -151,7 +156,13 @@ fun ExtensionRepoConflictDialog(
             Text(text = stringResource(ephyra.app.core.common.R.string.action_replace_repo_title))
         },
         text = {
-            Text(text = stringResource(ephyra.app.core.common.R.string.action_replace_repo_message, newRepo.name, oldRepo.name))
+            Text(
+                text = stringResource(
+                    ephyra.app.core.common.R.string.action_replace_repo_message,
+                    newRepo.name,
+                    oldRepo.name,
+                ),
+            )
         },
     )
 }

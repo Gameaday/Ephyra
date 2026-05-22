@@ -73,13 +73,7 @@ android {
 
             matchingFallbacks.addAll(commonMatchingFallbacks)
         }
-        create("foss") {
-            initWith(release)
 
-            applicationIdSuffix = ".foss"
-
-            matchingFallbacks.addAll(commonMatchingFallbacks)
-        }
         create("preview") {
             initWith(release)
 
@@ -193,7 +187,7 @@ dependencies {
     implementation(projects.sourceApi)
     implementation(projects.sourceLocal)
     implementation(projects.data)
-    implementation(projects.domain)
+    implementation(projects.core.domain)
     implementation(projects.presentationCore)
     implementation(projects.presentationWidget)
 
@@ -287,7 +281,6 @@ dependencies {
     }
 
     implementation(libs.aboutLibraries.compose)
-    implementation(libs.bundles.voyager)
     implementation(libs.compose.materialmotion)
     implementation(libs.swipe)
     implementation(libs.compose.webview)
@@ -343,4 +336,3 @@ buildscript {
         classpath(kotlinx.gradle)
     }
 }
-

@@ -1,27 +1,34 @@
 package ephyra.feature.upcoming
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.hilt.navigation.compose.hiltViewModel
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
-import ephyra.feature.manga.MangaScreen
-import ephyra.presentation.core.util.Screen
+import androidx.navigation.NavController
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
+import kotlinx.coroutines.flow.collectLatest
 
-class UpcomingScreen : Screen() {
+@Composable
+fun UpcomingScreen(
+    screenModel: UpcomingScreenModel,
+    navController: NavController = LocalNavController.current,
+) {
+    val state by screenModel.state.collectAsStateWithLifecycle()
 
-    @Composable
-    override fun Content() {
-        val navigator = LocalNavigator.currentOrThrow
-
-        val screenModel = hiltViewModel<UpcomingScreenModel>()
-        val state by screenModel.state.collectAsStateWithLifecycle()
-
-        UpcomingScreenContent(
-            state = state,
-            setSelectedYearMonth = { screenModel.onEvent(UpcomingScreenEvent.SetSelectedYearMonth(it)) },
-            onClickUpcoming = { navigator.push(MangaScreen(it.id)) },
-        )
+    LaunchedEffect(Unit) {
+        screenModel.effects.collectLatest { effect ->
+            when (effect) {
+                is UpcomingScreenEffect.NavigateToMangaDetails -> {
+                    navController.navigate(ScreenRoutes.MangaDetails.createRoute(effect.mangaId, false))
+                }
+            }
+        }
     }
+
+    UpcomingScreenContent(
+        state = state,
+        setSelectedYearMonth = { screenModel.onEvent(UpcomingScreenEvent.SetSelectedYearMonth(it)) },
+        onClickUpcoming = { screenModel.onEvent(UpcomingScreenEvent.ClickUpcoming(it.id)) },
+    )
 }

@@ -2,9 +2,9 @@ package ephyra.domain.source.interactor
 
 import ephyra.core.common.util.lang.compareToWithCollator
 import ephyra.domain.source.model.Source
+import ephyra.domain.source.model.isLocal
 import ephyra.domain.source.repository.SourceRepository
 import ephyra.domain.source.service.SourcePreferences
-import ephyra.source.local.isLocal
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import java.util.Collections

@@ -53,8 +53,8 @@ class AppNavigatorContractTest {
     // ── Constructor / instantiation ───────────────────────────────────────────
 
     /**
-     * Confirms that [NavigatorImpl] has a public no-arg constructor so that Koin's
-     * `single { NavigatorImpl() }` factory can create it without any Koin-provided
+     * Confirms that [NavigatorImpl] has a public no-arg constructor so that Hilt can
+     * instantiate and inject it without additional constructor-provided
      * dependencies.
      */
     @Test

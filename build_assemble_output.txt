@@ -1,0 +1,1499 @@
+Type-safe project accessors is an incubating feature.
+> Task :buildSrc:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :buildSrc:generateExternalPluginSpecBuilders UP-TO-DATE
+> Task :buildSrc:extractPrecompiledScriptPluginPlugins UP-TO-DATE
+> Task :buildSrc:compilePluginsBlocks UP-TO-DATE
+> Task :buildSrc:generatePrecompiledScriptPluginAccessors UP-TO-DATE
+> Task :buildSrc:generateScriptPluginAdapters UP-TO-DATE
+> Task :buildSrc:compileKotlin UP-TO-DATE
+> Task :buildSrc:compileJava NO-SOURCE
+> Task :buildSrc:compileGroovy NO-SOURCE
+> Task :buildSrc:pluginDescriptors UP-TO-DATE
+> Task :buildSrc:processResources UP-TO-DATE
+> Task :buildSrc:classes UP-TO-DATE
+> Task :buildSrc:jar UP-TO-DATE
+
+> Configure project :app
+WARNING: The option setting 'android.newDsl=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: API 'applicationVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
+    android.newDsl=false
+to this project's gradle.properties file.
+For more information, see http://developer.android.com/build/r/new-dsl.
+
+To determine what is calling applicationVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
+WARNING: API 'testVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
+    android.newDsl=false
+to this project's gradle.properties file.
+For more information, see http://developer.android.com/build/r/new-dsl.
+
+To determine what is calling testVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
+WARNING: API 'unitTestVariants' is obsolete and has been replaced with 'AndroidComponentsExtension'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+The legacy variant API is disabled by default in AGP 9.0, but can be re-enabled by adding 
+    android.newDsl=false
+to this project's gradle.properties file.
+For more information, see http://developer.android.com/build/r/new-dsl.
+
+To determine what is calling unitTestVariants, use -Pandroid.debug.obsoleteApi=true on the command line to display more information.
+Configuration 'debugCompileClasspath' was resolved during configuration time.
+This is a build performance and scalability issue.
+See https://github.com/gradle/gradle/issues/2298
+Run with --info for a stacktrace.
+Configuration 'debugRuntimeClasspath' was resolved during configuration time.
+This is a build performance and scalability issue.
+See https://github.com/gradle/gradle/issues/2298
+Run with --info for a stacktrace.
+
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:compileDebugAidl UP-TO-DATE
+> Task :app:dataBindingMergeDependencyArtifactsDebug UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:prepareLibraryDefinitionsDebug UP-TO-DATE
+> Task :core-metadata:preBuild UP-TO-DATE
+> Task :core-metadata:preDebugBuild UP-TO-DATE
+> Task :core-metadata:generateDebugResources UP-TO-DATE
+> Task :core-metadata:packageDebugResources UP-TO-DATE
+> Task :data:preBuild UP-TO-DATE
+> Task :data:preDebugBuild UP-TO-DATE
+> Task :data:generateDebugResources UP-TO-DATE
+> Task :data:packageDebugResources UP-TO-DATE
+> Task :domain:preBuild UP-TO-DATE
+> Task :domain:preDebugBuild UP-TO-DATE
+> Task :domain:generateDebugResources UP-TO-DATE
+> Task :domain:packageDebugResources UP-TO-DATE
+> Task :presentation-core:preBuild UP-TO-DATE
+> Task :presentation-core:preDebugBuild UP-TO-DATE
+> Task :presentation-core:generateDebugResources UP-TO-DATE
+> Task :presentation-core:packageDebugResources UP-TO-DATE
+> Task :presentation-widget:preBuild UP-TO-DATE
+> Task :presentation-widget:preDebugBuild UP-TO-DATE
+> Task :presentation-widget:generateDebugResources UP-TO-DATE
+> Task :presentation-widget:packageDebugResources UP-TO-DATE
+> Task :source-api:preBuild UP-TO-DATE
+> Task :source-api:preDebugBuild UP-TO-DATE
+> Task :source-api:generateDebugResources UP-TO-DATE
+> Task :source-api:packageDebugResources UP-TO-DATE
+> Task :source-local:preBuild UP-TO-DATE
+> Task :source-local:preDebugBuild UP-TO-DATE
+> Task :source-local:generateDebugResources UP-TO-DATE
+> Task :source-local:packageDebugResources UP-TO-DATE
+> Task :telemetry:preBuild UP-TO-DATE
+> Task :telemetry:preDebugBuild UP-TO-DATE
+> Task :telemetry:generateDebugResources UP-TO-DATE
+> Task :telemetry:packageDebugResources UP-TO-DATE
+> Task :core:archive:preBuild UP-TO-DATE
+> Task :core:archive:preDebugBuild UP-TO-DATE
+> Task :core:archive:generateDebugResources UP-TO-DATE
+> Task :core:archive:packageDebugResources UP-TO-DATE
+> Task :core:common:preBuild UP-TO-DATE
+> Task :core:common:preDebugBuild UP-TO-DATE
+> Task :core:common:generateDebugResources UP-TO-DATE
+> Task :core:common:packageDebugResources UP-TO-DATE
+> Task :core:data:preBuild UP-TO-DATE
+> Task :core:data:preDebugBuild UP-TO-DATE
+> Task :core:data:generateDebugResources UP-TO-DATE
+> Task :core:data:packageDebugResources UP-TO-DATE
+> Task :core:domain:preBuild UP-TO-DATE
+> Task :core:domain:preDebugBuild UP-TO-DATE
+> Task :core:domain:generateDebugResources UP-TO-DATE
+> Task :core:domain:packageDebugResources UP-TO-DATE
+> Task :core:download:preBuild UP-TO-DATE
+> Task :core:download:preDebugBuild UP-TO-DATE
+> Task :core:download:generateDebugResources UP-TO-DATE
+> Task :core:download:packageDebugResources UP-TO-DATE
+> Task :feature:browse:preBuild UP-TO-DATE
+> Task :feature:browse:preDebugBuild UP-TO-DATE
+> Task :feature:browse:generateDebugResources UP-TO-DATE
+> Task :feature:browse:packageDebugResources UP-TO-DATE
+> Task :feature:category:preBuild UP-TO-DATE
+> Task :feature:category:preDebugBuild UP-TO-DATE
+> Task :feature:category:generateDebugResources UP-TO-DATE
+> Task :feature:category:packageDebugResources UP-TO-DATE
+> Task :feature:download:preBuild UP-TO-DATE
+> Task :feature:download:preDebugBuild UP-TO-DATE
+> Task :feature:download:generateDebugResources UP-TO-DATE
+> Task :feature:download:packageDebugResources UP-TO-DATE
+> Task :feature:history:preBuild UP-TO-DATE
+> Task :feature:history:preDebugBuild UP-TO-DATE
+> Task :feature:history:generateDebugResources UP-TO-DATE
+> Task :feature:history:packageDebugResources UP-TO-DATE
+> Task :feature:library:preBuild UP-TO-DATE
+> Task :feature:library:preDebugBuild UP-TO-DATE
+> Task :feature:library:generateDebugResources UP-TO-DATE
+> Task :feature:library:packageDebugResources UP-TO-DATE
+> Task :feature:manga:preBuild UP-TO-DATE
+> Task :feature:manga:preDebugBuild UP-TO-DATE
+> Task :feature:manga:generateDebugResources UP-TO-DATE
+> Task :feature:manga:packageDebugResources UP-TO-DATE
+> Task :feature:migration:preBuild UP-TO-DATE
+> Task :feature:migration:preDebugBuild UP-TO-DATE
+> Task :feature:migration:generateDebugResources UP-TO-DATE
+> Task :feature:migration:packageDebugResources UP-TO-DATE
+> Task :feature:more:preBuild UP-TO-DATE
+> Task :feature:more:preDebugBuild UP-TO-DATE
+> Task :feature:more:generateDebugResources UP-TO-DATE
+> Task :feature:more:packageDebugResources UP-TO-DATE
+> Task :feature:reader:preBuild UP-TO-DATE
+> Task :feature:reader:preDebugBuild UP-TO-DATE
+> Task :feature:reader:generateDebugResources UP-TO-DATE
+> Task :feature:reader:packageDebugResources UP-TO-DATE
+> Task :feature:security:preBuild UP-TO-DATE
+> Task :feature:security:preDebugBuild UP-TO-DATE
+> Task :feature:security:generateDebugResources UP-TO-DATE
+> Task :feature:security:packageDebugResources UP-TO-DATE
+> Task :feature:settings:preBuild UP-TO-DATE
+> Task :feature:settings:preDebugBuild UP-TO-DATE
+> Task :feature:settings:generateDebugResources UP-TO-DATE
+> Task :feature:settings:packageDebugResources UP-TO-DATE
+> Task :feature:stats:preBuild UP-TO-DATE
+> Task :feature:stats:preDebugBuild UP-TO-DATE
+> Task :feature:stats:generateDebugResources UP-TO-DATE
+> Task :feature:stats:packageDebugResources UP-TO-DATE
+> Task :feature:upcoming:preBuild UP-TO-DATE
+> Task :feature:upcoming:preDebugBuild UP-TO-DATE
+> Task :feature:upcoming:generateDebugResources UP-TO-DATE
+> Task :feature:upcoming:packageDebugResources UP-TO-DATE
+> Task :feature:updates:preBuild UP-TO-DATE
+> Task :feature:updates:preDebugBuild UP-TO-DATE
+> Task :feature:updates:generateDebugResources UP-TO-DATE
+> Task :feature:updates:packageDebugResources UP-TO-DATE
+> Task :feature:webview:preBuild UP-TO-DATE
+> Task :feature:webview:preDebugBuild UP-TO-DATE
+> Task :feature:webview:generateDebugResources UP-TO-DATE
+> Task :feature:webview:packageDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :feature:reader:dataBindingMergeDependencyArtifactsDebug UP-TO-DATE
+> Task :feature:reader:dataBindingGenBaseClassesDebug UP-TO-DATE
+> Task :app:dataBindingGenBaseClassesDebug UP-TO-DATE
+> Task :app:generateDebugBuildConfig
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :core-metadata:processDebugNavigationResources UP-TO-DATE
+> Task :data:processDebugNavigationResources UP-TO-DATE
+> Task :domain:processDebugNavigationResources UP-TO-DATE
+> Task :presentation-core:processDebugNavigationResources UP-TO-DATE
+> Task :presentation-widget:processDebugNavigationResources UP-TO-DATE
+> Task :source-api:processDebugNavigationResources UP-TO-DATE
+> Task :source-local:processDebugNavigationResources UP-TO-DATE
+> Task :telemetry:processDebugNavigationResources UP-TO-DATE
+> Task :core:archive:processDebugNavigationResources UP-TO-DATE
+> Task :core:common:processDebugNavigationResources UP-TO-DATE
+> Task :core:data:processDebugNavigationResources UP-TO-DATE
+> Task :core:domain:processDebugNavigationResources UP-TO-DATE
+> Task :core:download:processDebugNavigationResources UP-TO-DATE
+> Task :feature:browse:processDebugNavigationResources UP-TO-DATE
+> Task :feature:category:processDebugNavigationResources UP-TO-DATE
+> Task :feature:download:processDebugNavigationResources UP-TO-DATE
+> Task :feature:history:processDebugNavigationResources UP-TO-DATE
+> Task :feature:library:processDebugNavigationResources UP-TO-DATE
+> Task :feature:manga:processDebugNavigationResources UP-TO-DATE
+> Task :feature:migration:processDebugNavigationResources UP-TO-DATE
+> Task :feature:more:processDebugNavigationResources UP-TO-DATE
+> Task :feature:reader:processDebugNavigationResources UP-TO-DATE
+> Task :feature:security:processDebugNavigationResources UP-TO-DATE
+> Task :feature:settings:processDebugNavigationResources UP-TO-DATE
+> Task :feature:stats:processDebugNavigationResources UP-TO-DATE
+> Task :feature:upcoming:processDebugNavigationResources UP-TO-DATE
+> Task :feature:updates:processDebugNavigationResources UP-TO-DATE
+> Task :feature:webview:processDebugNavigationResources UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :core-metadata:parseDebugLocalResources UP-TO-DATE
+> Task :source-api:parseDebugLocalResources UP-TO-DATE
+> Task :core:common:parseDebugLocalResources UP-TO-DATE
+> Task :core:common:generateDebugRFile UP-TO-DATE
+> Task :source-api:generateDebugRFile UP-TO-DATE
+> Task :core-metadata:generateDebugRFile UP-TO-DATE
+> Task :data:parseDebugLocalResources UP-TO-DATE
+> Task :domain:parseDebugLocalResources UP-TO-DATE
+> Task :domain:generateDebugRFile UP-TO-DATE
+> Task :data:generateDebugRFile UP-TO-DATE
+> Task :presentation-core:parseDebugLocalResources UP-TO-DATE
+> Task :source-local:parseDebugLocalResources UP-TO-DATE
+> Task :core:archive:parseDebugLocalResources UP-TO-DATE
+> Task :core:archive:generateDebugRFile UP-TO-DATE
+> Task :source-local:generateDebugRFile UP-TO-DATE
+> Task :core:data:parseDebugLocalResources UP-TO-DATE
+> Task :core:domain:parseDebugLocalResources UP-TO-DATE
+> Task :core:domain:generateDebugRFile UP-TO-DATE
+> Task :core:data:generateDebugRFile UP-TO-DATE
+> Task :core:download:parseDebugLocalResources UP-TO-DATE
+> Task :core:download:generateDebugRFile UP-TO-DATE
+> Task :presentation-core:generateDebugRFile UP-TO-DATE
+> Task :presentation-widget:parseDebugLocalResources UP-TO-DATE
+> Task :presentation-widget:generateDebugRFile UP-TO-DATE
+> Task :telemetry:parseDebugLocalResources UP-TO-DATE
+> Task :telemetry:generateDebugRFile UP-TO-DATE
+> Task :feature:browse:parseDebugLocalResources UP-TO-DATE
+> Task :feature:category:parseDebugLocalResources UP-TO-DATE
+> Task :feature:category:generateDebugRFile UP-TO-DATE
+> Task :feature:manga:parseDebugLocalResources UP-TO-DATE
+> Task :feature:migration:parseDebugLocalResources UP-TO-DATE
+> Task :feature:migration:generateDebugRFile UP-TO-DATE
+> Task :feature:reader:parseDebugLocalResources UP-TO-DATE
+> Task :feature:webview:parseDebugLocalResources UP-TO-DATE
+> Task :feature:webview:generateDebugRFile UP-TO-DATE
+> Task :feature:reader:generateDebugRFile UP-TO-DATE
+> Task :feature:settings:parseDebugLocalResources UP-TO-DATE
+> Task :feature:settings:generateDebugRFile UP-TO-DATE
+> Task :feature:manga:generateDebugRFile UP-TO-DATE
+> Task :feature:browse:generateDebugRFile UP-TO-DATE
+> Task :feature:download:parseDebugLocalResources UP-TO-DATE
+> Task :feature:download:generateDebugRFile UP-TO-DATE
+> Task :feature:history:parseDebugLocalResources UP-TO-DATE
+> Task :feature:history:generateDebugRFile UP-TO-DATE
+> Task :feature:library:parseDebugLocalResources UP-TO-DATE
+> Task :feature:library:generateDebugRFile UP-TO-DATE
+> Task :feature:more:parseDebugLocalResources UP-TO-DATE
+> Task :feature:stats:parseDebugLocalResources UP-TO-DATE
+> Task :feature:stats:generateDebugRFile UP-TO-DATE
+> Task :feature:more:generateDebugRFile UP-TO-DATE
+> Task :feature:security:parseDebugLocalResources UP-TO-DATE
+> Task :feature:security:generateDebugRFile UP-TO-DATE
+> Task :feature:upcoming:parseDebugLocalResources UP-TO-DATE
+> Task :feature:upcoming:generateDebugRFile UP-TO-DATE
+> Task :feature:updates:parseDebugLocalResources UP-TO-DATE
+> Task :feature:updates:generateDebugRFile UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+> Task :core:common:compileDebugKotlin UP-TO-DATE
+> Task :core:common:javaPreCompileDebug UP-TO-DATE
+> Task :core:common:compileDebugJavaWithJavac NO-SOURCE
+> Task :core:common:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :source-api:compileDebugKotlin UP-TO-DATE
+> Task :source-api:javaPreCompileDebug UP-TO-DATE
+> Task :source-api:compileDebugJavaWithJavac NO-SOURCE
+> Task :source-api:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :core-metadata:compileDebugKotlin UP-TO-DATE
+> Task :core-metadata:javaPreCompileDebug UP-TO-DATE
+> Task :core-metadata:compileDebugJavaWithJavac NO-SOURCE
+> Task :core-metadata:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :data:generateDebugDatabaseInterface UP-TO-DATE
+> Task :domain:compileDebugKotlin UP-TO-DATE
+> Task :domain:javaPreCompileDebug UP-TO-DATE
+> Task :domain:compileDebugJavaWithJavac NO-SOURCE
+> Task :domain:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :data:kspDebugKotlin UP-TO-DATE
+> Task :data:compileDebugKotlin UP-TO-DATE
+> Task :data:javaPreCompileDebug UP-TO-DATE
+> Task :data:compileDebugJavaWithJavac NO-SOURCE
+> Task :data:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :core:archive:compileDebugKotlin UP-TO-DATE
+> Task :core:archive:javaPreCompileDebug UP-TO-DATE
+> Task :core:archive:compileDebugJavaWithJavac NO-SOURCE
+> Task :core:archive:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :source-local:compileDebugKotlin UP-TO-DATE
+> Task :source-local:javaPreCompileDebug UP-TO-DATE
+> Task :source-local:compileDebugJavaWithJavac NO-SOURCE
+> Task :source-local:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :core:data:generateDebugBuildConfig
+> Task :core:domain:compileDebugKotlin UP-TO-DATE
+> Task :core:domain:javaPreCompileDebug UP-TO-DATE
+> Task :core:domain:compileDebugJavaWithJavac NO-SOURCE
+> Task :core:domain:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :core:data:javaPreCompileDebug UP-TO-DATE
+> Task :core:download:javaPreCompileDebug UP-TO-DATE
+> Task :presentation-core:javaPreCompileDebug UP-TO-DATE
+> Task :presentation-widget:javaPreCompileDebug UP-TO-DATE
+> Task :telemetry:compileDebugKotlin UP-TO-DATE
+> Task :telemetry:javaPreCompileDebug UP-TO-DATE
+> Task :telemetry:compileDebugJavaWithJavac NO-SOURCE
+> Task :telemetry:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :feature:category:javaPreCompileDebug UP-TO-DATE
+> Task :feature:migration:javaPreCompileDebug UP-TO-DATE
+> Task :core-metadata:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :data:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :domain:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :source-api:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :source-local:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :core:archive:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :core:common:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :core:domain:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :feature:webview:javaPreCompileDebug UP-TO-DATE
+> Task :feature:reader:javaPreCompileDebug UP-TO-DATE
+> Task :feature:settings:javaPreCompileDebug UP-TO-DATE
+> Task :feature:manga:javaPreCompileDebug UP-TO-DATE
+> Task :feature:browse:javaPreCompileDebug UP-TO-DATE
+> Task :feature:download:javaPreCompileDebug UP-TO-DATE
+> Task :feature:history:javaPreCompileDebug UP-TO-DATE
+> Task :feature:library:javaPreCompileDebug UP-TO-DATE
+> Task :feature:stats:javaPreCompileDebug UP-TO-DATE
+> Task :feature:more:javaPreCompileDebug UP-TO-DATE
+> Task :feature:security:javaPreCompileDebug UP-TO-DATE
+> Task :feature:upcoming:javaPreCompileDebug UP-TO-DATE
+> Task :feature:updates:javaPreCompileDebug UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :core-metadata:generateDebugAssets UP-TO-DATE
+> Task :core-metadata:mergeDebugAssets UP-TO-DATE
+> Task :data:generateDebugAssets UP-TO-DATE
+> Task :data:mergeDebugAssets UP-TO-DATE
+> Task :domain:generateDebugAssets UP-TO-DATE
+> Task :domain:mergeDebugAssets UP-TO-DATE
+> Task :presentation-core:generateDebugAssets UP-TO-DATE
+> Task :presentation-core:mergeDebugAssets UP-TO-DATE
+> Task :presentation-widget:generateDebugAssets UP-TO-DATE
+> Task :presentation-widget:mergeDebugAssets UP-TO-DATE
+> Task :source-api:generateDebugAssets UP-TO-DATE
+> Task :source-api:mergeDebugAssets UP-TO-DATE
+> Task :source-local:generateDebugAssets UP-TO-DATE
+> Task :source-local:mergeDebugAssets UP-TO-DATE
+> Task :telemetry:generateDebugAssets UP-TO-DATE
+> Task :telemetry:mergeDebugAssets UP-TO-DATE
+> Task :core:archive:generateDebugAssets UP-TO-DATE
+> Task :core:archive:mergeDebugAssets UP-TO-DATE
+> Task :core:common:generateDebugAssets UP-TO-DATE
+> Task :core:common:mergeDebugAssets UP-TO-DATE
+> Task :core:data:generateDebugAssets UP-TO-DATE
+> Task :core:data:mergeDebugAssets UP-TO-DATE
+> Task :core:domain:generateDebugAssets UP-TO-DATE
+> Task :core:domain:mergeDebugAssets UP-TO-DATE
+> Task :core:download:generateDebugAssets UP-TO-DATE
+> Task :core:download:mergeDebugAssets UP-TO-DATE
+> Task :feature:browse:generateDebugAssets UP-TO-DATE
+> Task :feature:browse:mergeDebugAssets UP-TO-DATE
+> Task :feature:category:generateDebugAssets UP-TO-DATE
+> Task :feature:category:mergeDebugAssets UP-TO-DATE
+> Task :feature:download:generateDebugAssets UP-TO-DATE
+> Task :feature:download:mergeDebugAssets UP-TO-DATE
+> Task :feature:history:generateDebugAssets UP-TO-DATE
+> Task :feature:history:mergeDebugAssets UP-TO-DATE
+> Task :feature:library:generateDebugAssets UP-TO-DATE
+> Task :feature:library:mergeDebugAssets UP-TO-DATE
+> Task :feature:manga:generateDebugAssets UP-TO-DATE
+> Task :feature:manga:mergeDebugAssets UP-TO-DATE
+> Task :feature:migration:generateDebugAssets UP-TO-DATE
+> Task :feature:migration:mergeDebugAssets UP-TO-DATE
+> Task :feature:more:generateDebugAssets UP-TO-DATE
+> Task :feature:more:mergeDebugAssets UP-TO-DATE
+> Task :feature:reader:generateDebugAssets UP-TO-DATE
+> Task :feature:reader:mergeDebugAssets UP-TO-DATE
+> Task :feature:security:generateDebugAssets UP-TO-DATE
+> Task :feature:security:mergeDebugAssets UP-TO-DATE
+> Task :feature:settings:generateDebugAssets UP-TO-DATE
+> Task :feature:settings:mergeDebugAssets UP-TO-DATE
+> Task :feature:stats:generateDebugAssets UP-TO-DATE
+> Task :feature:stats:mergeDebugAssets UP-TO-DATE
+> Task :feature:upcoming:generateDebugAssets UP-TO-DATE
+> Task :feature:upcoming:mergeDebugAssets UP-TO-DATE
+> Task :feature:updates:generateDebugAssets UP-TO-DATE
+> Task :feature:updates:mergeDebugAssets UP-TO-DATE
+> Task :feature:webview:generateDebugAssets UP-TO-DATE
+> Task :feature:webview:mergeDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets UP-TO-DATE
+> Task :app:compressDebugAssets UP-TO-DATE
+> Task :app:generateDebugGlobalSynthetics UP-TO-DATE
+> Task :app:l8DexDesugarLibDebug UP-TO-DATE
+> Task :telemetry:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :core-metadata:processDebugJavaRes UP-TO-DATE
+> Task :data:processDebugJavaRes UP-TO-DATE
+> Task :domain:processDebugJavaRes UP-TO-DATE
+> Task :source-api:processDebugJavaRes UP-TO-DATE
+> Task :source-local:processDebugJavaRes UP-TO-DATE
+> Task :telemetry:processDebugJavaRes UP-TO-DATE
+> Task :core:archive:processDebugJavaRes UP-TO-DATE
+> Task :core:common:processDebugJavaRes UP-TO-DATE
+> Task :core:domain:processDebugJavaRes UP-TO-DATE
+> Task :app:checkDebugDuplicateClasses UP-TO-DATE
+> Task :app:desugarDebugFileDependencies UP-TO-DATE
+> Task :app:mergeExtDexDebug UP-TO-DATE
+> Task :core:domain:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :source-local:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :core:archive:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :core-metadata:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :data:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :domain:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :source-api:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :core:common:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :telemetry:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :core-metadata:writeDebugAarMetadata UP-TO-DATE
+> Task :data:writeDebugAarMetadata UP-TO-DATE
+> Task :domain:writeDebugAarMetadata UP-TO-DATE
+> Task :presentation-core:writeDebugAarMetadata UP-TO-DATE
+> Task :presentation-widget:writeDebugAarMetadata UP-TO-DATE
+> Task :source-api:writeDebugAarMetadata UP-TO-DATE
+> Task :source-local:writeDebugAarMetadata UP-TO-DATE
+> Task :telemetry:writeDebugAarMetadata UP-TO-DATE
+> Task :core:archive:writeDebugAarMetadata UP-TO-DATE
+> Task :core:common:writeDebugAarMetadata UP-TO-DATE
+> Task :core:data:writeDebugAarMetadata UP-TO-DATE
+> Task :core:domain:writeDebugAarMetadata UP-TO-DATE
+> Task :core:download:writeDebugAarMetadata UP-TO-DATE
+> Task :feature:browse:writeDebugAarMetadata UP-TO-DATE
+> Task :feature:category:writeDebugAarMetadata UP-TO-DATE
+> Task :feature:download:writeDebugAarMetadata UP-TO-DATE
+> Task :feature:history:writeDebugAarMetadata UP-TO-DATE
+> Task :feature:library:writeDebugAarMetadata UP-TO-DATE
+> Task :feature:manga:writeDebugAarMetadata UP-TO-DATE
+> Task :feature:migration:writeDebugAarMetadata UP-TO-DATE
+> Task :feature:more:writeDebugAarMetadata UP-TO-DATE
+> Task :feature:reader:writeDebugAarMetadata UP-TO-DATE
+> Task :feature:security:writeDebugAarMetadata UP-TO-DATE
+> Task :feature:settings:writeDebugAarMetadata UP-TO-DATE
+> Task :feature:stats:writeDebugAarMetadata UP-TO-DATE
+> Task :feature:upcoming:writeDebugAarMetadata UP-TO-DATE
+> Task :feature:updates:writeDebugAarMetadata UP-TO-DATE
+> Task :feature:webview:writeDebugAarMetadata UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :core-metadata:extractDeepLinksDebug UP-TO-DATE
+> Task :core-metadata:processDebugManifest UP-TO-DATE
+> Task :data:extractDeepLinksDebug UP-TO-DATE
+> Task :data:processDebugManifest UP-TO-DATE
+> Task :domain:extractDeepLinksDebug UP-TO-DATE
+> Task :domain:processDebugManifest UP-TO-DATE
+> Task :presentation-core:extractDeepLinksDebug UP-TO-DATE
+> Task :presentation-core:processDebugManifest UP-TO-DATE
+> Task :presentation-widget:extractDeepLinksDebug UP-TO-DATE
+> Task :presentation-widget:processDebugManifest UP-TO-DATE
+> Task :source-api:extractDeepLinksDebug UP-TO-DATE
+> Task :source-api:processDebugManifest UP-TO-DATE
+> Task :source-local:extractDeepLinksDebug UP-TO-DATE
+> Task :source-local:processDebugManifest UP-TO-DATE
+> Task :telemetry:extractDeepLinksDebug UP-TO-DATE
+> Task :telemetry:processDebugManifest UP-TO-DATE
+> Task :core:archive:extractDeepLinksDebug UP-TO-DATE
+> Task :core:archive:processDebugManifest UP-TO-DATE
+> Task :core:common:extractDeepLinksDebug UP-TO-DATE
+> Task :core:common:processDebugManifest UP-TO-DATE
+> Task :core:data:extractDeepLinksDebug UP-TO-DATE
+> Task :core:data:processDebugManifest UP-TO-DATE
+> Task :core:domain:extractDeepLinksDebug UP-TO-DATE
+> Task :core:domain:processDebugManifest UP-TO-DATE
+> Task :core:download:extractDeepLinksDebug UP-TO-DATE
+> Task :core:download:processDebugManifest UP-TO-DATE
+> Task :feature:browse:extractDeepLinksDebug UP-TO-DATE
+> Task :feature:browse:processDebugManifest UP-TO-DATE
+> Task :feature:category:extractDeepLinksDebug UP-TO-DATE
+> Task :feature:category:processDebugManifest UP-TO-DATE
+> Task :feature:download:extractDeepLinksDebug UP-TO-DATE
+> Task :feature:download:processDebugManifest UP-TO-DATE
+> Task :feature:history:extractDeepLinksDebug UP-TO-DATE
+> Task :feature:history:processDebugManifest UP-TO-DATE
+> Task :feature:library:extractDeepLinksDebug UP-TO-DATE
+> Task :feature:library:processDebugManifest UP-TO-DATE
+> Task :feature:manga:extractDeepLinksDebug UP-TO-DATE
+> Task :feature:manga:processDebugManifest UP-TO-DATE
+> Task :feature:migration:extractDeepLinksDebug UP-TO-DATE
+> Task :feature:migration:processDebugManifest UP-TO-DATE
+> Task :feature:more:extractDeepLinksDebug UP-TO-DATE
+> Task :feature:more:processDebugManifest UP-TO-DATE
+> Task :feature:reader:extractDeepLinksDebug UP-TO-DATE
+> Task :feature:reader:processDebugManifest UP-TO-DATE
+> Task :feature:security:extractDeepLinksDebug UP-TO-DATE
+> Task :feature:security:processDebugManifest UP-TO-DATE
+> Task :feature:settings:extractDeepLinksDebug UP-TO-DATE
+> Task :feature:settings:processDebugManifest UP-TO-DATE
+> Task :feature:stats:extractDeepLinksDebug UP-TO-DATE
+> Task :feature:stats:processDebugManifest UP-TO-DATE
+> Task :feature:upcoming:extractDeepLinksDebug UP-TO-DATE
+> Task :feature:upcoming:processDebugManifest UP-TO-DATE
+> Task :feature:updates:extractDeepLinksDebug UP-TO-DATE
+> Task :feature:updates:processDebugManifest UP-TO-DATE
+> Task :feature:webview:extractDeepLinksDebug UP-TO-DATE
+> Task :feature:webview:processDebugManifest UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :core-metadata:mapDebugSourceSetPaths UP-TO-DATE
+> Task :core-metadata:compileDebugLibraryResources UP-TO-DATE
+> Task :data:mapDebugSourceSetPaths UP-TO-DATE
+> Task :data:compileDebugLibraryResources UP-TO-DATE
+> Task :domain:mapDebugSourceSetPaths UP-TO-DATE
+> Task :domain:compileDebugLibraryResources UP-TO-DATE
+> Task :presentation-core:mapDebugSourceSetPaths UP-TO-DATE
+> Task :presentation-core:compileDebugLibraryResources UP-TO-DATE
+> Task :presentation-widget:mapDebugSourceSetPaths UP-TO-DATE
+> Task :presentation-widget:compileDebugLibraryResources UP-TO-DATE
+> Task :source-api:mapDebugSourceSetPaths UP-TO-DATE
+> Task :source-api:compileDebugLibraryResources UP-TO-DATE
+> Task :source-local:mapDebugSourceSetPaths UP-TO-DATE
+> Task :source-local:compileDebugLibraryResources UP-TO-DATE
+> Task :telemetry:mapDebugSourceSetPaths UP-TO-DATE
+> Task :telemetry:compileDebugLibraryResources UP-TO-DATE
+> Task :core:archive:mapDebugSourceSetPaths UP-TO-DATE
+> Task :core:archive:compileDebugLibraryResources UP-TO-DATE
+> Task :core:common:mapDebugSourceSetPaths UP-TO-DATE
+> Task :core:common:compileDebugLibraryResources UP-TO-DATE
+> Task :core:data:mapDebugSourceSetPaths UP-TO-DATE
+> Task :core:data:compileDebugLibraryResources UP-TO-DATE
+> Task :core:domain:mapDebugSourceSetPaths UP-TO-DATE
+> Task :core:domain:compileDebugLibraryResources UP-TO-DATE
+> Task :core:download:mapDebugSourceSetPaths UP-TO-DATE
+> Task :core:download:compileDebugLibraryResources UP-TO-DATE
+> Task :feature:browse:mapDebugSourceSetPaths UP-TO-DATE
+> Task :feature:browse:compileDebugLibraryResources UP-TO-DATE
+> Task :feature:category:mapDebugSourceSetPaths UP-TO-DATE
+> Task :feature:category:compileDebugLibraryResources UP-TO-DATE
+> Task :feature:download:mapDebugSourceSetPaths UP-TO-DATE
+> Task :feature:download:compileDebugLibraryResources UP-TO-DATE
+> Task :feature:history:mapDebugSourceSetPaths UP-TO-DATE
+> Task :feature:history:compileDebugLibraryResources UP-TO-DATE
+> Task :feature:library:mapDebugSourceSetPaths UP-TO-DATE
+> Task :feature:library:compileDebugLibraryResources UP-TO-DATE
+> Task :feature:manga:mapDebugSourceSetPaths UP-TO-DATE
+> Task :feature:manga:compileDebugLibraryResources UP-TO-DATE
+> Task :feature:migration:mapDebugSourceSetPaths UP-TO-DATE
+> Task :feature:migration:compileDebugLibraryResources UP-TO-DATE
+> Task :feature:more:mapDebugSourceSetPaths UP-TO-DATE
+> Task :feature:more:compileDebugLibraryResources UP-TO-DATE
+> Task :feature:reader:mapDebugSourceSetPaths UP-TO-DATE
+> Task :feature:reader:compileDebugLibraryResources UP-TO-DATE
+> Task :feature:security:mapDebugSourceSetPaths UP-TO-DATE
+> Task :feature:security:compileDebugLibraryResources UP-TO-DATE
+> Task :feature:settings:mapDebugSourceSetPaths UP-TO-DATE
+> Task :feature:settings:compileDebugLibraryResources UP-TO-DATE
+> Task :feature:stats:mapDebugSourceSetPaths UP-TO-DATE
+> Task :feature:stats:compileDebugLibraryResources UP-TO-DATE
+> Task :feature:upcoming:mapDebugSourceSetPaths UP-TO-DATE
+> Task :feature:upcoming:compileDebugLibraryResources UP-TO-DATE
+> Task :feature:updates:mapDebugSourceSetPaths UP-TO-DATE
+> Task :feature:updates:compileDebugLibraryResources UP-TO-DATE
+> Task :feature:webview:mapDebugSourceSetPaths UP-TO-DATE
+> Task :feature:webview:compileDebugLibraryResources UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:mergeDebugJniLibFolders UP-TO-DATE
+> Task :core-metadata:mergeDebugJniLibFolders UP-TO-DATE
+> Task :core-metadata:mergeDebugNativeLibs NO-SOURCE
+> Task :core-metadata:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :data:mergeDebugJniLibFolders UP-TO-DATE
+> Task :data:mergeDebugNativeLibs NO-SOURCE
+> Task :data:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :domain:mergeDebugJniLibFolders UP-TO-DATE
+> Task :domain:mergeDebugNativeLibs NO-SOURCE
+> Task :domain:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :presentation-core:mergeDebugJniLibFolders UP-TO-DATE
+> Task :presentation-core:mergeDebugNativeLibs NO-SOURCE
+> Task :presentation-core:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :presentation-widget:mergeDebugJniLibFolders UP-TO-DATE
+> Task :presentation-widget:mergeDebugNativeLibs NO-SOURCE
+> Task :presentation-widget:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :source-api:mergeDebugJniLibFolders UP-TO-DATE
+> Task :source-api:mergeDebugNativeLibs NO-SOURCE
+> Task :source-api:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :source-local:mergeDebugJniLibFolders UP-TO-DATE
+> Task :source-local:mergeDebugNativeLibs NO-SOURCE
+> Task :source-local:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :telemetry:mergeDebugJniLibFolders UP-TO-DATE
+> Task :telemetry:mergeDebugNativeLibs NO-SOURCE
+> Task :telemetry:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :core:archive:mergeDebugJniLibFolders UP-TO-DATE
+> Task :core:archive:mergeDebugNativeLibs NO-SOURCE
+> Task :core:archive:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :core:common:mergeDebugJniLibFolders UP-TO-DATE
+> Task :core:common:mergeDebugNativeLibs NO-SOURCE
+> Task :core:common:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :core:data:mergeDebugJniLibFolders UP-TO-DATE
+> Task :core:data:mergeDebugNativeLibs NO-SOURCE
+> Task :core:data:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :core:domain:mergeDebugJniLibFolders UP-TO-DATE
+> Task :core:domain:mergeDebugNativeLibs NO-SOURCE
+> Task :core:domain:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :core:download:mergeDebugJniLibFolders UP-TO-DATE
+> Task :core:download:mergeDebugNativeLibs NO-SOURCE
+> Task :core:download:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :feature:browse:mergeDebugJniLibFolders UP-TO-DATE
+> Task :feature:browse:mergeDebugNativeLibs NO-SOURCE
+> Task :feature:browse:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :feature:category:mergeDebugJniLibFolders UP-TO-DATE
+> Task :feature:category:mergeDebugNativeLibs NO-SOURCE
+> Task :feature:category:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :feature:download:mergeDebugJniLibFolders UP-TO-DATE
+> Task :feature:download:mergeDebugNativeLibs NO-SOURCE
+> Task :feature:download:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :feature:history:mergeDebugJniLibFolders UP-TO-DATE
+> Task :feature:history:mergeDebugNativeLibs NO-SOURCE
+> Task :feature:history:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :feature:library:mergeDebugJniLibFolders UP-TO-DATE
+> Task :feature:library:mergeDebugNativeLibs NO-SOURCE
+> Task :feature:library:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :feature:manga:mergeDebugJniLibFolders UP-TO-DATE
+> Task :feature:manga:mergeDebugNativeLibs NO-SOURCE
+> Task :feature:manga:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :feature:migration:mergeDebugJniLibFolders UP-TO-DATE
+> Task :feature:migration:mergeDebugNativeLibs NO-SOURCE
+> Task :feature:migration:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :feature:more:mergeDebugJniLibFolders UP-TO-DATE
+> Task :feature:more:mergeDebugNativeLibs NO-SOURCE
+> Task :feature:more:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :feature:reader:mergeDebugJniLibFolders UP-TO-DATE
+> Task :feature:reader:mergeDebugNativeLibs NO-SOURCE
+> Task :feature:reader:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :feature:security:mergeDebugJniLibFolders UP-TO-DATE
+> Task :feature:security:mergeDebugNativeLibs NO-SOURCE
+> Task :feature:security:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :feature:settings:mergeDebugJniLibFolders UP-TO-DATE
+> Task :feature:settings:mergeDebugNativeLibs NO-SOURCE
+> Task :feature:settings:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :feature:stats:mergeDebugJniLibFolders UP-TO-DATE
+> Task :feature:stats:mergeDebugNativeLibs NO-SOURCE
+> Task :feature:stats:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :feature:upcoming:mergeDebugJniLibFolders UP-TO-DATE
+> Task :feature:upcoming:mergeDebugNativeLibs NO-SOURCE
+> Task :feature:upcoming:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :feature:updates:mergeDebugJniLibFolders UP-TO-DATE
+> Task :feature:updates:mergeDebugNativeLibs NO-SOURCE
+> Task :feature:updates:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :feature:webview:mergeDebugJniLibFolders UP-TO-DATE
+> Task :feature:webview:mergeDebugNativeLibs NO-SOURCE
+> Task :feature:webview:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :app:mergeDebugNativeLibs UP-TO-DATE
+> Task :app:stripDebugDebugSymbols UP-TO-DATE
+> Task :app:validateSigningDebug UP-TO-DATE
+> Task :app:writeDebugAppMetadata UP-TO-DATE
+> Task :app:writeDebugSigningConfigVersions UP-TO-DATE
+> Task :core-metadata:checkDebugAarMetadata UP-TO-DATE
+> Task :core-metadata:stripDebugDebugSymbols NO-SOURCE
+> Task :core-metadata:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :core-metadata:extractDebugAnnotations UP-TO-DATE
+> Task :core-metadata:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :core-metadata:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :core-metadata:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :core-metadata:prepareDebugArtProfile UP-TO-DATE
+> Task :core-metadata:prepareLintJarForPublish UP-TO-DATE
+> Task :core-metadata:mergeDebugJavaResource UP-TO-DATE
+> Task :core-metadata:syncDebugLibJars UP-TO-DATE
+> Task :core-metadata:bundleDebugAar UP-TO-DATE
+> Task :core-metadata:assembleDebug UP-TO-DATE
+> Task :data:checkDebugAarMetadata UP-TO-DATE
+> Task :data:stripDebugDebugSymbols NO-SOURCE
+> Task :data:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :data:extractDebugAnnotations UP-TO-DATE
+> Task :data:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :data:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :data:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :data:prepareDebugArtProfile UP-TO-DATE
+> Task :data:prepareLintJarForPublish UP-TO-DATE
+> Task :data:mergeDebugJavaResource UP-TO-DATE
+> Task :data:syncDebugLibJars UP-TO-DATE
+> Task :data:bundleDebugAar UP-TO-DATE
+> Task :data:assembleDebug UP-TO-DATE
+> Task :domain:checkDebugAarMetadata UP-TO-DATE
+> Task :domain:stripDebugDebugSymbols NO-SOURCE
+> Task :domain:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :domain:extractDebugAnnotations UP-TO-DATE
+> Task :domain:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :domain:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :domain:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :domain:prepareDebugArtProfile UP-TO-DATE
+> Task :domain:prepareLintJarForPublish UP-TO-DATE
+> Task :domain:mergeDebugJavaResource UP-TO-DATE
+> Task :domain:syncDebugLibJars UP-TO-DATE
+> Task :domain:bundleDebugAar UP-TO-DATE
+> Task :domain:assembleDebug UP-TO-DATE
+> Task :presentation-core:checkDebugAarMetadata UP-TO-DATE
+> Task :presentation-core:stripDebugDebugSymbols NO-SOURCE
+> Task :presentation-core:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :presentation-core:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :presentation-core:prepareDebugArtProfile UP-TO-DATE
+> Task :presentation-core:prepareLintJarForPublish UP-TO-DATE
+> Task :presentation-widget:checkDebugAarMetadata UP-TO-DATE
+> Task :presentation-widget:stripDebugDebugSymbols NO-SOURCE
+> Task :presentation-widget:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :presentation-widget:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :presentation-widget:prepareDebugArtProfile UP-TO-DATE
+> Task :presentation-widget:prepareLintJarForPublish UP-TO-DATE
+> Task :source-api:checkDebugAarMetadata UP-TO-DATE
+> Task :source-api:stripDebugDebugSymbols NO-SOURCE
+> Task :source-api:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :source-api:extractDebugAnnotations UP-TO-DATE
+> Task :source-api:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :source-api:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :source-api:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :source-api:prepareDebugArtProfile UP-TO-DATE
+> Task :source-api:prepareLintJarForPublish UP-TO-DATE
+> Task :source-api:mergeDebugJavaResource UP-TO-DATE
+> Task :source-api:syncDebugLibJars UP-TO-DATE
+> Task :source-api:bundleDebugAar UP-TO-DATE
+> Task :source-api:assembleDebug UP-TO-DATE
+> Task :source-local:checkDebugAarMetadata UP-TO-DATE
+> Task :source-local:stripDebugDebugSymbols NO-SOURCE
+> Task :source-local:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :source-local:extractDebugAnnotations UP-TO-DATE
+> Task :source-local:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :source-local:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :source-local:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :source-local:prepareDebugArtProfile UP-TO-DATE
+> Task :source-local:prepareLintJarForPublish UP-TO-DATE
+> Task :source-local:mergeDebugJavaResource UP-TO-DATE
+> Task :source-local:syncDebugLibJars UP-TO-DATE
+> Task :source-local:bundleDebugAar UP-TO-DATE
+> Task :source-local:assembleDebug UP-TO-DATE
+> Task :telemetry:checkDebugAarMetadata UP-TO-DATE
+> Task :telemetry:stripDebugDebugSymbols NO-SOURCE
+> Task :telemetry:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :telemetry:extractDebugAnnotations UP-TO-DATE
+> Task :telemetry:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :telemetry:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :telemetry:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :telemetry:prepareDebugArtProfile UP-TO-DATE
+> Task :telemetry:prepareLintJarForPublish UP-TO-DATE
+> Task :telemetry:mergeDebugJavaResource UP-TO-DATE
+> Task :telemetry:syncDebugLibJars UP-TO-DATE
+> Task :telemetry:bundleDebugAar UP-TO-DATE
+> Task :telemetry:assembleDebug UP-TO-DATE
+> Task :core:archive:checkDebugAarMetadata UP-TO-DATE
+> Task :core:archive:stripDebugDebugSymbols NO-SOURCE
+> Task :core:archive:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :core:archive:extractDebugAnnotations UP-TO-DATE
+> Task :core:archive:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :core:archive:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :core:archive:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :core:archive:prepareDebugArtProfile UP-TO-DATE
+
+> Task :core:data:compileDebugKotlin
+w: Opt-in requirement marker 'androidx.compose.material3.ExperimentalMaterial3Api' is unresolved. Make sure it's present in the module dependencies.
+
+> Task :core:archive:prepareLintJarForPublish UP-TO-DATE
+> Task :core:data:compileDebugJavaWithJavac
+> Task :core:data:processDebugJavaRes UP-TO-DATE
+> Task :core:archive:mergeDebugJavaResource UP-TO-DATE
+> Task :core:archive:syncDebugLibJars UP-TO-DATE
+> Task :core:archive:bundleDebugAar UP-TO-DATE
+> Task :core:archive:assembleDebug UP-TO-DATE
+> Task :core:data:bundleLibRuntimeToDirDebug
+> Task :core:common:checkDebugAarMetadata UP-TO-DATE
+> Task :core:common:stripDebugDebugSymbols NO-SOURCE
+> Task :core:common:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :core:common:extractDebugAnnotations UP-TO-DATE
+> Task :core:common:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :core:common:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :core:common:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :core:common:prepareDebugArtProfile UP-TO-DATE
+> Task :core:common:prepareLintJarForPublish UP-TO-DATE
+> Task :core:common:mergeDebugJavaResource UP-TO-DATE
+> Task :core:common:syncDebugLibJars UP-TO-DATE
+> Task :core:common:bundleDebugAar UP-TO-DATE
+> Task :core:common:assembleDebug UP-TO-DATE
+> Task :core:data:checkDebugAarMetadata UP-TO-DATE
+> Task :core:data:stripDebugDebugSymbols NO-SOURCE
+> Task :core:data:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :core:data:extractDebugAnnotations
+> Task :core:data:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :core:data:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :core:data:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :core:data:prepareDebugArtProfile UP-TO-DATE
+> Task :core:data:prepareLintJarForPublish UP-TO-DATE
+> Task :core:data:mergeDebugJavaResource UP-TO-DATE
+> Task :core:data:bundleLibRuntimeToJarDebug
+> Task :core:data:bundleLibCompileToJarDebug
+> Task :core:data:syncDebugLibJars
+> Task :core:data:bundleDebugAar
+> Task :core:data:assembleDebug
+> Task :core:download:compileDebugKotlin
+> Task :core:domain:checkDebugAarMetadata UP-TO-DATE
+> Task :core:download:compileDebugJavaWithJavac NO-SOURCE
+> Task :core:download:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :core:download:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :core:download:processDebugJavaRes UP-TO-DATE
+> Task :core:download:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :presentation-core:extractDebugAnnotations
+> Task :core:domain:stripDebugDebugSymbols NO-SOURCE
+> Task :core:domain:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :core:domain:extractDebugAnnotations UP-TO-DATE
+> Task :core:domain:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :core:domain:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :core:domain:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :core:domain:prepareDebugArtProfile UP-TO-DATE
+> Task :core:domain:prepareLintJarForPublish UP-TO-DATE
+> Task :core:domain:mergeDebugJavaResource UP-TO-DATE
+> Task :core:domain:syncDebugLibJars UP-TO-DATE
+> Task :core:domain:bundleDebugAar UP-TO-DATE
+> Task :core:domain:assembleDebug UP-TO-DATE
+> Task :presentation-core:compileDebugKotlin
+> Task :core:download:checkDebugAarMetadata UP-TO-DATE
+> Task :presentation-core:compileDebugJavaWithJavac NO-SOURCE
+> Task :presentation-core:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :presentation-widget:compileDebugKotlin
+> Task :presentation-widget:compileDebugJavaWithJavac NO-SOURCE
+> Task :presentation-widget:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :presentation-core:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :feature:security:kspDebugKotlin SKIPPED
+> Task :presentation-widget:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :presentation-core:processDebugJavaRes UP-TO-DATE
+> Task :presentation-widget:processDebugJavaRes UP-TO-DATE
+> Task :presentation-widget:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :presentation-core:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :presentation-core:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :presentation-core:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :presentation-core:mergeDebugJavaResource UP-TO-DATE
+> Task :presentation-core:syncDebugLibJars UP-TO-DATE
+> Task :presentation-core:bundleDebugAar UP-TO-DATE
+> Task :presentation-core:assembleDebug UP-TO-DATE
+> Task :presentation-widget:extractDebugAnnotations
+> Task :presentation-widget:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :presentation-widget:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :presentation-widget:mergeDebugJavaResource UP-TO-DATE
+> Task :presentation-widget:syncDebugLibJars UP-TO-DATE
+> Task :presentation-widget:bundleDebugAar UP-TO-DATE
+> Task :presentation-widget:assembleDebug UP-TO-DATE
+> Task :core:download:stripDebugDebugSymbols NO-SOURCE
+> Task :core:download:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :feature:security:compileDebugKotlin
+> Task :core:download:extractDebugAnnotations
+> Task :feature:security:compileDebugJavaWithJavac NO-SOURCE
+> Task :feature:security:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :feature:security:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :feature:security:processDebugJavaRes UP-TO-DATE
+> Task :feature:security:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :core:download:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :core:download:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :core:download:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :core:download:prepareDebugArtProfile UP-TO-DATE
+> Task :core:download:prepareLintJarForPublish UP-TO-DATE
+> Task :core:download:mergeDebugJavaResource UP-TO-DATE
+> Task :core:download:syncDebugLibJars UP-TO-DATE
+> Task :core:download:bundleDebugAar UP-TO-DATE
+> Task :core:download:assembleDebug UP-TO-DATE
+> Task :feature:browse:checkDebugAarMetadata UP-TO-DATE
+> Task :feature:browse:stripDebugDebugSymbols NO-SOURCE
+> Task :feature:browse:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :feature:browse:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :feature:browse:prepareDebugArtProfile UP-TO-DATE
+> Task :feature:browse:prepareLintJarForPublish UP-TO-DATE
+> Task :feature:category:checkDebugAarMetadata UP-TO-DATE
+> Task :feature:category:stripDebugDebugSymbols NO-SOURCE
+> Task :feature:category:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :feature:category:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :feature:category:prepareDebugArtProfile UP-TO-DATE
+> Task :feature:category:prepareLintJarForPublish UP-TO-DATE
+> Task :feature:download:checkDebugAarMetadata UP-TO-DATE
+> Task :feature:download:stripDebugDebugSymbols NO-SOURCE
+> Task :feature:download:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :feature:download:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :feature:download:prepareDebugArtProfile UP-TO-DATE
+> Task :feature:download:prepareLintJarForPublish UP-TO-DATE
+> Task :feature:history:checkDebugAarMetadata UP-TO-DATE
+> Task :feature:history:stripDebugDebugSymbols NO-SOURCE
+> Task :feature:history:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :feature:history:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :feature:history:prepareDebugArtProfile UP-TO-DATE
+> Task :feature:history:prepareLintJarForPublish UP-TO-DATE
+> Task :feature:library:checkDebugAarMetadata UP-TO-DATE
+> Task :feature:library:stripDebugDebugSymbols NO-SOURCE
+> Task :feature:library:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :feature:library:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :feature:library:prepareDebugArtProfile UP-TO-DATE
+> Task :feature:library:prepareLintJarForPublish UP-TO-DATE
+> Task :feature:manga:checkDebugAarMetadata UP-TO-DATE
+> Task :feature:manga:stripDebugDebugSymbols NO-SOURCE
+> Task :feature:manga:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :feature:manga:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :feature:manga:prepareDebugArtProfile UP-TO-DATE
+> Task :feature:manga:prepareLintJarForPublish UP-TO-DATE
+> Task :feature:migration:checkDebugAarMetadata UP-TO-DATE
+> Task :feature:migration:stripDebugDebugSymbols NO-SOURCE
+> Task :feature:migration:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :feature:migration:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :feature:migration:prepareDebugArtProfile UP-TO-DATE
+> Task :feature:migration:prepareLintJarForPublish UP-TO-DATE
+> Task :feature:more:checkDebugAarMetadata UP-TO-DATE
+> Task :feature:more:stripDebugDebugSymbols NO-SOURCE
+> Task :feature:more:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :feature:more:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :feature:more:prepareDebugArtProfile UP-TO-DATE
+> Task :feature:more:prepareLintJarForPublish UP-TO-DATE
+> Task :feature:reader:checkDebugAarMetadata UP-TO-DATE
+> Task :feature:reader:stripDebugDebugSymbols NO-SOURCE
+> Task :feature:reader:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :feature:reader:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :feature:reader:prepareDebugArtProfile UP-TO-DATE
+> Task :feature:reader:prepareLintJarForPublish UP-TO-DATE
+> Task :feature:security:checkDebugAarMetadata UP-TO-DATE
+> Task :feature:security:stripDebugDebugSymbols NO-SOURCE
+> Task :feature:security:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :feature:security:extractDebugAnnotations
+> Task :feature:security:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :feature:security:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :feature:security:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :feature:security:prepareDebugArtProfile UP-TO-DATE
+> Task :feature:security:prepareLintJarForPublish UP-TO-DATE
+> Task :feature:security:mergeDebugJavaResource UP-TO-DATE
+> Task :feature:security:syncDebugLibJars UP-TO-DATE
+> Task :feature:security:bundleDebugAar UP-TO-DATE
+> Task :feature:security:assembleDebug UP-TO-DATE
+> Task :feature:settings:checkDebugAarMetadata UP-TO-DATE
+> Task :feature:settings:stripDebugDebugSymbols NO-SOURCE
+> Task :feature:settings:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :feature:settings:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :feature:settings:prepareDebugArtProfile UP-TO-DATE
+> Task :feature:settings:prepareLintJarForPublish UP-TO-DATE
+> Task :feature:stats:checkDebugAarMetadata UP-TO-DATE
+> Task :feature:stats:stripDebugDebugSymbols NO-SOURCE
+> Task :feature:stats:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :feature:stats:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :feature:stats:prepareDebugArtProfile UP-TO-DATE
+> Task :feature:stats:prepareLintJarForPublish UP-TO-DATE
+> Task :feature:upcoming:checkDebugAarMetadata UP-TO-DATE
+> Task :feature:upcoming:stripDebugDebugSymbols NO-SOURCE
+> Task :feature:upcoming:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :feature:upcoming:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :feature:upcoming:prepareDebugArtProfile UP-TO-DATE
+> Task :feature:upcoming:prepareLintJarForPublish UP-TO-DATE
+> Task :feature:updates:checkDebugAarMetadata UP-TO-DATE
+> Task :feature:updates:stripDebugDebugSymbols NO-SOURCE
+> Task :feature:updates:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :feature:updates:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :feature:updates:prepareDebugArtProfile UP-TO-DATE
+> Task :feature:updates:prepareLintJarForPublish UP-TO-DATE
+> Task :feature:webview:checkDebugAarMetadata UP-TO-DATE
+> Task :feature:webview:stripDebugDebugSymbols NO-SOURCE
+> Task :feature:webview:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :feature:webview:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :feature:webview:prepareDebugArtProfile UP-TO-DATE
+> Task :feature:webview:prepareLintJarForPublish UP-TO-DATE
+> Task :feature:category:kspDebugKotlin
+> Task :feature:download:kspDebugKotlin
+> Task :feature:migration:kspDebugKotlin
+> Task :feature:stats:kspDebugKotlin
+> Task :feature:category:compileDebugKotlin
+> Task :feature:migration:compileDebugKotlin
+> Task :feature:download:compileDebugKotlin
+> Task :feature:stats:compileDebugKotlin
+> Task :feature:category:compileDebugJavaWithJavac UP-TO-DATE
+> Task :feature:category:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :feature:migration:compileDebugJavaWithJavac UP-TO-DATE
+> Task :feature:migration:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :feature:category:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :feature:download:compileDebugJavaWithJavac UP-TO-DATE
+> Task :feature:download:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :feature:stats:compileDebugJavaWithJavac UP-TO-DATE
+> Task :feature:stats:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :feature:download:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :feature:migration:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :feature:stats:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :feature:category:processDebugJavaRes UP-TO-DATE
+> Task :feature:download:processDebugJavaRes UP-TO-DATE
+> Task :feature:migration:processDebugJavaRes UP-TO-DATE
+> Task :feature:stats:processDebugJavaRes UP-TO-DATE
+> Task :feature:category:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :feature:download:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :feature:migration:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :feature:stats:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :feature:category:extractDebugAnnotations
+> Task :feature:category:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :feature:category:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :feature:category:mergeDebugJavaResource UP-TO-DATE
+> Task :feature:category:syncDebugLibJars UP-TO-DATE
+> Task :feature:category:bundleDebugAar UP-TO-DATE
+> Task :feature:category:assembleDebug UP-TO-DATE
+> Task :feature:download:extractDebugAnnotations
+> Task :feature:download:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :feature:download:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :feature:download:mergeDebugJavaResource UP-TO-DATE
+> Task :feature:download:syncDebugLibJars UP-TO-DATE
+> Task :feature:download:bundleDebugAar UP-TO-DATE
+> Task :feature:download:assembleDebug UP-TO-DATE
+> Task :feature:migration:extractDebugAnnotations
+> Task :feature:migration:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :feature:migration:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :feature:migration:mergeDebugJavaResource UP-TO-DATE
+> Task :feature:migration:syncDebugLibJars UP-TO-DATE
+> Task :feature:migration:bundleDebugAar UP-TO-DATE
+> Task :feature:migration:assembleDebug UP-TO-DATE
+> Task :feature:stats:extractDebugAnnotations
+> Task :feature:stats:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :feature:stats:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :feature:stats:mergeDebugJavaResource UP-TO-DATE
+> Task :feature:stats:syncDebugLibJars UP-TO-DATE
+> Task :feature:stats:bundleDebugAar UP-TO-DATE
+> Task :feature:stats:assembleDebug UP-TO-DATE
+> Task :feature:webview:kspDebugKotlin
+> Task :feature:webview:extractDebugAnnotations
+> Task :feature:webview:compileDebugKotlin
+> Task :feature:webview:compileDebugJavaWithJavac UP-TO-DATE
+> Task :feature:webview:processDebugJavaRes UP-TO-DATE
+> Task :feature:webview:mergeDebugJavaResource UP-TO-DATE
+> Task :feature:webview:transformDebugClassesWithAsm
+> Task :feature:webview:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :feature:webview:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :feature:webview:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :feature:webview:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :feature:webview:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :feature:webview:syncDebugLibJars UP-TO-DATE
+> Task :feature:webview:bundleDebugAar UP-TO-DATE
+> Task :feature:webview:assembleDebug UP-TO-DATE
+> Task :feature:reader:kspDebugKotlin
+> Task :feature:reader:extractDebugAnnotations
+> Task :feature:reader:compileDebugKotlin
+> Task :feature:reader:compileDebugJavaWithJavac UP-TO-DATE
+> Task :feature:reader:processDebugJavaRes UP-TO-DATE
+> Task :feature:reader:mergeDebugJavaResource UP-TO-DATE
+> Task :feature:settings:kspDebugKotlin
+> Task :feature:settings:extractDebugAnnotations
+> Task :feature:settings:compileDebugKotlin
+> Task :feature:settings:compileDebugJavaWithJavac UP-TO-DATE
+> Task :feature:settings:processDebugJavaRes UP-TO-DATE
+> Task :feature:settings:mergeDebugJavaResource UP-TO-DATE
+> Task :feature:reader:transformDebugClassesWithAsm
+> Task :feature:reader:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :feature:reader:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :feature:reader:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :feature:reader:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :feature:reader:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :feature:reader:syncDebugLibJars UP-TO-DATE
+> Task :feature:reader:bundleDebugAar UP-TO-DATE
+> Task :feature:reader:assembleDebug UP-TO-DATE
+> Task :feature:settings:transformDebugClassesWithAsm
+> Task :feature:settings:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :feature:manga:kspDebugKotlin SKIPPED
+> Task :feature:settings:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :feature:settings:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :feature:manga:extractDebugAnnotations
+> Task :feature:settings:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :feature:settings:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :feature:settings:syncDebugLibJars UP-TO-DATE
+> Task :feature:settings:bundleDebugAar UP-TO-DATE
+> Task :feature:settings:assembleDebug UP-TO-DATE
+> Task :feature:manga:compileDebugKotlin
+> Task :feature:manga:compileDebugJavaWithJavac NO-SOURCE
+> Task :feature:manga:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :feature:browse:kspDebugKotlin SKIPPED
+> Task :feature:browse:compileDebugKotlin
+> Task :feature:browse:compileDebugJavaWithJavac NO-SOURCE
+> Task :feature:browse:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :feature:browse:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :feature:manga:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :feature:browse:processDebugJavaRes UP-TO-DATE
+> Task :feature:manga:processDebugJavaRes UP-TO-DATE
+> Task :feature:browse:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :feature:manga:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :feature:browse:extractDebugAnnotations
+> Task :feature:browse:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :feature:browse:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :feature:browse:mergeDebugJavaResource UP-TO-DATE
+> Task :feature:browse:syncDebugLibJars UP-TO-DATE
+> Task :feature:browse:bundleDebugAar UP-TO-DATE
+> Task :feature:browse:assembleDebug UP-TO-DATE
+> Task :feature:manga:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :feature:manga:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :feature:manga:mergeDebugJavaResource UP-TO-DATE
+> Task :feature:manga:syncDebugLibJars UP-TO-DATE
+> Task :feature:manga:bundleDebugAar UP-TO-DATE
+> Task :feature:manga:assembleDebug UP-TO-DATE
+> Task :feature:history:kspDebugKotlin
+> Task :feature:history:extractDebugAnnotations
+> Task :feature:history:compileDebugKotlin
+> Task :feature:history:compileDebugJavaWithJavac UP-TO-DATE
+> Task :feature:history:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :feature:history:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :feature:more:kspDebugKotlin
+> Task :feature:history:processDebugJavaRes UP-TO-DATE
+> Task :feature:history:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :feature:history:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :feature:history:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :feature:history:mergeDebugJavaResource UP-TO-DATE
+> Task :feature:history:syncDebugLibJars UP-TO-DATE
+> Task :feature:history:bundleDebugAar UP-TO-DATE
+> Task :feature:history:assembleDebug UP-TO-DATE
+> Task :feature:more:extractDebugAnnotations
+> Task :feature:library:kspDebugKotlin
+> Task :feature:more:compileDebugKotlin
+> Task :feature:upcoming:kspDebugKotlin
+> Task :feature:more:compileDebugJavaWithJavac UP-TO-DATE
+> Task :feature:more:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :feature:library:compileDebugKotlin
+> Task :feature:library:compileDebugJavaWithJavac UP-TO-DATE
+> Task :feature:library:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :feature:library:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :feature:more:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :feature:library:processDebugJavaRes UP-TO-DATE
+> Task :feature:more:processDebugJavaRes UP-TO-DATE
+> Task :feature:library:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :feature:more:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :feature:upcoming:compileDebugKotlin
+> Task :feature:library:extractDebugAnnotations
+> Task :feature:upcoming:compileDebugJavaWithJavac UP-TO-DATE
+> Task :feature:upcoming:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :feature:upcoming:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :feature:upcoming:processDebugJavaRes UP-TO-DATE
+> Task :feature:upcoming:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :feature:library:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :feature:library:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :feature:library:mergeDebugJavaResource UP-TO-DATE
+> Task :feature:library:syncDebugLibJars UP-TO-DATE
+> Task :feature:library:bundleDebugAar UP-TO-DATE
+> Task :feature:library:assembleDebug UP-TO-DATE
+> Task :feature:more:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :feature:more:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :feature:more:mergeDebugJavaResource UP-TO-DATE
+> Task :feature:more:syncDebugLibJars UP-TO-DATE
+> Task :feature:more:bundleDebugAar UP-TO-DATE
+> Task :feature:more:assembleDebug UP-TO-DATE
+> Task :feature:upcoming:extractDebugAnnotations
+> Task :feature:upcoming:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :feature:upcoming:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :feature:upcoming:mergeDebugJavaResource UP-TO-DATE
+> Task :feature:upcoming:syncDebugLibJars UP-TO-DATE
+> Task :feature:upcoming:bundleDebugAar UP-TO-DATE
+> Task :feature:upcoming:assembleDebug UP-TO-DATE
+> Task :feature:updates:kspDebugKotlin
+> Task :feature:updates:extractDebugAnnotations
+> Task :feature:updates:compileDebugKotlin
+> Task :feature:updates:compileDebugJavaWithJavac UP-TO-DATE
+> Task :feature:updates:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :feature:updates:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :feature:updates:processDebugJavaRes UP-TO-DATE
+> Task :feature:updates:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :feature:updates:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :feature:updates:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :feature:updates:mergeDebugJavaResource UP-TO-DATE
+> Task :feature:updates:syncDebugLibJars UP-TO-DATE
+> Task :feature:updates:bundleDebugAar UP-TO-DATE
+> Task :feature:updates:assembleDebug UP-TO-DATE
+> Task :app:mergeLibDexDebug
+> Task :app:kspDebugKotlin
+
+> Task :app:compileDebugKotlin
+w: file:///C:/Project/Android/Ephyra/app/src/main/java/ephyra/app/App.kt:182:65 'fun getSync(): ThemeMode' is deprecated. Use suspend fun get() instead.
+w: file:///C:/Project/Android/Ephyra/app/src/main/java/ephyra/app/App.kt:189:53 'fun getSync(): Boolean' is deprecated. Use suspend fun get() instead.
+w: file:///C:/Project/Android/Ephyra/app/src/main/java/ephyra/app/App.kt:202:47 'fun getSync(): Int' is deprecated. Use suspend fun get() instead.
+w: file:///C:/Project/Android/Ephyra/app/src/main/java/ephyra/app/App.kt:204:30 'fun getSync(): Int' is deprecated. Use suspend fun get() instead.
+w: file:///C:/Project/Android/Ephyra/app/src/main/java/ephyra/app/App.kt:244:53 'fun getSync(): Boolean' is deprecated. Use suspend fun get() instead.
+
+> Task :app:compileDebugJavaWithJavac
+> Task :app:hiltAggregateDepsDebug UP-TO-DATE
+
+> Task :app:hiltJavaCompileDebug FAILED
+C:\Project\Android\Ephyra\app\build\generated\hilt\component_sources\debug\ephyra\app\App_HiltComponents.java:179: error: [Dagger/DependencyCycle] Found a dependency cycle:
+  public abstract static class SingletonC implements FragmentGetContextFix.FragmentGetContextFixEntryPoint,
+                         ^
+      ephyra.core.download.DownloadManager is injected at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideSourceManager(ΓÇª, downloadManager)
+      ephyra.domain.source.service.SourceManager is injected at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideDownloadManager(ΓÇª, sourceManager, ΓÇª)
+      ephyra.core.download.DownloadManager is injected at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideSourceManager(ΓÇª, downloadManager)
+      ...
+  
+  The cycle is requested via:
+      ephyra.core.download.DownloadManager is requested at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.data.work.WorkerFactoryEntryPoint.downloadManager()
+C:\Project\Android\Ephyra\app\build\generated\hilt\component_sources\debug\ephyra\app\App_HiltComponents.java:179: error: [Dagger/DependencyCycle] Found a dependency cycle:
+  public abstract static class SingletonC implements FragmentGetContextFix.FragmentGetContextFixEntryPoint,
+                         ^
+      ephyra.core.download.DownloadManager is injected at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideSourceManager(ΓÇª, downloadManager)
+      ephyra.domain.source.service.SourceManager is injected at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideDownloader(ΓÇª, sourceManager, ΓÇª)
+      ephyra.core.download.Downloader is injected at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideDownloadManager(ΓÇª, downloader, ΓÇª)
+      ephyra.core.download.DownloadManager is injected at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideSourceManager(ΓÇª, downloadManager)
+      ...
+  
+  The cycle is requested via:
+      ephyra.core.download.DownloadManager is requested at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.data.work.WorkerFactoryEntryPoint.downloadManager()
+C:\Project\Android\Ephyra\app\build\generated\hilt\component_sources\debug\ephyra\app\App_HiltComponents.java:179: error: [Dagger/DependencyCycle] Found a dependency cycle:
+  public abstract static class SingletonC implements FragmentGetContextFix.FragmentGetContextFixEntryPoint,
+                         ^
+      ephyra.core.download.DownloadManager is injected at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideSourceManager(ΓÇª, downloadManager)
+      ephyra.domain.source.service.SourceManager is injected at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideDownloadCache(ΓÇª, sourceManager, ΓÇª)
+      ephyra.core.download.DownloadCache is injected at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideDownloadManager(ΓÇª, downloadCache, ΓÇª)
+      ephyra.core.download.DownloadManager is injected at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideSourceManager(ΓÇª, downloadManager)
+      ...
+  
+  The cycle is requested via:
+      ephyra.core.download.DownloadManager is requested at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.data.work.WorkerFactoryEntryPoint.downloadManager()
+C:\Project\Android\Ephyra\app\build\generated\hilt\component_sources\debug\ephyra\app\App_HiltComponents.java:179: error: [Dagger/DependencyCycle] Found a dependency cycle:
+  public abstract static class SingletonC implements FragmentGetContextFix.FragmentGetContextFixEntryPoint,
+                         ^
+      ephyra.domain.track.service.TrackerManager is injected at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideAddTracks(ΓÇª, trackerManager, ΓÇª)
+      ephyra.domain.track.interactor.AddTracks is injected at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideTrackerManager(ΓÇª, addTracks, ΓÇª)
+      ephyra.domain.track.service.TrackerManager is injected at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideAddTracks(ΓÇª, trackerManager, ΓÇª)
+      ...
+  
+  The cycle is requested via:
+      ephyra.domain.track.service.TrackerManager is requested at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.ScreenEntryPoint.trackerManager()
+C:\Project\Android\Ephyra\app\build\generated\hilt\component_sources\debug\ephyra\app\App_HiltComponents.java:179: error: [Dagger/DependencyCycle] Found a dependency cycle:
+  public abstract static class SingletonC implements FragmentGetContextFix.FragmentGetContextFixEntryPoint,
+                         ^
+      ephyra.core.download.DownloadStore is injected at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideDownloader(ΓÇª, downloadStore)
+      ephyra.core.download.Downloader is injected at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideDownloadManager(ΓÇª, downloader, ΓÇª)
+      ephyra.core.download.DownloadStore is injected at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideDownloader(ΓÇª, downloadStore)
+      ...
+  
+  The cycle is requested via:
+      ephyra.core.download.DownloadManager is requested at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.data.work.WorkerFactoryEntryPoint.downloadManager()
+C:\Project\Android\Ephyra\app\build\generated\hilt\component_sources\debug\ephyra\app\App_HiltComponents.java:179: error: [Dagger/DependencyCycle] Found a dependency cycle:
+  public abstract static class SingletonC implements FragmentGetContextFix.FragmentGetContextFixEntryPoint,
+                         ^
+      ephyra.core.download.DownloadCache is injected at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideDownloader(ΓÇª, downloadCache, ΓÇª)
+      ephyra.core.download.Downloader is injected at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideDownloadManager(ΓÇª, downloader, ΓÇª)
+      ephyra.core.download.DownloadCache is injected at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideDownloader(ΓÇª, downloadCache, ΓÇª)
+      ...
+  
+  The cycle is requested via:
+      ephyra.core.download.DownloadManager is requested at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.data.work.WorkerFactoryEntryPoint.downloadManager()
+C:\Project\Android\Ephyra\app\build\generated\hilt\component_sources\debug\ephyra\app\App_HiltComponents.java:179: error: [Dagger/MissingBinding] ephyra.domain.download.service.DownloadManager cannot be provided without an @Provides-annotated method.
+  public abstract static class SingletonC implements FragmentGetContextFix.FragmentGetContextFixEntryPoint,
+                         ^
+  
+      ephyra.domain.download.service.DownloadManager is injected at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.data.notification.NotificationReceiver.downloadManager
+      ephyra.app.data.notification.NotificationReceiver is injected at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.data.notification.NotificationReceiver_GeneratedInjector.injectNotificationReceiver(ephyra.app.data.notification.NotificationReceiver)
+  It is also requested at:
+      ephyra.feature.download.DownloadQueueScreenModel(downloadManager)
+      ephyra.feature.library.LibraryScreenModel(ΓÇª, downloadManager, ΓÇª)
+      ephyra.feature.migration.dialog.MigrateDialogScreenModel(ΓÇª, downloadManager, ΓÇª)
+      ephyra.feature.more.MoreScreenModel(downloadManager, ΓÇª)
+      ephyra.feature.reader.ReaderViewModel(ΓÇª, downloadManager, ΓÇª)
+      ephyra.feature.stats.StatsScreenModel(downloadManager, ΓÇª)
+      ephyra.feature.updates.UpdatesScreenModel(ΓÇª, downloadManager, ΓÇª)
+  The following other entry points also depend on it:
+      dagger.hilt.android.internal.lifecycle.HiltViewModelFactory.ViewModelFactoriesEntryPoint.getHiltViewModelMap() [ephyra.app.App_HiltComponents.SingletonC ΓåÆ ephyra.app.App_HiltComponents.ActivityRetainedC ΓåÆ ephyra.app.App_HiltComponents.ViewModelC]
+C:\Project\Android\Ephyra\app\build\generated\hilt\component_sources\debug\ephyra\app\App_HiltComponents.java:179: error: [Dagger/MissingBinding] ephyra.domain.backup.service.BackupNotifier cannot be provided without an @Provides-annotated method.
+  public abstract static class SingletonC implements FragmentGetContextFix.FragmentGetContextFixEntryPoint,
+                         ^
+  
+      ephyra.domain.backup.service.BackupNotifier is injected at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideBackupRestorer(ΓÇª, backupNotifier)
+      ephyra.data.backup.restore.BackupRestorer is requested at
+          [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.data.work.WorkerFactoryEntryPoint.backupRestorer()
+C:\Project\Android\Ephyra\app\build\generated\hilt\component_sources\debug\ephyra\app\App_HiltComponents.java:179: error: [Dagger/MissingBinding] androidx.compose.material3.SnackbarHostState cannot be provided without an @Inject constructor or an @Provides-annotated method.
+  public abstract static class SingletonC implements FragmentGetContextFix.FragmentGetContextFixEntryPoint,
+                         ^
+  
+      androidx.compose.material3.SnackbarHostState is injected at
+          [ephyra.app.App_HiltComponents.ViewModelC] ephyra.feature.updates.UpdatesScreenModel(ΓÇª, snackbarHostState)
+      ephyra.feature.updates.UpdatesScreenModel is injected at
+          [ephyra.app.App_HiltComponents.ViewModelC] ephyra.feature.updates.UpdatesScreenModel_HiltModules.BindsModule.binds(arg0)
+      @dagger.hilt.android.internal.lifecycle.HiltViewModelMap java.util.Map<java.lang.Class<?>,javax.inject.Provider<androidx.lifecycle.ViewModel>> is requested at
+          [ephyra.app.App_HiltComponents.ViewModelC] dagger.hilt.android.internal.lifecycle.HiltViewModelFactory.ViewModelFactoriesEntryPoint.getHiltViewModelMap() [ephyra.app.App_HiltComponents.SingletonC ΓåÆ ephyra.app.App_HiltComponents.ActivityRetainedC ΓåÆ ephyra.app.App_HiltComponents.ViewModelC]
+  It is also requested at:
+      ephyra.feature.history.HistoryScreenModel(ΓÇª, snackbarHostState)
+C:\Project\Android\Ephyra\app\build\generated\hilt\component_sources\debug\ephyra\app\App_HiltComponents.java:179: error: [Dagger/MissingBinding] ephyra.domain.chapter.service.ChapterCache cannot be provided without an @Provides-annotated method.
+  public abstract static class SingletonC implements FragmentGetContextFix.FragmentGetContextFixEntryPoint,
+                         ^
+  
+      ephyra.domain.chapter.service.ChapterCache is injected at
+          [ephyra.app.App_HiltComponents.ViewModelC] ephyra.feature.settings.screen.SettingsDataScreenModel(ΓÇª, chapterCache, ΓÇª)
+      ephyra.feature.settings.screen.SettingsDataScreenModel is injected at
+          [ephyra.app.App_HiltComponents.ViewModelC] ephyra.feature.settings.screen.SettingsDataScreenModel_HiltModules.BindsModule.binds(arg0)
+      @dagger.hilt.android.internal.lifecycle.HiltViewModelMap java.util.Map<java.lang.Class<?>,javax.inject.Provider<androidx.lifecycle.ViewModel>> is requested at
+          [ephyra.app.App_HiltComponents.ViewModelC] dagger.hilt.android.internal.lifecycle.HiltViewModelFactory.ViewModelFactoriesEntryPoint.getHiltViewModelMap() [ephyra.app.App_HiltComponents.SingletonC ΓåÆ ephyra.app.App_HiltComponents.ActivityRetainedC ΓåÆ ephyra.app.App_HiltComponents.ViewModelC]
+  It is also requested at:
+      ephyra.feature.reader.ReaderViewModel(ΓÇª, chapterCache)
+C:\Project\Android\Ephyra\app\build\generated\hilt\component_sources\debug\ephyra\app\App_HiltComponents.java:179: error: [Dagger/MissingBinding] ephyra.domain.export.LibraryExporter cannot be provided without an @Provides-annotated method.
+  public abstract static class SingletonC implements FragmentGetContextFix.FragmentGetContextFixEntryPoint,
+                         ^
+  
+      ephyra.domain.export.LibraryExporter is injected at
+          [ephyra.app.App_HiltComponents.ViewModelC] ephyra.feature.settings.screen.SettingsDataScreenModel(ΓÇª, libraryExporter)
+      ephyra.feature.settings.screen.SettingsDataScreenModel is injected at
+          [ephyra.app.App_HiltComponents.ViewModelC] ephyra.feature.settings.screen.SettingsDataScreenModel_HiltModules.BindsModule.binds(arg0)
+      @dagger.hilt.android.internal.lifecycle.HiltViewModelMap java.util.Map<java.lang.Class<?>,javax.inject.Provider<androidx.lifecycle.ViewModel>> is requested at
+          [ephyra.app.App_HiltComponents.ViewModelC] dagger.hilt.android.internal.lifecycle.HiltViewModelFactory.ViewModelFactoriesEntryPoint.getHiltViewModelMap() [ephyra.app.App_HiltComponents.SingletonC ΓåÆ ephyra.app.App_HiltComponents.ActivityRetainedC ΓåÆ ephyra.app.App_HiltComponents.ViewModelC]
+C:\Project\Android\Ephyra\app\build\generated\hilt\component_sources\debug\ephyra\app\App_HiltComponents.java:179: error: [Dagger/MissingBinding] ephyra.presentation.core.ui.MatchUnlinkedJobRunner cannot be provided without an @Provides-annotated method.
+  public abstract static class SingletonC implements FragmentGetContextFix.FragmentGetContextFixEntryPoint,
+                         ^
+  
+      ephyra.presentation.core.ui.MatchUnlinkedJobRunner is injected at
+          [ephyra.app.App_HiltComponents.ViewModelC] ephyra.feature.settings.screen.SettingsTrackingScreenModel(ΓÇª, matchUnlinkedJobRunner)
+      ephyra.feature.settings.screen.SettingsTrackingScreenModel is injected at
+          [ephyra.app.App_HiltComponents.ViewModelC] ephyra.feature.settings.screen.SettingsTrackingScreenModel_HiltModules.BindsModule.binds(arg0)
+      @dagger.hilt.android.internal.lifecycle.HiltViewModelMap java.util.Map<java.lang.Class<?>,javax.inject.Provider<androidx.lifecycle.ViewModel>> is requested at
+          [ephyra.app.App_HiltComponents.ViewModelC] dagger.hilt.android.internal.lifecycle.HiltViewModelFactory.ViewModelFactoriesEntryPoint.getHiltViewModelMap() [ephyra.app.App_HiltComponents.SingletonC ΓåÆ ephyra.app.App_HiltComponents.ActivityRetainedC ΓåÆ ephyra.app.App_HiltComponents.ViewModelC]
+12 errors
+
+
+FAILURE: Build failed with an exception.
+
+[Incubating] Problems report is available at: file:///C:/Project/Android/Ephyra/build/reports/problems/problems-report.html
+* What went wrong:
+Execution failed for task ':app:hiltJavaCompileDebug' (registered by plugin 'com.google.dagger.hilt.android').
+> Compilation failed; see the compiler output below.
+  C:\Project\Android\Ephyra\app\build\generated\hilt\component_sources\debug\ephyra\app\App_HiltComponents.java:179: error: [Dagger/DependencyCycle] Found a dependency cycle:
+    public abstract static class SingletonC implements FragmentGetContextFix.FragmentGetContextFixEntryPoint,
+                           ^
+        ephyra.core.download.DownloadManager is injected at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideSourceManager(ΓÇª, downloadManager)
+        ephyra.domain.source.service.SourceManager is injected at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideDownloadManager(ΓÇª, sourceManager, ΓÇª)
+        ephyra.core.download.DownloadManager is injected at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideSourceManager(ΓÇª, downloadManager)
+        ...
+    
+    The cycle is requested via:
+        ephyra.core.download.DownloadManager is requested at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.data.work.WorkerFactoryEntryPoint.downloadManager()
+  C:\Project\Android\Ephyra\app\build\generated\hilt\component_sources\debug\ephyra\app\App_HiltComponents.java:179: error: [Dagger/DependencyCycle] Found a dependency cycle:
+    public abstract static class SingletonC implements FragmentGetContextFix.FragmentGetContextFixEntryPoint,
+                           ^
+        ephyra.core.download.DownloadManager is injected at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideSourceManager(ΓÇª, downloadManager)
+        ephyra.domain.source.service.SourceManager is injected at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideDownloader(ΓÇª, sourceManager, ΓÇª)
+        ephyra.core.download.Downloader is injected at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideDownloadManager(ΓÇª, downloader, ΓÇª)
+        ephyra.core.download.DownloadManager is injected at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideSourceManager(ΓÇª, downloadManager)
+        ...
+    
+    The cycle is requested via:
+        ephyra.core.download.DownloadManager is requested at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.data.work.WorkerFactoryEntryPoint.downloadManager()
+  C:\Project\Android\Ephyra\app\build\generated\hilt\component_sources\debug\ephyra\app\App_HiltComponents.java:179: error: [Dagger/DependencyCycle] Found a dependency cycle:
+    public abstract static class SingletonC implements FragmentGetContextFix.FragmentGetContextFixEntryPoint,
+                           ^
+        ephyra.core.download.DownloadManager is injected at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideSourceManager(ΓÇª, downloadManager)
+        ephyra.domain.source.service.SourceManager is injected at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideDownloadCache(ΓÇª, sourceManager, ΓÇª)
+        ephyra.core.download.DownloadCache is injected at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideDownloadManager(ΓÇª, downloadCache, ΓÇª)
+        ephyra.core.download.DownloadManager is injected at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideSourceManager(ΓÇª, downloadManager)
+        ...
+    
+    The cycle is requested via:
+        ephyra.core.download.DownloadManager is requested at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.data.work.WorkerFactoryEntryPoint.downloadManager()
+  C:\Project\Android\Ephyra\app\build\generated\hilt\component_sources\debug\ephyra\app\App_HiltComponents.java:179: error: [Dagger/DependencyCycle] Found a dependency cycle:
+    public abstract static class SingletonC implements FragmentGetContextFix.FragmentGetContextFixEntryPoint,
+                           ^
+        ephyra.domain.track.service.TrackerManager is injected at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideAddTracks(ΓÇª, trackerManager, ΓÇª)
+        ephyra.domain.track.interactor.AddTracks is injected at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideTrackerManager(ΓÇª, addTracks, ΓÇª)
+        ephyra.domain.track.service.TrackerManager is injected at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideAddTracks(ΓÇª, trackerManager, ΓÇª)
+        ...
+    
+    The cycle is requested via:
+        ephyra.domain.track.service.TrackerManager is requested at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.ScreenEntryPoint.trackerManager()
+  C:\Project\Android\Ephyra\app\build\generated\hilt\component_sources\debug\ephyra\app\App_HiltComponents.java:179: error: [Dagger/DependencyCycle] Found a dependency cycle:
+    public abstract static class SingletonC implements FragmentGetContextFix.FragmentGetContextFixEntryPoint,
+                           ^
+        ephyra.core.download.DownloadStore is injected at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideDownloader(ΓÇª, downloadStore)
+        ephyra.core.download.Downloader is injected at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideDownloadManager(ΓÇª, downloader, ΓÇª)
+        ephyra.core.download.DownloadStore is injected at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideDownloader(ΓÇª, downloadStore)
+        ...
+    
+    The cycle is requested via:
+        ephyra.core.download.DownloadManager is requested at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.data.work.WorkerFactoryEntryPoint.downloadManager()
+  C:\Project\Android\Ephyra\app\build\generated\hilt\component_sources\debug\ephyra\app\App_HiltComponents.java:179: error: [Dagger/DependencyCycle] Found a dependency cycle:
+    public abstract static class SingletonC implements FragmentGetContextFix.FragmentGetContextFixEntryPoint,
+                           ^
+        ephyra.core.download.DownloadCache is injected at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideDownloader(ΓÇª, downloadCache, ΓÇª)
+        ephyra.core.download.Downloader is injected at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideDownloadManager(ΓÇª, downloader, ΓÇª)
+        ephyra.core.download.DownloadCache is injected at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideDownloader(ΓÇª, downloadCache, ΓÇª)
+        ...
+    
+    The cycle is requested via:
+        ephyra.core.download.DownloadManager is requested at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.data.work.WorkerFactoryEntryPoint.downloadManager()
+  C:\Project\Android\Ephyra\app\build\generated\hilt\component_sources\debug\ephyra\app\App_HiltComponents.java:179: error: [Dagger/MissingBinding] ephyra.domain.download.service.DownloadManager cannot be provided without an @Provides-annotated method.
+    public abstract static class SingletonC implements FragmentGetContextFix.FragmentGetContextFixEntryPoint,
+                           ^
+    
+        ephyra.domain.download.service.DownloadManager is injected at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.data.notification.NotificationReceiver.downloadManager
+        ephyra.app.data.notification.NotificationReceiver is injected at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.data.notification.NotificationReceiver_GeneratedInjector.injectNotificationReceiver(ephyra.app.data.notification.NotificationReceiver)
+    It is also requested at:
+        ephyra.feature.download.DownloadQueueScreenModel(downloadManager)
+        ephyra.feature.library.LibraryScreenModel(ΓÇª, downloadManager, ΓÇª)
+        ephyra.feature.migration.dialog.MigrateDialogScreenModel(ΓÇª, downloadManager, ΓÇª)
+        ephyra.feature.more.MoreScreenModel(downloadManager, ΓÇª)
+        ephyra.feature.reader.ReaderViewModel(ΓÇª, downloadManager, ΓÇª)
+        ephyra.feature.stats.StatsScreenModel(downloadManager, ΓÇª)
+        ephyra.feature.updates.UpdatesScreenModel(ΓÇª, downloadManager, ΓÇª)
+    The following other entry points also depend on it:
+        dagger.hilt.android.internal.lifecycle.HiltViewModelFactory.ViewModelFactoriesEntryPoint.getHiltViewModelMap() [ephyra.app.App_HiltComponents.SingletonC ΓåÆ ephyra.app.App_HiltComponents.ActivityRetainedC ΓåÆ ephyra.app.App_HiltComponents.ViewModelC]
+  C:\Project\Android\Ephyra\app\build\generated\hilt\component_sources\debug\ephyra\app\App_HiltComponents.java:179: error: [Dagger/MissingBinding] ephyra.domain.backup.service.BackupNotifier cannot be provided without an @Provides-annotated method.
+    public abstract static class SingletonC implements FragmentGetContextFix.FragmentGetContextFixEntryPoint,
+                           ^
+    
+        ephyra.domain.backup.service.BackupNotifier is injected at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.di.AppModule.provideBackupRestorer(ΓÇª, backupNotifier)
+        ephyra.data.backup.restore.BackupRestorer is requested at
+            [ephyra.app.App_HiltComponents.SingletonC] ephyra.app.data.work.WorkerFactoryEntryPoint.backupRestorer()
+  C:\Project\Android\Ephyra\app\build\generated\hilt\component_sources\debug\ephyra\app\App_HiltComponents.java:179: error: [Dagger/MissingBinding] androidx.compose.material3.SnackbarHostState cannot be provided without an @Inject constructor or an @Provides-annotated method.
+    public abstract static class SingletonC implements FragmentGetContextFix.FragmentGetContextFixEntryPoint,
+                           ^
+    
+        androidx.compose.material3.SnackbarHostState is injected at
+            [ephyra.app.App_HiltComponents.ViewModelC] ephyra.feature.updates.UpdatesScreenModel(ΓÇª, snackbarHostState)
+        ephyra.feature.updates.UpdatesScreenModel is injected at
+            [ephyra.app.App_HiltComponents.ViewModelC] ephyra.feature.updates.UpdatesScreenModel_HiltModules.BindsModule.binds(arg0)
+        @dagger.hilt.android.internal.lifecycle.HiltViewModelMap java.util.Map<java.lang.Class<?>,javax.inject.Provider<androidx.lifecycle.ViewModel>> is requested at
+            [ephyra.app.App_HiltComponents.ViewModelC] dagger.hilt.android.internal.lifecycle.HiltViewModelFactory.ViewModelFactoriesEntryPoint.getHiltViewModelMap() [ephyra.app.App_HiltComponents.SingletonC ΓåÆ ephyra.app.App_HiltComponents.ActivityRetainedC ΓåÆ ephyra.app.App_HiltComponents.ViewModelC]
+    It is also requested at:
+        ephyra.feature.history.HistoryScreenModel(ΓÇª, snackbarHostState)
+  C:\Project\Android\Ephyra\app\build\generated\hilt\component_sources\debug\ephyra\app\App_HiltComponents.java:179: error: [Dagger/MissingBinding] ephyra.domain.chapter.service.ChapterCache cannot be provided without an @Provides-annotated method.
+    public abstract static class SingletonC implements FragmentGetContextFix.FragmentGetContextFixEntryPoint,
+                           ^
+    
+        ephyra.domain.chapter.service.ChapterCache is injected at
+            [ephyra.app.App_HiltComponents.ViewModelC] ephyra.feature.settings.screen.SettingsDataScreenModel(ΓÇª, chapterCache, ΓÇª)
+        ephyra.feature.settings.screen.SettingsDataScreenModel is injected at
+            [ephyra.app.App_HiltComponents.ViewModelC] ephyra.feature.settings.screen.SettingsDataScreenModel_HiltModules.BindsModule.binds(arg0)
+        @dagger.hilt.android.internal.lifecycle.HiltViewModelMap java.util.Map<java.lang.Class<?>,javax.inject.Provider<androidx.lifecycle.ViewModel>> is requested at
+            [ephyra.app.App_HiltComponents.ViewModelC] dagger.hilt.android.internal.lifecycle.HiltViewModelFactory.ViewModelFactoriesEntryPoint.getHiltViewModelMap() [ephyra.app.App_HiltComponents.SingletonC ΓåÆ ephyra.app.App_HiltComponents.ActivityRetainedC ΓåÆ ephyra.app.App_HiltComponents.ViewModelC]
+    It is also requested at:
+        ephyra.feature.reader.ReaderViewModel(ΓÇª, chapterCache)
+  C:\Project\Android\Ephyra\app\build\generated\hilt\component_sources\debug\ephyra\app\App_HiltComponents.java:179: error: [Dagger/MissingBinding] ephyra.domain.export.LibraryExporter cannot be provided without an @Provides-annotated method.
+    public abstract static class SingletonC implements FragmentGetContextFix.FragmentGetContextFixEntryPoint,
+                           ^
+    
+        ephyra.domain.export.LibraryExporter is injected at
+            [ephyra.app.App_HiltComponents.ViewModelC] ephyra.feature.settings.screen.SettingsDataScreenModel(ΓÇª, libraryExporter)
+        ephyra.feature.settings.screen.SettingsDataScreenModel is injected at
+            [ephyra.app.App_HiltComponents.ViewModelC] ephyra.feature.settings.screen.SettingsDataScreenModel_HiltModules.BindsModule.binds(arg0)
+        @dagger.hilt.android.internal.lifecycle.HiltViewModelMap java.util.Map<java.lang.Class<?>,javax.inject.Provider<androidx.lifecycle.ViewModel>> is requested at
+            [ephyra.app.App_HiltComponents.ViewModelC] dagger.hilt.android.internal.lifecycle.HiltViewModelFactory.ViewModelFactoriesEntryPoint.getHiltViewModelMap() [ephyra.app.App_HiltComponents.SingletonC ΓåÆ ephyra.app.App_HiltComponents.ActivityRetainedC ΓåÆ ephyra.app.App_HiltComponents.ViewModelC]
+  C:\Project\Android\Ephyra\app\build\generated\hilt\component_sources\debug\ephyra\app\App_HiltComponents.java:179: error: [Dagger/MissingBinding] ephyra.presentation.core.ui.MatchUnlinkedJobRunner cannot be provided without an @Provides-annotated method.
+    public abstract static class SingletonC implements FragmentGetContextFix.FragmentGetContextFixEntryPoint,
+                           ^
+    
+        ephyra.presentation.core.ui.MatchUnlinkedJobRunner is injected at
+            [ephyra.app.App_HiltComponents.ViewModelC] ephyra.feature.settings.screen.SettingsTrackingScreenModel(ΓÇª, matchUnlinkedJobRunner)
+        ephyra.feature.settings.screen.SettingsTrackingScreenModel is injected at
+            [ephyra.app.App_HiltComponents.ViewModelC] ephyra.feature.settings.screen.SettingsTrackingScreenModel_HiltModules.BindsModule.binds(arg0)
+        @dagger.hilt.android.internal.lifecycle.HiltViewModelMap java.util.Map<java.lang.Class<?>,javax.inject.Provider<androidx.lifecycle.ViewModel>> is requested at
+            [ephyra.app.App_HiltComponents.ViewModelC] dagger.hilt.android.internal.lifecycle.HiltViewModelFactory.ViewModelFactoriesEntryPoint.getHiltViewModelMap() [ephyra.app.App_HiltComponents.SingletonC ΓåÆ ephyra.app.App_HiltComponents.ActivityRetainedC ΓåÆ ephyra.app.App_HiltComponents.ViewModelC]
+  12 errors
+
+* Try:
+> Check your code and dependencies to fix the compilation error(s)
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+
+BUILD FAILED in 25s
+922 actionable tasks: 66 executed, 856 up-to-date

@@ -10,7 +10,7 @@ interface AppInfo {
     /** True when running a debug build. */
     val isDebug: Boolean
 
-    /** Build type string e.g. "debug", "release", "preview", "nightly", "foss". */
+    /** Build type string e.g. "debug", "release", "preview", "nightly". */
     val buildType: String
 
     /** Short commit hash included in the build. */
@@ -34,7 +34,7 @@ interface AppInfo {
     val isPreview: Boolean get() = buildType == "preview"
     val isNightly: Boolean get() = buildType == "nightly"
     val isRelease: Boolean get() = buildType == "release"
-    val isFoss: Boolean get() = buildType == "foss"
+    val isFoss: Boolean get() = false
     val telemetryIncluded: Boolean
     val updaterEnabled: Boolean
 

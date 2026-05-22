@@ -12,7 +12,7 @@ android {
 dependencies {
     // Internal project dependencies
     api(projects.core.common)
-    api(projects.domain)
+    api(projects.core.domain)
     api(projects.data)
     api(projects.sourceApi)
     api(projects.presentationCore)
@@ -26,10 +26,6 @@ dependencies {
     // Third-party libraries
     implementation(libs.logcat)
     implementation(libs.compose.grid)
-    api(libs.bundles.voyager)
 
-    // Dependency Injection (Hilt & Koin)
-    api(libs.koin.core)
-    implementation(libs.koin.annotations)
     ksp(libs.hilt.compiler)
 }

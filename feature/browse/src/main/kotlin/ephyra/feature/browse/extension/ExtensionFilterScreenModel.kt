@@ -4,7 +4,6 @@ import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.extension.interactor.GetExtensionLanguages
 import ephyra.domain.source.interactor.ToggleLanguage
@@ -26,6 +25,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
+import javax.inject.Inject
 
 @HiltViewModel
 class ExtensionFilterScreenModel @Inject constructor(

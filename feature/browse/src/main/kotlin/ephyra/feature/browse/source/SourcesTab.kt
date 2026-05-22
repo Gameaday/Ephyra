@@ -6,25 +6,22 @@ import androidx.compose.material.icons.outlined.TravelExplore
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
-import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import ephyra.feature.browse.presentation.SourceOptionsDialog
 import ephyra.feature.browse.presentation.SourcesScreen
-import ephyra.feature.browse.source.browse.BrowseSourceScreen
-import ephyra.feature.browse.source.globalsearch.GlobalSearchScreen
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.TabContent
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @Composable
-fun Screen.sourcesTab(): TabContent {
-    val navigator = LocalNavigator.currentOrThrow
+fun sourcesTab(navController: NavController = LocalNavController.current): TabContent {
     val screenModel = hiltViewModel<SourcesScreenModel>()
     val state by screenModel.state.collectAsStateWithLifecycle()
 
@@ -34,12 +31,12 @@ fun Screen.sourcesTab(): TabContent {
             AppBar.Action(
                 title = stringResource(ephyra.app.core.common.R.string.action_global_search),
                 icon = Icons.Outlined.TravelExplore,
-                onClick = { navigator.push(GlobalSearchScreen()) },
+                onClick = { navController.navigate(ScreenRoutes.GlobalSearch.createRoute(null)) },
             ),
             AppBar.Action(
                 title = stringResource(ephyra.app.core.common.R.string.action_filter),
                 icon = Icons.Outlined.FilterList,
-                onClick = { navigator.push(SourcesFilterScreen()) },
+                onClick = { navController.navigate(ScreenRoutes.SourcesFilter.route) },
             ),
         ),
         content = { contentPadding, snackbarHostState ->
@@ -47,7 +44,7 @@ fun Screen.sourcesTab(): TabContent {
                 state = state,
                 contentPadding = contentPadding,
                 onClickItem = { source, listing ->
-                    navigator.push(BrowseSourceScreen(source.id, listing.query))
+                    navController.navigate(ScreenRoutes.BrowseSource.createRoute(source.id, listing.query))
                 },
                 onClickPin = { screenModel.onEvent(SourcesScreenEvent.TogglePin(it)) },
                 onLongClickItem = { screenModel.onEvent(SourcesScreenEvent.ShowSourceDialog(it)) },

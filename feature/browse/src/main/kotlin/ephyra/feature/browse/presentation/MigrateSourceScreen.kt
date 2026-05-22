@@ -25,11 +25,11 @@ import ephyra.domain.source.interactor.SetMigrateSorting
 import ephyra.domain.source.model.Source
 import ephyra.feature.browse.migration.sources.MigrateSourceScreenModel
 import ephyra.feature.browse.presentation.components.BaseSourceItem
-import ephyra.presentation.core.components.SourceIcon
 import ephyra.presentation.core.components.Badge
 import ephyra.presentation.core.components.BadgeGroup
 import ephyra.presentation.core.components.ScrollbarLazyColumn
 import ephyra.presentation.core.components.Scroller.STICKY_HEADER_KEY_PREFIX
+import ephyra.presentation.core.components.SourceIcon
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.components.material.topSmallPaddingValues
 import ephyra.presentation.core.i18n.stringResource

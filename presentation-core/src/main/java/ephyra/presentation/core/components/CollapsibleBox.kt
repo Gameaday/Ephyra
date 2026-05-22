@@ -50,11 +50,15 @@ fun CollapsibleBox(
 
             Spacer(modifier = Modifier.weight(1f))
 
+            val contentDescriptionRes = if (expanded) {
+                ephyra.app.core.common.R.string.manga_info_collapse
+            } else {
+                ephyra.app.core.common.R.string.manga_info_expand
+            }
+
             Icon(
                 imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                contentDescription = stringResource(
-                    if (expanded) ephyra.app.core.common.R.string.manga_info_collapse else ephyra.app.core.common.R.string.manga_info_expand,
-                ),
+                contentDescription = stringResource(contentDescriptionRes),
             )
         }
 

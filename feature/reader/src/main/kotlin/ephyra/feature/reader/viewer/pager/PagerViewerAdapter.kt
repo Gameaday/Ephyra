@@ -13,7 +13,6 @@ import ephyra.feature.reader.model.ViewerChapters
 import ephyra.feature.reader.util.createReaderThemeContext
 import ephyra.feature.reader.viewer.calculateChapterGap
 import ephyra.feature.reader.widget.ViewPagerAdapter
-import ephyra.core.common.di.CoreContainer
 
 /**
  * Pager adapter used by this [viewer] to where [ViewerChapters] updates are posted.
@@ -41,8 +40,8 @@ class PagerViewerAdapter(private val viewer: PagerViewer) : ViewPagerAdapter() {
      * current app theme and reader background color
      */
     private var readerThemedContext = viewer.activity.createReaderThemeContext(
-        CoreContainer.get<UiPreferences>(),
-        CoreContainer.get<ReaderPreferences>(),
+        viewer.uiPreferences,
+        viewer.readerPreferences,
     )
 
     /**
@@ -208,8 +207,8 @@ class PagerViewerAdapter(private val viewer: PagerViewer) : ViewPagerAdapter() {
 
     fun refresh() {
         readerThemedContext = viewer.activity.createReaderThemeContext(
-            CoreContainer.get<UiPreferences>(),
-            CoreContainer.get<ReaderPreferences>(),
+            viewer.uiPreferences,
+            viewer.readerPreferences,
         )
     }
 }

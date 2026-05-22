@@ -1,1 +1,3 @@
-// Deleted unused legacy factory
+package ephyra.feature.manga
+
+internal object MangaScreenModelFactory

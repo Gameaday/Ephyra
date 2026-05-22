@@ -48,6 +48,10 @@ class DownloadManager(
     private val pendingDeleter: DownloadPendingDeleter,
 ) : IDownloadManager {
 
+    private val scope = kotlinx.coroutines.CoroutineScope(
+        kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO,
+    )
+
     override val isRunning: Boolean
         get() = downloader.isRunning
 
@@ -225,7 +229,7 @@ class DownloadManager(
      * @param source the source of the chapters.
      */
     override fun deleteChapters(chapters: List<Chapter>, manga: Manga, source: Source) {
-        launchIO {
+        scope.launchIO {
             val filteredChapters = getChaptersToDelete(chapters, manga)
             if (filteredChapters.isEmpty()) {
                 return@launchIO
@@ -252,7 +256,7 @@ class DownloadManager(
      * @param removeQueued whether to also remove queued downloads.
      */
     override fun deleteManga(manga: Manga, source: Source, removeQueued: Boolean) {
-        launchIO {
+        scope.launchIO {
             if (removeQueued) {
                 downloader.removeFromQueue(manga)
             }

@@ -15,7 +15,7 @@ dependencies {
     api(kotlinx.serialization.json)
     api(libs.jsoup)
 
-    implementation("androidx.compose.runtime:runtime:1.6.7")
+    implementation(libs.compose.runtime)
 
     implementation(projects.core.common)
     api(libs.preferencektx)

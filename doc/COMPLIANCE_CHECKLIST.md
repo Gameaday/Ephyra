@@ -34,13 +34,13 @@ platform implementation.
 
 | Status | File | Violation | Required Fix |
 |--------|------|-----------|--------------|
-| ⏳ | `core/domain/.../track/store/DelayedTrackingStore.kt` | `android.content.Context` + `SharedPreferences` | Move to `:data` module; inject via `TrackingQueueStore` interface in domain |
-| ⏳ | `core/domain/.../track/service/DelayedTrackingUpdateJob.kt` | `CoroutineWorker`, `Context`, `WorkManager` | Move to `:app` module; register with existing `WorkerFactory` |
-| ⏳ | `core/domain/.../track/interactor/TrackChapter.kt` | `android.content.Context` (passed to `DelayedTrackingUpdateJob.setupTask`) | Remove context from interactor; have the job scheduler interface (in domain) accept the parameters |
+| ✅ | `core/domain/.../track/store/DelayedTrackingStore.kt` | `android.content.Context` + `SharedPreferences` | Moved to `:app` module; implements `TrackingQueueStore` interface |
+| ✅ | `core/domain/.../track/service/DelayedTrackingUpdateJob.kt` | `CoroutineWorker`, `Context`, `WorkManager` | Moved to `:app` module; registered with `AppWorkerFactory` |
+| ✅ | `core/domain/.../track/interactor/TrackChapter.kt` | `android.content.Context` | Context removed; interactor now depends on `TrackingQueueStore` interface |
 | ⏳ | `core/domain/.../base/ExtensionInstallerPreference.kt` | `android.content.Context` (MIUI / Shizuku checks) | Extract `InstallerCapabilityProvider` interface in domain; implement in `:app` |
-| ⏳ | `core/domain/.../base/BasePreferences.kt` | `android.content.Context` property stored on class | Remove context from `BasePreferences`; `ExtensionInstallerPreference` receives its capabilities via interface |
+| ✅ | `core/domain/.../base/BasePreferences.kt` | `android.content.Context` property stored on class | Context removed from constructor; moved to `:app` layer logic where needed |
 | ✅ | `core/domain/.../extension/interactor/TrustExtension.kt` | `android.content.pm.PackageInfo` in `isTrusted()` | Introduced `data class ExtensionPackageInfo(packageName, versionCode)` in `domain/extension/model`; `TrustExtension.isTrusted()` now accepts it; `ExtensionLoader.kt` converts from `PackageInfo` at the `:app` boundary |
-| ⏳ | `domain/storage/service/StorageManager.kt` | `android.content.Context` + `UniFile` (Android) | Move to `:data`; expose `StorageDirectoryProvider` interface in domain |
+| ✅ | `domain/storage/service/StorageManager.kt` | `android.content.Context` + `UniFile` (Android) | Abstracted to interface; Android implementation `StorageManagerImpl` moved to `:app` |
 | ⏳ | `domain/reader/util/RectFExtensions.kt` | `android.graphics.RectF` | Introduce `data class Rect(val left: Float, val top: Float, val right: Float, val bottom: Float)` in domain; keep `RectF` in `:presentation-core` |
 
 ---
@@ -52,29 +52,29 @@ boundary and import concrete `:data` implementations directly.
 
 | Status | File | Offending Import(s) | Required Fix |
 |--------|------|---------------------|--------------|
-| ⏳ | `feature/browse/.../SourcePreferencesScreen.kt` | `ephyra.data.preference.SharedPreferencesDataStore` | Inject `PreferenceStore` domain interface |
-| ⏳ | `feature/browse/.../BrowseSourceScreenModel.kt` | `ephyra.data.cache.CoverCache` | Inject `ephyra.domain.manga.service.CoverCache` interface |
-| ⏳ | `feature/library/.../LibraryScreenModel.kt` | `ephyra.data.cache.CoverCache` | Inject domain interface |
-| ⏳ | `feature/manga/.../MangaCoverScreenModel.kt` | `CoverCache`, `ImageSaver`, `Image`, `Location` (all `:data`) | Formalise `ImageSaver` interface in domain; inject domain types |
-| ⏳ | `feature/manga/.../MangaScreen.kt` | `ephyra.data.cache.CoverCache` | Inject domain interface |
+| ✅ | `feature/browse/.../SourcePreferencesScreen.kt` | `ephyra.data.preference.SharedPreferencesDataStore` | Injected `PreferenceStore` domain interface |
+| ✅ | `feature/browse/.../BrowseSourceScreenModel.kt` | `ephyra.data.cache.CoverCache` | Injects `ephyra.domain.manga.service.CoverCache` interface |
+| ✅ | `feature/library/.../LibraryScreenModel.kt` | `ephyra.data.cache.CoverCache` | Injects domain interface |
+| ✅ | `feature/manga/.../MangaCoverScreenModel.kt` | `CoverCache`, `ImageSaver`, `Image`, `Location` (all `:data`) | ImageSaver interface formalized in domain |
+| ✅ | `feature/manga/.../MangaScreen.kt` | `ephyra.data.cache.CoverCache` | Injects domain interface |
 | ✅ | `feature/manga/.../track/TrackInfoDialog.kt` | `ephyra.data.track.DeletableTracker` | Moved `DeletableTracker` marker interface to `ephyra.domain.track.service`; old `:data` file deleted |
-| ⏳ | `feature/migration/.../MigrateMangaDialog.kt` | `ephyra.data.cache.CoverCache` | Inject domain interface |
-| ⏳ | `feature/reader/.../ReaderViewModel.kt` | `ChapterCache`, `CoverCache`, `toDomainChapter`, `ImageSaver`, `Image`, `Location` | Formalise interfaces in domain; use mapper in `:data` only |
+| ✅ | `feature/migration/.../MigrateMangaDialog.kt` | `ephyra.data.cache.CoverCache` | Injects domain interface |
+| ✅ | `feature/reader/.../ReaderViewModel.kt` | `ChapterCache`, `CoverCache`, `toDomainChapter`, `ImageSaver`, `Image`, `Location` | Formalised interfaces in domain; use mapper in `:data` only |
 | ⏳ | `feature/reader/.../SaveImageNotifier.kt` | `ephyra.data.notification.Notifications` | Extract notification-channel constants to `:core:common` or `:presentation-core` |
-| ⏳ | `feature/reader/.../loader/ChapterLoader.kt` | `ephyra.data.cache.ChapterCache` | Extract `ChapterCache` interface to domain |
-| ⏳ | `feature/reader/.../loader/HttpPageLoader.kt` | `ChapterCache`, `toDomainChapter` | Same as above; mapper in `:data` |
-| ⏳ | `feature/reader/.../model/ReaderChapter.kt` | `ephyra.data.database.models.Chapter` | Store domain `Chapter` model, not database entity |
+| ✅ | `feature/reader/.../loader/ChapterLoader.kt` | `ephyra.data.cache.ChapterCache` | Extract `ChapterCache` interface to domain |
+| ✅ | `feature/reader/.../loader/HttpPageLoader.kt" | `ChapterCache`, `toDomainChapter` | Same as above; mapper in `:data` |
+| ✅ | `feature/reader/.../model/ReaderChapter.kt` | `ephyra.data.database.models.Chapter` | Store domain `Chapter` model, not database entity |
 | ⏳ | `feature/reader/.../viewer/ReaderPageImageView.kt` | `ephyra.data.coil.cropBorders`, `customDecoder` | Move Coil utilities to `:presentation-core` or `:core:data` — accept via lambda/interface |
-| ⏳ | `feature/reader/.../viewer/MissingChapters.kt` | `ephyra.data.database.models.toDomainChapter` | Use domain `Chapter` at feature boundary |
+| ✅ | `feature/reader/.../viewer/MissingChapters.kt` | `ephyra.data.database.models.toDomainChapter` | Use domain `Chapter` at feature boundary |
 | ⏳ | `feature/settings/.../SettingsDataScreen.kt` | `ChapterCache`, `LibraryExporter`, `ExportOptions` | Extract `LibraryExporter` interface to domain |
-| ⏳ | `feature/settings/.../SettingsDataScreenModel.kt` | `ephyra.data.cache.ChapterCache` | Extract `ChapterCache` interface to domain |
-| ⏳ | `feature/settings/.../SettingsTrackingScreen.kt` | `AnilistApi`, `BangumiApi`, `MyAnimeListApi`, `ShikimoriApi` | Expose required capabilities via `Tracker` interface; no feature module needs concrete API |
+| ✅ | `feature/settings/.../SettingsDataScreenModel.kt` | `ephyra.data.cache.ChapterCache` | Extract `ChapterCache` interface to domain |
+| ✅ | `feature/settings/.../SettingsTrackingScreen.kt` | `AnilistApi`, `BangumiApi`, `MyAnimeListApi`, `ShikimoriApi` | Expose required capabilities via `Tracker` interface; no feature module needs concrete API |
 | ✅ | `feature/settings/.../about/AboutScreen.kt` | `ephyra.data.updater.RELEASE_URL` | Added `releaseUrl` computed property to `AppInfo` interface (presentation-core); `AboutScreen` now uses `appInfo.releaseUrl` |
 | ✅ | `feature/settings/.../about/AboutScreenModel.kt` | `ephyra.data.updater.AppUpdateChecker` | Replaced with `GetApplicationRelease` interactor; `AppInfo.githubRepo` added to provide repo slug; `checkVersion()` no longer needs `Context` parameter |
-| ⏳ | `feature/settings/.../data/CreateBackupScreen.kt` | `BackupCreator`, `BackupOptions` (`:data`) | Extract `BackupOptions` value type to domain |
-| ⏳ | `feature/settings/.../data/RestoreBackupScreen.kt` | `BackupFileValidator`, `RestoreOptions` (`:data`) | Extract `RestoreOptions` and a validator interface to domain |
-| ⏳ | `feature/settings/.../debug/BackupSchemaScreen.kt` | `ephyra.data.backup.models.Backup` | Move `Backup` model to domain `backup` package |
-| ⏳ | `feature/presentation/reader/ChapterTransition.kt` | `ephyra.data.database.models.toDomainChapter` | Use domain `Chapter` at presentation boundary |
+| ✅ | `feature/settings/.../data/CreateBackupScreen.kt` | `BackupCreator`, `BackupOptions` (`:data`) | Extract `BackupOptions` value type to domain |
+| ✅ | `feature/settings/.../data/RestoreBackupScreen.kt` | `BackupFileValidator`, `RestoreOptions` (`:data`) | Extract `RestoreOptions` and a validator interface to domain |
+| ✅ | `feature/settings/.../debug/BackupSchemaScreen.kt` | `ephyra.data.backup.models.Backup` | Move `Backup` model to domain `backup` package |
+| ✅ | `feature/presentation/reader/ChapterTransition.kt` | `ephyra.data.database.models.toDomainChapter` | Use domain `Chapter` at presentation boundary |
 
 ---
 
@@ -187,6 +187,10 @@ Dependencies that must become interfaces before unit-testing is possible:
 | ✅ | Theme/log-level `.getSync()` guarded | DataStore race on first launch | try/catch with safe defaults |
 | ✅ | `WORKMANAGER_CONFIGURED` phase added | No startup visibility for WorkManager init | Phase added to enum; `complete()` called inside `workManagerConfiguration` getter — fires the first time WorkManager requests its `Configuration` |
 | ✅ | Time-bound all phases | Only `MIGRATOR_COMPLETE` (30 s) and overlay (10 s) had timeouts | `timeoutMs: Long` added to each `Phase` enum entry; `StartupDiagnosticOverlay` now shows `Warning` icon + "OVERDUE (>Ns)" label in amber for any pending phase that has exceeded its individual budget |
+| ✅ | Hilt ViewModel usage | `HomeScreen` was using standard `viewModel()` | Migrated to `hiltViewModel()` to support constructor injection |
+| ✅ | Early Exception Handling | Crash handler initialized too late | Moved `GlobalExceptionHandler` to the top of `App.onCreate` and added `StartupFailureActivity` fallback |
+| ✅ | Glance Widget Safety | Premature access to `CoreContainer` in widget constructor | Refactored `BaseUpdatesGridGlanceWidget` to use lazy dependencies |
+| ✅ | GL Robustness | `DEVICE_TEXTURE_LIMIT` could crash without EGL | Added try-catch with safe default to `GLUtil` |
 
 ---
 

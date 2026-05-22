@@ -3,11 +3,11 @@ package ephyra.feature.more.onboarding
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import ephyra.domain.ui.model.setAppCompatDelegateThemeMode
 import ephyra.feature.settings.widget.AppThemeModePreferenceWidget
 import ephyra.feature.settings.widget.AppThemePreferenceWidget
 import ephyra.presentation.core.util.LocalUiPreferences
 import ephyra.presentation.core.util.collectAsState
+import ephyra.presentation.core.util.system.setAppCompatDelegateThemeMode
 
 internal class ThemeStep : OnboardingStep {
 

@@ -15,7 +15,6 @@ class AppUpdateChecker(
         return withIOContext {
             val result = getApplicationRelease.await(
                 GetApplicationRelease.Arguments(
-                    isFoss = isFossBuildType,
                     isPreview = isPreviewBuildType,
                     isNightly = isNightlyBuildType,
                     commitCount = BuildConfig.COMMIT_COUNT.toInt(),
@@ -36,7 +35,6 @@ class AppUpdateChecker(
     }
 }
 
-private val isFossBuildType: Boolean = false // Placeholder
 private val isPreviewBuildType: Boolean = false // Placeholder
 private val isNightlyBuildType: Boolean = false // Placeholder
 

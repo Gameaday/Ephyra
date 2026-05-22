@@ -15,6 +15,7 @@ import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaCover
+import ephyra.presentation.core.theme.LocalBrandedTheme
 import ephyra.presentation.core.util.plus
 import ephyra.presentation.manga.components.CommonMangaItemDefaults
 import ephyra.presentation.manga.components.MangaCompactGridItem
@@ -28,11 +29,12 @@ fun BrowseSourceCompactGrid(
     onMangaClick: (Manga) -> Unit,
     onMangaLongClick: (Manga) -> Unit,
 ) {
+    val config = LocalBrandedTheme.current
     LazyVerticalGrid(
         columns = columns,
         contentPadding = contentPadding + PaddingValues(8.dp),
-        verticalArrangement = Arrangement.spacedBy(CommonMangaItemDefaults.GridVerticalSpacer),
-        horizontalArrangement = Arrangement.spacedBy(CommonMangaItemDefaults.GridHorizontalSpacer),
+        verticalArrangement = Arrangement.spacedBy(config.gridVerticalSpacing),
+        horizontalArrangement = Arrangement.spacedBy(config.gridHorizontalSpacing),
     ) {
         if (mangaList.loadState.prepend is LoadState.Loading) {
             item(span = { GridItemSpan(maxLineSpan) }) {

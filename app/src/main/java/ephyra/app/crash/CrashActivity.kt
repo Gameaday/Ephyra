@@ -3,11 +3,13 @@ package ephyra.app.crash
 import android.content.Intent
 import android.os.Bundle
 import androidx.core.view.WindowCompat
+import dagger.hilt.android.AndroidEntryPoint
 import ephyra.app.ui.main.MainActivity
 import ephyra.presentation.core.crash.CrashScreen
 import ephyra.presentation.core.ui.activity.BaseActivity
 import ephyra.presentation.core.util.view.setComposeContent
 
+@AndroidEntryPoint
 class CrashActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -28,4 +28,3 @@ class ReaderSettingsScreenModel(
         .distinctUntilChanged()
         .stateIn(scope, SharingStarted.Lazily, null)
 }
-

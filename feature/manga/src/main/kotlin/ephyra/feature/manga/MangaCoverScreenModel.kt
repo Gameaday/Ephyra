@@ -5,12 +5,11 @@ import android.net.Uri
 import androidx.compose.material3.SnackbarHostState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import coil3.asDrawable
 import coil3.imageLoader
 import coil3.request.ImageRequest
 import coil3.size.Size
+import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.saver.Image
 import ephyra.core.common.saver.ImageSaver
@@ -40,6 +39,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import okhttp3.Request
+import javax.inject.Inject
 
 @HiltViewModel
 class MangaCoverScreenModel @Inject constructor(
@@ -128,7 +128,10 @@ class MangaCoverScreenModel @Inject constructor(
 
         // Shares always use PNG for compatibility; internal saves use user's preferred format
         val encoder = if (temp) {
-            { bmp: android.graphics.Bitmap, os: java.io.OutputStream -> bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, os); Unit }
+            { bmp: android.graphics.Bitmap, os: java.io.OutputStream ->
+                bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, os)
+                Unit
+            }
         } else {
             libraryPreferences.imageFormat().get().encoder()
         }

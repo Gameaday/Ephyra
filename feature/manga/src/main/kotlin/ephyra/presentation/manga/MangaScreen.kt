@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:max-line-length")
+
 package ephyra.feature.manga.presentation
 
 import androidx.activity.compose.BackHandler
@@ -343,7 +345,9 @@ private fun MangaScreenSmallImpl(
                         state.chapters.fastAny { it.read }
                     }
                     Text(
-                        text = stringResource(if (isReading) ephyra.app.core.common.R.string.action_resume else ephyra.app.core.common.R.string.action_start),
+                        text = stringResource(
+                            if (isReading) ephyra.app.core.common.R.string.action_resume else ephyra.app.core.common.R.string.action_start,
+                        ),
                     )
                 },
                 icon = { Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = null) },

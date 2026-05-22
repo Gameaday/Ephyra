@@ -65,7 +65,7 @@ class ShellInterface : IShellInterface.Stub() {
 
     @SuppressLint("PrivateApi")
     override fun install(apk: AssetFileDescriptor) {
-        val pmInterface = Class.forName($$"android.content.pm.IPackageManager$Stub")
+        val pmInterface = Class.forName("android.content.pm.IPackageManager${'$'}Stub")
             .getMethod("asInterface", IBinder::class.java)
             .invoke(null, SystemServiceHelper.getSystemService("package"))
 
@@ -112,7 +112,7 @@ class ShellInterface : IShellInterface.Stub() {
                 if (revocable) {
                     ParcelFileDescriptor.AutoCloseOutputStream(fd)
                 } else {
-                    Class.forName($$"android.os.FileBridge$FileBridgeOutputStream")
+                    Class.forName("android.os.FileBridge${'$'}FileBridgeOutputStream")
                         .getConstructor(ParcelFileDescriptor::class.java)
                         .newInstance(fd) as OutputStream
                 }

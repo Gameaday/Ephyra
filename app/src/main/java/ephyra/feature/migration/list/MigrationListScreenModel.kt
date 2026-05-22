@@ -1,8 +1,9 @@
 package ephyra.feature.migration.list
 
 import androidx.annotation.FloatRange
-import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
@@ -33,14 +34,15 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import logcat.LogPriority
-
-import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @HiltViewModel
@@ -54,15 +56,18 @@ class MigrationListScreenModel @Inject constructor(
     private val getChaptersByMangaId: GetChaptersByMangaId,
     private val migrateManga: MigrateMangaUseCase,
     private val getFavoritesByCanonicalId: GetFavoritesByCanonicalId,
-) : StateScreenModel<MigrationListScreenModel.State>(State()) {
+) : ViewModel() {
+
+    private val _state = MutableStateFlow(State())
+    val state = _state.asStateFlow()
 
     private lateinit var smartSearchEngine: SmartSourceSearchEngine
 
     val items
         inline get() = state.value.items
 
-    private val hideUnmatched = preferences.migrationHideUnmatched().getSync()
-    private val hideWithoutUpdates = preferences.migrationHideWithoutUpdates().getSync()
+    private val hideUnmatched = runBlocking { preferences.migrationHideUnmatched().get() }
+    private val hideWithoutUpdates = runBlocking { preferences.migrationHideWithoutUpdates().get() }
 
     private val navigateBackChannel = Channel<Unit>()
     val navigateBackEvent = navigateBackChannel.receiveAsFlow()
@@ -81,7 +86,7 @@ class MigrationListScreenModel @Inject constructor(
 
         smartSearchEngine = SmartSourceSearchEngine(extraSearchQuery)
 
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             val manga = mangaIds
                 .map {
                     async {
@@ -92,13 +97,13 @@ class MigrationListScreenModel @Inject constructor(
                             chapterCount = chapterInfo.chapterCount,
                             latestChapter = chapterInfo.latestChapter,
                             source = sourceManager.getOrStub(manga.source).getNameForMangaInfo(preferences),
-                            parentContext = screenModelScope.coroutineContext,
+                            parentContext = viewModelScope.coroutineContext,
                         )
                     }
                 }
                 .awaitAll()
                 .filterNotNull()
-            mutableState.update { it.copy(items = manga.toImmutableList()) }
+            _state.update { it.copy(items = manga.toImmutableList()) }
             runMigrations(manga)
         }
     }
@@ -264,7 +269,7 @@ class MigrationListScreenModel @Inject constructor(
     }
 
     private suspend fun updateMigrationProgress() {
-        mutableState.update { state ->
+        _state.update { state ->
             state.copy(
                 finishedCount = items.count { it.searchResult.value != SearchResult.Searching },
                 migrationComplete = migrationComplete(),
@@ -296,7 +301,7 @@ class MigrationListScreenModel @Inject constructor(
     private fun useMangaForMigration(current: Long, target: Long) {
         val migratingManga = items.find { it.manga.id == current } ?: return
         migratingManga.searchResult.value = SearchResult.Searching
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             val result = migratingManga.migrationScope.async {
                 val manga = getManga.await(target) ?: return@async null
                 try {
@@ -343,8 +348,8 @@ class MigrationListScreenModel @Inject constructor(
     }
 
     private fun migrateMangas(replace: Boolean) {
-        migrateJob = screenModelScope.launchIO {
-            mutableState.update { it.copy(dialog = Dialog.Progress(0f)) }
+        migrateJob = viewModelScope.launchIO {
+            _state.update { it.copy(dialog = Dialog.Progress(0f)) }
             val items = items
             try {
                 items.forEachIndexed { index, manga ->
@@ -364,14 +369,14 @@ class MigrationListScreenModel @Inject constructor(
                         if (e is CancellationException) throw e
                         logcat(LogPriority.WARN, throwable = e)
                     }
-                    mutableState.update {
+                    _state.update {
                         it.copy(dialog = Dialog.Progress((index.toFloat() / items.size).coerceAtMost(1f)))
                     }
                 }
 
                 navigateBack()
             } finally {
-                mutableState.update { it.copy(dialog = null) }
+                _state.update { it.copy(dialog = null) }
                 migrateJob = null
             }
         }
@@ -387,7 +392,7 @@ class MigrationListScreenModel @Inject constructor(
     }
 
     private fun migrateNow(mangaId: Long, replace: Boolean) {
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             val manga = items.find { it.manga.id == mangaId } ?: return@launchIO
             val target = (manga.searchResult.value as? SearchResult.Success)?.manga ?: return@launchIO
             migrateManga(current = manga.manga, target = target, replace = replace)
@@ -397,7 +402,7 @@ class MigrationListScreenModel @Inject constructor(
     }
 
     private fun removeManga(mangaId: Long) {
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             val item = items.find { it.manga.id == mangaId } ?: return@launchIO
             removeManga(item)
             item.migrationScope.cancel()
@@ -406,18 +411,18 @@ class MigrationListScreenModel @Inject constructor(
     }
 
     private fun removeManga(item: MigratingManga) {
-        mutableState.update { it.copy(items = items.toPersistentList().remove(item)) }
+        _state.update { it.copy(items = items.toPersistentList().remove(item)) }
     }
 
-    override fun onDispose() {
-        super.onDispose()
+    override fun onCleared() {
+        super.onCleared()
         items.forEach {
             it.migrationScope.cancel()
         }
     }
 
     private fun showMigrateDialog(copy: Boolean) {
-        mutableState.update { state ->
+        _state.update { state ->
             state.copy(
                 dialog = Dialog.Migrate(
                     copy = copy,
@@ -429,13 +434,13 @@ class MigrationListScreenModel @Inject constructor(
     }
 
     private fun showExitDialog() {
-        mutableState.update {
+        _state.update {
             it.copy(dialog = Dialog.Exit)
         }
     }
 
     private fun dismissDialog() {
-        mutableState.update { it.copy(dialog = null) }
+        _state.update { it.copy(dialog = null) }
     }
 
     data class ChapterInfo(

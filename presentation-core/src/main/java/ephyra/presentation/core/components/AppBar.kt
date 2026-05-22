@@ -234,7 +234,9 @@ fun AppBarActions(
             ) {
                 Icon(
                     Icons.Outlined.MoreVert,
-                    contentDescription = stringResource(ephyra.app.core.common.R.string.action_menu_overflow_description),
+                    contentDescription = stringResource(
+                        ephyra.app.core.common.R.string.action_menu_overflow_description,
+                    ),
                 )
             }
         }
@@ -326,7 +328,10 @@ fun SearchToolbar(
                         placeholder = {
                             Text(
                                 modifier = Modifier.secondaryItemAlpha(),
-                                text = (placeholderText ?: stringResource(ephyra.app.core.common.R.string.action_search_hint)),
+                                text = (
+                                    placeholderText
+                                        ?: stringResource(ephyra.app.core.common.R.string.action_search_hint)
+                                    ),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 style = MaterialTheme.typography.titleMedium.copy(

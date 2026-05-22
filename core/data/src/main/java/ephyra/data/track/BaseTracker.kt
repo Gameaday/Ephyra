@@ -3,7 +3,6 @@ package ephyra.data.track
 import android.app.Application
 import androidx.annotation.CallSuper
 import ephyra.core.common.util.lang.withIOContext
-import ephyra.core.common.util.lang.withUIContext
 import ephyra.core.common.util.system.logcat
 import ephyra.core.common.util.system.toast
 import ephyra.domain.track.interactor.AddTracks
@@ -14,8 +13,10 @@ import ephyra.domain.track.service.TrackPreferences
 import ephyra.domain.track.service.Tracker
 import eu.kanade.tachiyomi.network.HttpException
 import eu.kanade.tachiyomi.network.NetworkHelper
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.withContext
 import logcat.LogPriority
 import okhttp3.OkHttpClient
 import ephyra.data.database.models.Track as DbTrack
@@ -84,7 +85,7 @@ abstract class BaseTracker(
                 is HttpException -> "$name: HTTP ${e.code}"
                 else -> "$name: ${e.message}"
             }
-            withUIContext { context.toast(errorDetail) }
+            withContext(Dispatchers.Main) { context.toast(errorDetail) }
         }
     }
 
@@ -144,7 +145,7 @@ abstract class BaseTracker(
                 else -> "$name: ${e.message}"
             }
             logcat(LogPriority.ERROR, e) { "Failed to update remote track data id=$id ($errorDetail)" }
-            withUIContext { context.toast(errorDetail) }
+            withContext(Dispatchers.Main) { context.toast(errorDetail) }
         }
     }
 

@@ -160,7 +160,9 @@ class LibraryUpdateJob(
         val skippedUpdates = mutableListOf<Pair<Manga, String?>>()
         val (_, fetchWindowUpperBound) = fetchInterval.getWindow(ZonedDateTime.now())
 
-        val skipReasonNotAlwaysUpdate = context.stringResource(ephyra.app.core.common.R.string.skipped_reason_not_always_update)
+        val skipReasonNotAlwaysUpdate = context.stringResource(
+            ephyra.app.core.common.R.string.skipped_reason_not_always_update,
+        )
         val skipReasonCompleted = if (MANGA_NON_COMPLETED in restrictions) {
             context.stringResource(ephyra.app.core.common.R.string.skipped_reason_completed)
         } else {

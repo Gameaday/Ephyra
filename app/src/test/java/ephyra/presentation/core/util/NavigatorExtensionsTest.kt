@@ -101,19 +101,6 @@ class NavigatorExtensionsTest {
         assertNotNull(method) { "ephyra.presentation.core.util.Tab must declare onReselect" }
     }
 
-    /**
-     * [Tab.onReselect] takes a single [cafe.adriel.voyager.navigator.Navigator] parameter.
-     */
-    @Test
-    fun `Tab onReselect accepts a Navigator parameter`() {
-        val method = Tab::class.java.methods.firstOrNull { it.name == "onReselect" }
-        assertNotNull(method) { "Tab must declare onReselect" }
-        // Kotlin suspend functions receive a Continuation as the last parameter at the JVM level
-        assertTrue(method!!.parameterCount >= 1) {
-            "onReselect must accept at least a Navigator parameter (plus Kotlin continuation)"
-        }
-    }
-
     // ── AssistContentScreen interface ─────────────────────────────────────────
 
     /**
@@ -181,40 +168,16 @@ class NavigatorExtensionsTest {
         assertNotNull(local) { "LocalBackPress composition local must be declared" }
     }
 
-    // ── Tab interface extends Voyager Tab ─────────────────────────────────────
-
-    /**
-     * [Tab] must extend [cafe.adriel.voyager.navigator.tab.Tab] so that Voyager's
-     * tab navigation machinery accepts Ephyra screen-model tabs.
-     */
-    @Test
-    fun `ephyra Tab interface extends Voyager Tab interface`() {
-        val voyagerTabInterface = cafe.adriel.voyager.navigator.tab.Tab::class.java
-        assertTrue(voyagerTabInterface.isAssignableFrom(Tab::class.java)) {
-            "ephyra.presentation.core.util.Tab must extend cafe.adriel.voyager.navigator.tab.Tab"
-        }
-    }
-
     // ── Default Tab onReselect is a no-op ────────────────────────────────────
 
     /**
-     * Verifies the default [Tab.onReselect] no-op via reflection: the method must exist,
-     * be non-abstract, and its default implementation must complete without throwing.
-     *
-     * We test via reflection to avoid requiring a fully composed Tab (Content() is
-     * @Composable and requires a live Compose runtime).
+     * Verifies the default [Tab.onReselect] no-op by instantiating the interface without
+     * overriding the method and calling it directly.
      */
     @Test
     fun `Tab onReselect method is non-abstract (has a default body)`() {
-        val method = Tab::class.java.methods.firstOrNull { it.name == "onReselect" }
-        assertNotNull(method) { "Tab must declare onReselect" }
+        val tab = object : Tab {}
 
-        // In Kotlin, an interface method with a default body is compiled as a default
-        // JVM interface method (JVM 8+). Checking it is NOT abstract confirms the default body.
-        val javaMethod = method!!
-        assertFalse(
-            java.lang.reflect.Modifier.isAbstract(javaMethod.modifiers),
-            "Tab.onReselect should have a default (non-abstract) implementation",
-        )
+        tab.onReselect()
     }
 }

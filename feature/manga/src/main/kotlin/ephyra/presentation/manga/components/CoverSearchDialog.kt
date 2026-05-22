@@ -77,7 +77,9 @@ fun CoverSearchDialog(
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Refresh,
-                                contentDescription = stringResource(ephyra.app.core.common.R.string.action_webview_refresh),
+                                contentDescription = stringResource(
+                                    ephyra.app.core.common.R.string.action_webview_refresh,
+                                ),
                             )
                         }
                     },
@@ -164,7 +166,11 @@ private fun CoverSearchItem(
             )
             Text(
                 text = if (cover.sourceCount > 1) {
-                    stringResource(ephyra.app.core.common.R.string.cover_search_source_count, cover.sourceName, cover.sourceCount - 1)
+                    stringResource(
+                        ephyra.app.core.common.R.string.cover_search_source_count,
+                        cover.sourceName,
+                        cover.sourceCount - 1,
+                    )
                 } else {
                     cover.sourceName
                 },

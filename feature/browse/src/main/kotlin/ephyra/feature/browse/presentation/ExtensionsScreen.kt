@@ -40,16 +40,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
+import androidx.navigation.NavController
 import ephyra.core.common.util.system.LocaleHelper
 import ephyra.domain.extension.model.Extension
 import ephyra.domain.extension.model.InstallStep
 import ephyra.feature.browse.extension.ExtensionUiModel
 import ephyra.feature.browse.extension.ExtensionsScreenModel
 import ephyra.feature.browse.presentation.components.BaseBrowseItem
-import ephyra.presentation.core.components.ExtensionIcon
 import ephyra.feature.manga.presentation.components.DotSeparatorNoSpaceText
+import ephyra.presentation.core.components.ExtensionIcon
 import ephyra.presentation.core.components.FastScrollLazyColumn
 import ephyra.presentation.core.components.WarningBanner
 import ephyra.presentation.core.components.material.PullRefresh
@@ -60,7 +59,8 @@ import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.EmptyScreenAction
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.theme.header
-import ephyra.presentation.core.ui.ExtensionReposScreenFactory
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.animateItemFastScroll
 import ephyra.presentation.core.util.plus
 import ephyra.presentation.core.util.rememberRequestPackageInstallsPermissionState
@@ -83,10 +83,8 @@ fun ExtensionScreen(
     onOpenExtension: (Extension.Installed) -> Unit,
     onClickUpdateAll: () -> Unit,
     onRefresh: () -> Unit,
+    navController: NavController = LocalNavController.current,
 ) {
-    val navigator = LocalNavigator.currentOrThrow
-    val extensionReposFactory = remember { ephyra.core.common.di.CoreContainer.get<ExtensionReposScreenFactory>() }
-
     PullRefresh(
         refreshing = state.isRefreshing,
         onRefresh = onRefresh,
@@ -107,7 +105,7 @@ fun ExtensionScreen(
                         EmptyScreenAction(
                             stringRes = ephyra.app.core.common.R.string.label_extension_repos,
                             icon = Icons.Outlined.Settings,
-                            onClick = { navigator.push(extensionReposFactory.create(null)) },
+                            onClick = { navController.navigate(ScreenRoutes.ExtensionRepos.route) },
                         ),
                     ),
                 )
@@ -371,7 +369,8 @@ private fun ExtensionItemContent(
 
                 val warning = when {
                     extension is Extension.Untrusted -> ephyra.app.core.common.R.string.ext_untrusted
-                    extension is Extension.Installed && extension.isObsolete -> ephyra.app.core.common.R.string.ext_obsolete
+                    extension is Extension.Installed && extension.isObsolete ->
+                        ephyra.app.core.common.R.string.ext_obsolete
                     extension.isNsfw -> ephyra.app.core.common.R.string.ext_nsfw_short
                     else -> null
                 }
@@ -379,7 +378,9 @@ private fun ExtensionItemContent(
                     if (hasAlreadyShownAnElement) DotSeparatorNoSpaceText()
                     hasAlreadyShownAnElement = true
                     Text(
-                        text = stringResource(warning).uppercase(),
+                        text = stringResource(
+                            warning,
+                        ).uppercase(),
                         color = MaterialTheme.colorScheme.error,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -478,7 +479,9 @@ private fun ExtensionItemActions(
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.Public,
-                                    contentDescription = stringResource(ephyra.app.core.common.R.string.action_open_in_web_view),
+                                    contentDescription = stringResource(
+                                        ephyra.app.core.common.R.string.action_open_in_web_view,
+                                    ),
                                 )
                             }
                         }

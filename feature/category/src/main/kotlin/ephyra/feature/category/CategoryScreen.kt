@@ -5,81 +5,77 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.util.fastMap
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
-import ephyra.feature.category.presentation.CategoryScreen
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import ephyra.feature.category.presentation.components.CategoryCreateDialog
 import ephyra.feature.category.presentation.components.CategoryDeleteDialog
 import ephyra.feature.category.presentation.components.CategoryRenameDialog
 import ephyra.presentation.core.screens.LoadingScreen
-import ephyra.presentation.core.util.Screen
+import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.util.system.toast
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.collectLatest
 
-class CategoryScreen : Screen() {
+@Composable
+fun CategoryScreen(
+    navController: NavController = LocalNavController.current,
+) {
+    val context = LocalContext.current
+    val screenModel = hiltViewModel<CategoryScreenModel>()
 
-    @Composable
-    override fun Content() {
-        val context = LocalContext.current
-        val navigator = LocalNavigator.currentOrThrow
-        val screenModel = hiltViewModel<CategoryScreenModel>()
+    val state by screenModel.state.collectAsStateWithLifecycle()
 
-        val state by screenModel.state.collectAsStateWithLifecycle()
+    if (state is CategoryScreenState.Loading) {
+        LoadingScreen()
+        return
+    }
 
-        if (state is CategoryScreenState.Loading) {
-            LoadingScreen()
-            return
+    val successState = state as CategoryScreenState.Success
+
+    ephyra.feature.category.presentation.CategoryScreen(
+        state = successState,
+        onClickCreate = { screenModel.onEvent(CategoryScreenEvent.ShowDialog(CategoryDialog.Create)) },
+        onClickRename = { screenModel.onEvent(CategoryScreenEvent.ShowDialog(CategoryDialog.Rename(it))) },
+        onClickDelete = { screenModel.onEvent(CategoryScreenEvent.ShowDialog(CategoryDialog.Delete(it))) },
+        onChangeOrder = { category, newIndex ->
+            screenModel.onEvent(CategoryScreenEvent.ChangeOrder(category, newIndex))
+        },
+        navigateUp = { navController.popBackStack() },
+    )
+
+    when (val dialog = successState.dialog) {
+        null -> {}
+        CategoryDialog.Create -> {
+            CategoryCreateDialog(
+                onDismissRequest = { screenModel.onEvent(CategoryScreenEvent.DismissDialog) },
+                onCreate = { screenModel.onEvent(CategoryScreenEvent.CreateCategory(it)) },
+                categories = successState.categories.fastMap { it.name }.toImmutableList(),
+            )
         }
 
-        val successState = state as CategoryScreenState.Success
-
-        CategoryScreen(
-            state = successState,
-            onClickCreate = { screenModel.onEvent(CategoryScreenEvent.ShowDialog(CategoryDialog.Create)) },
-            onClickRename = { screenModel.onEvent(CategoryScreenEvent.ShowDialog(CategoryDialog.Rename(it))) },
-            onClickDelete = { screenModel.onEvent(CategoryScreenEvent.ShowDialog(CategoryDialog.Delete(it))) },
-            onChangeOrder = { category, newIndex ->
-                screenModel.onEvent(CategoryScreenEvent.ChangeOrder(category, newIndex))
-            },
-            navigateUp = navigator::pop,
-        )
-
-        when (val dialog = successState.dialog) {
-            null -> {}
-            CategoryDialog.Create -> {
-                CategoryCreateDialog(
-                    onDismissRequest = { screenModel.onEvent(CategoryScreenEvent.DismissDialog) },
-                    onCreate = { screenModel.onEvent(CategoryScreenEvent.CreateCategory(it)) },
-                    categories = successState.categories.fastMap { it.name }.toImmutableList(),
-                )
-            }
-
-            is CategoryDialog.Rename -> {
-                CategoryRenameDialog(
-                    onDismissRequest = { screenModel.onEvent(CategoryScreenEvent.DismissDialog) },
-                    onRename = { screenModel.onEvent(CategoryScreenEvent.RenameCategory(dialog.category, it)) },
-                    categories = successState.categories.fastMap { it.name }.toImmutableList(),
-                    category = dialog.category.name,
-                )
-            }
-
-            is CategoryDialog.Delete -> {
-                CategoryDeleteDialog(
-                    onDismissRequest = { screenModel.onEvent(CategoryScreenEvent.DismissDialog) },
-                    onDelete = { screenModel.onEvent(CategoryScreenEvent.DeleteCategory(dialog.category.id)) },
-                    category = dialog.category.name,
-                )
-            }
+        is CategoryDialog.Rename -> {
+            CategoryRenameDialog(
+                onDismissRequest = { screenModel.onEvent(CategoryScreenEvent.DismissDialog) },
+                onRename = { screenModel.onEvent(CategoryScreenEvent.RenameCategory(dialog.category, it)) },
+                categories = successState.categories.fastMap { it.name }.toImmutableList(),
+                category = dialog.category.name,
+            )
         }
 
-        LaunchedEffect(Unit) {
-            screenModel.events.collectLatest { event ->
-                if (event is CategoryEvent.LocalizedMessage) {
-                    context.toast(event.stringRes)
-                }
+        is CategoryDialog.Delete -> {
+            CategoryDeleteDialog(
+                onDismissRequest = { screenModel.onEvent(CategoryScreenEvent.DismissDialog) },
+                onDelete = { screenModel.onEvent(CategoryScreenEvent.DeleteCategory(dialog.category.id)) },
+                category = dialog.category.name,
+            )
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        screenModel.events.collectLatest { event ->
+            (event as? CategoryEvent.LocalizedMessage)?.let {
+                context.toast(it.stringRes)
             }
         }
     }

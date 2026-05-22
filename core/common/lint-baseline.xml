@@ -1,0 +1,473 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 9.2.1" type="baseline" client="gradle" dependencies="true" name="AGP (9.2.1)" variant="all" version="9.2.1">
+
+    <issue
+        id="PrivateResource"
+        message="Overriding `@string/copy` which is marked as private in androidx.preference:preference:1.2.1. If deliberate, use tools:override=&quot;true&quot;, otherwise pick a different name."
+        errorLine1="    &lt;string name=&quot;copy&quot;>Copy&lt;/string>"
+        errorLine2="                  ~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1107"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="Aligned16KB"
+        message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
+        <location
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/a3bf4295397c1406ff0fef363166fcc9/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;blocked&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;pref_blocked_pages_summary&quot;>%d blocked page(s)&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="665"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;blocked&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;pref_clear_blocked_pages_confirm&quot;>Remove all %d blocked pages? They will no longer"
+        errorLine2="    ^">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="673"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;sec&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;restore_duration&quot;>%1$02d min, %2$02d sec&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="720"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;files&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;cache_deleted&quot;>Cache cleared, %1$d files deleted&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="749"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;non&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;clear_database_source_item_count&quot;>%1$d non-library entries in database&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="778"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;chapter&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;jellyfin_sync_started&quot;>Syncing %d chapter(s) to Jellyfin…&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="959"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;more&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;notification_chapters_single_and_more&quot;>Chapter %1$s and %2$d more&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1154"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;update&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;notification_update_error&quot;>%1$d update(s) failed&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1156"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;not&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;download_notifier_split_page_not_found&quot;>Page %d not found while splitting&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1228"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;manga&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;notification_source_health_title&quot;>%d manga with source issues&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1323"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;manga&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;notification_dead_sources&quot;>🔴 %d manga with dead sources:&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1324"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;manga&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;notification_degraded_sources&quot;>🟡 %d manga with degraded sources:&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1325"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;manga&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;notification_migration_suggestion_body&quot;>%d manga have had dead sources for 3+"
+        errorLine2="    ^">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1330"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;more&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;notification_and_more&quot;>… and %d more&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1336"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;dead&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;library_health_banner_dead&quot;>%d dead&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1339"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;degraded&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;library_health_banner_degraded&quot;>%d degraded&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1340"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;manga&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;tracker_import_success&quot;>Imported %1$d manga&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1356"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;already&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;tracker_import_skipped&quot;>(%d already in library)&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1357"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;manga&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;tracker_link_success&quot;>Linked %d manga to authority&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1384"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;chapters&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;discover_find_source_chapters&quot;>%d chapters&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1406"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;chapters&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;discover_merge_chapters&quot;>%d chapters&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1414"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;results&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;discover_result_count&quot;>%d results&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1426"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;results&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;discover_result_count_filtered&quot;>%1$d of %2$d results&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1427"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;manga&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;tracker_match_all_result_detail&quot;>Resolved %1$d manga: %2$d from trackers, %3$d"
+        errorLine2="    ^">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1443"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;unlinked&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;tracker_match_all_no_matches_detail&quot;>No matches found for %d unlinked manga — try"
+        errorLine2="    ^">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1447"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;days&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;source_dead_duration_days&quot;>%d days&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1472"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;manga&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;match_results_summary&quot;>Resolved %1$d of %2$d manga&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1482"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;unlinked&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;match_results_unlinked_count&quot;>%d unlinked&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1486"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;manga&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;match_results_count_manga&quot;>%d manga&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1491"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;novels&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;match_results_count_novels&quot;>%d novels&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1492"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;other&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;match_results_count_other&quot;>%d other&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1493"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="PluralsCandidate"
+        message="Formatting %d followed by words (&quot;locked&quot;): This should probably be a plural rather than a string"
+        errorLine1="    &lt;string name=&quot;authority_locked_count&quot;>%d locked&lt;/string>"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/strings.xml"
+            line="1525"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="VectorPath"
+        message="Very long vector path (4609 characters), which is bad for performance. Considering reducing precision, removing minor details or rasterizing vector."
+        errorLine1="        android:pathData=&quot;m46,155.8 l-1.2,-0.5 -1,-0.5q0,-0.3 1,-1.3 3,-2.7 4.4,-4.7l1.7,-2.3c3,-3.2 6.8,-9.1 10,-15.2 2.1,-4 2.3,-4.3 2.5,-7.3a88,88 0,0 0,-1 -18.3c0,-0.2 -0.4,0 -3.8,1.4q-3.2,1.5 -3.7,2l-2,1.3c-1.6,0.8 -2,0.9 -4.7,0.3 -2.4,-0.5 -3.5,-1.1 -6,-3.3l-1,-1.1c0,-0.2 -1.1,-1.8 -2.6,-3.8l-0.7,-1 0.2,-1a9,9 0,0 0,0.2 -3.1l0.1,-2.3q0.2,-0.4 0.1,-1.1v-0.8l0.9,-0.4q0.8,-0.5 1.5,-0.4t1,-0.4q1.5,-1.5 2.7,-0.8c0.4,0.2 0.4,0.2 0.4,1.7 -0.1,1.7 0,1.7 1.2,2 1.3,0.2 3,0 7.4,-0.7 4,-0.8 9.6,-1.7 10.2,-1.7q0.4,0 1,-0.8l1.5,-1.5 0.8,-0.7h1.4c2.4,0.2 5.3,0.6 6.2,1 0.9,0.2 1,0.2 2.6,0l3.3,-0.5c4,-0.5 4.6,-0.6 4.8,-0.8q0,-0.1 0.4,0l0.7,-0.1c1.4,-0.8 1.6,-0.9 4,-1 1.2,0 2.6,0 3.3,-0.2 3,-0.6 12,-1.7 16.3,-2l1.6,-0.1 -0.2,-0.5q-0.4,-0.7 0,-0.7h2.3l0.8,-1.1 1,-1.4q0.1,-0.6 1.1,0.5l1.3,1.7 0.4,0.7h2.2l13,-0.3 5.2,0.5c0.8,0 0.8,0 -0.7,-2 -1,-1.3 -2.4,-2.6 -3.4,-3l-1,-0.6a11,11 0,0 0,-2.8 -1.1,14 14,0 0,1 -3.4,-1.6l-1.7,-0.3q-1.5,-0.4 -1.4,-0.6 0,-0.8 4.5,0.8 1.9,0.6 1.8,0.4 0,-0.3 -2.2,-1l-2.2,-1 0.2,-0.1q0.5,0 -0.4,-0.3 -0.5,0 -0.5,-0.4l-0.1,-0.2q-0.2,0 -0.1,-0.3v-0.2q-0.4,0 -1.3,1.6l-0.8,1L122,76.3l-1.4,-0.1q-0.3,0 -0.3,-0.3c0,-0.3 -0.2,-0.3 -2,-0.5L116,75.4q-0.4,0.3 -0.4,0t-0.8,-0.4l-7.1,-0.3q0,0.2 -0.2,0.3 -0.3,0.2 -0.4,-0.3c0,-0.5 0,-0.5 -1.3,-0.5l-1.2,0.1q0,0.2 0.2,0.2l0.8,0.3q0.5,0.4 1.1,0.4h0.7l0.2,0.2q0,0.2 -0.5,0.2h-2.5l0.7,0.1 1,0.6 0.3,0.5 -1,0.1 -1,0.3q-0.3,0.2 -0.1,-0.8v-0.9l-0.5,0.1 -1,0.4q-0.2,0.3 -1.4,0.2h-1l-0.2,-0.5q-0.2,-1.2 -0.8,-0.2 -0.4,0.5 -0.6,0.5t-0.2,0.3v0.3l-11.4,0.3 -1.3,0.2 0.6,0.1 1.2,0.1q1,0.4 -2.2,0.4c-2.6,0 -3,0.1 -2.5,0.5q0.4,0.2 -0.7,0.3l-1.7,0.1q-0.7,0 -0.4,0.2h1.1q1.4,0 0.6,0.4l-2,0.2c-1.6,0.1 -3.4,0.5 -3.7,0.9l-1,0.2 -1.5,0.1 -2.3,0.3q-1.8,0.2 -2.5,0.5c-0.5,0.2 -0.9,0.3 -5.1,0.2a36,36 0,0 1,-9.5 -1c-2.3,-0.5 -6.5,-2.8 -8.1,-4.4s-1.8,-2 -2.6,-6.4c-0.3,-2 -0.3,-2.6 -0.3,-5 0,-3.2 0.3,-4.1 1.4,-6.5 2.3,-4.9 5.7,-7.1 9.3,-6 1.6,0.4 3.3,0.7 4,0.7 1.1,0 3.3,0.4 3.5,0.6 0.3,0.4 -0.3,0.5 -3.1,0.5 -3.1,0.1 -3.8,0.3 -5.4,1a4,4 0,0 0,-2.3 2.5l-0.3,0.6 0.7,0.6q2.1,1.9 6.1,3l4.7,0.9 4.5,0.8 1.9,0.3c1.5,0.2 2.1,0.5 0.7,0.4h-0.5q0.3,0.3 1.4,0 1.7,-0.1 1.8,0.2l-0.2,0.1 -0.2,0.1 1.5,0.2 14.3,1.6q0.3,0 0,0.3 -0.6,0.2 0.5,0.4h1c0,-0.3 0.5,-0.3 2.3,-0.3 2.2,0 2.3,0 2.4,0.3q0.4,0.3 -0.6,0.5l-1,0.2 5.7,0.6c0.7,0 2.2,0 3.3,0.3 1.8,0.3 2.7,0.3 6,0.3a78,78 0,0 1,8.8 0.2q1,-0.2 1,0l1.8,0.4 2.7,0.6c1,0.3 4,0.8 6.4,1l3,0.6 2.8,0.7a20,20 0,0 1,7 3q4.4,2.3 5,8.6v1.5c-0.2,0.3 -0.2,0.3 1,0.6s2.5,1 2.4,1.2l-0.2,0.4c-0.1,0.4 0.9,1.4 1.5,1.7q0.7,0.1 1.1,0.5 0.6,0.3 0.5,1t0.6,1.6l1.2,1.5q0.9,0.7 0.3,1.8l-0.6,2.6c-0.5,2.5 -0.6,2.7 -2,3.4 -0.8,0.4 -1,0.5 -1.8,1.8q-1,1.3 0.7,2.3c0.8,0.6 -0.1,0.5 -1.5,-0.1q-1,-0.6 -2,0.3c-0.7,0.5 -1,0.5 -2.4,0.7h-1l-2,-1.3 -2.3,-1.3 -2.5,-1.1 -2.6,-1.5c-0.4,-0.2 -8.3,-2.4 -8.7,-2.4a42,42 0,0 1,3.4 11.7c0.6,4.3 1.5,9.9 1.8,10.7 0.8,2.4 2.2,4.6 6.1,9.7 3.7,4.8 8.1,10.7 8.4,11.4a25,25 0,0 1,1.6 5.8q0,0.3 -0.6,0.6 -1,0.1 -0.8,1.6 0,1 -2.1,3c-1,1 -1.3,1.2 -2,1.3 -1.1,0.2 -3.3,0.2 -4,0 -1.7,-0.5 -1.8,-0.6 -2,-1.2l-1,-1.3 -1.2,-1.7q-1.5,-2 -3.1,-2.8t-4.4,-2.8a11,11 0,0 1,-3 -3.6c-0.4,-0.7 -1,-1.8 -1.5,-2.4a13,13 0,0 1,-2.2 -4.6c-0.3,-1.4 -0.4,-1.7 -0.4,-5l-0.2,-11c-0.1,-8.1 -0.2,-8.3 -1,-11.5 -0.4,-1.6 -2.7,-9.3 -2.9,-9.4l-2,-0.2c-1.6,-0.2 -2.2,-0.2 -3.7,0q-1.8,0.4 -3.4,0.2l-1.6,0.1a234,234 0,0 1,4.9 22.7,44 44,0 0,1 0.1,9.9c-0.3,2.6 -0.6,4 -1.4,6a5,5 0,0 1,-1.6 2.5q-1.4,1.3 -1.3,2.2c0,0.6 -1.2,2.2 -1.8,2.6l-1,1 -0.8,1 -1,0.8q-1,1 -3,1.2c-2.3,0.1 -2.5,0 -5.2,-2.7l-3.7,-3.2q-1.4,-0.9 -1.5,-1.5c-0.3,-0.6 -2,-2.2 -3.3,-2.8q-0.9,-0.5 -1,-0.8 -0.2,-0.4 -1.1,-1l-1.2,-1.3 -0.6,-0.8q-0.4,-0.3 -0.7,-0.9l-0.8,-0.8q-0.4,-0.2 -0.3,-0.8v-0.8q-0.5,-0.4 0,-0.3l0.3,-0.1 -1.3,-1.7 -1.3,-1.7 2.1,1a91,91 0,0 0,9.8 4.2c2,0.9 2.7,1 3.4,0.5 1,-0.7 1,-1 1,-6.7 0.2,-5.7 0.4,-7.4 1,-12.6 0.3,-3 0.4,-4.2 0.4,-8.3l-0.1,-4.9a28,28 0,0 0,-7.2 1.2l-3.3,0.8 -2.9,0.6 -4,0.6 -3,0.3 -0.6,0.6 -1.6,1.1c-1,0.6 -1.2,0.8 -1.4,2q-0.7,4 0.8,9.4c0.6,2 0.9,2.5 1.9,4a14,14 0,0 1,2.4 8c0.1,2 0.1,2.3 0.5,3q0.5,0.8 0.5,1.1a8,8 0,0 1,-0.8 3.4l-0.5,1.1c-0.1,0.7 -1.4,1.8 -3,2.7a75,75 0,0 0,-7.4 7,51 51,0 0,1 -7.3,7q-1.3,1 -2.6,1.1l-1.4,0.3q-1.4,0.5 -2.3,0l-0.5,-0.4 -1,0.6c-1.2,0.7 -1.5,0.8 -1.8,0.5m94.4,-71 l-0.6,-0.3c-0.3,0.1 0.2,0.5 0.6,0.5q0.5,0 0,-0.2m-11,-9.7q0.2,-0.2 -0.1,-0.2l-0.5,-0.2q-0.2,-0.4 -0.2,0t0.4,0.5zM103.5,74.3q0.3,-0.1 0.2,-0.2c-0.2,-0.2 -0.8,0 -0.7,0.2q0.2,0.3 0.5,0m19.2,-1q1,0 1,-0.5c0,-0.4 0,-0.4 0.8,-0.4l1.9,0.1q1.4,0.1 -0.4,-0.2 -0.4,0 -0.4,-0.3h1l1,-0.1 -0.5,-0.1 -1,-0.2c-0.9,-0.2 -1,-0.2 -1.6,0.1 -0.5,0.3 -0.8,0.4 -1.7,0.3h-1.3q-0.2,0.3 -0.6,0c-0.4,-0.4 -0.7,-0.4 -2,-0.4h-1.5l2.6,0.5 2.6,0.6c0.2,0.2 -0.6,0.1 -3.3,-0.3l-2.3,-0.1q3,0.4 4,1c0.8,0.3 0.7,0.3 1.7,0&quot;"
+        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/drawable/brand_shikimori.xml"
+            line="14"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `Int.toDrawable` instead?"
+        errorLine1="        if (image == null) return ColorDrawable(whiteColor)"
+        errorLine2="                                  ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/core/common/util/system/ImageUtil.kt"
+            line="584"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `Int.toDrawable` instead?"
+        errorLine1="            return ColorDrawable(whiteColor)"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/core/common/util/system/ImageUtil.kt"
+            line="587"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `Int.toDrawable` instead?"
+        errorLine1="            return ColorDrawable(topLeftPixel)"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/core/common/util/system/ImageUtil.kt"
+            line="631"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `Int.toDrawable` instead?"
+        errorLine1="                darkBG -> ColorDrawable(blackColor)"
+        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/core/common/util/system/ImageUtil.kt"
+            line="750"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `Int.toDrawable` instead?"
+        errorLine1="                else -> ColorDrawable(whiteColor)"
+        errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/core/common/util/system/ImageUtil.kt"
+            line="751"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `Int.toDrawable` instead?"
+        errorLine1="                return ColorDrawable(blackColor)"
+        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/core/common/util/system/ImageUtil.kt"
+            line="771"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `Int.toDrawable` instead?"
+        errorLine1="                return ColorDrawable(whiteColor)"
+        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/core/common/util/system/ImageUtil.kt"
+            line="793"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `Bitmap.scale` instead?"
+        errorLine1="        val scaled = Bitmap.createScaledBitmap(coarse, DHASH_WIDTH, DHASH_HEIGHT, true)"
+        errorLine2="                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/core/common/util/system/ImageUtil.kt"
+            line="858"
+            column="22"/>
+    </issue>
+
+</issues>

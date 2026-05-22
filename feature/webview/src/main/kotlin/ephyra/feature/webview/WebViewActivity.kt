@@ -7,6 +7,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.core.net.toUri
+import dagger.hilt.android.AndroidEntryPoint
 import ephyra.core.common.util.system.WebViewUtil
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.source.service.SourceManager
@@ -21,13 +22,13 @@ import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.source.online.HttpSource
 import logcat.LogPriority
 import okhttp3.HttpUrl.Companion.toHttpUrl
-import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class WebViewActivity : BaseActivity() {
 
     @Inject lateinit var sourceManager: SourceManager
+
     @Inject lateinit var network: NetworkHelper
 
     private var assistUrl: String? = null

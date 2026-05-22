@@ -20,7 +20,7 @@ object CoreContainer {
     fun <T : Any> get(clazz: Class<T>): T {
         val provider = providers[clazz] ?: throw IllegalArgumentException(
             "No Hilt EntryPoint / dependency registered for requested class: ${clazz.name}. " +
-            "Ensure that this class is registered in CoreContainer at application startup."
+                "Ensure that this class is registered in CoreContainer at application startup.",
         )
         return provider() as T
     }

@@ -10,14 +10,16 @@ import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import ephyra.app.data.backup.BackupNotifier
 import ephyra.app.data.backup.create.BackupCreateJob
-import ephyra.app.data.backup.create.BackupCreator
 import ephyra.app.data.backup.restore.BackupRestoreJob
-import ephyra.app.data.backup.restore.BackupRestorer
-import ephyra.app.data.download.DownloadJob
 import ephyra.app.data.library.LibraryUpdateJob
 import ephyra.app.data.library.LibraryUpdateNotifier
 import ephyra.app.data.library.MetadataUpdateJob
 import ephyra.app.data.updater.AppUpdateDownloadJob
+import ephyra.app.track.DelayedTrackingUpdateJob
+import ephyra.core.download.DownloadJob
+import ephyra.core.download.DownloadManager
+import ephyra.data.backup.create.BackupCreator
+import ephyra.data.backup.restore.BackupRestorer
 import ephyra.data.cache.CoverCache
 import ephyra.domain.backup.service.BackupPreferences
 import ephyra.domain.chapter.interactor.FilterChaptersForDownload
@@ -34,9 +36,7 @@ import ephyra.domain.storage.service.StorageManager
 import ephyra.domain.track.interactor.GetTracks
 import ephyra.domain.track.interactor.RefreshCanonicalMetadata
 import ephyra.domain.track.interactor.TrackChapter
-import ephyra.domain.track.service.DelayedTrackingUpdateJob
-import ephyra.domain.track.store.DelayedTrackingStore
-import ephyra.feature.download.DownloadManager
+import ephyra.domain.track.store.TrackingQueueStore
 import eu.kanade.tachiyomi.network.NetworkHelper
 
 /**
@@ -56,7 +56,7 @@ interface WorkerFactoryEntryPoint {
     fun downloadPreferences(): DownloadPreferences
     fun getTracks(): GetTracks
     fun trackChapter(): TrackChapter
-    fun delayedTrackingStore(): DelayedTrackingStore
+    fun trackingQueueStore(): TrackingQueueStore
     fun sourceManager(): SourceManager
     fun coverCache(): CoverCache
     fun getLibraryManga(): GetLibraryManga
@@ -79,44 +79,40 @@ class AppWorkerFactory : WorkerFactory() {
     override fun createWorker(
         appContext: Context,
         workerClassName: String,
-        workerParameters: WorkerParameters
+        workerParameters: WorkerParameters,
     ): ListenableWorker? {
         val entryPoint = EntryPointAccessors.fromApplication(
             appContext,
-            WorkerFactoryEntryPoint::class.java
+            WorkerFactoryEntryPoint::class.java,
         )
         return when (workerClassName) {
             AppUpdateDownloadJob::class.java.name -> AppUpdateDownloadJob(
                 appContext,
                 workerParameters,
-                entryPoint.networkHelper()
+                entryPoint.networkHelper(),
             )
             BackupCreateJob::class.java.name -> BackupCreateJob(
                 appContext,
                 workerParameters,
                 entryPoint.backupCreator(),
-                entryPoint.storageManager(),
-                entryPoint.backupPreferences(),
-                entryPoint.backupNotifier()
             )
             BackupRestoreJob::class.java.name -> BackupRestoreJob(
                 appContext,
                 workerParameters,
                 entryPoint.backupRestorer(),
-                entryPoint.backupNotifier()
             )
             DownloadJob::class.java.name -> DownloadJob(
                 appContext,
                 workerParameters,
                 entryPoint.downloadManager(),
-                entryPoint.downloadPreferences()
+                entryPoint.downloadPreferences(),
             )
             DelayedTrackingUpdateJob::class.java.name -> DelayedTrackingUpdateJob(
                 appContext,
                 workerParameters,
                 entryPoint.getTracks(),
                 entryPoint.trackChapter(),
-                entryPoint.delayedTrackingStore()
+                entryPoint.trackingQueueStore(),
             )
             MetadataUpdateJob::class.java.name -> MetadataUpdateJob(
                 appContext,
@@ -125,7 +121,7 @@ class AppWorkerFactory : WorkerFactory() {
                 entryPoint.coverCache(),
                 entryPoint.getLibraryManga(),
                 entryPoint.updateManga(),
-                entryPoint.libraryUpdateNotifier()
+                entryPoint.libraryUpdateNotifier(),
             )
             LibraryUpdateJob::class.java.name -> LibraryUpdateJob(
                 appContext,
@@ -142,7 +138,7 @@ class AppWorkerFactory : WorkerFactory() {
                 entryPoint.filterChaptersForDownload(),
                 entryPoint.getChaptersByMangaId(),
                 entryPoint.refreshCanonicalMetadata(),
-                entryPoint.libraryUpdateNotifier()
+                entryPoint.libraryUpdateNotifier(),
             )
             else -> null
         }

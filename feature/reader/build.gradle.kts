@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "ephyra.feature.reader"
-    
+
     buildFeatures {
         viewBinding = true
     }
@@ -15,7 +15,7 @@ android {
 
 dependencies {
     implementation(projects.core.common)
-    implementation(projects.domain)
+    implementation(projects.core.domain)
     implementation(projects.data)
     implementation(projects.sourceApi)
     implementation(projects.sourceLocal)
@@ -23,8 +23,7 @@ dependencies {
     implementation(projects.feature.webview)
 
     implementation(libs.logcat)
-    implementation(libs.bundles.voyager)
-    
+
     implementation(libs.subsamplingscaleimageview)
     implementation(libs.image.decoder)
     implementation(libs.directionalviewpager)
@@ -34,4 +33,3 @@ dependencies {
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
 }
-

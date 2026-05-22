@@ -73,7 +73,11 @@ class LibraryUpdateNotifier(
             setLargeIcon(notificationBitmap)
             setOngoing(true)
             setOnlyAlertOnce(true)
-            addAction(R.drawable.ic_close_24dp, context.stringResource(ephyra.app.core.common.R.string.action_cancel), cancelIntent)
+            addAction(
+                R.drawable.ic_close_24dp,
+                context.stringResource(ephyra.app.core.common.R.string.action_cancel),
+                cancelIntent,
+            )
         }
     }
 
@@ -125,7 +129,9 @@ class LibraryUpdateNotifier(
         ) {
             setContentTitle(context.stringResource(ephyra.app.core.common.R.string.label_warning))
             setStyle(
-                NotificationCompat.BigTextStyle().bigText(context.stringResource(ephyra.app.core.common.R.string.notification_size_warning)),
+                NotificationCompat.BigTextStyle().bigText(
+                    context.stringResource(ephyra.app.core.common.R.string.notification_size_warning),
+                ),
             )
             setSmallIcon(R.drawable.ic_warning_white_24dp)
             setTimeoutAfter(WARNING_NOTIF_TIMEOUT_MS)
@@ -323,7 +329,10 @@ class LibraryUpdateNotifier(
 
         if (degradedManga.isNotEmpty()) {
             lines.add(
-                context.stringResource(ephyra.app.core.common.R.string.notification_degraded_sources, degradedManga.size),
+                context.stringResource(
+                    ephyra.app.core.common.R.string.notification_degraded_sources,
+                    degradedManga.size,
+                ),
             )
             if (!securityPreferences.hideNotificationContent().get()) {
                 degradedManga.take(NOTIF_MAX_HEALTH_ENTRIES).forEach { manga ->
@@ -374,7 +383,10 @@ class LibraryUpdateNotifier(
 
         val lines = mutableListOf<String>()
         lines.add(
-            context.stringResource(ephyra.app.core.common.R.string.notification_migration_suggestion_body, persistentlyDeadManga.size),
+            context.stringResource(
+                ephyra.app.core.common.R.string.notification_migration_suggestion_body,
+                persistentlyDeadManga.size,
+            ),
         )
         if (!securityPreferences.hideNotificationContent().get()) {
             persistentlyDeadManga.take(NOTIF_MAX_HEALTH_ENTRIES).forEach { manga ->

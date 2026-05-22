@@ -21,6 +21,7 @@ import android.view.View.LAYER_TYPE_HARDWARE
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -43,10 +44,10 @@ import androidx.lifecycle.lifecycleScope
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
 import com.google.android.material.transition.platform.MaterialContainerTransform
 import com.hippo.unifile.UniFile
+import dagger.hilt.android.AndroidEntryPoint
 import ephyra.core.common.Constants
 import ephyra.core.common.notification.NotificationManager
 import ephyra.core.common.util.lang.launchNonCancellable
-import ephyra.core.common.util.lang.withUIContext
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.reader.model.ReaderOrientation
@@ -85,6 +86,7 @@ import ephyra.presentation.reader.ReadingModeSelectDialog
 import ephyra.presentation.reader.appbars.ReaderAppBars
 import ephyra.presentation.reader.settings.ReaderSettingsDialog
 import eu.kanade.tachiyomi.source.online.HttpSource
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
@@ -92,11 +94,10 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import logcat.LogPriority
-import dagger.hilt.android.AndroidEntryPoint
-import androidx.activity.viewModels
-import javax.inject.Inject
 import java.io.ByteArrayOutputStream
+import javax.inject.Inject
 import ephyra.presentation.core.R as CoreR
 
 @AndroidEntryPoint
@@ -114,8 +115,11 @@ class ReaderActivity : BaseActivity() {
     }
 
     @Inject lateinit var readerPreferences: ReaderPreferences
+
     @Inject lateinit var preferences: BasePreferences
+
     @Inject lateinit var navigator: AppNavigator
+
     @Inject lateinit var notificationManager: NotificationManager
 
     lateinit var binding: ReaderActivityBinding
@@ -169,7 +173,7 @@ class ReaderActivity : BaseActivity() {
                 val initResult = viewModel.init(manga, chapter)
                 if (!initResult.getOrDefault(false)) {
                     val exception = initResult.exceptionOrNull() ?: IllegalStateException("Unknown error")
-                    withUIContext {
+                    withContext(Dispatchers.Main) {
                         setInitialChapterError(exception)
                     }
                 }

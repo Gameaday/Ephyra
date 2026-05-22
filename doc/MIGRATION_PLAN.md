@@ -2,16 +2,12 @@
 
 This document outlines the phased approach to fully modernize the Ephyra codebase.
 
-> **Current Status (as of modernization sprint `copilot/refactor-codebase-architecture`):**
-> Phases 1–3 are **complete**. Phase 4 domain-purity CI gate is in place. Phase 5 (UDF) is
-> **complete** — all 20 ScreenModels and `ReaderViewModel` have a single `onEvent()` entry-point;
-> no Android framework types (`Context`, `Activity`, `View`) appear in any event sealed class;
-> one-shot UI effects flow via `Channel<Effect>` (`WebViewEffect`, `MangaCoverEffect`,
-> `TrackInfoDialog.Model.Effect`).
-> Phase 4 repository-to-interactor decomposition and Phase 6 Room migration are the active next
-> steps. Build is green. Koin is at **4.2.1**. Legacy extension API compatibility is preserved.
-> Boot-safety hardening pass completed: `fallbackToDestructiveMigration` added to Room,
-> typed `MangaNotFoundException` replaces generic exceptions, `scope!!` eliminated.
+> **Current Status (as of modernization sprint `hilt-navigation-migration`):**
+> Phases 1-9 are largely **complete** or established. We have entered **Phase 10 (Standardized Stack Migration)**:
+> - Purging legacy Koin dependency injection in favor of compile-safe **Hilt + @HiltViewModel**.
+> - Purging legacy Voyager navigation in favor of type-safe **Jetpack Navigation Compose**.
+> - Zero compile-time errors target is active: compiled cleanly under Kotlin 2.1 flags with dynamic Coil 3 Hilt bindings and static resource linking.
+> - Pioneer feature screen (`MangaScreen` / `MangaScreenModel`) is successfully migrated to the modern Hilt + Jetpack Navigation standard.
 
 ## Phase 1: Foundation and Discovery ✅
 

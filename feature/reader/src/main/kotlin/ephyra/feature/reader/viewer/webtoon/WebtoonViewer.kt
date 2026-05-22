@@ -13,8 +13,10 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.WebtoonLayoutManager
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.logcat
+import ephyra.domain.base.BasePreferences
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.reader.service.ReaderPreferences
+import ephyra.domain.ui.UiPreferences
 import ephyra.feature.reader.ReaderActivity
 import ephyra.feature.reader.model.ChapterTransition
 import ephyra.feature.reader.model.ReaderPage
@@ -33,6 +35,8 @@ class WebtoonViewer(
     val activity: ReaderActivity,
     val downloadManager: DownloadManager,
     val readerPreferences: ReaderPreferences,
+    val uiPreferences: UiPreferences,
+    val basePreferences: BasePreferences,
     val isContinuous: Boolean = true,
 ) : Viewer {
 

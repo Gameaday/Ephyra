@@ -20,7 +20,11 @@ fun Duration.toDurationString(context: Context, fallback: String): String {
                     context.stringResource(ephyra.app.core.common.R.string.minute_short, minutes),
                 )
             }
-            if (seconds != 0 && days == 0L && hours == 0) add(context.stringResource(ephyra.app.core.common.R.string.seconds_short, seconds))
+            if (seconds != 0 && days == 0L &&
+                hours == 0
+            ) {
+                add(context.stringResource(ephyra.app.core.common.R.string.seconds_short, seconds))
+            }
         }.joinToString(" ").ifBlank { fallback }
     }
 }

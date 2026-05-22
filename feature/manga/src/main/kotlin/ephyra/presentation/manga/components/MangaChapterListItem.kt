@@ -119,7 +119,9 @@ fun MangaChapterListItem(
                     if (bookmark) {
                         Icon(
                             imageVector = Icons.Filled.Bookmark,
-                            contentDescription = stringResource(ephyra.app.core.common.R.string.action_filter_bookmarked),
+                            contentDescription = stringResource(
+                                ephyra.app.core.common.R.string.action_filter_bookmarked,
+                            ),
                             modifier = Modifier
                                 .sizeIn(maxHeight = with(LocalDensity.current) { textHeight.toDp() - 2.dp }),
                             tint = MaterialTheme.colorScheme.primary,

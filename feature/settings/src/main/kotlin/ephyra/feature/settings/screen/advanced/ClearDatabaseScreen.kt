@@ -29,17 +29,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastMap
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavController
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.launchUI
 import ephyra.core.common.util.lang.toLong
@@ -49,178 +44,184 @@ import ephyra.domain.manga.interactor.DeleteNonLibraryManga
 import ephyra.domain.source.interactor.GetSourcesWithNonLibraryManga
 import ephyra.domain.source.model.Source
 import ephyra.domain.source.model.SourceWithCount
-import ephyra.presentation.core.components.SourceIcon
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.LazyColumnWithAction
+import ephyra.presentation.core.components.SourceIcon
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.LoadingScreen
-import ephyra.presentation.core.util.Screen
+import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.util.selectedBackground
 import ephyra.presentation.core.util.system.toast
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
+import javax.inject.Inject
 
-class ClearDatabaseScreen : Screen() {
+@Composable
+fun ClearDatabaseScreen(
+    navController: NavController = LocalNavController.current,
+) {
+    val context = LocalContext.current
+    val model = hiltViewModel<ClearDatabaseScreenModel>()
+    val state by model.state.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
 
-    @Composable
-    override fun Content() {
-        val context = LocalContext.current
-        val navigator = LocalNavigator.currentOrThrow
-        val model = hiltViewModel<ClearDatabaseScreenModel>()
-        val state by model.state.collectAsStateWithLifecycle()
-        val scope = rememberCoroutineScope()
-
-        when (val s = state) {
-            is ClearDatabaseScreenModel.State.Loading -> LoadingScreen()
-            is ClearDatabaseScreenModel.State.Ready -> {
-                if (s.showConfirmation) {
-                    var keepReadManga by remember { mutableStateOf(true) }
-                    AlertDialog(
-                        title = {
-                            Text(text = stringResource(ephyra.app.core.common.R.string.are_you_sure))
-                        },
-                        text = {
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
-                            ) {
-                                Text(text = stringResource(ephyra.app.core.common.R.string.clear_database_text))
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.extraSmall),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Text(
-                                        text = stringResource(ephyra.app.core.common.R.string.clear_db_exclude_read),
-                                        modifier = Modifier.weight(1f),
-                                    )
-                                    Switch(
-                                        checked = keepReadManga,
-                                        onCheckedChange = { keepReadManga = it },
-                                    )
-                                }
-                                if (!keepReadManga) {
-                                    Text(
-                                        text = stringResource(ephyra.app.core.common.R.string.clear_database_history_warning),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.error,
-                                    )
-                                }
-                            }
-                        },
-                        onDismissRequest = model::hideConfirmation,
-                        confirmButton = {
-                            TextButton(
-                                onClick = {
-                                    scope.launchUI {
-                                        model.removeMangaBySourceId(keepReadManga)
-                                        model.clearSelection()
-                                        model.hideConfirmation()
-                                        context.toast(ephyra.app.core.common.R.string.clear_database_completed)
-                                    }
-                                },
-                            ) {
-                                Text(text = stringResource(ephyra.app.core.common.R.string.action_ok))
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = model::hideConfirmation) {
-                                Text(text = stringResource(ephyra.app.core.common.R.string.action_cancel))
-                            }
-                        },
-                    )
-                }
-
-                Scaffold(
-                    topBar = { scrollBehavior ->
-                        AppBar(
-                            title = stringResource(ephyra.app.core.common.R.string.pref_clear_database),
-                            navigateUp = navigator::pop,
-                            actions = {
-                                if (s.items.isNotEmpty()) {
-                                    AppBarActions(
-                                        actions = persistentListOf(
-                                            AppBar.Action(
-                                                title = stringResource(ephyra.app.core.common.R.string.action_select_all),
-                                                icon = Icons.Outlined.SelectAll,
-                                                onClick = model::selectAll,
-                                            ),
-                                            AppBar.Action(
-                                                title = stringResource(ephyra.app.core.common.R.string.action_select_inverse),
-                                                icon = Icons.Outlined.FlipToBack,
-                                                onClick = model::invertSelection,
-                                            ),
-                                        ),
-                                    )
-                                }
-                            },
-                            scrollBehavior = scrollBehavior,
-                        )
+    when (val s = state) {
+        is ClearDatabaseScreenModel.State.Loading -> LoadingScreen()
+        is ClearDatabaseScreenModel.State.Ready -> {
+            if (s.showConfirmation) {
+                var keepReadManga by remember { mutableStateOf(true) }
+                AlertDialog(
+                    title = {
+                        Text(text = stringResource(ephyra.app.core.common.R.string.are_you_sure))
                     },
-                ) { contentPadding ->
-                    if (s.items.isEmpty()) {
-                        EmptyScreen(
-                            message = stringResource(ephyra.app.core.common.R.string.database_clean),
-                            modifier = Modifier.padding(contentPadding),
-                        )
-                    } else {
-                        LazyColumnWithAction(
-                            contentPadding = contentPadding,
-                            actionLabel = stringResource(ephyra.app.core.common.R.string.action_delete),
-                            actionEnabled = s.selection.isNotEmpty(),
-                            onClickAction = model::showConfirmation,
+                    text = {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
                         ) {
-                            items(s.items, key = { it.id }) { sourceWithCount ->
-                                ClearDatabaseItem(
-                                    source = sourceWithCount.source,
-                                    count = sourceWithCount.count,
-                                    isSelected = s.selection.contains(sourceWithCount.id),
-                                    onClickSelect = { model.toggleSelection(sourceWithCount.source) },
+                            Text(text = stringResource(ephyra.app.core.common.R.string.clear_database_text))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.extraSmall),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = stringResource(ephyra.app.core.common.R.string.clear_db_exclude_read),
+                                    modifier = Modifier.weight(1f),
+                                )
+                                Switch(
+                                    checked = keepReadManga,
+                                    onCheckedChange = { keepReadManga = it },
                                 )
                             }
+                            if (!keepReadManga) {
+                                Text(
+                                    text = stringResource(
+                                        ephyra.app.core.common.R.string.clear_database_history_warning,
+                                    ),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            }
+                        }
+                    },
+                    onDismissRequest = model::hideConfirmation,
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                scope.launchUI {
+                                    model.removeMangaBySourceId(keepReadManga)
+                                    model.clearSelection()
+                                    model.hideConfirmation()
+                                    context.toast(ephyra.app.core.common.R.string.clear_database_completed)
+                                }
+                            },
+                        ) {
+                            Text(text = stringResource(ephyra.app.core.common.R.string.action_ok))
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = model::hideConfirmation) {
+                            Text(text = stringResource(ephyra.app.core.common.R.string.action_cancel))
+                        }
+                    },
+                )
+            }
+
+            Scaffold(
+                topBar = { scrollBehavior ->
+                    AppBar(
+                        title = stringResource(ephyra.app.core.common.R.string.pref_clear_database),
+                        navigateUp = { navController.popBackStack() },
+                        actions = {
+                            if (s.items.isNotEmpty()) {
+                                AppBarActions(
+                                    actions = persistentListOf(
+                                        AppBar.Action(
+                                            title = stringResource(ephyra.app.core.common.R.string.action_select_all),
+                                            icon = Icons.Outlined.SelectAll,
+                                            onClick = model::selectAll,
+                                        ),
+                                        AppBar.Action(
+                                            title = stringResource(
+                                                ephyra.app.core.common.R.string.action_select_inverse,
+                                            ),
+                                            icon = Icons.Outlined.FlipToBack,
+                                            onClick = model::invertSelection,
+                                        ),
+                                    ),
+                                )
+                            }
+                        },
+                        scrollBehavior = scrollBehavior,
+                    )
+                },
+            ) { contentPadding ->
+                if (s.items.isEmpty()) {
+                    EmptyScreen(
+                        message = stringResource(ephyra.app.core.common.R.string.database_clean),
+                        modifier = Modifier.padding(contentPadding),
+                    )
+                } else {
+                    LazyColumnWithAction(
+                        contentPadding = contentPadding,
+                        actionLabel = stringResource(ephyra.app.core.common.R.string.action_delete),
+                        actionEnabled = s.selection.isNotEmpty(),
+                        onClickAction = model::showConfirmation,
+                    ) {
+                        items(s.items, key = { it.id }) { sourceWithCount ->
+                            ClearDatabaseItem(
+                                source = sourceWithCount.source,
+                                count = sourceWithCount.count,
+                                isSelected = s.selection.contains(sourceWithCount.id),
+                                onClickSelect = { model.toggleSelection(sourceWithCount.source) },
+                            )
                         }
                     }
                 }
             }
         }
     }
+}
 
-    @Composable
-    private fun ClearDatabaseItem(
-        source: Source,
-        count: Long,
-        isSelected: Boolean,
-        onClickSelect: () -> Unit,
+@Composable
+private fun ClearDatabaseItem(
+    source: Source,
+    count: Long,
+    isSelected: Boolean,
+    onClickSelect: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .selectedBackground(isSelected)
+            .clickable(onClick = onClickSelect)
+            .padding(horizontal = 8.dp)
+            .height(56.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
+        SourceIcon(source = source)
+        Column(
             modifier = Modifier
-                .selectedBackground(isSelected)
-                .clickable(onClick = onClickSelect)
-                .padding(horizontal = 8.dp)
-                .height(56.dp),
-            verticalAlignment = Alignment.CenterVertically,
+                .padding(start = 8.dp)
+                .weight(1f),
         ) {
-            SourceIcon(source = source)
-            Column(
-                modifier = Modifier
-                    .padding(start = 8.dp)
-                    .weight(1f),
-            ) {
-                Text(
-                    text = source.visualName,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(text = stringResource(ephyra.app.core.common.R.string.clear_database_source_item_count, count))
-            }
-            Checkbox(
-                checked = isSelected,
-                onCheckedChange = { onClickSelect() },
+            Text(
+                text = source.visualName,
+                style = MaterialTheme.typography.bodyMedium,
             )
+            Text(text = stringResource(ephyra.app.core.common.R.string.clear_database_source_item_count, count))
         }
+        Checkbox(
+            checked = isSelected,
+            onCheckedChange = { onClickSelect() },
+        )
     }
 }
 

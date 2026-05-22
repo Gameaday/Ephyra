@@ -7,14 +7,22 @@ import ephyra.source.local.LocalSource
 
 data class LibraryItem(
     val libraryManga: LibraryManga,
-    val downloadCount: Long = -1,
-    val unreadCount: Long = -1,
-    val isLocal: Boolean = false,
-    val sourceLanguage: String = "",
-    val sourceId: Long = 0L,
-    val sourceName: String = "",
-) {
-    val id: Long = libraryManga.id
+    override val downloadCount: Long = -1,
+    override val unreadCount: Long = -1,
+    override val isLocal: Boolean = false,
+    override val sourceLanguage: String = "",
+    override val sourceId: Long = 0L,
+    override val sourceName: String = "",
+) : ILibraryItem {
+    override val id: Long = libraryManga.id
+    override val title: String = libraryManga.manga.title
+    override val subtitle: String? = libraryManga.manga.author
+    override val coverUrl: String? = libraryManga.manga.thumbnailUrl
+    override val isFavorite: Boolean = libraryManga.manga.favorite
+    override val genres: List<String>? = libraryManga.manga.genre
+    override val canonicalId: String? = libraryManga.manga.canonicalId
+    override val coverLastModified: Long = libraryManga.manga.coverLastModified
+    override val sourceStatus: Int = libraryManga.manga.sourceStatus
 
     /**
      * Checks if a query matches the manga
@@ -22,7 +30,7 @@ data class LibraryItem(
      * @param constraint the query to check.
      * @return true if the manga matches the query, false otherwise.
      */
-    fun matches(constraint: String): Boolean {
+    override fun matches(constraint: String): Boolean {
         if (constraint.startsWith("id:", true)) {
             return id == constraint.substringAfter("id:").toLongOrNull()
         } else if (constraint.startsWith("src:", true)) {

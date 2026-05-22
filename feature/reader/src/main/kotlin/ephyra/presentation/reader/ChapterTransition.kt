@@ -190,7 +190,11 @@ private fun ChapterGapWarning(
             )
 
             Text(
-                text = pluralStringResource(ephyra.app.core.common.R.plurals.missing_chapters_warning, count = gapCount, gapCount),
+                text = pluralStringResource(
+                    ephyra.app.core.common.R.plurals.missing_chapters_warning,
+                    count = gapCount,
+                    gapCount,
+                ),
                 style = MaterialTheme.typography.bodyMedium,
             )
         }

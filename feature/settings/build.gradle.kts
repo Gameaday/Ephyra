@@ -12,12 +12,10 @@ android {
 
 dependencies {
     implementation(projects.core.common)
-    implementation(projects.domain)
+    implementation(projects.core.domain)
     implementation(projects.data)
     implementation(projects.presentationCore)
     implementation(projects.feature.category)
-
-    implementation(libs.bundles.voyager)
 
     // External dependencies
     implementation(libs.hilt.android)
@@ -28,5 +26,3 @@ dependencies {
     implementation(kotlinx.bundles.serialization)
     implementation(kotlinx.bundles.coroutines)
 }
-
-

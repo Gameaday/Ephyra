@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.core.net.toUri
+import dagger.hilt.android.AndroidEntryPoint
 import ephyra.app.data.backup.restore.BackupRestoreJob
 import ephyra.app.data.library.LibraryUpdateJob
 import ephyra.app.data.updater.AppUpdateDownloadJob
@@ -13,7 +14,6 @@ import ephyra.app.ui.main.MainActivity
 import ephyra.app.util.system.notificationManager
 import ephyra.core.common.Constants
 import ephyra.core.common.util.lang.launchIO
-import ephyra.core.common.util.lang.withUIContext
 import ephyra.core.common.util.system.cancelNotification
 import ephyra.domain.chapter.interactor.GetChapter
 import ephyra.domain.chapter.interactor.UpdateChapter
@@ -28,7 +28,8 @@ import ephyra.feature.reader.ReaderActivity
 import ephyra.presentation.core.util.system.getParcelableExtraCompat
 import ephyra.presentation.core.util.system.toShareIntent
 import ephyra.presentation.core.util.system.toast
-import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import ephyra.app.BuildConfig.APPLICATION_ID as ID
 
@@ -41,10 +42,15 @@ import ephyra.app.BuildConfig.APPLICATION_ID as ID
 class NotificationReceiver : BroadcastReceiver() {
 
     @Inject lateinit var getManga: GetManga
+
     @Inject lateinit var getChapter: GetChapter
+
     @Inject lateinit var updateChapter: UpdateChapter
+
     @Inject lateinit var downloadManager: DownloadManager
+
     @Inject lateinit var downloadPreferences: DownloadPreferences
+
     @Inject lateinit var sourceManager: SourceManager
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -83,7 +89,7 @@ class NotificationReceiver : BroadcastReceiver() {
             // Open reader activity
             ACTION_OPEN_CHAPTER -> {
                 val pendingResult = goAsync()
-                launchIO {
+                ephyra.core.common.util.lang.AppCoroutineScope.launchIO {
                     try {
                         openChapter(
                             context,
@@ -161,7 +167,7 @@ class NotificationReceiver : BroadcastReceiver() {
     private suspend fun openChapter(context: Context, mangaId: Long, chapterId: Long) {
         val manga = getManga.await(mangaId)
         val chapter = getChapter.await(chapterId)
-        withUIContext {
+        withContext(Dispatchers.Main) {
             if (manga != null && chapter != null) {
                 val intent = ReaderActivity.newIntent(context, manga.id, chapter.id).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -214,22 +220,27 @@ class NotificationReceiver : BroadcastReceiver() {
      * @param mangaId id of manga
      */
     private fun markAsRead(chapterUrls: Array<String>, mangaId: Long) {
-        launchIO {
-            val toUpdate = chapterUrls.mapNotNull { getChapter.await(it, mangaId) }
-                .map {
-                    val chapter = it.copy(read = true)
-                    if (downloadPreferences.removeAfterMarkedAsRead().get()) {
-                        val manga = getManga.await(mangaId)
-                        if (manga != null) {
-                            val source = sourceManager.get(manga.source)
-                            if (source != null) {
-                                downloadManager.deleteChapters(listOf(it), manga, source)
+        val pendingResult = goAsync()
+        ephyra.core.common.util.lang.AppCoroutineScope.launchIO {
+            try {
+                val toUpdate = chapterUrls.mapNotNull { getChapter.await(it, mangaId) }
+                    .map {
+                        val chapter = it.copy(read = true)
+                        if (downloadPreferences.removeAfterMarkedAsRead().get()) {
+                            val manga = getManga.await(mangaId)
+                            if (manga != null) {
+                                val source = sourceManager.get(manga.source)
+                                if (source != null) {
+                                    downloadManager.deleteChapters(listOf(it), manga, source)
+                                }
                             }
                         }
+                        chapter.toChapterUpdate()
                     }
-                    chapter.toChapterUpdate()
-                }
-            updateChapter.awaitAll(toUpdate)
+                updateChapter.awaitAll(toUpdate)
+            } finally {
+                pendingResult.finish()
+            }
         }
     }
 
@@ -240,10 +251,15 @@ class NotificationReceiver : BroadcastReceiver() {
      * @param mangaId id of manga
      */
     private fun downloadChapters(chapterUrls: Array<String>, mangaId: Long) {
-        launchIO {
-            val manga = getManga.await(mangaId) ?: return@launchIO
-            val chapters = chapterUrls.mapNotNull { getChapter.await(it, mangaId) }
-            downloadManager.downloadChapters(manga, chapters)
+        val pendingResult = goAsync()
+        ephyra.core.common.util.lang.AppCoroutineScope.launchIO {
+            try {
+                val manga = getManga.await(mangaId) ?: return@launchIO
+                val chapters = chapterUrls.mapNotNull { getChapter.await(it, mangaId) }
+                downloadManager.downloadChapters(manga, chapters)
+            } finally {
+                pendingResult.finish()
+            }
         }
     }
 

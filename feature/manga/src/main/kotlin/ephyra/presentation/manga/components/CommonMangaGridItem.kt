@@ -1,6 +1,7 @@
 package ephyra.presentation.manga.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -23,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -30,6 +32,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ephyra.feature.manga.presentation.components.MangaCover
 import ephyra.presentation.core.components.BadgeGroup
+import ephyra.presentation.core.theme.LocalBrandedTheme
 import ephyra.presentation.core.theme.ShapeTokens
 import ephyra.domain.manga.model.MangaCover as MangaCoverModel
 
@@ -278,8 +281,26 @@ private fun MangaGridItemSelectable(
     content: @Composable () -> Unit,
 ) {
     val selectionColor = MaterialTheme.colorScheme.secondaryContainer
+    val config = LocalBrandedTheme.current
+    val surfaceColor = MaterialTheme.colorScheme.surfaceContainerLow
+
+    val elevationModifier = if (config.cardElevation > 0.dp) {
+        Modifier.shadow(config.cardElevation, ShapeTokens.card, clip = false)
+    } else {
+        Modifier
+    }
+
+    val borderModifier = if (config.cardBorderWidth > 0.dp) {
+        Modifier.border(config.cardBorderWidth, MaterialTheme.colorScheme.outlineVariant, ShapeTokens.card)
+    } else {
+        Modifier
+    }
+
     Box(
         modifier = modifier
+            .then(elevationModifier)
+            .background(surfaceColor, ShapeTokens.card)
+            .then(borderModifier)
             .clip(ShapeTokens.card)
             .combinedClickable(
                 onClick = onClick,

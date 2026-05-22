@@ -43,7 +43,9 @@ class DownloadProvider(
         if (downloadsDir == null) {
             logcat(LogPriority.ERROR) { "Failed to create download directory" }
             return Result.failure(
-                IOException(context.stringResource(ephyra.app.core.common.R.string.storage_failed_to_create_download_directory)),
+                IOException(
+                    context.stringResource(ephyra.app.core.common.R.string.storage_failed_to_create_download_directory),
+                ),
             )
         }
 
@@ -53,7 +55,12 @@ class DownloadProvider(
             val displayablePath = downloadsDir.displayablePath + "/$sourceDirName"
             logcat(LogPriority.ERROR) { "Failed to create source download directory: $displayablePath" }
             return Result.failure(
-                IOException(context.stringResource(ephyra.app.core.common.R.string.storage_failed_to_create_directory, displayablePath)),
+                IOException(
+                    context.stringResource(
+                        ephyra.app.core.common.R.string.storage_failed_to_create_directory,
+                        displayablePath,
+                    ),
+                ),
             )
         }
 
@@ -63,7 +70,12 @@ class DownloadProvider(
             val displayablePath = sourceDir.displayablePath + "/$mangaDirName"
             logcat(LogPriority.ERROR) { "Failed to create manga download directory: $displayablePath" }
             return Result.failure(
-                IOException(context.stringResource(ephyra.app.core.common.R.string.storage_failed_to_create_directory, displayablePath)),
+                IOException(
+                    context.stringResource(
+                        ephyra.app.core.common.R.string.storage_failed_to_create_directory,
+                        displayablePath,
+                    ),
+                ),
             )
         }
 

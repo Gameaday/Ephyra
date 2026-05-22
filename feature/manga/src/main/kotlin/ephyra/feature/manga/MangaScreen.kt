@@ -6,7 +6,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -17,23 +16,16 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.core.net.toUri
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.hilt.navigation.compose.hiltViewModel
-import ephyra.core.common.di.CoreContainer
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.Navigator
-import cafe.adriel.voyager.navigator.currentOrThrow
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import ephyra.presentation.core.ui.navigation.LocalNavController
-import ephyra.presentation.core.ui.navigation.ScreenRoutes
-import ephyra.presentation.core.util.system.openInBrowser
-import ephyra.core.util.ifSourcesLoaded
+import ephyra.core.common.util.lang.withIOContext
+import ephyra.core.common.util.system.logcat
+import ephyra.domain.chapter.model.Chapter
+import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.hasCustomCover
-import ephyra.data.cache.CoverCache
-import ephyra.domain.base.BasePreferences
 import ephyra.domain.manga.model.toSManga
-import ephyra.presentation.category.components.ChangeCategoryDialog
-import ephyra.presentation.core.components.NavigatorAdaptiveSheet
+import ephyra.feature.category.presentation.components.ChangeCategoryDialog
 import ephyra.feature.manga.presentation.ChapterSettingsDialog
 import ephyra.feature.manga.presentation.DuplicateMangaDialog
 import ephyra.feature.manga.presentation.EditCoverAction
@@ -44,53 +36,24 @@ import ephyra.feature.manga.presentation.components.EditMetadataDialog
 import ephyra.feature.manga.presentation.components.MangaCoverDialog
 import ephyra.feature.manga.presentation.components.ScanlatorFilterDialog
 import ephyra.feature.manga.presentation.components.SetIntervalDialog
-import ephyra.presentation.util.AssistContentScreen
-import ephyra.presentation.util.Screen
-import ephyra.presentation.util.isTabletUi
-import eu.kanade.tachiyomi.source.Source
-import ephyra.source.local.isLocalOrStub
-import eu.kanade.tachiyomi.source.online.HttpSource
-import ephyra.presentation.core.ui.SearchableScreen
-import ephyra.presentation.core.ui.GlobalSearchScreenFactory
-import ephyra.feature.category.CategoryScreen
-import ephyra.feature.manga.notes.MangaNotesScreen
-import ephyra.feature.manga.track.TrackInfoDialogHomeScreen
+import ephyra.feature.migration.dialog.MigrateMangaDialog
 import ephyra.feature.reader.ReaderActivity
-import ephyra.feature.settings.SettingsScreen
-import ephyra.feature.webview.WebViewScreen
+import ephyra.presentation.core.feature.SafeFeatureContainer
+import ephyra.presentation.core.screens.LoadingScreen
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
+import ephyra.presentation.core.util.ifSourcesLoaded
+import ephyra.presentation.core.util.isTabletUi
 import ephyra.presentation.core.util.system.copyToClipboard
 import ephyra.presentation.core.util.system.toShareIntent
 import ephyra.presentation.core.util.system.toast
+import ephyra.source.local.isLocalOrStub
+import eu.kanade.tachiyomi.source.Source
+import eu.kanade.tachiyomi.source.online.HttpSource
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import logcat.LogPriority
-import ephyra.presentation.core.ui.MigrationConfigScreenFactory
-import ephyra.feature.migration.dialog.MigrateMangaDialog
-import ephyra.core.common.util.lang.withIOContext
-import ephyra.core.common.util.system.logcat
-import ephyra.domain.chapter.model.Chapter
-import ephyra.domain.manga.model.Manga
-import ephyra.presentation.core.screens.LoadingScreen
-
-class MangaScreen(
-    private val mangaId: Long,
-    val fromSource: Boolean = false,
-) : Screen(), AssistContentScreen {
-
-    private var assistUrl: String? = null
-
-    override fun onProvideAssistUrl() = assistUrl
-
-    @Composable
-    override fun Content() {
-        val navigator = LocalNavigator.currentOrThrow
-        MangaDetailsScreen(
-            mangaId = mangaId,
-            fromSource = fromSource,
-            navigateUp = { navigator.pop() },
-            onAssistUrlComputed = { assistUrl = it }
-        )
-    }
-}
 
 @Composable
 fun MangaDetailsScreen(
@@ -100,20 +63,40 @@ fun MangaDetailsScreen(
     navigateUp: () -> Unit = { navController.popBackStack() },
     onAssistUrlComputed: (String?) -> Unit = {},
 ) {
+    SafeFeatureContainer(
+        featureName = "MangaDetails",
+        viewModelClass = MangaScreenModel::class.java,
+        onBack = navigateUp,
+    ) { screenModel ->
+        MangaDetailsScreen(
+            mangaId = mangaId,
+            fromSource = fromSource,
+            screenModel = screenModel,
+            navController = navController,
+            navigateUp = navigateUp,
+            onAssistUrlComputed = onAssistUrlComputed,
+        )
+    }
+}
+
+@Composable
+fun MangaDetailsScreen(
+    mangaId: Long,
+    fromSource: Boolean = false,
+    screenModel: MangaScreenModel,
+    navController: NavController,
+    navigateUp: () -> Unit = { navController.popBackStack() },
+    onAssistUrlComputed: (String?) -> Unit = {},
+) {
     if (!ifSourcesLoaded()) {
         LoadingScreen()
         return
     }
 
-    val navigator = LocalNavigator.current
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
 
-    val basePreferences = remember { CoreContainer.get<BasePreferences>() }
-    val coverCache = remember { CoreContainer.get<CoverCache>() }
-
-    val screenModel = hiltViewModel<MangaScreenModel>()
     LaunchedEffect(mangaId, fromSource) {
         screenModel.init(mangaId, fromSource)
     }
@@ -150,7 +133,11 @@ fun MangaDetailsScreen(
         chapterSwipeEndAction = successState.chapterSwipeEndAction,
         navigateUp = navigateUp,
         onChapterClicked = { openChapter(context, it) },
-        onDownloadChapter = if (!successState.source.isLocalOrStub()) { { items, action -> screenModel.onEvent(MangaScreenEvent.RunChapterDownloadActions(items, action)) } } else null,
+        onDownloadChapter = if (!successState.source.isLocalOrStub()) {
+            { items, action -> screenModel.onEvent(MangaScreenEvent.RunChapterDownloadActions(items, action)) }
+        } else {
+            null
+        },
         onAddToLibraryClicked = {
             screenModel.onEvent(MangaScreenEvent.ToggleFavorite())
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -158,13 +145,14 @@ fun MangaDetailsScreen(
         onWebViewClicked = if (isHttpSource) {
             {
                 openMangaInWebView(
-                    context,
-                    navigator,
+                    navController,
                     screenModel.manga,
                     screenModel.source,
                 )
             }
-        } else null,
+        } else {
+            null
+        },
         onWebViewLongClicked = if (isHttpSource) {
             {
                 copyMangaUrl(
@@ -173,71 +161,95 @@ fun MangaDetailsScreen(
                     screenModel.source,
                 )
             }
-        } else null,
+        } else {
+            null
+        },
         onTrackingClicked = {
             if (!successState.hasLoggedInTrackers) {
-                if (navigator != null) {
-                    navigator.push(SettingsScreen(SettingsScreen.Destination.Tracking))
-                } else {
-                    // Fallback
-                }
+                navController.navigate(ScreenRoutes.Settings.route)
             } else {
                 screenModel.onEvent(MangaScreenEvent.ShowTrackDialog)
             }
         },
-        onTagSearch = { scope.launch { performGenreSearch(navigator, navController, it, screenModel.source!!) } },
+        onTagSearch = {
+            scope.launch {
+                performGenreSearch(
+                    navController,
+                    it,
+                )
+            }
+        },
         onFilterButtonClicked = { screenModel.onEvent(MangaScreenEvent.ShowSettingsDialog) },
         onRefresh = { screenModel.onEvent(MangaScreenEvent.FetchAllFromSource(manualFetch = true)) },
         onContinueReading = { continueReading(context, screenModel.getNextUnreadChapter()) },
-        onSearch = { query, global -> scope.launch { performSearch(navigator, navController, query, global) } },
-        onCoverClicked = { screenModel.onEvent(MangaScreenEvent.ShowCoverDialog) },
-        onShareClicked = if (isHttpSource) { { shareManga(context, screenModel.manga, screenModel.source) } } else null,
-        onDownloadActionClicked = if (!successState.source.isLocalOrStub()) { { screenModel.onEvent(MangaScreenEvent.RunDownloadAction(it)) } } else null,
-        onEditCategoryClicked = if (successState.manga.favorite) { { screenModel.onEvent(MangaScreenEvent.ShowChangeCategoryDialog) } } else null,
-        onEditFetchIntervalClicked = if (successState.manga.favorite) { { screenModel.onEvent(MangaScreenEvent.ShowSetFetchIntervalDialog) } } else null,
-        onMigrateClicked = if (successState.manga.favorite) {
-            {
-                val migrationConfigScreenFactory = CoreContainer.get<MigrationConfigScreenFactory>()
-                if (navigator != null) {
-                    navigator.push(migrationConfigScreenFactory.create(listOf(successState.manga.id)))
-                } else {
-                    // Fallback
-                }
-            }
-        } else null,
-        onEditNotesClicked = {
-            if (navigator != null) {
-                navigator.push(MangaNotesScreen(manga = successState.manga))
-            } else {
-                // Fallback
+        onSearch = { query, global ->
+            scope.launch {
+                performSearch(
+                    navController,
+                    query,
+                    global,
+                )
             }
         },
-        onEditMetadataClicked = if (successState.manga.favorite || successState.manga.canonicalId != null) { { screenModel.onEvent(MangaScreenEvent.ShowEditMetadataDialog) } } else null,
+        onCoverClicked = { screenModel.onEvent(MangaScreenEvent.ShowCoverDialog) },
+        onShareClicked = if (isHttpSource) {
+            { shareManga(context, screenModel.manga, screenModel.source) }
+        } else {
+            null
+        },
+        onDownloadActionClicked = if (!successState.source.isLocalOrStub()) {
+            { screenModel.onEvent(MangaScreenEvent.RunDownloadAction(it)) }
+        } else {
+            null
+        },
+        onEditCategoryClicked = if (successState.manga.favorite) {
+            { screenModel.onEvent(MangaScreenEvent.ShowChangeCategoryDialog) }
+        } else {
+            null
+        },
+        onEditFetchIntervalClicked = if (successState.manga.favorite) {
+            { screenModel.onEvent(MangaScreenEvent.ShowSetFetchIntervalDialog) }
+        } else {
+            null
+        },
+        onMigrateClicked = if (successState.manga.favorite) {
+            {
+                navController.navigate(ScreenRoutes.MigrateManga.createRoute(successState.manga.id))
+            }
+        } else {
+            null
+        },
+        onEditNotesClicked = {
+            navController.navigate(ScreenRoutes.MangaNotes.createRoute(successState.manga.id))
+        },
+        onEditMetadataClicked = if (successState.manga.favorite || (successState.manga.canonicalId != null)) {
+            { screenModel.onEvent(MangaScreenEvent.ShowEditMetadataDialog) }
+        } else {
+            null
+        },
         onMultiBookmarkClicked = { ch, b -> screenModel.onEvent(MangaScreenEvent.BookmarkChapters(ch, b)) },
         onMultiMarkAsReadClicked = { ch, b -> screenModel.onEvent(MangaScreenEvent.MarkChaptersRead(ch, b)) },
         onMarkPreviousAsReadClicked = { screenModel.onEvent(MangaScreenEvent.MarkPreviousChapterRead(it)) },
         onMultiDeleteClicked = { screenModel.onEvent(MangaScreenEvent.ShowDeleteChapterDialog(it)) },
         onChapterSwipe = { ch, sw -> screenModel.onEvent(MangaScreenEvent.ChapterSwipe(ch, sw)) },
-        onChapterSelected = { item, selected, fromLongPress -> screenModel.onEvent(MangaScreenEvent.ToggleSelection(item, selected, fromLongPress)) },
+        onChapterSelected = { item, selected, fromLongPress ->
+            screenModel.onEvent(MangaScreenEvent.ToggleSelection(item, selected, fromLongPress))
+        },
         onAllChapterSelected = { screenModel.onEvent(MangaScreenEvent.ToggleAllSelection(it)) },
         onInvertSelection = { screenModel.onEvent(MangaScreenEvent.InvertSelection) },
     )
 
-    var showScanlatorsDialog by remember { mutableStateOf(false) }
+    var showScanlatorsDialog by remember { mutableStateOf(value = false) }
 
     val onDismissRequest = { screenModel.onEvent(MangaScreenEvent.DismissDialog) }
     when (val dialog = successState.dialog) {
         null -> {}
         is MangaScreenModel.Dialog.ChangeCategory -> {
             ChangeCategoryDialog(
-                initialSelection = dialog.initialSelection,
+                initialSelection = dialog.initialSelection.toImmutableList(),
                 onDismissRequest = onDismissRequest,
                 onEditCategories = {
-                    if (navigator != null) {
-                        navigator.push(CategoryScreen())
-                    } else {
-                        // Fallback
-                    }
+                    navController.navigate(ScreenRoutes.Category.route)
                 },
                 onConfirm = { include, _ ->
                     screenModel.onEvent(MangaScreenEvent.MoveMangaToCategoriesAndAddToLibrary(dialog.manga, include))
@@ -248,7 +260,7 @@ fun MangaDetailsScreen(
             DeleteChaptersDialog(
                 onDismissRequest = onDismissRequest,
                 onConfirm = {
-                    screenModel.onEvent(MangaScreenEvent.ToggleAllSelection(false))
+                    screenModel.onEvent(MangaScreenEvent.ToggleAllSelection(selected = false))
                     screenModel.onEvent(MangaScreenEvent.DeleteChapters(dialog.chapters))
                 },
             )
@@ -260,13 +272,10 @@ fun MangaDetailsScreen(
                 onDismissRequest = onDismissRequest,
                 onConfirm = { screenModel.onEvent(MangaScreenEvent.ToggleFavorite(checkDuplicate = false)) },
                 onOpenManga = {
-                    if (navigator != null) {
-                        navigator.push(MangaScreen(it.id))
-                    } else {
-                        navController.navigate(ScreenRoutes.MangaDetails.createRoute(it.id, false))
-                    }
+                    navController.navigate(ScreenRoutes.MangaDetails.createRoute(it.id, false))
                 },
                 onMigrate = { screenModel.onEvent(MangaScreenEvent.ShowMigrateDialog(it)) },
+                sourceManager = screenModel.sourceManager,
             )
         }
 
@@ -275,17 +284,13 @@ fun MangaDetailsScreen(
                 current = dialog.current,
                 target = dialog.target,
                 onClickTitle = {
-                    if (navigator != null) {
-                        navigator.push(MangaScreen(dialog.current.id))
-                    } else {
-                        navController.navigate(ScreenRoutes.MangaDetails.createRoute(dialog.current.id, false))
-                    }
+                    navController.navigate(ScreenRoutes.MangaDetails.createRoute(dialog.current.id, false))
                 },
                 onDismissRequest = onDismissRequest,
             )
         }
         MangaScreenModel.Dialog.SettingsSheet -> ChapterSettingsDialog(
-            basePreferences = basePreferences,
+            basePreferences = screenModel.basePreferences,
             onDismissRequest = onDismissRequest,
             manga = successState.manga,
             onDownloadFilterChanged = { screenModel.onEvent(MangaScreenEvent.SetDownloadedFilter(it)) },
@@ -299,14 +304,9 @@ fun MangaDetailsScreen(
             onScanlatorFilterClicked = { showScanlatorsDialog = true },
         )
         MangaScreenModel.Dialog.TrackSheet -> {
-            NavigatorAdaptiveSheet(
-                screen = TrackInfoDialogHomeScreen(
-                    mangaId = successState.manga.id,
-                    mangaTitle = successState.manga.title,
-                    sourceId = successState.source.id,
-                    canonicalId = successState.manga.canonicalId,
-                ),
-                enableSwipeDismiss = { it.lastItem is TrackInfoDialogHomeScreen },
+            ephyra.feature.manga.track.TrackInfoDialog(
+                manga = successState.manga,
+                source = successState.source,
                 onDismissRequest = onDismissRequest,
             )
         }
@@ -331,7 +331,7 @@ fun MangaDetailsScreen(
                     if (it == null) return@rememberLauncherForActivityResult
                     sm.onEvent(MangaCoverScreenEvent.EditCover(it))
                 }
-                var showCoverSearch by remember { mutableStateOf(false) }
+                var showCoverSearch by remember { mutableStateOf(value = false) }
                 if (showCoverSearch) {
                     val coverSearchSm = hiltViewModel<CoverSearchScreenModel>()
                     LaunchedEffect(manga!!.title, successState.source.id) {
@@ -359,7 +359,7 @@ fun MangaDetailsScreen(
                     MangaCoverDialog(
                         manga = manga!!,
                         snackbarHostState = sm.snackbarHostState,
-                        isCustomCover = remember(manga) { manga!!.hasCustomCover(coverCache) },
+                        isCustomCover = remember(manga) { manga!!.hasCustomCover(screenModel.coverCache) },
                         onShareClick = { sm.onEvent(MangaCoverScreenEvent.ShareCover) },
                         onSaveClick = { sm.onEvent(MangaCoverScreenEvent.SaveCover) },
                         onEditClick = {
@@ -383,8 +383,11 @@ fun MangaDetailsScreen(
                 interval = dialog.manga.fetchInterval,
                 nextUpdate = dialog.manga.expectedNextUpdate,
                 onDismissRequest = onDismissRequest,
-                onValueChanged = { interval: Int -> screenModel.onEvent(MangaScreenEvent.SetFetchInterval(dialog.manga, interval)) }
+                onValueChanged = { interval: Int ->
+                    screenModel.onEvent(MangaScreenEvent.SetFetchInterval(dialog.manga, interval))
+                }
                     .takeIf { successState.isUpdateIntervalEnabled },
+                appInfo = screenModel.appInfo,
             )
         }
         MangaScreenModel.Dialog.EditMetadata -> {
@@ -445,43 +448,39 @@ fun MangaDetailsScreen(
 }
 
 private fun continueReading(context: Context, unreadChapter: Chapter?) {
-    if (unreadChapter != null) openChapter(context, unreadChapter)
+    unreadChapter?.let { openChapter(context, it) }
 }
 
 private fun openChapter(context: Context, chapter: Chapter) {
     context.startActivity(ReaderActivity.newIntent(context, chapter.mangaId, chapter.id))
 }
 
-private fun getMangaUrl(manga_: Manga?, source_: Source?): String? {
-    val manga = manga_ ?: return null
-    val source = source_ as? HttpSource ?: return null
+private fun getMangaUrl(manga: Manga?, source: Source?): String? {
+    val m = manga ?: return null
+    val s = source as? HttpSource ?: return null
 
     return try {
-        source.getMangaUrl(manga.toSManga())
-    } catch (e: Exception) {
+        s.getMangaUrl(m.toSManga())
+    } catch (_: Exception) {
         null
     }
 }
 
-private fun openMangaInWebView(context: Context, navigator: Navigator?, manga_: Manga?, source_: Source?) {
-    getMangaUrl(manga_, source_)?.let { url ->
-        if (navigator != null) {
-            navigator.push(
-                WebViewScreen(
-                    url = url,
-                    initialTitle = manga_?.title,
-                    sourceId = source_?.id,
-                ),
-            )
-        } else {
-            context.openInBrowser(url)
-        }
+private fun openMangaInWebView(navController: NavController, manga: Manga?, source: Source?) {
+    getMangaUrl(manga, source)?.let { url ->
+        navController.navigate(
+            ScreenRoutes.WebView.createRoute(
+                url = url,
+                title = manga?.title,
+                sourceId = source?.id,
+            ),
+        )
     }
 }
 
-private fun shareManga(context: Context, manga_: Manga?, source_: Source?) {
+private fun shareManga(context: Context, manga: Manga?, source: Source?) {
     try {
-        getMangaUrl(manga_, source_)?.let { url ->
+        getMangaUrl(manga, source)?.let { url ->
             val intent = url.toUri().toShareIntent(context, type = "text/plain")
             context.startActivity(intent)
         }
@@ -490,53 +489,34 @@ private fun shareManga(context: Context, manga_: Manga?, source_: Source?) {
     }
 }
 
-private suspend fun performSearch(navigator: Navigator?, navController: NavController, query: String, global: Boolean) {
+private fun performSearch(
+    navController: NavController,
+    query: String,
+    global: Boolean,
+) {
     if (global) {
-        if (navigator != null) {
-            val factory = CoreContainer.get<GlobalSearchScreenFactory>()
-            navigator.push(factory.create(query))
-        } else {
-            navController.navigate(ScreenRoutes.GlobalSearch.createRoute(query))
-        }
+        navController.navigate(ScreenRoutes.GlobalSearch.createRoute(query))
         return
     }
-
-    if (navigator != null) {
-        if (navigator.size < 2) {
-            return
-        }
-
-        val previousController = navigator.items[navigator.size - 2]
-        if (previousController is SearchableScreen) {
-            navigator.pop()
-            previousController.search(query)
-        }
-    } else {
-        navController.navigate(ScreenRoutes.GlobalSearch.createRoute(query))
-    }
+    // TODO: implement logic to pass search query back if needed, or just navigate to search
+    navController.navigate(ScreenRoutes.GlobalSearch.createRoute(query))
 }
 
-private suspend fun performGenreSearch(navigator: Navigator?, navController: NavController, genreName: String, source: Source) {
-    if (navigator != null) {
-        if (navigator.size < 2) {
-            return
-        }
-
-        val previousController = navigator.items[navigator.size - 2]
-        if (previousController is SearchableScreen && source is HttpSource) {
-            navigator.pop()
-            previousController.searchGenre(genreName)
-        } else {
-            performSearch(navigator, navController, genreName, global = false)
-        }
-    } else {
-        performSearch(navigator, navController, genreName, global = false)
-    }
+private fun performGenreSearch(
+    navController: NavController,
+    genreName: String,
+) {
+    // TODO: implement logic to pass genre search query back if needed
+    performSearch(
+        navController,
+        genreName,
+        global = false,
+    )
 }
 
-private fun copyMangaUrl(context: Context, manga_: Manga?, source_: Source?) {
-    val manga = manga_ ?: return
-    val source = source_ as? HttpSource ?: return
-    val url = source.getMangaUrl(manga.toSManga())
+private fun copyMangaUrl(context: Context, manga: Manga?, source: Source?) {
+    val m = manga ?: return
+    val s = source as? HttpSource ?: return
+    val url = s.getMangaUrl(m.toSManga())
     context.copyToClipboard(url, url)
 }

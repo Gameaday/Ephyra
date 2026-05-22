@@ -29,16 +29,16 @@ import org.junit.jupiter.api.parallel.ExecutionMode
 
 /**
  * Structural contract tests for all interface→implementation bindings declared in
- * [koinDomainModule].
+ * Hilt DI modules.
  *
  * Each test uses [Class.isAssignableFrom] — a pure JVM reflection check that requires no
- * Android runtime and no Koin context. The assertions will fail at CI time if:
+ * Android runtime and no DI context. The assertions will fail at CI time if:
  * - A repository implementation class is refactored away from its interface
  * - An interface is renamed or moved without updating the concrete class declaration
  * - A class is accidentally made abstract or its `implements` clause is removed
  *
- * These checks complement [ephyra.app.di.KoinModuleInterfaceBindingTest] which tests the
- * app-layer bindings. Together they give full pre-compilation coverage of the Koin graph.
+ * These checks complement Hilt compile-time checks which test the
+ * app-layer bindings. Together they give full coverage of the DI graph.
  *
  * Tests run concurrently because they are stateless reflection checks.
  */
@@ -48,7 +48,7 @@ class DomainModuleImplementationContractTest {
     // ── CategoryRepository ────────────────────────────────────────────────────
 
     /**
-     * [koinDomainModule] binds [CategoryRepositoryImpl] as [CategoryRepository].
+     * Hilt binds [CategoryRepositoryImpl] as [CategoryRepository].
      * Verifies the data implementation still satisfies the domain interface.
      */
     @Test
@@ -61,7 +61,7 @@ class DomainModuleImplementationContractTest {
     // ── MangaRepository ───────────────────────────────────────────────────────
 
     /**
-     * [koinDomainModule] binds [MangaRepositoryImpl] as [MangaRepository].
+     * Hilt binds [MangaRepositoryImpl] as [MangaRepository].
      */
     @Test
     fun `MangaRepositoryImpl implements MangaRepository`() {
@@ -73,7 +73,7 @@ class DomainModuleImplementationContractTest {
     // ── ChapterRepository ─────────────────────────────────────────────────────
 
     /**
-     * [koinDomainModule] binds [ChapterRepositoryImpl] as [ChapterRepository].
+     * Hilt binds [ChapterRepositoryImpl] as [ChapterRepository].
      */
     @Test
     fun `ChapterRepositoryImpl implements ChapterRepository`() {
@@ -85,10 +85,10 @@ class DomainModuleImplementationContractTest {
     // ── ExcludedScanlatorRepository ───────────────────────────────────────────
 
     /**
-     * [koinDomainModule] binds [ExcludedScanlatorRepositoryImpl] as [ExcludedScanlatorRepository].
+     * Hilt binds [ExcludedScanlatorRepositoryImpl] as [ExcludedScanlatorRepository].
      * Verifies the data implementation still satisfies the domain interface so that any
-     * screen or interactor that injects [ExcludedScanlatorRepository] does not crash with
-     * [org.koin.core.error.NoBeanDefFoundException] at runtime.
+     * screen or interactor that injects [ExcludedScanlatorRepository] does not fail
+     * at runtime.
      */
     @Test
     fun `ExcludedScanlatorRepositoryImpl implements ExcludedScanlatorRepository`() {
@@ -105,7 +105,7 @@ class DomainModuleImplementationContractTest {
     // ── TrackRepository ───────────────────────────────────────────────────────
 
     /**
-     * [koinDomainModule] binds [TrackRepositoryImpl] as [TrackRepository].
+     * Hilt binds [TrackRepositoryImpl] as [TrackRepository].
      */
     @Test
     fun `TrackRepositoryImpl implements TrackRepository`() {
@@ -117,7 +117,7 @@ class DomainModuleImplementationContractTest {
     // ── HistoryRepository ─────────────────────────────────────────────────────
 
     /**
-     * [koinDomainModule] binds [HistoryRepositoryImpl] as [HistoryRepository].
+     * Hilt binds [HistoryRepositoryImpl] as [HistoryRepository].
      */
     @Test
     fun `HistoryRepositoryImpl implements HistoryRepository`() {
@@ -129,7 +129,7 @@ class DomainModuleImplementationContractTest {
     // ── UpdatesRepository ─────────────────────────────────────────────────────
 
     /**
-     * [koinDomainModule] binds [UpdatesRepositoryImpl] as [UpdatesRepository].
+     * Hilt binds [UpdatesRepositoryImpl] as [UpdatesRepository].
      */
     @Test
     fun `UpdatesRepositoryImpl implements UpdatesRepository`() {
@@ -141,7 +141,7 @@ class DomainModuleImplementationContractTest {
     // ── SourceRepository ─────────────────────────────────────────────────────
 
     /**
-     * [koinDomainModule] binds [SourceRepositoryImpl] as [SourceRepository].
+     * Hilt binds [SourceRepositoryImpl] as [SourceRepository].
      */
     @Test
     fun `SourceRepositoryImpl implements SourceRepository`() {
@@ -153,7 +153,7 @@ class DomainModuleImplementationContractTest {
     // ── StubSourceRepository ─────────────────────────────────────────────────
 
     /**
-     * [koinDomainModule] binds [StubSourceRepositoryImpl] as [StubSourceRepository].
+     * Hilt binds [StubSourceRepositoryImpl] as [StubSourceRepository].
      */
     @Test
     fun `StubSourceRepositoryImpl implements StubSourceRepository`() {
@@ -165,7 +165,7 @@ class DomainModuleImplementationContractTest {
     // ── ReleaseService ────────────────────────────────────────────────────────
 
     /**
-     * [koinDomainModule] binds [ReleaseServiceImpl] as [ReleaseService].
+     * Hilt binds [ReleaseServiceImpl] as [ReleaseService].
      * Verifies the data implementation still satisfies the domain service interface.
      */
     @Test
@@ -178,7 +178,7 @@ class DomainModuleImplementationContractTest {
     // ── ExtensionRepoRepository ───────────────────────────────────────────────
 
     /**
-     * [koinDomainModule] binds [ExtensionRepoRepositoryImpl] as [ExtensionRepoRepository].
+     * Hilt binds [ExtensionRepoRepositoryImpl] as [ExtensionRepoRepository].
      */
     @Test
     fun `ExtensionRepoRepositoryImpl implements ExtensionRepoRepository`() {

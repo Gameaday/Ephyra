@@ -22,7 +22,9 @@ val Throwable.formattedMessage: String
             }
 
             is NoResultsException -> return context.stringResource(ephyra.app.core.common.R.string.no_results_found)
-            is SourceNotInstalledException -> return context.stringResource(ephyra.app.core.common.R.string.loader_not_implemented_error)
+            is SourceNotInstalledException -> return context.stringResource(
+                ephyra.app.core.common.R.string.loader_not_implemented_error,
+            )
         }
         return when (val className = this::class.simpleName) {
             "Exception", "IOException" -> message ?: className

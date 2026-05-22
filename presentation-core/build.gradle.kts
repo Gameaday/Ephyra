@@ -29,7 +29,7 @@ kotlin {
 dependencies {
     // Internal Layers
     api(projects.core.common)
-    api(projects.domain)
+    api(projects.core.domain)
     api(projects.core.domain)
     api(projects.core.data)
     api(projects.core.archive)
@@ -68,7 +68,6 @@ dependencies {
     api(libs.okio)
 
     // Navigation & DI
-    api(libs.bundles.voyager)
     api(libs.hilt.android)
     api(libs.hilt.navigation.compose)
 

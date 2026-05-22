@@ -89,7 +89,9 @@ class DownloadJob(
             }
             !noWifi
         } else {
-            downloadManager.downloaderStop(context.stringResource(ephyra.app.core.common.R.string.download_notifier_no_network))
+            downloadManager.downloaderStop(
+                context.stringResource(ephyra.app.core.common.R.string.download_notifier_no_network),
+            )
             false
         }
     }

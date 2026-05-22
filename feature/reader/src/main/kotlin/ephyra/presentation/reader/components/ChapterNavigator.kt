@@ -80,11 +80,14 @@ fun ChapterNavigator(
                 onClick = if (isRtl) onNextChapter else onPreviousChapter,
                 colors = buttonColor,
             ) {
+                val resourceId = if (isRtl) {
+                    ephyra.app.core.common.R.string.action_next_chapter
+                } else {
+                    ephyra.app.core.common.R.string.action_previous_chapter
+                }
                 Icon(
                     imageVector = Icons.Outlined.SkipPrevious,
-                    contentDescription = stringResource(
-                        if (isRtl) ephyra.app.core.common.R.string.action_next_chapter else ephyra.app.core.common.R.string.action_previous_chapter,
-                    ),
+                    contentDescription = stringResource(resourceId),
                 )
             }
 
@@ -136,11 +139,14 @@ fun ChapterNavigator(
                 onClick = if (isRtl) onPreviousChapter else onNextChapter,
                 colors = buttonColor,
             ) {
+                val resourceId = if (isRtl) {
+                    ephyra.app.core.common.R.string.action_previous_chapter
+                } else {
+                    ephyra.app.core.common.R.string.action_next_chapter
+                }
                 Icon(
                     imageVector = Icons.Outlined.SkipNext,
-                    contentDescription = stringResource(
-                        if (isRtl) ephyra.app.core.common.R.string.action_previous_chapter else ephyra.app.core.common.R.string.action_next_chapter,
-                    ),
+                    contentDescription = stringResource(resourceId),
                 )
             }
         }

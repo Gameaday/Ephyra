@@ -20,7 +20,7 @@ sqldelight {
 
 dependencies {
     implementation(projects.sourceApi)
-    implementation(projects.domain)
+    implementation(projects.core.domain)
     implementation(projects.core.common)
 
     // Room - Processed via KSP
@@ -32,8 +32,4 @@ dependencies {
     // SQLDelight
     implementation(libs.sqldelight.android.driver)
     implementation(libs.sqldelight.coroutines)
-
-    // Koin - Handled by the Compiler Plugin (no ksp line needed)
-    implementation(libs.koin.core)
-    implementation(libs.koin.annotations)
 }

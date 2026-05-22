@@ -25,7 +25,7 @@ class AddTracks(
     private val syncChapterProgressWithTrack: SyncChapterProgressWithTrack,
     private val getChaptersByMangaId: GetChaptersByMangaId,
     private val getHistory: GetHistory,
-    private val trackerManager: TrackerManager,
+    private val trackerManagerProvider: () -> TrackerManager,
     private val mangaRepository: MangaRepository,
 ) {
 
@@ -93,7 +93,7 @@ class AddTracks(
 
     suspend fun bindEnhancedTrackers(manga: Manga, source: Source) = withNonCancellableContext {
         withIOContext {
-            trackerManager.loggedInTrackers()
+            trackerManagerProvider().loggedInTrackers()
                 .filterIsInstance<EnhancedTracker>()
                 .filter { it.accept(source) }
                 .forEach { service ->

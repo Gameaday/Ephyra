@@ -1,6 +1,7 @@
 package ephyra.feature.more
 
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.automirrored.outlined.Label
@@ -11,19 +12,110 @@ import androidx.compose.material.icons.outlined.QueryStats
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavController
+import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.Constants
+import ephyra.core.common.util.lang.launchIO
+import ephyra.domain.base.BasePreferences
+import ephyra.domain.download.service.DownloadManager
 import ephyra.feature.settings.widget.SwitchPreferenceWidget
 import ephyra.feature.settings.widget.TextPreferenceWidget
 import ephyra.presentation.core.R
 import ephyra.presentation.core.components.ScrollbarLazyColumn
 import ephyra.presentation.core.components.material.Scaffold
+import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.ui.AppReadySignal
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
+import ephyra.presentation.core.util.asState
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import javax.inject.Inject
+
+@Composable
+fun MoreTabScreen(
+    navController: NavController = LocalNavController.current,
+) {
+    val context = LocalContext.current
+    val screenModel = hiltViewModel<MoreScreenModel>()
+    val downloadQueueState by screenModel.downloadQueueState.collectAsStateWithLifecycle()
+    MoreScreen(
+        downloadQueueStateProvider = { downloadQueueState },
+        downloadedOnly = screenModel.downloadedOnly,
+        onDownloadedOnlyChange = { screenModel.downloadedOnly = it },
+        incognitoMode = screenModel.incognitoMode,
+        onIncognitoModeChange = { screenModel.incognitoMode = it },
+        onClickDownloadQueue = { navController.navigate(ScreenRoutes.DownloadQueue.route) },
+        onClickCategories = { navController.navigate(ScreenRoutes.Category.route) },
+        onClickStats = { navController.navigate(ScreenRoutes.Stats.route) },
+        onClickDataAndStorage = { navController.navigate(ScreenRoutes.Settings.route) }, // TODO: sub-route
+        onClickSettings = { navController.navigate(ScreenRoutes.Settings.route) },
+        onClickAbout = { navController.navigate(ScreenRoutes.About.route) },
+    )
+
+    LaunchedEffect(Unit) {
+        (context as? AppReadySignal)?.signalReady()
+    }
+}
+
+@HiltViewModel
+class MoreScreenModel @Inject constructor(
+    private val downloadManager: DownloadManager,
+    preferences: BasePreferences,
+) : ViewModel() {
+
+    var downloadedOnly by preferences.downloadedOnly().asState(viewModelScope)
+    var incognitoMode by preferences.incognitoMode().asState(viewModelScope)
+
+    private var _downloadQueueState: MutableStateFlow<DownloadQueueState> = MutableStateFlow(DownloadQueueState.Stopped)
+    val downloadQueueState: StateFlow<DownloadQueueState> = _downloadQueueState.asStateFlow()
+
+    init {
+        // Handle running/paused status change and queue progress updating
+        viewModelScope.launchIO {
+            combine(
+                downloadManager.isDownloaderRunning,
+                downloadManager.queueState,
+            ) { isRunning, downloadQueue -> Pair(isRunning, downloadQueue.size) }
+                .collectLatest { (isDownloading, downloadQueueSize) ->
+                    val pendingDownloadExists = downloadQueueSize != 0
+                    _downloadQueueState.value = when {
+                        !pendingDownloadExists -> DownloadQueueState.Stopped
+                        !isDownloading -> DownloadQueueState.Paused(downloadQueueSize)
+                        else -> DownloadQueueState.Downloading(downloadQueueSize)
+                    }
+                }
+        }
+    }
+}
+
+sealed interface DownloadQueueState {
+    data object Stopped : DownloadQueueState
+    data class Paused(val pending: Int) : DownloadQueueState
+    data class Downloading(val pending: Int) : DownloadQueueState
+}
 
 @Composable
 fun MoreScreen(
@@ -91,7 +183,11 @@ fun MoreScreen(
                         }
                         is DownloadQueueState.Downloading -> {
                             val pending = downloadQueueState.pending
-                            pluralStringResource(ephyra.app.core.common.R.plurals.download_queue_summary, count = pending, pending)
+                            pluralStringResource(
+                                ephyra.app.core.common.R.plurals.download_queue_summary,
+                                count = pending,
+                                pending,
+                            )
                         }
                     },
                     icon = Icons.Outlined.GetApp,

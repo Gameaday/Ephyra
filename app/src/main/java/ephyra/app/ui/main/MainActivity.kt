@@ -1,7 +1,6 @@
 package ephyra.app.ui.main
 
 import android.app.SearchManager
-import android.app.assist.AssistContent
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -9,18 +8,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.consumeWindowInsets
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
@@ -32,9 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.net.toUri
@@ -43,21 +34,17 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.util.Consumer
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import ephyra.presentation.core.ui.navigation.ScreenRoutes
-import ephyra.presentation.core.ui.navigation.LocalNavController
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.Navigator
-import cafe.adriel.voyager.navigator.NavigatorDisposeBehavior
-import cafe.adriel.voyager.navigator.currentOrThrow
+import dagger.hilt.android.AndroidEntryPoint
 import ephyra.app.BuildConfig
 import ephyra.app.data.notification.NotificationReceiver
 import ephyra.app.extension.api.ExtensionApi
 import ephyra.app.startup.StartupDiagnosticOverlay
 import ephyra.app.startup.StartupTracker
-import ephyra.app.ui.deeplink.DeepLinkScreen
 import ephyra.app.ui.home.HomeScreen
 import ephyra.app.util.system.isDebugBuildType
 import ephyra.app.util.system.isNightlyBuildType
@@ -74,91 +61,71 @@ import ephyra.domain.base.BasePreferences
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.release.interactor.GetApplicationRelease
 import ephyra.domain.source.interactor.GetIncognitoState
-import ephyra.feature.browse.source.authority.MatchResultsScreen
-import ephyra.feature.browse.source.browse.BrowseSourceScreen
-import ephyra.feature.browse.source.globalsearch.GlobalSearchScreen
-import ephyra.feature.manga.MangaScreen
-import ephyra.feature.more.NewUpdateScreen
-import ephyra.feature.more.OnboardingScreen
-import ephyra.feature.settings.screen.browse.ExtensionReposScreen
-import ephyra.feature.settings.screen.data.RestoreBackupScreen
-import ephyra.presentation.core.components.AppStateBanners
 import ephyra.presentation.core.components.DownloadedOnlyBannerBackgroundColor
 import ephyra.presentation.core.components.IncognitoModeBannerBackgroundColor
 import ephyra.presentation.core.components.IndexingBannerBackgroundColor
-import ephyra.presentation.core.components.material.Scaffold
+import ephyra.presentation.core.feature.FeatureApi
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.AppInfo
 import ephyra.presentation.core.ui.AppReadySignal
 import ephyra.presentation.core.ui.activity.BaseActivity
-import ephyra.presentation.core.util.AssistContentScreen
-import ephyra.presentation.core.util.DefaultNavigatorScreenTransition
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.collectAsState
-import ephyra.presentation.core.util.system.isNavigationBarNeedsScrim
 import ephyra.presentation.core.util.system.openInBrowser
 import ephyra.presentation.core.util.view.setComposeContent
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import logcat.LogPriority
-import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 
 @AndroidEntryPoint
 class MainActivity : BaseActivity(), AppReadySignal {
 
     @Inject lateinit var libraryPreferences: LibraryPreferences
+
     @Inject lateinit var preferences: BasePreferences
 
     @Inject lateinit var downloadCache: DownloadCache
+
     @Inject lateinit var chapterCache: ChapterCache
 
     @Inject lateinit var getIncognitoState: GetIncognitoState
+
     @Inject lateinit var uiPreferences: ephyra.domain.ui.UiPreferences
+
     @Inject lateinit var privacyPreferences: ephyra.core.common.core.security.PrivacyPreferences
+
     @Inject lateinit var storagePreferences: ephyra.domain.storage.service.StoragePreferences
+
     @Inject lateinit var extensionApi: ExtensionApi
+
     @Inject lateinit var appUpdateChecker: AppUpdateChecker
+
     @Inject lateinit var appInfo: AppInfo
 
-    // To be checked by splash screen. If true then splash screen will be removed.
+    @Inject lateinit var featureApis: Set<@JvmSuppressWildcards FeatureApi>
+
     var ready = false
 
     override fun signalReady() {
-        ready = true
-        // Mark the final startup phase. signalReady() is idempotent by contract, so
-        // StartupTracker.complete() is called here and also in handleIntentAction(),
-        // which can set ready=true via a direct intent (e.g. a shortcut tap).
-        StartupTracker.complete(StartupTracker.Phase.HOME_SCREEN_LOADED)
-    }
-
-    private var navigator: Navigator? = null
-
-    init {
         registerSecureActivity(this)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val isLaunch = savedInstanceState == null
-
-        // Prevent splash screen showing up on configuration changes
         val splashScreen = if (isLaunch) installSplashScreen() else null
 
         super.onCreate(savedInstanceState)
+        if (!isLaunch) ready = true
         StartupTracker.complete(StartupTracker.Phase.ACTIVITY_CREATED)
 
-        // Do not let the launcher create a new activity http://stackoverflow.com/questions/16283079
         if (!isTaskRoot) {
-            // Dismiss the splash immediately – setKeepOnScreenCondition is never reached in this
-            // early-exit path, so without this the compat library may leave the splash visible
-            // until the window is destroyed (potentially causing a brief frozen-splash flash).
             splashScreen?.setKeepOnScreenCondition { false }
             finish()
             return
@@ -169,6 +136,11 @@ class MainActivity : BaseActivity(), AppReadySignal {
                 StartupTracker.complete(StartupTracker.Phase.COMPOSE_STARTED)
             }
             val navController = rememberNavController()
+            LaunchedEffect(navController) {
+                if (isLaunch) {
+                    handleIntentAction(intent, navController)
+                }
+            }
             androidx.compose.runtime.CompositionLocalProvider(
                 ephyra.presentation.core.util.LocalUiPreferences provides uiPreferences,
                 ephyra.presentation.core.util.LocalPrivacyPreferences provides privacyPreferences,
@@ -176,37 +148,23 @@ class MainActivity : BaseActivity(), AppReadySignal {
             ) {
                 var didMigration by remember { mutableStateOf<Boolean?>(null) }
                 LaunchedEffect(Unit) {
-                    try {
-                        val result = withTimeoutOrNull(MIGRATION_TIMEOUT_MS) {
+                    val result = try {
+                        withTimeoutOrNull(MIGRATION_TIMEOUT_MS) {
                             Migrator.awaitAndRelease()
                         }
-                        if (result == null) {
-                            // Timeout: awaitAndRelease() was cancelled before release() ran,
-                            // so manually release to avoid holding the deferred reference.
-                            Migrator.release()
-                            logcat(LogPriority.WARN) {
-                                "Migrator.awaitAndRelease() timed out after ${MIGRATION_TIMEOUT_MS}ms – continuing startup"
-                            }
-                        }
-                        didMigration = result ?: false
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
-                        // An unexpected exception from the migration deferred itself:
-                        // record it for the diagnostic overlay and continue startup.
-                        logcat(LogPriority.ERROR, e) {
-                            "Migrator.awaitAndRelease() threw unexpectedly – continuing startup"
-                        }
                         StartupTracker.recordError(StartupTracker.Phase.MIGRATOR_COMPLETE, e)
                         Migrator.release()
-                        didMigration = false
+                        false
                     }
+                    didMigration = result ?: false
                     StartupTracker.complete(StartupTracker.Phase.MIGRATOR_COMPLETE)
                 }
 
                 val context = LocalContext.current
-
-                var incognito by remember { mutableStateOf(false) }
+                val incognito by getIncognitoState.subscribe(null).collectAsStateWithLifecycle(initialValue = false)
                 val downloadOnly by preferences.downloadedOnly().collectAsState()
                 val indexing by downloadCache.isInitializing.collectAsStateWithLifecycle()
 
@@ -218,7 +176,6 @@ class MainActivity : BaseActivity(), AppReadySignal {
                     else -> MaterialTheme.colorScheme.surface
                 }
                 LaunchedEffect(isSystemInDarkTheme, statusBarBackgroundColor) {
-                    // Draw edge-to-edge and set system bars color to transparent
                     val lightStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.BLACK)
                     val darkStyle = SystemBarStyle.dark(Color.TRANSPARENT)
                     enableEdgeToEdge(
@@ -227,128 +184,73 @@ class MainActivity : BaseActivity(), AppReadySignal {
                     )
                 }
 
-                NavHost(
-                    navController = navController,
-                    startDestination = ScreenRoutes.Home.route,
+                Box(
+                    modifier = Modifier.windowInsetsPadding(
+                        WindowInsets.navigationBars.only(WindowInsetsSides.Horizontal),
+                    ),
                 ) {
-                    composable(ScreenRoutes.Home.route) {
-                        Navigator(
-                            screen = HomeScreen,
-                            disposeBehavior = NavigatorDisposeBehavior(disposeNestedNavigators = false, disposeSteps = true),
-                        ) { navigator ->
-                            LaunchedEffect(navigator) {
-                                this@MainActivity.navigator = navigator
-                                StartupTracker.complete(StartupTracker.Phase.NAVIGATOR_CREATED)
+                    NavHost(
+                        navController = navController,
+                        startDestination = ScreenRoutes.Home.route,
+                    ) {
+                        composable(ScreenRoutes.Home.route) { HomeScreen(navController) }
 
-                                if (isLaunch) {
-                                    // Set start screen
-                                    handleIntentAction(intent, navigator)
-
-                                    // Reset Incognito Mode on relaunch
-                                    preferences.incognitoMode().set(false)
-                                }
-
-                                // signalReady() is intentionally NOT called here.
-                                // HOME_SCREEN_LOADED must only be completed when actual content is
-                                // visible: tabs call it when their data finishes loading, and
-                                // OnboardingScreen calls it when it is first shown.  Completing the
-                                // phase here (at Navigator-creation time) would cause
-                                // StartupDiagnosticOverlay to never show, defeating its purpose.
-                            }
-                            LaunchedEffect(navigator.lastItem) {
-                                (navigator.lastItem as? BrowseSourceScreen)?.sourceId
-                                    .let(getIncognitoState::subscribe)
-                                    .collectLatest { incognito = it }
-                            }
-
-                            val scaffoldInsets = WindowInsets.navigationBars.only(WindowInsetsSides.Horizontal)
-                            Scaffold(
-                                topBar = {
-                                    AppStateBanners(
-                                        downloadedOnlyMode = downloadOnly,
-                                        incognitoMode = incognito,
-                                        indexing = indexing,
-                                        modifier = Modifier.windowInsetsPadding(scaffoldInsets),
-                                    )
-                                },
-                                contentWindowInsets = scaffoldInsets,
-                            ) { contentPadding ->
-                                // Consume insets already used by app state banners
-                                Box {
-                                    // Shows current screen
-                                    DefaultNavigatorScreenTransition(
-                                        navigator = navigator,
-                                        modifier = Modifier
-                                            .padding(contentPadding)
-                                            .consumeWindowInsets(contentPadding),
-                                    )
-
-                                    // Draw navigation bar scrim when needed
-                                    if (remember { context.isNavigationBarNeedsScrim() }) {
-                                        Spacer(
-                                            modifier = Modifier
-                                                .align(Alignment.BottomCenter)
-                                                .fillMaxWidth()
-                                                .windowInsetsBottomHeight(WindowInsets.navigationBars)
-                                                .alpha(0.8f)
-                                                .background(MaterialTheme.colorScheme.surfaceContainer),
-                                        )
-                                    }
-                                }
-                            }
-
-                            // Pop source-related screens when incognito mode is turned off
-                            LaunchedEffect(Unit) {
-                                preferences.incognitoMode().changes()
-                                    .drop(1)
-                                    .filter { !it }
-                                    .onEach {
-                                        val currentScreen = navigator.lastItem
-                                        if (currentScreen is BrowseSourceScreen ||
-                                            (currentScreen is MangaScreen && currentScreen.fromSource)
-                                        ) {
-                                            navigator.popUntilRoot()
-                                        }
-                                    }
-                                    .launchIn(this)
-                            }
-
-                            HandleOnNewIntent(context = context, navigator = navigator)
-
-                            CheckForUpdates()
-                            ShowOnboarding()
+                        composable(ScreenRoutes.DownloadQueue.route) {
+                            ephyra.feature.download.DownloadQueueScreen(navController)
                         }
-                    }
+                        composable(ScreenRoutes.MigrationConfig.route) { backStackEntry ->
+                            val mangaIdsStr = backStackEntry.arguments?.getString("mangaIds") ?: return@composable
+                            val mangaIds = mangaIdsStr.split(",").mapNotNull { it.toLongOrNull() }
+                            ephyra.feature.migration.config.MigrationConfigScreen(mangaIds, navController)
+                        }
 
-                    composable(
-                        route = ScreenRoutes.MangaDetails.route,
-                        arguments = listOf(
-                            androidx.navigation.navArgument("mangaId") { type = androidx.navigation.NavType.LongType },
-                            androidx.navigation.navArgument("fromSource") { type = androidx.navigation.NavType.BoolType }
-                        )
-                    ) { backStackEntry ->
-                        val mangaId = backStackEntry.arguments?.getLong("mangaId") ?: return@composable
-                        val fromSource = backStackEntry.arguments?.getBoolean("fromSource") ?: false
-                        ephyra.feature.manga.MangaDetailsScreen(
-                            mangaId = mangaId,
-                            fromSource = fromSource,
-                            navigateUp = { navController.popBackStack() }
-                        )
+                        composable(
+                            route = ScreenRoutes.MigrationList.route,
+                            arguments = listOf(
+                                androidx.navigation.navArgument("mangaIds") {
+                                    type =
+                                        androidx.navigation.NavType.StringType
+                                },
+                                androidx.navigation.navArgument("query") { nullable = true },
+                            ),
+                        ) { backStackEntry ->
+                            val mangaIdsStr = backStackEntry.arguments?.getString("mangaIds") ?: return@composable
+                            val mangaIds = mangaIdsStr.split(",").mapNotNull { it.toLongOrNull() }
+                            val query = backStackEntry.arguments?.getString("query")
+                            ephyra.feature.migration.list.MigrationListScreen(mangaIds, query, navController)
+                        }
+
+                        featureApis.forEach { featureApi ->
+                            try {
+                                featureApi.register(this, navController)
+                            } catch (e: Exception) {
+                                logcat(LogPriority.ERROR, e) {
+                                    "Failed to register feature: ${featureApi.javaClass.simpleName}"
+                                }
+                            }
+                        }
                     }
                 }
 
-                var showChangelog by remember { mutableStateOf(false) }
-                // `remember { mutableStateOf(didMigration == true …) }` would always
-                // initialise to false because the lambda only runs on first composition
-                // when didMigration is still null.  LaunchedEffect re-evaluates whenever
-                // didMigration changes, so the dialog correctly appears after an upgrade.
+                HandleOnNewIntent(context, navController)
+                CheckForUpdates()
+                ShowOnboarding()
+
+                var showChangelog by remember { mutableStateOf(value = false) }
                 LaunchedEffect(didMigration) {
-                    if (didMigration == true && !BuildConfig.DEBUG) showChangelog = true
+                    if ((didMigration == true) && !BuildConfig.DEBUG) showChangelog = true
                 }
                 if (showChangelog) {
                     AlertDialog(
                         onDismissRequest = { showChangelog = false },
-                        title = { Text(text = stringResource(ephyra.app.core.common.R.string.updated_version, BuildConfig.VERSION_NAME)) },
+                        title = {
+                            Text(
+                                text = stringResource(
+                                    ephyra.app.core.common.R.string.updated_version,
+                                    BuildConfig.VERSION_NAME,
+                                ),
+                            )
+                        },
                         dismissButton = {
                             TextButton(onClick = { openInBrowser(appInfo.releaseUrl) }) {
                                 Text(text = stringResource(ephyra.app.core.common.R.string.whats_new))
@@ -362,9 +264,6 @@ class MainActivity : BaseActivity(), AppReadySignal {
                     )
                 }
 
-                // Overlaid on top of all content; only visible on debug/nightly/preview builds
-                // when the app has not become ready within the diagnostic timeout window.
-                // Excluded from release, foss, and benchmark builds.
                 StartupDiagnosticOverlay(
                     isReleaseBuild = !(isDebugBuildType || isNightlyBuildType || isPreviewBuildType),
                 )
@@ -374,30 +273,12 @@ class MainActivity : BaseActivity(), AppReadySignal {
         val startTime = System.currentTimeMillis()
         splashScreen?.setKeepOnScreenCondition {
             val elapsed = System.currentTimeMillis() - startTime
-            elapsed <= SPLASH_MIN_DURATION || (!ready && elapsed <= SPLASH_MAX_DURATION)
-        }
-        setSplashScreenExitAnimation(splashScreen)
-
-        if (isLaunch) {
-            lifecycleScope.launchIO {
-                if (libraryPreferences.autoClearChapterCache().get()) {
-                    chapterCache.clear()
-                }
-            }
-        }
-    }
-
-    override fun onProvideAssistContent(outContent: AssistContent) {
-        super.onProvideAssistContent(outContent)
-        when (val screen = navigator?.lastItem) {
-            is AssistContentScreen -> {
-                screen.onProvideAssistUrl()?.let { outContent.webUri = it.toUri() }
-            }
+            (elapsed <= SPLASH_MIN_DURATION) || (!ready && (elapsed <= SPLASH_MAX_DURATION))
         }
     }
 
     @Composable
-    private fun HandleOnNewIntent(context: Context, navigator: Navigator) {
+    private fun HandleOnNewIntent(context: Context, navController: NavHostController) {
         LaunchedEffect(Unit) {
             callbackFlow {
                 val componentActivity = context as ComponentActivity
@@ -405,36 +286,22 @@ class MainActivity : BaseActivity(), AppReadySignal {
                 componentActivity.addOnNewIntentListener(consumer)
                 awaitClose { componentActivity.removeOnNewIntentListener(consumer) }
             }
-                .collectLatest { handleIntentAction(it, navigator) }
+                .collectLatest { handleIntentAction(it, navController) }
         }
     }
 
     @Composable
     private fun CheckForUpdates() {
         val context = LocalContext.current
-        val navigator = LocalNavigator.currentOrThrow
-
-        // App updates
         LaunchedEffect(Unit) {
             if (updaterEnabled) {
                 try {
-                    val result = appUpdateChecker.checkForUpdate(context)
-                    if (result is GetApplicationRelease.Result.NewUpdate) {
-                        val updateScreen = NewUpdateScreen(
-                            versionName = result.release.version,
-                            changelogInfo = result.release.info,
-                            releaseLink = result.release.releaseLink,
-                            downloadLink = result.release.downloadLink,
-                        )
-                        navigator.push(updateScreen)
-                    }
+                    appUpdateChecker.checkForUpdate(context)
                 } catch (e: Exception) {
                     logcat(LogPriority.ERROR, e)
                 }
             }
         }
-
-        // Extensions updates
         LaunchedEffect(Unit) {
             try {
                 extensionApi.checkForUpdates(context)
@@ -446,26 +313,18 @@ class MainActivity : BaseActivity(), AppReadySignal {
 
     @Composable
     private fun ShowOnboarding() {
-        val navigator = LocalNavigator.currentOrThrow
-
+        val navController = LocalNavController.current
         LaunchedEffect(Unit) {
-            if (!preferences.shownOnboardingFlow().get() && navigator.lastItem !is OnboardingScreen) {
-                navigator.push(OnboardingScreen())
+            if (!preferences.shownOnboardingFlow().get()) {
+                navController.navigate(ScreenRoutes.Onboarding.route)
             }
         }
     }
 
-    /**
-     * Splash screen exit animation handling.
-     *
-     * On API 31+ the system handles the splash screen exit animation natively,
-     * so this is a no-op.
-     */
-    private fun setSplashScreenExitAnimation(splashScreen: SplashScreen?) {
-        // No-op: native splash exit animation on API 34+
-    }
+    private fun handleIntentAction(intent: Intent, navController: NavHostController): Boolean {
+        ready = true
+        StartupTracker.complete(StartupTracker.Phase.HOME_SCREEN_LOADED)
 
-    private fun handleIntentAction(intent: Intent, navigator: Navigator): Boolean {
         val notificationId = intent.getIntExtra("notificationId", -1)
         if (notificationId > -1) {
             NotificationReceiver.dismissNotification(
@@ -479,7 +338,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
             Constants.SHORTCUT_LIBRARY -> HomeScreen.Tab.Library()
             Constants.SHORTCUT_MANGA -> {
                 val idToOpen = intent.extras?.getLong(Constants.MANGA_EXTRA) ?: return false
-                navigator.popUntilRoot()
+                navController.popBackStack(navController.graph.findStartDestination().id, inclusive = false)
                 HomeScreen.Tab.Library(idToOpen)
             }
             Constants.SHORTCUT_UPDATES -> HomeScreen.Tab.Updates
@@ -487,46 +346,14 @@ class MainActivity : BaseActivity(), AppReadySignal {
             Constants.SHORTCUT_SOURCES -> HomeScreen.Tab.Browse(false)
             Constants.SHORTCUT_EXTENSIONS -> HomeScreen.Tab.Browse(true)
             Constants.SHORTCUT_DOWNLOADS -> {
-                navigator.popUntilRoot()
+                navController.popBackStack(navController.graph.findStartDestination().id, inclusive = false)
                 HomeScreen.Tab.More(toDownloads = true)
             }
-            Constants.SHORTCUT_MATCH_RESULTS -> {
-                navigator.popUntilRoot()
-                navigator.push(MatchResultsScreen())
-                null
-            }
             Intent.ACTION_SEARCH, Intent.ACTION_SEND, "com.google.android.gms.actions.SEARCH_ACTION" -> {
-                // If the intent match the "standard" Android search intent
-                // or the Google-specific search intent (triggered by saying or typing "search *query* on *Tachiyomi*" in Google Search/Google Assistant)
-
-                // Get the search query provided in extras, and if not null, perform a global search with it.
                 val query = intent.getStringExtra(SearchManager.QUERY) ?: intent.getStringExtra(Intent.EXTRA_TEXT)
                 if (!query.isNullOrEmpty()) {
-                    navigator.popUntilRoot()
-                    navigator.push(DeepLinkScreen(query))
-                }
-                null
-            }
-            INTENT_SEARCH -> {
-                val query = intent.getStringExtra(INTENT_SEARCH_QUERY)
-                if (!query.isNullOrEmpty()) {
-                    val filter = intent.getStringExtra(INTENT_SEARCH_FILTER)
-                    navigator.popUntilRoot()
-                    navigator.push(GlobalSearchScreen(query, filter))
-                }
-                null
-            }
-            Intent.ACTION_VIEW -> {
-                // Handling opening of backup files
-                if (intent.data.toString().endsWith(".tachibk")) {
-                    navigator.popUntilRoot()
-                    navigator.push(RestoreBackupScreen(intent.data.toString()))
-                } else if (intent.scheme == "tachiyomi" && intent.data?.host == "add-repo") {
-                    // Deep link to add extension repo
-                    intent.data?.getQueryParameter("url")?.let { repoUrl ->
-                        navigator.popUntilRoot()
-                        navigator.push(ExtensionReposScreen(repoUrl))
-                    }
+                    navController.popBackStack(navController.graph.findStartDestination().id, inclusive = false)
+                    navController.navigate(ScreenRoutes.GlobalSearch.createRoute(query))
                 }
                 null
             }
@@ -538,28 +365,13 @@ class MainActivity : BaseActivity(), AppReadySignal {
         }
 
         ready = true
-        // This path (intent-driven launch) also counts as ready; complete the phase
-        // idempotently in case signalReady() has not been called yet.
         StartupTracker.complete(StartupTracker.Phase.HOME_SCREEN_LOADED)
         return true
     }
 
     companion object {
-        const val INTENT_SEARCH = "ephyra.app.SEARCH"
-        const val INTENT_SEARCH_QUERY = "query"
-        const val INTENT_SEARCH_FILTER = "filter"
-
-        // Splash screen
-        private const val SPLASH_MIN_DURATION = 500 // ms
-
-        // Maximum time the splash can be held waiting for signalReady().  A fresh empty app
-        // should become ready in well under 1 s; 3 s gives plenty of margin for slow I/O on
-        // first install while avoiding a 5 s frozen-looking experience.
-        private const val SPLASH_MAX_DURATION = 3000 // ms
-
-        // Maximum time to wait for the Migrator before proceeding with startup.
-        // This prevents an unexpected exception in App.initializeMigrator() from
-        // leaving the initGate permanently incomplete and blocking this coroutine.
-        private const val MIGRATION_TIMEOUT_MS = 30_000L // ms
+        private const val SPLASH_MIN_DURATION = 500
+        private const val SPLASH_MAX_DURATION = 3000
+        private val MIGRATION_TIMEOUT_MS = 30.seconds
     }
 }

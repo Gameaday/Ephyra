@@ -8,14 +8,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
+import androidx.navigation.NavController
 import ephyra.core.common.i18n.stringResource
 import ephyra.domain.source.service.SourcePreferences
 import ephyra.feature.settings.Preference
 import ephyra.feature.settings.screen.browse.ExtensionReposScreen
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.core.util.system.AuthenticatorUtil.authenticate
 import kotlinx.collections.immutable.persistentListOf
@@ -29,7 +30,7 @@ object SettingsBrowseScreen : SearchableSettings {
     @Composable
     override fun getPreferences(): List<Preference> {
         val context = LocalContext.current
-        val navigator = LocalNavigator.currentOrThrow
+        val navController = LocalNavController.current
 
         val screenModel = hiltViewModel<SettingsBrowseScreenModel>()
         val reposCount by screenModel.getExtensionRepoCount().collectAsState(0)
@@ -44,9 +45,13 @@ object SettingsBrowseScreen : SearchableSettings {
                     ),
                     Preference.PreferenceItem.TextPreference(
                         title = stringResource(ephyra.app.core.common.R.string.label_extension_repos),
-                        subtitle = pluralStringResource(ephyra.app.core.common.R.plurals.num_repos, reposCount, reposCount),
+                        subtitle = pluralStringResource(
+                            ephyra.app.core.common.R.plurals.num_repos,
+                            reposCount,
+                            reposCount,
+                        ),
                         onClick = {
-                            navigator.push(ExtensionReposScreen())
+                            navController.navigate(ScreenRoutes.ExtensionRepos.route)
                         },
                     ),
                 ),
@@ -60,11 +65,15 @@ object SettingsBrowseScreen : SearchableSettings {
                         subtitle = stringResource(ephyra.app.core.common.R.string.requires_app_restart),
                         onValueChanged = {
                             (context as FragmentActivity).authenticate(
-                                title = context.stringResource(ephyra.app.core.common.R.string.pref_category_nsfw_content),
+                                title = context.stringResource(
+                                    ephyra.app.core.common.R.string.pref_category_nsfw_content,
+                                ),
                             )
                         },
                     ),
-                    Preference.PreferenceItem.InfoPreference(stringResource(ephyra.app.core.common.R.string.parental_controls_info)),
+                    Preference.PreferenceItem.InfoPreference(
+                        stringResource(ephyra.app.core.common.R.string.parental_controls_info),
+                    ),
                 ),
             ),
         )

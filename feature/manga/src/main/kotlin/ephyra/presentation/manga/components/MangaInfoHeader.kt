@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:max-line-length")
+
 package ephyra.feature.manga.presentation.components
 
 import androidx.compose.animation.animateContentSize
@@ -239,7 +241,11 @@ fun MangaActionRow(
         MangaActionButton(
             title = when {
                 hasAuthority -> stringResource(ephyra.app.core.common.R.string.tracking_linked)
-                trackingCount > 0 -> pluralStringResource(ephyra.app.core.common.R.plurals.num_trackers, count = trackingCount, trackingCount)
+                trackingCount > 0 -> pluralStringResource(
+                    ephyra.app.core.common.R.plurals.num_trackers,
+                    count = trackingCount,
+                    trackingCount,
+                )
                 else -> stringResource(ephyra.app.core.common.R.string.manga_tracking_tab)
             },
             icon = when {
@@ -283,7 +289,9 @@ fun ExpandableMangaDescription(
             mutableStateOf(defaultExpandState)
         }
         val desc =
-            description.takeIf { !it.isNullOrBlank() } ?: stringResource(ephyra.app.core.common.R.string.description_placeholder)
+            description.takeIf { !it.isNullOrBlank() } ?: stringResource(
+                ephyra.app.core.common.R.string.description_placeholder,
+            )
 
         MangaSummary(
             description = desc,
@@ -312,14 +320,26 @@ fun ExpandableMangaDescription(
                     onDismissRequest = { showMenu = false },
                 ) {
                     DropdownMenuItem(
-                        text = { Text(text = stringResource(ephyra.app.core.common.R.string.action_search)) },
+                        text = {
+                            Text(
+                                text = stringResource(
+                                    ephyra.app.core.common.R.string.action_search,
+                                ),
+                            )
+                        },
                         onClick = {
                             onTagSearch(tagSelected)
                             showMenu = false
                         },
                     )
                     DropdownMenuItem(
-                        text = { Text(text = stringResource(ephyra.app.core.common.R.string.action_copy_to_clipboard)) },
+                        text = {
+                            Text(
+                                text = stringResource(
+                                    ephyra.app.core.common.R.string.action_copy_to_clipboard,
+                                ),
+                            )
+                        },
                         onClick = {
                             onCopyTagToClipboard(tagSelected)
                             showMenu = false
@@ -588,7 +608,9 @@ private fun ColumnScope.MangaContentInfo(
                     SManga.ONGOING.toLong() -> stringResource(ephyra.app.core.common.R.string.ongoing)
                     SManga.COMPLETED.toLong() -> stringResource(ephyra.app.core.common.R.string.completed)
                     SManga.LICENSED.toLong() -> stringResource(ephyra.app.core.common.R.string.licensed)
-                    SManga.PUBLISHING_FINISHED.toLong() -> stringResource(ephyra.app.core.common.R.string.publishing_finished)
+                    SManga.PUBLISHING_FINISHED.toLong() -> stringResource(
+                        ephyra.app.core.common.R.string.publishing_finished,
+                    )
                     SManga.CANCELLED.toLong() -> stringResource(ephyra.app.core.common.R.string.cancelled)
                     SManga.ON_HIATUS.toLong() -> stringResource(ephyra.app.core.common.R.string.on_hiatus)
                     else -> stringResource(ephyra.app.core.common.R.string.unknown)
@@ -723,7 +745,9 @@ private fun ColumnScope.MangaContentInfo(
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Verified,
-                        contentDescription = stringResource(ephyra.app.core.common.R.string.authority_badge_description),
+                        contentDescription = stringResource(
+                            ephyra.app.core.common.R.string.authority_badge_description,
+                        ),
                         modifier = Modifier
                             .padding(end = 10.dp)
                             .size(20.dp),
@@ -750,7 +774,10 @@ private fun ColumnScope.MangaContentInfo(
                             DotSeparatorText()
                             Icon(
                                 imageVector = Icons.Outlined.Lock,
-                                contentDescription = stringResource(ephyra.app.core.common.R.string.authority_locked_count, lockCount),
+                                contentDescription = stringResource(
+                                    ephyra.app.core.common.R.string.authority_locked_count,
+                                    lockCount,
+                                ),
                                 modifier = Modifier
                                     .padding(end = 4.dp)
                                     .size(14.dp),
@@ -761,7 +788,10 @@ private fun ColumnScope.MangaContentInfo(
                                 },
                             )
                             Text(
-                                text = stringResource(ephyra.app.core.common.R.string.authority_locked_count, lockCount),
+                                text = stringResource(
+                                    ephyra.app.core.common.R.string.authority_locked_count,
+                                    lockCount,
+                                ),
                                 overflow = TextOverflow.Ellipsis,
                                 maxLines = 1,
                                 color = if (brandGradient != null) {
@@ -892,7 +922,11 @@ private fun MangaSummary(
                     Icon(
                         painter = rememberAnimatedVectorPainter(image, !expanded),
                         contentDescription = stringResource(
-                            if (expanded) ephyra.app.core.common.R.string.manga_info_collapse else ephyra.app.core.common.R.string.manga_info_expand,
+                            if (expanded) {
+                                ephyra.app.core.common.R.string.manga_info_collapse
+                            } else {
+                                ephyra.app.core.common.R.string.manga_info_expand
+                            },
                         ),
                         tint = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.background(Brush.radialGradient(colors = colors.asReversed())),

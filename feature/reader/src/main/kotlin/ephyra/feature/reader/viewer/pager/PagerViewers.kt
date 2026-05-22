@@ -2,6 +2,7 @@ package ephyra.feature.reader.viewer.pager
 
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.reader.service.ReaderPreferences
+import ephyra.domain.ui.UiPreferences
 import ephyra.feature.reader.ReaderActivity
 
 /**
@@ -11,7 +12,8 @@ class L2RPagerViewer(
     activity: ReaderActivity,
     downloadManager: DownloadManager,
     readerPreferences: ReaderPreferences,
-) : PagerViewer(activity, downloadManager, readerPreferences) {
+    uiPreferences: UiPreferences,
+) : PagerViewer(activity, downloadManager, readerPreferences, uiPreferences) {
     /**
      * Creates a new left to right pager.
      */
@@ -27,7 +29,8 @@ class R2LPagerViewer(
     activity: ReaderActivity,
     downloadManager: DownloadManager,
     readerPreferences: ReaderPreferences,
-) : PagerViewer(activity, downloadManager, readerPreferences) {
+    uiPreferences: UiPreferences,
+) : PagerViewer(activity, downloadManager, readerPreferences, uiPreferences) {
     /**
      * Creates a new right to left pager.
      */
@@ -57,7 +60,8 @@ class VerticalPagerViewer(
     activity: ReaderActivity,
     downloadManager: DownloadManager,
     readerPreferences: ReaderPreferences,
-) : PagerViewer(activity, downloadManager, readerPreferences) {
+    uiPreferences: UiPreferences,
+) : PagerViewer(activity, downloadManager, readerPreferences, uiPreferences) {
     /**
      * Creates a new vertical pager.
      */

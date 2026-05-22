@@ -20,14 +20,8 @@ import androidx.compose.ui.util.fastForEach
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cafe.adriel.voyager.core.screen.Screen
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import ephyra.core.common.util.lang.launchIO
-import ephyra.core.common.util.lang.withUIContext
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.hasCustomCover
@@ -39,7 +33,13 @@ import ephyra.presentation.core.components.LabeledCheckbox
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.LoadingScreen
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.withContext
+import javax.inject.Inject
 import kotlin.collections.toMutableSet
 
 private fun MigrationFlag.getLabel(): Int {
@@ -53,7 +53,7 @@ private fun MigrationFlag.getLabel(): Int {
 }
 
 @Composable
-fun Screen.MigrateMangaDialog(
+fun MigrateMangaDialog(
     current: Manga,
     target: Manga,
     onClickTitle: () -> Unit,
@@ -114,7 +114,7 @@ fun Screen.MigrateMangaDialog(
                     onClick = {
                         scope.launchIO {
                             screenModel.migrateManga(replace = false)
-                            withUIContext { onComplete() }
+                            withContext(Dispatchers.Main) { onComplete() }
                         }
                     },
                 ) {
@@ -124,7 +124,7 @@ fun Screen.MigrateMangaDialog(
                     onClick = {
                         scope.launchIO {
                             screenModel.migrateManga(replace = true)
-                            withUIContext { onComplete() }
+                            withContext(Dispatchers.Main) { onComplete() }
                         }
                     },
                 ) {

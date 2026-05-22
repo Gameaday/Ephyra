@@ -38,7 +38,11 @@ fun ChapterHeader(
             text = if (chapterCount == null) {
                 stringResource(ephyra.app.core.common.R.string.chapters)
             } else {
-                pluralStringResource(ephyra.app.core.common.R.plurals.manga_num_chapters, count = chapterCount, chapterCount)
+                pluralStringResource(
+                    ephyra.app.core.common.R.plurals.manga_num_chapters,
+                    count = chapterCount,
+                    chapterCount,
+                )
             },
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface,

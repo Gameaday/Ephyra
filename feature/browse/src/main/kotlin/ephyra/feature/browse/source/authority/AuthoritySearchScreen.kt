@@ -59,10 +59,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import ephyra.domain.manga.interactor.FindContentSource
 import ephyra.domain.manga.model.ContentType
@@ -74,13 +73,15 @@ import ephyra.presentation.core.components.AdaptiveSheet
 import ephyra.presentation.core.components.ScrollbarLazyColumn
 import ephyra.presentation.core.components.TabContent
 import ephyra.presentation.core.components.material.padding
+import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.theme.MotionTokens
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
-import cafe.adriel.voyager.core.screen.Screen as VoyagerScreen
 
 /**
  * Creates the Search sub-tab inside the top-level Discover tab.
@@ -92,8 +93,7 @@ import cafe.adriel.voyager.core.screen.Screen as VoyagerScreen
  * alongside the search.
  */
 @Composable
-fun VoyagerScreen.discoverTab(): TabContent {
-    val navigator = LocalNavigator.currentOrThrow
+fun discoverTab(navController: NavController = LocalNavController.current): TabContent {
     val screenModel = hiltViewModel<AuthoritySearchScreenModel>()
     val state by screenModel.state.collectAsStateWithLifecycle()
 
@@ -139,8 +139,8 @@ fun VoyagerScreen.discoverTab(): TabContent {
                     isSearching = sourcePrompt.isSearching,
                     onSelectSource = { match ->
                         screenModel.onEvent(AuthoritySearchScreenEvent.DismissSourcePrompt)
-                        navigator.push(
-                            ephyra.feature.browse.source.browse.BrowseSourceScreen(
+                        navController.navigate(
+                            ScreenRoutes.BrowseSource.createRoute(
                                 match.sourceId,
                                 match.manga.title,
                             ),
@@ -148,7 +148,7 @@ fun VoyagerScreen.discoverTab(): TabContent {
                     },
                     onManualSearch = {
                         screenModel.onEvent(AuthoritySearchScreenEvent.DismissSourcePrompt)
-                        navigator.push(GlobalSearchScreen(sourcePrompt.title))
+                        navController.navigate(ScreenRoutes.GlobalSearch.createRoute(sourcePrompt.title))
                     },
                     onDismiss = { screenModel.onEvent(AuthoritySearchScreenEvent.DismissSourcePrompt) },
                 )
@@ -326,13 +326,18 @@ private fun DiscoverContent(
                 state.contentTypeFilter != ContentType.UNKNOWN &&
                 displayResults.size != state.results.size
             ) {
-                stringResource(
-                    ephyra.app.core.common.R.string.discover_result_count_filtered,
+                pluralStringResource(
+                    ephyra.app.core.common.R.plurals.discover_result_count_filtered,
+                    count = displayResults.size,
                     displayResults.size,
                     state.results.size,
                 )
             } else {
-                stringResource(ephyra.app.core.common.R.string.discover_result_count, displayResults.size)
+                pluralStringResource(
+                    ephyra.app.core.common.R.plurals.discover_result_count,
+                    count = displayResults.size,
+                    displayResults.size,
+                )
             }
             Text(
                 text = countText,
@@ -636,7 +641,11 @@ private fun DiscoverDetailSheet(
                 Spacer(Modifier.width(8.dp))
                 Text(
                     stringResource(
-                        if (isAdded) ephyra.app.core.common.R.string.discover_added else ephyra.app.core.common.R.string.discover_add,
+                        if (isAdded) {
+                            ephyra.app.core.common.R.string.discover_added
+                        } else {
+                            ephyra.app.core.common.R.string.discover_add
+                        },
                     ),
                 )
             }
@@ -752,8 +761,9 @@ private fun MergeWithExistingDialog(
                                         overflow = TextOverflow.Ellipsis,
                                     )
                                     Text(
-                                        text = stringResource(
-                                            ephyra.app.core.common.R.string.discover_merge_chapters,
+                                        text = pluralStringResource(
+                                            ephyra.app.core.common.R.plurals.discover_merge_chapters,
+                                            count = candidate.chapterCount.toInt(),
                                             candidate.chapterCount,
                                         ),
                                         style = MaterialTheme.typography.bodySmall,
@@ -845,8 +855,9 @@ private fun FindSourceDialog(
                                             overflow = TextOverflow.Ellipsis,
                                         )
                                         val chapterText = when {
-                                            match.chapterCount > 0 -> stringResource(
-                                                ephyra.app.core.common.R.string.discover_find_source_chapters,
+                                            match.chapterCount > 0 -> pluralStringResource(
+                                                ephyra.app.core.common.R.plurals.discover_find_source_chapters,
+                                                count = match.chapterCount,
                                                 match.chapterCount,
                                             )
 

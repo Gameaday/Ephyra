@@ -1,10 +1,9 @@
 package ephyra.app.ui.deeplink
 
 import androidx.compose.runtime.Immutable
-import cafe.adriel.voyager.core.model.StateScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import ephyra.core.common.util.lang.launchIO
 import ephyra.domain.chapter.interactor.GetChapterByUrlAndMangaId
 import ephyra.domain.chapter.interactor.SyncChaptersWithSource
@@ -18,7 +17,11 @@ import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.model.SChapter
 import eu.kanade.tachiyomi.source.online.ResolvableSource
 import eu.kanade.tachiyomi.source.online.UriType
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import javax.inject.Inject
 
 @HiltViewModel
 class DeepLinkScreenModel @Inject constructor(
@@ -26,7 +29,10 @@ class DeepLinkScreenModel @Inject constructor(
     private val networkToLocalManga: NetworkToLocalManga,
     private val getChapterByUrlAndMangaId: GetChapterByUrlAndMangaId,
     private val syncChaptersWithSource: SyncChaptersWithSource,
-) : StateScreenModel<DeepLinkScreenModel.State>(State.Loading) {
+) : ViewModel() {
+
+    private val _state = MutableStateFlow<State>(State.Loading)
+    val state: StateFlow<State> = _state.asStateFlow()
 
     private var isInitialized = false
 
@@ -34,7 +40,7 @@ class DeepLinkScreenModel @Inject constructor(
         if (isInitialized) return
         isInitialized = true
 
-        screenModelScope.launchIO {
+        viewModelScope.launchIO {
             val source = sourceManager.getCatalogueSources()
                 .filterIsInstance<ResolvableSource>()
                 .firstOrNull { it.getUriType(query) != UriType.Unknown }
@@ -49,7 +55,7 @@ class DeepLinkScreenModel @Inject constructor(
                 null
             }
 
-            mutableState.update {
+            _state.update {
                 if (manga == null) {
                     State.NoResults
                 } else {

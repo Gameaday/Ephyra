@@ -18,6 +18,9 @@ class GlobalExceptionHandler private constructor(
     private val activityToBeLaunched: Class<*>,
 ) : Thread.UncaughtExceptionHandler {
 
+    @Volatile
+    private var isCrashing = false
+
     object ThrowableSerializer : KSerializer<Throwable> {
         override val descriptor: SerialDescriptor =
             PrimitiveSerialDescriptor("Throwable", PrimitiveKind.STRING)
@@ -30,15 +33,29 @@ class GlobalExceptionHandler private constructor(
     }
 
     override fun uncaughtException(thread: Thread, exception: Throwable) {
+        if (isCrashing) {
+            defaultHandler?.uncaughtException(thread, exception)
+            return
+        }
+        isCrashing = true
+
         logcat(priority = LogPriority.ERROR, throwable = exception)
         val isDiReady = try {
             ephyra.core.common.di.CoreContainer.applicationContext != null
         } catch (e: Exception) {
             false
         }
-        if (isDiReady) {
-            launchActivity(applicationContext, activityToBeLaunched, exception)
+
+        // Use a simpler fallback if DI isn't ready or if we are in early startup
+        val fallbackActivity = if (isDiReady) activityToBeLaunched else StartupFailureActivity::class.java
+
+        try {
+            launchActivity(applicationContext, fallbackActivity, exception)
+        } catch (e: Exception) {
+            // Last resort: just log it. The default handler will take over.
+            logcat(LogPriority.ERROR, e) { "Failed to launch crash activity" }
         }
+
         defaultHandler?.uncaughtException(thread, exception)
     }
 

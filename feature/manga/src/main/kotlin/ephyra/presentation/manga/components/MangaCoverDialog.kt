@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:max-line-length")
+
 package ephyra.feature.manga.presentation.components
 
 import android.graphics.Bitmap
@@ -113,7 +115,9 @@ fun MangaCoverDialog(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Outlined.Edit,
-                                        contentDescription = stringResource(ephyra.app.core.common.R.string.action_edit_cover),
+                                        contentDescription = stringResource(
+                                            ephyra.app.core.common.R.string.action_edit_cover,
+                                        ),
                                     )
                                 }
                                 DropdownMenu(
@@ -122,14 +126,26 @@ fun MangaCoverDialog(
                                     offset = DpOffset(8.dp, 0.dp),
                                 ) {
                                     DropdownMenuItem(
-                                        text = { Text(text = stringResource(ephyra.app.core.common.R.string.action_edit)) },
+                                        text = {
+                                            Text(
+                                                text = stringResource(
+                                                    ephyra.app.core.common.R.string.action_edit,
+                                                ),
+                                            )
+                                        },
                                         onClick = {
                                             onEditClick(EditCoverAction.EDIT)
                                             expanded = false
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text(text = stringResource(ephyra.app.core.common.R.string.action_search_cover)) },
+                                        text = {
+                                            Text(
+                                                text = stringResource(
+                                                    ephyra.app.core.common.R.string.action_search_cover,
+                                                ),
+                                            )
+                                        },
                                         onClick = {
                                             onEditClick(EditCoverAction.SEARCH)
                                             expanded = false
@@ -137,7 +153,13 @@ fun MangaCoverDialog(
                                     )
                                     if (isCustomCover) {
                                         DropdownMenuItem(
-                                            text = { Text(text = stringResource(ephyra.app.core.common.R.string.action_delete)) },
+                                            text = {
+                                                Text(
+                                                    text = stringResource(
+                                                        ephyra.app.core.common.R.string.action_delete,
+                                                    ),
+                                                )
+                                            },
                                             onClick = {
                                                 onEditClick(EditCoverAction.DELETE)
                                                 expanded = false

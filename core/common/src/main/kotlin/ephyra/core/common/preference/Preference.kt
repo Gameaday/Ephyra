@@ -8,7 +8,6 @@ interface Preference<T> {
 
     fun key(): String
 
-    @Deprecated("Use suspend fun get() instead", ReplaceWith("get()"))
     fun getSync(): T
 
     suspend fun get(): T

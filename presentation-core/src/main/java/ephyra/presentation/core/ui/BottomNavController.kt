@@ -8,14 +8,11 @@ package ephyra.presentation.core.ui
  *
  * Usage in a Tab composable:
  * ```kotlin
- * val navigator = LocalNavigator.currentOrThrow
+ * val homeController = LocalBottomNavController.current
  * LaunchedEffect(selectionMode) {
- *     (navigator.parent?.lastItemOrNull as? BottomNavController)?.showBottomNav(!selectionMode)
+ *     homeController.showBottomNav(!selectionMode)
  * }
  * ```
- *
- * [HomeScreen] is a Voyager [cafe.adriel.voyager.core.screen.Screen] that implements this
- * interface via its `companion object`, which is the object passed in [navigator.items].
  */
 interface BottomNavController {
     suspend fun showBottomNav(show: Boolean)

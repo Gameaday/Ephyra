@@ -1,12 +1,9 @@
 package ephyra.app.ui.home
 
-import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
@@ -23,305 +20,341 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.util.fastForEach
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
-import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
-import cafe.adriel.voyager.navigator.tab.TabNavigator
-import ephyra.domain.library.service.LibraryPreferences
-import ephyra.domain.source.service.SourcePreferences
-import ephyra.feature.browse.BrowseTab
-import ephyra.feature.download.DownloadQueueScreen
-import ephyra.feature.history.HistoryTab
-import ephyra.feature.library.LibraryTab
-import ephyra.feature.manga.MangaScreen
-import ephyra.feature.more.MoreTab
-import ephyra.feature.updates.UpdatesTab
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import ephyra.app.util.system.updaterEnabled
+import ephyra.core.common.util.system.logcat
+import ephyra.feature.browse.BrowseTabScreen
+import ephyra.feature.history.HistoryTabScreen
+import ephyra.feature.library.LibraryScreen
+import ephyra.feature.more.MoreTabScreen
+import ephyra.feature.updates.UpdatesScreen
+import ephyra.presentation.core.components.AppStateBanners
 import ephyra.presentation.core.components.material.NavigationBar
 import ephyra.presentation.core.components.material.NavigationRail
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.theme.MotionTokens
-import ephyra.presentation.core.ui.BottomNavController
-import ephyra.presentation.core.ui.SearchableScreen
-import ephyra.presentation.core.util.Screen
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.NavigationEvents
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
+import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.core.util.isTabletUi
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
-import soup.compose.material.motion.animation.materialFadeThroughIn
-import soup.compose.material.motion.animation.materialFadeThroughOut
 
-object HomeScreen : Screen(), BottomNavController, SearchableScreen {
+object HomeScreen {
+    private val _openTabEvent = MutableSharedFlow<Tab>(extraBufferCapacity = 1)
+    val openTabEvent = _openTabEvent.asSharedFlow()
 
-    // CONFLATED: only the most recent event is kept; stale navigation intents are
-    // silently dropped rather than accumulating across configuration changes or
-    // rapid back-stack push/pop cycles on an object-scoped singleton screen.
-    private val librarySearchEvent = Channel<String>(Channel.CONFLATED)
-    private val openTabEvent = Channel<Tab>(Channel.CONFLATED)
-    private val showBottomNavEvent = Channel<Boolean>(Channel.CONFLATED)
+    fun openTab(tab: Tab) {
+        _openTabEvent.tryEmit(tab)
+    }
 
-    @Suppress("ConstPropertyName")
-    private const val TabFadeDuration = MotionTokens.DURATION_MEDIUM
+    sealed class Tab {
+        data class Library(val mangaId: Long? = null) : Tab()
+        data object Updates : Tab()
+        data object History : Tab()
+        data class Browse(val toExtensions: Boolean) : Tab()
+        data class More(val toDownloads: Boolean) : Tab()
+    }
+}
 
-    @Suppress("ConstPropertyName")
-    private const val TabNavigatorKey = "HomeTabs"
-
-    private val TABS = listOf(
-        LibraryTab,
-        UpdatesTab,
-        HistoryTab,
-        BrowseTab,
-        MoreTab,
+@Composable
+fun HomeScreen(
+    externalNavController: NavHostController = LocalNavController.current,
+    viewModel: HomeViewModel = hiltViewModel(),
+) {
+    val bottomNavController = rememberNavController()
+    val tabs = listOf(
+        HomeTab.Library,
+        HomeTab.Updates,
+        HomeTab.History,
+        HomeTab.Browse,
+        HomeTab.More,
     )
 
-    @Composable
-    override fun Content() {
-        val navigator = LocalNavigator.currentOrThrow
-        TabNavigator(
-            tab = LibraryTab,
-            key = TabNavigatorKey,
-        ) { tabNavigator ->
-            // Provide usable navigator to content screen
-            CompositionLocalProvider(LocalNavigator provides navigator) {
-                Scaffold(
-                    startBar = {
-                        if (isTabletUi()) {
-                            NavigationRail {
-                                TABS.fastForEach {
-                                    NavigationRailItem(it)
-                                }
-                            }
+    val incognito by viewModel.incognito.collectAsStateWithLifecycle()
+    val downloadOnly by viewModel.downloadOnly.collectAsStateWithLifecycle()
+    val indexing by viewModel.indexing.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) {
+        HomeScreen.openTabEvent.collect { tab ->
+            val homeTab = when (tab) {
+                is HomeScreen.Tab.Library -> HomeTab.Library
+                HomeScreen.Tab.Updates -> HomeTab.Updates
+                HomeScreen.Tab.History -> HomeTab.History
+                is HomeScreen.Tab.Browse -> HomeTab.Browse
+                is HomeScreen.Tab.More -> HomeTab.More
+            }
+            bottomNavController.navigate(homeTab.route) {
+                popUpTo(bottomNavController.graph.findStartDestination().id) {
+                    saveState = true
+                }
+                launchSingleTop = true
+                restoreState = true
+            }
+        }
+    }
+
+    CompositionLocalProvider(LocalNavController provides externalNavController) {
+        Scaffold(
+            topBar = {
+                AppStateBanners(
+                    downloadedOnlyMode = downloadOnly,
+                    incognitoMode = incognito,
+                    indexing = indexing,
+                )
+            },
+            startBar = {
+                if (isTabletUi()) {
+                    NavigationRail {
+                        tabs.forEach {
+                            HomeNavigationRailItem(it, bottomNavController, viewModel)
                         }
-                    },
-                    bottomBar = {
-                        if (!isTabletUi()) {
-                            val bottomNavVisible by produceState(initialValue = true) {
-                                showBottomNavEvent.receiveAsFlow().collectLatest { value = it }
-                            }
-                            AnimatedVisibility(
-                                visible = bottomNavVisible,
-                                enter = expandVertically(
-                                    animationSpec = tween(
-                                        durationMillis = MotionTokens.DURATION_MEDIUM,
-                                        easing = MotionTokens.EasingDecelerate,
-                                    ),
-                                ),
-                                exit = shrinkVertically(
-                                    animationSpec = tween(
-                                        durationMillis = MotionTokens.DURATION_SHORT,
-                                        easing = MotionTokens.EasingAccelerate,
-                                    ),
-                                ),
-                            ) {
-                                NavigationBar {
-                                    TABS.fastForEach {
-                                        NavigationBarItem(it)
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    contentWindowInsets = WindowInsets(0),
-                ) { contentPadding ->
-                    Box(
-                        modifier = Modifier
-                            .padding(contentPadding)
-                            .consumeWindowInsets(contentPadding),
+                    }
+                }
+            },
+            bottomBar = {
+                if (!isTabletUi()) {
+                    // TODO: communicate visibility from screens
+                    val bottomNavVisible = true
+                    AnimatedVisibility(
+                        visible = bottomNavVisible,
+                        enter = expandVertically(
+                            animationSpec = tween(
+                                durationMillis = MotionTokens.DURATION_MEDIUM,
+                                easing = MotionTokens.EasingDecelerate,
+                            ),
+                        ),
+                        exit = shrinkVertically(
+                            animationSpec = tween(
+                                durationMillis = MotionTokens.DURATION_SHORT,
+                                easing = MotionTokens.EasingAccelerate,
+                            ),
+                        ),
                     ) {
-                        AnimatedContent(
-                            targetState = tabNavigator.current,
-                            transitionSpec = {
-                                materialFadeThroughIn(initialScale = 1f, durationMillis = TabFadeDuration) togetherWith
-                                    materialFadeThroughOut(durationMillis = TabFadeDuration)
-                            },
-                            label = "tabContent",
-                        ) {
-                            tabNavigator.saveableState(key = "currentTab", it) {
-                                it.Content()
+                        NavigationBar {
+                            tabs.forEach {
+                                HomeNavigationBarItem(it, bottomNavController, viewModel)
                             }
                         }
                     }
                 }
-            }
-
-            val goToLibraryTab = { tabNavigator.current = LibraryTab }
-
-            BackHandler(enabled = tabNavigator.current != LibraryTab, onBack = goToLibraryTab)
-
-            LaunchedEffect(Unit) {
-                launch {
-                    librarySearchEvent.receiveAsFlow().collectLatest {
-                        goToLibraryTab()
-                        LibraryTab.search(it)
+            },
+            contentWindowInsets = WindowInsets(0),
+        ) { contentPadding ->
+            Box(
+                modifier = Modifier
+                    .padding(contentPadding)
+                    .consumeWindowInsets(contentPadding),
+            ) {
+                NavHost(
+                    navController = bottomNavController,
+                    startDestination = ScreenRoutes.Library.route,
+                    modifier = Modifier,
+                ) {
+                    composable(ScreenRoutes.Library.route) {
+                        LibraryScreen(navController = externalNavController)
                     }
-                }
-                launch {
-                    openTabEvent.receiveAsFlow().collectLatest {
-                        tabNavigator.current = when (it) {
-                            is Tab.Library -> LibraryTab
-                            Tab.Updates -> UpdatesTab
-                            Tab.History -> HistoryTab
-                            is Tab.Browse -> {
-                                if (it.toExtensions) {
-                                    BrowseTab.showExtension()
-                                }
-                                BrowseTab
-                            }
-                            is Tab.More -> MoreTab
-                        }
-
-                        if (it is Tab.Library && it.mangaIdToOpen != null) {
-                            navigator.push(MangaScreen(it.mangaIdToOpen))
-                        }
-                        if (it is Tab.More && it.toDownloads) {
-                            navigator.push(DownloadQueueScreen)
-                        }
+                    composable(ScreenRoutes.Updates.route) {
+                        UpdatesScreen(navController = externalNavController)
+                    }
+                    composable(ScreenRoutes.History.route) {
+                        HistoryTabScreen(navController = externalNavController)
+                    }
+                    composable(ScreenRoutes.Browse.route) {
+                        BrowseTabScreen(navController = externalNavController)
+                    }
+                    composable(ScreenRoutes.More.route) {
+                        MoreTabScreen(navController = externalNavController)
                     }
                 }
             }
         }
     }
+}
 
-    @Composable
-    private fun RowScope.NavigationBarItem(tab: ephyra.presentation.core.util.Tab) {
-        val tabNavigator = LocalTabNavigator.current
-        val navigator = LocalNavigator.currentOrThrow
-        val scope = rememberCoroutineScope()
-        val selected = tabNavigator.current::class == tab::class
-        NavigationBarItem(
-            selected = selected,
-            onClick = {
-                if (!selected) {
-                    tabNavigator.current = tab
-                } else {
-                    scope.launch { tab.onReselect(navigator) }
-                }
-            },
-            icon = { NavigationIconItem(tab) },
-            label = {
-                Text(
-                    text = tab.options.title,
-                    style = MaterialTheme.typography.labelLarge,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            },
-            alwaysShowLabel = true,
-        )
-    }
+@Composable
+private fun RowScope.HomeNavigationBarItem(
+    tab: HomeTab,
+    navController: NavHostController,
+    viewModel: HomeViewModel,
+) {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+    val selected = currentDestination?.hierarchy?.any { it.route == tab.route } == true
 
-    @Composable
-    fun NavigationRailItem(tab: ephyra.presentation.core.util.Tab) {
-        val tabNavigator = LocalTabNavigator.current
-        val navigator = LocalNavigator.currentOrThrow
-        val scope = rememberCoroutineScope()
-        val selected = tabNavigator.current::class == tab::class
-        NavigationRailItem(
-            selected = selected,
-            onClick = {
-                if (!selected) {
-                    tabNavigator.current = tab
-                } else {
-                    scope.launch { tab.onReselect(navigator) }
-                }
-            },
-            icon = { NavigationIconItem(tab) },
-            label = {
-                Text(
-                    text = tab.options.title,
-                    style = MaterialTheme.typography.labelLarge,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            },
-            alwaysShowLabel = true,
-        )
-    }
-
-    @Composable
-    private fun NavigationIconItem(tab: ephyra.presentation.core.util.Tab) {
-        BadgedBox(
-            badge = {
-                when {
-                    tab is UpdatesTab -> {
-                        val pref = remember { ephyra.core.common.di.CoreContainer.get<LibraryPreferences>() }
-                        val count by produceState(initialValue = 0) {
-                            combine(
-                                pref.newShowUpdatesCount().changes(),
-                                pref.newUpdatesCount().changes(),
-                            ) { show, count -> if (show) count else 0 }
-                                .collectLatest { value = it }
-                        }
-                        if (count > 0) {
-                            Badge {
-                                val desc = pluralStringResource(
-                                    ephyra.app.core.common.R.plurals.notification_chapters_generic,
-                                    count = count,
-                                    count,
-                                )
-                                Text(
-                                    text = count.toString(),
-                                    modifier = Modifier.semantics { contentDescription = desc },
-                                )
-                            }
-                        }
+    NavigationBarItem(
+        selected = selected,
+        onClick = {
+            if (selected) {
+                NavigationEvents.triggerReselect(tab.route)
+            } else {
+                navController.navigate(tab.route) {
+                    popUpTo(navController.graph.findStartDestination().id) {
+                        saveState = true
                     }
-                    BrowseTab::class.isInstance(tab) -> {
-                        val sourcePreferences = remember { ephyra.core.common.di.CoreContainer.get<SourcePreferences>() }
-                        val count by produceState(initialValue = 0) {
-                            sourcePreferences.extensionUpdatesCount().changes()
-                                .collectLatest { value = it }
-                        }
-                        if (count > 0) {
-                            Badge {
-                                val desc = pluralStringResource(
-                                    ephyra.app.core.common.R.plurals.update_check_notification_ext_updates,
-                                    count = count,
-                                    count,
-                                )
-                                Text(
-                                    text = count.toString(),
-                                    modifier = Modifier.semantics { contentDescription = desc },
-                                )
-                            }
-                        }
-                    }
+                    launchSingleTop = true
+                    restoreState = true
                 }
-            },
-        ) {
-            Icon(
-                painter = tab.options.icon!!,
-                contentDescription = tab.options.title,
+            }
+        },
+        icon = { HomeTabIcon(tab, selected, viewModel) },
+        label = {
+            Text(
+                text = stringResource(tab.titleRes),
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
-        }
-    }
+        },
+        alwaysShowLabel = true,
+    )
+}
 
-    override suspend fun search(query: String) {
-        librarySearchEvent.send(query)
-    }
+@Composable
+private fun HomeNavigationRailItem(
+    tab: HomeTab,
+    navController: NavHostController,
+    viewModel: HomeViewModel,
+) {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+    val selected = currentDestination?.hierarchy?.any { it.route == tab.route } == true
 
-    suspend fun openTab(tab: Tab) {
-        openTabEvent.send(tab)
-    }
+    NavigationRailItem(
+        selected = selected,
+        onClick = {
+            if (selected) {
+                NavigationEvents.triggerReselect(tab.route)
+            } else {
+                navController.navigate(tab.route) {
+                    popUpTo(navController.graph.findStartDestination().id) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            }
+        },
+        icon = { HomeTabIcon(tab, selected, viewModel) },
+        label = {
+            Text(
+                text = stringResource(tab.titleRes),
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        },
+        alwaysShowLabel = true,
+    )
+}
 
-    override suspend fun showBottomNav(show: Boolean) {
-        showBottomNavEvent.send(show)
+@Composable
+private fun HomeTabIcon(
+    tab: HomeTab,
+    selected: Boolean,
+    viewModel: HomeViewModel,
+) {
+    BadgedBox(
+        badge = {
+            if (tab == HomeTab.Updates) {
+                val count by viewModel.updatesBadgeCount.collectAsStateWithLifecycle()
+                if (count > 0) {
+                    Badge {
+                        val desc = pluralStringResource(
+                            ephyra.app.core.common.R.plurals.notification_chapters_generic,
+                            count = count,
+                            count,
+                        )
+                        Text(
+                            text = count.toString(),
+                            modifier = Modifier.semantics { contentDescription = desc },
+                        )
+                    }
+                }
+            }
+            if (tab == HomeTab.Browse) {
+                val count by viewModel.extensionsBadgeCount.collectAsStateWithLifecycle()
+                if (count > 0) {
+                    Badge {
+                        val desc = pluralStringResource(
+                            ephyra.app.core.common.R.plurals.update_check_notification_ext_updates,
+                            count = count,
+                            count,
+                        )
+                        Text(
+                            text = count.toString(),
+                            modifier = Modifier.semantics { contentDescription = desc },
+                        )
+                    }
+                }
+            }
+        },
+    ) {
+        Icon(
+            imageVector = ImageVector.vectorResource(if (selected) tab.iconSelectedRes else tab.iconRes),
+            contentDescription = stringResource(tab.titleRes),
+        )
     }
+}
 
-    sealed interface Tab {
-        data class Library(val mangaIdToOpen: Long? = null) : Tab
-        data object Updates : Tab
-        data object History : Tab
-        data class Browse(val toExtensions: Boolean = false) : Tab
-        data class More(val toDownloads: Boolean) : Tab
-    }
+enum class HomeTab(
+    val route: String,
+    val titleRes: Int,
+    val iconRes: Int,
+    val iconSelectedRes: Int,
+) {
+    Library(
+        ScreenRoutes.Library.route,
+        ephyra.app.core.common.R.string.label_library,
+        ephyra.presentation.core.R.drawable.anim_library_enter,
+        ephyra.presentation.core.R.drawable.anim_library_enter,
+    ),
+    Updates(
+        ScreenRoutes.Updates.route,
+        ephyra.app.core.common.R.string.label_recent_updates,
+        ephyra.presentation.core.R.drawable.anim_updates_enter,
+        ephyra.presentation.core.R.drawable.anim_updates_enter,
+    ),
+    History(
+        ScreenRoutes.History.route,
+        ephyra.app.core.common.R.string.label_recent_manga,
+        ephyra.presentation.core.R.drawable.anim_history_enter,
+        ephyra.presentation.core.R.drawable.anim_history_enter,
+    ),
+    Browse(
+        ScreenRoutes.Browse.route,
+        ephyra.app.core.common.R.string.label_discover,
+        ephyra.presentation.core.R.drawable.anim_browse_enter,
+        ephyra.presentation.core.R.drawable.anim_browse_enter,
+    ),
+    More(
+        ScreenRoutes.More.route,
+        ephyra.app.core.common.R.string.label_more,
+        ephyra.presentation.core.R.drawable.anim_more_enter,
+        ephyra.presentation.core.R.drawable.anim_more_enter,
+    ),
 }

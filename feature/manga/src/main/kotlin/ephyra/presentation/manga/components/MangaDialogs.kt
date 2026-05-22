@@ -67,8 +67,8 @@ fun SetIntervalDialog(
     nextUpdate: Instant?,
     onDismissRequest: () -> Unit,
     onValueChanged: ((Int) -> Unit)? = null,
+    appInfo: AppInfo,
 ) {
-    val appInfo = remember { ephyra.core.common.di.CoreContainer.get<AppInfo>() }
     var selectedInterval by rememberSaveable { mutableIntStateOf(if (interval < 0) -interval else 0) }
 
     val nextUpdateDays = remember(nextUpdate) {

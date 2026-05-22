@@ -31,7 +31,7 @@ object SettingsSecurityScreen : SearchableSettings {
         val screenModel = hiltViewModel<SettingsSecurityScreenModel>()
         val securityPreferences = screenModel.securityPreferences
         val privacyPreferences = screenModel.privacyPreferences
-        val appInfo = remember { ephyra.core.common.di.CoreContainer.get<AppInfo>() }
+        val appInfo = screenModel.appInfo
 
         return buildList(2) {
             add(getSecurityGroup(securityPreferences))
@@ -69,7 +69,11 @@ object SettingsSecurityScreen : SearchableSettings {
                             when (it) {
                                 -1 -> stringResource(ephyra.app.core.common.R.string.lock_never)
                                 0 -> stringResource(ephyra.app.core.common.R.string.lock_always)
-                                else -> pluralStringResource(ephyra.app.core.common.R.plurals.lock_after_mins, count = it, it)
+                                else -> pluralStringResource(
+                                    ephyra.app.core.common.R.plurals.lock_after_mins,
+                                    count = it,
+                                    it,
+                                )
                             }
                         }
                         .toImmutableMap(),
@@ -93,7 +97,9 @@ object SettingsSecurityScreen : SearchableSettings {
                         .toImmutableMap(),
                     title = stringResource(ephyra.app.core.common.R.string.secure_screen),
                 ),
-                Preference.PreferenceItem.InfoPreference(stringResource(ephyra.app.core.common.R.string.secure_screen_summary)),
+                Preference.PreferenceItem.InfoPreference(
+                    stringResource(ephyra.app.core.common.R.string.secure_screen_summary),
+                ),
             ),
         )
     }
@@ -108,14 +114,20 @@ object SettingsSecurityScreen : SearchableSettings {
                 Preference.PreferenceItem.SwitchPreference(
                     preference = privacyPreferences.crashlytics(),
                     title = stringResource(ephyra.app.core.common.R.string.onboarding_permission_crashlytics),
-                    subtitle = stringResource(ephyra.app.core.common.R.string.onboarding_permission_crashlytics_description),
+                    subtitle = stringResource(
+                        ephyra.app.core.common.R.string.onboarding_permission_crashlytics_description,
+                    ),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = privacyPreferences.analytics(),
                     title = stringResource(ephyra.app.core.common.R.string.onboarding_permission_analytics),
-                    subtitle = stringResource(ephyra.app.core.common.R.string.onboarding_permission_analytics_description),
+                    subtitle = stringResource(
+                        ephyra.app.core.common.R.string.onboarding_permission_analytics_description,
+                    ),
                 ),
-                Preference.PreferenceItem.InfoPreference(stringResource(ephyra.app.core.common.R.string.firebase_summary)),
+                Preference.PreferenceItem.InfoPreference(
+                    stringResource(ephyra.app.core.common.R.string.firebase_summary),
+                ),
             ),
         )
     }

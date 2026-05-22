@@ -9,6 +9,7 @@ import ephyra.core.common.i18n.pluralStringResource
 import ephyra.core.common.util.system.cancelNotification
 import ephyra.core.common.util.system.notify
 import ephyra.data.notification.Notifications
+import kotlinx.coroutines.runBlocking
 
 class ExtensionUpdateNotifier(
     private val context: Context,
@@ -26,7 +27,7 @@ class ExtensionUpdateNotifier(
                     names.size,
                 ),
             )
-            if (!securityPreferences.hideNotificationContent().getSync()) {
+            if (!runBlocking { securityPreferences.hideNotificationContent().get() }) {
                 val extNames = names.joinToString(", ")
                 setContentText(extNames)
                 setStyle(NotificationCompat.BigTextStyle().bigText(extNames))

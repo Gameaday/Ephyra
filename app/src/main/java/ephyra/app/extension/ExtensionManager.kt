@@ -9,7 +9,6 @@ import ephyra.app.extension.util.ExtensionInstallReceiver
 import ephyra.app.extension.util.ExtensionInstaller
 import ephyra.app.extension.util.ExtensionLoader
 import ephyra.core.common.core.security.SecurityPreferences
-import ephyra.core.common.util.lang.withUIContext
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.extension.interactor.TrustExtension
 import ephyra.domain.extension.model.Extension
@@ -18,6 +17,7 @@ import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.service.SourcePreferences
 import ephyra.presentation.core.util.system.toast
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import logcat.LogPriority
 import java.util.Locale
 import ephyra.domain.extension.service.ExtensionManager as IExtensionManager
@@ -39,7 +40,7 @@ import ephyra.domain.extension.service.ExtensionManager as IExtensionManager
  * signature is trusted, otherwise the user will be prompted with a warning to trust it before being
  * loaded.
  */
-internal class ExtensionManager(
+class ExtensionManager(
     private val context: Context,
     private val preferences: SourcePreferences,
     private val trustExtension: TrustExtension,
@@ -154,7 +155,7 @@ internal class ExtensionManager(
             api.findExtensions()
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e)
-            withUIContext { context.toast(ephyra.app.core.common.R.string.extension_api_error) }
+            withContext(Dispatchers.Main) { context.toast(ephyra.app.core.common.R.string.extension_api_error) }
             return
         }
 

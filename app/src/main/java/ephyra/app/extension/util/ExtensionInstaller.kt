@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import logcat.LogPriority
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -30,7 +31,7 @@ import java.io.File
  *
  * @param context The application context.
  */
-internal class ExtensionInstaller(
+class ExtensionInstaller(
     private val context: Context,
     private val basePreferences: BasePreferences,
     private val networkHelper: NetworkHelper,
@@ -102,15 +103,7 @@ internal class ExtensionInstaller(
      * @param tempFile The file of the extension to install. Delete after use.
      */
     private fun installApk(downloadId: Long, tempFile: File) {
-        when (val installer = extensionInstaller.getSync()) {
-            BasePreferences.ExtensionInstaller.LEGACY -> {
-                val intent = Intent(context, ExtensionInstallActivity::class.java)
-                    .setDataAndType(tempFile.getUriCompat(context), APK_MIME)
-                    .putExtra(EXTRA_DOWNLOAD_ID, downloadId)
-                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
-
-                context.startActivity(intent)
-            }
+        when (val installer = runBlocking { extensionInstaller.get() }) {
             BasePreferences.ExtensionInstaller.PRIVATE -> {
                 try {
                     if (extensionLoader.installPrivateExtensionFile(context, tempFile)) {

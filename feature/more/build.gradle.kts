@@ -11,7 +11,7 @@ android {
 
 dependencies {
     api(projects.core.common)
-    api(projects.domain)
+    api(projects.core.domain)
     api(projects.data)
     api(projects.sourceApi)
     api(projects.presentationCore)
@@ -25,4 +25,3 @@ dependencies {
 
     ksp(libs.hilt.compiler)
 }
-

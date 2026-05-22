@@ -36,6 +36,8 @@
     <application
         android:name=".App"
         android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="false"
         android:enableOnBackInvokedCallback="true"
         android:hardwareAccelerated="true"
         android:icon="@mipmap/ic_launcher"
@@ -110,11 +112,8 @@
             android:process=":error_handler" />
 
         <!--
-            Koin-free fallback shown when App.onCreate() fails before startKoin()
-            completes (e.g. a module binding throws).  CrashActivity extends BaseActivity
-            which calls KoinJavaComponent.get() eagerly; launching it before Koin is ready
-            would trigger a second crash that silently swallows the original error.
-            StartupFailureActivity has zero Koin dependencies and uses only plain Android
+            Hilt-native fallback shown when App.onCreate() fails (e.g. a module binding throws).
+            StartupFailureActivity has zero complex dependencies and uses only plain Android
             Views, so it works regardless of DI state.
         -->
         <activity
@@ -171,10 +170,6 @@
             android:configChanges="uiMode|orientation|screenSize"
             android:exported="false" />
 
-        <activity
-            android:name=".extension.util.ExtensionInstallActivity"
-            android:exported="false"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
         <activity
             android:name="ephyra.feature.settings.track.TrackLoginActivity"
@@ -243,12 +238,11 @@
             android:name="android.webkit.WebView.MetricsOptOut"
             android:value="true" />
 
-        <!-- Disable the default WorkManager startup initializer so that Koin's
-             workManagerFactory() can register KoinWorkerFactory as the worker
-             factory before WorkManager initialises. Without this, WorkManager
-             initialises via androidx.startup before Application.onCreate() runs,
-             causing workers with extra constructor parameters (e.g.
-             BackupCreateJob) to fail with NoSuchMethodException. -->
+        <!-- Disable the default WorkManager startup initializer so that the Hilt-powered
+             AppWorkerFactory can register as the worker factory before WorkManager
+             initialises. Without this, WorkManager initialises via androidx.startup
+             before Application.onCreate() runs, causing workers with extra constructor
+             parameters (e.g. BackupCreateJob) to fail with NoSuchMethodException. -->
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"

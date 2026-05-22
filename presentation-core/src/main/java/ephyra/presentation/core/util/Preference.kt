@@ -7,6 +7,7 @@ import androidx.compose.ui.state.ToggleableState
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ephyra.core.common.preference.CheckboxState
 import ephyra.core.common.preference.Preference
+import kotlinx.coroutines.runBlocking
 
 /**
  * Collects [Preference.changes] as Compose state, automatically pausing collection when the
@@ -19,7 +20,7 @@ import ephyra.core.common.preference.Preference
 @Composable
 fun <T> Preference<T>.collectAsState(): State<T> {
     val flow = remember(this) { changes() }
-    return flow.collectAsStateWithLifecycle(initialValue = getSync())
+    return flow.collectAsStateWithLifecycle(initialValue = runBlocking { get() })
 }
 
 fun <T> CheckboxState.TriState<T>.asToggleableState(): ToggleableState {

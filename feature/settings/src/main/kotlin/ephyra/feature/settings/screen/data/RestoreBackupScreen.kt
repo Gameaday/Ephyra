@@ -11,10 +11,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -22,13 +22,9 @@ import androidx.compose.ui.text.withStyle
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.domain.backup.model.RestoreOptions
 import ephyra.domain.backup.service.BackupFileValidator
@@ -41,132 +37,141 @@ import ephyra.presentation.core.components.WarningBanner
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
-import ephyra.presentation.core.util.Screen
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import androidx.compose.runtime.LaunchedEffect
+import javax.inject.Inject
 
-class RestoreBackupScreen(
-    private val uri: String,
-) : Screen() {
+@Composable
+fun RestoreBackupScreen(
+    uri: String,
+    navController: NavController = LocalNavController.current,
+) {
+    val model = hiltViewModel<RestoreBackupViewModel>()
+    val state by model.state.collectAsStateWithLifecycle()
 
-    @Composable
-    override fun Content() {
-        val context = LocalContext.current
-        val navigator = LocalNavigator.currentOrThrow
-        val model = hiltViewModel<RestoreBackupViewModel>()
-        val state by model.state.collectAsStateWithLifecycle()
+    LaunchedEffect(uri) {
+        model.initialize(uri)
+    }
 
-        LaunchedEffect(uri) {
-            model.initialize(uri)
-        }
-
-        Scaffold(
-            topBar = {
-                AppBar(
-                    title = stringResource(ephyra.app.core.common.R.string.pref_restore_backup),
-                    navigateUp = navigator::pop,
-                    scrollBehavior = it,
-                )
+    Scaffold(
+        topBar = {
+            AppBar(
+                title = stringResource(ephyra.app.core.common.R.string.pref_restore_backup),
+                navigateUp = { navController.popBackStack() },
+                scrollBehavior = it,
+            )
+        },
+    ) { contentPadding ->
+        LazyColumnWithAction(
+            contentPadding = contentPadding,
+            actionLabel = stringResource(ephyra.app.core.common.R.string.action_restore),
+            actionEnabled = state.canRestore && state.options.canRestore(),
+            onClickAction = {
+                model.startRestore()
+                navController.popBackStack()
             },
-        ) { contentPadding ->
-            LazyColumnWithAction(
-                contentPadding = contentPadding,
-                actionLabel = stringResource(ephyra.app.core.common.R.string.action_restore),
-                actionEnabled = state.canRestore && state.options.canRestore(),
-                onClickAction = {
-                    model.startRestore()
-                    navigator.pop()
-                },
-            ) {
-                if (DeviceUtil.isMiui && DeviceUtil.isMiuiOptimizationDisabled()) {
-                    item {
-                        WarningBanner(stringResource(ephyra.app.core.common.R.string.restore_miui_warning))
-                    }
+        ) {
+            if (DeviceUtil.isMiui && DeviceUtil.isMiuiOptimizationDisabled()) {
+                item {
+                    WarningBanner(stringResource(ephyra.app.core.common.R.string.restore_miui_warning))
                 }
+            }
 
-                if (state.canRestore) {
-                    item {
-                        SectionCard {
-                            RestoreOptions.options.forEach { option ->
-                                LabeledCheckbox(
-                                    label = stringResource(option.label),
-                                    checked = option.getter(state.options),
-                                    onCheckedChange = {
-                                        model.toggle(option.setter, it)
-                                    },
-                                )
-                            }
+            if (state.canRestore) {
+                item {
+                    SectionCard {
+                        RestoreOptions.options.forEach { option ->
+                            LabeledCheckbox(
+                                label = stringResource(option.label),
+                                checked = option.getter(state.options),
+                                onCheckedChange = {
+                                    model.toggle(option.setter, it)
+                                },
+                            )
                         }
                     }
                 }
+            }
 
-                if (state.error != null) {
-                    errorMessageItem(state.error)
-                }
+            if (state.error != null) {
+                errorMessageItem(state.error)
             }
         }
     }
+}
 
-    private fun LazyListScope.errorMessageItem(
-        error: Any?,
-    ) {
-        item {
-            SectionCard {
-                Column(
-                    modifier = Modifier.padding(horizontal = MaterialTheme.padding.medium),
-                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
-                ) {
-                    val msg = buildAnnotatedString {
-                        when (error) {
-                            is MissingRestoreComponents -> {
-                                appendLine(stringResource(ephyra.app.core.common.R.string.backup_restore_content_full))
-                                if (error.sources.isNotEmpty()) {
-                                    appendLine()
-                                    withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
-                                        appendLine(stringResource(ephyra.app.core.common.R.string.backup_restore_missing_sources))
-                                    }
-                                    error.sources.joinTo(
-                                        this,
-                                        separator = "\n- ",
-                                        prefix = "- ",
-                                    )
-                                }
-                                if (error.trackers.isNotEmpty()) {
-                                    appendLine()
-                                    withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
-                                        appendLine(stringResource(ephyra.app.core.common.R.string.backup_restore_missing_trackers))
-                                    }
-                                    error.trackers.joinTo(
-                                        this,
-                                        separator = "\n- ",
-                                        prefix = "- ",
-                                    )
-                                }
-                            }
-
-                            is InvalidRestore -> {
-                                withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
-                                    appendLine(stringResource(ephyra.app.core.common.R.string.invalid_backup_file))
-                                }
-                                appendLine(error.uri.toString())
-
+private fun LazyListScope.errorMessageItem(
+    error: Any?,
+) {
+    item {
+        SectionCard {
+            Column(
+                modifier = Modifier.padding(horizontal = MaterialTheme.padding.medium),
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
+            ) {
+                val msg = buildAnnotatedString {
+                    when (error) {
+                        is MissingRestoreComponents -> {
+                            appendLine(stringResource(ephyra.app.core.common.R.string.backup_restore_content_full))
+                            if (error.sources.isNotEmpty()) {
                                 appendLine()
-
                                 withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
-                                    appendLine(stringResource(ephyra.app.core.common.R.string.invalid_backup_file_error))
+                                    appendLine(
+                                        stringResource(
+                                            ephyra.app.core.common.R.string.backup_restore_missing_sources,
+                                        ),
+                                    )
                                 }
-                                appendLine(error.message)
+                                error.sources.joinTo(
+                                    this,
+                                    separator = "\n- ",
+                                    prefix = "- ",
+                                )
                             }
-
-                            else -> {
-                                appendLine(error.toString())
+                            if (error.trackers.isNotEmpty()) {
+                                appendLine()
+                                withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                                    appendLine(
+                                        stringResource(
+                                            ephyra.app.core.common.R.string.backup_restore_missing_trackers,
+                                        ),
+                                    )
+                                }
+                                error.trackers.joinTo(
+                                    this,
+                                    separator = "\n- ",
+                                    prefix = "- ",
+                                )
                             }
                         }
-                    }
 
-                    SelectionContainer {
-                        Text(text = msg)
+                        is InvalidRestore -> {
+                            withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                                appendLine(stringResource(ephyra.app.core.common.R.string.invalid_backup_file))
+                            }
+                            appendLine(error.uri.toString())
+
+                            appendLine()
+
+                            withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                                appendLine(
+                                    stringResource(ephyra.app.core.common.R.string.invalid_backup_file_error),
+                                )
+                            }
+                            appendLine(error.message)
+                        }
+
+                        else -> {
+                            appendLine(error.toString())
+                        }
                     }
+                }
+
+                SelectionContainer {
+                    Text(text = msg)
                 }
             }
         }

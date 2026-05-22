@@ -15,13 +15,21 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
+import ephyra.core.common.i18n.stringResource
 import ephyra.domain.download.model.Download
 import ephyra.feature.manga.presentation.components.ChapterDownloadAction
 import ephyra.feature.manga.presentation.components.MangaBottomActionMenu
+import ephyra.feature.reader.ReaderActivity
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.FastScrollLazyColumn
@@ -31,10 +39,15 @@ import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.theme.active
+import ephyra.presentation.core.ui.AppReadySignal
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.NavigationEvents
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filter
 import java.time.LocalDate
 import kotlin.collections.isNotEmpty
-import kotlin.compareTo
 
 @Composable
 fun UpdateScreen(
@@ -216,4 +229,109 @@ private fun UpdatesBottomBar(
 sealed interface UpdatesUiModel {
     data class Header(val date: LocalDate) : UpdatesUiModel
     data class Item(val item: UpdatesItem) : UpdatesUiModel
+}
+
+@Composable
+fun UpdatesScreen(
+    navController: NavController = LocalNavController.current,
+) {
+    val context = LocalContext.current
+    val screenModel = hiltViewModel<UpdatesScreenModel>()
+    val settingsScreenModel = hiltViewModel<UpdatesSettingsScreenModel>()
+    val state by screenModel.state.collectAsStateWithLifecycle()
+
+    UpdateScreen(
+        state = state,
+        snackbarHostState = screenModel.snackbarHostState,
+        lastUpdated = screenModel.lastUpdated,
+        isRefreshing = state.isLibraryUpdating,
+        onClickCover = { item ->
+            navController.navigate(ScreenRoutes.MangaDetails.createRoute(item.update.mangaId, false))
+        },
+        onSelectAll = { screenModel.onEvent(UpdatesScreenEvent.ToggleAllSelection(it)) },
+        onInvertSelection = { screenModel.onEvent(UpdatesScreenEvent.InvertSelection) },
+        onUpdateLibrary = { screenModel.onEvent(UpdatesScreenEvent.UpdateLibrary) },
+        onDownloadChapter = { items, action ->
+            screenModel.onEvent(UpdatesScreenEvent.DownloadChapters(items, action))
+        },
+        onMultiBookmarkClicked = { items, bookmark ->
+            screenModel.onEvent(UpdatesScreenEvent.BookmarkUpdates(items, bookmark))
+        },
+        onMultiMarkAsReadClicked = { items, read ->
+            screenModel.onEvent(UpdatesScreenEvent.MarkUpdatesRead(items, read))
+        },
+        onMultiDeleteClicked = { items ->
+            screenModel.onEvent(UpdatesScreenEvent.ShowConfirmDeleteChapters(items))
+        },
+        onUpdateSelected = { item, selected, fromLongPress ->
+            screenModel.onEvent(UpdatesScreenEvent.ToggleSelection(item, selected, fromLongPress))
+        },
+        onOpenChapter = {
+            val intent = ReaderActivity.newIntent(context, it.update.mangaId, it.update.chapterId)
+            context.startActivity(intent)
+        },
+        onCalendarClicked = {
+            navController.navigate(ScreenRoutes.Upcoming.route)
+        },
+        onFilterClicked = { screenModel.onEvent(UpdatesScreenEvent.ShowFilterDialog) },
+        hasActiveFilters = state.hasActiveFilters,
+    )
+
+    val onDismissDialog = { screenModel.onEvent(UpdatesScreenEvent.SetDialog(null)) }
+    when (val dialog = state.dialog) {
+        is UpdatesScreenModel.Dialog.DeleteConfirmation -> {
+            UpdatesDeleteConfirmationDialog(
+                onDismissRequest = onDismissDialog,
+                onConfirm = { screenModel.onEvent(UpdatesScreenEvent.DeleteChapters(dialog.toDelete)) },
+            )
+        }
+
+        is UpdatesScreenModel.Dialog.FilterSheet -> {
+            UpdatesFilterDialog(
+                onDismissRequest = onDismissDialog,
+                screenModel = settingsScreenModel,
+            )
+        }
+
+        null -> {}
+    }
+
+    LaunchedEffect(Unit) {
+        screenModel.events.collectLatest { event ->
+            when (event) {
+                UpdatesScreenModel.Event.InternalError -> screenModel.snackbarHostState.showSnackbar(
+                    context.stringResource(ephyra.app.core.common.R.string.internal_error),
+                )
+
+                is UpdatesScreenModel.Event.LibraryUpdateTriggered -> {
+                    val msg = if (event.started) {
+                        ephyra.app.core.common.R.string.updating_library
+                    } else {
+                        ephyra.app.core.common.R.string.update_already_running
+                    }
+                    screenModel.snackbarHostState.showSnackbar(context.stringResource(msg))
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(state.isLoading) {
+        if (!state.isLoading) {
+            (context as? AppReadySignal)?.signalReady()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        NavigationEvents.reselectEvent
+            .filter { it == ScreenRoutes.Updates.route }
+            .collect { navController.navigate(ScreenRoutes.DownloadQueue.route) }
+    }
+
+    DisposableEffect(Unit) {
+        screenModel.onEvent(UpdatesScreenEvent.ResetNewUpdatesCount)
+
+        onDispose {
+            screenModel.onEvent(UpdatesScreenEvent.ResetNewUpdatesCount)
+        }
+    }
 }

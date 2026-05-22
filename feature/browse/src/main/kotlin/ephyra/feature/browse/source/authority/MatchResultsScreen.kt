@@ -39,57 +39,55 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import ephyra.domain.manga.model.Manga
-import ephyra.feature.manga.MangaScreen
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding
+import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.LoadingScreen
-import ephyra.presentation.core.util.Screen
+import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.system.openInBrowser
 
 /**
  * Screen showing the results of authority matching.
  * Displays recently linked manga and still-unlinked items with retry actions.
  */
-class MatchResultsScreen : Screen() {
+@Composable
+fun MatchResultsScreen(
+    navController: NavController = LocalNavController.current,
+) {
+    val screenModel = hiltViewModel<MatchResultsScreenModel>()
+    val state by screenModel.state.collectAsStateWithLifecycle()
 
-    @Composable
-    override fun Content() {
-        val navigator = LocalNavigator.currentOrThrow
-        val screenModel = hiltViewModel<MatchResultsScreenModel>()
-        val state by screenModel.state.collectAsStateWithLifecycle()
-
-        Scaffold(
-            topBar = { scrollBehavior ->
-                AppBar(
-                    title = stringResource(ephyra.app.core.common.R.string.match_results_title),
-                    navigateUp = navigator::pop,
-                    scrollBehavior = scrollBehavior,
-                )
-            },
-        ) { paddingValues ->
-            if (state.isLoading) {
-                LoadingScreen()
-                return@Scaffold
-            }
-
-            MatchResultsContent(
-                state = state,
-                onRetrySingle = screenModel::retrySingle,
-                onRetryAll = screenModel::retryAll,
-                onOpenManga = { manga ->
-                    navigator.push(MangaScreen(manga.id))
-                },
-                contentPadding = paddingValues,
+    Scaffold(
+        topBar = { scrollBehavior ->
+            AppBar(
+                title = stringResource(ephyra.app.core.common.R.string.match_results_title),
+                navigateUp = { navController.popBackStack() },
+                scrollBehavior = scrollBehavior,
             )
+        },
+    ) { paddingValues ->
+        if (state.isLoading) {
+            LoadingScreen()
+            return@Scaffold
         }
+
+        MatchResultsContent(
+            state = state,
+            onRetrySingle = screenModel::retrySingle,
+            onRetryAll = screenModel::retryAll,
+            onOpenManga = { manga ->
+                navController.navigate(ScreenRoutes.MangaDetails.createRoute(manga.id, true))
+            },
+            contentPadding = paddingValues,
+        )
     }
 }
 
@@ -265,7 +263,12 @@ private fun SummaryCard(
                     tint = MaterialTheme.colorScheme.primary,
                 )
                 Text(
-                    text = stringResource(ephyra.app.core.common.R.string.match_results_summary, totalLinked, totalFavorites),
+                    text = pluralStringResource(
+                        ephyra.app.core.common.R.plurals.match_results_summary,
+                        count = totalFavorites,
+                        totalLinked,
+                        totalFavorites,
+                    ),
                     style = MaterialTheme.typography.titleMedium,
                 )
             }
@@ -284,10 +287,34 @@ private fun SummaryCard(
             if (mangaCount > 0 || novelCount > 0) {
                 Spacer(modifier = Modifier.height(MaterialTheme.padding.extraSmall))
                 val parts = mutableListOf<String>()
-                if (mangaCount > 0) parts.add(stringResource(ephyra.app.core.common.R.string.match_results_count_manga, mangaCount))
-                if (novelCount > 0) parts.add(stringResource(ephyra.app.core.common.R.string.match_results_count_novels, novelCount))
+                if (mangaCount >
+                    0
+                ) {
+                    parts.add(
+                        pluralStringResource(
+                            ephyra.app.core.common.R.plurals.match_results_count_manga,
+                            count = mangaCount,
+                            mangaCount,
+                        ),
+                    )
+                }
+                parts.add(
+                    pluralStringResource(
+                        ephyra.app.core.common.R.plurals.match_results_count_novels,
+                        count = novelCount,
+                        novelCount,
+                    ),
+                )
                 val otherCount = totalFavorites - mangaCount - novelCount
-                if (otherCount > 0) parts.add(stringResource(ephyra.app.core.common.R.string.match_results_count_other, otherCount))
+                if (otherCount > 0) {
+                    parts.add(
+                        pluralStringResource(
+                            ephyra.app.core.common.R.plurals.match_results_count_other,
+                            count = otherCount,
+                            otherCount,
+                        ),
+                    )
+                }
                 Text(
                     text = parts.joinToString(" • "),
                     style = MaterialTheme.typography.labelMedium,
@@ -297,7 +324,11 @@ private fun SummaryCard(
             if (unlinkedCount > 0) {
                 Spacer(modifier = Modifier.height(MaterialTheme.padding.extraSmall))
                 Text(
-                    text = stringResource(ephyra.app.core.common.R.string.match_results_unlinked_count, unlinkedCount),
+                    text = pluralStringResource(
+                        ephyra.app.core.common.R.plurals.match_results_unlinked_count,
+                        count = unlinkedCount,
+                        unlinkedCount,
+                    ),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.error,
                 )
@@ -355,9 +386,15 @@ private fun UnlinkedMangaItem(
                 )
                 // Show content type when known
                 val contentTypeLabel = when (manga.contentType) {
-                    ephyra.domain.manga.model.ContentType.MANGA -> stringResource(ephyra.app.core.common.R.string.content_type_manga)
-                    ephyra.domain.manga.model.ContentType.NOVEL -> stringResource(ephyra.app.core.common.R.string.content_type_novel)
-                    ephyra.domain.manga.model.ContentType.BOOK -> stringResource(ephyra.app.core.common.R.string.content_type_book)
+                    ephyra.domain.manga.model.ContentType.MANGA -> stringResource(
+                        ephyra.app.core.common.R.string.content_type_manga,
+                    )
+                    ephyra.domain.manga.model.ContentType.NOVEL -> stringResource(
+                        ephyra.app.core.common.R.string.content_type_novel,
+                    )
+                    ephyra.domain.manga.model.ContentType.BOOK -> stringResource(
+                        ephyra.app.core.common.R.string.content_type_book,
+                    )
                     else -> null
                 }
                 if (contentTypeLabel != null && !hasFailed && !isMatching) {

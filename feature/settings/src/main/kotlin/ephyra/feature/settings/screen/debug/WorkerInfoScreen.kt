@@ -20,16 +20,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
-import androidx.work.WorkInfo
-import androidx.work.WorkQuery
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavController
+import androidx.work.WorkInfo
+import androidx.work.WorkQuery
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
-import androidx.hilt.navigation.compose.hiltViewModel
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
 import ephyra.core.common.util.lang.toDateTimestampString
 import ephyra.core.common.util.system.workManager
 import ephyra.domain.ui.UiPreferences
@@ -37,7 +35,7 @@ import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
-import ephyra.presentation.core.util.Screen
+import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.util.system.copyToClipboard
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.SharingStarted
@@ -46,78 +44,77 @@ import kotlinx.coroutines.flow.stateIn
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
+import javax.inject.Inject
 
-class WorkerInfoScreen : Screen() {
+@Composable
+fun WorkerInfoScreen(
+    navController: NavController = LocalNavController.current,
+) {
+    val context = LocalContext.current
 
-    companion object {
-        const val TITLE = "Worker info"
-    }
+    val screenModel = hiltViewModel<WorkerInfoScreenModel>()
+    val enqueued by screenModel.enqueued.collectAsState()
+    val finished by screenModel.finished.collectAsState()
+    val running by screenModel.running.collectAsState()
 
-    @Composable
-    override fun Content() {
-        val context = LocalContext.current
-        val navigator = LocalNavigator.currentOrThrow
-
-        val screenModel = hiltViewModel<WorkerInfoScreenModel>()
-        val enqueued by screenModel.enqueued.collectAsState()
-        val finished by screenModel.finished.collectAsState()
-        val running by screenModel.running.collectAsState()
-
-        Scaffold(
-            topBar = {
-                AppBar(
-                    title = TITLE,
-                    navigateUp = navigator::pop,
-                    actions = {
-                        AppBarActions(
-                            persistentListOf(
-                                AppBar.Action(
-                                    title = stringResource(ephyra.app.core.common.R.string.action_copy_to_clipboard),
-                                    icon = Icons.Default.ContentCopy,
-                                    onClick = {
-                                        context.copyToClipboard(TITLE, enqueued + finished + running)
-                                    },
-                                ),
+    Scaffold(
+        topBar = {
+            AppBar(
+                title = WorkerInfoScreen.TITLE,
+                navigateUp = { navController.popBackStack() },
+                actions = {
+                    AppBarActions(
+                        persistentListOf(
+                            AppBar.Action(
+                                title = stringResource(ephyra.app.core.common.R.string.action_copy_to_clipboard),
+                                icon = Icons.Default.ContentCopy,
+                                onClick = {
+                                    context.copyToClipboard(WorkerInfoScreen.TITLE, enqueued + finished + running)
+                                },
                             ),
-                        )
-                    },
-                    scrollBehavior = it,
-                )
-            },
-        ) { contentPadding ->
-            LazyColumn(
-                contentPadding = contentPadding + PaddingValues(horizontal = 16.dp),
-                modifier = Modifier.horizontalScroll(rememberScrollState()),
-            ) {
-                item { SectionTitle(title = "Enqueued") }
-                item { SectionText(text = enqueued) }
+                        ),
+                    )
+                },
+                scrollBehavior = it,
+            )
+        },
+    ) { contentPadding ->
+        LazyColumn(
+            contentPadding = contentPadding + PaddingValues(horizontal = 16.dp),
+            modifier = Modifier.horizontalScroll(rememberScrollState()),
+        ) {
+            item { SectionTitle(title = "Enqueued") }
+            item { SectionText(text = enqueued) }
 
-                item { SectionTitle(title = "Finished") }
-                item { SectionText(text = finished) }
+            item { SectionTitle(title = "Finished") }
+            item { SectionText(text = finished) }
 
-                item { SectionTitle(title = "Running") }
-                item { SectionText(text = running) }
-            }
+            item { SectionTitle(title = "Running") }
+            item { SectionText(text = running) }
         }
     }
+}
 
-    @Composable
-    private fun SectionTitle(title: String) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(vertical = 8.dp),
-        )
-    }
+object WorkerInfoScreen {
+    const val TITLE = "Worker info"
+}
 
-    @Composable
-    private fun SectionText(text: String) {
-        Text(
-            text = text,
-            softWrap = false,
-            fontFamily = FontFamily.Monospace,
-        )
-    }
+@Composable
+private fun SectionTitle(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleMedium,
+        modifier = Modifier.padding(vertical = 8.dp),
+    )
+}
+
+@Composable
+private fun SectionText(text: String) {
+    Text(
+        text = text,
+        softWrap = false,
+        fontFamily = FontFamily.Monospace,
+    )
 }
 
 @HiltViewModel
@@ -181,7 +178,6 @@ private operator fun PaddingValues.plus(other: PaddingValues): PaddingValues {
         start = this.calculateStartPadding(layoutDirection) + other.calculateStartPadding(layoutDirection),
         top = this.calculateTopPadding() + other.calculateTopPadding(),
         end = this.calculateEndPadding(layoutDirection) + other.calculateEndPadding(layoutDirection),
-        bottom = this.calculateBottomPadding() + other.calculateBottomPadding()
+        bottom = this.calculateBottomPadding() + other.calculateBottomPadding(),
     )
 }
-

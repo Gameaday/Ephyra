@@ -2,7 +2,6 @@ package ephyra.feature.browse.migration.search
 
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.interactor.NetworkToLocalManga
@@ -13,6 +12,7 @@ import ephyra.feature.browse.source.globalsearch.SearchScreenModel
 import eu.kanade.tachiyomi.source.CatalogueSource
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @HiltViewModel
 class MigrateSearchScreenModel @Inject constructor(
@@ -46,7 +46,7 @@ class MigrateSearchScreenModel @Inject constructor(
         isInitialized = true
         viewModelScope.launch {
             val manga = getManga.await(mangaId)!!
-            _state.update {
+            updateState {
                 it.copy(
                     from = manga,
                     searchQuery = manga.title,

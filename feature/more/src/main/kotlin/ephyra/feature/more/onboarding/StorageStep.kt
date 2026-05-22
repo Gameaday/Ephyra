@@ -38,7 +38,9 @@ internal class StorageStep : OnboardingStep {
         val context = LocalContext.current
         val handler = LocalUriHandler.current
 
-        val storagePref = remember { ephyra.core.common.di.CoreContainer.get<StoragePreferences>() }.baseStorageDirectory()
+        val storagePref = remember {
+            ephyra.core.common.di.CoreContainer.get<StoragePreferences>()
+        }.baseStorageDirectory()
 
         val pickStorageLocation = SettingsDataScreen.storageLocationPicker(storagePref)
 
@@ -72,7 +74,12 @@ internal class StorageStep : OnboardingStep {
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
 
-            Text(stringResource(ephyra.app.core.common.R.string.onboarding_storage_help_info, stringResource(ephyra.app.core.common.R.string.app_name)))
+            Text(
+                stringResource(
+                    ephyra.app.core.common.R.string.onboarding_storage_help_info,
+                    stringResource(ephyra.app.core.common.R.string.app_name),
+                ),
+            )
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = { handler.openUri(SettingsDataScreen.HELP_URL) },

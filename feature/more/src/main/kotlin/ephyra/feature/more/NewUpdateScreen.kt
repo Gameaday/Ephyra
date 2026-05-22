@@ -3,40 +3,36 @@ package ephyra.feature.more
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
+import androidx.navigation.NavController
 import ephyra.domain.release.service.AppUpdateDownloader
-import ephyra.presentation.core.util.Screen
+import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.util.system.openInBrowser
 
-class NewUpdateScreen(
-    private val versionName: String,
-    private val changelogInfo: String,
-    private val releaseLink: String,
-    private val downloadLink: String,
-) : Screen() {
-
-    @Composable
-    override fun Content() {
-        val navigator = LocalNavigator.currentOrThrow
-        val context = LocalContext.current
-        val appUpdateDownloader = remember { ephyra.core.common.di.CoreContainer.get<AppUpdateDownloader>() }
-        val changelogInfoNoChecksum = remember {
-            changelogInfo.replace("""---(\R|.)*Checksums(\R|.)*""".toRegex(), "")
-        }
-
-        NewUpdateScreen(
-            versionName = versionName,
-            changelogInfo = changelogInfoNoChecksum,
-            onOpenInBrowser = { context.openInBrowser(releaseLink) },
-            onRejectUpdate = navigator::pop,
-            onAcceptUpdate = {
-                appUpdateDownloader.start(
-                    url = downloadLink,
-                    title = versionName,
-                )
-                navigator.pop()
-            },
-        )
+@Composable
+fun NewUpdateScreen(
+    versionName: String,
+    changelogInfo: String,
+    releaseLink: String,
+    downloadLink: String,
+    navController: NavController = LocalNavController.current,
+) {
+    val context = LocalContext.current
+    val appUpdateDownloader = remember { ephyra.core.common.di.CoreContainer.get<AppUpdateDownloader>() }
+    val changelogInfoNoChecksum = remember {
+        changelogInfo.replace("""---(\R|.)*Checksums(\R|.)*""".toRegex(), "")
     }
+
+    NewUpdateScreen(
+        versionName = versionName,
+        changelogInfo = changelogInfoNoChecksum,
+        onOpenInBrowser = { context.openInBrowser(releaseLink) },
+        onRejectUpdate = { navController.popBackStack() },
+        onAcceptUpdate = {
+            appUpdateDownloader.start(
+                url = downloadLink,
+                title = versionName,
+            )
+            navController.popBackStack()
+        },
+    )
 }

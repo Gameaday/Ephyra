@@ -15,6 +15,7 @@ import androidx.annotation.AttrRes
 import androidx.annotation.CallSuper
 import androidx.annotation.StyleRes
 import androidx.appcompat.widget.AppCompatImageView
+import androidx.core.graphics.drawable.toDrawable
 import androidx.core.os.postDelayed
 import androidx.core.view.isVisible
 import coil3.BitmapImage
@@ -164,7 +165,7 @@ open class ReaderPageImageView @JvmOverloads constructor(
     fun setImage(bitmap: Bitmap, config: Config) {
         this.config = config
         prepareNonAnimatedImageView()
-        setNonAnimatedImage(BitmapDrawable(context.resources, bitmap), config)
+        setNonAnimatedImage(bitmap.toDrawable(context.resources), config)
     }
 
     fun setImage(source: BufferedSource, isAnimated: Boolean, config: Config) {

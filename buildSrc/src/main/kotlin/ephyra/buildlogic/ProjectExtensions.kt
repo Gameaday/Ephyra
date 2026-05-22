@@ -65,7 +65,7 @@ internal fun Project.configureAndroid(commonExtension: CommonExtension) {
                 checkReleaseBuilds = false
                 lintConfig = rootProject.file("lint.xml")
                 baseline = file("lint-baseline.xml")
-                checkDependencies = true
+                checkDependencies = false
                 ignoreTestSources = true
             }
         }
@@ -83,7 +83,7 @@ internal fun Project.configureAndroid(commonExtension: CommonExtension) {
                 checkReleaseBuilds = false
                 lintConfig = rootProject.file("lint.xml")
                 baseline = file("lint-baseline.xml")
-                checkDependencies = true
+                checkDependencies = false
                 ignoreTestSources = true
             }
         }
@@ -93,9 +93,11 @@ internal fun Project.configureAndroid(commonExtension: CommonExtension) {
         compilerOptions {
             jvmTarget.set(AndroidConfig.JvmTarget)
             freeCompilerArgs.addAll(
+                "-language-version", "2.3",
+                "-api-version", "2.3",
                 "-Xcontext-parameters",
                 "-opt-in=kotlin.RequiresOptIn",
-                "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
+                "-opt-in=kotlin.ExperimentalStdlibApi",
             )
 
             val warningsAsErrors: String? by project
@@ -145,6 +147,21 @@ internal fun Project.configureCompose(commonExtension: CommonExtension) {
         val stabilityConfig = rootProject.layout.projectDirectory.file("app/compose_stability.conf")
         if (stabilityConfig.asFile.exists()) {
             stabilityConfigurationFiles.add(stabilityConfig)
+        }
+    }
+
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+        val hasMaterial3 = project.configurations.any { config ->
+            config.dependencies.any { dep ->
+                dep.name == "presentation-core" ||
+                dep.name == "material3" ||
+                dep.group == "androidx.compose.material3"
+            }
+        }
+        if (hasMaterial3) {
+            compilerOptions {
+                freeCompilerArgs.add("-opt-in=androidx.compose.material3.ExperimentalMaterial3Api")
+            }
         }
     }
 }

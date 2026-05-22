@@ -25,10 +25,10 @@ import ephyra.presentation.core.ui.delegate.ThemingDelegate as CoreThemingDelega
 
 /**
  * Structural contract tests for every remaining interface→implementation binding declared in
- * [koinAppModule] that was not covered by [KoinModuleInterfaceBindingTest].
+ * Hilt DI modules that was not covered by Hilt compile-time verification.
  *
  * Each test uses [Class.isAssignableFrom] — a pure JVM reflection check that requires no
- * Android runtime and no Koin context. The assertions will fail at CI time if:
+ * Android runtime and no DI context. The assertions will fail at CI time if:
  * - An implementation class is refactored away from an interface without updating the module
  * - An interface is renamed or moved without updating the concrete class declaration
  * - A class is accidentally made abstract or its `implements` clause is removed
@@ -41,7 +41,7 @@ class AppModuleImplementationContractTest {
     // ── NotificationManager ───────────────────────────────────────────────────
 
     /**
-     * [koinAppModule] binds [NotificationManagerImpl] as [NotificationManager].
+     * Hilt binds [NotificationManagerImpl] as [NotificationManager].
      * Verifies the concrete class still implements the core interface.
      */
     @Test
@@ -54,7 +54,7 @@ class AppModuleImplementationContractTest {
     // ── ThemingDelegate ───────────────────────────────────────────────────────
 
     /**
-     * [koinAppModule] binds [ThemingDelegateImpl] as [CoreThemingDelegate].
+     * Hilt binds [ThemingDelegateImpl] as [CoreThemingDelegate].
      * Verifies the concrete delegate still implements the presentation-core interface.
      */
     @Test
@@ -67,7 +67,7 @@ class AppModuleImplementationContractTest {
     // ── SecureActivityDelegate ────────────────────────────────────────────────
 
     /**
-     * [koinAppModule] binds [SecureActivityDelegateImpl] as [CoreSecureActivityDelegate].
+     * Hilt binds [SecureActivityDelegateImpl] as [CoreSecureActivityDelegate].
      * Verifies the concrete delegate still implements the presentation-core interface.
      */
     @Test
@@ -80,7 +80,7 @@ class AppModuleImplementationContractTest {
     // ── AppUpdateDownloader ───────────────────────────────────────────────────
 
     /**
-     * [koinAppModule] binds [AppUpdateDownloaderImpl] as [AppUpdateDownloader].
+     * Hilt binds [AppUpdateDownloaderImpl] as [AppUpdateDownloader].
      * Verifies the concrete class still implements the domain interface.
      */
     @Test
@@ -93,7 +93,7 @@ class AppModuleImplementationContractTest {
     // ── BackupNotifier ────────────────────────────────────────────────────────
 
     /**
-     * [koinAppModule] binds the app-level [BackupNotifier] as [DomainBackupNotifier].
+     * Hilt binds the app-level [BackupNotifier] as [DomainBackupNotifier].
      * Verifies the concrete class still implements the domain interface.
      */
     @Test
@@ -106,7 +106,7 @@ class AppModuleImplementationContractTest {
     // ── AppUpdateNotifier ─────────────────────────────────────────────────────
 
     /**
-     * [koinAppModule] binds the app-level [AppUpdateNotifier] as [DomainAppUpdateNotifier].
+     * Hilt binds the app-level [AppUpdateNotifier] as [DomainAppUpdateNotifier].
      * Verifies the concrete class still implements the domain interface.
      */
     @Test
@@ -119,7 +119,7 @@ class AppModuleImplementationContractTest {
     // ── LibraryUpdateNotifier ─────────────────────────────────────────────────
 
     /**
-     * [koinAppModule] binds the app-level [LibraryUpdateNotifier] as [DomainLibraryUpdateNotifier].
+     * Hilt binds the app-level [LibraryUpdateNotifier] as [DomainLibraryUpdateNotifier].
      * Verifies the concrete class still implements the domain interface.
      */
     @Test
@@ -132,7 +132,7 @@ class AppModuleImplementationContractTest {
     // ── DownloadManager ───────────────────────────────────────────────────────
 
     /**
-     * [koinAppModule] binds [CoreDownloadManager] as the domain [DomainDownloadManager] interface.
+     * Hilt binds [CoreDownloadManager] as the domain [DomainDownloadManager] interface.
      * Verifies the core implementation still satisfies the domain contract.
      */
     @Test
@@ -143,25 +143,24 @@ class AppModuleImplementationContractTest {
     }
 
     /**
-     * [koinAppModule] registers [CoreDownloadManager] only under the domain [DomainDownloadManager]
+     * Hilt registers [CoreDownloadManager] only under the domain [DomainDownloadManager]
      * interface.  [ephyra.app.data.notification.NotificationReceiver] must therefore inject the
      * domain interface, not the concrete class.
      *
      * This test acts as a compile-time guard: if [NotificationReceiver] is changed to inject
-     * [CoreDownloadManager] directly, Koin will throw [org.koin.core.error.NoBeanDefFoundException]
-     * at runtime (any download notification tap will crash).
+     * [CoreDownloadManager] directly, dependency injection will fail.
      */
     @Test
     fun `core DownloadManager implements domain DownloadManager — required for NotificationReceiver injection`() {
         assertTrue(DomainDownloadManager::class.java.isAssignableFrom(CoreDownloadManager::class.java)) {
             "ephyra.core.download.DownloadManager must implement ephyra.domain.download.service.DownloadManager. " +
                 "NotificationReceiver injects DomainDownloadManager; if CoreDownloadManager stops implementing " +
-                "this interface the Koin binding will break."
+                "this interface the Hilt binding will break."
         }
     }
 
     /**
-     * [koinAppModule] binds [TrackerManagerImpl] as [TrackerManager].
+     * Hilt binds [TrackerManagerImpl] as [TrackerManager].
      * Verifies the data-layer implementation still satisfies the domain interface.
      */
     @Test
@@ -174,9 +173,9 @@ class AppModuleImplementationContractTest {
     // ── CoverCache ────────────────────────────────────────────────────────────
 
     /**
-     * [koinAppModule] binds [ephyra.data.cache.CoverCache] with an additional
+     * Hilt binds [ephyra.data.cache.CoverCache] with an additional
      * [ephyra.domain.manga.service.CoverCache] interface binding.
-     * Multiple ScreenModels ([LibraryScreenModel], [BrowseSourceScreenModel],
+     * Multiple ViewModels ([LibraryScreenModel], [BrowseSourceScreenModel],
      * [MangaCoverScreenModel], [MigrateDialogScreenModel]) inject the domain interface,
      * so this binding is required for them to resolve at runtime.
      */
@@ -188,19 +187,18 @@ class AppModuleImplementationContractTest {
             ),
         ) {
             "ephyra.data.cache.CoverCache must implement ephyra.domain.manga.service.CoverCache " +
-                "so the Koin `bind ICoverCache::class` binding in koinAppModule remains valid"
+                "so the Hilt interface binding remains valid"
         }
     }
 
     /**
-     * [koinAppModule] binds [ephyra.data.cache.ChapterCache] with an additional
+     * Hilt binds [ephyra.data.cache.ChapterCache] with an additional
      * [ephyra.domain.chapter.service.ChapterCache] interface binding.
      * Verifies the concrete implementation still satisfies the domain interface
-     * so the `bind IChapterCache::class` in the module remains valid.
+     * so the interface binding remains valid.
      *
-     * Without this binding [ReaderViewModel] would crash at runtime with
-     * NoBeanDefFoundException because it injects the domain interface, not the
-     * concrete data-layer class.
+     * Without this binding [ReaderViewModel] would crash at runtime because it
+     * injects the domain interface, not the concrete data-layer class.
      */
     @Test
     fun `data ChapterCache implements domain ChapterCache`() {
@@ -210,7 +208,7 @@ class AppModuleImplementationContractTest {
             ),
         ) {
             "ephyra.data.cache.ChapterCache must implement ephyra.domain.chapter.service.ChapterCache " +
-                "so the Koin `bind IChapterCache::class` binding in koinAppModule remains valid"
+                "so the Hilt interface binding remains valid"
         }
     }
 }

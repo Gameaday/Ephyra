@@ -62,7 +62,10 @@ class CloudflareInterceptor(
         // Because OkHttp's enqueue only handles IOExceptions, wrap the exception so that
         // we don't crash the entire app
         catch (e: CloudflareBypassException) {
-            throw IOException(context.stringResource(ephyra.app.core.common.R.string.information_cloudflare_bypass_failure), e)
+            throw IOException(
+                context.stringResource(ephyra.app.core.common.R.string.information_cloudflare_bypass_failure),
+                e,
+            )
         } catch (e: Exception) {
             throw IOException(e)
         }

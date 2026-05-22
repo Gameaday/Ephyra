@@ -14,7 +14,6 @@ import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.toDomainManga
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
-import ephyra.presentation.core.util.ioCoroutineScope
 import eu.kanade.tachiyomi.source.CatalogueSource
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.mutate
@@ -24,12 +23,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -43,8 +42,8 @@ abstract class SearchScreenModel(
     private val getManga: GetManga,
 ) : ViewModel() {
 
-    protected val _state = MutableStateFlow(initialState)
-    val state: StateFlow<State> = _state.asStateFlow()
+    private val stateMutable = MutableStateFlow(initialState)
+    val state: StateFlow<State> = stateMutable.asStateFlow()
 
     private val coroutineDispatcher = Dispatchers.IO.limitedParallelism(5)
     private var searchJob: Job? = null
@@ -74,7 +73,7 @@ abstract class SearchScreenModel(
     init {
         viewModelScope.launch {
             sourcePreferences.globalSearchFilterState().changes().collectLatest { filterState ->
-                _state.update { it.copy(onlyShowHasResults = filterState) }
+                stateMutable.update { it.copy(onlyShowHasResults = filterState) }
             }
         }
     }
@@ -136,11 +135,11 @@ abstract class SearchScreenModel(
     }
 
     protected fun updateSearchQuery(query: String?) {
-        _state.update { it.copy(searchQuery = query) }
+        stateMutable.update { it.copy(searchQuery = query) }
     }
 
     protected fun setSourceFilter(filter: SourceFilter) {
-        _state.update { it.copy(sourceFilter = filter) }
+        stateMutable.update { it.copy(sourceFilter = filter) }
         search()
     }
 
@@ -179,7 +178,7 @@ abstract class SearchScreenModel(
             )
         }
 
-        searchJob = ioCoroutineScope.launch {
+        searchJob = viewModelScope.launchIO {
             sources.map { source ->
                 async {
                     if (state.value.items[source] !is SearchItemResult.Loading) {
@@ -212,7 +211,7 @@ abstract class SearchScreenModel(
     }
 
     private fun updateItems(items: PersistentMap<CatalogueSource, SearchItemResult>) {
-        _state.update {
+        stateMutable.update {
             it.copy(
                 items = items
                     .toSortedMap(sortComparator(items))
@@ -231,12 +230,17 @@ abstract class SearchScreenModel(
     protected fun setMigrateDialog(currentId: Long, target: Manga) {
         viewModelScope.launchIO {
             val current = getManga.await(currentId) ?: return@launchIO
-            _state.update { it.copy(dialog = Dialog.Migrate(target, current)) }
+            stateMutable.update { it.copy(dialog = Dialog.Migrate(target, current)) }
         }
     }
 
     protected fun clearDialog() {
-        _state.update { it.copy(dialog = null) }
+        stateMutable.update { it.copy(dialog = null) }
+    }
+
+    // Allow subclasses to update the internal state safely
+    protected fun updateState(transform: (State) -> State) {
+        stateMutable.update { transform(it) }
     }
 
     @Immutable
