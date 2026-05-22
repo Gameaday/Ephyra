@@ -10,7 +10,7 @@ android {
 
 dependencies {
     api(projects.presentationCore)
-    api(projects.domain)
+    api(projects.core.domain)
     implementation(projects.core.data)
     implementation(projects.core.download)
 

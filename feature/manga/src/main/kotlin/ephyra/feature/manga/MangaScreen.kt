@@ -38,6 +38,7 @@ import ephyra.feature.manga.presentation.components.ScanlatorFilterDialog
 import ephyra.feature.manga.presentation.components.SetIntervalDialog
 import ephyra.feature.migration.dialog.MigrateMangaDialog
 import ephyra.feature.reader.ReaderActivity
+import ephyra.presentation.core.feature.SafeFeatureContainer
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
@@ -50,6 +51,7 @@ import ephyra.source.local.isLocalOrStub
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 
@@ -58,6 +60,31 @@ fun MangaDetailsScreen(
     mangaId: Long,
     fromSource: Boolean = false,
     navController: NavController = LocalNavController.current,
+    navigateUp: () -> Unit = { navController.popBackStack() },
+    onAssistUrlComputed: (String?) -> Unit = {},
+) {
+    SafeFeatureContainer(
+        featureName = "MangaDetails",
+        viewModelClass = MangaScreenModel::class.java,
+        onBack = navigateUp,
+    ) { screenModel ->
+        MangaDetailsScreen(
+            mangaId = mangaId,
+            fromSource = fromSource,
+            screenModel = screenModel,
+            navController = navController,
+            navigateUp = navigateUp,
+            onAssistUrlComputed = onAssistUrlComputed,
+        )
+    }
+}
+
+@Composable
+fun MangaDetailsScreen(
+    mangaId: Long,
+    fromSource: Boolean = false,
+    screenModel: MangaScreenModel,
+    navController: NavController,
     navigateUp: () -> Unit = { navController.popBackStack() },
     onAssistUrlComputed: (String?) -> Unit = {},
 ) {
@@ -70,7 +97,6 @@ fun MangaDetailsScreen(
     val haptic = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
 
-    val screenModel = hiltViewModel<MangaScreenModel>()
     LaunchedEffect(mangaId, fromSource) {
         screenModel.init(mangaId, fromSource)
     }

@@ -53,11 +53,11 @@ import ephyra.data.notification.Notifications
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.ui.UiPreferences
-import ephyra.domain.ui.model.setAppCompatDelegateThemeMode
 import ephyra.domain.updates.interactor.GetUpdates
 import ephyra.presentation.core.data.coil.TachiyomiImageDecoder
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.delegate.SecureActivityDelegateState
+import ephyra.presentation.core.util.system.setAppCompatDelegateThemeMode
 import ephyra.presentation.widget.WidgetManager
 import ephyra.telemetry.TelemetryConfig
 import eu.kanade.tachiyomi.network.NetworkHelper
@@ -122,6 +122,7 @@ class App :
 
     @SuppressLint("LaunchActivityFromNotification")
     override fun onCreate() {
+        super<Application>.onCreate()
         if (!LogcatLogger.isInstalled) {
             LogcatLogger.install()
             val minLogPriority = if (BuildConfig.DEBUG) LogPriority.DEBUG else LogPriority.INFO
@@ -130,7 +131,6 @@ class App :
         GlobalExceptionHandler.initialize(applicationContext, CrashActivity::class.java)
 
         initializeCoreContainer(this)
-        super<Application>.onCreate()
         ephyra.app.startup.StartupTracker.complete(ephyra.app.startup.StartupTracker.Phase.APP_CREATED)
 
         TelemetryConfig.init(applicationContext)
@@ -150,13 +150,17 @@ class App :
             .onEach { enabled ->
                 if (enabled) {
                     disableIncognitoReceiver.register()
-                    if (ContextCompat.checkSelfPermission(this@App, android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    if (ContextCompat.checkSelfPermission(this@App, android.Manifest.permission.POST_NOTIFICATIONS) ==
+                        android.content.pm.PackageManager.PERMISSION_GRANTED
+                    ) {
                         notify(
                             Notifications.ID_INCOGNITO_MODE,
                             Notifications.CHANNEL_INCOGNITO_MODE,
                         ) {
                             setContentTitle(this@App.getString(ephyra.app.core.common.R.string.pref_incognito_mode))
-                            setContentText(this@App.getString(ephyra.app.core.common.R.string.notification_incognito_text))
+                            setContentText(
+                                this@App.getString(ephyra.app.core.common.R.string.notification_incognito_text),
+                            )
                             setSmallIcon(R.drawable.ic_glasses_24dp)
                             setOngoing(true)
 

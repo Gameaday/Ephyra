@@ -13,7 +13,6 @@ import androidx.navigation.NavController
 import ephyra.domain.ui.UiPreferences
 import ephyra.domain.ui.model.TabletUiMode
 import ephyra.domain.ui.model.ThemeMode
-import ephyra.domain.ui.model.setAppCompatDelegateThemeMode
 import ephyra.feature.settings.Preference
 import ephyra.feature.settings.widget.AppThemeModePreferenceWidget
 import ephyra.feature.settings.widget.AppThemePreferenceWidget
@@ -21,6 +20,7 @@ import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.collectAsState
+import ephyra.presentation.core.util.system.setAppCompatDelegateThemeMode
 import ephyra.presentation.core.util.system.toast
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableMap

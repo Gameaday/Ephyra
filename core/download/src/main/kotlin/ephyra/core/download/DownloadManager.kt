@@ -48,7 +48,9 @@ class DownloadManager(
     private val pendingDeleter: DownloadPendingDeleter,
 ) : IDownloadManager {
 
-    private val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO)
+    private val scope = kotlinx.coroutines.CoroutineScope(
+        kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO,
+    )
 
     override val isRunning: Boolean
         get() = downloader.isRunning

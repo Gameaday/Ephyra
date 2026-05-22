@@ -290,14 +290,30 @@ private fun SummaryCard(
                 if (mangaCount >
                     0
                 ) {
-                    parts.add(pluralStringResource(ephyra.app.core.common.R.plurals.match_results_count_manga, count = mangaCount, mangaCount))
-                }
                     parts.add(
-                        pluralStringResource(ephyra.app.core.common.R.plurals.match_results_count_novels, count = novelCount, novelCount),
+                        pluralStringResource(
+                            ephyra.app.core.common.R.plurals.match_results_count_manga,
+                            count = mangaCount,
+                            mangaCount,
+                        ),
                     )
+                }
+                parts.add(
+                    pluralStringResource(
+                        ephyra.app.core.common.R.plurals.match_results_count_novels,
+                        count = novelCount,
+                        novelCount,
+                    ),
+                )
                 val otherCount = totalFavorites - mangaCount - novelCount
                 if (otherCount > 0) {
-                    parts.add(pluralStringResource(ephyra.app.core.common.R.plurals.match_results_count_other, count = otherCount, otherCount))
+                    parts.add(
+                        pluralStringResource(
+                            ephyra.app.core.common.R.plurals.match_results_count_other,
+                            count = otherCount,
+                            otherCount,
+                        ),
+                    )
                 }
                 Text(
                     text = parts.joinToString(" • "),
@@ -308,7 +324,11 @@ private fun SummaryCard(
             if (unlinkedCount > 0) {
                 Spacer(modifier = Modifier.height(MaterialTheme.padding.extraSmall))
                 Text(
-                    text = pluralStringResource(ephyra.app.core.common.R.plurals.match_results_unlinked_count, count = unlinkedCount, unlinkedCount),
+                    text = pluralStringResource(
+                        ephyra.app.core.common.R.plurals.match_results_unlinked_count,
+                        count = unlinkedCount,
+                        unlinkedCount,
+                    ),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.error,
                 )

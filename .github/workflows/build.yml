@@ -64,19 +64,13 @@ jobs:
             exit 1
           fi
 
-      - name: Architecture fitness – no Injekt.get() outside legacy shim
+      - name: Architecture fitness – no Injekt.get()
         run: |
-          # Injekt.get() is preserved only in the legacy compatibility shim
-          # (core/common/src/main/kotlin/uy/kohesive/injekt/Injekt.kt).
-          # Any other usage is a regression to the old service-locator pattern
-          # and must be replaced with Koin constructor injection.
-          SHIM="core/common/src/main/kotlin/uy/kohesive/injekt/Injekt.kt"
-          # Use grep -H to ensure consistent "path:line" output, then exclude the shim
-          # by matching its full relative path component (without leading ./).
-          VIOLATIONS=$(grep -rHn --include="*.kt" "Injekt\.get(" . \
-            | grep -v "${SHIM}:" || true)
+          # The service locator pattern shim (Injekt) has been completely removed.
+          # Any usage of Injekt.get() is a regression and must be replaced with Koin constructor injection.
+          VIOLATIONS=$(grep -rHn --include="*.kt" "Injekt\.get(" . || true)
           if [ -n "$VIOLATIONS" ]; then
-            echo "::error::Injekt.get() found outside the legacy shim (use Koin constructor injection instead):"
+            echo "::error::Injekt.get() found in codebase (use Koin constructor injection instead):"
             echo "$VIOLATIONS"
             exit 1
           fi

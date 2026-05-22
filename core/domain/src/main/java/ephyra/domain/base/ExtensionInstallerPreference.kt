@@ -25,7 +25,7 @@ class ExtensionInstallerPreference(
         }
 
     override fun defaultValue() = if (!capabilityProvider.isAvailable(ExtensionInstaller.PACKAGEINSTALLER)) {
-        ExtensionInstaller.LEGACY
+        ExtensionInstaller.PRIVATE
     } else {
         ExtensionInstaller.PACKAGEINSTALLER
     }
@@ -37,7 +37,7 @@ class ExtensionInstallerPreference(
                         ExtensionInstaller.PACKAGEINSTALLER,
                     )
                 ) {
-                    return ExtensionInstaller.LEGACY
+                    return ExtensionInstaller.PRIVATE
                 }
             }
 
@@ -50,9 +50,7 @@ class ExtensionInstallerPreference(
         return value
     }
 
-    @Deprecated("Use suspend fun get() instead", ReplaceWith("get()"))
     override fun getSync(): ExtensionInstaller {
-        @Suppress("DEPRECATION")
         return check(basePref.getSync())
     }
 

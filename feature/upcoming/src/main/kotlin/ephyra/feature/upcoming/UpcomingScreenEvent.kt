@@ -4,4 +4,5 @@ import java.time.YearMonth
 
 sealed interface UpcomingScreenEvent {
     data class SetSelectedYearMonth(val yearMonth: YearMonth) : UpcomingScreenEvent
+    data class ClickUpcoming(val mangaId: Long) : UpcomingScreenEvent
 }

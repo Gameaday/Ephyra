@@ -14,8 +14,6 @@ import ephyra.app.ui.main.MainActivity
 import ephyra.app.util.system.notificationManager
 import ephyra.core.common.Constants
 import ephyra.core.common.util.lang.launchIO
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import ephyra.core.common.util.system.cancelNotification
 import ephyra.domain.chapter.interactor.GetChapter
 import ephyra.domain.chapter.interactor.UpdateChapter
@@ -30,6 +28,8 @@ import ephyra.feature.reader.ReaderActivity
 import ephyra.presentation.core.util.system.getParcelableExtraCompat
 import ephyra.presentation.core.util.system.toShareIntent
 import ephyra.presentation.core.util.system.toast
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import ephyra.app.BuildConfig.APPLICATION_ID as ID
 

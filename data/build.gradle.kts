@@ -20,7 +20,7 @@ sqldelight {
 
 dependencies {
     implementation(projects.sourceApi)
-    implementation(projects.domain)
+    implementation(projects.core.domain)
     implementation(projects.core.common)
 
     // Room - Processed via KSP

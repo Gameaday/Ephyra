@@ -15,7 +15,7 @@ android {
 
 dependencies {
     implementation(projects.core.common)
-    implementation(projects.domain)
+    implementation(projects.core.domain)
     implementation(projects.data)
     implementation(projects.sourceApi)
     implementation(projects.sourceLocal)

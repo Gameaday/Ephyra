@@ -37,6 +37,7 @@ import ephyra.domain.manga.model.toSManga
 import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.domain.source.service.SourceManager
 import ephyra.feature.manga.presentation.components.ChapterDownloadAction
+import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.presentation.core.ui.AppInfo
 import ephyra.presentation.core.util.asState
 import ephyra.presentation.core.util.manga.DownloadAction
@@ -84,10 +85,7 @@ class MangaScreenModel @Inject constructor(
     val coverCache: ephyra.domain.manga.service.CoverCache,
     val appInfo: AppInfo,
     val snackbarHostState: SnackbarHostState = SnackbarHostState(),
-) : ViewModel() {
-
-    private val _state = MutableStateFlow<State>(State.Loading)
-    val state: StateFlow<State> = _state.asStateFlow()
+) : BaseUdfViewModel<MangaScreenModel.State, MangaScreenEvent, MangaScreenEffect>(State.Loading) {
 
     private val successState: State.Success?
         get() = state.value as? State.Success
@@ -115,7 +113,7 @@ class MangaScreenModel @Inject constructor(
                 .distinctUntilChanged()
                 .collect { manga ->
                     if (manga == null) return@collect
-                    _state.update { state ->
+                    updateState { state ->
                         when (state) {
                             is State.Loading -> State.Success(
                                 manga = manga,
@@ -138,8 +136,8 @@ class MangaScreenModel @Inject constructor(
                 libraryPreferences.swipeToEndAction().changes(),
                 libraryPreferences.swipeToStartAction().changes(),
             ) { (manga, chapters), _, queue, swipeStart, swipeEnd ->
-                _state.update { state ->
-                    val success = state as? State.Success ?: return@update state
+                updateState { state ->
+                    val success = state as? State.Success ?: return@updateState state
                     success.copy(
                         manga = manga,
                         chapters = chapters,
@@ -156,7 +154,7 @@ class MangaScreenModel @Inject constructor(
                 .map { it.isNotEmpty() }
                 .distinctUntilChanged()
                 .collect { hasLoggedIn ->
-                    _state.update { state ->
+                    updateState { state ->
                         when (state) {
                             is State.Loading -> state
                             is State.Success -> state.copy(hasLoggedInTrackers = hasLoggedIn)
@@ -176,7 +174,7 @@ class MangaScreenModel @Inject constructor(
         }
     }
 
-    fun onEvent(event: MangaScreenEvent) {
+    override fun onEvent(event: MangaScreenEvent) {
         when (event) {
             is MangaScreenEvent.ToggleSelection -> {
                 selectedChapterIds.addOrRemove(event.item.id, event.selected)
@@ -201,44 +199,44 @@ class MangaScreenModel @Inject constructor(
                 updateSelectionState()
             }
             MangaScreenEvent.DismissDialog -> {
-                _state.update { state ->
-                    val success = state as? State.Success ?: return@update state
+                updateState { state ->
+                    val success = state as? State.Success ?: return@updateState state
                     success.copy(dialog = null)
                 }
             }
             MangaScreenEvent.ShowSettingsDialog -> {
-                _state.update { state ->
-                    val success = state as? State.Success ?: return@update state
+                updateState { state ->
+                    val success = state as? State.Success ?: return@updateState state
                     success.copy(dialog = Dialog.SettingsSheet)
                 }
             }
             MangaScreenEvent.ShowTrackDialog -> {
-                _state.update { state ->
-                    val success = state as? State.Success ?: return@update state
+                updateState { state ->
+                    val success = state as? State.Success ?: return@updateState state
                     success.copy(dialog = Dialog.TrackSheet)
                 }
             }
             MangaScreenEvent.ShowCoverDialog -> {
-                _state.update { state ->
-                    val success = state as? State.Success ?: return@update state
+                updateState { state ->
+                    val success = state as? State.Success ?: return@updateState state
                     success.copy(dialog = Dialog.FullCover)
                 }
             }
             MangaScreenEvent.ShowEditMetadataDialog -> {
-                _state.update { state ->
-                    val success = state as? State.Success ?: return@update state
+                updateState { state ->
+                    val success = state as? State.Success ?: return@updateState state
                     success.copy(dialog = Dialog.EditMetadata)
                 }
             }
             is MangaScreenEvent.ShowDeleteChapterDialog -> {
-                _state.update { state ->
-                    val success = state as? State.Success ?: return@update state
+                updateState { state ->
+                    val success = state as? State.Success ?: return@updateState state
                     success.copy(dialog = Dialog.DeleteChapters(event.chapters))
                 }
             }
             is MangaScreenEvent.ShowMigrateDialog -> {
-                _state.update { state ->
-                    val success = state as? State.Success ?: return@update state
+                updateState { state ->
+                    val success = state as? State.Success ?: return@updateState state
                     success.copy(dialog = Dialog.Migrate(current = success.manga, target = event.duplicate))
                 }
             }
@@ -249,15 +247,15 @@ class MangaScreenModel @Inject constructor(
                     val selection = categories.map { category ->
                         CheckboxState.State.None(category) as CheckboxState<Category>
                     }
-                    _state.update { state ->
-                        val success = state as? State.Success ?: return@update state
+                    updateState { state ->
+                        val success = state as? State.Success ?: return@updateState state
                         success.copy(dialog = Dialog.ChangeCategory(manga, selection))
                     }
                 }
             }
             MangaScreenEvent.ShowSetFetchIntervalDialog -> {
-                _state.update { state ->
-                    val success = state as? State.Success ?: return@update state
+                updateState { state ->
+                    val success = state as? State.Success ?: return@updateState state
                     success.copy(dialog = Dialog.SetFetchInterval(success.manga))
                 }
             }
@@ -266,8 +264,8 @@ class MangaScreenModel @Inject constructor(
     }
 
     private fun updateSelectionState() {
-        _state.update { state ->
-            val success = state as? State.Success ?: return@update state
+        updateState { state ->
+            val success = state as? State.Success ?: return@updateState state
             success.copy(
                 isAnySelected = selectedChapterIds.isNotEmpty(),
                 chapterListItems = success.chapterListItems.map { item ->

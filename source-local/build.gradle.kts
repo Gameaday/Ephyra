@@ -21,7 +21,7 @@ dependencies {
     implementation(projects.coreMetadata)
 
     // Move ChapterRecognition to separate module?
-    implementation(projects.domain)
+    implementation(projects.core.domain)
 
     implementation(libs.bundles.sqlite)
     implementation(kotlinx.bundles.serialization)

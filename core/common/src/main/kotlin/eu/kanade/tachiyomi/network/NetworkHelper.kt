@@ -55,20 +55,12 @@ class NetworkHelper(
             builder.addNetworkInterceptor(httpLoggingInterceptor)
         }
 
-        when (preferences.dohProvider().getSync()) {
-            PREF_DOH_CLOUDFLARE -> builder.dohCloudflare()
-            PREF_DOH_GOOGLE -> builder.dohGoogle()
-            PREF_DOH_ADGUARD -> builder.dohAdGuard()
-            PREF_DOH_QUAD9 -> builder.dohQuad9()
-            PREF_DOH_ALIDNS -> builder.dohAliDNS()
-            PREF_DOH_DNSPOD -> builder.dohDNSPod()
-            PREF_DOH_360 -> builder.doh360()
-            PREF_DOH_QUAD101 -> builder.dohQuad101()
-            PREF_DOH_MULLVAD -> builder.dohMullvad()
-            PREF_DOH_CONTROLD -> builder.dohControlD()
-            PREF_DOH_NJALLA -> builder.dohNajalla()
-            PREF_DOH_SHECAN -> builder.dohShecan()
-            else -> builder
+        val dohProviderId = preferences.dohProvider().getSync()
+        val dohProvider = dohProviders.find { it.id == dohProviderId }
+        if (dohProvider != null) {
+            builder.doh(dohProvider)
+        } else {
+            builder
         }
     }
 
@@ -79,13 +71,6 @@ class NetworkHelper(
             CloudflareInterceptor(context, cookieJar, ::defaultUserAgentProvider),
         )
         .build()
-
-    /**
-     * @deprecated Since extension-lib 1.5
-     */
-    @Deprecated("The regular client handles Cloudflare by default")
-    @Suppress("UNUSED")
-    val cloudflareClient: OkHttpClient = client
 
     fun defaultUserAgentProvider() = preferences.defaultUserAgent().getSync().trim()
 }

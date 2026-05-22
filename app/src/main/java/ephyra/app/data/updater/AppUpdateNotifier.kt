@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import ephyra.app.R
 import ephyra.app.data.notification.NotificationHandler
@@ -17,8 +18,6 @@ import ephyra.data.notification.Notifications
 import ephyra.domain.release.model.Release
 import ephyra.domain.release.service.AppUpdateNotifier as DomainAppUpdateNotifier
 
-import androidx.core.content.ContextCompat
-
 class AppUpdateNotifier(private val context: Context) : DomainAppUpdateNotifier {
 
     private val notificationBuilder = context.notificationBuilder(Notifications.CHANNEL_APP_UPDATE)
@@ -29,7 +28,9 @@ class AppUpdateNotifier(private val context: Context) : DomainAppUpdateNotifier 
      * @param id id of the notification channel.
      */
     private fun NotificationCompat.Builder.show(id: Int = Notifications.ID_APP_UPDATER) {
-        if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) ==
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
             context.notify(id, build())
         }
     }

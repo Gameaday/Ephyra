@@ -187,7 +187,7 @@ dependencies {
     implementation(projects.sourceApi)
     implementation(projects.sourceLocal)
     implementation(projects.data)
-    implementation(projects.domain)
+    implementation(projects.core.domain)
     implementation(projects.presentationCore)
     implementation(projects.presentationWidget)
 

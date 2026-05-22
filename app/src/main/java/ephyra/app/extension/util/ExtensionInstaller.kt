@@ -104,14 +104,6 @@ class ExtensionInstaller(
      */
     private fun installApk(downloadId: Long, tempFile: File) {
         when (val installer = runBlocking { extensionInstaller.get() }) {
-            BasePreferences.ExtensionInstaller.LEGACY -> {
-                val intent = Intent(context, ExtensionInstallActivity::class.java)
-                    .setDataAndType(tempFile.getUriCompat(context), APK_MIME)
-                    .putExtra(EXTRA_DOWNLOAD_ID, downloadId)
-                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
-
-                context.startActivity(intent)
-            }
             BasePreferences.ExtensionInstaller.PRIVATE -> {
                 try {
                     if (extensionLoader.installPrivateExtensionFile(context, tempFile)) {

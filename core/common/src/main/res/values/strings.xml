@@ -114,6 +114,7 @@
     <string name="action_previous_chapter">Previous chapter</string>
     <string name="action_next_chapter">Next chapter</string>
     <string name="action_retry">Retry</string>
+    <string name="action_back">Back</string>
     <string name="action_remove">Remove</string>
     <string name="action_remove_everything">Remove everything</string>
     <string name="action_start">Start</string>
@@ -443,7 +444,6 @@
     </string>
     <string name="ext_install_service_notif">Installing extension…</string>
     <string name="ext_installer_pref">Installer</string>
-    <string name="ext_installer_legacy">Legacy</string>
     <string name="ext_installer_packageinstaller" translatable="false">PackageInstaller</string>
     <string name="ext_installer_shizuku" translatable="false">Shizuku</string>
     <string name="ext_installer_private" translatable="false">Private</string>
