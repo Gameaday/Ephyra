@@ -187,6 +187,10 @@ Dependencies that must become interfaces before unit-testing is possible:
 | ✅ | Theme/log-level `.getSync()` guarded | DataStore race on first launch | try/catch with safe defaults |
 | ✅ | `WORKMANAGER_CONFIGURED` phase added | No startup visibility for WorkManager init | Phase added to enum; `complete()` called inside `workManagerConfiguration` getter — fires the first time WorkManager requests its `Configuration` |
 | ✅ | Time-bound all phases | Only `MIGRATOR_COMPLETE` (30 s) and overlay (10 s) had timeouts | `timeoutMs: Long` added to each `Phase` enum entry; `StartupDiagnosticOverlay` now shows `Warning` icon + "OVERDUE (>Ns)" label in amber for any pending phase that has exceeded its individual budget |
+| ✅ | Hilt ViewModel usage | `HomeScreen` was using standard `viewModel()` | Migrated to `hiltViewModel()` to support constructor injection |
+| ✅ | Early Exception Handling | Crash handler initialized too late | Moved `GlobalExceptionHandler` to the top of `App.onCreate` and added `StartupFailureActivity` fallback |
+| ✅ | Glance Widget Safety | Premature access to `CoreContainer` in widget constructor | Refactored `BaseUpdatesGridGlanceWidget` to use lazy dependencies |
+| ✅ | GL Robustness | `DEVICE_TEXTURE_LIMIT` could crash without EGL | Added try-catch with safe default to `GLUtil` |
 
 ---
 

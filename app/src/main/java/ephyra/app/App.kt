@@ -111,19 +111,29 @@ class App :
     private var verboseLoggingEnabled = false
 
     override val workManagerConfiguration: androidx.work.Configuration
-        get() = androidx.work.Configuration.Builder()
-            .setWorkerFactory(ephyra.app.data.work.AppWorkerFactory())
-            .build()
+        get() {
+            ephyra.app.startup.StartupTracker.complete(ephyra.app.startup.StartupTracker.Phase.WORKMANAGER_CONFIGURED)
+            return androidx.work.Configuration.Builder()
+                .setWorkerFactory(ephyra.app.data.work.AppWorkerFactory())
+                .build()
+        }
 
     private val disableIncognitoReceiver = DisableIncognitoReceiver()
 
     @SuppressLint("LaunchActivityFromNotification")
     override fun onCreate() {
+        if (!LogcatLogger.isInstalled) {
+            LogcatLogger.install()
+            val minLogPriority = if (BuildConfig.DEBUG) LogPriority.DEBUG else LogPriority.INFO
+            LogcatLogger.loggers += AndroidLogcatLogger(minLogPriority)
+        }
+        GlobalExceptionHandler.initialize(applicationContext, CrashActivity::class.java)
+
         initializeCoreContainer(this)
         super<Application>.onCreate()
-        TelemetryConfig.init(applicationContext)
+        ephyra.app.startup.StartupTracker.complete(ephyra.app.startup.StartupTracker.Phase.APP_CREATED)
 
-        GlobalExceptionHandler.initialize(applicationContext, CrashActivity::class.java)
+        TelemetryConfig.init(applicationContext)
 
         // Avoid potential crashes from multiple WebView processes
         val process = getProcessName()
@@ -191,16 +201,6 @@ class App :
             // Updates widget update
             WidgetManager(getUpdates, securityPreferences).apply { init(scope) }
 
-            if (!LogcatLogger.isInstalled) {
-                val minLogPriority = when {
-                    verboseLoggingEnabled -> LogPriority.VERBOSE
-                    BuildConfig.DEBUG -> LogPriority.DEBUG
-                    else -> LogPriority.INFO
-                }
-                LogcatLogger.install()
-                LogcatLogger.loggers += AndroidLogcatLogger(minLogPriority)
-            }
-
             initializeMigrator()
         }
     }
@@ -208,6 +208,7 @@ class App :
     private suspend fun initializeMigrator() {
         val preference = preferenceStore.getInt(Preference.appStateKey("last_version_code"), 0)
         logcat { "Migration from ${preference.get()} to ${BuildConfig.VERSION_CODE}" }
+        ephyra.app.startup.StartupTracker.complete(ephyra.app.startup.StartupTracker.Phase.MIGRATOR_STARTED)
         Migrator.initialize(
             old = preference.get(),
             new = BuildConfig.VERSION_CODE,

@@ -30,7 +30,6 @@ object StartupTracker {
         ACTIVITY_CREATED("Main activity created", 15_000L),
         COMPOSE_STARTED("Compose content initialized", 20_000L),
         MIGRATOR_COMPLETE("Migrations complete", 40_000L),
-        NAVIGATOR_CREATED("Navigator ready", 45_000L),
         HOME_SCREEN_LOADED("App ready", 60_000L),
     }
 

@@ -59,11 +59,17 @@ interface WidgetEntryPoint {
 
 abstract class BaseUpdatesGridGlanceWidget : GlanceAppWidget() {
 
-    private val widgetContext: Application = ephyra.core.common.di.CoreContainer.applicationContext as Application
-    private val entryPoint = EntryPointAccessors.fromApplication(widgetContext, WidgetEntryPoint::class.java)
+    private val widgetContext: Application by lazy {
+        ephyra.core.common.di.CoreContainer.applicationContext as Application
+    }
+    private val entryPoint by lazy {
+        EntryPointAccessors.fromApplication(widgetContext, WidgetEntryPoint::class.java)
+    }
 
-    private val getUpdates: GetUpdates = entryPoint.getUpdates()
-    private val preferences: SecurityPreferences = entryPoint.securityPreferences()
+    private val getUpdates: GetUpdates
+        get() = entryPoint.getUpdates()
+    private val preferences: SecurityPreferences
+        get() = entryPoint.securityPreferences()
 
     override val sizeMode = SizeMode.Exact
 

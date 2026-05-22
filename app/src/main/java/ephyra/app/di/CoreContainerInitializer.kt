@@ -68,6 +68,7 @@ interface ScreenEntryPoint {
     fun backupFileValidator(): ephyra.domain.backup.service.BackupFileValidator
     fun secureActivityDelegate(): ephyra.presentation.core.ui.delegate.SecureActivityDelegate
     fun themingDelegate(): ephyra.presentation.core.ui.delegate.ThemingDelegate
+    fun appInfo(): ephyra.presentation.core.ui.AppInfo
 
     // Extension repos
     fun getExtensionRepoCount(): ephyra.domain.extensionrepo.interactor.GetExtensionRepoCount
@@ -163,7 +164,7 @@ fun initializeCoreContainer(context: Context) {
     CoreContainer.register(ephyra.domain.category.interactor.SetMangaCategories::class.java) {
         entryPoint.setMangaCategories()
     }
-    CoreContainer.register(ephyra.core.download.DownloadManager::class.java) { entryPoint.downloadManager() }
+    CoreContainer.register(ephyra.domain.download.service.DownloadManager::class.java) { entryPoint.downloadManager() }
     CoreContainer.register(ephyra.core.download.DownloadCache::class.java) { entryPoint.downloadCache() }
     CoreContainer.register(ephyra.domain.track.service.TrackerManager::class.java) { entryPoint.trackerManager() }
 
@@ -196,6 +197,9 @@ fun initializeCoreContainer(context: Context) {
     }
     CoreContainer.register(ephyra.presentation.core.ui.delegate.ThemingDelegate::class.java) {
         entryPoint.themingDelegate()
+    }
+    CoreContainer.register(ephyra.presentation.core.ui.AppInfo::class.java) {
+        entryPoint.appInfo()
     }
 
     // Extension repos

@@ -119,6 +119,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
         val splashScreen = if (isLaunch) installSplashScreen() else null
 
         super.onCreate(savedInstanceState)
+        if (!isLaunch) ready = true
         StartupTracker.complete(StartupTracker.Phase.ACTIVITY_CREATED)
 
         if (!isTaskRoot) {
@@ -132,6 +133,11 @@ class MainActivity : BaseActivity(), AppReadySignal {
                 StartupTracker.complete(StartupTracker.Phase.COMPOSE_STARTED)
             }
             val navController = rememberNavController()
+            LaunchedEffect(navController) {
+                if (isLaunch) {
+                    handleIntentAction(intent, navController)
+                }
+            }
             androidx.compose.runtime.CompositionLocalProvider(
                 ephyra.presentation.core.util.LocalUiPreferences provides uiPreferences,
                 ephyra.presentation.core.util.LocalPrivacyPreferences provides privacyPreferences,
@@ -515,6 +521,9 @@ class MainActivity : BaseActivity(), AppReadySignal {
     }
 
     private fun handleIntentAction(intent: Intent, navController: NavHostController): Boolean {
+        ready = true
+        StartupTracker.complete(StartupTracker.Phase.HOME_SCREEN_LOADED)
+
         val notificationId = intent.getIntExtra("notificationId", -1)
         if (notificationId > -1) {
             NotificationReceiver.dismissNotification(
