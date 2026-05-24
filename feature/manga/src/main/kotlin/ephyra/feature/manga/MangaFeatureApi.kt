@@ -5,9 +5,12 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import ephyra.presentation.core.feature.FeatureApi
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
+import ephyra.presentation.core.ui.viewer.MediaViewerRegistry
 import javax.inject.Inject
 
-class MangaFeatureApi @Inject constructor() : FeatureApi {
+class MangaFeatureApi @Inject constructor(
+    private val mediaViewerRegistry: MediaViewerRegistry,
+) : FeatureApi {
     override fun register(
         navGraphBuilder: NavGraphBuilder,
         navController: NavHostController,
@@ -30,6 +33,7 @@ class MangaFeatureApi @Inject constructor() : FeatureApi {
                 fromSource = fromSource,
                 navController = navController,
                 navigateUp = { navController.popBackStack() },
+                mediaViewerRegistry = mediaViewerRegistry,
             )
         }
 

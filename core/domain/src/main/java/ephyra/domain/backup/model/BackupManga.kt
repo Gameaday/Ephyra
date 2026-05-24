@@ -1,6 +1,6 @@
 package ephyra.domain.backup.model
 
-import ephyra.domain.manga.model.ContentType
+import ephyra.domain.content.model.ContentType
 import ephyra.domain.manga.model.Manga
 import eu.kanade.tachiyomi.source.model.UpdateStrategy
 import kotlinx.serialization.Serializable

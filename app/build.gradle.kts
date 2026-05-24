@@ -201,6 +201,7 @@ dependencies {
     implementation(projects.feature.migration)
     implementation(projects.feature.more)
     implementation(projects.feature.reader)
+    implementation(projects.feature.player)
     implementation(projects.feature.security)
     implementation(projects.feature.settings)
     implementation(projects.feature.stats)

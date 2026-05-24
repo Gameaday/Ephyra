@@ -22,6 +22,8 @@ import androidx.navigation.NavController
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.chapter.model.Chapter
+import ephyra.domain.content.model.toContentItem
+import ephyra.domain.content.model.toContentUnit
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.hasCustomCover
 import ephyra.domain.manga.model.toSManga
@@ -42,6 +44,7 @@ import ephyra.presentation.core.feature.SafeFeatureContainer
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
+import ephyra.presentation.core.ui.viewer.MediaViewerRegistry
 import ephyra.presentation.core.util.ifSourcesLoaded
 import ephyra.presentation.core.util.isTabletUi
 import ephyra.presentation.core.util.system.copyToClipboard
@@ -61,6 +64,7 @@ fun MangaDetailsScreen(
     fromSource: Boolean = false,
     navController: NavController = LocalNavController.current,
     navigateUp: () -> Unit = { navController.popBackStack() },
+    mediaViewerRegistry: MediaViewerRegistry,
     onAssistUrlComputed: (String?) -> Unit = {},
 ) {
     SafeFeatureContainer(
@@ -74,6 +78,7 @@ fun MangaDetailsScreen(
             screenModel = screenModel,
             navController = navController,
             navigateUp = navigateUp,
+            mediaViewerRegistry = mediaViewerRegistry,
             onAssistUrlComputed = onAssistUrlComputed,
         )
     }
@@ -85,6 +90,7 @@ fun MangaDetailsScreen(
     fromSource: Boolean = false,
     screenModel: MangaScreenModel,
     navController: NavController,
+    mediaViewerRegistry: MediaViewerRegistry,
     navigateUp: () -> Unit = { navController.popBackStack() },
     onAssistUrlComputed: (String?) -> Unit = {},
 ) {
@@ -132,7 +138,7 @@ fun MangaDetailsScreen(
         chapterSwipeStartAction = successState.chapterSwipeStartAction,
         chapterSwipeEndAction = successState.chapterSwipeEndAction,
         navigateUp = navigateUp,
-        onChapterClicked = { openChapter(context, it) },
+        onChapterClicked = { openChapter(context, navController, mediaViewerRegistry, successState.manga, it) },
         onDownloadChapter = if (!successState.source.isLocalOrStub()) {
             { items, action -> screenModel.onEvent(MangaScreenEvent.RunChapterDownloadActions(items, action)) }
         } else {
@@ -181,7 +187,15 @@ fun MangaDetailsScreen(
         },
         onFilterButtonClicked = { screenModel.onEvent(MangaScreenEvent.ShowSettingsDialog) },
         onRefresh = { screenModel.onEvent(MangaScreenEvent.FetchAllFromSource(manualFetch = true)) },
-        onContinueReading = { continueReading(context, screenModel.getNextUnreadChapter()) },
+        onContinueReading = {
+            continueReading(
+                context,
+                navController,
+                mediaViewerRegistry,
+                successState.manga,
+                screenModel.getNextUnreadChapter(),
+            )
+        },
         onSearch = { query, global ->
             scope.launch {
                 performSearch(
@@ -447,12 +461,29 @@ fun MangaDetailsScreen(
     }
 }
 
-private fun continueReading(context: Context, unreadChapter: Chapter?) {
-    unreadChapter?.let { openChapter(context, it) }
+private fun continueReading(
+    context: Context,
+    navController: NavController,
+    mediaViewerRegistry: MediaViewerRegistry,
+    manga: Manga,
+    unreadChapter: Chapter?,
+) {
+    unreadChapter?.let { openChapter(context, navController, mediaViewerRegistry, manga, it) }
 }
 
-private fun openChapter(context: Context, chapter: Chapter) {
-    context.startActivity(ReaderActivity.newIntent(context, chapter.mangaId, chapter.id))
+private fun openChapter(
+    context: Context,
+    navController: NavController,
+    mediaViewerRegistry: MediaViewerRegistry,
+    manga: Manga,
+    chapter: Chapter,
+) {
+    val contentItem = manga.toContentItem()
+    val contentUnit = chapter.toContentUnit()
+    val launched = mediaViewerRegistry.launch(navController, contentItem, contentUnit)
+    if (!launched) {
+        context.startActivity(ReaderActivity.newIntent(context, chapter.mangaId, chapter.id))
+    }
 }
 
 private fun getMangaUrl(manga: Manga?, source: Source?): String? {

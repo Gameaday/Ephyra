@@ -63,8 +63,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
+import ephyra.domain.content.model.ContentType
 import ephyra.domain.manga.interactor.FindContentSource
-import ephyra.domain.manga.model.ContentType
 import ephyra.domain.manga.model.MangaWithChapterCount
 import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.model.TrackSearch

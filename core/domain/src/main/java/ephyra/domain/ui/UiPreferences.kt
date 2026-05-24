@@ -2,8 +2,6 @@ package ephyra.domain.ui
 
 import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.common.preference.getEnum
-import ephyra.core.common.util.system.DeviceUtil
-import ephyra.core.common.util.system.isDynamicColorAvailable
 import ephyra.domain.ui.model.AppTheme
 import ephyra.domain.ui.model.TabletUiMode
 import ephyra.domain.ui.model.ThemeMode
@@ -11,19 +9,23 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
 
+/**
+ * UI-related preferences. Domain-pure: no Android framework dependencies.
+ *
+ * The [isDynamicColorAvailable] flag must be provided from the data layer
+ * (e.g., set via constructor or preference migration) since it requires
+ * Android API checks that are not available in the pure domain module.
+ */
 class UiPreferences(
     private val preferenceStore: PreferenceStore,
+    private val isDynamicColorAvailable: Boolean = false,
 ) {
 
     fun themeMode() = preferenceStore.getEnum("pref_theme_mode_key", ThemeMode.SYSTEM)
 
     fun appTheme() = preferenceStore.getEnum(
         "pref_app_theme",
-        if (DeviceUtil.isDynamicColorAvailable) {
-            AppTheme.MONET
-        } else {
-            AppTheme.DEFAULT
-        },
+        if (isDynamicColorAvailable) AppTheme.MONET else AppTheme.DEFAULT,
     )
 
     fun themeDarkAmoled() = preferenceStore.getBoolean("pref_theme_dark_amoled_key", false)

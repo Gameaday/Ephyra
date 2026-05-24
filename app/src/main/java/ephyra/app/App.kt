@@ -28,6 +28,7 @@ import dagger.hilt.android.HiltAndroidApp
 import ephyra.app.crash.CrashActivity
 import ephyra.app.crash.GlobalExceptionHandler
 import ephyra.app.di.initializeCoreContainer
+import ephyra.app.startup.StartupGuard
 import ephyra.app.util.system.animatorDurationScale
 import ephyra.app.util.system.cancelNotification
 import ephyra.app.util.system.notify
@@ -123,89 +124,154 @@ class App :
     @SuppressLint("LaunchActivityFromNotification")
     override fun onCreate() {
         super<Application>.onCreate()
-        if (!LogcatLogger.isInstalled) {
-            LogcatLogger.install()
-            val minLogPriority = if (BuildConfig.DEBUG) LogPriority.DEBUG else LogPriority.INFO
-            LogcatLogger.loggers += AndroidLogcatLogger(minLogPriority)
-        }
-        GlobalExceptionHandler.initialize(applicationContext, CrashActivity::class.java)
 
-        initializeCoreContainer(this)
+        // Phase 1: Logging — must succeed first
+        try {
+            if (!LogcatLogger.isInstalled) {
+                LogcatLogger.install()
+                val minLogPriority = if (BuildConfig.DEBUG) LogPriority.DEBUG else LogPriority.INFO
+                LogcatLogger.loggers += AndroidLogcatLogger(minLogPriority)
+            }
+        } catch (e: Exception) {
+            // Last resort — logging is unavailable
+            android.util.Log.e("Ephyra", "Failed to initialize logcat", e)
+        }
+        StartupGuard.completePhase("logging")
+
+        // Phase 2: Global crash handler
+        try {
+            GlobalExceptionHandler.initialize(applicationContext, CrashActivity::class.java)
+        } catch (e: Exception) {
+            android.util.Log.e("Ephyra", "Failed to initialize crash handler", e)
+        }
+        StartupGuard.completePhase("crash_handler")
+
+        // Phase 3: DI container initialization — wrapped in try/catch
+        try {
+            initializeCoreContainer(this)
+        } catch (e: Exception) {
+            logcat(LogPriority.ERROR, e) { "DI container initialization failed — app will degrade" }
+        }
+        StartupGuard.completePhase("di_container")
         ephyra.app.startup.StartupTracker.complete(ephyra.app.startup.StartupTracker.Phase.APP_CREATED)
 
-        TelemetryConfig.init(applicationContext)
+        // Phase 4: Telemetry (non-critical)
+        try {
+            TelemetryConfig.init(applicationContext)
+        } catch (e: Exception) {
+            logcat(LogPriority.ERROR, e) { "Telemetry init failed — non-fatal" }
+        }
+        StartupGuard.completePhase("telemetry")
 
         // Avoid potential crashes from multiple WebView processes
-        val process = getProcessName()
-        if (packageName != process) WebView.setDataDirectorySuffix(process)
+        try {
+            val process = getProcessName()
+            if (packageName != process) WebView.setDataDirectorySuffix(process)
+        } catch (e: Exception) {
+            logcat(LogPriority.ERROR, e) { "WebView data directory setup failed" }
+        }
 
+        // Phase 5: Notification channels (non-critical)
         setupNotificationChannels()
+        StartupGuard.completePhase("notifications")
 
         ProcessLifecycleOwner.get().lifecycle.addObserver(this)
 
         val scope = ProcessLifecycleOwner.get().lifecycleScope
 
-        // Show notification to disable Incognito Mode when it's enabled
-        basePreferences.incognitoMode().changes()
-            .onEach { enabled ->
-                if (enabled) {
-                    disableIncognitoReceiver.register()
-                    if (ContextCompat.checkSelfPermission(this@App, android.Manifest.permission.POST_NOTIFICATIONS) ==
-                        android.content.pm.PackageManager.PERMISSION_GRANTED
-                    ) {
-                        notify(
-                            Notifications.ID_INCOGNITO_MODE,
-                            Notifications.CHANNEL_INCOGNITO_MODE,
-                        ) {
-                            setContentTitle(this@App.getString(ephyra.app.core.common.R.string.pref_incognito_mode))
-                            setContentText(
-                                this@App.getString(ephyra.app.core.common.R.string.notification_incognito_text),
-                            )
-                            setSmallIcon(R.drawable.ic_glasses_24dp)
-                            setOngoing(true)
-
-                            val pendingIntent = PendingIntent.getBroadcast(
+        // Phase 6: Reactive bindings (preference flows)
+        try {
+            basePreferences.incognitoMode().changes()
+                .onEach { enabled ->
+                    if (enabled) {
+                        disableIncognitoReceiver.register()
+                        if (ContextCompat.checkSelfPermission(
                                 this@App,
-                                0,
-                                Intent(ACTION_DISABLE_INCOGNITO_MODE).setPackage(BuildConfig.APPLICATION_ID),
-                                PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE,
-                            )
-                            setContentIntent(pendingIntent)
+                                android.Manifest.permission.POST_NOTIFICATIONS,
+                            ) ==
+                            android.content.pm.PackageManager.PERMISSION_GRANTED
+                        ) {
+                            notify(
+                                Notifications.ID_INCOGNITO_MODE,
+                                Notifications.CHANNEL_INCOGNITO_MODE,
+                            ) {
+                                setContentTitle(this@App.getString(ephyra.app.core.common.R.string.pref_incognito_mode))
+                                setContentText(
+                                    this@App.getString(ephyra.app.core.common.R.string.notification_incognito_text),
+                                )
+                                setSmallIcon(R.drawable.ic_glasses_24dp)
+                                setOngoing(true)
+
+                                val pendingIntent = PendingIntent.getBroadcast(
+                                    this@App,
+                                    0,
+                                    Intent(ACTION_DISABLE_INCOGNITO_MODE).setPackage(BuildConfig.APPLICATION_ID),
+                                    PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE,
+                                )
+                                setContentIntent(pendingIntent)
+                            }
                         }
+                    } else {
+                        disableIncognitoReceiver.unregister()
+                        cancelNotification(Notifications.ID_INCOGNITO_MODE)
                     }
-                } else {
-                    disableIncognitoReceiver.unregister()
-                    cancelNotification(Notifications.ID_INCOGNITO_MODE)
                 }
+                .launchIn(scope)
+
+            privacyPreferences.analytics()
+                .changes()
+                .onEach(TelemetryConfig::setAnalyticsEnabled)
+                .launchIn(scope)
+
+            privacyPreferences.crashlytics()
+                .changes()
+                .onEach(TelemetryConfig::setCrashlyticsEnabled)
+                .launchIn(scope)
+
+            basePreferences.hardwareBitmapThreshold().let { preference ->
+                if (!preference.isSet()) preference.set(GLUtil.DEVICE_TEXTURE_LIMIT)
             }
-            .launchIn(scope)
 
-        privacyPreferences.analytics()
-            .changes()
-            .onEach(TelemetryConfig::setAnalyticsEnabled)
-            .launchIn(scope)
-
-        privacyPreferences.crashlytics()
-            .changes()
-            .onEach(TelemetryConfig::setCrashlyticsEnabled)
-            .launchIn(scope)
-
-        basePreferences.hardwareBitmapThreshold().let { preference ->
-            if (!preference.isSet()) preference.set(GLUtil.DEVICE_TEXTURE_LIMIT)
+            basePreferences.hardwareBitmapThreshold().changes()
+                .onEach { ImageUtil.hardwareBitmapThreshold = it }
+                .launchIn(scope)
+        } catch (e: Exception) {
+            logcat(LogPriority.ERROR, e) { "Startup reactive binding setup failed" }
         }
+        StartupGuard.completePhase("reactive_bindings")
 
-        basePreferences.hardwareBitmapThreshold().changes()
-            .onEach { ImageUtil.hardwareBitmapThreshold = it }
-            .launchIn(scope)
-
+        // Phase 7: Async initialization (theme, widget, migration)
         scope.launchIO {
-            verboseLoggingEnabled = networkPreferences.verboseLogging().get()
-            setAppCompatDelegateThemeMode(uiPreferences.themeMode().get())
+            try {
+                verboseLoggingEnabled = try {
+                    networkPreferences.verboseLogging().get()
+                } catch (e: Exception) {
+                    logcat(LogPriority.WARN, e) { "Failed to read verbose logging pref" }
+                    false
+                }
 
-            // Updates widget update
-            WidgetManager(getUpdates, securityPreferences).apply { init(scope) }
+                try {
+                    setAppCompatDelegateThemeMode(uiPreferences.themeMode().get())
+                } catch (e: Exception) {
+                    logcat(LogPriority.WARN, e) { "Failed to set theme — using default" }
+                }
 
-            initializeMigrator()
+                try {
+                    WidgetManager(getUpdates, securityPreferences).apply { init(scope) }
+                } catch (e: Exception) {
+                    logcat(LogPriority.WARN, e) { "Widget manager init failed" }
+                }
+
+                try {
+                    initializeMigrator()
+                } catch (e: Exception) {
+                    logcat(LogPriority.ERROR, e) { "Migration failed — continuing with current data" }
+                }
+            } catch (e: Exception) {
+                logcat(LogPriority.ERROR, e) { "Async startup initialization failed" }
+            } finally {
+                StartupGuard.completePhase("async_init")
+            }
         }
     }
 

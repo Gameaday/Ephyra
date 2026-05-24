@@ -1,7 +1,7 @@
 package ephyra.domain.track.interactor
 
 import ephyra.core.common.preference.Preference
-import ephyra.domain.manga.model.ContentType
+import ephyra.domain.content.model.ContentType
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaUpdate
 import ephyra.domain.manga.repository.MangaRepository

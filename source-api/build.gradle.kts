@@ -20,6 +20,8 @@ dependencies {
     implementation(projects.core.common)
     api(libs.preferencektx)
 
+    implementation(libs.hilt.android)
+
     implementation(kotlinx.coroutines.android)
     implementation(platform(kotlinx.coroutines.bom))
 }

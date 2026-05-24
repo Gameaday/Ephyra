@@ -25,6 +25,7 @@ import ephyra.domain.chapter.interactor.GetBookmarkedChaptersByMangaId
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
 import ephyra.domain.chapter.interactor.SetReadStatus
 import ephyra.domain.chapter.model.Chapter
+import ephyra.domain.content.model.ContentType
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.history.interactor.GetNextChapters
 import ephyra.domain.library.model.LibraryDisplayMode
@@ -35,8 +36,8 @@ import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.library.service.LibraryUpdateScheduler
 import ephyra.domain.manga.interactor.GetLibraryManga
 import ephyra.domain.manga.interactor.UpdateManga
-import ephyra.domain.manga.model.ContentType
 import ephyra.domain.manga.model.Manga
+import ephyra.domain.manga.model.MangaStatus
 import ephyra.domain.manga.model.MangaUpdate
 import ephyra.domain.manga.model.SourceStatus
 import ephyra.domain.manga.model.applyFilter
@@ -53,7 +54,6 @@ import ephyra.presentation.core.util.manga.DownloadAction
 import ephyra.presentation.core.util.manga.removeCovers
 import ephyra.presentation.core.util.system.getNameForMangaInfo
 import ephyra.source.local.isLocal
-import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
@@ -75,7 +75,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
-import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 import kotlin.random.Random
 
@@ -98,7 +97,7 @@ class LibraryScreenModel @Inject constructor(
     private val downloadManager: DownloadManager,
     private val downloadCache: DownloadCache,
     private val trackerManager: TrackerManager,
-    val libraryUpdateScheduler: LibraryUpdateScheduler,
+    private val libraryUpdateScheduler: LibraryUpdateScheduler,
 ) : BaseUdfViewModel<LibraryScreenModel.State, LibraryScreenEvent, LibraryScreenEffect>(State()) {
 
     override fun onEvent(event: LibraryScreenEvent) {
@@ -127,13 +126,22 @@ class LibraryScreenModel @Inject constructor(
             is LibraryScreenEvent.OpenChangeCategoryDialog -> openChangeCategoryDialog()
             is LibraryScreenEvent.OpenDeleteMangaDialog -> openDeleteMangaDialog()
             is LibraryScreenEvent.CloseDialog -> closeDialog()
+
+            // Sealed UDF: previously public ViewModel methods → events
+            is LibraryScreenEvent.RefreshLibrary -> refreshLibrary(event.category)
+            is LibraryScreenEvent.GetRandomManga -> getRandomManga()
+            is LibraryScreenEvent.NavigateToNextUnread -> navigateToNextUnread(event.manga)
         }
     }
 
     init {
-        updateState { state ->
-            state.copy(activeCategoryIndex = runBlocking { libraryPreferences.lastUsedCategory().get() })
+        // Read active category index asynchronously to avoid blocking the main thread.
+        // The combine block below will re-emit with the correct index once loaded.
+        viewModelScope.launchIO {
+            val index = libraryPreferences.lastUsedCategory().get()
+            updateState { it.copy(activeCategoryIndex = index) }
         }
+
         viewModelScope.launchIO {
             combine(
                 state.map { it.searchQuery }.distinctUntilChanged().debounce(SEARCH_DEBOUNCE_MILLIS),
@@ -268,7 +276,9 @@ class LibraryScreenModel @Inject constructor(
         }
 
         val filterFnCompleted: (LibraryItem) -> Boolean = {
-            applyFilter(filterCompleted) { it.libraryManga.manga.status.toInt() == SManga.COMPLETED }
+            applyFilter(filterCompleted) {
+                MangaStatus.fromValue(it.libraryManga.manga.status) is MangaStatus.Completed
+            }
         }
 
         val filterFnIntervalCustom: (LibraryItem) -> Boolean = {
@@ -407,7 +417,8 @@ class LibraryScreenModel @Inject constructor(
 
         return mapValues { (key, value) ->
             if (key.sort.type == LibrarySort.Type.Random) {
-                return@mapValues value.shuffled(Random(runBlocking { libraryPreferences.randomSortSeed().get() }))
+                val seed = libraryPreferences.randomSortSeed().getSync()
+                return@mapValues value.shuffled(Random(seed))
             }
 
             val manga = value.mapNotNull { favoritesById[it] }
@@ -853,6 +864,43 @@ class LibraryScreenModel @Inject constructor(
 
     private fun closeDialog() {
         updateState { it.copy(dialog = null) }
+    }
+
+    /** UDF handler for [LibraryScreenEvent.RefreshLibrary]. */
+    private fun refreshLibrary(category: Category?) {
+        val started = libraryUpdateScheduler.startNow(category)
+        val effect = when {
+            !started -> LibraryScreenEffect.ShowSnackbar(
+                ephyra.app.core.common.R.string.update_already_running,
+            )
+            category != null -> LibraryScreenEffect.ShowSnackbar(
+                ephyra.app.core.common.R.string.updating_category,
+                category.name,
+            )
+            else -> LibraryScreenEffect.ShowSnackbar(
+                ephyra.app.core.common.R.string.updating_library,
+            )
+        }
+        emitEffect(effect)
+    }
+
+    /** UDF handler for [LibraryScreenEvent.GetRandomManga]. */
+    private fun getRandomManga() {
+        val item = getRandomLibraryItemForCurrentCategory()
+        if (item != null) {
+            emitEffect(LibraryScreenEffect.NavigateToManga(item.id))
+        }
+    }
+
+    /** UDF handler for [LibraryScreenEvent.NavigateToNextUnread]. */
+    private fun navigateToNextUnread(manga: Manga) {
+        viewModelScope.launchIO {
+            val chapter = getNextUnreadChapter(manga)
+            if (chapter != null) {
+                // The screen observes the effect stream
+                emitEffect(LibraryScreenEffect.NavigateToManga(manga.id))
+            }
+        }
     }
 
     sealed interface Dialog {

@@ -1,5 +1,6 @@
 package ephyra.domain.manga.model
 
+import ephyra.domain.content.model.ContentType
 import eu.kanade.tachiyomi.source.model.UpdateStrategy
 
 data class MangaUpdate(

@@ -9,9 +9,7 @@ import ephyra.presentation.core.util.manga.DownloadAction
  * All user intents originating from the Library screen.
  *
  * [LibraryScreenModel.onEvent] is the single entry-point for all mutations.
- * Public value-returning accessors ([LibraryScreenModel.getDisplayMode],
- * [LibraryScreenModel.getColumnsForOrientation], [LibraryScreenModel.getRandomLibraryItemForCurrentCategory],
- * [LibraryScreenModel.getNextUnreadChapter]) remain public because they return live/reactive values.
+ * No public accessors bypass the event channel — the screen emits Events, ViewModel emits Effects.
  */
 sealed interface LibraryScreenEvent {
     data class Search(val query: String?) : LibraryScreenEvent
@@ -38,4 +36,9 @@ sealed interface LibraryScreenEvent {
     data object OpenChangeCategoryDialog : LibraryScreenEvent
     data object OpenDeleteMangaDialog : LibraryScreenEvent
     data object CloseDialog : LibraryScreenEvent
+
+    // UDF sealing: previously public ViewModel methods now dispatched via Events
+    data class RefreshLibrary(val category: Category?) : LibraryScreenEvent
+    data object GetRandomManga : LibraryScreenEvent
+    data class NavigateToNextUnread(val manga: Manga) : LibraryScreenEvent
 }

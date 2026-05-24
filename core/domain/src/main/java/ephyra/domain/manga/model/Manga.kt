@@ -1,11 +1,11 @@
 package ephyra.domain.manga.model
 
-import androidx.compose.runtime.Immutable
 import ephyra.core.common.preference.TriState
 import ephyra.core.metadata.comicinfo.ComicInfo
 import ephyra.core.metadata.comicinfo.ComicInfoPublishingStatus
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.chapter.model.Chapter
+import ephyra.domain.content.model.ContentType
 import ephyra.domain.manga.service.CoverCache
 import ephyra.domain.reader.model.ReaderOrientation
 import ephyra.domain.reader.model.ReadingMode
@@ -14,7 +14,7 @@ import eu.kanade.tachiyomi.source.model.UpdateStrategy
 import java.io.Serializable
 import java.time.Instant
 
-@Immutable
+/** @suppress Compose compiler does not reach domain models; use `@Immutable` in UI mappers instead. */
 data class Manga(
     val id: Long,
     val source: Long,
@@ -52,7 +52,7 @@ data class Manga(
 
     val expectedNextUpdate: Instant?
         get() = nextUpdate
-            .takeIf { status != SManga.COMPLETED.toLong() }
+            .takeIf { MangaStatus.fromValue(status) !is MangaStatus.Completed }
             ?.let { Instant.ofEpochMilli(it) }
 
     val sorting: Long
@@ -270,7 +270,7 @@ fun getComicInfo(
  */
 private fun determineMangaField(manga: Manga): ComicInfo.Manga? {
     return when (manga.contentType) {
-        ContentType.NOVEL, ContentType.BOOK -> null
+        ContentType.NOVEL, ContentType.BOOK, ContentType.ANIME, ContentType.AUDIO -> null
         ContentType.MANGA, ContentType.UNKNOWN -> {
             val mode = ReadingMode.fromPreference(manga.readingMode.toInt())
             when (mode) {

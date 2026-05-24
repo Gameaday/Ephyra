@@ -5,8 +5,8 @@ import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.lang.withNonCancellableContext
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
+import ephyra.domain.content.model.ContentType
 import ephyra.domain.history.interactor.GetHistory
-import ephyra.domain.manga.model.ContentType
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaUpdate
 import ephyra.domain.manga.model.mergedAlternativeTitles

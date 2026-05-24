@@ -45,6 +45,22 @@ sealed class ScreenRoutes(val route: String) {
         }
     }
 
+    object VideoPlayer : ScreenRoutes("player/{title}/{url}") {
+        fun createRoute(title: String, url: String): String {
+            val encodedTitle = java.net.URLEncoder.encode(title, "UTF-8")
+            val encodedUrl = java.net.URLEncoder.encode(url, "UTF-8")
+            return "player/$encodedTitle/$encodedUrl"
+        }
+    }
+
+    object BookReader : ScreenRoutes("book/{title}/{content}") {
+        fun createRoute(title: String, content: String): String {
+            val encodedTitle = java.net.URLEncoder.encode(title, "UTF-8")
+            val encodedContent = java.net.URLEncoder.encode(content, "UTF-8")
+            return "book/$encodedTitle/$encodedContent"
+        }
+    }
+
     object GlobalSearch : ScreenRoutes("global_search?query={query}") {
         fun createRoute(query: String?): String {
             return if (query != null) "global_search?query=$query" else "global_search"

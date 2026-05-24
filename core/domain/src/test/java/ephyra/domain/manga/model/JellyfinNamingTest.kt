@@ -1,5 +1,6 @@
 package ephyra.domain.manga.model
 
+import ephyra.domain.content.model.ContentType
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull

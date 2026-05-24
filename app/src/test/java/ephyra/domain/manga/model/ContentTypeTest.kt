@@ -1,5 +1,6 @@
 package ephyra.domain.manga.model
 
+import ephyra.domain.content.model.ContentType
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -52,9 +53,17 @@ class ContentTypeTest {
     @Test
     fun `fromPublishingType returns UNKNOWN for unrecognized types`() {
         assertEquals(ContentType.UNKNOWN, ContentType.fromPublishingType(""))
-        assertEquals(ContentType.UNKNOWN, ContentType.fromPublishingType("Movie"))
-        assertEquals(ContentType.UNKNOWN, ContentType.fromPublishingType("Anime"))
+        assertEquals(ContentType.UNKNOWN, ContentType.fromPublishingType("Random"))
         assertEquals(ContentType.UNKNOWN, ContentType.fromPublishingType("null"))
+    }
+
+    @Test
+    fun `fromPublishingType maps anime and audio variants`() {
+        assertEquals(ContentType.ANIME, ContentType.fromPublishingType("Anime"))
+        assertEquals(ContentType.ANIME, ContentType.fromPublishingType("Movie"))
+        assertEquals(ContentType.ANIME, ContentType.fromPublishingType("TV"))
+        assertEquals(ContentType.AUDIO, ContentType.fromPublishingType("Audiobook"))
+        assertEquals(ContentType.AUDIO, ContentType.fromPublishingType("Podcast"))
     }
 
     @Test

@@ -4,8 +4,8 @@ import ephyra.core.common.util.system.logcat
 import ephyra.data.room.entities.MangaEntity
 import ephyra.data.room.views.LibraryView
 import ephyra.data.room.views.UpdatesView
+import ephyra.domain.content.model.ContentType
 import ephyra.domain.library.model.LibraryManga
-import ephyra.domain.manga.model.ContentType
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaWithChapterCount
 import eu.kanade.tachiyomi.source.model.UpdateStrategy

@@ -31,6 +31,7 @@ import ephyra.domain.chapter.model.ChapterUpdate
 import ephyra.domain.chapter.model.toSChapter
 import ephyra.domain.chapter.service.ChapterCache
 import ephyra.domain.chapter.service.getChapterSort
+import ephyra.domain.content.model.ContentType
 import ephyra.domain.download.model.Download
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.download.service.DownloadPreferences
@@ -41,7 +42,6 @@ import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.interactor.SetMangaViewerFlags
 import ephyra.domain.manga.interactor.UpdateManga
-import ephyra.domain.manga.model.ContentType
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.readerOrientation
 import ephyra.domain.manga.model.readingMode

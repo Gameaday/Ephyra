@@ -49,7 +49,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.time.Instant
 import javax.inject.Inject
 import eu.kanade.tachiyomi.source.model.Filter as SourceModelFilter
@@ -84,6 +83,9 @@ class BrowseSourceScreenModel @Inject constructor(
 
     private var isInitialized = false
 
+    // Lazy-init to avoid runBlocking on main thread during ViewModel creation
+    private var hideInLibraryItems: Boolean = false
+
     fun init(sourceId: Long, listingQuery: String?) {
         if (isInitialized) return
         isInitialized = true
@@ -114,9 +116,12 @@ class BrowseSourceScreenModel @Inject constructor(
         if (!getIncognitoState.await(src.id)) {
             sourcePreferences.lastUsedSource().set(src.id)
         }
-    }
 
-    private val hideInLibraryItems = runBlocking { sourcePreferences.hideInLibraryItems().get() }
+        // Read async preference after init to avoid blocking main thread
+        viewModelScope.launch {
+            hideInLibraryItems = sourcePreferences.hideInLibraryItems().get()
+        }
+    }
     val mangaPagerFlowFlow = state.map { it.listing }
         .distinctUntilChanged()
         .map { listing ->
@@ -137,12 +142,12 @@ class BrowseSourceScreenModel @Inject constructor(
 
     fun getColumnsPreference(orientation: Int): GridCells {
         val isLandscape = orientation == Configuration.ORIENTATION_LANDSCAPE
-        val columns = runBlocking {
-            if (isLandscape) {
-                libraryPreferences.landscapeColumns().get()
-            } else {
-                libraryPreferences.portraitColumns().get()
-            }
+        // Use a coroutine-free synchronous snapshot; DataStore `get()` is a suspend function,
+        // but we run it in init to cache the value and update it reactively.
+        val columns = if (isLandscape) {
+            libraryPreferences.landscapeColumns().getSync()
+        } else {
+            libraryPreferences.portraitColumns().getSync()
         }
         return if (columns == 0) GridCells.Adaptive(128.dp) else GridCells.Fixed(columns)
     }

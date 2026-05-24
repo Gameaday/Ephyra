@@ -7,13 +7,13 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.chapter.interactor.GenerateAuthorityChapters
+import ephyra.domain.content.model.ContentType
 import ephyra.domain.manga.interactor.FindContentSource
 import ephyra.domain.manga.interactor.GetDuplicateLibraryManga
 import ephyra.domain.manga.interactor.GetFavoritesByCanonicalId
 import ephyra.domain.manga.interactor.GetMangaByUrlAndSourceId
 import ephyra.domain.manga.interactor.NetworkToLocalManga
 import ephyra.domain.manga.interactor.UpdateManga
-import ephyra.domain.manga.model.ContentType
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaUpdate
 import ephyra.domain.manga.model.MangaWithChapterCount

@@ -15,23 +15,29 @@ dependencies {
     api(projects.coreMetadata)
     implementation(projects.core.common)
     implementation(projects.sourceApi)
-    implementation(androidx.workmanager)
-    implementation(libs.sqldelight.coroutines)
-    implementation(libs.stringSimilarity)
 
+    // Pure Kotlin dependencies only — no Android framework dependencies.
+    // WorkManager, Compose annotations, and Paging must NOT be in this module.
     api(kotlinx.coroutines.core)
-
-    // Dependencies from unified root domain module
     implementation(platform(kotlinx.coroutines.bom))
     implementation(kotlinx.bundles.coroutines)
     implementation(kotlinx.bundles.serialization)
-
-    implementation(libs.unifile)
     implementation(kotlinx.immutables)
-    compileOnly(libs.paging.common)
+    implementation("javax.inject:javax.inject:1")
 
-    compileOnly(platform(compose.compose.bom))
-    compileOnly(compose.runtime.annotation)
+    // Logic / utilities that are pure Kotlin
+    implementation(libs.stringSimilarity)
+
+    // PagingSource is a pure-Kotlin type in androidx.paging:paging-common.
+    // No Android framework dependency; safe for domain layer.
+    implementation(libs.paging.common)
+
+    // UniFile is a pure-Kotlin abstraction over file systems (no Android framework).
+    // Domain uses it in DownloadProvider and StorageManager interfaces.
+    implementation(libs.unifile)
+
+    // sqldelight will be removed as part of Room migration; keep only what's needed
+    // for the transition period
 
     testImplementation(libs.bundles.test)
     testImplementation(kotlinx.coroutines.test)

@@ -2,7 +2,7 @@ package ephyra.domain.track.interactor
 
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.logcat
-import ephyra.domain.manga.model.ContentType
+import ephyra.domain.content.model.ContentType
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaUpdate
 import ephyra.domain.manga.model.mergedAlternativeTitles

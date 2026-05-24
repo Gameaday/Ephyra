@@ -1,5 +1,7 @@
 package ephyra.domain.manga.model
 
+import ephyra.domain.content.model.ContentType
+
 /**
  * Generates Jellyfin-compatible directory and file names for manga content.
  *
@@ -144,6 +146,8 @@ object JellyfinNaming {
             ContentType.MANGA -> "Manga"
             ContentType.NOVEL -> "Novels"
             ContentType.BOOK -> "Books"
+            ContentType.ANIME -> "Anime"
+            ContentType.AUDIO -> "Audiobooks"
             ContentType.UNKNOWN -> "Manga"
         }
     }

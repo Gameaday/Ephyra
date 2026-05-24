@@ -43,6 +43,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
+import ephyra.domain.content.model.ContentType
 import ephyra.domain.manga.model.Manga
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.material.Scaffold
@@ -386,13 +387,13 @@ private fun UnlinkedMangaItem(
                 )
                 // Show content type when known
                 val contentTypeLabel = when (manga.contentType) {
-                    ephyra.domain.manga.model.ContentType.MANGA -> stringResource(
+                    ContentType.MANGA -> stringResource(
                         ephyra.app.core.common.R.string.content_type_manga,
                     )
-                    ephyra.domain.manga.model.ContentType.NOVEL -> stringResource(
+                    ContentType.NOVEL -> stringResource(
                         ephyra.app.core.common.R.string.content_type_novel,
                     )
-                    ephyra.domain.manga.model.ContentType.BOOK -> stringResource(
+                    ContentType.BOOK -> stringResource(
                         ephyra.app.core.common.R.string.content_type_book,
                     )
                     else -> null

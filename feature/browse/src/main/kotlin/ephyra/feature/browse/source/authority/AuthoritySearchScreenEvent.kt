@@ -1,6 +1,6 @@
 package ephyra.feature.browse.source.authority
 
-import ephyra.domain.manga.model.ContentType
+import ephyra.domain.content.model.ContentType
 import ephyra.domain.manga.model.MangaWithChapterCount
 import ephyra.domain.track.model.TrackSearch
 import ephyra.domain.track.service.Tracker

@@ -83,17 +83,8 @@ fun LibraryScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val onClickRefresh: (Category?) -> Boolean = { category ->
-        val started = screenModel.libraryUpdateScheduler.startNow(category)
-        scope.launch {
-            val msgRes = when {
-                !started -> ephyra.app.core.common.R.string.update_already_running
-                category != null -> ephyra.app.core.common.R.string.updating_category
-                else -> ephyra.app.core.common.R.string.updating_library
-            }
-            snackbarHostState.showSnackbar(context.stringResource(msgRes))
-        }
-        started
+    val onClickRefresh: (Category?) -> Unit = { category ->
+        screenModel.onEvent(LibraryScreenEvent.RefreshLibrary(category))
     }
 
     Scaffold(
@@ -210,7 +201,10 @@ fun LibraryScreen(
                         screenModel.onEvent(LibraryScreenEvent.ToggleRangeSelection(category, manga))
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     },
-                    onRefresh = { onClickRefresh(state.activeCategory) },
+                    onRefresh = {
+                        onClickRefresh(state.activeCategory)
+                        true
+                    },
                     onGlobalSearchClicked = {
                         navController.navigate(
                             ScreenRoutes.GlobalSearch.createRoute(screenModel.state.value.searchQuery),

@@ -59,6 +59,8 @@ import ephyra.data.cache.ChapterCache
 import ephyra.data.cache.CoverCache
 import ephyra.data.category.CategoryRepositoryImpl
 import ephyra.data.chapter.ChapterRepositoryImpl
+import ephyra.data.content.ContentRepositoryImpl
+import ephyra.data.content.ContentUnitRepositoryImpl
 import ephyra.data.history.HistoryRepositoryImpl
 import ephyra.data.manga.ExcludedScanlatorRepositoryImpl
 import ephyra.data.manga.MangaRepositoryImpl
@@ -109,6 +111,14 @@ import ephyra.domain.chapter.interactor.ShouldUpdateDbChapter
 import ephyra.domain.chapter.interactor.SyncChaptersWithSource
 import ephyra.domain.chapter.interactor.UpdateChapter
 import ephyra.domain.chapter.repository.ChapterRepository
+import ephyra.domain.content.interactor.GetContentItem
+import ephyra.domain.content.interactor.GetContentUnits
+import ephyra.domain.content.repository.ContentRepository
+import ephyra.domain.content.repository.ContentUnitRepository
+import ephyra.domain.content.source.ContentSourceEngine
+import ephyra.domain.content.source.ContentSourceOrchestrator
+import ephyra.domain.content.source.HeuristicContentSourceEngine
+import ephyra.domain.content.source.SourceProfileCache
 import ephyra.domain.download.interactor.DeleteDownload
 import ephyra.domain.download.service.DownloadPreferences
 import ephyra.domain.extension.interactor.GetExtensionLanguages
@@ -399,6 +409,34 @@ object AppModule {
     @Singleton
     fun provideChapterRepository(chapterDao: ChapterDao): ChapterRepository =
         ChapterRepositoryImpl(chapterDao)
+
+    @Provides
+    @Singleton
+    fun provideContentRepository(mangaRepository: MangaRepository): ContentRepository =
+        ContentRepositoryImpl(mangaRepository)
+
+    @Provides
+    @Singleton
+    fun provideContentUnitRepository(chapterRepository: ChapterRepository): ContentUnitRepository =
+        ContentUnitRepositoryImpl(chapterRepository)
+
+    @Provides
+    @Singleton
+    fun provideSourceProfileCache(preferenceStore: PreferenceStore, json: Json): SourceProfileCache =
+        SourceProfileCache(preferenceStore, json)
+
+    @Provides
+    @Singleton
+    fun provideHeuristicContentSourceEngine(): ContentSourceEngine =
+        HeuristicContentSourceEngine()
+
+    @Provides
+    @Singleton
+    fun provideContentSourceOrchestrator(
+        profileCache: SourceProfileCache,
+        heuristicEngine: ContentSourceEngine,
+    ): ContentSourceOrchestrator =
+        ContentSourceOrchestrator(profileCache, heuristicEngine)
 
     @Provides
     @Singleton
@@ -1016,6 +1054,12 @@ object AppModule {
 
     @Provides
     fun provideGetManga(mangaRepository: MangaRepository) = GetManga(mangaRepository)
+
+    @Provides
+    fun provideGetContentItem(contentRepository: ContentRepository) = GetContentItem(contentRepository)
+
+    @Provides
+    fun provideGetContentUnits(contentUnitRepository: ContentUnitRepository) = GetContentUnits(contentUnitRepository)
 
     @Provides
     fun provideGetNextChapters(
