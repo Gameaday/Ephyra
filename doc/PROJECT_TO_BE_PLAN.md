@@ -2,61 +2,65 @@
 
 ## ✨ Guiding Principles
 
-The refactor will adhere to the following modern Android architectural principles:
-1. **Unidirectional Data Flow (UDF):** UI state is a single source of truth, flowing down from the ViewModel/UI layer. All interactions follow the pattern: **Event $\rightarrow$ State $\rightarrow$ View**.
-2. **Compile-Time Safety:** Maximize the use of Kotlin's type system, sealed classes, and Flow to eliminate runtime casting and null pointer exceptions.
-3. **Separation of Concerns (Clean Architecture):** Strictly enforce boundaries between the Presentation, Domain, and Data layers. The Domain layer must contain no Android framework dependencies.
-4. **Modern Declarative UI:** Transition all View components to Jetpack Compose for a single, cohesive UI development experience.
+The refactored architecture adheres strictly to modern "Android First Principles":
+1. **Unidirectional Data Flow (UDF):** The UI observes a single immutable `ViewState` flow. User interactions are dispatched as events: **Event $\rightarrow$ State $\rightarrow$ View**.
+2. **Compile-Time Safety & Static Verification:** Dependency Injection graphs are verified completely at build time using Dagger Hilt.
+3. **Domain Layer Purity:** Business rules reside in the pure Kotlin `:domain` and `:core` modules, completely isolated from Android framework dependencies (`android.*`).
+4. **Jetpack Compose Native Layouts:** A fully declarative, responsive UI designed around structured design systems, eliminating legacy XML layouts.
 
 ## 💻 Technology Stack
 
-| Component | Technology | Rationale |
-| :--- | :--- | :--- |
-| **UI Layer** | Jetpack Compose | Modern, declarative, and highly efficient for complex UIs. |
-| **Dependency Injection** | Hilt (Dagger) | Simplifies module-level dependency graph management and promotes clean, testable dependency scoping. |
-| **Data Persistence** | Room (Kotlin Extensions) | Used for structured object storage. Will be utilized alongside SQLDelight for complex, read-heavy querying, maintaining type safety. |
-| **Asynchrony/State** | Kotlin Coroutines & StateFlow | Provides structured concurrency, making state management predictable and robust, especially for background data fetching. |
-| **Settings/Key-Value** | DataStore | Replacement for legacy `SharedPreferences`, offering asynchronous, type-safe data persistence. |
+| Component | Technology | Rationale | Status |
+| :--- | :--- | :--- | :--- |
+| **UI & Layouts** | Jetpack Compose | Modern, declarative, reactive layout engine. | **100% Implemented** |
+| **Dependency Injection** | Hilt (Dagger) | Compile-time deterministic wiring; static validation. | **100% Implemented** |
+| **Navigation** | Jetpack Navigation | Official Compose-first navigation graph. | **100% Implemented** |
+| **State Holders** | Android Architecture ViewModels | Hilt-lifecycle-integrated `@HiltViewModel`s. | **100% Implemented** |
+| **Data Persistence** | Room Database | Asynchronous object relational mapper with reactive Flow. | **In Progress (Build 3)** |
+| **Settings Storage** | Jetpack DataStore | Asynchronous, flow-driven key-value storage. | **100% Implemented** |
+| **Diagnostics** | StartupGuard | Diagnostic watchdog tracking app initialization. | **100% Implemented** |
 
-## 🔄 Architectural Flow Diagram: Fetching Manga List
+## 🔄 Architectural Flow Diagram
 
-The following flow illustrates the mandated layered structure, ensuring clean separation and testability.
+The mandated clean-architecture layered data flow:
 
 ```mermaid
 graph TD
-    A[UI/Compose Composable] -->|1. User Action (Event)| B(ViewModel);
-    B -->|2. State Update (Flow Emit)| C{UiState: Loading/Success/Error};
-    C -->|3. Request Data (Use Case)| D[Interactor (Domain Layer)];
-    D -->|4. Business Logic & Aggregation| E[Repository (Data Layer)];
-    E -->|5. Data Source Call| F(DAO/Mapper Layer);
-    F -->|6. Raw Data/Flow| G[Room/SQLDelight/Network API];
-    G -->|7. Domain Object| E;
-    E -->|8. Success State| B;
-    B -->|9. State Emit| A;
+    A[UI Composable Screen] -->|1. Dispatch Event| B(Hilt ViewModel);
+    B -->|2. Invoke Interactor| C[Domain Interactor (Use-Case)];
+    C -->|3. Access Data| D[Repository Interface (Domain)];
+    E[Repository Implementation (Data)] -.->|Implements| D;
+    E -->|4. Query Database/Network| F[Room DAO / Network Service];
+    F -->|5. Return Entity/DTO| E;
+    E -->|6. Map to Domain Model| B;
+    B -->|7. Emit ViewState Flow| A;
 ```
 
-**Layers Detailed:**
-*   **UI:** Observes the `StateFlow<UiState>` exposed by the ViewModel.
-*   **ViewModel:** Maps UI Events to Domain use cases and manages the state lifecycle.
-*   **Interactor (Domain):** Contains pure business logic (e.g., *Can this manga be shown?*). It coordinates repositories but knows nothing about Android APIs.
-*   **Repository:** Acts as the data source coordinator, deciding whether to fetch data from the network or from the local database.
-*   **DAO/Mapper:** Handles the technical execution (e.g., converting a `Cursor` into a `data class`).
+**Architectural Boundaries:**
+- **Presentation Layer (`feature/*`, `presentation-core`):** Pure UI components and ViewModels. ViewModels inject single-purpose use-cases (Interactors). Direct database or raw settings access is strictly prohibited.
+- **Domain Layer (`domain`, `core`):** Contains business logic (e.g. `GetManga`, `UpdateReadStatus`). Defines repository interfaces. Zero reference to `android.*` classes.
+- **Data Layer (`data`):** Implements repository contracts. Coordinates queries via Room DAOs or external HTTP interceptors. Maps backend schemas into clean domain objects.
 
-## 🛣️ Migration Strategy Roadmap
+## 🛣️ Modernization Roadmap
 
-The refactoring will be tackled in phased increments to minimize risk:
+The migration plan is structured in sequential builds:
 
-1. **Phase 1: Foundation & UI:**
-    *   **Action:** Implement a unified `Theme` module using Jetpack Compose Styles API.
-    *   **Action:** Migrate the `UserPref.sq` data persistence mechanism from `SharedPreferences` to `DataStore` within the `:core:preferences` module.
-    *   **Goal:** Establish a Compose-first development environment and modernize simple data persistence.
+### 🟩 Build 1: Foundation, Styling & DataStore [COMPLETE]
+- Strip out `moko-resources` and KMP dependencies; establish native `:presentation-core` design token.
+- Convert all core SharedPreferences instances to Jetpack DataStore with custom migrations.
+- Set up Hilt compilation support.
 
-2. **Phase 2: Data Layer Refinement:**
-    *   **Action:** Refactor the data access logic (`dao` packages) to strictly use Kotlin `Flow` wrappers for all database reads, ensuring asynchronous operations are non-blocking.
-    *   **Action:** Introduce the **Interactor** layer between the Repository and the use-case logic, ensuring domain models are strictly defined and used.
-    *   **Goal:** Achieve true separation between data fetching and business logic.
+### 🟩 Build 2: UI, DI & Navigation Purge [COMPLETE]
+- Decommission Voyager Navigation; implement Jetpack Navigation `NavHost` in `MainActivity`.
+- Eradicate legacy Koin and Injekt registries in favor of Hilt compile-time DI.
+- Migrate leaf screens to pure `@Composable` layouts with `@HiltViewModel`s.
+- Clean up main-thread blocking calls (`runBlocking` preferences queries) with cached `.getSync()` and async loaders.
 
-3. **Phase 3: UI & Core Flows:**
-    *   **Action:** Migrate the `ContentViewing` flow: Replace `ContentActivity` with a Compose Composable.
-    *   **Action:** Update all ViewModels to expose `StateFlow` and handle UI state lifecycle management.
-    *   **Goal:** Complete the migration of the core user journey to a fully modern, testable, and declarative architecture.
+### 🟦 Build 3: Database & Widget Performance [ACTIVE]
+- [x] Convert all legacy SQLDelight `.sq` queries into reactive Room Entity and DAO layers.
+- [ ] Optimize Glance Widgets (`BaseUpdatesGridGlanceWidget`) by introducing background pre-caching workers.
+- [x] Decommission `AndroidDatabaseHandler` and completely remove the SQLDelight framework.
+
+### ⬜ Build 4: Domain Refinement & Clean Arch
+- Purge any remaining direct data dependencies in ViewModels, ensuring 100% coverage of single-purpose Domain Interactors.
+- Deprecate `CoreContainer` once all legacy widgets and plugins leverage standard Hilt EntryPoints.

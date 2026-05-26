@@ -44,6 +44,8 @@ dependencies {
 
     // room-ktx provides the withTransaction {} extension used by MangaRestorer.
     implementation(libs.room.ktx)
+    implementation("javax.inject:javax.inject:1")
+    implementation(libs.stringSimilarity)
 }
 // Suppress warnings for the following:
 

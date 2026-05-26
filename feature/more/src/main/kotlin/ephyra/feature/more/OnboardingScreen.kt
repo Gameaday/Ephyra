@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
+import dagger.hilt.android.EntryPointAccessors
 import ephyra.domain.base.BasePreferences
 import ephyra.feature.settings.screen.SettingsDataScreen
 import ephyra.presentation.core.i18n.stringResource
@@ -22,7 +23,12 @@ fun OnboardingScreen(
 ) {
     val context = LocalContext.current
 
-    val basePreferences = remember { ephyra.core.common.di.CoreContainer.get<BasePreferences>() }
+    val basePreferences = remember {
+        EntryPointAccessors.fromApplication(
+            context.applicationContext,
+            MoreEntryPoint::class.java,
+        ).basePreferences()
+    }
     val shownOnboardingFlow by basePreferences.shownOnboardingFlow().collectAsState()
 
     // Dismiss the splash screen promptly when onboarding is shown.  Without this,

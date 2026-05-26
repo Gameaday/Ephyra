@@ -3,6 +3,7 @@ package ephyra.core.common.di
 import android.content.Context
 import kotlin.reflect.KClass
 
+@Deprecated("Use standard Hilt injection or Hilt EntryPoints instead. Kept only for legacy extension compatibility.")
 object CoreContainer {
     lateinit var applicationContext: Context
 

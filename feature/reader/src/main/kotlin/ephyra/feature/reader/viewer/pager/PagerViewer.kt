@@ -438,14 +438,14 @@ abstract class PagerViewer(
     /**
      * Moves to the next page.
      */
-    open fun moveToNext() {
+    override fun moveToNext() {
         moveRight()
     }
 
     /**
      * Moves to the previous page.
      */
-    open fun moveToPrevious() {
+    override fun moveToPrevious() {
         moveLeft()
     }
 

@@ -37,11 +37,11 @@ platform implementation.
 | ✅ | `core/domain/.../track/store/DelayedTrackingStore.kt` | `android.content.Context` + `SharedPreferences` | Moved to `:app` module; implements `TrackingQueueStore` interface |
 | ✅ | `core/domain/.../track/service/DelayedTrackingUpdateJob.kt` | `CoroutineWorker`, `Context`, `WorkManager` | Moved to `:app` module; registered with `AppWorkerFactory` |
 | ✅ | `core/domain/.../track/interactor/TrackChapter.kt` | `android.content.Context` | Context removed; interactor now depends on `TrackingQueueStore` interface |
-| ⏳ | `core/domain/.../base/ExtensionInstallerPreference.kt` | `android.content.Context` (MIUI / Shizuku checks) | Extract `InstallerCapabilityProvider` interface in domain; implement in `:app` |
+| ✅ | `core/domain/.../base/ExtensionInstallerPreference.kt` | `android.content.Context` (MIUI / Shizuku checks) | Extract `InstallerCapabilityProvider` interface in domain; implement in `:app` |
 | ✅ | `core/domain/.../base/BasePreferences.kt` | `android.content.Context` property stored on class | Context removed from constructor; moved to `:app` layer logic where needed |
 | ✅ | `core/domain/.../extension/interactor/TrustExtension.kt` | `android.content.pm.PackageInfo` in `isTrusted()` | Introduced `data class ExtensionPackageInfo(packageName, versionCode)` in `domain/extension/model`; `TrustExtension.isTrusted()` now accepts it; `ExtensionLoader.kt` converts from `PackageInfo` at the `:app` boundary |
 | ✅ | `domain/storage/service/StorageManager.kt` | `android.content.Context` + `UniFile` (Android) | Abstracted to interface; Android implementation `StorageManagerImpl` moved to `:app` |
-| ⏳ | `domain/reader/util/RectFExtensions.kt` | `android.graphics.RectF` | Introduce `data class Rect(val left: Float, val top: Float, val right: Float, val bottom: Float)` in domain; keep `RectF` in `:presentation-core` |
+| ✅ | `domain/reader/util/RectFExtensions.kt` | `android.graphics.RectF` | Introduce `data class Rect(val left: Float, val top: Float, val right: Float, val bottom: Float)` in domain; keep `RectF` in `:presentation-core` |
 
 ---
 
@@ -60,13 +60,13 @@ boundary and import concrete `:data` implementations directly.
 | ✅ | `feature/manga/.../track/TrackInfoDialog.kt` | `ephyra.data.track.DeletableTracker` | Moved `DeletableTracker` marker interface to `ephyra.domain.track.service`; old `:data` file deleted |
 | ✅ | `feature/migration/.../MigrateMangaDialog.kt` | `ephyra.data.cache.CoverCache` | Injects domain interface |
 | ✅ | `feature/reader/.../ReaderViewModel.kt` | `ChapterCache`, `CoverCache`, `toDomainChapter`, `ImageSaver`, `Image`, `Location` | Formalised interfaces in domain; use mapper in `:data` only |
-| ⏳ | `feature/reader/.../SaveImageNotifier.kt` | `ephyra.data.notification.Notifications` | Extract notification-channel constants to `:core:common` or `:presentation-core` |
+| ✅ | `feature/reader/.../SaveImageNotifier.kt` | `ephyra.data.notification.Notifications` | Extract notification-channel constants to `:core:common` or `:presentation-core` |
 | ✅ | `feature/reader/.../loader/ChapterLoader.kt` | `ephyra.data.cache.ChapterCache` | Extract `ChapterCache` interface to domain |
 | ✅ | `feature/reader/.../loader/HttpPageLoader.kt" | `ChapterCache`, `toDomainChapter` | Same as above; mapper in `:data` |
 | ✅ | `feature/reader/.../model/ReaderChapter.kt` | `ephyra.data.database.models.Chapter` | Store domain `Chapter` model, not database entity |
-| ⏳ | `feature/reader/.../viewer/ReaderPageImageView.kt` | `ephyra.data.coil.cropBorders`, `customDecoder` | Move Coil utilities to `:presentation-core` or `:core:data` — accept via lambda/interface |
+| ✅ | `feature/reader/.../viewer/ReaderPageImageView.kt` | `ephyra.data.coil.cropBorders`, `customDecoder` | Move Coil utilities to `:presentation-core` or `:core:data` — accept via lambda/interface |
 | ✅ | `feature/reader/.../viewer/MissingChapters.kt` | `ephyra.data.database.models.toDomainChapter` | Use domain `Chapter` at feature boundary |
-| ⏳ | `feature/settings/.../SettingsDataScreen.kt` | `ChapterCache`, `LibraryExporter`, `ExportOptions` | Extract `LibraryExporter` interface to domain |
+| ✅ | `feature/settings/.../SettingsDataScreen.kt` | `ChapterCache`, `LibraryExporter`, `ExportOptions` | Extract `LibraryExporter` interface to domain |
 | ✅ | `feature/settings/.../SettingsDataScreenModel.kt` | `ephyra.data.cache.ChapterCache` | Extract `ChapterCache` interface to domain |
 | ✅ | `feature/settings/.../SettingsTrackingScreen.kt` | `AnilistApi`, `BangumiApi`, `MyAnimeListApi`, `ShikimoriApi` | Expose required capabilities via `Tracker` interface; no feature module needs concrete API |
 | ✅ | `feature/settings/.../about/AboutScreen.kt` | `ephyra.data.updater.RELEASE_URL` | Added `releaseUrl` computed property to `AppInfo` interface (presentation-core); `AboutScreen` now uses `appInfo.releaseUrl` |
@@ -174,7 +174,7 @@ Dependencies that must become interfaces before unit-testing is possible:
 | ✅ | `DownloadManager` | Interface (`domain.download.service`) | — |
 | ✅ | `TrackerManager` | Interface (`domain.track.service`) | — |
 | ⏳ | `NetworkHelper` | Concrete class | Extract `NetworkClient` interface in domain |
-| ⏳ | `ExtensionManager` | Concrete + alias | Formalise pure-Kotlin domain interface |
+| ✅ | `ExtensionManager` | Concrete + alias | Formalise pure-Kotlin domain interface |
 
 ---
 
@@ -198,13 +198,13 @@ Dependencies that must become interfaces before unit-testing is possible:
 
 | Status | Module | Violation | Required Fix |
 |--------|--------|-----------|--------------|
-| ⏳ | `app/build.gradle.kts` | `koinCompiler { compileSafety.set(false) }` | Enable `compileSafety.set(true)` after converting manual modules to `@Module` annotations or providing `@ExternalDefinitions` |
-| ⏳ | `feature/more/build.gradle.kts` | Same | Same |
-| ⏳ | `feature/library/build.gradle.kts` | Same | Same |
-| ⏳ | `feature/browse/build.gradle.kts` | Same | Same |
-| ⏳ | `feature/updates/build.gradle.kts` | Same | Same |
-| ⏳ | `feature/manga/build.gradle.kts` | Same | Same |
-| ⏳ | `feature/stats/build.gradle.kts` | Same | Same |
+| ✅ | `app/build.gradle.kts` | `koinCompiler { compileSafety.set(false) }` | Koin is fully decommissioned in favor of Hilt |
+| ✅ | `feature/more/build.gradle.kts` | Same | Same |
+| ✅ | `feature/library/build.gradle.kts` | Same | Same |
+| ✅ | `feature/browse/build.gradle.kts` | Same | Same |
+| ✅ | `feature/updates/build.gradle.kts` | Same | Same |
+| ✅ | `feature/manga/build.gradle.kts` | Same | Same |
+| ✅ | `feature/stats/build.gradle.kts` | Same | Same |
 
 ---
 

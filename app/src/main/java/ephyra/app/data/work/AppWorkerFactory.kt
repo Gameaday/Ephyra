@@ -15,12 +15,14 @@ import ephyra.app.data.library.LibraryUpdateJob
 import ephyra.app.data.library.LibraryUpdateNotifier
 import ephyra.app.data.library.MetadataUpdateJob
 import ephyra.app.data.updater.AppUpdateDownloadJob
+import ephyra.app.data.work.DynamicScraperUpdateWorker
 import ephyra.app.track.DelayedTrackingUpdateJob
 import ephyra.core.download.DownloadJob
 import ephyra.core.download.DownloadManager
 import ephyra.data.backup.create.BackupCreator
 import ephyra.data.backup.restore.BackupRestorer
 import ephyra.data.cache.CoverCache
+import ephyra.data.sourcing.DynamicScraperUpdater
 import ephyra.domain.backup.service.BackupPreferences
 import ephyra.domain.chapter.interactor.FilterChaptersForDownload
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
@@ -37,6 +39,7 @@ import ephyra.domain.track.interactor.GetTracks
 import ephyra.domain.track.interactor.RefreshCanonicalMetadata
 import ephyra.domain.track.interactor.TrackChapter
 import ephyra.domain.track.store.TrackingQueueStore
+import ephyra.domain.updates.interactor.GetUpdates
 import eu.kanade.tachiyomi.network.NetworkHelper
 
 /**
@@ -69,6 +72,8 @@ interface WorkerFactoryEntryPoint {
     fun refreshCanonicalMetadata(): RefreshCanonicalMetadata
     fun libraryUpdateNotifier(): LibraryUpdateNotifier
     fun libraryPreferences(): LibraryPreferences
+    fun getUpdates(): GetUpdates
+    fun dynamicScraperUpdater(): DynamicScraperUpdater
 }
 
 /**
@@ -139,6 +144,16 @@ class AppWorkerFactory : WorkerFactory() {
                 entryPoint.getChaptersByMangaId(),
                 entryPoint.refreshCanonicalMetadata(),
                 entryPoint.libraryUpdateNotifier(),
+            )
+            WidgetUpdatesJob::class.java.name -> WidgetUpdatesJob(
+                appContext,
+                workerParameters,
+                entryPoint.getUpdates(),
+            )
+            DynamicScraperUpdateWorker::class.java.name -> DynamicScraperUpdateWorker(
+                appContext,
+                workerParameters,
+                entryPoint.dynamicScraperUpdater(),
             )
             else -> null
         }

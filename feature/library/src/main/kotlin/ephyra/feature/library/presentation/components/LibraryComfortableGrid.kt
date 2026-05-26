@@ -20,11 +20,13 @@ internal fun LibraryComfortableGrid(
     onClickContinueReading: ((LibraryManga) -> Unit)?,
     searchQuery: String?,
     onGlobalSearchClicked: () -> Unit,
+    onColumnsChange: ((Int) -> Unit)? = null,
 ) {
     LazyLibraryGrid(
         modifier = Modifier.fillMaxSize(),
         columns = columns,
         contentPadding = contentPadding,
+        onColumnsChange = onColumnsChange,
     ) {
         globalSearchItem(searchQuery, onGlobalSearchClicked)
 

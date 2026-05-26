@@ -299,10 +299,7 @@ class DownloadManager(
         pendingDeleter.addChapters(getChaptersToDelete(chapters, manga), manga)
     }
 
-    /**
-     * Triggers the execution of the deletion of pending chapters.
-     */
-    override fun deletePendingChapters() {
+    override suspend fun deletePendingChapters() {
         val pendingChapters = pendingDeleter.getPendingChapters()
         for ((manga, chapters) in pendingChapters) {
             val source = sourceManager.get(manga.source) ?: continue

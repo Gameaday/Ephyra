@@ -73,41 +73,41 @@ We are currently executing a phased transition to reach the target state describ
     - [x] Standardize on `StateFlow<ViewState>` and `onEvent(Intent)` pattern.
     - [x] Key targets: `DeepLinkScreenModel`, `MigrationListScreenModel`, `CoverSearchScreenModel`.
 
-### Phase 5: Database & Persistence [IN PROGRESS]
+### Phase 5: Database & Persistence [COMPLETE]
 - [x] Initialize Room (`EphyraDatabase.kt`).
-- [ ] Progressively migrate SQLDelight `.sq` definitions to Room:
-    - [ ] `mangas.sq` -> `MangaEntity` & `MangaDao`.
-    - [ ] `chapters.sq` -> `ChapterEntity` & `ChapterDao`.
-    - [ ] `history.sq` -> `HistoryEntity` & `HistoryDao`.
-    - [ ] `categories.sq` -> `CategoryEntity` & `CategoryDao`.
-- [ ] Replace `SQLDelight` drivers with Room in all Repositories.
-- [ ] Standardize on DataStore (Preferences) for all key-value configuration, removing legacy `SharedPreferences` wrappers where they remain.
+- [x] Progressively migrate SQLDelight `.sq` definitions to Room:
+    - [x] `mangas.sq` -> `MangaEntity` & `MangaDao`.
+    - [x] `chapters.sq` -> `ChapterEntity` & `ChapterDao`.
+    - [x] `history.sq` -> `HistoryEntity` & `HistoryDao`.
+    - [x] `categories.sq` -> `CategoryEntity` & `CategoryDao`.
+- [x] Replace `SQLDelight` drivers with Room in all Repositories.
+- [x] Standardize on DataStore (Preferences) for all key-value configuration, removing legacy `SharedPreferences` wrappers and integrating explicit `SharedPreferencesMigration` rules for all core stores.
 
-### Phase 6: UI & Feature Parity
-- **Settings**: Implement `PreferenceFragmentCompat` styled with Material 3.
-- **Library**: Implement robust grid/list views with two-handed gesture support.
-- **Reader**: Implement "Two-Handed" reading gesture (swipe bottom for next page).
+### Phase 6: UI & Feature Parity [COMPLETE]
+- [x] **Settings**: Implement `PreferenceFragmentCompat` styled with Material 3.
+- [x] **Library**: Implement robust grid/list views with two-handed gesture support.
+- [x] **Reader**: Implement "Two-Handed" reading gesture (swipe bottom for next page).
 
-### Phase 7: Remote Content Retrieval & Management
-- Add Remote Content Source Manager
-- Add Remote Tracking Service Manager
-- Add Remote Content Scanner
-- Add Remote Content Search
-- Add Local Content Manager
-- Add Local Content Scanner
-- Add Local Content Search
-- Add Merge Content
-- Add Content Details
-- Add Content opprotunistic Merge
-- Add Content Sync Services (Remote and Local)
-- Add Content retrieval preferance heirachy
-- Add Update Checker
-- Add Downloader
+### Phase 7: Remote Content Retrieval & Management [COMPLETE]
+- [x] Add Remote Content Source Manager
+- [x] Add Remote Tracking Service Manager
+- [x] Add Remote Content Scanner
+- [x] Add Remote Content Search
+- [x] Add Local Content Manager
+- [x] Add Local Content Scanner
+- [x] Add Local Content Search
+- [x] Add Merge Content
+- [x] Add Content Details
+- [x] Add Content opportunistic Merge
+- [x] Add Content Sync Services (Remote and Local)
+- [x] Add Content retrieval preference hierarchy
+- [x] Add Update Checker
+- [x] Add Downloader
 
-### Phase 8: Clean Arch & Domain Separation
-- Identify core business logic in Repository and UseCase layers.
-- Abstract `ContentDatabase`, `RemoteSource`, `TrackingService` behind interfaces in the domain layer.
-- Enforce `sealed class Result` wrappers to handle remote/local data operations explicitly.
+### Phase 8: Clean Arch & Domain Separation [COMPLETE]
+- [x] Identify core business logic in Repository and UseCase layers.
+- [x] Abstract `ContentDatabase`, `RemoteSource`, `TrackingService` behind interfaces in the domain layer.
+- [x] Enforce `sealed class Result` wrappers to handle remote/local data operations explicitly.
 
 ### Phase 9: Advanced Features & Polish
 - [ ] Add Migration tools (Tachiyomi and Mihon).
@@ -129,10 +129,10 @@ We are currently executing a phased transition to reach the target state describ
 - improve app accessibility
 - improve app test coverage
 
-### Phase 11: Refine app architecture and organization [IN PROGRESS]
-- [ ] Deprecate and remove `CoreContainer` compat-shim once all consumers are Hilt-native.
+### Phase 11: Refine app architecture and organization [COMPLETE]
+- [x] Deprecate and remove `CoreContainer` compat-shim once all consumers are Hilt-native.
 - [x] Remove Voyager, Koin, and Injekt from `libs.versions.toml` and build scripts.
-- [ ] Remove SQLDelight from the build system once Room migration is 100% complete.
+- [x] Remove SQLDelight from the build system once Room migration is 100% complete.
 - [x] Ensure 100% compile time determinism via Hilt.
 - [x] Ensure 100% Jetpack Navigation & Compose coverage.
 
@@ -141,12 +141,8 @@ We are currently executing a phased transition to reach the target state describ
 
 ---
 
-## 📋 Immediate TODO List (High Priority)
+1. **Glance Widget Performance**: Move image loading out of the Glance lifecycle and implement a background worker to handle async pre-caching of bitmaps for `BaseUpdatesGridGlanceWidget`.
 
-1. **Finish Navigation Bridge**: Move `HomeScreen` tabs into the main `NavHost`.
-2. **State Holder Purge**: Refactor `DeepLinkScreenModel` and `MigrationListScreenModel` to remove Voyager imports.
-3. **Manga Entity Migration**: Create the Room equivalent for `mangas.sq` to begin the persistence transition.
-4. **Cleanup libs**: Scan for unused Koin modules and delete them.
 
 
 

@@ -67,10 +67,10 @@ jobs:
       - name: Architecture fitness – no Injekt.get()
         run: |
           # The service locator pattern shim (Injekt) has been completely removed.
-          # Any usage of Injekt.get() is a regression and must be replaced with Koin constructor injection.
+          # Any usage of Injekt.get() is a regression and must be replaced with Hilt constructor injection.
           VIOLATIONS=$(grep -rHn --include="*.kt" "Injekt\.get(" . || true)
           if [ -n "$VIOLATIONS" ]; then
-            echo "::error::Injekt.get() found in codebase (use Koin constructor injection instead):"
+            echo "::error::Injekt.get() found in codebase (use Hilt constructor injection instead):"
             echo "$VIOLATIONS"
             exit 1
           fi
@@ -81,12 +81,8 @@ jobs:
           # concrete :data implementations.  Interactors must depend only on repository
           # interfaces defined in :domain.  Any ephyra.data.* import in core/domain/src
           # is a Dependency Rule violation (domain must not know about the data layer).
-          #
-          # DomainModule.kt (the Koin wiring file) is explicitly excluded because it is
-          # the single authorised place where interfaces are bound to implementations.
           VIOLATIONS=$(grep -rn --include="*.kt" "^\s*import ephyra\.data\." \
-            core/domain/src 2>/dev/null \
-            | grep -v "core/domain/src/main/java/ephyra/domain/DomainModule.kt:" || true)
+            core/domain/src 2>/dev/null || true)
           if [ -n "$VIOLATIONS" ]; then
             echo "::error::ephyra.data.* imports found in core/domain (architectural violation):"
             echo "$VIOLATIONS"
@@ -99,7 +95,7 @@ jobs:
           # They should reference only domain interfaces and types.
           #
           # All 38 previously-tracked violations have been resolved (data-layer types are now
-          # accessed exclusively through domain interfaces injected by Koin).  BASELINE is set
+          # accessed exclusively through domain interfaces injected by Hilt).  BASELINE is set
           # to 0 so that any new direct data import in a feature module fails CI immediately.
           BASELINE=0
           VIOLATION_COUNT=$(grep -rn --include="*.kt" "^\s*import ephyra\.data\." \
@@ -124,11 +120,11 @@ jobs:
           # If a tab is added to HomeScreen.TABS without the signalReady() call this
           # check will fail CI immediately, preventing the regression from reaching users.
           TABS=(
-            "feature/library/src/main/kotlin/ephyra/feature/library/LibraryTab.kt"
-            "feature/updates/src/main/kotlin/ephyra/feature/updates/UpdatesTab.kt"
-            "feature/history/src/main/kotlin/ephyra/feature/history/HistoryTab.kt"
-            "feature/browse/src/main/kotlin/ephyra/feature/browse/BrowseTab.kt"
-            "feature/more/src/main/kotlin/ephyra/feature/more/MoreTab.kt"
+            "feature/library/src/main/kotlin/ephyra/feature/library/LibraryScreen.kt"
+            "feature/updates/src/main/kotlin/ephyra/feature/updates/UpdatesScreen.kt"
+            "feature/history/src/main/kotlin/ephyra/feature/history/HistoryScreen.kt"
+            "feature/browse/src/main/kotlin/ephyra/feature/browse/BrowseScreen.kt"
+            "feature/more/src/main/kotlin/ephyra/feature/more/MoreScreen.kt"
           )
           MISSING=()
           for tab in "${TABS[@]}"; do

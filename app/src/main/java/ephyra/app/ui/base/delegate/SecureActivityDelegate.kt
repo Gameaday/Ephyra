@@ -19,7 +19,6 @@ import ephyra.presentation.core.util.view.setSecureScreen
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.runBlocking
 import ephyra.presentation.core.ui.delegate.SecureActivityDelegate as CoreSecureActivityDelegate
 
 class SecureActivityDelegateImpl(
@@ -54,7 +53,7 @@ class SecureActivityDelegateImpl(
     }
 
     private fun setAppLock() {
-        if (!runBlocking { securityPreferences.useAuthenticator().get() }) return
+        if (!securityPreferences.useAuthenticator().getSync()) return
         if (activity.isAuthenticationSupported()) {
             if (!SecureActivityDelegateState.requireUnlock) return
             activity.startActivity(Intent(activity, UnlockActivity::class.java))

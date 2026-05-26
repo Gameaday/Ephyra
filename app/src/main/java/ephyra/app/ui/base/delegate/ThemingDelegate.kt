@@ -6,7 +6,6 @@ import android.app.Activity
 import ephyra.app.R
 import ephyra.domain.ui.UiPreferences
 import ephyra.domain.ui.model.AppTheme
-import kotlinx.coroutines.runBlocking
 import ephyra.presentation.core.ui.delegate.ThemingDelegate as CoreThemingDelegate
 
 class ThemingDelegateImpl(
@@ -14,8 +13,8 @@ class ThemingDelegateImpl(
 ) : CoreThemingDelegate {
     override fun applyAppTheme(activity: Activity) {
         getThemeResIds(
-            runBlocking { uiPreferences.appTheme().get() },
-            runBlocking { uiPreferences.themeDarkAmoled().get() },
+            uiPreferences.appTheme().getSync(),
+            uiPreferences.themeDarkAmoled().getSync(),
         )
             .forEach(activity::setTheme)
     }

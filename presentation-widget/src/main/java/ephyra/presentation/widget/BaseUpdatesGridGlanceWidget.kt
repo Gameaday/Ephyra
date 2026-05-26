@@ -20,9 +20,11 @@ import androidx.glance.background
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.padding
 import androidx.glance.unit.ColorProvider
+import androidx.work.ListenableWorker
+import androidx.work.OneTimeWorkRequest
+import androidx.work.WorkManager
 import coil3.annotation.ExperimentalCoilApi
 import coil3.asDrawable
-import coil3.executeBlocking
 import coil3.imageLoader
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
@@ -35,6 +37,7 @@ import dagger.hilt.components.SingletonComponent
 import ephyra.core.common.core.security.SecurityPreferences
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.dpToPx
+import ephyra.core.common.util.system.logcat
 import ephyra.domain.manga.model.MangaCover
 import ephyra.domain.updates.interactor.GetUpdates
 import ephyra.domain.updates.model.UpdatesWithRelations
@@ -47,6 +50,7 @@ import ephyra.presentation.widget.util.calculateRowAndColumnCount
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.map
+import logcat.LogPriority
 import java.time.Instant
 import java.time.ZonedDateTime
 
@@ -59,18 +63,6 @@ interface WidgetEntryPoint {
 
 abstract class BaseUpdatesGridGlanceWidget : GlanceAppWidget() {
 
-    private val widgetContext: Application by lazy {
-        ephyra.core.common.di.CoreContainer.applicationContext as Application
-    }
-    private val entryPoint by lazy {
-        EntryPointAccessors.fromApplication(widgetContext, WidgetEntryPoint::class.java)
-    }
-
-    private val getUpdates: GetUpdates
-        get() = entryPoint.getUpdates()
-    private val preferences: SecurityPreferences
-        get() = entryPoint.securityPreferences()
-
     override val sizeMode = SizeMode.Exact
 
     abstract val foreground: ColorProvider
@@ -79,6 +71,11 @@ abstract class BaseUpdatesGridGlanceWidget : GlanceAppWidget() {
     abstract val bottomPadding: Dp
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
+        val app = context.applicationContext as Application
+        val entryPoint = EntryPointAccessors.fromApplication(app, WidgetEntryPoint::class.java)
+        val getUpdates = entryPoint.getUpdates()
+        val preferences = entryPoint.securityPreferences()
+
         val locked = preferences.useAuthenticator().get()
         val containerModifier = GlanceModifier
             .fillMaxSize()
@@ -108,7 +105,7 @@ abstract class BaseUpdatesGridGlanceWidget : GlanceAppWidget() {
                 getUpdates
                     .subscribe(false, DateLimit.toEpochMilli())
                     .map { rawData ->
-                        rawData.prepareData(rowCount, columnCount)
+                        rawData.prepareData(app, rowCount, columnCount)
                     }
             }
             val data by flow.collectAsState(initial = null)
@@ -124,6 +121,7 @@ abstract class BaseUpdatesGridGlanceWidget : GlanceAppWidget() {
 
     @OptIn(ExperimentalCoilApi::class)
     private suspend fun List<UpdatesWithRelations>.prepareData(
+        widgetContext: Context,
         rowCount: Int,
         columnCount: Int,
     ): ImmutableList<Pair<Long, Bitmap?>> {
@@ -135,6 +133,7 @@ abstract class BaseUpdatesGridGlanceWidget : GlanceAppWidget() {
                 .distinctBy { it.mangaId }
                 .take(rowCount * columnCount)
                 .map { updatesView ->
+                    // Enforce local-cache only strategy for Glance rendering
                     val request = ImageRequest.Builder(widgetContext)
                         .data(
                             MangaCover(
@@ -145,15 +144,32 @@ abstract class BaseUpdatesGridGlanceWidget : GlanceAppWidget() {
                                 lastModified = updatesView.coverData.lastModified,
                             ),
                         )
-                        .memoryCachePolicy(CachePolicy.DISABLED)
                         .precision(Precision.EXACT)
                         .size(widthPx, heightPx)
                         .scale(Scale.FILL)
+                        .networkCachePolicy(CachePolicy.DISABLED) // Do NOT download from network during composition
+                        .diskCachePolicy(CachePolicy.ENABLED)
+                        .memoryCachePolicy(CachePolicy.ENABLED)
                         .build()
-                    val bitmap = widgetContext.imageLoader.executeBlocking(request)
-                        .image
-                        ?.asDrawable(widgetContext.resources)
-                        ?.toBitmap()
+
+                    val result = widgetContext.imageLoader.execute(request).image
+                    val bitmap = if (result != null) {
+                        result.asDrawable(widgetContext.resources).toBitmap()
+                    } else {
+                        // Image is NOT yet pre-cached! Return null immediately (trigger default fallback placeholder)
+                        // and delegate network download to the background worker to avoid blocking Glance composition.
+                        try {
+                            @Suppress("UNCHECKED_CAST")
+                            val workClass = Class.forName(
+                                "ephyra.app.data.work.WidgetUpdatesJob",
+                            ) as Class<out ListenableWorker>
+                            val workRequest = OneTimeWorkRequest.Builder(workClass).build()
+                            WorkManager.getInstance(widgetContext).enqueue(workRequest)
+                        } catch (e: Exception) {
+                            logcat(LogPriority.WARN, e) { "Failed to enqueue WidgetUpdatesJob via reflection" }
+                        }
+                        null
+                    }
                     Pair(updatesView.mangaId, bitmap)
                 }
                 .toImmutableList()

@@ -1,5 +1,6 @@
 package ephyra.core.migration
 
+import android.content.Context
 import ephyra.core.common.util.system.logcat
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -25,13 +26,14 @@ object Migrator {
     val scope = CoroutineScope(Dispatchers.IO + Job())
 
     fun initialize(
+        context: Context,
         old: Int,
         new: Int,
         migrations: List<Migration>,
         dryrun: Boolean = false,
         onMigrationComplete: () -> Unit,
     ) {
-        val migrationContext = MigrationContext(dryrun)
+        val migrationContext = MigrationContext(context, dryrun)
         val migrationJobFactory = MigrationJobFactory(migrationContext, scope)
         val migrationStrategyFactory = MigrationStrategyFactory(migrationJobFactory, onMigrationComplete)
         initializeWithStrategy(migrationStrategyFactory.create(old, new), migrations)
@@ -74,6 +76,15 @@ object Migrator {
 
     suspend fun awaitAndRelease(): Boolean {
         return await().also { release() }
+    }
+
+    /**
+     * Instantly completes the initialization gate and sets a fallback failed result
+     * to unblock any waiting threads during early bootstrap errors.
+     */
+    fun cancelAndRelease() {
+        initGate.complete(Unit)
+        result = CompletableDeferred(false)
     }
 
     /**

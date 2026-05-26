@@ -1,93 +1,106 @@
 package ephyra.domain.content.source
 
+import ephyra.core.common.preference.PreferenceStore
+import ephyra.core.common.util.Result
+import ephyra.core.common.util.getOrThrow
 import ephyra.domain.content.model.ContentItem
 
 /**
- * Central orchestrator for resolving content from URLs.
+ * Central orchestrator for resolving content from URLs, implementing [RemoteSource].
  *
  * Implements the "try known → fall back to heuristic → report failure" pipeline.
  * The app core calls this single class; it never touches engines directly.
- *
- * This is the key to swappable sourcing: you can replace the heuristic engine
- * with WASM, AI, or anything else without touching the rest of the app.
- *
- * Usage:
- * ```
- * val results = orchestrator.search("https://mangadex.org", "One Piece", 1)
- * val detail = orchestrator.getItem(profile, "https://mangadex.org/title/...")
- * ```
+ * All return values are explicitly wrapped in [Result] structures for Clean UDF execution.
  */
 class ContentSourceOrchestrator(
     private val profileCache: SourceProfileCache,
     private val heuristicEngine: ContentSourceEngine,
-    private val knownEngines: Map<String, ContentSourceEngine> = emptyMap(),
-) {
-    /**
-     * Search for content items matching [query] on the source at [baseUrl].
-     *
-     * Resolution order:
-     * 1. Known engine for this URL (hardcoded adapter, if registered)
-     * 2. Cached profile + heuristic engine
-     * 3. Fresh heuristic discovery + heuristic engine
-     */
-    suspend fun search(baseUrl: String, query: String, page: Int = 1): List<ContentItem> {
-        val profile = resolveProfile(baseUrl)
-        val engine = resolveEngine(baseUrl)
-        return engine.search(profile, query, page)
+    private val scriptEngine: ContentSourceEngine,
+    private val preferenceStore: PreferenceStore,
+) : RemoteSource {
+
+    override suspend fun discover(baseUrl: String): Result<SourceProfile> {
+        return try {
+            profileCache.invalidate(baseUrl)
+            val engine = resolveEngine(baseUrl)
+            val profile = engine.discover(baseUrl)
+            profileCache.save(profile)
+            Result.Success(profile)
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
     }
 
-    /**
-     * Fetch full details for a single content item URL.
-     */
-    suspend fun getItem(baseUrl: String, itemUrl: String): ContentItem {
-        val profile = resolveProfile(baseUrl)
-        val engine = resolveEngine(baseUrl)
-        return engine.getItem(profile, itemUrl)
+    override suspend fun search(baseUrl: String, query: String, page: Int): Result<List<ContentItem>> {
+        return try {
+            val profile = resolveProfile(baseUrl)
+            val engine = resolveEngine(baseUrl)
+            val items = engine.search(profile, query, page)
+            Result.Success(items)
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
     }
 
-    /**
-     * Fetch popular/trending items from a source.
-     */
-    suspend fun getPopular(baseUrl: String, page: Int = 1): List<ContentItem> {
-        val profile = resolveProfile(baseUrl)
-        val engine = resolveEngine(baseUrl)
-        return engine.getPopular(profile, page)
+    override suspend fun getItem(baseUrl: String, itemUrl: String): Result<ContentItem> {
+        return try {
+            val profile = resolveProfile(baseUrl)
+            val engine = resolveEngine(baseUrl)
+            val item = engine.getItem(profile, itemUrl)
+            Result.Success(item)
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
     }
 
-    /**
-     * Fetch latest/updated items from a source.
-     */
-    suspend fun getLatest(baseUrl: String, page: Int = 1): List<ContentItem> {
-        val profile = resolveProfile(baseUrl)
-        val engine = resolveEngine(baseUrl)
-        return engine.getLatest(profile, page)
+    override suspend fun getPopular(baseUrl: String, page: Int): Result<List<ContentItem>> {
+        return try {
+            val profile = resolveProfile(baseUrl)
+            val engine = resolveEngine(baseUrl)
+            val items = engine.getPopular(profile, page)
+            Result.Success(items)
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
+    }
+
+    override suspend fun getLatest(baseUrl: String, page: Int): Result<List<ContentItem>> {
+        return try {
+            val profile = resolveProfile(baseUrl)
+            val engine = resolveEngine(baseUrl)
+            val items = engine.getLatest(profile, page)
+            Result.Success(items)
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
     }
 
     /**
      * Force re-discovery of a source (clears cached profile).
+     * Kept for backward compatibility with existing screen models.
      */
-    suspend fun rediscover(baseUrl: String): SourceProfile {
-        profileCache.invalidate(baseUrl)
-        val profile = heuristicEngine.discover(baseUrl)
-        profileCache.save(profile)
-        return profile
-    }
+    suspend fun rediscover(baseUrl: String): SourceProfile = discover(baseUrl).getOrThrow()
 
     // ── Private helpers ──────────────────────────────────────────
 
     private suspend fun resolveProfile(baseUrl: String): SourceProfile {
-        // Check cache first
         val cached = profileCache.get(baseUrl)
         if (cached != null) return cached
 
-        // Fresh discovery
-        val profile = heuristicEngine.discover(baseUrl)
+        val engine = resolveEngine(baseUrl)
+        val profile = engine.discover(baseUrl)
         profileCache.save(profile)
         return profile
     }
 
-    private fun resolveEngine(baseUrl: String): ContentSourceEngine {
-        return knownEngines[normalizeUrl(baseUrl)] ?: heuristicEngine
+    private suspend fun resolveEngine(baseUrl: String): ContentSourceEngine {
+        val normalized = normalizeUrl(baseUrl)
+        val mapped = preferenceStore.getString("baseUrl_scraper_mapping_$normalized", "").get()
+        return if (mapped.isNotBlank()) {
+            scriptEngine
+        } else {
+            heuristicEngine
+        }
     }
 
     private fun normalizeUrl(url: String): String {

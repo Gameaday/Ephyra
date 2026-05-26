@@ -132,12 +132,14 @@ class MainActivity : BaseActivity(), AppReadySignal {
         }
 
         setComposeContent {
+            var didMigration by remember { mutableStateOf<Boolean?>(null) }
+
             LaunchedEffect(Unit) {
                 StartupTracker.complete(StartupTracker.Phase.COMPOSE_STARTED)
             }
             val navController = rememberNavController()
-            LaunchedEffect(navController) {
-                if (isLaunch) {
+            LaunchedEffect(navController, didMigration) {
+                if (isLaunch && didMigration != null) {
                     handleIntentAction(intent, navController)
                 }
             }
@@ -146,7 +148,6 @@ class MainActivity : BaseActivity(), AppReadySignal {
                 ephyra.presentation.core.util.LocalPrivacyPreferences provides privacyPreferences,
                 LocalNavController provides navController,
             ) {
-                var didMigration by remember { mutableStateOf<Boolean?>(null) }
                 LaunchedEffect(Unit) {
                     val result = try {
                         withTimeoutOrNull(MIGRATION_TIMEOUT_MS) {
@@ -184,84 +185,86 @@ class MainActivity : BaseActivity(), AppReadySignal {
                     )
                 }
 
-                Box(
-                    modifier = Modifier.windowInsetsPadding(
-                        WindowInsets.navigationBars.only(WindowInsetsSides.Horizontal),
-                    ),
-                ) {
-                    NavHost(
-                        navController = navController,
-                        startDestination = ScreenRoutes.Home.route,
+                if (didMigration != null) {
+                    Box(
+                        modifier = Modifier.windowInsetsPadding(
+                            WindowInsets.navigationBars.only(WindowInsetsSides.Horizontal),
+                        ),
                     ) {
-                        composable(ScreenRoutes.Home.route) { HomeScreen(navController) }
+                        NavHost(
+                            navController = navController,
+                            startDestination = ScreenRoutes.Home.route,
+                        ) {
+                            composable(ScreenRoutes.Home.route) { HomeScreen(navController) }
 
-                        composable(ScreenRoutes.DownloadQueue.route) {
-                            ephyra.feature.download.DownloadQueueScreen(navController)
-                        }
-                        composable(ScreenRoutes.MigrationConfig.route) { backStackEntry ->
-                            val mangaIdsStr = backStackEntry.arguments?.getString("mangaIds") ?: return@composable
-                            val mangaIds = mangaIdsStr.split(",").mapNotNull { it.toLongOrNull() }
-                            ephyra.feature.migration.config.MigrationConfigScreen(mangaIds, navController)
-                        }
+                            composable(ScreenRoutes.DownloadQueue.route) {
+                                ephyra.feature.download.DownloadQueueScreen(navController)
+                            }
+                            composable(ScreenRoutes.MigrationConfig.route) { backStackEntry ->
+                                val mangaIdsStr = backStackEntry.arguments?.getString("mangaIds") ?: return@composable
+                                val mangaIds = mangaIdsStr.split(",").mapNotNull { it.toLongOrNull() }
+                                ephyra.feature.migration.config.MigrationConfigScreen(mangaIds, navController)
+                            }
 
-                        composable(
-                            route = ScreenRoutes.MigrationList.route,
-                            arguments = listOf(
-                                androidx.navigation.navArgument("mangaIds") {
-                                    type =
-                                        androidx.navigation.NavType.StringType
-                                },
-                                androidx.navigation.navArgument("query") { nullable = true },
-                            ),
-                        ) { backStackEntry ->
-                            val mangaIdsStr = backStackEntry.arguments?.getString("mangaIds") ?: return@composable
-                            val mangaIds = mangaIdsStr.split(",").mapNotNull { it.toLongOrNull() }
-                            val query = backStackEntry.arguments?.getString("query")
-                            ephyra.feature.migration.list.MigrationListScreen(mangaIds, query, navController)
-                        }
+                            composable(
+                                route = ScreenRoutes.MigrationList.route,
+                                arguments = listOf(
+                                    androidx.navigation.navArgument("mangaIds") {
+                                        type =
+                                            androidx.navigation.NavType.StringType
+                                    },
+                                    androidx.navigation.navArgument("query") { nullable = true },
+                                ),
+                            ) { backStackEntry ->
+                                val mangaIdsStr = backStackEntry.arguments?.getString("mangaIds") ?: return@composable
+                                val mangaIds = mangaIdsStr.split(",").mapNotNull { it.toLongOrNull() }
+                                val query = backStackEntry.arguments?.getString("query")
+                                ephyra.feature.migration.list.MigrationListScreen(mangaIds, query, navController)
+                            }
 
-                        featureApis.forEach { featureApi ->
-                            try {
-                                featureApi.register(this, navController)
-                            } catch (e: Exception) {
-                                logcat(LogPriority.ERROR, e) {
-                                    "Failed to register feature: ${featureApi.javaClass.simpleName}"
+                            featureApis.forEach { featureApi ->
+                                try {
+                                    featureApi.register(this, navController)
+                                } catch (e: Exception) {
+                                    logcat(LogPriority.ERROR, e) {
+                                        "Failed to register feature: ${featureApi.javaClass.simpleName}"
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                HandleOnNewIntent(context, navController)
-                CheckForUpdates()
-                ShowOnboarding()
+                    HandleOnNewIntent(context, navController)
+                    CheckForUpdates()
+                    ShowOnboarding()
 
-                var showChangelog by remember { mutableStateOf(value = false) }
-                LaunchedEffect(didMigration) {
-                    if ((didMigration == true) && !BuildConfig.DEBUG) showChangelog = true
-                }
-                if (showChangelog) {
-                    AlertDialog(
-                        onDismissRequest = { showChangelog = false },
-                        title = {
-                            Text(
-                                text = stringResource(
-                                    ephyra.app.core.common.R.string.updated_version,
-                                    BuildConfig.VERSION_NAME,
-                                ),
-                            )
-                        },
-                        dismissButton = {
-                            TextButton(onClick = { openInBrowser(appInfo.releaseUrl) }) {
-                                Text(text = stringResource(ephyra.app.core.common.R.string.whats_new))
-                            }
-                        },
-                        confirmButton = {
-                            TextButton(onClick = { showChangelog = false }) {
-                                Text(text = stringResource(ephyra.app.core.common.R.string.action_ok))
-                            }
-                        },
-                    )
+                    var showChangelog by remember { mutableStateOf(value = false) }
+                    LaunchedEffect(didMigration) {
+                        if ((didMigration == true) && !BuildConfig.DEBUG) showChangelog = true
+                    }
+                    if (showChangelog) {
+                        AlertDialog(
+                            onDismissRequest = { showChangelog = false },
+                            title = {
+                                Text(
+                                    text = stringResource(
+                                        ephyra.app.core.common.R.string.updated_version,
+                                        BuildConfig.VERSION_NAME,
+                                    ),
+                                )
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { openInBrowser(appInfo.releaseUrl) }) {
+                                    Text(text = stringResource(ephyra.app.core.common.R.string.whats_new))
+                                }
+                            },
+                            confirmButton = {
+                                TextButton(onClick = { showChangelog = false }) {
+                                    Text(text = stringResource(ephyra.app.core.common.R.string.action_ok))
+                                }
+                            },
+                        )
+                    }
                 }
 
                 StartupDiagnosticOverlay(

@@ -29,6 +29,12 @@ dependencies {
     implementation(libs.logcat)
     implementation(libs.unifile)
 
+    // AndroidX DataStore for preference-backed stores
+    implementation(libs.datastore)
+    // Explicit fallbacks in case version catalog alias doesn't resolve in this module
+    implementation("androidx.datastore:datastore-preferences:1.2.1")
+    implementation("androidx.datastore:datastore-core:1.2.1")
+
     implementation(kotlinx.bundles.serialization)
 }
 // Suppress warnings for the following:

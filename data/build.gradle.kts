@@ -3,19 +3,10 @@ plugins {
     kotlin("plugin.serialization")
     // Keep KSP for Room database processing
     alias(libs.plugins.ksp)
-    alias(libs.plugins.sqldelight)
 }
 
 android {
     namespace = "ephyra.data"
-}
-
-sqldelight {
-    databases {
-        create("Database") {
-            packageName.set("ephyra.data")
-        }
-    }
 }
 
 dependencies {
@@ -28,8 +19,4 @@ dependencies {
     implementation(libs.room.ktx)
     implementation(libs.room.paging)
     ksp(libs.room.compiler)
-
-    // SQLDelight
-    implementation(libs.sqldelight.android.driver)
-    implementation(libs.sqldelight.coroutines)
 }

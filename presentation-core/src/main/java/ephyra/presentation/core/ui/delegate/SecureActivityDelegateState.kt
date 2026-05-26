@@ -2,7 +2,6 @@ package ephyra.presentation.core.ui.delegate
 
 import ephyra.core.common.core.security.SecurityPreferences
 import ephyra.presentation.core.util.system.AuthenticatorUtil
-import kotlinx.coroutines.runBlocking
 
 /**
  * Global state and lifecycle hooks for app-wide security.
@@ -20,11 +19,11 @@ object SecureActivityDelegateState {
 
     @Suppress("DEPRECATION")
     fun onApplicationStopped(preferences: SecurityPreferences) {
-        if (!runBlocking { preferences.useAuthenticator().get() }) return
+        if (!preferences.useAuthenticator().getSync()) return
 
         if (!AuthenticatorUtil.isAuthenticating) {
             if (requireUnlock) return
-            if (runBlocking { preferences.lockAppAfter().get() } > 0) {
+            if (preferences.lockAppAfter().getSync() > 0) {
                 preferences.lastAppClosed().set(System.currentTimeMillis())
             }
         }
@@ -35,15 +34,15 @@ object SecureActivityDelegateState {
      */
     @Suppress("DEPRECATION")
     fun onApplicationStart(preferences: SecurityPreferences) {
-        if (!runBlocking { preferences.useAuthenticator().get() }) return
+        if (!preferences.useAuthenticator().getSync()) return
 
         val lastClosedPref = preferences.lastAppClosed()
 
         if (!AuthenticatorUtil.isAuthenticating && !requireUnlock) {
-            requireUnlock = when (val lockDelay = runBlocking { preferences.lockAppAfter().get() }) {
+            requireUnlock = when (val lockDelay = preferences.lockAppAfter().getSync()) {
                 -1 -> false
                 0 -> true
-                else -> runBlocking { lastClosedPref.get() } + lockDelay * 60_000 <= System.currentTimeMillis()
+                else -> lastClosedPref.getSync() + lockDelay * 60_000 <= System.currentTimeMillis()
             }
         }
 

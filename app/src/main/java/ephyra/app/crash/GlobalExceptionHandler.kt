@@ -41,7 +41,7 @@ class GlobalExceptionHandler private constructor(
 
         logcat(priority = LogPriority.ERROR, throwable = exception)
         val isDiReady = try {
-            ephyra.core.common.di.CoreContainer.applicationContext != null
+            ephyra.app.startup.StartupGuard.registerPhase("di_container").isComplete
         } catch (e: Exception) {
             false
         }

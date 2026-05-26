@@ -44,6 +44,10 @@ class SourceProfileCache(
         preferenceStore.getString(key, "").set(
             json.encodeToString(SerializableProfile.fromDomain(profile)),
         )
+
+        // Save to dynamic list of profiled domains
+        val currentDomains = preferenceStore.getStringSet("profiled_domains_list", emptySet()).get()
+        preferenceStore.getStringSet("profiled_domains_list", emptySet()).set(currentDomains + profile.baseUrl)
     }
 
     /**
@@ -52,6 +56,25 @@ class SourceProfileCache(
     suspend fun invalidate(baseUrl: String) {
         val key = cacheKey(baseUrl)
         preferenceStore.getString(key, "").delete()
+
+        // Remove from dynamic list of profiled domains
+        val currentDomains = preferenceStore.getStringSet("profiled_domains_list", emptySet()).get()
+        preferenceStore.getStringSet("profiled_domains_list", emptySet()).set(currentDomains - baseUrl)
+    }
+
+    /**
+     * Retrieve all profiled domains dynamically, falling back to a pre-populated default set.
+     */
+    suspend fun getAllProfiledDomains(): Set<String> {
+        val customList = preferenceStore.getStringSet("profiled_domains_list", emptySet()).get()
+        if (customList.isEmpty()) {
+            return setOf(
+                "https://mangadex.org",
+                "https://manganato.com",
+                "https://asuratoons.com",
+            )
+        }
+        return customList
     }
 
     /** Check if a profile exists in cache. */

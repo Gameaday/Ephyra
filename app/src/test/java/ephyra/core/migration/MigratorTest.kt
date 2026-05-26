@@ -1,6 +1,8 @@
 package ephyra.core.migration
 
+import android.content.Context
 import io.kotest.assertions.nondeterministic.eventually
+import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.verify
@@ -33,7 +35,7 @@ class MigratorTest {
 
     @BeforeEach
     fun initialize() {
-        migrationContext = MigrationContext(false)
+        migrationContext = MigrationContext(mockk(relaxed = true), false)
         migrationJobFactory = spyk(MigrationJobFactory(migrationContext, CoroutineScope(Dispatchers.Main + Job())))
         migrationCompletedListener = spyk<MigrationCompletedListener>(block = {})
         migrationStrategyFactory = spyk(MigrationStrategyFactory(migrationJobFactory, migrationCompletedListener))

@@ -3,11 +3,7 @@
 This document outlines the phased approach to fully modernize the Ephyra codebase.
 
 > **Current Status (as of modernization sprint `hilt-navigation-migration`):**
-> Phases 1-9 are largely **complete** or established. We have entered **Phase 10 (Standardized Stack Migration)**:
-> - Purging legacy Koin dependency injection in favor of compile-safe **Hilt + @HiltViewModel**.
-> - Purging legacy Voyager navigation in favor of type-safe **Jetpack Navigation Compose**.
-> - Zero compile-time errors target is active: compiled cleanly under Kotlin 2.1 flags with dynamic Coil 3 Hilt bindings and static resource linking.
-> - Pioneer feature screen (`MangaScreen` / `MangaScreenModel`) is successfully migrated to the modern Hilt + Jetpack Navigation standard.
+> Phases 1-10 are **100% complete**. We have achieved all goals for Build 2, transitioning entirely to modern Hilt DI, Jetpack Compose, Jetpack Navigation, and Unidirectional Data Flow, with zero compile-time or spotless format errors. We have now entered **Phase 11 (Database & Glance Widget Performance)** as active targets.
 
 ## Phase 1: Foundation and Discovery ✅
 
@@ -277,9 +273,23 @@ The following `GlobalContext` usages remain and are intentionally out of scope f
 | `Injekt.kt` | Legacy shim for extensions that still use the Injekt service locator. Delegates to Koin's `GlobalContext`. Safe: only called from extension code after startup. |
 | `MigrationContext.kt` | Uses `GlobalContext.getOrNull()` — explicitly tolerates "Koin not started" by returning null. This is the correct pattern for migration code. |
 
+## Phase 10: Standardized Stack Migration (Hilt & Jetpack Navigation) ✅
+
+Decommission legacy frameworks and transition all components to Jetpack standards:
+- **Dependency Injection**: Purged all manual Koin registries and `GlobalContext` lookups. Every single core dependency and ViewModel uses Dagger Hilt (`@Inject`, `@HiltViewModel`).
+- **Navigation Compose**: Centralized voyager-free screens in a main `NavHost` inside `MainActivity` utilizing type-safe Compose routes and bottom navigation bar interactions.
+- **Asynchronous DataStore Persistence**: Eliminated main-thread thread-blocking `runBlocking` preferences queries using non-blocking memory cached `.getSync()` operations.
+
+## Phase 11: Database & Glance Widget Performance 🔧
+
+Replace SQLDelight with Room and resolve widget render loops:
+- **Room Migration**: Port relational `.sq` schemas to Room Entities and DAOs.
+- **Glance Pre-caching**: Refactor Updates Widget to load and pre-cache bitmaps via a background WorkManager worker instead of inside the composition layout lifecycle.
+- **SQLDelight Decommission**: Retire Koin shims, manual SQL helpers, and delete the SQLDelight dependency entirely.
+
 ### Remaining merge-blocking items
 
 1. **Room versioned migrations** — replace `fallbackToDestructiveMigration` with explicit
    `Migration` objects before any production schema change.
 2. **SQLDelight backup retirement** — backup restorer/creator classes still depend on
-   `DatabaseHandler`.  Requires domain interactor coverage first.
+   `DatabaseHandler`. Requires domain interactor coverage first.

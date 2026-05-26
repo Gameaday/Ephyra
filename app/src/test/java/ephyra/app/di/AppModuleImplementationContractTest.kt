@@ -211,4 +211,39 @@ class AppModuleImplementationContractTest {
                 "so the Hilt interface binding remains valid"
         }
     }
+
+    // ── Phase 8 Clean Architecture Boundary Contracts ──────────────────────────
+
+    @Test
+    fun `ContentDatabaseImpl implements ContentDatabase`() {
+        assertTrue(
+            ephyra.domain.content.repository.ContentDatabase::class.java.isAssignableFrom(
+                ephyra.data.content.ContentDatabaseImpl::class.java,
+            ),
+        ) {
+            "ContentDatabaseImpl must implement ContentDatabase to maintain strict domain-separation boundaries"
+        }
+    }
+
+    @Test
+    fun `ContentSourceOrchestrator implements RemoteSource`() {
+        assertTrue(
+            ephyra.domain.content.source.RemoteSource::class.java.isAssignableFrom(
+                ephyra.domain.content.source.ContentSourceOrchestrator::class.java,
+            ),
+        ) {
+            "ContentSourceOrchestrator must implement RemoteSource to abstract scraping engines"
+        }
+    }
+
+    @Test
+    fun `TrackingServiceImpl implements TrackingService`() {
+        assertTrue(
+            ephyra.domain.track.service.TrackingService::class.java.isAssignableFrom(
+                ephyra.data.track.TrackingServiceImpl::class.java,
+            ),
+        ) {
+            "TrackingServiceImpl must implement TrackingService to abstract media-sync operations"
+        }
+    }
 }

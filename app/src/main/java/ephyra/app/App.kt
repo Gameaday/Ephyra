@@ -64,6 +64,7 @@ import ephyra.telemetry.TelemetryConfig
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.NetworkPreferences
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import logcat.AndroidLogcatLogger
@@ -121,9 +122,8 @@ class App :
 
     private val disableIncognitoReceiver = DisableIncognitoReceiver()
 
-    @SuppressLint("LaunchActivityFromNotification")
-    override fun onCreate() {
-        super<Application>.onCreate()
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(base)
 
         // Phase 1: Logging — must succeed first
         try {
@@ -140,11 +140,16 @@ class App :
 
         // Phase 2: Global crash handler
         try {
-            GlobalExceptionHandler.initialize(applicationContext, CrashActivity::class.java)
+            GlobalExceptionHandler.initialize(base, CrashActivity::class.java)
         } catch (e: Exception) {
             android.util.Log.e("Ephyra", "Failed to initialize crash handler", e)
         }
         StartupGuard.completePhase("crash_handler")
+    }
+
+    @SuppressLint("LaunchActivityFromNotification")
+    override fun onCreate() {
+        super<Application>.onCreate()
 
         // Phase 3: DI container initialization — wrapped in try/catch
         try {
@@ -216,16 +221,19 @@ class App :
                         cancelNotification(Notifications.ID_INCOGNITO_MODE)
                     }
                 }
+                .catch { e -> logcat(LogPriority.ERROR, e) { "Failed to monitor incognito mode" } }
                 .launchIn(scope)
 
             privacyPreferences.analytics()
                 .changes()
                 .onEach(TelemetryConfig::setAnalyticsEnabled)
+                .catch { e -> logcat(LogPriority.ERROR, e) { "Failed to monitor analytics" } }
                 .launchIn(scope)
 
             privacyPreferences.crashlytics()
                 .changes()
                 .onEach(TelemetryConfig::setCrashlyticsEnabled)
+                .catch { e -> logcat(LogPriority.ERROR, e) { "Failed to monitor crashlytics" } }
                 .launchIn(scope)
 
             basePreferences.hardwareBitmapThreshold().let { preference ->
@@ -234,6 +242,7 @@ class App :
 
             basePreferences.hardwareBitmapThreshold().changes()
                 .onEach { ImageUtil.hardwareBitmapThreshold = it }
+                .catch { e -> logcat(LogPriority.ERROR, e) { "Failed to monitor hardware bitmap threshold" } }
                 .launchIn(scope)
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e) { "Startup reactive binding setup failed" }
@@ -276,16 +285,24 @@ class App :
     }
 
     private suspend fun initializeMigrator() {
-        val preference = preferenceStore.getInt(Preference.appStateKey("last_version_code"), 0)
-        logcat { "Migration from ${preference.get()} to ${BuildConfig.VERSION_CODE}" }
-        ephyra.app.startup.StartupTracker.complete(ephyra.app.startup.StartupTracker.Phase.MIGRATOR_STARTED)
-        Migrator.initialize(
-            old = preference.get(),
-            new = BuildConfig.VERSION_CODE,
-            migrations = migrations,
-        ) {
-            logcat { "Updating last version to ${BuildConfig.VERSION_CODE}" }
-            preference.set(BuildConfig.VERSION_CODE)
+        try {
+            val preference = preferenceStore.getInt(Preference.appStateKey("last_version_code"), 0)
+            logcat { "Migration from ${preference.get()} to ${BuildConfig.VERSION_CODE}" }
+            ephyra.app.startup.StartupTracker.complete(ephyra.app.startup.StartupTracker.Phase.MIGRATOR_STARTED)
+            Migrator.initialize(
+                context = this,
+                old = preference.get(),
+                new = BuildConfig.VERSION_CODE,
+                migrations = migrations,
+            ) {
+                logcat { "Updating last version to ${BuildConfig.VERSION_CODE}" }
+                preference.set(BuildConfig.VERSION_CODE)
+            }
+        } catch (e: Exception) {
+            logcat(LogPriority.ERROR, e) { "initializeMigrator failed; canceling and releasing Migrator initGate" }
+            ephyra.app.startup.StartupTracker.recordError(ephyra.app.startup.StartupTracker.Phase.MIGRATOR_COMPLETE, e)
+            Migrator.cancelAndRelease()
+            throw e
         }
     }
 

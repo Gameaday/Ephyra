@@ -17,12 +17,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dagger.hilt.android.EntryPointAccessors
 import ephyra.core.common.preference.TriState
 import ephyra.domain.category.model.Category
 import ephyra.domain.library.model.LibraryDisplayMode
 import ephyra.domain.library.model.LibrarySort
 import ephyra.domain.library.model.sort
 import ephyra.domain.library.service.LibraryPreferences
+import ephyra.feature.library.LibraryEntryPoint
 import ephyra.feature.library.LibrarySettingsScreenEvent
 import ephyra.feature.library.LibrarySettingsScreenModel
 import ephyra.presentation.core.components.BaseSortItem
@@ -80,7 +82,13 @@ fun LibrarySettingsDialog(
 private fun ColumnScope.FilterPage(
     screenModel: LibrarySettingsScreenModel,
 ) {
-    val appInfo = remember { ephyra.core.common.di.CoreContainer.get<AppInfo>() }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val appInfo = remember {
+        EntryPointAccessors.fromApplication(
+            context.applicationContext,
+            LibraryEntryPoint::class.java,
+        ).appInfo()
+    }
     val filterDownloaded by screenModel.libraryPreferences.filterDownloaded().collectAsState()
     val downloadedOnly by screenModel.preferences.downloadedOnly().collectAsState()
     val autoUpdateMangaRestrictions by screenModel.libraryPreferences.autoUpdateMangaRestrictions()

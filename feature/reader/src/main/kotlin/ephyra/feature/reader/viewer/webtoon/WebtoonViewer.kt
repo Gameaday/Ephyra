@@ -308,6 +308,14 @@ class WebtoonViewer(
         }
     }
 
+    override fun moveToNext() {
+        scrollDown()
+    }
+
+    override fun moveToPrevious() {
+        scrollUp()
+    }
+
     /**
      * Scrolls up by [scrollDistance].
      */

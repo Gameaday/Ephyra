@@ -48,16 +48,21 @@ Every module exposes **only interfaces** (defined in `domain`) and receives **on
 interfaces**. Concrete implementations live in `:data` and `:app`. No feature module ever
 imports a concrete repository or service implementation directly.
 
-The canonical pattern is:
+The canonical Hilt pattern is:
 
 ```kotlin
-// In koinDomainModule — the ONLY place implementations are wired to interfaces.
-single<CategoryRepository> { CategoryRepositoryImpl(get()) }
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class RepositoryModule {
+    @Binds
+    @Singleton
+    abstract fun bindCategoryRepository(
+        impl: CategoryRepositoryImpl
+    ): CategoryRepository
+}
 ```
 
-This is what makes individual systems replaceable in 20 years: you swap the
-implementation, never the interface. The day the database engine changes, exactly one file
-changes per repository.
+This is what makes individual systems replaceable: you swap the implementation, never the interface. The day the database engine changes, exactly one file changes per repository.
 
 **Violation signal:** a `:feature:*` module that imports a class from `:data` or `:app`
 directly instead of from `:core:domain` or `:domain`.
@@ -69,20 +74,19 @@ directly instead of from `:core:domain` or `:domain`.
 State flows in exactly one direction:
 
 ```
-database → repository → interactor → screen model → UI
+database → repository → interactor → view model → UI
 ```
 
 State **never** flows backward. The UI never writes directly to the database. The database
 never reads from the UI. There is exactly one place each piece of state is defined, and
 everything else observes it.
 
-A `ScreenModel` that calls `preferenceStore.get()` directly instead of going through a
+A `ViewModel` that calls `preferenceStore.get()` directly instead of going through a
 domain interactor that owns that preference creates **two sources of truth** for the same
 data. This is the root cause of the "why did my UI show stale data" bugs that are only
-observable on real devices under real conditions — they are invisible in tests because
-tests control timing.
+observable on real devices under real conditions.
 
-**Rule:** `ScreenModel`s inject only domain **Interactors**, never repositories or
+**Rule:** `ViewModel`s inject only domain **Interactors**, never repositories or
 preference stores directly.
 
 ---
@@ -94,25 +98,25 @@ explicitly). Silent `catch (_: Exception) {}` blocks are architectural debt: the
 hard failures into phantom bugs that are only observable in the real world, never in CI.
 
 **Recoverable failures** (e.g., notification channel setup failed) should log at
-`ERROR` and continue:
+`WARN` or `ERROR` and continue:
 
 ```kotlin
 } catch (e: Exception) {
-    logcat(LogPriority.ERROR, e) { "Failed to modify notification channels" }
+    logcat(LogPriority.WARN, e) { "Failed to modify notification channels" }
 }
 ```
 
-**Unrecoverable failures** (e.g., Koin graph failed to start, database failed to open)
+**Unrecoverable failures** (e.g., Hilt DI container failed to compile or initialize, database failed to open)
 must **crash fast and loud**:
 
 ```kotlin
 } catch (e: Exception) {
-    StartupTracker.recordError(StartupTracker.Phase.KOIN_INITIALIZED, e)
-    throw e  // crash visibly; CrashActivity will surface the stack trace
+    StartupGuard.recordError("di_container", e)
+    throw e  // crash visibly; StartupFailureActivity will surface the stack trace
 }
 ```
 
-The `StartupTracker` and `StartupDiagnosticOverlay` exist precisely to surface
+The `StartupGuard` and `StartupDiagnosticOverlay` exist precisely to surface
 unrecoverable failures with full context on the device screen. Use `recordError()` at
 every startup catch site before re-throwing.
 
@@ -121,7 +125,7 @@ every startup catch site before re-throwing.
 ## Principle 5 — Everything Observable Must Be Testable in Isolation
 
 Each interactor must be testable by constructing it with fake repository implementations.
-Each screen model must be testable by constructing it with fake interactors. Each
+Each ViewModel must be testable by constructing it with fake interactors. Each
 repository must be testable with an in-memory database substitute.
 
 The architecture supports this because all repository and service contracts are interfaces.
@@ -135,7 +139,7 @@ The remaining work is ensuring that **every** service dependency is also an inte
 | `DownloadManager` | ✅ Interface (`domain.download.service`) | — |
 | `TrackerManager` | ✅ Interface (`domain.track.service`) | — |
 | `NetworkHelper` | ⚠️ Concrete | Extract `NetworkClient` interface in domain |
-| `ExtensionManager` | ⚠️ Concrete (aliased) | Formalise domain interface |
+| `ExtensionManager` | ✅ Interface | — |
 
 **Rule:** If a class cannot be instantiated in a JVM unit test with a fake collaborator,
 it is not finished.
@@ -144,54 +148,43 @@ it is not finished.
 
 ## Principle 6 — Startup Is a Contract, Not a Hope
 
-The `StartupTracker` records every phase of app startup with wall-clock timestamps and
+The `StartupGuard` records every phase of app startup with wall-clock timestamps and
 surfaces failures in the `StartupDiagnosticOverlay`. Every startup phase must be:
 
-1. **Time-bounded** — if a phase takes more than N seconds, it is a bug, not a slow
-   device.
+1. **Time-bounded** — if a phase takes more than 10 seconds, it is a bug, not a slow device.
 2. **Failure-reporting** — `recordError()` must be called from every `catch` block during
    startup. Never log and swallow during startup.
 3. **Causally ordered** — if Phase B depends on Phase A, that dependency is encoded in
-   code (e.g., `Migrator.await()` blocks until `initGate` is completed), not assumed by
-   convention.
+   code, not assumed by convention.
 
 The defined startup sequence and its correctness guarantees:
 
 | Phase | Guarantee |
 |---|---|
-| `APP_CREATED` | `Application.onCreate()` entered |
-| `KOIN_INITIALIZED` | Full DI graph is available; any failure crashes fast |
-| `MIGRATOR_STARTED` | Version preference read; migrator coroutine running |
-| `ACTIVITY_CREATED` | `MainActivity.onCreate()` entered |
-| `COMPOSE_STARTED` | Compose content set; UI frame pipeline active |
-| `MIGRATOR_COMPLETE` | All migrations done (or timed out); startup unblocked |
-| `NAVIGATOR_CREATED` | Root navigator ready |
-| `HOME_SCREEN_LOADED` | Content is visible and interactive |
+| `logging` | Logcat logger is initialized |
+| `crash_handler` | Volatile global exception handler is registered |
+| `di_container` | Hilt dependency graph is ready and verified |
+| `telemetry` | Analytics and performance metrics active |
+| `notifications` | Notification channels are registered |
+| `reactive_bindings` | Settings changes reactively bound to services |
+| `async_init` | Disk storage migrations and widget cache updates |
 
 If a phase never completes, the `StartupDiagnosticOverlay` shows it as pending
-(⏳) on debug/nightly/preview builds. **A startup bug is not a "crash" — it may be a
-hung phase that leaves the user on a blank screen.** The overlay makes this visible.
+(⏳) on debug/nightly/preview builds. The overlay makes this visible immediately.
 
 ---
 
-## Principle 7 — Dependency Injection Is Constructor Injection
+## Principle 7 — Dependency Injection Is Compile-Time Constructor Injection
 
-Koin is the dependency injection framework. All dependencies are resolved at construction
-time via constructor parameters — not by calling `get()` inside a method body, not by
-`by inject()` as a lazy property outside the constructor scope, not by `Injekt.get()`.
+Hilt is the dependency injection framework. All dependencies are resolved statically at compile time.
+All internal dependencies are resolved via constructor parameters — not by calling manual Koin injectors, not by Koin `by inject()` lazy properties, and not by legacy `Injekt.get()` shims.
 
-The only permitted exception is the `uy.kohesive.injekt.Injekt` shim, which exists
+The only permitted exception is the legacy `uy.kohesive.injekt.Injekt` service locator shim, which exists
 exclusively to bridge legacy third-party extensions that cannot be recompiled. **Internal
 code must never use `Injekt.get()`.**
 
 **Enforced by:** the "Architecture fitness" step in `build.yml` which fails the CI build
 on any `Injekt.get()` call outside the shim file.
-
-The current `compileSafety.set(false)` in several module `build.gradle.kts` files is a
-temporary compromise. The path to `compileSafety.set(true)` requires converting all
-manual `module {}` blocks to `@Module` annotations (or declaring `@ExternalDefinitions`
-when that annotation becomes available in Koin Annotations). This is the single highest
-priority DI improvement remaining.
 
 ---
 
@@ -203,11 +196,10 @@ duplicated.
 
 - **Persistence layer** (Room entities, DataStore keys): raw storage types.
 - **Domain layer** (Interactors, repositories): domain model types (`Manga`, `Chapter`).
-- **Presentation layer** (ScreenModel state): immutable ViewState snapshots.
+- **Presentation layer** (ViewModel state): immutable ViewState snapshots.
 - **UI layer** (Composable): `@Stable` or `@Immutable` data passed as parameters.
 
-Duplication of state between layers (e.g., a `MutableStateFlow` in a `ScreenModel` that
-mirrors a database `Flow` without being derived from it) always diverges under concurrent
+Duplication of state between layers always diverges under concurrent
 writes. **One flow. One source. One direction.**
 
 ---
@@ -216,14 +208,14 @@ writes. **One flow. One source. One direction.**
 
 | Anti-pattern | Why it fails | Correct alternative |
 |---|---|---|
-| `Injekt.get()` in internal code | Service-locator pattern; graph not verified at compile time | Constructor injection via Koin |
-| `ScreenModel` imports `*RepositoryImpl` | Bypasses domain interface boundary | Inject `*Repository` interface |
-| `catch (_: Exception) {}` during startup | Swallows failures; invisible on device | `StartupTracker.recordError()` + re-throw |
-| `runBlocking {}` on the main thread | Blocks UI; causes ANR | `Dispatchers.IO` + coroutine |
+| `Injekt.get()` in internal code | Service-locator pattern; graph not verified at compile time | Constructor injection via Hilt |
+| `ViewModel` imports `*RepositoryImpl` | Bypasses domain interface boundary | Inject `*Repository` interface |
+| `catch (_: Exception) {}` during startup | Swallows failures; invisible on device | `StartupGuard.recordError()` + re-throw |
+| `runBlocking {}` on the main thread | Blocks UI; causes ANR | `Preference.getSync()` or coroutines |
 | `android.*` import in `:domain` | Prevents JVM-only testing; couples business logic to platform | Move Android-specific code to `:data`/`:app` |
 | Unbounded `Channel<T>()` on an `object`-scoped screen | Accumulates undelivered events across navigation | `Channel.CONFLATED` or `Channel.DROP_OLDEST` |
-| Multiple `MutableStateFlow`s in one `ScreenModel` | Multiple sources of truth; diverges under concurrent writes | Single immutable `ViewState` data class |
-| `by inject()` field in a `ScreenModel` | Hidden dependency; untestable without Koin context | Constructor parameter |
+| Multiple `MutableStateFlow`s in one `ViewModel` | Multiple sources of truth; diverges under concurrent writes | Single immutable `ViewState` data class |
+| `by inject()` field in a `ViewModel` | Hidden dependency; untestable | Constructor parameter |
 
 ---
 

@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
+import dagger.hilt.android.EntryPointAccessors
 import ephyra.domain.release.service.AppUpdateDownloader
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.util.system.openInBrowser
@@ -17,7 +18,12 @@ fun NewUpdateScreen(
     navController: NavController = LocalNavController.current,
 ) {
     val context = LocalContext.current
-    val appUpdateDownloader = remember { ephyra.core.common.di.CoreContainer.get<AppUpdateDownloader>() }
+    val appUpdateDownloader = remember {
+        EntryPointAccessors.fromApplication(
+            context.applicationContext,
+            MoreEntryPoint::class.java,
+        ).appUpdateDownloader()
+    }
     val changelogInfoNoChecksum = remember {
         changelogInfo.replace("""---(\R|.)*Checksums(\R|.)*""".toRegex(), "")
     }

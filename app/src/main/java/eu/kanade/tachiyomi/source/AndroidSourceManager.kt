@@ -19,6 +19,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import nl.adaptivity.xmlutil.serialization.XML
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Provider
 
@@ -29,6 +31,8 @@ internal class AndroidSourceManager(
     private val fileSystem: ephyra.source.local.io.LocalSourceFileSystem,
     private val coverManager: ephyra.source.local.image.LocalCoverManager,
     private val downloadManagerProvider: Provider<DownloadManager>,
+    private val json: Json,
+    private val xml: XML,
 ) : SourceManager {
 
     private val _isInitialized = MutableStateFlow(false)
@@ -54,6 +58,8 @@ internal class AndroidSourceManager(
                                 context,
                                 fileSystem,
                                 coverManager,
+                                json,
+                                xml,
                             ),
                         ),
                     )

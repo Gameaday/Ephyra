@@ -35,6 +35,7 @@ import androidx.core.net.toUri
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import ephyra.feature.more.MoreEntryPoint
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.AppInfo
 import ephyra.presentation.core.util.LocalPrivacyPreferences
@@ -55,7 +56,12 @@ internal class PermissionStep : OnboardingStep {
         val context = LocalContext.current
         val lifecycleOwner = LocalLifecycleOwner.current
         val privacyPreferences = LocalPrivacyPreferences.current
-        val appInfo = remember { ephyra.core.common.di.CoreContainer.get<AppInfo>() }
+        val appInfo = remember {
+            dagger.hilt.android.EntryPointAccessors.fromApplication(
+                context.applicationContext,
+                MoreEntryPoint::class.java,
+            ).appInfo()
+        }
 
         val installGranted = rememberRequestPackageInstallsPermissionState()
 

@@ -1,40 +1,55 @@
 package ephyra.app.track
 
 import android.content.Context
-import androidx.core.content.edit
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.SharedPreferencesMigration
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStoreFile
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.track.store.TrackingQueueStore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
 import logcat.LogPriority
 
 class DelayedTrackingStore(context: Context) : TrackingQueueStore {
 
-    /**
-     * Preference file where queued tracking updates are stored.
-     */
-    private val preferences = context.getSharedPreferences("tracking_queue", Context.MODE_PRIVATE)
+    private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-    override fun add(trackId: Long, lastChapterRead: Double) {
-        val previousLastChapterRead = preferences.getFloat(trackId.toString(), 0f)
+    private val dataStore: DataStore<Preferences> = PreferenceDataStoreFactory.create(
+        scope = ioScope,
+        migrations = listOf(SharedPreferencesMigration(context, "tracking_queue")),
+        produceFile = { context.preferencesDataStoreFile("tracking_queue.preferences_pb") },
+    )
+
+    override suspend fun add(trackId: Long, lastChapterRead: Double) {
+        val previousLastChapterRead =
+            dataStore.data.first()[stringPreferencesKey(trackId.toString())]?.toDoubleOrNull() ?: 0.0
         if (lastChapterRead > previousLastChapterRead) {
             logcat(LogPriority.DEBUG) { "Queuing track item: $trackId, last chapter read: $lastChapterRead" }
-            preferences.edit {
-                putFloat(trackId.toString(), lastChapterRead.toFloat())
+            dataStore.edit { prefs -> prefs[stringPreferencesKey(trackId.toString())] = lastChapterRead.toString() }
+        }
+    }
+
+    override suspend fun remove(trackId: Long) {
+        dataStore.edit { prefs -> prefs.remove(stringPreferencesKey(trackId.toString())) }
+    }
+
+    override suspend fun getItems(): List<TrackingQueueStore.TrackingQueueItem> {
+        val prefs = dataStore.data.first()
+        return prefs.asMap().mapNotNull { (k, v) ->
+            try {
+                TrackingQueueStore.TrackingQueueItem(
+                    trackId = k.name.toLong(),
+                    lastChapterRead = v.toString().toFloat(),
+                )
+            } catch (e: Exception) {
+                null
             }
-        }
-    }
-
-    override fun remove(trackId: Long) {
-        preferences.edit {
-            remove(trackId.toString())
-        }
-    }
-
-    override fun getItems(): List<TrackingQueueStore.TrackingQueueItem> {
-        return preferences.all.mapNotNull {
-            TrackingQueueStore.TrackingQueueItem(
-                trackId = it.key.toLong(),
-                lastChapterRead = it.value.toString().toFloat(),
-            )
         }
     }
 }

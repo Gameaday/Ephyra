@@ -65,14 +65,16 @@ fun LibraryPager(
         }
 
         val displayMode by getDisplayMode(page)
-        val columns by if (displayMode != LibraryDisplayMode.List) {
+        val columnsState = if (displayMode != LibraryDisplayMode.List) {
             val configuration = LocalConfiguration.current
             val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
             remember(isLandscape) { getColumnsForOrientation(isLandscape) }
         } else {
-            remember { mutableIntStateOf(0) }
+            null
         }
+        val columns = columnsState?.value ?: 0
+        val onColumnsChange: ((Int) -> Unit)? = columnsState?.let { state -> { state.value = it } }
 
         val onClickManga: (LibraryManga) -> Unit = { onClickManga(category, it) }
         val onLongClickManga: (LibraryManga) -> Unit = { onLongClickManga(category, it) }
@@ -103,6 +105,7 @@ fun LibraryPager(
                     onClickContinueReading = onClickContinueReading,
                     searchQuery = searchQuery,
                     onGlobalSearchClicked = onGlobalSearchClicked,
+                    onColumnsChange = onColumnsChange,
                 )
             }
 
@@ -117,6 +120,7 @@ fun LibraryPager(
                     onClickContinueReading = onClickContinueReading,
                     searchQuery = searchQuery,
                     onGlobalSearchClicked = onGlobalSearchClicked,
+                    onColumnsChange = onColumnsChange,
                 )
             }
         }

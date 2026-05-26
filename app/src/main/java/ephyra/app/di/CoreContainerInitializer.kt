@@ -21,6 +21,9 @@ interface ScreenEntryPoint {
     fun libraryPreferences(): ephyra.domain.library.service.LibraryPreferences
     fun extensionManager(): ephyra.app.extension.ExtensionManager
     fun trustExtension(): ephyra.domain.extension.interactor.TrustExtension
+    fun appUpdateDownloader(): ephyra.domain.release.service.AppUpdateDownloader
+    fun sourcePreferences(): ephyra.domain.source.service.SourcePreferences
+    fun extensionRepoRepository(): ephyra.domain.extensionrepo.repository.ExtensionRepoRepository
 
     // Interactors / Use Cases
     fun updateMangaNotes(): ephyra.domain.manga.interactor.UpdateMangaNotes
@@ -78,6 +81,7 @@ interface ScreenEntryPoint {
     fun xml(): nl.adaptivity.xmlutil.serialization.XML
 }
 
+@Deprecated("Use standard Hilt injection or Hilt EntryPoints instead.")
 fun initializeCoreContainer(context: Context) {
     CoreContainer.init(context)
     val entryPoint = EntryPointAccessors.fromApplication(context.applicationContext, ScreenEntryPoint::class.java)
@@ -210,4 +214,11 @@ fun initializeCoreContainer(context: Context) {
     // Serialization
     CoreContainer.register(kotlinx.serialization.json.Json::class.java) { entryPoint.json() }
     CoreContainer.register(nl.adaptivity.xmlutil.serialization.XML::class.java) { entryPoint.xml() }
+
+    CoreContainer.register(ephyra.domain.source.service.SourcePreferences::class.java) {
+        entryPoint.sourcePreferences()
+    }
+    CoreContainer.register(ephyra.domain.extensionrepo.repository.ExtensionRepoRepository::class.java) {
+        entryPoint.extensionRepoRepository()
+    }
 }

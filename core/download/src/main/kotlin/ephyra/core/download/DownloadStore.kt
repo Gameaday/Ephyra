@@ -1,13 +1,24 @@
 package ephyra.core.download
 
 import android.content.Context
-import androidx.core.content.edit
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.SharedPreferencesMigration
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStoreFile
 import ephyra.domain.chapter.interactor.GetChapter
 import ephyra.domain.download.model.Download
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.service.SourceManager
 import eu.kanade.tachiyomi.source.online.HttpSource
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -23,9 +34,16 @@ class DownloadStore(
 ) {
 
     /**
-     * Preference file where active downloads are stored.
+     * DataStore backing file for active downloads. Migrates from legacy SharedPreferences
+     * named "active_downloads" using SharedPreferencesMigration to ensure zero data loss.
      */
-    private val preferences = context.getSharedPreferences("active_downloads", Context.MODE_PRIVATE)
+    private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
+    private val dataStore: DataStore<Preferences> = PreferenceDataStoreFactory.create(
+        scope = ioScope,
+        migrations = listOf(SharedPreferencesMigration(context, "active_downloads")),
+        produceFile = { context.preferencesDataStoreFile("active_downloads.preferences_pb") },
+    )
 
     /**
      * Counter used to keep the queue order.
@@ -38,8 +56,11 @@ class DownloadStore(
      * @param downloads the list of downloads to add.
      */
     fun addAll(downloads: List<Download>) {
-        preferences.edit {
-            downloads.forEach { putString(getKey(it), serialize(it)) }
+        // Non-blocking write via DataStore
+        ioScope.launch {
+            dataStore.edit { prefs ->
+                downloads.forEach { prefs[stringPreferencesKey(getKey(it))] = serialize(it) }
+            }
         }
     }
 
@@ -49,9 +70,7 @@ class DownloadStore(
      * @param download the download to remove.
      */
     fun remove(download: Download) {
-        preferences.edit {
-            remove(getKey(download))
-        }
+        ioScope.launch { dataStore.edit { prefs -> prefs.remove(stringPreferencesKey(getKey(download))) } }
     }
 
     /**
@@ -60,8 +79,8 @@ class DownloadStore(
      * @param downloads the download to remove.
      */
     fun removeAll(downloads: List<Download>) {
-        preferences.edit {
-            downloads.forEach { remove(getKey(it)) }
+        ioScope.launch {
+            dataStore.edit { prefs -> downloads.forEach { prefs.remove(stringPreferencesKey(getKey(it))) } }
         }
     }
 
@@ -69,9 +88,7 @@ class DownloadStore(
      * Removes all the downloads from the store.
      */
     fun clear() {
-        preferences.edit {
-            clear()
-        }
+        ioScope.launch { dataStore.edit { prefs -> prefs.clear() } }
     }
 
     /**
@@ -87,8 +104,10 @@ class DownloadStore(
      * Returns the list of downloads to restore. It should be called in a background thread.
      */
     suspend fun restore(): List<Download> {
-        val objs = preferences.all
-            .mapNotNull { it.value as? String }
+        // Read current prefs snapshot
+        val prefs = dataStore.data.first()
+        val objs = prefs.asMap().values
+            .mapNotNull { it as? String }
             .mapNotNull { deserialize(it) }
             .sortedBy { it.order }
 
@@ -106,7 +125,13 @@ class DownloadStore(
         }
 
         // Clear the store, downloads will be added again immediately.
-        clear()
+        dataStore.edit { prefs ->
+            val keys = prefs.asMap().keys.toList()
+            for (k in keys) {
+                @Suppress("UNCHECKED_CAST")
+                prefs.remove(k as androidx.datastore.preferences.core.Preferences.Key<Any>)
+            }
+        }
         return downloads
     }
 

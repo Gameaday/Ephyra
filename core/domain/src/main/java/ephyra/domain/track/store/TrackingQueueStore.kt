@@ -5,9 +5,9 @@ package ephyra.domain.track.store
  * Implementations live in :app using SharedPreferences.
  */
 interface TrackingQueueStore {
-    fun add(trackId: Long, lastChapterRead: Double)
-    fun remove(trackId: Long)
-    fun getItems(): List<TrackingQueueItem>
+    suspend fun add(trackId: Long, lastChapterRead: Double)
+    suspend fun remove(trackId: Long)
+    suspend fun getItems(): List<TrackingQueueItem>
 
     data class TrackingQueueItem(
         val trackId: Long,

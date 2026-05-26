@@ -39,7 +39,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import logcat.LogPriority
@@ -65,9 +64,6 @@ class MigrationListScreenModel @Inject constructor(
 
     val items
         inline get() = state.value.items
-
-    private val hideUnmatched = runBlocking { preferences.migrationHideUnmatched().get() }
-    private val hideWithoutUpdates = runBlocking { preferences.migrationHideWithoutUpdates().get() }
 
     private val navigateBackChannel = Channel<Unit>()
     val navigateBackEvent = navigateBackChannel.receiveAsFlow()
@@ -128,6 +124,8 @@ class MigrationListScreenModel @Inject constructor(
     }
 
     private suspend fun runMigrations(mangas: List<MigratingManga>) {
+        val hideUnmatched = preferences.migrationHideUnmatched().get()
+        val hideWithoutUpdates = preferences.migrationHideWithoutUpdates().get()
         val prioritizeByChapters = preferences.migrationPrioritizeByChapters().get()
         val deepSearchMode = preferences.migrationDeepSearchMode().get()
 

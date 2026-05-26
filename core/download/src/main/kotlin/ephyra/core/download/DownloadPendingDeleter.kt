@@ -1,9 +1,21 @@
 package ephyra.core.download
 
 import android.content.Context
-import androidx.core.content.edit
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.SharedPreferencesMigration
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStoreFile
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.manga.model.Manga
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -13,9 +25,18 @@ class DownloadPendingDeleter(
 ) {
 
     /**
-     * Preferences used to store the list of chapters to delete.
+     * DataStore used to store the list of chapters to delete. Migrates from legacy
+     * SharedPreferences named "chapters_to_delete" to avoid data loss.
      */
-    private val preferences = context.getSharedPreferences("chapters_to_delete", Context.MODE_PRIVATE)
+    private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
+    private val dataStore: DataStore<Preferences> = PreferenceDataStoreFactory.create(
+        scope = ioScope,
+        migrations = listOf(SharedPreferencesMigration(context, "chapters_to_delete")),
+        produceFile = { context.preferencesDataStoreFile("chapters_to_delete.preferences_pb") },
+    )
+
+    private val mutex = Mutex()
 
     /**
      * Last added chapter, used to avoid decoding from the preference too often.
@@ -28,8 +49,7 @@ class DownloadPendingDeleter(
      * @param chapters the chapters to be deleted.
      * @param manga the manga of the chapters.
      */
-    @Synchronized
-    fun addChapters(chapters: List<Chapter>, manga: Manga) {
+    suspend fun addChapters(chapters: List<Chapter>, manga: Manga): Unit = mutex.withLock {
         val lastEntry = lastAddedEntry
 
         val newEntry = if (lastEntry != null && lastEntry.manga.id == manga.id) {
@@ -42,9 +62,10 @@ class DownloadPendingDeleter(
             // Last entry matches the manga, reuse it to avoid decoding json from preferences
             lastEntry.copy(chapters = newChapters)
         } else {
-            val existingEntry = preferences.getString(manga.id.toString(), null)
+            // Read existing entry from DataStore
+            val existingEntry = dataStore.data.first()[stringPreferencesKey(manga.id.toString())]
             if (existingEntry != null) {
-                // Existing entry found on preferences, decode json and add the new chapter
+                // Existing entry found, decode json and add the new chapter
                 val savedEntry = json.decodeFromString<Entry>(existingEntry)
 
                 // Append new chapters
@@ -61,10 +82,8 @@ class DownloadPendingDeleter(
         }
 
         // Save current state
-        val json = json.encodeToString(newEntry)
-        preferences.edit {
-            putString(newEntry.manga.id.toString(), json)
-        }
+        val jsonString = json.encodeToString(newEntry)
+        dataStore.edit { prefs -> prefs[stringPreferencesKey(newEntry.manga.id.toString())] = jsonString }
         lastAddedEntry = newEntry
     }
 
@@ -74,24 +93,35 @@ class DownloadPendingDeleter(
      * Note: the returned list of manga and chapters only contain basic information needed by the
      * downloader, so don't use them for anything else.
      */
-    @Synchronized
-    fun getPendingChapters(): Map<Manga, List<Chapter>> {
-        val entries = decodeAll()
-        preferences.edit {
-            clear()
+    suspend fun getPendingChapters(): Map<Manga, List<Chapter>> = mutex.withLock {
+        // Read snapshot from DataStore, then clear the DataStore
+        val prefs = dataStore.data.first()
+        val entries = prefs.asMap().values.mapNotNull { rawEntry ->
+            try {
+                (rawEntry as? String)?.let { json.decodeFromString<Entry>(it) }
+            } catch (e: Exception) {
+                null
+            }
+        }
+
+        dataStore.edit { prefs ->
+            val keys = prefs.asMap().keys.toList()
+            for (k in keys) {
+                @Suppress("UNCHECKED_CAST")
+                prefs.remove(k as androidx.datastore.preferences.core.Preferences.Key<Any>)
+            }
         }
         lastAddedEntry = null
 
-        return entries.associate { (chapters, manga) ->
-            manga.toModel() to chapters.map { it.toModel() }
-        }
+        return entries.associate { (chapters, manga) -> manga.toModel() to chapters.map { it.toModel() } }
     }
 
     /**
      * Decodes all the chapters from preferences.
      */
-    private fun decodeAll(): List<Entry> {
-        return preferences.all.values.mapNotNull { rawEntry ->
+    private suspend fun decodeAll(): List<Entry> {
+        val prefs = dataStore.data.first()
+        return prefs.asMap().values.mapNotNull { rawEntry ->
             try {
                 (rawEntry as? String)?.let { json.decodeFromString<Entry>(it) }
             } catch (e: Exception) {

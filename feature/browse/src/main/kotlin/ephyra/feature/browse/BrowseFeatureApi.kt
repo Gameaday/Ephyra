@@ -110,5 +110,10 @@ class BrowseFeatureApi @Inject constructor() : FeatureApi {
             val pkgName = backStackEntry.arguments?.getString("pkgName") ?: return@composable
             ephyra.feature.browse.extension.details.ExtensionDetailsScreen(pkgName, navController)
         }
+
+        // Content Sourcing Hub Screen
+        navGraphBuilder.composable(ScreenRoutes.ContentSourcing.route) {
+            ephyra.feature.browse.presentation.ContentSourcingScreen(navController)
+        }
     }
 }

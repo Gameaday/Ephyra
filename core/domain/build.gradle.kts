@@ -36,9 +36,6 @@ dependencies {
     // Domain uses it in DownloadProvider and StorageManager interfaces.
     implementation(libs.unifile)
 
-    // sqldelight will be removed as part of Room migration; keep only what's needed
-    // for the transition period
-
     testImplementation(libs.bundles.test)
     testImplementation(kotlinx.coroutines.test)
     testRuntimeOnly(libs.junit.platform.launcher)

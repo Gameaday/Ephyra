@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
 @HiltViewModel
@@ -44,6 +43,6 @@ class HomeViewModel @Inject constructor(
     private fun <T> ephyra.core.common.preference.Preference<T>.asState(
         scope: kotlinx.coroutines.CoroutineScope,
     ): StateFlow<T> {
-        return changes().stateIn(scope, SharingStarted.WhileSubscribed(5000), runBlocking { get() })
+        return changes().stateIn(scope, SharingStarted.WhileSubscribed(5000), getSync())
     }
 }

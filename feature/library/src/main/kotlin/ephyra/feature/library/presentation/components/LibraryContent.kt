@@ -14,6 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLayoutDirection
 import ephyra.domain.category.model.Category
 import ephyra.domain.library.model.LibraryDisplayMode
@@ -48,13 +49,36 @@ fun LibraryContent(
     getDisplayMode: (Int) -> PreferenceMutableState<LibraryDisplayMode>,
     getColumnsForOrientation: (Boolean) -> PreferenceMutableState<Int>,
     getItemsForCategory: (Category) -> List<LibraryItem>,
+    onShowSettingsDialog: (() -> Unit)? = null,
 ) {
     Column(
-        modifier = Modifier.padding(
-            top = contentPadding.calculateTopPadding(),
-            start = contentPadding.calculateStartPadding(LocalLayoutDirection.current),
-            end = contentPadding.calculateEndPadding(LocalLayoutDirection.current),
-        ),
+        modifier = Modifier
+            .padding(
+                top = contentPadding.calculateTopPadding(),
+                start = contentPadding.calculateStartPadding(LocalLayoutDirection.current),
+                end = contentPadding.calculateEndPadding(LocalLayoutDirection.current),
+            )
+            .then(
+                if (onShowSettingsDialog != null) {
+                    Modifier.pointerInput(Unit) {
+                        awaitPointerEventScope {
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                if (event.changes.size == 2) {
+                                    val dragAmountX = event.changes.map {
+                                        it.position.x - it.previousPosition.x
+                                    }.average()
+                                    if (kotlin.math.abs(dragAmountX) > 15f) {
+                                        onShowSettingsDialog()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    Modifier
+                },
+            ),
     ) {
         val pagerState = rememberPagerState(currentPage) { categories.size }
 

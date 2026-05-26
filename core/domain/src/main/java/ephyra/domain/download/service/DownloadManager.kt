@@ -37,7 +37,7 @@ interface DownloadManager {
     fun deleteChapters(chapters: List<Chapter>, manga: Manga, source: Source)
     fun deleteManga(manga: Manga, source: Source, removeQueued: Boolean = true)
     suspend fun enqueueChaptersToDelete(chapters: List<Chapter>, manga: Manga)
-    fun deletePendingChapters()
+    suspend fun deletePendingChapters()
     fun renameSource(oldSource: Source, newSource: Source)
     suspend fun renameManga(manga: Manga, newTitle: String)
     suspend fun renameChapter(source: Source, manga: Manga, oldChapter: Chapter, newChapter: Chapter)

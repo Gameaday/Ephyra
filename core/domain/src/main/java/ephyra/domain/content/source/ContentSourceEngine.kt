@@ -18,7 +18,7 @@ import ephyra.domain.content.model.ContentItem
  * @see SourceProfile
  * @see ContentSourceOrchestrator
  */
-sealed interface ContentSourceEngine {
+interface ContentSourceEngine {
 
     /**
      * Discover how to interact with a content source at [baseUrl].

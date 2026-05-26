@@ -215,6 +215,7 @@ fun LibraryScreen(
                     getDisplayMode = { screenModel.getDisplayMode() },
                     getColumnsForOrientation = { screenModel.getColumnsForOrientation(it) },
                     getItemsForCategory = { state.getItemsForCategory(it) },
+                    onShowSettingsDialog = { screenModel.onEvent(LibraryScreenEvent.ShowSettingsDialog) },
                 )
             }
         }

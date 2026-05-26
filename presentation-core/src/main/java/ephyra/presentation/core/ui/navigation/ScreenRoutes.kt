@@ -145,4 +145,5 @@ sealed class ScreenRoutes(val route: String) {
     object SettingsData : ScreenRoutes("settings_data")
     object SettingsSecurity : ScreenRoutes("settings_security")
     object SettingsAdvanced : ScreenRoutes("settings_advanced")
+    data object ContentSourcing : ScreenRoutes("content_sourcing")
 }

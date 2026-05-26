@@ -59,8 +59,10 @@ import ephyra.data.cache.ChapterCache
 import ephyra.data.cache.CoverCache
 import ephyra.data.category.CategoryRepositoryImpl
 import ephyra.data.chapter.ChapterRepositoryImpl
+import ephyra.data.content.ContentDatabaseImpl
 import ephyra.data.content.ContentRepositoryImpl
 import ephyra.data.content.ContentUnitRepositoryImpl
+import ephyra.data.content.merge.OpportunisticMergeManager
 import ephyra.data.history.HistoryRepositoryImpl
 import ephyra.data.manga.ExcludedScanlatorRepositoryImpl
 import ephyra.data.manga.MangaRepositoryImpl
@@ -79,8 +81,11 @@ import ephyra.data.room.daos.UpdateDao
 import ephyra.data.saver.ImageSaverImpl
 import ephyra.data.source.SourceRepositoryImpl
 import ephyra.data.source.StubSourceRepositoryImpl
+import ephyra.data.sourcing.DynamicScraperUpdater
+import ephyra.data.sourcing.ScriptableContentSourceEngine
 import ephyra.data.track.TrackRepositoryImpl
 import ephyra.data.track.TrackerManagerImpl
+import ephyra.data.track.TrackingServiceImpl
 import ephyra.data.updater.AppUpdateChecker
 import ephyra.data.updates.UpdatesRepositoryImpl
 import ephyra.domain.backup.service.BackupFileValidator
@@ -113,11 +118,14 @@ import ephyra.domain.chapter.interactor.UpdateChapter
 import ephyra.domain.chapter.repository.ChapterRepository
 import ephyra.domain.content.interactor.GetContentItem
 import ephyra.domain.content.interactor.GetContentUnits
+import ephyra.domain.content.repository.ContentDatabase
 import ephyra.domain.content.repository.ContentRepository
 import ephyra.domain.content.repository.ContentUnitRepository
+import ephyra.domain.content.source.AdaptiveHeuristicEngine
 import ephyra.domain.content.source.ContentSourceEngine
 import ephyra.domain.content.source.ContentSourceOrchestrator
 import ephyra.domain.content.source.HeuristicContentSourceEngine
+import ephyra.domain.content.source.RemoteSource
 import ephyra.domain.content.source.SourceProfileCache
 import ephyra.domain.download.interactor.DeleteDownload
 import ephyra.domain.download.service.DownloadPreferences
@@ -200,6 +208,7 @@ import ephyra.domain.track.repository.TrackRepository
 import ephyra.domain.track.service.TrackPreferences
 import ephyra.domain.track.service.TrackerManager
 import ephyra.domain.track.service.TrackingJobScheduler
+import ephyra.domain.track.service.TrackingService
 import ephyra.domain.track.store.TrackingQueueStore
 import ephyra.domain.ui.UiPreferences
 import ephyra.domain.upcoming.interactor.GetUpcomingManga
@@ -213,6 +222,7 @@ import ephyra.presentation.core.ui.delegate.SecureActivityDelegate
 import ephyra.presentation.core.ui.delegate.ThemingDelegate
 import ephyra.presentation.core.util.AppNavigator
 import ephyra.presentation.core.util.CrashLogUtil
+import ephyra.source.api.ScriptableSourceEngine
 import ephyra.source.local.image.LocalCoverManager
 import ephyra.source.local.io.LocalSourceFileSystem
 import eu.kanade.tachiyomi.network.JavaScriptEngine
@@ -422,21 +432,62 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideContentDatabase(
+        mangaDao: MangaDao,
+        chapterDao: ChapterDao,
+    ): ContentDatabase = ContentDatabaseImpl(mangaDao, chapterDao)
+
+    @Provides
+    @Singleton
     fun provideSourceProfileCache(preferenceStore: PreferenceStore, json: Json): SourceProfileCache =
         SourceProfileCache(preferenceStore, json)
 
     @Provides
     @Singleton
-    fun provideHeuristicContentSourceEngine(): ContentSourceEngine =
-        HeuristicContentSourceEngine()
+    fun provideDynamicScraperUpdater(
+        @ApplicationContext context: Context,
+        networkHelper: NetworkHelper,
+        preferenceStore: PreferenceStore,
+    ): DynamicScraperUpdater = DynamicScraperUpdater(context, networkHelper, preferenceStore)
+
+    @Provides
+    @Singleton
+    fun provideOpportunisticMergeManager(): OpportunisticMergeManager =
+        OpportunisticMergeManager()
+
+    @Provides
+    @Singleton
+    fun provideHeuristicContentSourceEngine(
+        networkHelper: NetworkHelper,
+        profileCache: SourceProfileCache,
+    ): AdaptiveHeuristicEngine =
+        AdaptiveHeuristicEngine(networkHelper, profileCache)
+
+    @Provides
+    @Singleton
+    fun provideScriptableContentSourceEngine(
+        scraperUpdater: DynamicScraperUpdater,
+        scriptEngine: ScriptableSourceEngine,
+        preferenceStore: PreferenceStore,
+        json: Json,
+    ): ScriptableContentSourceEngine =
+        ScriptableContentSourceEngine(scraperUpdater, scriptEngine, preferenceStore, json)
 
     @Provides
     @Singleton
     fun provideContentSourceOrchestrator(
         profileCache: SourceProfileCache,
-        heuristicEngine: ContentSourceEngine,
+        heuristicEngine: AdaptiveHeuristicEngine,
+        scriptEngine: ScriptableContentSourceEngine,
+        preferenceStore: PreferenceStore,
     ): ContentSourceOrchestrator =
-        ContentSourceOrchestrator(profileCache, heuristicEngine)
+        ContentSourceOrchestrator(profileCache, heuristicEngine, scriptEngine, preferenceStore)
+
+    @Provides
+    @Singleton
+    fun provideRemoteSource(
+        orchestrator: ContentSourceOrchestrator,
+    ): RemoteSource = orchestrator
 
     @Provides
     @Singleton
@@ -560,13 +611,17 @@ object AppModule {
         localSourceFileSystem: LocalSourceFileSystem,
         localCoverManager: LocalCoverManager,
         downloadManagerProvider: Provider<DownloadManager>,
+        json: Json,
+        xml: XML,
     ): SourceManager = AndroidSourceManager(
-        context,
-        extensionManager,
-        stubSourceRepository,
-        localSourceFileSystem,
-        localCoverManager,
-        downloadManagerProvider,
+        context = context,
+        extensionManager = extensionManager,
+        sourceRepository = stubSourceRepository,
+        fileSystem = localSourceFileSystem,
+        coverManager = localCoverManager,
+        downloadManagerProvider = downloadManagerProvider,
+        json = json,
+        xml = xml,
     )
 
     @Provides
@@ -715,6 +770,14 @@ object AppModule {
         insertTrack = insertTrack,
         json = json,
     )
+
+    @Provides
+    @Singleton
+    fun provideTrackingService(
+        trackerManager: TrackerManager,
+        addTracks: AddTracks,
+        trackRepository: TrackRepository,
+    ): TrackingService = TrackingServiceImpl(trackerManager, addTracks, trackRepository)
 
     @Provides
     @Singleton
@@ -936,6 +999,13 @@ object AppModule {
         @ApplicationContext context: Context,
     ): ephyra.domain.release.service.AppUpdateNotifier =
         AppUpdateNotifier(context)
+
+    @Provides
+    @Singleton
+    fun provideAppUpdateDownloader(
+        @ApplicationContext context: Context,
+    ): ephyra.domain.release.service.AppUpdateDownloader =
+        ephyra.app.data.updater.AppUpdateDownloaderImpl(context)
 
     @Provides
     @Singleton

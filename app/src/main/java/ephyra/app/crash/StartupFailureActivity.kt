@@ -30,7 +30,9 @@ class StartupFailureActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val stackTrace = intent.getStringExtra(EXTRA_STACK_TRACE) ?: "Unknown error"
+        val stackTrace = intent.getStringExtra(EXTRA_STACK_TRACE)
+            ?: GlobalExceptionHandler.getThrowableFromIntent(intent)?.stackTraceToString()
+            ?: "Unknown error"
 
         val scrollView = ScrollView(this).apply {
             val padding = (16 * resources.displayMetrics.density).toInt()

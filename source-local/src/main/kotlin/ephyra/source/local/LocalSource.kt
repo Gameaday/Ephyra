@@ -49,10 +49,9 @@ class LocalSource(
     private val context: Context,
     private val fileSystem: LocalSourceFileSystem,
     private val coverManager: LocalCoverManager,
+    private val json: Json,
+    private val xml: XML,
 ) : CatalogueSource, UnmeteredSource {
-
-    private val json: Json by lazy { ephyra.core.common.di.CoreContainer.get<Json>() }
-    private val xml: XML by lazy { ephyra.core.common.di.CoreContainer.get<XML>() }
 
     @Suppress("PrivatePropertyName")
     private val PopularFilters = FilterList(OrderBy.Popular(context))

@@ -5,7 +5,10 @@ import android.util.AttributeSet
 import android.widget.EditText
 import androidx.core.view.inputmethod.EditorInfoCompat
 import com.google.android.material.textfield.TextInputEditText
-import ephyra.core.common.di.CoreContainer
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
 import ephyra.domain.base.BasePreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,13 +23,22 @@ import kotlinx.coroutines.flow.onEach
  *
  * @see setIncognito
  */
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface PreferencesEntryPoint {
+    fun basePreferences(): BasePreferences
+}
+
 class TachiyomiTextInputEditText @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = android.R.attr.editTextStyle,
 ) : TextInputEditText(context, attrs, defStyleAttr) {
 
-    private val preferences: BasePreferences = CoreContainer.get()
+    private val preferences: BasePreferences = EntryPointAccessors.fromApplication(
+        context.applicationContext,
+        PreferencesEntryPoint::class.java,
+    ).basePreferences()
 
     private var scope: CoroutineScope? = null
 

@@ -14,6 +14,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Composable Screens**: All navigation-level screens are now standard @Composable functions, improving testability and standard Android tool support.
 - **Hilt ViewModels**: Standardized on `@HiltViewModel` for state management, eliminating all remaining Voyager `ScreenModel` dependencies.
 - **CoreContainer Modernization**: Refactored `CoreContainer` as a Hilt-backed service locator to bridge legacy extension points while maintaining compile-time safety for the internal app.
+- **Reactive Asynchronous Preferences**: Replaced all main-thread blocking `runBlocking` calls fetching preferences inside ViewModels, Compose remember/state blocks, and activity start/stop lifecycles with memory-cached non-blocking `.getSync()` operations or standard background thread coroutines.
+- **DataStore Storage Migration**: Converted all app-owned SharedPreferences (`DownloadStore`, `DownloadPendingDeleter`, `DelayedTrackingStore`) into Jetpack DataStore preference stores utilizing explicit `SharedPreferencesMigration` rules to avoid user data loss during app updates.
 
 ### 🔧 Build & Performance
 
