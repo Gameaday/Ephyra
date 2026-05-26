@@ -7,29 +7,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-### 🏗️ Architecture
+### 🏛️ Architecture & Clean Separation (Phase 8)
+- **Domain Abstractions**: Introduced generic, media-agnostic domain interfaces `ContentDatabase`, `RemoteSource`, and `TrackingService` inside `:core:domain`, separating high-level business rules from concrete database/network frames.
+- **Result Envelopes**: Wrapped database and remote crawling transactions in standard `Result<T>` sealed envelopes, guaranteeing explicit data mapping and strict exception boundaries.
+- **DI Bindings**: Bound concrete data implementations (`ContentDatabaseImpl`, `ContentSourceOrchestrator`, `TrackingServiceImpl`) inside `AppModule` using standard `@Provides @Singleton` annotations.
 
-- **Transition to Hilt**: Fully migrated from Koin to Hilt for Dependency Injection across all modules.
-- **Voyager Purged**: Removed Voyager navigation library in favor of official Jetpack Navigation Compose.
-- **Composable Screens**: All navigation-level screens are now standard @Composable functions, improving testability and standard Android tool support.
-- **Hilt ViewModels**: Standardized on `@HiltViewModel` for state management, eliminating all remaining Voyager `ScreenModel` dependencies.
-- **CoreContainer Modernization**: Refactored `CoreContainer` as a Hilt-backed service locator to bridge legacy extension points while maintaining compile-time safety for the internal app.
-- **Reactive Asynchronous Preferences**: Replaced all main-thread blocking `runBlocking` calls fetching preferences inside ViewModels, Compose remember/state blocks, and activity start/stop lifecycles with memory-cached non-blocking `.getSync()` operations or standard background thread coroutines.
-- **DataStore Storage Migration**: Converted all app-owned SharedPreferences (`DownloadStore`, `DownloadPendingDeleter`, `DelayedTrackingStore`) into Jetpack DataStore preference stores utilizing explicit `SharedPreferencesMigration` rules to avoid user data loss during app updates.
+### 🧹 Dependency & Legacy Purges (Phase 11)
+- **SQLDelight Complete Purge**: Systematically removed SQLDelight drivers, configuration files, and references from all module build scripts and version catalogs, completing the transition of mangas, chapters, categories, and history to standard Room DAOs.
+- **DI & Navigation Purges**: Eradicated all remnants of Voyager, Koin, and uy.kohesive.injekt libraries from all build configurations, achieving 100% compile-time determinism with Hilt and 100% Jetpack Navigation & Compose coverage.
+- **CoreContainer Isolation**: Fully decoupled `CoreContainer` from all internal classes, confining it strictly as a bridge for external dynamic extensions in `:source-api`.
 
-### 🔧 Build & Performance
-
-- **Non-Transitive R Classes**: Enabled `android.nonTransitiveRClass=true` globally to reduce build times and APK size.
-- **Gradle 10 Readiness**: Enabled Configuration Cache and Configure-on-demand for significantly faster incremental builds.
-- **Resource Optimization**: Consolidated redundant resource folders (v27, v31, v33) into default directories, leveraging `minSdk 34`.
-- **Lint Hardening**: Cleared hundreds of lint warnings, including MissingPermission, PluralsCandidate, and ObsoleteSdkInt.
-- **Coroutines Cleanup**: Purged delicate top-level `launchIO`/`launchUI` globals in favor of structured concurrency and explicit scopes.
-
-### 🛡️ Security & Reliability
-
-- **Intent Sanitization**: Implemented `IntentSanitizer` for deep-link handling to prevent unsafe intent launch vulnerabilities.
-- **Safe Notifications**: Added runtime permission checks for `POST_NOTIFICATIONS` in all app-facing notifiers.
-- **UDF Compliance**: Verified all major features follow strict Unidirectional Data Flow patterns.
+### 🛡️ Startup Resiliency & Safety (Phase 12)
+- **Early Logging & Crash Trapping**: Overrode `attachBaseContext(base: Context)` inside `App.kt` to initialize `LogcatLogger` and `GlobalExceptionHandler` *before* the application executes Hilt dependency injection, content providers, or WorkManager initializers in `super.onCreate()`. Any early bootstrap crash is now gracefully captured.
+- **Splash Screen Freeze Elimination**: Added a public `cancelAndRelease()` function to `Migrator.kt` that instantly completes the synchronization `initGate` on preference load failures, bypassing the 30-second splash screen freeze and permitting degraded boot.
+- **Preference Stream Crash Guard**: Appended `.catch` flow operators to all reactive preference observation streams inside `App.kt` to ensure unhandled I/O failures never terminate the application scope.
+- **Recovery Diagnostics Mismatch Solved**: Refactored `StartupFailureActivity.kt` to query `GlobalExceptionHandler.getThrowableFromIntent(intent)` directly, ensuring the exact Hilt/DI traceback is displayed on screen rather than a generic `"Unknown error"`.
+- **Compose Migration Gating**: Gated `NavHost` rendering and update checker execution in `MainActivity.kt` behind database migration completion (`didMigration != null`), resolving a fundamental startup race condition where active ViewModels queried the database before Room migrations finished.
 
 ---
 
