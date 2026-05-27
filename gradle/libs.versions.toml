@@ -19,7 +19,7 @@ hilt = "2.59.2"
 ksp = "2.3.8"
 room = "2.8.4"
 paging = "3.5.0"
-media3 = "1.5.1"
+media3 = "1.10.1"
 
 
 [libraries]
