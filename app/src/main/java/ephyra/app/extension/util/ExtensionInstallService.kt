@@ -11,22 +11,24 @@ import ephyra.app.extension.installer.Installer
 import ephyra.app.extension.installer.PackageInstallerInstaller
 import ephyra.app.extension.installer.ShizukuInstaller
 import ephyra.app.extension.util.ExtensionInstaller.Companion.EXTRA_DOWNLOAD_ID
+import ephyra.core.common.di.IoDispatcher
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.system.logcat
 import ephyra.core.common.util.system.notificationBuilder
 import ephyra.data.notification.Notifications
 import ephyra.domain.base.BasePreferences
 import ephyra.presentation.core.util.system.getSerializableExtraCompat
-import logcat.LogPriority
 import kotlinx.coroutines.CoroutineDispatcher
-import ephyra.core.common.di.IoDispatcher
+import logcat.LogPriority
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class ExtensionInstallService : Service() {
 
     @Inject lateinit var extensionManager: ephyra.app.extension.ExtensionManager
-    @Inject @IoDispatcher lateinit var ioDispatcher: CoroutineDispatcher
+
+    @Inject @IoDispatcher
+    lateinit var ioDispatcher: CoroutineDispatcher
     private var installer: Installer? = null
 
     override fun onCreate() {

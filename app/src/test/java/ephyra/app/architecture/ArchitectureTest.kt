@@ -17,14 +17,14 @@ class ArchitectureTest {
     @Test
     fun `domain layer must not depend on data, app, or presentation layers`() {
         val classes = ClassFileImporter().importPackages("ephyra.core.domain")
-        
+
         val rule = noClasses()
             .that().resideInAPackage("ephyra.core.domain..")
             .should().dependOnClassesThat().resideInAnyPackage(
                 "ephyra.core.data..",
                 "ephyra.app..",
                 "ephyra.presentation..",
-                "ephyra.feature.."
+                "ephyra.feature..",
             )
 
         rule.check(classes)
@@ -40,9 +40,9 @@ class ArchitectureTest {
     fun `viewmodels must be annotated with HiltViewModel`() {
         val classes = ClassFileImporter().importPackages(
             "ephyra.app",
-            "ephyra.feature"
+            "ephyra.feature",
         )
-        
+
         val rule = classes()
             .that().areAssignableTo("androidx.lifecycle.ViewModel")
             .and().areNotInterfaces()

@@ -3,9 +3,9 @@ package ephyra.app.res
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.w3c.dom.Element
 import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
-import org.w3c.dom.Element
 
 class VectorDrawableValidationTest {
 
@@ -21,7 +21,9 @@ class VectorDrawableValidationTest {
         rootDir.walkTopDown().forEach { file ->
             if (file.isDirectory && file.name.startsWith("drawable") && file.parentFile.name == "res") {
                 // Exclude build directories and IDE metadata
-                if (!file.absolutePath.contains("build") && !file.absolutePath.contains(".gradle") && !file.absolutePath.contains(".idea")) {
+                if (!file.absolutePath.contains("build") && !file.absolutePath.contains(".gradle") &&
+                    !file.absolutePath.contains(".idea")
+                ) {
                     drawableDirs.add(file)
                 }
             }
@@ -45,12 +47,12 @@ class VectorDrawableValidationTest {
                 try {
                     val doc = dBuilder.parse(file)
                     doc.documentElement.normalize()
-                    
+
                     val vectors = mutableListOf<Element>()
                     if (doc.documentElement.localName == "vector") {
                         vectors.add(doc.documentElement)
                     }
-                    
+
                     val nodeList = doc.getElementsByTagNameNS("*", "vector")
                     for (i in 0 until nodeList.length) {
                         val node = nodeList.item(i)
@@ -69,11 +71,11 @@ class VectorDrawableValidationTest {
                         // 1. Viewport boundaries verification
                         assertTrue(
                             viewportWidth.isNotEmpty(),
-                            "File ${file.absolutePath} has a <vector> tag missing android:viewportWidth"
+                            "File ${file.absolutePath} has a <vector> tag missing android:viewportWidth",
                         )
                         assertTrue(
                             viewportHeight.isNotEmpty(),
-                            "File ${file.absolutePath} has a <vector> tag missing android:viewportHeight"
+                            "File ${file.absolutePath} has a <vector> tag missing android:viewportHeight",
                         )
 
                         val widthVal = viewportWidth.toFloatOrNull()
@@ -81,39 +83,39 @@ class VectorDrawableValidationTest {
 
                         assertNotNull(
                             widthVal,
-                            "File ${file.absolutePath} has invalid float value for android:viewportWidth: '$viewportWidth'"
+                            "File ${file.absolutePath} has invalid float value for android:viewportWidth: '$viewportWidth'",
                         )
                         assertNotNull(
                             heightVal,
-                            "File ${file.absolutePath} has invalid float value for android:viewportHeight: '$viewportHeight'"
+                            "File ${file.absolutePath} has invalid float value for android:viewportHeight: '$viewportHeight'",
                         )
 
                         assertTrue(
                             widthVal!! > 0f,
-                            "File ${file.absolutePath} has android:viewportWidth = $widthVal which is <= 0"
+                            "File ${file.absolutePath} has android:viewportWidth = $widthVal which is <= 0",
                         )
                         assertTrue(
                             heightVal!! > 0f,
-                            "File ${file.absolutePath} has android:viewportHeight = $heightVal which is <= 0"
+                            "File ${file.absolutePath} has android:viewportHeight = $heightVal which is <= 0",
                         )
 
                         // 2. Resource dimensions verification (dp, dip, or px suffixes)
                         assertTrue(
                             width.isNotEmpty(),
-                            "File ${file.absolutePath} has a <vector> tag missing android:width"
+                            "File ${file.absolutePath} has a <vector> tag missing android:width",
                         )
                         assertTrue(
                             height.isNotEmpty(),
-                            "File ${file.absolutePath} has a <vector> tag missing android:height"
+                            "File ${file.absolutePath} has a <vector> tag missing android:height",
                         )
 
                         assertTrue(
                             width.endsWith("dp") || width.endsWith("dip") || width.endsWith("px"),
-                            "File ${file.absolutePath} has invalid width dimension specification (expected dp, dip or px): '$width'"
+                            "File ${file.absolutePath} has invalid width dimension specification (expected dp, dip or px): '$width'",
                         )
                         assertTrue(
                             height.endsWith("dp") || height.endsWith("dip") || height.endsWith("px"),
-                            "File ${file.absolutePath} has invalid height dimension specification (expected dp, dip or px): '$height'"
+                            "File ${file.absolutePath} has invalid height dimension specification (expected dp, dip or px): '$height'",
                         )
                     }
 
@@ -125,7 +127,7 @@ class VectorDrawableValidationTest {
                         val pathData = path.getAttributeNS(androidNs, "pathData")
                         assertTrue(
                             pathData.trim().isNotEmpty(),
-                            "File ${file.absolutePath} contains a <path> tag with empty or missing android:pathData"
+                            "File ${file.absolutePath} contains a <path> tag with empty or missing android:pathData",
                         )
                     }
                 } catch (e: Exception) {
@@ -135,6 +137,8 @@ class VectorDrawableValidationTest {
             }
         }
 
-        println("VectorDrawableValidationTest: Scanned $checkedFiles XML files. Validated $checkedVectors <vector> elements and $checkedPaths <path> elements successfully.")
+        println(
+            "VectorDrawableValidationTest: Scanned $checkedFiles XML files. Validated $checkedVectors <vector> elements and $checkedPaths <path> elements successfully.",
+        )
     }
 }

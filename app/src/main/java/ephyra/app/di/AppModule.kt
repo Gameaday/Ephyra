@@ -31,6 +31,7 @@ import ephyra.app.util.NavigatorImpl
 import ephyra.app.util.system.isDebugBuildType
 import ephyra.core.common.core.security.PrivacyPreferences
 import ephyra.core.common.core.security.SecurityPreferences
+import ephyra.core.common.di.IoDispatcher
 import ephyra.core.common.notification.NotificationManager
 import ephyra.core.common.preference.DataStorePreferenceStore
 import ephyra.core.common.preference.PreferenceStore
@@ -229,7 +230,6 @@ import eu.kanade.tachiyomi.network.JavaScriptEngine
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.NetworkPreferences
 import eu.kanade.tachiyomi.source.AndroidSourceManager
-import ephyra.core.common.di.IoDispatcher
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf

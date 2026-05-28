@@ -28,7 +28,7 @@ class R8OptimizationTest {
         File("../../app/build/outputs/mapping/benchmark"),
         File("build/outputs/mapping/release"),
         File("build/outputs/mapping/preview"),
-        File("build/outputs/mapping/benchmark")
+        File("build/outputs/mapping/benchmark"),
     )
 
     private fun findActiveMappingDirectory(): File? {
@@ -45,7 +45,7 @@ class R8OptimizationTest {
         // Gracefully skip if R8 hasn't run yet (typical for local debug test runs)
         assumeTrue(
             "R8 output mapping directory not found. Run a minified build (e.g. ./gradlew :app:assembleRelease) to run R8 tests.",
-            mappingDir != null
+            mappingDir != null,
         )
 
         val seedsFile = File(mappingDir, "seeds.txt")
@@ -58,14 +58,14 @@ class R8OptimizationTest {
             "ephyra.app.App",
             "ephyra.app.ui.main.MainActivity",
             "ephyra.app.ui.deeplink.DeepLinkActivity",
-            "ephyra.app.startup.StartupGuard"
+            "ephyra.app.startup.StartupGuard",
         )
 
         criticalClassesToKeep.forEach { className ->
             val isKept = keptClasses.any { it.contains(className) }
             assertTrue(
                 "Critical class $className must be kept by Proguard/R8 rules to prevent startup crash (not found in seeds.txt)",
-                isKept
+                isKept,
             )
         }
     }
@@ -86,14 +86,14 @@ class R8OptimizationTest {
 
         // Reflection-sensitive classes or packages that must never be stripped as dead code
         val reflectionSensitivePrefixes = listOf(
-            "ephyra.app.AppInfo" // Crucial app metadata shim used by external extensions
+            "ephyra.app.AppInfo", // Crucial app metadata shim used by external extensions
         )
 
         reflectionSensitivePrefixes.forEach { prefix ->
             val wasStripped = strippedClasses.any { it.trim().startsWith(prefix) }
             assertTrue(
                 "Reflection-sensitive class or member starting with '$prefix' was stripped by R8! Add a keep rule in proguard-rules.pro.",
-                !wasStripped
+                !wasStripped,
             )
         }
     }

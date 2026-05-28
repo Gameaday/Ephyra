@@ -57,7 +57,7 @@ class ShadowAnimatedVectorResources : ShadowResources() {
                 Resources::class.java,
                 "loadXmlResourceParser",
                 ClassParameter.from(java.lang.Integer.TYPE, safeId),
-                ClassParameter.from(String::class.java, type)
+                ClassParameter.from(String::class.java, type),
             )
         }
         return Shadow.directlyOn<XmlResourceParser, Resources>(
@@ -65,7 +65,7 @@ class ShadowAnimatedVectorResources : ShadowResources() {
             Resources::class.java,
             "loadXmlResourceParser",
             ClassParameter.from(java.lang.Integer.TYPE, resId),
-            ClassParameter.from(String::class.java, type)
+            ClassParameter.from(String::class.java, type),
         )
     }
 
@@ -77,10 +77,14 @@ class ShadowAnimatedVectorResources : ShadowResources() {
         } catch (e: Exception) {
             ""
         }
-        println("ShadowAnimatedVectorResources: loadXmlResourceParser(file='$file', id=$id, cookie=$assetCookie, type=$type) -> name='$name'")
+        println(
+            "ShadowAnimatedVectorResources: loadXmlResourceParser(file='$file', id=$id, cookie=$assetCookie, type=$type) -> name='$name'",
+        )
         if (name.startsWith("anim_")) {
             val safeId = ephyra.presentation.core.R.drawable.ic_book_24dp
-            println("ShadowAnimatedVectorResources: Redirecting animated vector '$name' to safe vector drawable (overload 2)")
+            println(
+                "ShadowAnimatedVectorResources: Redirecting animated vector '$name' to safe vector drawable (overload 2)",
+            )
             return loadXmlResourceParser(safeId, type)
         }
         return Shadow.directlyOn<XmlResourceParser, Resources>(
@@ -90,7 +94,7 @@ class ShadowAnimatedVectorResources : ShadowResources() {
             ClassParameter.from(String::class.java, file),
             ClassParameter.from(java.lang.Integer.TYPE, id),
             ClassParameter.from(java.lang.Integer.TYPE, assetCookie),
-            ClassParameter.from(String::class.java, type)
+            ClassParameter.from(String::class.java, type),
         )
     }
 }
@@ -107,7 +111,7 @@ class ShadowAnimatedVectorResources : ShadowResources() {
 @Config(
     sdk = [34],
     application = App::class,
-    shadows = [ShadowAnimatedVectorResources::class]
+    shadows = [ShadowAnimatedVectorResources::class],
 )
 class AppStartupTest {
 
@@ -123,11 +127,23 @@ class AppStartupTest {
         assertTrue("Constructed application context must be App instance", app is App)
 
         // Verify sequential progress of crucial startup guard phases
-        assertTrue("Logging initialization phase should be completed", StartupGuard.awaitPhase("logging", timeoutMs = 100))
+        assertTrue(
+            "Logging initialization phase should be completed",
+            StartupGuard.awaitPhase("logging", timeoutMs = 100),
+        )
         assertTrue("Crash handler phase should be completed", StartupGuard.awaitPhase("crash_handler", timeoutMs = 100))
-        assertTrue("DI container registration phase should be completed", StartupGuard.awaitPhase("di_container", timeoutMs = 100))
-        assertTrue("Notifications registration phase should be completed", StartupGuard.awaitPhase("notifications", timeoutMs = 100))
-        assertTrue("Reactive bindings configuration phase should be completed", StartupGuard.awaitPhase("reactive_bindings", timeoutMs = 100))
+        assertTrue(
+            "DI container registration phase should be completed",
+            StartupGuard.awaitPhase("di_container", timeoutMs = 100),
+        )
+        assertTrue(
+            "Notifications registration phase should be completed",
+            StartupGuard.awaitPhase("notifications", timeoutMs = 100),
+        )
+        assertTrue(
+            "Reactive bindings configuration phase should be completed",
+            StartupGuard.awaitPhase("reactive_bindings", timeoutMs = 100),
+        )
     }
 
     /**
@@ -143,9 +159,12 @@ class AppStartupTest {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
                 assertNotNull("MainActivity instance must be successfully injected and created", activity)
-                
+
                 // Confirm the activity was configured with the primary task root status
-                assertTrue("MainActivity should be in task root or finished safely", activity.isTaskRoot || activity.isFinishing)
+                assertTrue(
+                    "MainActivity should be in task root or finished safely",
+                    activity.isTaskRoot || activity.isFinishing,
+                )
             }
         }
     }

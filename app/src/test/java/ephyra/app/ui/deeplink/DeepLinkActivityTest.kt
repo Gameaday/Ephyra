@@ -31,21 +31,21 @@ class DeepLinkActivityTest {
         ActivityScenario.launch<DeepLinkActivity>(intent).use { scenario ->
             // Since the activity calls finish() in onCreate, it gets destroyed immediately.
             assertEquals("Activity must be in DESTROYED state", Lifecycle.State.DESTROYED, scenario.state)
-            
+
             // Retrieve the next started activity from the shadow application
             val shadowApp = Shadows.shadowOf(ApplicationProvider.getApplicationContext<android.app.Application>())
             val nextStartedActivity = shadowApp.nextStartedActivity
-            
+
             assertNotNull("An intent to launch another activity should be registered", nextStartedActivity)
             assertEquals(
                 "The class to launch must be MainActivity",
                 MainActivity::class.java.name,
-                nextStartedActivity?.component?.className
+                nextStartedActivity?.component?.className,
             )
             assertEquals(
                 "The query extra should be carried over",
                 "One Piece",
-                nextStartedActivity?.getStringExtra("query")
+                nextStartedActivity?.getStringExtra("query"),
             )
         }
     }
@@ -61,20 +61,20 @@ class DeepLinkActivityTest {
 
         ActivityScenario.launch<DeepLinkActivity>(intent).use { scenario ->
             assertEquals("Activity must be in DESTROYED state", Lifecycle.State.DESTROYED, scenario.state)
-            
+
             val shadowApp = Shadows.shadowOf(ApplicationProvider.getApplicationContext<android.app.Application>())
             val nextStartedActivity = shadowApp.nextStartedActivity
-            
+
             assertNotNull("An intent to launch another activity should be registered", nextStartedActivity)
             assertEquals(
                 "The class to launch must be MainActivity",
                 MainActivity::class.java.name,
-                nextStartedActivity?.component?.className
+                nextStartedActivity?.component?.className,
             )
             assertEquals(
                 "The text extra should be carried over",
                 "https://ephyra.app/manga/123",
-                nextStartedActivity?.getStringExtra(Intent.EXTRA_TEXT)
+                nextStartedActivity?.getStringExtra(Intent.EXTRA_TEXT),
             )
         }
     }
@@ -89,7 +89,7 @@ class DeepLinkActivityTest {
 
         ActivityScenario.launch<DeepLinkActivity>(intent).use { scenario ->
             assertEquals("Activity must be in DESTROYED state", Lifecycle.State.DESTROYED, scenario.state)
-            
+
             // Assert that no redirection happened to MainActivity
             val shadowApp = Shadows.shadowOf(ApplicationProvider.getApplicationContext<android.app.Application>())
             val nextStartedActivity = shadowApp.nextStartedActivity
