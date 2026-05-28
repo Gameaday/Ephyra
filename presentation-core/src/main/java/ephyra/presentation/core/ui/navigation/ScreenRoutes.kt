@@ -38,48 +38,8 @@ sealed class ScreenRoutes(val route: String) {
     }
     data object Settings : ScreenRoutes("settings")
 
-    object VideoPlayer : ScreenRoutes("player/{title}/{url}") {
-        fun createRoute(title: String, url: String): String {
-            val encodedTitle = java.net.URLEncoder.encode(title, "UTF-8")
-            val encodedUrl = java.net.URLEncoder.encode(url, "UTF-8")
-            return "player/$encodedTitle/$encodedUrl"
-        }
-    }
-
-    object BookReader : ScreenRoutes("book/{title}/{content}") {
-        fun createRoute(title: String, content: String): String {
-            val encodedTitle = java.net.URLEncoder.encode(title, "UTF-8")
-            val encodedContent = java.net.URLEncoder.encode(content, "UTF-8")
-            return "book/$encodedTitle/$encodedContent"
-        }
-    }
-
-    object GlobalSearch : ScreenRoutes("global_search?query={query}") {
-        fun createRoute(query: String?): String {
-            return if (query != null) "global_search?query=$query" else "global_search"
-        }
-    }
-
-    object BrowseSource : ScreenRoutes("browse_source/{sourceId}?query={query}") {
-        fun createRoute(sourceId: Long, query: String? = null): String {
-            return if (query != null) "browse_source/$sourceId?query=$query" else "browse_source/$sourceId"
-        }
-    }
-
     data object SourcesFilter : ScreenRoutes("sources_filter")
     data object ExtensionFilter : ScreenRoutes("extension_filter")
-
-    data object ExtensionDetails : ScreenRoutes("extension_details/{pkgName}") {
-        fun createRoute(pkgName: String) = "extension_details/$pkgName"
-    }
-
-    object WebView : ScreenRoutes("webview?url={url}&title={title}&sourceId={sourceId}") {
-        fun createRoute(url: String, title: String? = null, sourceId: Long? = null): String {
-            return "webview?url=$url" +
-                (if (title != null) "&title=$title" else "") +
-                (if (sourceId != null) "&sourceId=$sourceId" else "")
-        }
-    }
 
     object MigrateManga : ScreenRoutes("migrate_manga/{sourceId}") {
         fun createRoute(sourceId: Long) = "migrate_manga/$sourceId"

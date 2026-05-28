@@ -11,8 +11,9 @@ import ephyra.data.cache.ChapterCache.Companion.CACHE_SIZE_LOW
 import ephyra.data.cache.ChapterCache.Companion.CACHE_SIZE_MEDIUM
 import ephyra.domain.chapter.model.Chapter
 import eu.kanade.tachiyomi.source.model.Page
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
+import ephyra.core.common.di.IoDispatcher
 import kotlinx.serialization.json.Json
 import logcat.LogPriority
 import okhttp3.Response
@@ -34,6 +35,7 @@ import ephyra.domain.chapter.service.ChapterCache as IChapterCache
 class ChapterCache(
     private val context: Context,
     private val json: Json,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : IChapterCache {
 
     companion object {
@@ -79,7 +81,7 @@ class ChapterCache(
     /**
      * Returns real size of directory in human readable format.
      */
-    override suspend fun getReadableSize(): String = withContext(Dispatchers.IO) {
+    override suspend fun getReadableSize(): String = withContext(ioDispatcher) {
         val size = DiskUtil.getDirectorySize(cacheDir)
         Formatter.formatFileSize(context, size)
     }

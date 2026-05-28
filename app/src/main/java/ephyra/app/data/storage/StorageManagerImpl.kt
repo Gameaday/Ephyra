@@ -6,8 +6,8 @@ import com.hippo.unifile.UniFile
 import ephyra.core.common.util.storage.DiskUtil
 import ephyra.domain.storage.service.StorageManager
 import ephyra.domain.storage.service.StoragePreferences
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -20,9 +20,10 @@ import kotlinx.coroutines.flow.shareIn
 class StorageManagerImpl(
     private val context: Context,
     storagePreferences: StoragePreferences,
+    ioDispatcher: CoroutineDispatcher,
 ) : StorageManager {
 
-    private val scope = CoroutineScope(Dispatchers.IO)
+    private val scope = CoroutineScope(ioDispatcher)
 
     private var baseDir: UniFile? = getBaseDir(storagePreferences.baseStorageDirectory().getSync())
 

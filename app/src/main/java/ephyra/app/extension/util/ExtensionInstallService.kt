@@ -18,12 +18,15 @@ import ephyra.data.notification.Notifications
 import ephyra.domain.base.BasePreferences
 import ephyra.presentation.core.util.system.getSerializableExtraCompat
 import logcat.LogPriority
+import kotlinx.coroutines.CoroutineDispatcher
+import ephyra.core.common.di.IoDispatcher
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class ExtensionInstallService : Service() {
 
     @Inject lateinit var extensionManager: ephyra.app.extension.ExtensionManager
+    @Inject @IoDispatcher lateinit var ioDispatcher: CoroutineDispatcher
     private var installer: Installer? = null
 
     override fun onCreate() {
@@ -50,7 +53,7 @@ class ExtensionInstallService : Service() {
         if (installer == null) {
             installer = when (installerUsed) {
                 BasePreferences.ExtensionInstaller.PACKAGEINSTALLER -> PackageInstallerInstaller(this, extensionManager)
-                BasePreferences.ExtensionInstaller.SHIZUKU -> ShizukuInstaller(this, extensionManager)
+                BasePreferences.ExtensionInstaller.SHIZUKU -> ShizukuInstaller(this, extensionManager, ioDispatcher)
                 else -> {
                     logcat(LogPriority.ERROR) { "Not implemented for installer $installerUsed" }
                     stopSelf()

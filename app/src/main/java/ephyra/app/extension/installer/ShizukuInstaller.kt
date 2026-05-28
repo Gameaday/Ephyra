@@ -17,8 +17,8 @@ import ephyra.app.shizuku.ShellInterface
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.extension.model.InstallStep
 import ephyra.presentation.core.util.system.toast
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import logcat.LogPriority
@@ -27,9 +27,10 @@ import rikka.shizuku.Shizuku
 internal class ShizukuInstaller(
     private val service: Service,
     extensionManager: ephyra.app.extension.ExtensionManager,
+    ioDispatcher: CoroutineDispatcher,
 ) : Installer(service, extensionManager) {
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val scope = CoroutineScope(SupervisorJob() + ioDispatcher)
 
     private var shellInterface: IShellInterface? = null
 

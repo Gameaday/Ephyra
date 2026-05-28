@@ -79,6 +79,7 @@ import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.theme.MotionTokens
 import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -140,7 +141,7 @@ fun discoverTab(navController: NavController = LocalNavController.current): TabC
                     onSelectSource = { match ->
                         screenModel.onEvent(AuthoritySearchScreenEvent.DismissSourcePrompt)
                         navController.navigate(
-                            ScreenRoutes.BrowseSource.createRoute(
+                            Screen.BrowseSource(
                                 match.sourceId,
                                 match.manga.title,
                             ),
@@ -148,7 +149,7 @@ fun discoverTab(navController: NavController = LocalNavController.current): TabC
                     },
                     onManualSearch = {
                         screenModel.onEvent(AuthoritySearchScreenEvent.DismissSourcePrompt)
-                        navController.navigate(ScreenRoutes.GlobalSearch.createRoute(sourcePrompt.title))
+                        navController.navigate(Screen.GlobalSearch(sourcePrompt.title))
                     },
                     onDismiss = { screenModel.onEvent(AuthoritySearchScreenEvent.DismissSourcePrompt) },
                 )

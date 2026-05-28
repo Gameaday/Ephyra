@@ -70,6 +70,7 @@ import ephyra.presentation.core.ui.AppInfo
 import ephyra.presentation.core.ui.AppReadySignal
 import ephyra.presentation.core.ui.activity.BaseActivity
 import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.core.util.system.openInBrowser
@@ -356,7 +357,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
                 val query = intent.getStringExtra(SearchManager.QUERY) ?: intent.getStringExtra(Intent.EXTRA_TEXT)
                 if (!query.isNullOrEmpty()) {
                     navController.popBackStack(navController.graph.findStartDestination().id, inclusive = false)
-                    navController.navigate(ScreenRoutes.GlobalSearch.createRoute(query))
+                    navController.navigate(Screen.GlobalSearch(query))
                 }
                 null
             }

@@ -16,6 +16,7 @@ import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.TabContent
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.collectLatest
@@ -32,7 +33,7 @@ fun sourcesTab(navController: NavController = LocalNavController.current): TabCo
             AppBar.Action(
                 title = stringResource(ephyra.app.core.common.R.string.action_global_search),
                 icon = Icons.Outlined.TravelExplore,
-                onClick = { navController.navigate(ScreenRoutes.GlobalSearch.createRoute(null)) },
+                onClick = { navController.navigate(Screen.GlobalSearch(null)) },
             ),
             AppBar.Action(
                 title = stringResource(ephyra.app.core.common.R.string.action_filter),
@@ -50,7 +51,7 @@ fun sourcesTab(navController: NavController = LocalNavController.current): TabCo
                 state = state,
                 contentPadding = contentPadding,
                 onClickItem = { source, listing ->
-                    navController.navigate(ScreenRoutes.BrowseSource.createRoute(source.id, listing.query))
+                    navController.navigate(Screen.BrowseSource(source.id, listing.query))
                 },
                 onClickPin = { screenModel.onEvent(SourcesScreenEvent.TogglePin(it)) },
                 onLongClickItem = { screenModel.onEvent(SourcesScreenEvent.ShowSourceDialog(it)) },

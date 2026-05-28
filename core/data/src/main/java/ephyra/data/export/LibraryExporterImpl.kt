@@ -4,8 +4,9 @@ import android.content.Context
 import androidx.core.net.toUri
 import ephyra.domain.export.LibraryExporter
 import ephyra.domain.manga.model.Manga
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
+import ephyra.core.common.di.IoDispatcher
 
 /**
  * Concrete implementation of [LibraryExporter].
@@ -14,7 +15,10 @@ import kotlinx.coroutines.withContext
  * [android.net.Uri].  Feature modules receive [LibraryExporter] (the domain interface)
  * via constructor injection.
  */
-class LibraryExporterImpl(private val context: Context) : LibraryExporter {
+class LibraryExporterImpl(
+    private val context: Context,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+) : LibraryExporter {
 
     override suspend fun exportToCsv(
         uriString: String,
@@ -22,7 +26,7 @@ class LibraryExporterImpl(private val context: Context) : LibraryExporter {
         options: LibraryExporter.ExportOptions,
         onExportComplete: () -> Unit,
     ) {
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             context.contentResolver.openOutputStream(uriString.toUri())?.use { outputStream ->
                 val csvData = generateCsvData(favorites, options)
                 outputStream.write(csvData.toByteArray())

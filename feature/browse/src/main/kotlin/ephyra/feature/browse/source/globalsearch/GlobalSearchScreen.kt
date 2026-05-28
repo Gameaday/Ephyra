@@ -64,7 +64,7 @@ fun GlobalSearchScreen(
             onChangeSearchFilter = { screenModel.onEvent(SearchScreenEvent.SetSourceFilter(it)) },
             onToggleResults = { screenModel.onEvent(SearchScreenEvent.ToggleFilterResults) },
             onClickSource = {
-                navController.navigate(ScreenRoutes.BrowseSource.createRoute(it.id, state.searchQuery))
+                navController.navigate(Screen.BrowseSource(it.id, state.searchQuery))
             },
             onClickItem = { navController.navigate(Screen.MangaDetails(it.id, true)) },
             onLongClickItem = { navController.navigate(Screen.MangaDetails(it.id, true)) },

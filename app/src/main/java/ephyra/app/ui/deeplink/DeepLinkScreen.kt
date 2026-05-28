@@ -44,7 +44,7 @@ fun DeepLinkScreen(
                 LoadingScreen(Modifier.padding(contentPadding))
             }
             is DeepLinkScreenModel.State.NoResults -> {
-                navController.navigate(ScreenRoutes.GlobalSearch.createRoute(query)) {
+                navController.navigate(Screen.GlobalSearch(query)) {
                     popUpTo(ScreenRoutes.Home.route) { inclusive = false }
                 }
             }

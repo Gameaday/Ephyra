@@ -43,6 +43,7 @@ import ephyra.feature.reader.ReaderActivity
 import ephyra.presentation.core.feature.SafeFeatureContainer
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.ui.viewer.MediaViewerRegistry
 import ephyra.presentation.core.util.ifSourcesLoaded
@@ -500,7 +501,7 @@ private fun getMangaUrl(manga: Manga?, source: Source?): String? {
 private fun openMangaInWebView(navController: NavController, manga: Manga?, source: Source?) {
     getMangaUrl(manga, source)?.let { url ->
         navController.navigate(
-            ScreenRoutes.WebView.createRoute(
+            Screen.WebView(
                 url = url,
                 title = manga?.title,
                 sourceId = source?.id,
@@ -526,11 +527,11 @@ private fun performSearch(
     global: Boolean,
 ) {
     if (global) {
-        navController.navigate(ScreenRoutes.GlobalSearch.createRoute(query))
+        navController.navigate(Screen.GlobalSearch(query))
         return
     }
     // TODO: implement logic to pass search query back if needed, or just navigate to search
-    navController.navigate(ScreenRoutes.GlobalSearch.createRoute(query))
+    navController.navigate(Screen.GlobalSearch(query))
 }
 
 private fun performGenreSearch(

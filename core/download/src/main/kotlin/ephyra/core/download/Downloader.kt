@@ -33,9 +33,11 @@ import eu.kanade.tachiyomi.source.UnmeteredSource
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import ephyra.core.common.di.IoDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
@@ -84,6 +86,7 @@ class Downloader(
     private val getTracks: GetTracks,
     private val notifier: DownloadNotifier,
     private val store: DownloadStore,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) {
 
     /**
@@ -96,7 +99,7 @@ class Downloader(
      * Notifier for the downloader state and progress.
      */
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val scope = CoroutineScope(SupervisorJob() + ioDispatcher)
     private var downloaderJob: Job? = null
 
     /**
@@ -394,7 +397,7 @@ class Downloader(
                     withIOContext { getOrDownloadImage(page, download, tmpDir) }
                     emit(page)
                 }
-                    .flowOn(Dispatchers.IO)
+                    .flowOn(ioDispatcher)
             }
                 .collect {
                     // Do when page is downloaded.

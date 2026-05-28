@@ -208,7 +208,7 @@ fun LibraryScreen(
                     },
                     onGlobalSearchClicked = {
                         navController.navigate(
-                            ScreenRoutes.GlobalSearch.createRoute(screenModel.state.value.searchQuery),
+                            Screen.GlobalSearch(screenModel.state.value.searchQuery),
                         )
                     },
                     onClickHealthFilter = { screenModel.onEvent(LibraryScreenEvent.EnableHealthFilter) },
@@ -314,7 +314,7 @@ fun LibraryScreen(
                     navController.navigate(ephyra.presentation.core.ui.navigation.Screen.Category)
                 }
                 is LibraryScreenEffect.NavigateToGlobalSearch -> {
-                    navController.navigate(ScreenRoutes.GlobalSearch.createRoute(effect.query))
+                    navController.navigate(Screen.GlobalSearch(effect.query))
                 }
             }
         }

@@ -645,7 +645,8 @@ object AppModule {
     fun provideStorageManager(
         @ApplicationContext context: Context,
         storagePreferences: StoragePreferences,
-    ): StorageManager = StorageManagerImpl(context, storagePreferences)
+        @IoDispatcher ioDispatcher: CoroutineDispatcher,
+    ): StorageManager = StorageManagerImpl(context, storagePreferences, ioDispatcher)
 
     @Provides
     @Singleton
@@ -672,7 +673,8 @@ object AppModule {
         downloadProvider: DownloadProvider,
         sourceManager: SourceManager,
         storageManager: StorageManager,
-    ): DownloadCache = DownloadCache(application, downloadProvider, sourceManager, storageManager)
+        @IoDispatcher ioDispatcher: CoroutineDispatcher,
+    ): DownloadCache = DownloadCache(application, downloadProvider, sourceManager, storageManager, ioDispatcher)
 
     @Provides
     @Singleton
@@ -724,6 +726,7 @@ object AppModule {
         getTracks: GetTracks,
         downloadNotifier: ephyra.domain.download.service.DownloadNotifier,
         downloadStore: DownloadStore,
+        @IoDispatcher ioDispatcher: CoroutineDispatcher,
     ): Downloader = Downloader(
         context = context,
         provider = downloadProvider,
@@ -738,6 +741,7 @@ object AppModule {
         getTracks = getTracks,
         notifier = downloadNotifier,
         store = downloadStore,
+        ioDispatcher = ioDispatcher,
     )
 
     @Provides
@@ -799,8 +803,11 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideChapterCache(@ApplicationContext context: Context, json: Json) =
-        ChapterCache(context, json)
+    fun provideChapterCache(
+        @ApplicationContext context: Context,
+        json: Json,
+        @IoDispatcher ioDispatcher: CoroutineDispatcher,
+    ) = ChapterCache(context, json, ioDispatcher)
 
     @Provides
     @Singleton
@@ -1041,8 +1048,9 @@ object AppModule {
     fun provideChapterCacheDomain(
         @ApplicationContext context: Context,
         json: Json,
+        @IoDispatcher ioDispatcher: CoroutineDispatcher,
     ): ephyra.domain.chapter.service.ChapterCache =
-        ChapterCache(context, json)
+        ChapterCache(context, json, ioDispatcher)
 
     @Provides
     @Singleton
@@ -1051,8 +1059,11 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideLibraryExporter(@ApplicationContext context: Context): ephyra.domain.export.LibraryExporter =
-        ephyra.data.export.LibraryExporterImpl(context)
+    fun provideLibraryExporter(
+        @ApplicationContext context: Context,
+        @IoDispatcher ioDispatcher: CoroutineDispatcher,
+    ): ephyra.domain.export.LibraryExporter =
+        ephyra.data.export.LibraryExporterImpl(context, ioDispatcher)
 
     @Provides
     @Singleton
