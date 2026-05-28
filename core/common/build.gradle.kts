@@ -53,6 +53,7 @@ dependencies {
     implementation(libs.bundles.js.engine)
 
     testImplementation(libs.bundles.test)
+    testImplementation(kotlinx.coroutines.test)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 // Suppress warnings for the following:

@@ -155,6 +155,14 @@ android {
         dataBinding = false
         shaders = false
     }
+
+    testOptions {
+        unitTests {
+            all {
+                it.maxHeapSize = "2g"
+            }
+        }
+    }
 }
 
 kotlin {
