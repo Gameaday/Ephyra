@@ -50,6 +50,7 @@ import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.collectAsLazyPagingItems
 import ephyra.presentation.core.util.ifSourcesLoaded
@@ -109,7 +110,7 @@ fun BrowseSourceScreen(
     val onWebViewClick = f@{
         val httpSource = source as? HttpSource ?: return@f
         navController.navigate(
-            ScreenRoutes.WebView.createRoute(
+            Screen.WebView(
                 url = httpSource.baseUrl,
                 title = httpSource.name,
                 sourceId = httpSource.id,

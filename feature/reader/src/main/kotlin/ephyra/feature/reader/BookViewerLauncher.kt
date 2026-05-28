@@ -4,6 +4,7 @@ import androidx.navigation.NavController
 import ephyra.domain.content.model.ContentItem
 import ephyra.domain.content.model.ContentType
 import ephyra.domain.content.model.ContentUnit
+import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.viewer.MediaViewerLauncher
 import javax.inject.Inject
 
@@ -17,7 +18,6 @@ class BookViewerLauncher @Inject constructor() : MediaViewerLauncher {
     }
 
     override fun launch(navController: NavController, item: ContentItem, unit: ContentUnit) {
-        val encodedTitle = java.net.URLEncoder.encode(item.title, "UTF-8")
         val sampleContent = "Chapter 1: The Adventure Begins...\n\n" +
             "This is a premium, content-agnostic reflowable text reader " +
             "built using dynamic modern typography and interactive reading modes. " +
@@ -29,7 +29,6 @@ class BookViewerLauncher @Inject constructor() : MediaViewerLauncher {
             "laboris nisi ut aliquip ex ea commodo consequat. " +
             "Duis aute irure dolor in reprehenderit in voluptate velit " +
             "esse cillum dolore eu fugiat nulla pariatur."
-        val encodedContent = java.net.URLEncoder.encode(sampleContent, "UTF-8")
-        navController.navigate("book/$encodedTitle/$encodedContent")
+        navController.navigate(Screen.BookReader(item.title, sampleContent))
     }
 }

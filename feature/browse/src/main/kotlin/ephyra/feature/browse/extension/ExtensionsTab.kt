@@ -19,6 +19,7 @@ import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.TabContent
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.system.isPackageInstalled
 import kotlinx.collections.immutable.persistentListOf
@@ -73,7 +74,7 @@ fun extensionsTab(
                 onOpenWebView = { extension ->
                     extension.sources.getOrNull(0)?.let {
                         navController.navigate(
-                            ScreenRoutes.WebView.createRoute(
+                            Screen.WebView(
                                 url = it.baseUrl,
                                 title = it.name,
                                 sourceId = it.id,
@@ -82,7 +83,7 @@ fun extensionsTab(
                     }
                 },
                 onInstallExtension = extensionsScreenModel::installExtension,
-                onOpenExtension = { navController.navigate(ScreenRoutes.ExtensionDetails.createRoute(it.pkgName)) },
+                onOpenExtension = { navController.navigate(Screen.ExtensionDetails(it.pkgName)) },
                 onTrustExtension = { extensionsScreenModel.trustExtension(it) },
                 onUninstallExtension = { extensionsScreenModel.uninstallExtension(it) },
                 onUpdateExtension = extensionsScreenModel::updateExtension,

@@ -126,7 +126,7 @@ fun MigrateSourceSearchScreen(
             onWebViewClick = {
                 val httpSource = source as? HttpSource ?: return@BrowseSourceContent
                 navController.navigate(
-                    ScreenRoutes.WebView.createRoute(httpSource.baseUrl, httpSource.name, httpSource.id),
+                    Screen.WebView(httpSource.baseUrl, httpSource.name, httpSource.id),
                 )
             },
             onHelpClick = { uriHandler.openUri(Constants.URL_HELP) },
