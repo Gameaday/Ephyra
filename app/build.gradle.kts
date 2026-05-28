@@ -158,8 +158,10 @@ android {
 
     testOptions {
         unitTests {
+            isIncludeAndroidResources = true
             all {
                 it.maxHeapSize = "2g"
+                it.exclude("**/ShadowAnimatedVectorResources*")
             }
         }
     }
@@ -312,6 +314,10 @@ dependencies {
     testRuntimeOnly(libs.junit.platform.launcher)
 
     testImplementation(kotlinx.coroutines.test)
+    testImplementation("org.robolectric:robolectric:4.11.1")
+    testImplementation("androidx.test:core:1.5.0")
+    testImplementation("androidx.test.ext:junit:1.1.5")
+    testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.11.0")
 
     // Hilt dependencies
     implementation(libs.hilt.android)

@@ -41,7 +41,7 @@ object GLUtil {
 
             // Return largest texture size found (after making it a multiplier of [Multiplier]), or default
             max(maximumTextureSize, SAFE_TEXTURE_LIMIT)
-        } catch (_: Exception) {
+        } catch (_: Throwable) {
             SAFE_TEXTURE_LIMIT
         }
     }

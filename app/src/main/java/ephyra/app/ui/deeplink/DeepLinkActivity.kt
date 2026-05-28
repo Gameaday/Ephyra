@@ -11,23 +11,28 @@ class DeepLinkActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val sanitizedIntent = IntentSanitizer.Builder()
-            .allowAnyComponent()
-            .allowAction(Intent.ACTION_SEARCH)
-            .allowAction("com.google.android.gms.actions.SEARCH_ACTION")
-            .allowAction("ephyra.app.SEARCH")
-            .allowAction(Intent.ACTION_SEND)
-            .allowType("text/plain")
-            .allowExtra("query") { it is String }
-            .allowExtra(Intent.EXTRA_TEXT) { it is String }
-            .build()
-            .sanitizeByThrowing(intent)
+        try {
+            val sanitizedIntent = IntentSanitizer.Builder()
+                .allowAnyComponent()
+                .allowAction(Intent.ACTION_SEARCH)
+                .allowAction("com.google.android.gms.actions.SEARCH_ACTION")
+                .allowAction("ephyra.app.SEARCH")
+                .allowAction(Intent.ACTION_SEND)
+                .allowType("text/plain")
+                .allowExtra("query") { it is String }
+                .allowExtra(Intent.EXTRA_TEXT) { it is String }
+                .build()
+                .sanitizeByThrowing(intent)
 
-        sanitizedIntent.apply {
-            flags = flags or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
-            setClass(applicationContext, MainActivity::class.java)
+            sanitizedIntent.apply {
+                flags = flags or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                setClass(applicationContext, MainActivity::class.java)
+            }
+            startActivity(sanitizedIntent)
+        } catch (e: Exception) {
+            android.util.Log.e("DeepLinkActivity", "Insecure or malformed intent rejected", e)
+        } finally {
+            finish()
         }
-        startActivity(sanitizedIntent)
-        finish()
     }
 }
