@@ -3,6 +3,7 @@ package ephyra.core.download
 import android.app.Application
 import androidx.core.net.toUri
 import com.hippo.unifile.UniFile
+import ephyra.core.common.di.IoDispatcher
 import ephyra.core.common.storage.extension
 import ephyra.core.common.storage.nameWithoutExtension
 import ephyra.core.common.util.lang.launchIO
@@ -17,7 +18,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import ephyra.core.common.di.IoDispatcher
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async

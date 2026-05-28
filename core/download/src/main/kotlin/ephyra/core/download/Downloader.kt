@@ -3,6 +3,7 @@ package ephyra.core.download
 import android.content.Context
 import com.hippo.unifile.UniFile
 import ephyra.core.archive.ZipWriter
+import ephyra.core.common.di.IoDispatcher
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.storage.extension
 import ephyra.core.common.util.lang.launchIO
@@ -37,7 +38,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import ephyra.core.common.di.IoDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
