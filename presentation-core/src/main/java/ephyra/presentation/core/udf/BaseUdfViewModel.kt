@@ -48,4 +48,3 @@ abstract class BaseUdfViewModel<State, Event, Effect>(initialState: State) : Vie
         }
     }
 }
-

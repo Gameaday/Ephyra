@@ -66,4 +66,3 @@ interface BaseActivityEntryPoint {
     fun secureActivityDelegate(): SecureActivityDelegate
     fun themingDelegate(): ThemingDelegate
 }
-
