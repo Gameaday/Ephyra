@@ -1,5 +1,6 @@
 package ephyra.data.sourcing
 
+import ephyra.core.common.di.IoDispatcher
 import ephyra.core.common.preference.PreferenceStore
 import ephyra.domain.content.model.ContentItem
 import ephyra.domain.content.model.ContentStatus
@@ -9,7 +10,6 @@ import ephyra.domain.content.source.PaginationType
 import ephyra.domain.content.source.ResponseType
 import ephyra.domain.content.source.SourceProfile
 import ephyra.source.api.ScriptableSourceEngine
-import ephyra.core.common.di.IoDispatcher
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -45,7 +45,9 @@ class ScriptableContentSourceEngine @Inject constructor(
             val resultJson = scriptEngine.executeScraper(scriptContent, "discover", payload)
             json.decodeFromString<ScraperProfileDto>(resultJson)
         } catch (e: Exception) {
-            logcat(LogPriority.ERROR) { "QuickJS Discovery execution failed for $baseUrl: ${e.localizedMessage}\n${e.stackTraceToString()}" }
+            logcat(LogPriority.ERROR) {
+                "QuickJS Discovery execution failed for $baseUrl: ${e.localizedMessage}\n${e.stackTraceToString()}"
+            }
             ScraperProfileDto(contentType = "UNKNOWN", displayName = "Failed Scraper ($baseUrl)")
         }
 
@@ -92,7 +94,9 @@ class ScriptableContentSourceEngine @Inject constructor(
             val resultJson = scriptEngine.executeScraper(scriptContent, "getItem", url)
             json.decodeFromString<ScraperContentItemDto>(resultJson)
         } catch (e: Exception) {
-            logcat(LogPriority.ERROR) { "QuickJS getItem execution failed for $url: ${e.localizedMessage}\n${e.stackTraceToString()}" }
+            logcat(LogPriority.ERROR) {
+                "QuickJS getItem execution failed for $url: ${e.localizedMessage}\n${e.stackTraceToString()}"
+            }
             throw IllegalArgumentException("Scraper failed to resolve content at $url: ${e.localizedMessage}", e)
         }
         itemDto.toDomain(profile.baseUrl.hashCode().toLong())

@@ -37,7 +37,7 @@ class LibraryExporterImplTest {
         val options = LibraryExporter.ExportOptions(
             includeTitle = true,
             includeAuthor = true,
-            includeArtist = true
+            includeArtist = true,
         )
 
         var callbackInvoked = false
@@ -49,7 +49,7 @@ class LibraryExporterImplTest {
         val fileContent = tempFile.readText()
         val expectedLines = listOf(
             "Manga One,Author One,Artist One",
-            "Manga Two,Author Two,Artist Two"
+            "Manga Two,Author Two,Artist Two",
         )
         val actualLines = fileContent.split("\r\n")
         assertEquals(expectedLines, actualLines)
@@ -67,7 +67,7 @@ class LibraryExporterImplTest {
         val options = LibraryExporter.ExportOptions(
             includeTitle = true,
             includeAuthor = false,
-            includeArtist = true
+            includeArtist = true,
         )
 
         var callbackInvoked = false
@@ -79,7 +79,7 @@ class LibraryExporterImplTest {
         val fileContent = tempFile.readText()
         val expectedLines = listOf(
             "Manga One,Artist One",
-            "Manga Two,Artist Two"
+            "Manga Two,Artist Two",
         )
         val actualLines = fileContent.split("\r\n")
         assertEquals(expectedLines, actualLines)

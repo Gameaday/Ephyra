@@ -18,7 +18,7 @@ class EphyraDatabaseMigrationTest {
         InstrumentationRegistry.getInstrumentation(),
         EphyraDatabase::class.java,
         emptyList(),
-        FrameworkSQLiteOpenHelperFactory()
+        FrameworkSQLiteOpenHelperFactory(),
     )
 
     @Test

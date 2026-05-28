@@ -1,10 +1,10 @@
 package ephyra.domain.content.source
 
+import ephyra.core.common.di.IoDispatcher
 import ephyra.domain.content.model.ContentItem
 import ephyra.domain.content.model.ContentStatus
 import ephyra.domain.content.model.ContentType
 import eu.kanade.tachiyomi.network.NetworkHelper
-import ephyra.core.common.di.IoDispatcher
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
