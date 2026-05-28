@@ -12,9 +12,10 @@ android {
 dependencies {
     api(projects.core.common)
     api(projects.core.domain)
-    api(projects.data)
+    api(projects.core.data)
     api(projects.sourceApi)
     api(projects.presentationCore)
 
     ksp(libs.hilt.compiler)
 }
+

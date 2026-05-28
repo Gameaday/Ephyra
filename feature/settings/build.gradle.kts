@@ -13,7 +13,7 @@ android {
 dependencies {
     implementation(projects.core.common)
     implementation(projects.core.domain)
-    implementation(projects.data)
+    implementation(projects.core.data)
     implementation(projects.presentationCore)
     implementation(projects.feature.category)
 
@@ -26,3 +26,4 @@ dependencies {
     implementation(kotlinx.bundles.serialization)
     implementation(kotlinx.bundles.coroutines)
 }
+

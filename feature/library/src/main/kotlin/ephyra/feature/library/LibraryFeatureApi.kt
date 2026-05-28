@@ -4,7 +4,6 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import ephyra.presentation.core.feature.FeatureApi
-import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import javax.inject.Inject
 
 class LibraryFeatureApi @Inject constructor() : FeatureApi {
@@ -12,7 +11,7 @@ class LibraryFeatureApi @Inject constructor() : FeatureApi {
         navGraphBuilder: NavGraphBuilder,
         navController: NavHostController,
     ) {
-        navGraphBuilder.composable(ScreenRoutes.Library.route) {
+        navGraphBuilder.composable<ephyra.presentation.core.ui.navigation.Screen.Library> {
             LibraryScreen(navController = navController)
         }
     }

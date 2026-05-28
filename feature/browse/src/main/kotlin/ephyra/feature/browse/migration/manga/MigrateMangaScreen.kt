@@ -34,6 +34,7 @@ import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.selectedBackground
 import ephyra.presentation.core.util.shouldExpandFAB
@@ -119,7 +120,7 @@ fun MigrateMangaScreen(
             contentPadding = contentPadding,
             state = state,
             onClickItem = { screenModel.onEvent(MigrateMangaScreenEvent.ToggleSelection(it)) },
-            onClickCover = { navController.navigate(ScreenRoutes.MangaDetails.createRoute(it.id, true)) },
+            onClickCover = { navController.navigate(Screen.MangaDetails(it.id, true)) },
         )
     }
 

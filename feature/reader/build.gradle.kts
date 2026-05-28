@@ -16,7 +16,7 @@ android {
 dependencies {
     implementation(projects.core.common)
     implementation(projects.core.domain)
-    implementation(projects.data)
+    implementation(projects.core.data)
     implementation(projects.sourceApi)
     implementation(projects.sourceLocal)
     implementation(projects.presentationCore)
@@ -33,3 +33,4 @@ dependencies {
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
 }
+

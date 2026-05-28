@@ -19,8 +19,10 @@ class JavaScriptEngine(context: Context) {
      * @return Result of JavaScript code as a primitive type.
      */
     suspend fun <T> evaluate(script: String): T = withIOContext {
-        QuickJs.create().use {
-            it.evaluate(script) as T
+        kotlinx.coroutines.withTimeout(5000) {
+            QuickJs.create().use {
+                it.evaluate(script) as T
+            }
         }
     }
 }

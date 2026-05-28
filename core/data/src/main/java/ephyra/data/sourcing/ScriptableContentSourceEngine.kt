@@ -9,11 +9,14 @@ import ephyra.domain.content.source.PaginationType
 import ephyra.domain.content.source.ResponseType
 import ephyra.domain.content.source.SourceProfile
 import ephyra.source.api.ScriptableSourceEngine
-import kotlinx.coroutines.Dispatchers
+import ephyra.core.common.di.IoDispatcher
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import logcat.LogPriority
+import logcat.logcat
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -24,21 +27,27 @@ import javax.inject.Singleton
  */
 @Singleton
 class ScriptableContentSourceEngine @Inject constructor(
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     private val scraperUpdater: DynamicScraperUpdater,
     private val scriptEngine: ScriptableSourceEngine,
     private val preferenceStore: PreferenceStore,
     private val json: Json,
 ) : ContentSourceEngine {
 
-    override suspend fun discover(baseUrl: String): SourceProfile = withContext(Dispatchers.IO) {
+    override suspend fun discover(baseUrl: String): SourceProfile = withContext(ioDispatcher) {
         val scriptName = getScraperNameForUrl(baseUrl)
             ?: throw IllegalArgumentException("No scraper script configured for $baseUrl")
         val scriptContent = scraperUpdater.getScraperScript(scriptName)
             ?: throw IllegalArgumentException("Scraper script $scriptName not found")
 
         val payload = json.encodeToString(baseUrl)
-        val resultJson = scriptEngine.executeScraper(scriptContent, "discover", payload)
-        val profileDto = json.decodeFromString<ScraperProfileDto>(resultJson)
+        val profileDto = try {
+            val resultJson = scriptEngine.executeScraper(scriptContent, "discover", payload)
+            json.decodeFromString<ScraperProfileDto>(resultJson)
+        } catch (e: Exception) {
+            logcat(LogPriority.ERROR) { "QuickJS Discovery execution failed for $baseUrl: ${e.localizedMessage}\n${e.stackTraceToString()}" }
+            ScraperProfileDto(contentType = "UNKNOWN", displayName = "Failed Scraper ($baseUrl)")
+        }
 
         SourceProfile(
             baseUrl = baseUrl,
@@ -48,14 +57,14 @@ class ScriptableContentSourceEngine @Inject constructor(
                 ContentType.UNKNOWN
             },
             displayName = profileDto.displayName ?: "QuickJS Scraper ($baseUrl)",
-            verified = true,
+            verified = false,
             pagination = PaginationType.PAGE_BASED,
             responseType = ResponseType.JSON,
         )
     }
 
     override suspend fun search(profile: SourceProfile, query: String, page: Int): List<ContentItem> = withContext(
-        Dispatchers.IO,
+        ioDispatcher,
     ) {
         val scriptName = getScraperNameForUrl(profile.baseUrl) ?: return@withContext emptyList()
         val scriptContent = scraperUpdater.getScraperScript(scriptName) ?: return@withContext emptyList()
@@ -73,14 +82,19 @@ class ScriptableContentSourceEngine @Inject constructor(
         items.map { it.toDomain(profile.baseUrl.hashCode().toLong()) }
     }
 
-    override suspend fun getItem(profile: SourceProfile, url: String): ContentItem = withContext(Dispatchers.IO) {
+    override suspend fun getItem(profile: SourceProfile, url: String): ContentItem = withContext(ioDispatcher) {
         val scriptName = getScraperNameForUrl(profile.baseUrl)
             ?: throw IllegalArgumentException("No scraper script configured for ${profile.baseUrl}")
         val scriptContent = scraperUpdater.getScraperScript(scriptName)
             ?: throw IllegalArgumentException("Scraper script $scriptName not found")
 
-        val resultJson = scriptEngine.executeScraper(scriptContent, "getItem", url)
-        val itemDto = json.decodeFromString<ScraperContentItemDto>(resultJson)
+        val itemDto = try {
+            val resultJson = scriptEngine.executeScraper(scriptContent, "getItem", url)
+            json.decodeFromString<ScraperContentItemDto>(resultJson)
+        } catch (e: Exception) {
+            logcat(LogPriority.ERROR) { "QuickJS getItem execution failed for $url: ${e.localizedMessage}\n${e.stackTraceToString()}" }
+            throw IllegalArgumentException("Scraper failed to resolve content at $url: ${e.localizedMessage}", e)
+        }
         itemDto.toDomain(profile.baseUrl.hashCode().toLong())
     }
 

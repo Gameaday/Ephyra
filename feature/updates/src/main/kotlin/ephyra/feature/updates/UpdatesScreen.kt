@@ -42,6 +42,7 @@ import ephyra.presentation.core.theme.active
 import ephyra.presentation.core.ui.AppReadySignal
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.NavigationEvents
+import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.collectLatest
@@ -246,7 +247,7 @@ fun UpdatesScreen(
         lastUpdated = screenModel.lastUpdated,
         isRefreshing = state.isLibraryUpdating,
         onClickCover = { item ->
-            navController.navigate(ScreenRoutes.MangaDetails.createRoute(item.update.mangaId, false))
+            navController.navigate(Screen.MangaDetails(item.update.mangaId, false))
         },
         onSelectAll = { screenModel.onEvent(UpdatesScreenEvent.ToggleAllSelection(it)) },
         onInvertSelection = { screenModel.onEvent(UpdatesScreenEvent.InvertSelection) },

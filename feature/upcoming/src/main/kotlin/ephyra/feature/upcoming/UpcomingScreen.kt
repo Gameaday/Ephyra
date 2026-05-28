@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import kotlinx.coroutines.flow.collectLatest
 
@@ -20,7 +21,7 @@ fun UpcomingScreen(
         screenModel.effects.collectLatest { effect ->
             when (effect) {
                 is UpcomingScreenEffect.NavigateToMangaDetails -> {
-                    navController.navigate(ScreenRoutes.MangaDetails.createRoute(effect.mangaId, false))
+                    navController.navigate(Screen.MangaDetails(effect.mangaId, false))
                 }
             }
         }

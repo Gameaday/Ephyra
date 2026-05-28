@@ -21,6 +21,7 @@ kotlin {
 dependencies {
 
     api(libs.logcat)
+    api("javax.inject:javax.inject:1")
     implementation(libs.material)
 
     api(libs.okhttp.core)

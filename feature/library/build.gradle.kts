@@ -12,7 +12,7 @@ android {
 dependencies {
     api(projects.core.common)
     api(projects.core.domain)
-    api(projects.data)
+    api(projects.core.data)
     api(projects.sourceApi)
     api(projects.presentationCore)
     api(projects.feature.manga)
@@ -25,3 +25,4 @@ dependencies {
     ksp(libs.hilt.compiler)
     testImplementation(libs.bundles.test)
 }
+

@@ -229,6 +229,8 @@ import eu.kanade.tachiyomi.network.JavaScriptEngine
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.NetworkPreferences
 import eu.kanade.tachiyomi.source.AndroidSourceManager
+import ephyra.core.common.di.IoDispatcher
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf
 import nl.adaptivity.xmlutil.XmlDeclMode
@@ -458,20 +460,22 @@ object AppModule {
     @Provides
     @Singleton
     fun provideHeuristicContentSourceEngine(
+        @IoDispatcher ioDispatcher: CoroutineDispatcher,
         networkHelper: NetworkHelper,
         profileCache: SourceProfileCache,
     ): AdaptiveHeuristicEngine =
-        AdaptiveHeuristicEngine(networkHelper, profileCache)
+        AdaptiveHeuristicEngine(ioDispatcher, networkHelper, profileCache)
 
     @Provides
     @Singleton
     fun provideScriptableContentSourceEngine(
+        @IoDispatcher ioDispatcher: CoroutineDispatcher,
         scraperUpdater: DynamicScraperUpdater,
         scriptEngine: ScriptableSourceEngine,
         preferenceStore: PreferenceStore,
         json: Json,
     ): ScriptableContentSourceEngine =
-        ScriptableContentSourceEngine(scraperUpdater, scriptEngine, preferenceStore, json)
+        ScriptableContentSourceEngine(ioDispatcher, scraperUpdater, scriptEngine, preferenceStore, json)
 
     @Provides
     @Singleton

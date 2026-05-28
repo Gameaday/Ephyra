@@ -52,6 +52,7 @@ import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.system.openInBrowser
 
@@ -85,7 +86,7 @@ fun MatchResultsScreen(
             onRetrySingle = screenModel::retrySingle,
             onRetryAll = screenModel::retryAll,
             onOpenManga = { manga ->
-                navController.navigate(ScreenRoutes.MangaDetails.createRoute(manga.id, true))
+                navController.navigate(Screen.MangaDetails(manga.id, true))
             },
             contentPadding = paddingValues,
         )

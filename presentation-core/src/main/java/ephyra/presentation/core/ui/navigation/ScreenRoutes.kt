@@ -33,17 +33,10 @@ sealed class ScreenRoutes(val route: String) {
     data object Stats : ScreenRoutes("stats")
     data object Upcoming : ScreenRoutes("upcoming")
 
-    data object Category : ScreenRoutes("category")
     data object MangaNotes : ScreenRoutes("manga_notes/{mangaId}") {
         fun createRoute(mangaId: Long) = "manga_notes/$mangaId"
     }
     data object Settings : ScreenRoutes("settings")
-
-    data object MangaDetails : ScreenRoutes("manga/{mangaId}/{fromSource}") {
-        fun createRoute(mangaId: Long, fromSource: Boolean): String {
-            return "manga/$mangaId/$fromSource"
-        }
-    }
 
     object VideoPlayer : ScreenRoutes("player/{title}/{url}") {
         fun createRoute(title: String, url: String): String {
@@ -146,4 +139,23 @@ sealed class ScreenRoutes(val route: String) {
     object SettingsSecurity : ScreenRoutes("settings_security")
     object SettingsAdvanced : ScreenRoutes("settings_advanced")
     data object ContentSourcing : ScreenRoutes("content_sourcing")
+}
+
+@kotlinx.serialization.Serializable
+sealed interface Screen {
+    @kotlinx.serialization.Serializable data object Onboarding : Screen
+    @kotlinx.serialization.Serializable data object Home : Screen
+    @kotlinx.serialization.Serializable data object Library : Screen
+    @kotlinx.serialization.Serializable data object Updates : Screen
+    @kotlinx.serialization.Serializable data object History : Screen
+    @kotlinx.serialization.Serializable data object Browse : Screen
+    @kotlinx.serialization.Serializable data object More : Screen
+    @kotlinx.serialization.Serializable data object Category : Screen
+    @kotlinx.serialization.Serializable data class MangaDetails(val mangaId: Long, val fromSource: Boolean) : Screen
+    @kotlinx.serialization.Serializable data class VideoPlayer(val title: String, val url: String) : Screen
+    @kotlinx.serialization.Serializable data class BookReader(val title: String, val content: String) : Screen
+    @kotlinx.serialization.Serializable data class WebView(val url: String, val title: String? = null, val sourceId: Long? = null) : Screen
+    @kotlinx.serialization.Serializable data class GlobalSearch(val query: String? = null) : Screen
+    @kotlinx.serialization.Serializable data class BrowseSource(val sourceId: Long, val query: String? = null) : Screen
+    @kotlinx.serialization.Serializable data class ExtensionDetails(val pkgName: String) : Screen
 }

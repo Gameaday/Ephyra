@@ -32,6 +32,7 @@ import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.collectAsLazyPagingItems
 import ephyra.presentation.core.util.ifSourcesLoaded
@@ -132,7 +133,7 @@ fun MigrateSourceSearchScreen(
             onLocalSourceHelpClick = { uriHandler.openUri(LocalSource.HELP_URL) },
             onMangaClick = openMigrateDialog,
             onMangaLongClick = {
-                navController.navigate(ScreenRoutes.MangaDetails.createRoute(it.id, true))
+                navController.navigate(Screen.MangaDetails(it.id, true))
             },
         )
     }
@@ -154,12 +155,12 @@ fun MigrateSourceSearchScreen(
                 current = currentManga,
                 target = dialog.target,
                 onClickTitle = {
-                    navController.navigate(ScreenRoutes.MangaDetails.createRoute(dialog.target.id, true))
+                    navController.navigate(Screen.MangaDetails(dialog.target.id, true))
                 },
                 onDismissRequest = onDismissRequest,
                 onComplete = {
                     scope.launch {
-                        navController.navigate(ScreenRoutes.MangaDetails.createRoute(dialog.target.id, true)) {
+                        navController.navigate(Screen.MangaDetails(dialog.target.id, true)) {
                             popUpTo(ScreenRoutes.Home.route) { inclusive = false }
                         }
                     }

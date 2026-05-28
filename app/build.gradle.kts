@@ -186,7 +186,7 @@ dependencies {
     implementation(projects.coreMetadata)
     implementation(projects.sourceApi)
     implementation(projects.sourceLocal)
-    implementation(projects.data)
+    implementation(projects.core.data)
     implementation(projects.core.domain)
     implementation(projects.presentationCore)
     implementation(projects.presentationWidget)
@@ -337,3 +337,4 @@ buildscript {
         classpath(kotlinx.gradle)
     }
 }
+

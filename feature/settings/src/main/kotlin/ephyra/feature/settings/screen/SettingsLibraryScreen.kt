@@ -35,6 +35,7 @@ import ephyra.feature.settings.widget.TriStateListDialog
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.collectAsState
 import kotlinx.collections.immutable.persistentListOf
@@ -97,7 +98,7 @@ object SettingsLibraryScreen : SearchableSettings {
                         count = userCategoriesCount,
                         userCategoriesCount,
                     ),
-                    onClick = { navController.navigate(ScreenRoutes.Category.route) },
+                    onClick = { navController.navigate(Screen.Category) },
                 ),
                 Preference.PreferenceItem.ListPreference(
                     preference = libraryPreferences.defaultCategory(),

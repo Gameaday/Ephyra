@@ -13,7 +13,12 @@ import ephyra.core.common.util.fastFilterNot
 import ephyra.core.common.util.lang.compareToWithCollator
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.launchNonCancellable
-import ephyra.core.common.utils.mutate
+import kotlinx.collections.immutable.PersistentList
+import kotlinx.collections.immutable.PersistentMap
+import kotlinx.collections.immutable.PersistentSet
+import kotlinx.collections.immutable.toPersistentList
+import kotlinx.collections.immutable.toPersistentMap
+import kotlinx.collections.immutable.toPersistentSet
 import ephyra.core.download.DownloadCache
 import ephyra.core.download.util.getNextUnread
 import ephyra.domain.base.BasePreferences
@@ -56,7 +61,14 @@ import ephyra.presentation.core.util.system.getNameForMangaInfo
 import ephyra.source.local.isLocal
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.ImmutableMap
+import kotlinx.collections.immutable.ImmutableSet
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.persistentMapOf
+import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.toImmutableMap
+import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
@@ -77,6 +89,12 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
 import javax.inject.Inject
 import kotlin.random.Random
+
+private inline fun <T> PersistentSet<T>.mutate(action: (MutableSet<T>) -> Unit): PersistentSet<T> {
+    val builder = this.builder()
+    action(builder)
+    return builder.build()
+}
 
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -158,10 +176,10 @@ class LibraryScreenModel @Inject constructor(
                 LibraryData(
                     isInitialized = true,
                     showSystemCategory = showSystemCategory,
-                    categories = categories,
-                    favorites = filteredFavorites,
-                    tracksMap = tracksMap,
-                    loggedInTrackerIds = trackingFilters.keys,
+                    categories = categories.toPersistentList(),
+                    favorites = filteredFavorites.toPersistentList(),
+                    tracksMap = tracksMap.mapValues { it.value.toPersistentList() }.toPersistentMap(),
+                    loggedInTrackerIds = trackingFilters.keys.toPersistentSet(),
                 )
             }
                 .distinctUntilChanged()
@@ -181,6 +199,8 @@ class LibraryScreenModel @Inject constructor(
                     data.favorites
                         .applyGrouping(data.categories, data.showSystemCategory)
                         .applySort(data.favoritesById, data.tracksMap, data.loggedInTrackerIds)
+                        .mapValues { it.value.toPersistentList() }
+                        .toPersistentMap()
                 }
                 .collectLatest {
                     updateState { state ->
@@ -757,7 +777,7 @@ class LibraryScreenModel @Inject constructor(
 
     private fun clearSelection() {
         lastSelectionCategory = null
-        updateState { it.copy(selection = setOf()) }
+        updateState { it.copy(selection = persistentSetOf()) }
     }
 
     private fun toggleSelection(category: Category, manga: LibraryManga) {
@@ -936,10 +956,10 @@ class LibraryScreenModel @Inject constructor(
     data class LibraryData(
         val isInitialized: Boolean = false,
         val showSystemCategory: Boolean = false,
-        val categories: List<Category> = emptyList(),
-        val favorites: List<LibraryItem> = emptyList(),
-        val tracksMap: Map</* Manga */ Long, List<Track>> = emptyMap(),
-        val loggedInTrackerIds: Set<Long> = emptySet(),
+        val categories: PersistentList<Category> = persistentListOf(),
+        val favorites: PersistentList<LibraryItem> = persistentListOf(),
+        val tracksMap: PersistentMap<Long, PersistentList<Track>> = persistentMapOf(),
+        val loggedInTrackerIds: PersistentSet<Long> = persistentSetOf(),
     ) {
         val favoritesById by lazy { favorites.associateBy { it.id } }
     }
@@ -949,7 +969,7 @@ class LibraryScreenModel @Inject constructor(
         val isInitialized: Boolean = false,
         val isLoading: Boolean = true,
         val searchQuery: String? = null,
-        val selection: Set</* Manga */ Long> = setOf(),
+        val selection: PersistentSet<Long> = persistentSetOf(),
         val hasActiveFilters: Boolean = false,
         val showCategoryTabs: Boolean = false,
         val showMangaCount: Boolean = false,
@@ -957,9 +977,9 @@ class LibraryScreenModel @Inject constructor(
         val dialog: Dialog? = null,
         val libraryData: LibraryData = LibraryData(),
         private val activeCategoryIndex: Int = 0,
-        private val groupedFavorites: Map<Category, List</* LibraryItem */ Long>> = emptyMap(),
+        private val groupedFavorites: PersistentMap<Category, PersistentList<Long>> = persistentMapOf(),
     ) {
-        val displayedCategories: List<Category> = groupedFavorites.keys.toList()
+        val displayedCategories: PersistentList<Category> = groupedFavorites.keys.toPersistentList()
 
         val coercedActiveCategoryIndex = activeCategoryIndex.coerceIn(
             minimumValue = 0,
@@ -988,14 +1008,14 @@ class LibraryScreenModel @Inject constructor(
 
         val selectedManga by lazy { selection.mapNotNull { libraryData.favoritesById[it]?.libraryManga?.manga } }
 
-        fun getItemsForCategoryId(categoryId: Long?): List<LibraryItem> {
-            if (categoryId == null) return emptyList()
-            val category = displayedCategories.find { it.id == categoryId } ?: return emptyList()
+        fun getItemsForCategoryId(categoryId: Long?): PersistentList<LibraryItem> {
+            if (categoryId == null) return persistentListOf()
+            val category = displayedCategories.find { it.id == categoryId } ?: return persistentListOf()
             return getItemsForCategory(category)
         }
 
-        fun getItemsForCategory(category: Category): List<LibraryItem> {
-            return groupedFavorites[category].orEmpty().mapNotNull { libraryData.favoritesById[it] }
+        fun getItemsForCategory(category: Category): PersistentList<LibraryItem> {
+            return groupedFavorites[category].orEmpty().mapNotNull { libraryData.favoritesById[it] }.toPersistentList()
         }
 
         fun getItemCountForCategory(category: Category): Int? {

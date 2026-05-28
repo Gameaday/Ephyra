@@ -40,6 +40,7 @@ import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.ui.AppReadySignal
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.NavigationEvents
+import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.manga.DownloadAction
 import ephyra.source.local.isLocal
@@ -109,7 +110,7 @@ fun LibraryScreen(
                         val randomItem = screenModel.getRandomLibraryItemForCurrentCategory()
                         if (randomItem != null) {
                             navController.navigate(
-                                ScreenRoutes.MangaDetails.createRoute(
+                                Screen.MangaDetails(
                                     randomItem.libraryManga.manga.id,
                                     fromSource = false,
                                 ),
@@ -178,7 +179,7 @@ fun LibraryScreen(
                     deadSourceCount = state.deadSourceCount,
                     degradedSourceCount = state.degradedSourceCount,
                     onChangeCurrentPage = { screenModel.onEvent(LibraryScreenEvent.UpdateActiveCategoryIndex(it)) },
-                    onClickManga = { navController.navigate(ScreenRoutes.MangaDetails.createRoute(it, false)) },
+                    onClickManga = { navController.navigate(ephyra.presentation.core.ui.navigation.Screen.MangaDetails(mangaId = it, fromSource = false)) },
                     onContinueReadingClicked = { it: LibraryManga ->
                         scope.launchIO {
                             val chapter = screenModel.getNextUnreadChapter(it.manga)
@@ -237,7 +238,7 @@ fun LibraryScreen(
                 onDismissRequest = onDismissRequest,
                 onEditCategories = {
                     screenModel.onEvent(LibraryScreenEvent.ClearSelection)
-                    navController.navigate(ScreenRoutes.Category.route)
+                    navController.navigate(ephyra.presentation.core.ui.navigation.Screen.Category)
                 },
                 onConfirm = { include, exclude ->
                     screenModel.onEvent(LibraryScreenEvent.ClearSelection)
@@ -295,7 +296,7 @@ fun LibraryScreen(
             when (effect) {
                 is LibraryScreenEffect.NavigateToManga -> {
                     navController.navigate(
-                        ScreenRoutes.MangaDetails.createRoute(
+                        Screen.MangaDetails(
                             effect.mangaId,
                             fromSource = false,
                         ),
@@ -310,7 +311,7 @@ fun LibraryScreen(
                     snackbarHostState.showSnackbar(msg)
                 }
                 is LibraryScreenEffect.NavigateToCategorySettings -> {
-                    navController.navigate(ScreenRoutes.Category.route)
+                    navController.navigate(ephyra.presentation.core.ui.navigation.Screen.Category)
                 }
                 is LibraryScreenEffect.NavigateToGlobalSearch -> {
                     navController.navigate(ScreenRoutes.GlobalSearch.createRoute(effect.query))

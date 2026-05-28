@@ -1,12 +1,14 @@
 package ephyra.presentation.core.udf
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 /**
  * Standardized base ViewModel implementing a robust Unidirectional Data Flow (UDF) pattern.
@@ -37,8 +39,13 @@ abstract class BaseUdfViewModel<State, Event, Effect>(initialState: State) : Vie
 
     /**
      * Emits a one-time side-effect to the UI layer.
+     * Uses the suspending send call in viewModelScope to guarantee delivery
+     * even during layout transitions or configuration changes.
      */
     protected fun emitEffect(effect: Effect) {
-        _effects.trySend(effect)
+        viewModelScope.launch {
+            _effects.send(effect)
+        }
     }
 }
+

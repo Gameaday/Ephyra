@@ -68,7 +68,7 @@ fun MoreTabScreen(
         incognitoMode = screenModel.incognitoMode,
         onIncognitoModeChange = { screenModel.incognitoMode = it },
         onClickDownloadQueue = { navController.navigate(ScreenRoutes.DownloadQueue.route) },
-        onClickCategories = { navController.navigate(ScreenRoutes.Category.route) },
+        onClickCategories = { navController.navigate(ephyra.presentation.core.ui.navigation.Screen.Category) },
         onClickStats = { navController.navigate(ScreenRoutes.Stats.route) },
         onClickDataAndStorage = { navController.navigate(ScreenRoutes.Settings.route) }, // TODO: sub-route
         onClickSettings = { navController.navigate(ScreenRoutes.Settings.route) },

@@ -11,6 +11,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.ifSourcesLoaded
 
@@ -43,7 +44,7 @@ fun GlobalSearchScreen(
                 is SearchItemResult.Success -> {
                     val manga = result.result.singleOrNull()
                     if (manga != null) {
-                        navController.navigate(ScreenRoutes.MangaDetails.createRoute(manga.id, true)) {
+                        navController.navigate(Screen.MangaDetails(manga.id, true)) {
                             popUpTo(navController.currentBackStackEntry?.destination?.id ?: -1) { inclusive = true }
                         }
                     } else {
@@ -65,8 +66,8 @@ fun GlobalSearchScreen(
             onClickSource = {
                 navController.navigate(ScreenRoutes.BrowseSource.createRoute(it.id, state.searchQuery))
             },
-            onClickItem = { navController.navigate(ScreenRoutes.MangaDetails.createRoute(it.id, true)) },
-            onLongClickItem = { navController.navigate(ScreenRoutes.MangaDetails.createRoute(it.id, true)) },
+            onClickItem = { navController.navigate(Screen.MangaDetails(it.id, true)) },
+            onLongClickItem = { navController.navigate(Screen.MangaDetails(it.id, true)) },
         )
     }
 }

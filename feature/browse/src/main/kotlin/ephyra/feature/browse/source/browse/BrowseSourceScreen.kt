@@ -217,7 +217,7 @@ fun BrowseSourceScreen(
             onWebViewClick = onWebViewClick,
             onHelpClick = { uriHandler.openUri(Constants.URL_HELP) },
             onLocalSourceHelpClick = onHelpClick,
-            onMangaClick = { navController.navigate(ScreenRoutes.MangaDetails.createRoute(it.id, true)) },
+            onMangaClick = { navController.navigate(ephyra.presentation.core.ui.navigation.Screen.MangaDetails(mangaId = it.id, fromSource = true)) },
             onMangaLongClick = { manga ->
                 scope.launchIO {
                     val duplicates = screenModel.getDuplicateLibraryManga(manga)
@@ -259,7 +259,7 @@ fun BrowseSourceScreen(
                 duplicates = dialog.duplicates,
                 onDismissRequest = onDismissRequest,
                 onConfirm = { screenModel.onEvent(BrowseSourceScreenEvent.AddFavorite(dialog.manga)) },
-                onOpenManga = { navController.navigate(ScreenRoutes.MangaDetails.createRoute(it.id, false)) },
+                onOpenManga = { navController.navigate(ephyra.presentation.core.ui.navigation.Screen.MangaDetails(mangaId = it.id, fromSource = false)) },
                 onMigrate = {
                     screenModel.onEvent(
                         BrowseSourceScreenEvent.SetDialog(BrowseSourceScreenModel.Dialog.Migrate(dialog.manga, it)),
@@ -274,7 +274,7 @@ fun BrowseSourceScreen(
                 current = dialog.current,
                 target = dialog.target,
                 onClickTitle = {
-                    navController.navigate(ScreenRoutes.MangaDetails.createRoute(dialog.current.id, false))
+                    navController.navigate(ephyra.presentation.core.ui.navigation.Screen.MangaDetails(mangaId = dialog.current.id, fromSource = false))
                 },
                 onDismissRequest = onDismissRequest,
             )
@@ -294,7 +294,7 @@ fun BrowseSourceScreen(
             ChangeCategoryDialog(
                 initialSelection = dialog.initialSelection,
                 onDismissRequest = onDismissRequest,
-                onEditCategories = { navController.navigate(ScreenRoutes.Category.route) },
+                onEditCategories = { navController.navigate(ephyra.presentation.core.ui.navigation.Screen.Category) },
                 onConfirm = { include, _ ->
                     screenModel.onEvent(BrowseSourceScreenEvent.ChangeMangaFavorite(dialog.manga))
                     screenModel.onEvent(BrowseSourceScreenEvent.MoveMangaToCategories(dialog.manga, include))

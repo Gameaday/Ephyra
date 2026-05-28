@@ -177,7 +177,7 @@ fun HistoryTabScreen(
         state = state,
         snackbarHostState = snackbarHostState,
         onSearchQueryChange = { screenModel.onEvent(HistoryScreenEvent.UpdateSearchQuery(it)) },
-        onClickCover = { navController.navigate(ScreenRoutes.MangaDetails.createRoute(it, fromSource = false)) },
+        onClickCover = { navController.navigate(ephyra.presentation.core.ui.navigation.Screen.MangaDetails(mangaId = it, fromSource = false)) },
         onClickResume = { mangaId, chapterId ->
             screenModel.onEvent(HistoryScreenEvent.GetNextChapterForManga(mangaId, chapterId))
         },
@@ -212,7 +212,7 @@ fun HistoryTabScreen(
                 duplicates = dialog.duplicates,
                 onDismissRequest = onDismissRequest,
                 onConfirm = { screenModel.onEvent(HistoryScreenEvent.AddFavorite(dialog.manga)) },
-                onOpenManga = { navController.navigate(ScreenRoutes.MangaDetails.createRoute(it.id, false)) },
+                onOpenManga = { navController.navigate(ephyra.presentation.core.ui.navigation.Screen.MangaDetails(mangaId = it.id, fromSource = false)) },
                 onMigrate = { screenModel.onEvent(HistoryScreenEvent.ShowMigrateDialog(dialog.manga, it)) },
                 sourceManager = screenModel.sourceManager,
             )
@@ -222,7 +222,7 @@ fun HistoryTabScreen(
             ephyra.feature.category.components.ChangeCategoryDialog(
                 initialSelection = dialog.initialSelection,
                 onDismissRequest = onDismissRequest,
-                onEditCategories = { navController.navigate(ScreenRoutes.Category.route) },
+                onEditCategories = { navController.navigate(ephyra.presentation.core.ui.navigation.Screen.Category) },
                 onConfirm = { include, _ ->
                     screenModel.onEvent(
                         HistoryScreenEvent.MoveMangaToCategoriesAndAddToLibrary(dialog.manga, include),
@@ -236,7 +236,7 @@ fun HistoryTabScreen(
                 current = dialog.current,
                 target = dialog.target,
                 onClickTitle = {
-                    navController.navigate(ScreenRoutes.MangaDetails.createRoute(dialog.current.id, false))
+                    navController.navigate(ephyra.presentation.core.ui.navigation.Screen.MangaDetails(mangaId = dialog.current.id, fromSource = false))
                 },
                 onDismissRequest = onDismissRequest,
             )

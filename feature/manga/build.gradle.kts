@@ -12,7 +12,7 @@ android {
 dependencies {
     api(projects.core.common)
     api(projects.core.domain)
-    api(projects.data)
+    api(projects.core.data)
     api(projects.sourceApi)
     api(projects.sourceLocal)
     api(projects.presentationCore)
@@ -30,3 +30,4 @@ dependencies {
 
     testImplementation(libs.bundles.test)
 }
+

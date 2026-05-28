@@ -5,6 +5,7 @@ import ephyra.buildlogic.getGitSha
 plugins {
     id("ephyra.library")
     kotlin("plugin.serialization")
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -21,10 +22,25 @@ android {
     buildFeatures {
         buildConfig = true
     }
+
+    sourceSets {
+        getByName("test") {
+            assets.srcDirs(files("$projectDir/schemas"))
+        }
+    }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
+}
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 dependencies {
-    api(projects.data)
     api(projects.core.domain)
 
     implementation(projects.core.common)
@@ -42,10 +58,22 @@ dependencies {
 
     api(kotlinx.coroutines.core)
 
-    // room-ktx provides the withTransaction {} extension used by MangaRestorer.
+    // Room - Processed via KSP
+    implementation(libs.room.runtime)
     implementation(libs.room.ktx)
+    implementation(libs.room.paging)
+    ksp(libs.room.compiler)
+
     implementation("javax.inject:javax.inject:1")
     implementation(libs.stringSimilarity)
+
+    // Testing Dependencies
+    testImplementation(libs.room.testing)
+    testImplementation("org.robolectric:robolectric:4.11.1")
+    testImplementation("androidx.test:core:1.5.0")
+    testImplementation("androidx.test.ext:junit:1.1.5")
+    testImplementation(libs.bundles.test)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
 // Suppress warnings for the following:
 
@@ -55,4 +83,8 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
             "-opt-in=kotlinx.serialization.ExperimentalSerializationApi",
         )
     }
+}
+
+tasks.withType<Test>().configureEach {
+    useJUnit()
 }

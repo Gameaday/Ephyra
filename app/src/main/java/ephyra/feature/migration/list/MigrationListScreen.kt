@@ -13,6 +13,7 @@ import ephyra.feature.migration.list.components.MigrationExitDialog
 import ephyra.feature.migration.list.components.MigrationMangaDialog
 import ephyra.feature.migration.list.components.MigrationProgressDialog
 import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.system.toast
 
@@ -59,7 +60,7 @@ fun MigrationListScreen(
         migrationComplete = state.migrationComplete,
         finishedCount = state.finishedCount,
         onItemClick = {
-            navController.navigate(ScreenRoutes.MangaDetails.createRoute(it.id, true))
+            navController.navigate(Screen.MangaDetails(it.id, true))
         },
         onSearchManually = { migrationItem ->
             navController.navigate(ScreenRoutes.MigrateSearch.createRoute(migrationItem.manga.id))

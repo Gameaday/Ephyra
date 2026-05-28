@@ -11,6 +11,7 @@ import ephyra.feature.browse.source.globalsearch.SearchScreenEvent
 import ephyra.feature.browse.source.globalsearch.SearchScreenModel
 import ephyra.feature.migration.dialog.MigrateMangaDialog
 import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 
 @Composable
@@ -48,7 +49,7 @@ fun MigrateSearchScreen(
             }
         },
         onLongClickItem = {
-            navController.navigate(ScreenRoutes.MangaDetails.createRoute(it.id, true))
+            navController.navigate(Screen.MangaDetails(it.id, true))
         },
     )
 
@@ -58,11 +59,11 @@ fun MigrateSearchScreen(
                 current = dialog.current,
                 target = dialog.target,
                 onClickTitle = {
-                    navController.navigate(ScreenRoutes.MangaDetails.createRoute(dialog.target.id, true))
+                    navController.navigate(Screen.MangaDetails(dialog.target.id, true))
                 },
                 onDismissRequest = { screenModel.onEvent(SearchScreenEvent.ClearDialog) },
                 onComplete = {
-                    navController.navigate(ScreenRoutes.MangaDetails.createRoute(dialog.target.id, true)) {
+                    navController.navigate(Screen.MangaDetails(dialog.target.id, true)) {
                         popUpTo(ScreenRoutes.MigrateSearch.route) { inclusive = true }
                     }
                 },

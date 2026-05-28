@@ -15,6 +15,7 @@ import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 
 @Composable
@@ -50,7 +51,7 @@ fun DeepLinkScreen(
             is DeepLinkScreenModel.State.Result -> {
                 val resultState = state as DeepLinkScreenModel.State.Result
                 if (resultState.chapterId == null) {
-                    navController.navigate(ScreenRoutes.MangaDetails.createRoute(resultState.manga.id, true)) {
+                    navController.navigate(Screen.MangaDetails(resultState.manga.id, true)) {
                         popUpTo(ScreenRoutes.Home.route) { inclusive = false }
                     }
                 } else {

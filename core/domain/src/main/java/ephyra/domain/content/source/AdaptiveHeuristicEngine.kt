@@ -4,8 +4,9 @@ import ephyra.domain.content.model.ContentItem
 import ephyra.domain.content.model.ContentStatus
 import ephyra.domain.content.model.ContentType
 import eu.kanade.tachiyomi.network.NetworkHelper
+import ephyra.core.common.di.IoDispatcher
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.Request
@@ -22,13 +23,14 @@ import javax.inject.Singleton
  */
 @Singleton
 class AdaptiveHeuristicEngine @Inject constructor(
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     private val networkHelper: NetworkHelper,
     private val profileCache: SourceProfileCache,
 ) : ContentSourceEngine {
 
-    private val scope = CoroutineScope(Dispatchers.IO)
+    private val scope = CoroutineScope(ioDispatcher)
 
-    override suspend fun discover(baseUrl: String): SourceProfile = withContext(Dispatchers.IO) {
+    override suspend fun discover(baseUrl: String): SourceProfile = withContext(ioDispatcher) {
         val request = Request.Builder().url(baseUrl).build()
         val response = networkHelper.client.newCall(request).execute()
         if (!response.isSuccessful) throw IOException("Failed to load base URL: $baseUrl")
@@ -70,7 +72,7 @@ class AdaptiveHeuristicEngine @Inject constructor(
     }
 
     override suspend fun search(profile: SourceProfile, query: String, page: Int): List<ContentItem> = withContext(
-        Dispatchers.IO,
+        ioDispatcher,
     ) {
         val searchPattern = profile.endpoints[Endpoint.SEARCH]?.pathTemplate ?: "/?s={query}"
         val searchUrl = profile.baseUrl.removeSuffix("/") + searchPattern
@@ -126,7 +128,7 @@ class AdaptiveHeuristicEngine @Inject constructor(
         }
     }
 
-    override suspend fun getItem(profile: SourceProfile, url: String): ContentItem = withContext(Dispatchers.IO) {
+    override suspend fun getItem(profile: SourceProfile, url: String): ContentItem = withContext(ioDispatcher) {
         val request = Request.Builder().url(url).build()
         val response = try {
             networkHelper.client.newCall(request).execute()
