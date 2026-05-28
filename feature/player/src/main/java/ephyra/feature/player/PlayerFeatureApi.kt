@@ -3,8 +3,9 @@ package ephyra.feature.player
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
 import ephyra.presentation.core.feature.FeatureApi
-import ephyra.presentation.core.ui.navigation.ScreenRoutes
+import ephyra.presentation.core.ui.navigation.Screen
 import javax.inject.Inject
 
 /**
@@ -16,24 +17,11 @@ class PlayerFeatureApi @Inject constructor() : FeatureApi {
         navGraphBuilder: NavGraphBuilder,
         navController: NavHostController,
     ) {
-        navGraphBuilder.composable(
-            route = ScreenRoutes.VideoPlayer.route,
-            arguments = listOf(
-                androidx.navigation.navArgument("title") {
-                    type = androidx.navigation.NavType.StringType
-                },
-                androidx.navigation.navArgument("url") {
-                    type = androidx.navigation.NavType.StringType
-                },
-            ),
-        ) { backStackEntry ->
-            val title = backStackEntry.arguments?.getString("title") ?: ""
-            val url = backStackEntry.arguments?.getString("url") ?: ""
-            val decodedTitle = java.net.URLDecoder.decode(title, "UTF-8")
-            val decodedUrl = java.net.URLDecoder.decode(url, "UTF-8")
+        navGraphBuilder.composable<Screen.VideoPlayer> { backStackEntry ->
+            val route = backStackEntry.toRoute<Screen.VideoPlayer>()
             VideoPlayerScreen(
-                title = decodedTitle,
-                streamUrl = decodedUrl,
+                title = route.title,
+                streamUrl = route.url,
                 onNavigateBack = { navController.popBackStack() },
             )
         }
