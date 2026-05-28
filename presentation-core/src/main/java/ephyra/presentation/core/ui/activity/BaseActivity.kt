@@ -57,12 +57,13 @@ open class BaseActivity :
         applyAppTheme(this)
         super.onCreate(savedInstanceState)
     }
-
-    @EntryPoint
-    @InstallIn(SingletonComponent::class)
-    interface BaseActivityEntryPoint {
-        fun uiPreferences(): UiPreferences
-        fun secureActivityDelegate(): SecureActivityDelegate
-        fun themingDelegate(): ThemingDelegate
-    }
 }
+
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface BaseActivityEntryPoint {
+    fun uiPreferences(): UiPreferences
+    fun secureActivityDelegate(): SecureActivityDelegate
+    fun themingDelegate(): ThemingDelegate
+}
+

@@ -19,7 +19,7 @@ class AdaptiveHeuristicEngineTest {
 
     private val networkHelper = mockk<NetworkHelper>()
     private val profileCache = mockk<SourceProfileCache>()
-    private val engine = AdaptiveHeuristicEngine(networkHelper, profileCache)
+    private val engine = AdaptiveHeuristicEngine(kotlinx.coroutines.Dispatchers.Unconfined, networkHelper, profileCache)
 
     @Test
     fun `discover extracts standard layout components successfully`() = runBlocking {
