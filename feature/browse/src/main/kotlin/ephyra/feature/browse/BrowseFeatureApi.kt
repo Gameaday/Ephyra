@@ -3,7 +3,9 @@ package ephyra.feature.browse
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
 import ephyra.presentation.core.feature.FeatureApi
+import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import javax.inject.Inject
 
@@ -13,7 +15,7 @@ class BrowseFeatureApi @Inject constructor() : FeatureApi {
         navController: NavHostController,
     ) {
         // Browse main screen route
-        navGraphBuilder.composable(ScreenRoutes.Browse.route) {
+        navGraphBuilder.composable<Screen.Browse> {
             BrowseTabScreen(navController = navController)
         }
 
@@ -62,27 +64,15 @@ class BrowseFeatureApi @Inject constructor() : FeatureApi {
         }
 
         // Global Search Screen
-        navGraphBuilder.composable(
-            route = ScreenRoutes.GlobalSearch.route,
-            arguments = listOf(androidx.navigation.navArgument("query") { nullable = true }),
-        ) { backStackEntry ->
-            val query = backStackEntry.arguments?.getString("query") ?: ""
-            ephyra.feature.browse.source.globalsearch.GlobalSearchScreen(query, null, navController)
+        navGraphBuilder.composable<Screen.GlobalSearch> { backStackEntry ->
+            val route = backStackEntry.toRoute<Screen.GlobalSearch>()
+            ephyra.feature.browse.source.globalsearch.GlobalSearchScreen(route.query ?: "", null, navController)
         }
 
         // Browse Source Screen
-        navGraphBuilder.composable(
-            route = ScreenRoutes.BrowseSource.route,
-            arguments = listOf(
-                androidx.navigation.navArgument("sourceId") {
-                    type = androidx.navigation.NavType.LongType
-                },
-                androidx.navigation.navArgument("query") { nullable = true },
-            ),
-        ) { backStackEntry ->
-            val sourceId = backStackEntry.arguments?.getLong("sourceId") ?: return@composable
-            val query = backStackEntry.arguments?.getString("query")
-            ephyra.feature.browse.source.browse.BrowseSourceScreen(sourceId, query, navController)
+        navGraphBuilder.composable<Screen.BrowseSource> { backStackEntry ->
+            val route = backStackEntry.toRoute<Screen.BrowseSource>()
+            ephyra.feature.browse.source.browse.BrowseSourceScreen(route.sourceId, route.query, navController)
         }
 
         // Source Preferences Screen
@@ -99,16 +89,9 @@ class BrowseFeatureApi @Inject constructor() : FeatureApi {
         }
 
         // Extension Details Screen
-        navGraphBuilder.composable(
-            route = ScreenRoutes.ExtensionDetails.route,
-            arguments = listOf(
-                androidx.navigation.navArgument("pkgName") {
-                    type = androidx.navigation.NavType.StringType
-                },
-            ),
-        ) { backStackEntry ->
-            val pkgName = backStackEntry.arguments?.getString("pkgName") ?: return@composable
-            ephyra.feature.browse.extension.details.ExtensionDetailsScreen(pkgName, navController)
+        navGraphBuilder.composable<Screen.ExtensionDetails> { backStackEntry ->
+            val route = backStackEntry.toRoute<Screen.ExtensionDetails>()
+            ephyra.feature.browse.extension.details.ExtensionDetailsScreen(route.pkgName, navController)
         }
 
         // Content Sourcing Hub Screen

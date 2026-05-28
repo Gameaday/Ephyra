@@ -51,7 +51,7 @@ fun SourceIcon(
         EntryPointAccessors.fromApplication(
             context.applicationContext,
             SourceUtilEntryPoint::class.java,
-        ).extensionManager()
+        ).domainExtensionManager()
     }
     val icon = source.icon(extensionManager)
 
@@ -115,7 +115,7 @@ fun ExtensionIcon(
                 EntryPointAccessors.fromApplication(
                     context.applicationContext,
                     SourceUtilEntryPoint::class.java,
-                ).extensionManager()
+                ).domainExtensionManager()
             }
             val icon by extension.getIcon(extensionManager, density)
             when (icon) {

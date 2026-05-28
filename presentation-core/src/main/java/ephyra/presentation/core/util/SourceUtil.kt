@@ -14,7 +14,7 @@ import ephyra.domain.source.service.SourceManager
 @InstallIn(SingletonComponent::class)
 interface SourceUtilEntryPoint {
     fun sourceManager(): SourceManager
-    fun extensionManager(): ExtensionManager
+    fun domainExtensionManager(): ExtensionManager
 }
 
 @Composable

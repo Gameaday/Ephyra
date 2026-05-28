@@ -1,6 +1,8 @@
 plugins {
     id("ephyra.library")
     id("ephyra.library.compose")
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -16,6 +18,9 @@ dependencies {
     implementation(projects.core.common)
     implementation(projects.core.domain)
     implementation(projects.presentationCore)
+
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
 
     implementation(compose.glance)
     implementation(libs.material)

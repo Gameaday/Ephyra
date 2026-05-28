@@ -278,8 +278,8 @@ private fun TrackInfoDialogHomeScreen(
 
 @HiltViewModel(assistedFactory = TrackInfoHomeViewModel.Factory::class)
 class TrackInfoHomeViewModel @AssistedInject constructor(
-    @Assisted private val mangaId: Long,
-    @Assisted private val sourceId: Long,
+    @Assisted("mangaId") private val mangaId: Long,
+    @Assisted("sourceId") private val sourceId: Long,
     private val getTracks: GetTracks,
     private val trackerManager: TrackerManager,
     private val sourceManager: SourceManager,
@@ -298,7 +298,10 @@ class TrackInfoHomeViewModel @AssistedInject constructor(
 
     @AssistedFactory
     interface Factory {
-        fun create(mangaId: Long, sourceId: Long): TrackInfoHomeViewModel
+        fun create(
+            @Assisted("mangaId") mangaId: Long,
+            @Assisted("sourceId") sourceId: Long,
+        ): TrackInfoHomeViewModel
     }
 
     init {
@@ -831,10 +834,10 @@ fun TrackerSearchScreen(
 
 @HiltViewModel(assistedFactory = TrackerSearchViewModel.Factory::class)
 class TrackerSearchViewModel @AssistedInject constructor(
-    @Assisted private val mangaId: Long,
-    @Assisted private val serviceId: Long,
-    @Assisted private val currentUrl: String? = null,
-    @Assisted initialQuery: String,
+    @Assisted("mangaId") private val mangaId: Long,
+    @Assisted("serviceId") private val serviceId: Long,
+    @Assisted("currentUrl") private val currentUrl: String? = null,
+    @Assisted("initialQuery") initialQuery: String,
     private val trackerManager: TrackerManager,
 ) : ViewModel() {
 
@@ -846,7 +849,12 @@ class TrackerSearchViewModel @AssistedInject constructor(
 
     @AssistedFactory
     interface Factory {
-        fun create(mangaId: Long, serviceId: Long, currentUrl: String?, initialQuery: String): TrackerSearchViewModel
+        fun create(
+            @Assisted("mangaId") mangaId: Long,
+            @Assisted("serviceId") serviceId: Long,
+            @Assisted("currentUrl") currentUrl: String?,
+            @Assisted("initialQuery") initialQuery: String,
+        ): TrackerSearchViewModel
     }
 
     init {
@@ -986,9 +994,9 @@ private fun TrackerRemoveScreen(
 
 @HiltViewModel(assistedFactory = TrackerRemoveViewModel.Factory::class)
 class TrackerRemoveViewModel @AssistedInject constructor(
-    @Assisted private val mangaId: Long,
-    @Assisted private val track: Track,
-    @Assisted private val serviceId: Long,
+    @Assisted("mangaId") private val mangaId: Long,
+    @Assisted("track") private val track: Track,
+    @Assisted("serviceId") private val serviceId: Long,
     private val trackerManager: TrackerManager,
     private val deleteTrack: DeleteTrack,
 ) : ViewModel() {
@@ -997,7 +1005,11 @@ class TrackerRemoveViewModel @AssistedInject constructor(
 
     @AssistedFactory
     interface Factory {
-        fun create(mangaId: Long, track: Track, serviceId: Long): TrackerRemoveViewModel
+        fun create(
+            @Assisted("mangaId") mangaId: Long,
+            @Assisted("track") track: Track,
+            @Assisted("serviceId") serviceId: Long,
+        ): TrackerRemoveViewModel
     }
 
     fun getName() = tracker.name

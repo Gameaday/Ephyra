@@ -35,7 +35,7 @@ fun CrashScreen(
         EntryPointAccessors.fromApplication(
             context.applicationContext,
             SourceUtilEntryPoint::class.java,
-        ).extensionManager()
+        ).domainExtensionManager()
     }
 
     InfoScreen(

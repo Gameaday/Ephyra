@@ -2,6 +2,8 @@ plugins {
     id("ephyra.library")
     id("ephyra.library.compose")
     kotlin("plugin.serialization")
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -70,6 +72,7 @@ dependencies {
 
     // Navigation & DI
     api(libs.hilt.android)
+    ksp(libs.hilt.compiler)
     api(libs.hilt.navigation.compose)
     api(libs.navigation.compose)
 
