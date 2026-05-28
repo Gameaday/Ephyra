@@ -27,4 +27,3 @@ dependencies {
     ksp(libs.hilt.compiler)
     testImplementation(libs.bundles.test)
 }
-
