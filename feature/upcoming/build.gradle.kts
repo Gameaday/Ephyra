@@ -2,6 +2,7 @@ plugins {
     id("ephyra.library")
     id("ephyra.library.compose")
     id("org.jetbrains.kotlin.plugin.compose")
+    alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
 }
 
@@ -27,6 +28,7 @@ dependencies {
     implementation(libs.logcat)
     implementation(libs.compose.grid)
 
+    implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
 }
 

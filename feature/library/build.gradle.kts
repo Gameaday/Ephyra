@@ -2,6 +2,7 @@ plugins {
     id("ephyra.library")
     id("ephyra.library.compose")
 
+    alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
 }
 
@@ -22,6 +23,7 @@ dependencies {
 
     implementation(libs.logcat)
 
+    implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     testImplementation(libs.bundles.test)
 }
