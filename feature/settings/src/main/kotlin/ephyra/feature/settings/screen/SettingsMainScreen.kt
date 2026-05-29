@@ -1,6 +1,5 @@
 package ephyra.feature.settings.screen
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -70,13 +69,6 @@ fun SettingsMainScreen(
         content = { contentPadding ->
             val state = rememberLazyListState()
             val settingItems = getItems()
-            val indexSelected = if (twoPane) {
-                // TODO: handle selection in twoPane
-                null
-            } else {
-                null
-            }
-
             LazyColumn(
                 state = state,
                 contentPadding = contentPadding,
@@ -85,23 +77,12 @@ fun SettingsMainScreen(
                     items = settingItems,
                     key = { _, item -> item.titleRes },
                 ) { index, item ->
-                    val selected = indexSelected == index
                     var modifier: Modifier = Modifier
                     var contentColor = LocalContentColor.current
                     if (twoPane) {
                         modifier = Modifier
                             .padding(horizontal = 8.dp)
                             .clip(MaterialTheme.shapes.extraLarge)
-                            .then(
-                                if (selected) {
-                                    Modifier.background(MaterialTheme.colorScheme.surfaceVariant)
-                                } else {
-                                    Modifier
-                                },
-                            )
-                        if (selected) {
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        }
                     }
                     CompositionLocalProvider(LocalContentColor provides contentColor) {
                         TextPreferenceWidget(

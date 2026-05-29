@@ -36,6 +36,7 @@ import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 
 @HiltViewModel
+@OptIn(kotlinx.coroutines.FlowPreview::class)
 class ExtensionsScreenModel @Inject constructor(
     private val context: Application,
     private val preferences: SourcePreferences,

@@ -32,7 +32,7 @@ class MangaNotesScreenModel @Inject constructor(
         viewModelScope.launch {
             val manga = getManga.await(mangaId)
             if (manga != null) {
-                _state.value = MangaNotesState(manga, manga.notes ?: "")
+                _state.value = MangaNotesState(manga, manga.notes)
             }
         }
     }

@@ -112,7 +112,6 @@ class MangaScreenModel @Inject constructor(
             getManga.subscribe(mangaId)
                 .distinctUntilChanged()
                 .collect { manga ->
-                    if (manga == null) return@collect
                     updateState { state ->
                         when (state) {
                             is State.Loading -> State.Success(

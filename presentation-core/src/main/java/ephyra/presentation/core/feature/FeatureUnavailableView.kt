@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.paddingFromBaseline
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.MaterialTheme
@@ -93,7 +94,7 @@ fun FeatureUnavailableView(
                 )
                 ActionButton(
                     title = stringResource(ephyra.app.core.common.R.string.action_back),
-                    icon = Icons.Default.ArrowBack,
+                    icon = Icons.AutoMirrored.Filled.ArrowBack,
                     onClick = onBack,
                     modifier = Modifier.weight(1f),
                 )

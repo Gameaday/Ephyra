@@ -54,6 +54,7 @@ private const val MAX_LENGTH = 250
 private const val MAX_LENGTH_WARN = MAX_LENGTH * 0.9
 
 @Composable
+@OptIn(kotlinx.coroutines.FlowPreview::class)
 fun MangaNotesTextArea(
     state: MangaNotesState,
     onUpdate: (String) -> Unit,

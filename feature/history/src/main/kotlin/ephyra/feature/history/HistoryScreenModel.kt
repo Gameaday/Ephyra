@@ -47,6 +47,7 @@ import logcat.LogPriority
 import javax.inject.Inject
 
 @HiltViewModel
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class HistoryScreenModel @Inject constructor(
     private val addTracks: AddTracks,
     private val getCategories: GetCategories,

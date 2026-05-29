@@ -23,6 +23,7 @@ import ephyra.presentation.core.util.system.copyToClipboard
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.serialization.protobuf.schema.ProtoBufSchemaGenerator
 
+@OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
 @Composable
 fun BackupSchemaScreen(
     navController: NavController = LocalNavController.current,

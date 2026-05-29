@@ -38,19 +38,21 @@ fun OpenSourceLibraryLicenseScreen(
     )
     val library = libraries?.libraries?.find { it.name == name }
 
+    val website = library?.website
+
     Scaffold(
         topBar = {
             AppBar(
                 title = name,
                 navigateUp = { navController.popBackStack() },
                 actions = {
-                    if (!library?.website.isNullOrEmpty()) {
+                    if (!website.isNullOrEmpty()) {
                         AppBarActions(
                             persistentListOf(
                                 AppBar.Action(
                                     title = stringResource(ephyra.app.core.common.R.string.website),
                                     icon = Icons.Default.Public,
-                                    onClick = { uriHandler.openUri(library!!.website!!) },
+                                    onClick = { uriHandler.openUri(website) },
                                 ),
                             ),
                         )

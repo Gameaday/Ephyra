@@ -84,3 +84,48 @@
 # AndroidX Window
 -dontwarn androidx.window.extensions.**
 -dontwarn androidx.window.sidecar.**
+
+# Dagger Hilt EntryPoints Protection
+# R8's aggressive optimization can strip entry point interfaces from SingletonComponent (SingletonCImpl)
+# because they are only retrieved via reflection (EntryPointAccessors). This keeps the interfaces
+# and their implementations intact in the final optimized APK.
+-keep @dagger.hilt.EntryPoint interface * { *; }
+
+# Explicit Keep Rules for All Dynamic EntryPoints & Their Implementations
+-keep interface ephyra.app.data.work.WorkerFactoryEntryPoint { *; }
+-keep class * implements ephyra.app.data.work.WorkerFactoryEntryPoint { *; }
+
+-keep interface ephyra.app.di.ScreenEntryPoint { *; }
+-keep class * implements ephyra.app.di.ScreenEntryPoint { *; }
+
+-keep interface ephyra.app.di.CoreEntryPoint { *; }
+-keep class * implements ephyra.app.di.CoreEntryPoint { *; }
+
+-keep interface ephyra.app.widget.PreferencesEntryPoint { *; }
+-keep class * implements ephyra.app.widget.PreferencesEntryPoint { *; }
+
+-keep interface ephyra.core.util.SourceUtilEntryPoint { *; }
+-keep class * implements ephyra.core.util.SourceUtilEntryPoint { *; }
+
+-keep interface ephyra.feature.library.LibraryEntryPoint { *; }
+-keep class * implements ephyra.feature.library.LibraryEntryPoint { *; }
+
+-keep interface ephyra.feature.more.MoreEntryPoint { *; }
+-keep class * implements ephyra.feature.more.MoreEntryPoint { *; }
+
+-keep interface ephyra.presentation.core.ui.activity.BaseActivityEntryPoint { *; }
+-keep class * implements ephyra.presentation.core.ui.activity.BaseActivityEntryPoint { *; }
+
+-keep interface ephyra.presentation.core.util.SourceUtilEntryPoint { *; }
+-keep class * implements ephyra.presentation.core.util.SourceUtilEntryPoint { *; }
+
+-keep interface ephyra.presentation.core.util.view.ViewExtensionsEntryPoint { *; }
+-keep class * implements ephyra.presentation.core.util.view.ViewExtensionsEntryPoint { *; }
+
+-keep interface ephyra.presentation.core.widget.PreferencesEntryPoint { *; }
+-keep class * implements ephyra.presentation.core.widget.PreferencesEntryPoint { *; }
+
+-keep interface ephyra.presentation.widget.WidgetEntryPoint { *; }
+-keep class * implements ephyra.presentation.widget.WidgetEntryPoint { *; }
+
+

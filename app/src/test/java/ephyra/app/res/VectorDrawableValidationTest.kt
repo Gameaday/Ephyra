@@ -11,15 +11,16 @@ class VectorDrawableValidationTest {
 
     @Test
     fun validateVectorDrawables() {
-        var rootDir = File(".").absoluteFile
+        var rootDir: File? = File(".").absoluteFile
         while (rootDir != null && !File(rootDir, "settings.gradle.kts").exists()) {
             rootDir = rootDir.parentFile
         }
         assertNotNull(rootDir, "Could not find project root directory")
+        val finalRootDir = rootDir!!
 
         val drawableDirs = mutableListOf<File>()
-        rootDir.walkTopDown().forEach { file ->
-            if (file.isDirectory && file.name.startsWith("drawable") && file.parentFile.name == "res") {
+        finalRootDir.walkTopDown().forEach { file ->
+            if (file.isDirectory && file.name.startsWith("drawable") && file.parentFile?.name == "res") {
                 // Exclude build directories and IDE metadata
                 if (!file.absolutePath.contains("build") && !file.absolutePath.contains(".gradle") &&
                     !file.absolutePath.contains(".idea")

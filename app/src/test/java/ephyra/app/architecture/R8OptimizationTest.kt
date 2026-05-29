@@ -59,6 +59,18 @@ class R8OptimizationTest {
             "ephyra.app.ui.main.MainActivity",
             "ephyra.app.ui.deeplink.DeepLinkActivity",
             "ephyra.app.startup.StartupGuard",
+            "ephyra.app.data.work.WorkerFactoryEntryPoint",
+            "ephyra.app.di.ScreenEntryPoint",
+            "ephyra.app.di.CoreEntryPoint",
+            "ephyra.app.widget.PreferencesEntryPoint",
+            "ephyra.core.util.SourceUtilEntryPoint",
+            "ephyra.feature.library.LibraryEntryPoint",
+            "ephyra.feature.more.MoreEntryPoint",
+            "ephyra.presentation.core.ui.activity.BaseActivityEntryPoint",
+            "ephyra.presentation.core.util.SourceUtilEntryPoint",
+            "ephyra.presentation.core.util.view.ViewExtensionsEntryPoint",
+            "ephyra.presentation.core.widget.PreferencesEntryPoint",
+            "ephyra.presentation.widget.WidgetEntryPoint",
         )
 
         criticalClassesToKeep.forEach { className ->
