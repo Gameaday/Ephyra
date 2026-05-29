@@ -26,4 +26,3 @@ dependencies {
     implementation(kotlinx.bundles.serialization)
     implementation(kotlinx.bundles.coroutines)
 }
-

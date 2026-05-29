@@ -21,4 +21,3 @@ dependencies {
     implementation(libs.compose.webview)
     ksp(libs.hilt.compiler)
 }
-

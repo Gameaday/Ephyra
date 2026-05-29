@@ -179,7 +179,14 @@ fun LibraryScreen(
                     deadSourceCount = state.deadSourceCount,
                     degradedSourceCount = state.degradedSourceCount,
                     onChangeCurrentPage = { screenModel.onEvent(LibraryScreenEvent.UpdateActiveCategoryIndex(it)) },
-                    onClickManga = { navController.navigate(ephyra.presentation.core.ui.navigation.Screen.MangaDetails(mangaId = it, fromSource = false)) },
+                    onClickManga = {
+                        navController.navigate(
+                            ephyra.presentation.core.ui.navigation.Screen.MangaDetails(
+                                mangaId = it,
+                                fromSource = false,
+                            ),
+                        )
+                    },
                     onContinueReadingClicked = { it: LibraryManga ->
                         scope.launchIO {
                             val chapter = screenModel.getNextUnreadChapter(it.manga)
