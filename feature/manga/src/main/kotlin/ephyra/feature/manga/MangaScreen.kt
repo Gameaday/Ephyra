@@ -287,7 +287,9 @@ fun MangaDetailsScreen(
                 onDismissRequest = onDismissRequest,
                 onConfirm = { screenModel.onEvent(MangaScreenEvent.ToggleFavorite(checkDuplicate = false)) },
                 onOpenManga = {
-                    navController.navigate(ephyra.presentation.core.ui.navigation.Screen.MangaDetails(mangaId = it.id, fromSource = false))
+                    navController.navigate(
+                        ephyra.presentation.core.ui.navigation.Screen.MangaDetails(mangaId = it.id, fromSource = false),
+                    )
                 },
                 onMigrate = { screenModel.onEvent(MangaScreenEvent.ShowMigrateDialog(it)) },
                 sourceManager = screenModel.sourceManager,
@@ -299,7 +301,12 @@ fun MangaDetailsScreen(
                 current = dialog.current,
                 target = dialog.target,
                 onClickTitle = {
-                    navController.navigate(ephyra.presentation.core.ui.navigation.Screen.MangaDetails(mangaId = dialog.current.id, fromSource = false))
+                    navController.navigate(
+                        ephyra.presentation.core.ui.navigation.Screen.MangaDetails(
+                            mangaId = dialog.current.id,
+                            fromSource = false,
+                        ),
+                    )
                 },
                 onDismissRequest = onDismissRequest,
             )

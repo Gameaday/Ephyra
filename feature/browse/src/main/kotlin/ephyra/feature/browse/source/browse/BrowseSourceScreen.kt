@@ -218,7 +218,11 @@ fun BrowseSourceScreen(
             onWebViewClick = onWebViewClick,
             onHelpClick = { uriHandler.openUri(Constants.URL_HELP) },
             onLocalSourceHelpClick = onHelpClick,
-            onMangaClick = { navController.navigate(ephyra.presentation.core.ui.navigation.Screen.MangaDetails(mangaId = it.id, fromSource = true)) },
+            onMangaClick = {
+                navController.navigate(
+                    ephyra.presentation.core.ui.navigation.Screen.MangaDetails(mangaId = it.id, fromSource = true),
+                )
+            },
             onMangaLongClick = { manga ->
                 scope.launchIO {
                     val duplicates = screenModel.getDuplicateLibraryManga(manga)
@@ -260,7 +264,11 @@ fun BrowseSourceScreen(
                 duplicates = dialog.duplicates,
                 onDismissRequest = onDismissRequest,
                 onConfirm = { screenModel.onEvent(BrowseSourceScreenEvent.AddFavorite(dialog.manga)) },
-                onOpenManga = { navController.navigate(ephyra.presentation.core.ui.navigation.Screen.MangaDetails(mangaId = it.id, fromSource = false)) },
+                onOpenManga = {
+                    navController.navigate(
+                        ephyra.presentation.core.ui.navigation.Screen.MangaDetails(mangaId = it.id, fromSource = false),
+                    )
+                },
                 onMigrate = {
                     screenModel.onEvent(
                         BrowseSourceScreenEvent.SetDialog(BrowseSourceScreenModel.Dialog.Migrate(dialog.manga, it)),
@@ -275,7 +283,12 @@ fun BrowseSourceScreen(
                 current = dialog.current,
                 target = dialog.target,
                 onClickTitle = {
-                    navController.navigate(ephyra.presentation.core.ui.navigation.Screen.MangaDetails(mangaId = dialog.current.id, fromSource = false))
+                    navController.navigate(
+                        ephyra.presentation.core.ui.navigation.Screen.MangaDetails(
+                            mangaId = dialog.current.id,
+                            fromSource = false,
+                        ),
+                    )
                 },
                 onDismissRequest = onDismissRequest,
             )
