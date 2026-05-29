@@ -347,13 +347,6 @@ class ReaderActivity : BaseActivity() {
         )
     }
 
-    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_BACK) {
-            onBackPressedDispatcher.onBackPressed()
-            return true
-        }
-        return super.onKeyUp(keyCode, event)
-    }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         val handled = viewModel.state.value.viewer?.handleKeyEvent(event) ?: false
