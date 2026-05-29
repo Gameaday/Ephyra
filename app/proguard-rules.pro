@@ -19,7 +19,9 @@
 -keep,allowoptimization class okio.** { public protected *; }
 -keep,allowoptimization class org.jsoup.** { public protected *; }
 -keep,allowoptimization class rx.** { public protected *; }
--keep,allowoptimization class app.cash.quickjs.** { public protected *; }
+# JNI and Native library entry points must be fully preserved without optimization
+-keep class app.cash.quickjs.** { *; }
+
 
 # From extensions-lib
 -keep,allowoptimization class eu.kanade.tachiyomi.network.interceptor.RateLimitInterceptorKt { public protected *; }

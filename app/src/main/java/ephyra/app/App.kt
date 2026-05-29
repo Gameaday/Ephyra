@@ -132,7 +132,7 @@ class App :
                 val minLogPriority = if (BuildConfig.DEBUG) LogPriority.DEBUG else LogPriority.INFO
                 LogcatLogger.loggers += AndroidLogcatLogger(minLogPriority)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             // Last resort — logging is unavailable
             android.util.Log.e("Ephyra", "Failed to initialize logcat", e)
         }
@@ -141,7 +141,7 @@ class App :
         // Phase 2: Global crash handler
         try {
             GlobalExceptionHandler.initialize(base, CrashActivity::class.java)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             android.util.Log.e("Ephyra", "Failed to initialize crash handler", e)
         }
         StartupGuard.completePhase("crash_handler")
@@ -154,7 +154,7 @@ class App :
         // Phase 3: DI container initialization — wrapped in try/catch
         try {
             initializeCoreContainer(this)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             logcat(LogPriority.ERROR, e) { "DI container initialization failed — app will degrade" }
         }
         StartupGuard.completePhase("di_container")
@@ -163,7 +163,7 @@ class App :
         // Phase 4: Telemetry (non-critical)
         try {
             TelemetryConfig.init(applicationContext)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             logcat(LogPriority.ERROR, e) { "Telemetry init failed — non-fatal" }
         }
         StartupGuard.completePhase("telemetry")
@@ -172,7 +172,7 @@ class App :
         try {
             val process = getProcessName()
             if (packageName != process) WebView.setDataDirectorySuffix(process)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             logcat(LogPriority.ERROR, e) { "WebView data directory setup failed" }
         }
 
@@ -244,7 +244,7 @@ class App :
                 .onEach { ImageUtil.hardwareBitmapThreshold = it }
                 .catch { e -> logcat(LogPriority.ERROR, e) { "Failed to monitor hardware bitmap threshold" } }
                 .launchIn(scope)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             logcat(LogPriority.ERROR, e) { "Startup reactive binding setup failed" }
         }
         StartupGuard.completePhase("reactive_bindings")
@@ -276,7 +276,7 @@ class App :
                 } catch (e: Exception) {
                     logcat(LogPriority.ERROR, e) { "Migration failed — continuing with current data" }
                 }
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 logcat(LogPriority.ERROR, e) { "Async startup initialization failed" }
             } finally {
                 StartupGuard.completePhase("async_init")
@@ -298,7 +298,7 @@ class App :
                 logcat { "Updating last version to ${BuildConfig.VERSION_CODE}" }
                 preference.set(BuildConfig.VERSION_CODE)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             logcat(LogPriority.ERROR, e) { "initializeMigrator failed; canceling and releasing Migrator initGate" }
             ephyra.app.startup.StartupTracker.recordError(ephyra.app.startup.StartupTracker.Phase.MIGRATOR_COMPLETE, e)
             Migrator.cancelAndRelease()

@@ -1,3 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools"
-    tools:keep="@drawable/anim_*,@drawable/ic_glasses_24dp" />
+    tools:keep="@drawable/anim_*,@drawable/ic_glasses_24dp,@raw/aboutlibraries,@xml/locales_config" />
+
