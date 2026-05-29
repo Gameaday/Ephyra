@@ -151,12 +151,12 @@ internal fun Project.configureCompose(commonExtension: CommonExtension) {
     }
 
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-        val hasMaterial3 = project.configurations.any { config ->
-            config.dependencies.any { dep ->
+        val hasMaterial3 = listOf("implementation", "api", "compileOnly").any { configName ->
+            project.configurations.findByName(configName)?.dependencies?.any { dep ->
                 dep.name == "presentation-core" ||
                 dep.name == "material3" ||
                 dep.group == "androidx.compose.material3"
-            }
+            } ?: false
         }
         if (hasMaterial3) {
             compilerOptions {
