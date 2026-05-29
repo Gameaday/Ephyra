@@ -347,7 +347,6 @@ class ReaderActivity : BaseActivity() {
         )
     }
 
-
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         val handled = viewModel.state.value.viewer?.handleKeyEvent(event) ?: false
         return handled || super.dispatchKeyEvent(event)

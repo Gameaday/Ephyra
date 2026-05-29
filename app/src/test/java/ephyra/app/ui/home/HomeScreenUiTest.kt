@@ -43,7 +43,7 @@ class HomeScreenUiTest {
                 }
             }
         }
-        
+
         composeTestRule.waitForIdle()
     }
 }

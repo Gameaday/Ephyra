@@ -80,7 +80,7 @@ class ResourceIntegrityTest {
                         if (rootTagName == "vector") {
                             vectors.add(doc.documentElement)
                         }
-                        
+
                         val nestedVectors = doc.getElementsByTagNameNS("*", "vector")
                         for (i in 0 until nestedVectors.length) {
                             val node = nestedVectors.item(i)
@@ -149,7 +149,7 @@ class ResourceIntegrityTest {
                                 translationKeysChecked++
                             }
                         }
-                        
+
                         val pluralsNodes = doc.getElementsByTagName("plurals")
                         for (i in 0 until pluralsNodes.length) {
                             val pluralsElem = pluralsNodes.item(i) as Element
