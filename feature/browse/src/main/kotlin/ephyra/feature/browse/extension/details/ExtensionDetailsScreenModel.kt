@@ -41,7 +41,7 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 @HiltViewModel(assistedFactory = ExtensionDetailsScreenModel.Factory::class)
 class ExtensionDetailsScreenModel @AssistedInject constructor(
     @Assisted private val pkgName: String,
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val network: NetworkHelper,
     private val extensionManager: ExtensionManager,
     private val getExtensionSources: GetExtensionSources,

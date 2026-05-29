@@ -186,7 +186,9 @@ class SourcePreferencesFragment : PreferenceFragmentCompat() {
 
         fun getInstance(sourceId: Long): SourcePreferencesFragment {
             return SourcePreferencesFragment().apply {
-                arguments = bundleOf(SOURCE_ID to sourceId)
+                arguments = Bundle().apply {
+                    putLong(SOURCE_ID, sourceId)
+                }
             }
         }
     }

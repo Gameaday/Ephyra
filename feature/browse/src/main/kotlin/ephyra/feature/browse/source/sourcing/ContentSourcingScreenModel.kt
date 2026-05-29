@@ -22,7 +22,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ContentSourcingScreenModel @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val scraperUpdater: ScraperScriptUpdater,
     private val localScanner: LocalContentScanner,
     private val orchestrator: ContentSourceOrchestrator,
