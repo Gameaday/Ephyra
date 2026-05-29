@@ -5,3 +5,8 @@
 -keep @dagger.hilt.EntryPoint interface * { *; }
 -keep interface ephyra.presentation.core.ui.activity.BaseActivityEntryPoint { *; }
 -keep class * implements ephyra.presentation.core.ui.activity.BaseActivityEntryPoint { *; }
+
+# General keep rule for any class implementing an interface annotated with @EntryPoint.
+# Automatically protects all downstream module implementations.
+-keep class * implements @dagger.hilt.EntryPoint * { *; }
+

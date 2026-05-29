@@ -128,4 +128,17 @@
 -keep interface ephyra.presentation.widget.WidgetEntryPoint { *; }
 -keep class * implements ephyra.presentation.widget.WidgetEntryPoint { *; }
 
+# =========================================================================
+# Systemic R8 Protection Enhancements
+# =========================================================================
+
+# General Keep rule for any class that implements an interface annotated with @EntryPoint.
+# This provides automatic, foolproof protection for any new Hilt EntryPoint without requiring explicit keep rules.
+-keep class * implements @dagger.hilt.EntryPoint * { *; }
+
+# Protect Dagger and Hilt generated component implementations from aggressive optimization or inlining.
+-keep class *.*_HiltComponents_* { *; }
+-keep class **.Dagger* { *; }
+
+
 
