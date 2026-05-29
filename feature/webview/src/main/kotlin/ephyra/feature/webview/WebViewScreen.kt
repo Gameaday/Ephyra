@@ -28,7 +28,7 @@ fun WebViewScreen(
     var assistUrl by remember { mutableStateOf<String?>(null) }
     // TODO: handle assistUrl if needed for parent activity
 
-    remember(screenModel, sourceId) {
+    LaunchedEffect(screenModel, sourceId) {
         screenModel.initialize(sourceId)
     }
 
