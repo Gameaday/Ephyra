@@ -7,12 +7,12 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.common.util.lang.launchIO
-import ephyra.data.sourcing.DynamicScraperUpdater
 import ephyra.domain.content.model.ContentItem
 import ephyra.domain.content.service.LocalContentScanner
 import ephyra.domain.content.source.ContentSourceOrchestrator
 import ephyra.domain.content.source.SourceProfile
 import ephyra.domain.content.source.SourceProfileCache
+import ephyra.domain.content.source.ScraperScriptUpdater
 import ephyra.presentation.core.udf.BaseUdfViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -23,7 +23,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ContentSourcingScreenModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val scraperUpdater: DynamicScraperUpdater,
+    private val scraperUpdater: ScraperScriptUpdater,
     private val localScanner: LocalContentScanner,
     private val orchestrator: ContentSourceOrchestrator,
     private val profileCache: SourceProfileCache,
