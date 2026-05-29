@@ -1,4 +1,8 @@
--dontobfuscate
+# -dontobfuscate
+# Note: We commented out -dontobfuscate to enable full R8 name-obfuscation.
+# This ensures that obfuscation-sensitive logic (such as reflection, serialized JSON mapping,
+# and JS-to-Java bridges) is fully obfuscated and validated at build time, preventing
+# "build-only" or "nightly-only" runtime failures from leaking to production.
 
 -keep,allowoptimization class eu.kanade.**
 -keep,allowoptimization class ephyra.**
@@ -60,11 +64,12 @@
     kotlinx.serialization.KSerializer serializer(...);
 }
 
--keep,includedescriptorclasses class eu.kanade.**$$serializer { *; }
--keepclassmembers class eu.kanade.** {
+# Systemic general keep rules for any @Serializable classes (covers eu.kanade.** and ephyra.**)
+-keep,includedescriptorclasses class *$$serializer { *; }
+-keepclassmembers class * {
     *** Companion;
 }
--keepclasseswithmembers class eu.kanade.** {
+-keepclasseswithmembers class * {
     kotlinx.serialization.KSerializer serializer(...);
 }
 
