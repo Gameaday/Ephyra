@@ -12,15 +12,19 @@ class AppUpdateChecker(
 ) {
 
     suspend fun checkForUpdate(context: Context, forceCheck: Boolean = false): GetApplicationRelease.Result {
+        val isPreview = context.packageName.endsWith(".debug")
+        val isNightly = context.packageName.endsWith(".nightly")
+        val repo = getGithubRepo(isPreview, isNightly)
+
         return withIOContext {
             val result = getApplicationRelease.await(
                 GetApplicationRelease.Arguments(
-                    isPreview = isPreviewBuildType,
-                    isNightly = isNightlyBuildType,
+                    isPreview = isPreview,
+                    isNightly = isNightly,
                     commitCount = BuildConfig.COMMIT_COUNT.toInt(),
                     commitSha = BuildConfig.COMMIT_SHA,
                     versionName = BuildConfig.VERSION_NAME,
-                    repository = GITHUB_REPO,
+                    repository = repo,
                     forceCheck = forceCheck,
                 ),
             )
@@ -33,25 +37,30 @@ class AppUpdateChecker(
             result
         }
     }
-}
 
-private val isPreviewBuildType: Boolean = false // Placeholder
-private val isNightlyBuildType: Boolean = false // Placeholder
+    companion object {
+        fun getGithubRepo(isPreview: Boolean, isNightly: Boolean): String {
+            return when {
+                isPreview -> "Gameaday/Ephyra-preview"
+                isNightly -> "Gameaday/Ephyra"
+                else -> "Gameaday/Ephyra"
+            }
+        }
 
-val GITHUB_REPO: String by lazy {
-    when {
-        isPreviewBuildType -> "Gameaday/Ephyra-preview"
-        isNightlyBuildType -> "Gameaday/Ephyra"
-        else -> "Gameaday/Ephyra"
+        fun getReleaseTag(isPreview: Boolean): String {
+            return if (isPreview) {
+                "r${BuildConfig.COMMIT_COUNT}"
+            } else {
+                "v${BuildConfig.VERSION_NAME}"
+            }
+        }
+
+        fun getReleaseUrl(context: Context): String {
+            val isPreview = context.packageName.endsWith(".debug")
+            val isNightly = context.packageName.endsWith(".nightly")
+            val repo = getGithubRepo(isPreview, isNightly)
+            val tag = getReleaseTag(isPreview)
+            return "https://github.com/$repo/releases/tag/$tag"
+        }
     }
 }
-
-val RELEASE_TAG: String by lazy {
-    if (isPreviewBuildType) {
-        "r${BuildConfig.COMMIT_COUNT}"
-    } else {
-        "v${BuildConfig.VERSION_NAME}"
-    }
-}
-
-val RELEASE_URL = "https://github.com/$GITHUB_REPO/releases/tag/$RELEASE_TAG"

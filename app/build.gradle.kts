@@ -48,6 +48,15 @@ android {
         }
     }
 
+    signingConfigs {
+        create("nightly") {
+            storeFile = file("nightly.keystore")
+            storePassword = "ephyra"
+            keyAlias = "nightlykey"
+            keyPassword = "ephyra"
+        }
+    }
+
     buildTypes {
         val debug by getting {
             applicationIdSuffix = ".dev"
@@ -67,6 +76,9 @@ android {
 
         create("nightly") {
             initWith(release)
+            isMinifyEnabled = false
+            isShrinkResources = false
+            signingConfig = signingConfigs.getByName("nightly")
 
             applicationIdSuffix = ".nightly"
             versionNameSuffix = "-nightly-${getGitSha()}"
