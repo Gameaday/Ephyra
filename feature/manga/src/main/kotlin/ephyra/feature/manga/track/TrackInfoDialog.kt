@@ -445,17 +445,17 @@ private fun TrackChapterSelectorScreen(
     onConfirm: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    val ViewModel = hiltViewModel<TrackSelectorViewModel, TrackSelectorViewModel.Factory> { factory ->
+    val viewModel = hiltViewModel<TrackSelectorViewModel, TrackSelectorViewModel.Factory> { factory ->
         factory.create(track, serviceId)
     }
-    val state by ViewModel.state.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     TrackChapterSelector(
         selection = state.chapter,
-        onSelectionChange = { ViewModel.onEvent(TrackSelectorViewModel.Event.SetChapterSelection(it)) },
-        range = remember { ViewModel.getChapterRange() },
+        onSelectionChange = { viewModel.onEvent(TrackSelectorViewModel.Event.SetChapterSelection(it)) },
+        range = remember { viewModel.getChapterRange() },
         onConfirm = {
-            ViewModel.onEvent(TrackSelectorViewModel.Event.ConfirmChapter)
+            viewModel.onEvent(TrackSelectorViewModel.Event.ConfirmChapter)
             onConfirm()
         },
         onDismissRequest = onDismissRequest,
