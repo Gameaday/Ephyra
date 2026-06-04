@@ -42,24 +42,6 @@ class ShadowAnimatedVectorResources : ShadowResources() {
 
     @Implementation
     override fun loadXmlResourceParser(resId: Int, type: String): XmlResourceParser {
-        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
-        val name = try {
-            context.resources.getResourceEntryName(resId)
-        } catch (e: Exception) {
-            ""
-        }
-        println("ShadowAnimatedVectorResources: loadXmlResourceParser(resId=$resId, type=$type) -> name='$name'")
-        if (name.startsWith("anim_")) {
-            val safeId = ephyra.presentation.core.R.drawable.ic_book_24dp
-            println("ShadowAnimatedVectorResources: Redirecting animated vector '$name' to safe vector drawable")
-            return Shadow.directlyOn<XmlResourceParser, Resources>(
-                realResources,
-                Resources::class.java,
-                "loadXmlResourceParser",
-                ClassParameter.from(java.lang.Integer.TYPE, safeId),
-                ClassParameter.from(String::class.java, type),
-            )
-        }
         return Shadow.directlyOn<XmlResourceParser, Resources>(
             realResources,
             Resources::class.java,
@@ -71,22 +53,6 @@ class ShadowAnimatedVectorResources : ShadowResources() {
 
     @Implementation
     override fun loadXmlResourceParser(file: String, id: Int, assetCookie: Int, type: String): XmlResourceParser {
-        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
-        val name = try {
-            context.resources.getResourceEntryName(id)
-        } catch (e: Exception) {
-            ""
-        }
-        println(
-            "ShadowAnimatedVectorResources: loadXmlResourceParser(file='$file', id=$id, cookie=$assetCookie, type=$type) -> name='$name'",
-        )
-        if (name.startsWith("anim_")) {
-            val safeId = ephyra.presentation.core.R.drawable.ic_book_24dp
-            println(
-                "ShadowAnimatedVectorResources: Redirecting animated vector '$name' to safe vector drawable (overload 2)",
-            )
-            return loadXmlResourceParser(safeId, type)
-        }
         return Shadow.directlyOn<XmlResourceParser, Resources>(
             realResources,
             Resources::class.java,

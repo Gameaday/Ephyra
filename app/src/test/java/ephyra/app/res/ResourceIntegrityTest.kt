@@ -201,4 +201,90 @@ class ResourceIntegrityTest {
             "ResourceIntegrityTest: Statically audited $xmlFilesChecked XML resource files. Checked $vectorElementsChecked vectors and $translationKeysChecked string/plurals entries. Verified default fallback matches across $stringsFilesChecked strings files.",
         )
     }
+
+    @Test
+    fun auditComposeAnimatedVectorUsage() {
+        var rootDir: File? = File(".").absoluteFile
+        while (rootDir != null && !File(rootDir, "settings.gradle.kts").exists()) {
+            rootDir = rootDir.parentFile
+        }
+        assertNotNull(rootDir, "Could not find project root directory")
+        val finalRootDir = rootDir!!
+
+        val kotlinFiles = mutableListOf<File>()
+        finalRootDir.walkTopDown().forEach { file ->
+            if (file.isFile && file.name.endsWith(".kt") &&
+                file.name != "ResourceIntegrityTest.kt" &&
+                !file.absolutePath.contains("build") &&
+                !file.absolutePath.contains(".gradle") &&
+                !file.absolutePath.contains(".idea")
+            ) {
+                kotlinFiles.add(file)
+            }
+        }
+
+        val painterResourceRegex = Regex("""painterResource\s*\(\s*([^)]*)\)""")
+        val animReferenceRegex = Regex("""anim_[a-zA-Z0-9_]+""")
+
+        for (file in kotlinFiles) {
+            val content = file.readText()
+            if (!content.contains("painterResource")) continue
+
+            // 1. Direct violation: painterResource(R.drawable.anim_...)
+            val matches = painterResourceRegex.findAll(content)
+            for (match in matches) {
+                val argument = match.groupValues[1]
+                if (argument.contains("anim_")) {
+                    throw AssertionError(
+                        "File ${file.absolutePath} incorrectly passes an AVD " +
+                            "resource to painterResource: '${match.value}'. " +
+                            "Only VectorDrawables/rasterized asset types " +
+                            "are supported. Use AnimatedImageVector" +
+                            ".animatedVectorResource and " +
+                            "rememberAnimatedVectorPainter instead.",
+                    )
+                }
+            }
+
+            // 2. Indirect/semi-direct violation:
+            // If the file references any 'anim_' drawables, and uses 'painterResource(arg)',
+            // check if the argument of painterResource matches any variable or field that was assigned to an anim_ resource,
+            // or contains common indicators like 'iconres'.
+            val animDrawables = animReferenceRegex.findAll(content).map { it.value }.toSet()
+            if (animDrawables.isNotEmpty()) {
+                val lines = content.lines()
+                val suspectIdentifiers = mutableSetOf<String>()
+                for (line in lines) {
+                    if (line.contains("anim_")) {
+                        val assignmentMatch = Regex("""\b([a-zA-Z_][a-zA-Z0-9_]*)\s*=""").find(line)
+                        if (assignmentMatch != null) {
+                            suspectIdentifiers.add(assignmentMatch.groupValues[1])
+                        }
+                    }
+                }
+
+                for (match in matches) {
+                    val argument = match.groupValues[1]
+                    val tokens = Regex("""\b[a-zA-Z_][a-zA-Z0-9_]*\b""")
+                        .findAll(argument).map { it.value }.toList()
+                    for (token in tokens) {
+                        val isSuspect = suspectIdentifiers.contains(token) ||
+                            token.lowercase().contains("iconres") ||
+                            token.lowercase().contains("tab.icon")
+                        if (isSuspect) {
+                            throw AssertionError(
+                                "File ${file.absolutePath} incorrectly " +
+                                    "passes a property/variable '$token' " +
+                                    "associated with animated vectors to " +
+                                    "painterResource: '${match.value}'. " +
+                                    "Use AnimatedImageVector." +
+                                    "animatedVectorResource and " +
+                                    "rememberAnimatedVectorPainter instead.",
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

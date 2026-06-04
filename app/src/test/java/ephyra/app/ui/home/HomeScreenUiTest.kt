@@ -1,8 +1,10 @@
 package ephyra.app.ui.home
 
+import androidx.compose.animation.graphics.res.animatedVectorResource
+import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
+import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.Icon
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ephyra.app.App
@@ -36,8 +38,10 @@ class HomeScreenUiTest {
         composeTestRule.setContent {
             Row {
                 for (icon in icons) {
+                    val image = AnimatedImageVector.animatedVectorResource(icon)
+                    val painter = rememberAnimatedVectorPainter(image, atEnd = true)
                     Icon(
-                        painter = painterResource(icon),
+                        painter = painter,
                         contentDescription = null,
                     )
                 }

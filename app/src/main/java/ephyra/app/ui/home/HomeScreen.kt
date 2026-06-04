@@ -3,6 +3,9 @@ package ephyra.app.ui.home
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
+import androidx.compose.animation.graphics.res.animatedVectorResource
+import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
+import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope
@@ -26,7 +29,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -313,8 +315,10 @@ private fun HomeTabIcon(
             }
         },
     ) {
+        val image = AnimatedImageVector.animatedVectorResource(if (selected) tab.iconSelectedRes else tab.iconRes)
+        val painter = rememberAnimatedVectorPainter(image, atEnd = selected)
         Icon(
-            painter = painterResource(if (selected) tab.iconSelectedRes else tab.iconRes),
+            painter = painter,
             contentDescription = stringResource(tab.titleRes),
         )
     }
