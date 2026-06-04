@@ -56,6 +56,7 @@ fun ExtensionReposScreen(
                 onDismissRequest = { screenModel.onEvent(ExtensionReposScreenEvent.DismissDialog) },
                 onCreate = { screenModel.onEvent(ExtensionReposScreenEvent.CreateRepo(it)) },
                 repoUrls = successState.repos.map { it.baseUrl }.toImmutableSet(),
+                isAdding = successState.isAdding,
             )
         }
 
@@ -81,6 +82,7 @@ fun ExtensionReposScreen(
                 onDismissRequest = { screenModel.onEvent(ExtensionReposScreenEvent.DismissDialog) },
                 onCreate = { screenModel.onEvent(ExtensionReposScreenEvent.CreateRepo(dialog.url)) },
                 repo = dialog.url,
+                isAdding = successState.isAdding,
             )
         }
     }

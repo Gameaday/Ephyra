@@ -70,6 +70,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data android:scheme="tachiyomi" />
+                <data android:scheme="ephyra" />
                 <data android:host="add-repo" />
             </intent-filter>
 

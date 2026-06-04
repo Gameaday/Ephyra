@@ -1,6 +1,7 @@
 package ephyra.feature.settings.screen.browse.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -65,54 +66,73 @@ private fun ExtensionRepoListItem(
     val context = LocalContext.current
 
     ElevatedCard(
-        modifier = modifier,
+        modifier = modifier.fillMaxWidth(),
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(
-                    start = MaterialTheme.padding.medium,
-                    top = MaterialTheme.padding.medium,
-                    end = MaterialTheme.padding.medium,
-                ),
-            verticalAlignment = Alignment.CenterVertically,
+                .padding(MaterialTheme.padding.medium),
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small)
         ) {
-            Icon(imageVector = Icons.AutoMirrored.Outlined.Label, contentDescription = null)
-            Text(
-                text = repo.name,
-                modifier = Modifier.padding(start = MaterialTheme.padding.medium),
-                style = MaterialTheme.typography.titleMedium,
-            )
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End,
-        ) {
-            IconButton(onClick = onOpenWebsite) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Outlined.OpenInNew,
-                    contentDescription = stringResource(ephyra.app.core.common.R.string.action_open_in_browser),
-                )
-            }
-
-            IconButton(
-                onClick = {
-                    val url = "${repo.baseUrl}/index.min.json"
-                    context.copyToClipboard(url, url)
-                },
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
-                    imageVector = Icons.Outlined.ContentCopy,
-                    contentDescription = stringResource(ephyra.app.core.common.R.string.action_copy_to_clipboard),
+                    imageVector = Icons.AutoMirrored.Outlined.Label,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = repo.name,
+                    modifier = Modifier.padding(start = MaterialTheme.padding.medium),
+                    style = MaterialTheme.typography.titleMedium,
                 )
             }
 
-            IconButton(onClick = onDelete) {
-                Icon(
-                    imageVector = Icons.Outlined.Delete,
-                    contentDescription = stringResource(ephyra.app.core.common.R.string.action_delete),
-                )
+            Text(
+                text = repo.baseUrl,
+                modifier = Modifier.padding(start = MaterialTheme.padding.medium + MaterialTheme.padding.medium),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Text(
+                text = "Fingerprint: ${repo.signingKeyFingerprint.take(16)}...",
+                modifier = Modifier.padding(start = MaterialTheme.padding.medium + MaterialTheme.padding.medium),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                IconButton(onClick = onOpenWebsite) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Outlined.OpenInNew,
+                        contentDescription = stringResource(ephyra.app.core.common.R.string.action_open_in_browser),
+                    )
+                }
+
+                IconButton(
+                    onClick = {
+                        val url = "${repo.baseUrl}/index.min.json"
+                        context.copyToClipboard(url, url)
+                    },
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.ContentCopy,
+                        contentDescription = stringResource(ephyra.app.core.common.R.string.action_copy_to_clipboard),
+                    )
+                }
+
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        imageVector = Icons.Outlined.Delete,
+                        contentDescription = stringResource(ephyra.app.core.common.R.string.action_delete),
+                    )
+                }
             }
         }
     }

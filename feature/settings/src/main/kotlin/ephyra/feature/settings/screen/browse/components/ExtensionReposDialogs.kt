@@ -2,8 +2,10 @@ package ephyra.feature.settings.screen.browse.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -17,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
 import ephyra.domain.extensionrepo.model.ExtensionRepo
 import ephyra.presentation.core.i18n.stringResource
 import kotlinx.collections.immutable.ImmutableSet
@@ -28,6 +31,7 @@ fun ExtensionRepoCreateDialog(
     onDismissRequest: () -> Unit,
     onCreate: (String) -> Unit,
     repoUrls: ImmutableSet<String>,
+    isAdding: Boolean = false,
 ) {
     var name by remember { mutableStateOf("") }
 
@@ -35,20 +39,29 @@ fun ExtensionRepoCreateDialog(
     val nameAlreadyExists = remember(name) { repoUrls.contains(name) }
 
     AlertDialog(
-        onDismissRequest = onDismissRequest,
+        onDismissRequest = { if (!isAdding) onDismissRequest() },
         confirmButton = {
             TextButton(
-                enabled = name.isNotEmpty() && !nameAlreadyExists,
+                enabled = name.isNotEmpty() && !nameAlreadyExists && !isAdding,
                 onClick = {
                     onCreate(name)
-                    onDismissRequest()
                 },
             ) {
-                Text(text = stringResource(ephyra.app.core.common.R.string.action_add))
+                if (isAdding) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(text = stringResource(ephyra.app.core.common.R.string.action_add))
+                }
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismissRequest) {
+            TextButton(
+                enabled = !isAdding,
+                onClick = onDismissRequest
+            ) {
                 Text(text = stringResource(ephyra.app.core.common.R.string.action_cancel))
             }
         },
@@ -70,6 +83,7 @@ fun ExtensionRepoCreateDialog(
                         .focusRequester(focusRequester),
                     value = name,
                     onValueChange = { name = it },
+                    enabled = !isAdding,
                     label = {
                         Text(text = stringResource(ephyra.app.core.common.R.string.label_add_repo_input))
                     },
@@ -172,9 +186,10 @@ fun ExtensionRepoConfirmDialog(
     onDismissRequest: () -> Unit,
     onCreate: () -> Unit,
     repo: String,
+    isAdding: Boolean = false,
 ) {
     AlertDialog(
-        onDismissRequest = onDismissRequest,
+        onDismissRequest = { if (!isAdding) onDismissRequest() },
         title = {
             Text(text = stringResource(ephyra.app.core.common.R.string.action_add_repo))
         },
@@ -183,16 +198,26 @@ fun ExtensionRepoConfirmDialog(
         },
         confirmButton = {
             TextButton(
+                enabled = !isAdding,
                 onClick = {
                     onCreate()
-                    onDismissRequest()
                 },
             ) {
-                Text(text = stringResource(ephyra.app.core.common.R.string.action_add))
+                if (isAdding) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(text = stringResource(ephyra.app.core.common.R.string.action_add))
+                }
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismissRequest) {
+            TextButton(
+                enabled = !isAdding,
+                onClick = onDismissRequest
+            ) {
                 Text(text = stringResource(ephyra.app.core.common.R.string.action_cancel))
             }
         },

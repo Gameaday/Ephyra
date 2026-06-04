@@ -221,4 +221,9 @@ fun initializeCoreContainer(context: Context) {
     CoreContainer.register(ephyra.domain.extensionrepo.repository.ExtensionRepoRepository::class.java) {
         entryPoint.extensionRepoRepository()
     }
+
+    // Legacy Extension API Compatibility
+    CoreContainer.register(Context::class.java) { CoreContainer.applicationContext }
+    CoreContainer.register(android.app.Application::class.java) { CoreContainer.applicationContext as android.app.Application }
+    CoreContainer.register(okhttp3.OkHttpClient::class.java) { entryPoint.networkHelper().client }
 }

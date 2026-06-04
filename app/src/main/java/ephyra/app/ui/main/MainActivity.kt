@@ -361,6 +361,17 @@ class MainActivity : BaseActivity(), AppReadySignal {
                 }
                 null
             }
+            Intent.ACTION_VIEW -> {
+                val data = intent.data
+                if (data != null && (data.scheme == "tachiyomi" || data.scheme == "ephyra") && data.host == "add-repo") {
+                    val repoUrl = data.getQueryParameter("url")
+                    if (!repoUrl.isNullOrEmpty()) {
+                        navController.popBackStack(navController.graph.findStartDestination().id, inclusive = false)
+                        navController.navigate(ScreenRoutes.ExtensionRepos.createRoute(repoUrl))
+                    }
+                }
+                null
+            }
             else -> return false
         }
 

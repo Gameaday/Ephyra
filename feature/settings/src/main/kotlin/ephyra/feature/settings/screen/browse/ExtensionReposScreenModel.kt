@@ -43,9 +43,13 @@ class ExtensionReposScreenModel @Inject constructor(
         viewModelScope.launchIO {
             getExtensionRepo.subscribeAll()
                 .collectLatest { repos ->
-                    _state.update {
+                    _state.update { oldState ->
+                        val currentSuccess = oldState as? RepoScreenState.Success
                         RepoScreenState.Success(
                             repos = repos.toImmutableSet(),
+                            oldRepos = currentSuccess?.oldRepos,
+                            dialog = currentSuccess?.dialog,
+                            isAdding = currentSuccess?.isAdding ?: false
                         )
                     }
                 }
@@ -69,16 +73,69 @@ class ExtensionReposScreenModel @Inject constructor(
      * @param baseUrl The baseUrl of the repo to create.
      */
     private fun createRepo(baseUrl: String) {
+        _state.update {
+            when (it) {
+                RepoScreenState.Loading -> it
+                is RepoScreenState.Success -> it.copy(isAdding = true)
+            }
+        }
         viewModelScope.launchIO {
-            when (val result = createExtensionRepo.await(baseUrl)) {
-                CreateExtensionRepo.Result.Success -> extensionManager.findAvailableExtensions()
-                CreateExtensionRepo.Result.InvalidUrl -> _events.send(RepoEvent.InvalidUrl)
-                CreateExtensionRepo.Result.RepoAlreadyExists -> _events.send(RepoEvent.RepoAlreadyExists)
-                is CreateExtensionRepo.Result.DuplicateFingerprint -> {
-                    showDialog(RepoDialog.Conflict(result.oldRepo, result.newRepo))
+            try {
+                when (val result = createExtensionRepo.await(baseUrl)) {
+                    CreateExtensionRepo.Result.Success -> {
+                        extensionManager.findAvailableExtensions()
+                        _state.update { oldState ->
+                            when (oldState) {
+                                RepoScreenState.Loading -> oldState
+                                is RepoScreenState.Success -> oldState.copy(isAdding = false, dialog = null)
+                            }
+                        }
+                    }
+                    CreateExtensionRepo.Result.InvalidUrl -> {
+                        _events.send(RepoEvent.InvalidUrl)
+                        _state.update { oldState ->
+                            when (oldState) {
+                                RepoScreenState.Loading -> oldState
+                                is RepoScreenState.Success -> oldState.copy(isAdding = false)
+                            }
+                        }
+                    }
+                    CreateExtensionRepo.Result.RepoAlreadyExists -> {
+                        _events.send(RepoEvent.RepoAlreadyExists)
+                        _state.update { oldState ->
+                            when (oldState) {
+                                RepoScreenState.Loading -> oldState
+                                is RepoScreenState.Success -> oldState.copy(isAdding = false)
+                            }
+                        }
+                    }
+                    is CreateExtensionRepo.Result.DuplicateFingerprint -> {
+                        _state.update { oldState ->
+                            when (oldState) {
+                                RepoScreenState.Loading -> oldState
+                                is RepoScreenState.Success -> oldState.copy(
+                                    isAdding = false,
+                                    dialog = RepoDialog.Conflict(result.oldRepo, result.newRepo)
+                                )
+                            }
+                        }
+                    }
+                    else -> {
+                        _state.update { oldState ->
+                            when (oldState) {
+                                RepoScreenState.Loading -> oldState
+                                is RepoScreenState.Success -> oldState.copy(isAdding = false)
+                            }
+                        }
+                    }
                 }
-
-                else -> {}
+            } catch (e: Exception) {
+                _state.update { oldState ->
+                    when (oldState) {
+                        RepoScreenState.Loading -> oldState
+                        is RepoScreenState.Success -> oldState.copy(isAdding = false)
+                    }
+                }
             }
         }
     }
@@ -159,6 +216,7 @@ sealed class RepoScreenState {
         val repos: ImmutableSet<ExtensionRepo>,
         val oldRepos: ImmutableSet<String>? = null,
         val dialog: RepoDialog? = null,
+        val isAdding: Boolean = false,
     ) : RepoScreenState() {
 
         val isEmpty: Boolean
