@@ -720,10 +720,10 @@ private fun TrackDateRemoverScreen(
     onConfirm: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    val ViewModel = hiltViewModel<TrackDateViewModel, TrackDateViewModel.Factory> { factory ->
+    val viewModel = hiltViewModel<TrackDateViewModel, TrackDateViewModel.Factory> { factory ->
         factory.create(track, serviceId, start)
     }
-    val state by ViewModel.state.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
     AlertDialogContent(
         modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars),
         icon = {
@@ -758,7 +758,7 @@ private fun TrackDateRemoverScreen(
                 }
                 FilledTonalButton(
                     onClick = {
-                        ViewModel.onEvent(TrackDateViewModel.Event.RemoveDate)
+                        viewModel.onEvent(TrackDateViewModel.Event.RemoveDate)
                         onConfirm()
                     },
                     colors = ButtonDefaults.filledTonalButtonColors(
