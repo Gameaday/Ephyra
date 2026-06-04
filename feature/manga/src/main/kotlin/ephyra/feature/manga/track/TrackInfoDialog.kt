@@ -624,7 +624,7 @@ private fun TrackDateSelectorScreen(
         }
     }
 
-    val ViewModel = hiltViewModel<TrackDateViewModel, TrackDateViewModel.Factory> { factory ->
+    val viewModel = hiltViewModel<TrackDateViewModel, TrackDateViewModel.Factory> { factory ->
         factory.create(track, serviceId, start)
     }
 
@@ -639,10 +639,10 @@ private fun TrackDateSelectorScreen(
         } else {
             stringResource(ephyra.app.core.common.R.string.track_finished_reading_date)
         },
-        initialSelectedDateMillis = ViewModel.initialSelection,
+        initialSelectedDateMillis = viewModel.initialSelection,
         selectableDates = selectableDates,
         onConfirm = {
-            ViewModel.onEvent(TrackDateViewModel.Event.SetDate(it))
+            viewModel.onEvent(TrackDateViewModel.Event.SetDate(it))
             onConfirm(it)
         },
         onRemove = onRemove.takeIf { canRemove },
