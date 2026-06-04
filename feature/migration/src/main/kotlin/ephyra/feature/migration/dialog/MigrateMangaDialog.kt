@@ -62,11 +62,11 @@ fun MigrateMangaDialog(
 ) {
     val scope = rememberCoroutineScope()
 
-    val ViewModel = hiltViewModel<MigrateDialogViewModel>()
+    val viewModel = hiltViewModel<MigrateDialogViewModel>()
     LaunchedEffect(current, target) {
-        ViewModel.init(current, target)
+        viewModel.init(current, target)
     }
-    val state by ViewModel.state.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     if (state.isMigrated) return
 
@@ -90,7 +90,7 @@ fun MigrateMangaDialog(
                     LabeledCheckbox(
                         label = stringResource(flag.getLabel()),
                         checked = flag in state.selectedFlags,
-                        onCheckedChange = { ViewModel.toggleSelection(flag) },
+                        onCheckedChange = { viewModel.toggleSelection(flag) },
                     )
                 }
             }
@@ -113,7 +113,7 @@ fun MigrateMangaDialog(
                 TextButton(
                     onClick = {
                         scope.launchIO {
-                            ViewModel.migrateManga(replace = false)
+                            viewModel.migrateManga(replace = false)
                             withContext(Dispatchers.Main) { onComplete() }
                         }
                     },
@@ -123,7 +123,7 @@ fun MigrateMangaDialog(
                 TextButton(
                     onClick = {
                         scope.launchIO {
-                            ViewModel.migrateManga(replace = true)
+                            viewModel.migrateManga(replace = true)
                             withContext(Dispatchers.Main) { onComplete() }
                         }
                     },
