@@ -230,15 +230,15 @@ private fun TrackInfoDialogHomeScreen(
 ) {
     val context = LocalContext.current
 
-    val ViewModel = hiltViewModel<TrackInfoHomeViewModel, TrackInfoHomeViewModel.Factory> { factory ->
+    val viewModel = hiltViewModel<TrackInfoHomeViewModel, TrackInfoHomeViewModel.Factory> { factory ->
         factory.create(mangaId, sourceId)
     }
 
-    val state by ViewModel.state.collectAsStateWithLifecycle()
-    val dateFormat = remember { UiPreferences.dateFormat(ViewModel.uiPreferences.dateFormat().getSync()) }
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val dateFormat = remember { UiPreferences.dateFormat(viewModel.uiPreferences.dateFormat().getSync()) }
 
-    LaunchedEffect(ViewModel) {
-        ViewModel.effects.collect { effect ->
+    LaunchedEffect(viewModel) {
+        viewModel.effects.collect { effect ->
             when (effect) {
                 is TrackInfoHomeViewModel.Effect.ShowToast -> context.toast(effect.message)
             }
@@ -256,7 +256,7 @@ private fun TrackInfoDialogHomeScreen(
         onEndDateEdit = onEndDateEdit,
         onNewSearch = {
             if (it.tracker is EnhancedTracker) {
-                ViewModel.onEvent(TrackInfoHomeViewModel.Event.RegisterEnhancedTracking(it))
+                viewModel.onEvent(TrackInfoHomeViewModel.Event.RegisterEnhancedTracking(it))
             } else {
                 onNewSearch(it)
             }
@@ -274,7 +274,7 @@ private fun TrackInfoDialogHomeScreen(
                 context.copyToClipboard(url, url)
             }
         },
-        onTogglePrivate = { ViewModel.onEvent(TrackInfoHomeViewModel.Event.TogglePrivate(it)) },
+        onTogglePrivate = { viewModel.onEvent(TrackInfoHomeViewModel.Event.TogglePrivate(it)) },
     )
 }
 

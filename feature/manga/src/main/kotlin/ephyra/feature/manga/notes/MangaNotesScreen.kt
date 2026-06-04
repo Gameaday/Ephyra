@@ -13,17 +13,17 @@ fun MangaNotesScreen(
     mangaId: Long,
     navController: NavController = LocalNavController.current,
 ) {
-    val ViewModel = hiltViewModel<MangaNotesViewModel>()
+    val viewModel = hiltViewModel<MangaNotesViewModel>()
     LaunchedEffect(mangaId) {
-        ViewModel.onEvent(MangaNotesEvent.Init(mangaId))
+        viewModel.onEvent(MangaNotesEvent.Init(mangaId))
     }
-    val state by ViewModel.state.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     if (state != null) {
         ephyra.feature.manga.presentation.MangaNotesScreen(
             state = state!!,
             navigateUp = { navController.popBackStack() },
-            onUpdate = { ViewModel.onEvent(MangaNotesEvent.UpdateNotes(it)) },
+            onUpdate = { viewModel.onEvent(MangaNotesEvent.UpdateNotes(it)) },
         )
     }
 }
