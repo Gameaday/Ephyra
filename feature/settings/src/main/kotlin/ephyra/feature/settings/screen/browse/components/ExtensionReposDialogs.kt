@@ -50,7 +50,7 @@ fun ExtensionRepoCreateDialog(
                 if (isAdding) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(18.dp),
-                        strokeWidth = 2.dp
+                        strokeWidth = 2.dp,
                     )
                 } else {
                     Text(text = stringResource(ephyra.app.core.common.R.string.action_add))
@@ -60,7 +60,7 @@ fun ExtensionRepoCreateDialog(
         dismissButton = {
             TextButton(
                 enabled = !isAdding,
-                onClick = onDismissRequest
+                onClick = onDismissRequest,
             ) {
                 Text(text = stringResource(ephyra.app.core.common.R.string.action_cancel))
             }
@@ -206,7 +206,7 @@ fun ExtensionRepoConfirmDialog(
                 if (isAdding) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(18.dp),
-                        strokeWidth = 2.dp
+                        strokeWidth = 2.dp,
                     )
                 } else {
                     Text(text = stringResource(ephyra.app.core.common.R.string.action_add))
@@ -216,7 +216,7 @@ fun ExtensionRepoConfirmDialog(
         dismissButton = {
             TextButton(
                 enabled = !isAdding,
-                onClick = onDismissRequest
+                onClick = onDismissRequest,
             ) {
                 Text(text = stringResource(ephyra.app.core.common.R.string.action_cancel))
             }

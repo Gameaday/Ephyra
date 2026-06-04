@@ -16,6 +16,12 @@ data class SourceProfile(
     /** The content type this source primarily serves. */
     val contentType: ContentType,
 
+    /** The type of source this profile represents. */
+    val sourceType: SourceType = SourceType.HEURISTIC,
+
+    /** Whether this source is enabled for content discovery. */
+    val enabled: Boolean = true,
+
     /** Known API endpoints and their URL patterns. */
     val endpoints: Map<Endpoint, EndpointPattern> = emptyMap(),
 
@@ -45,7 +51,39 @@ data class SourceProfile(
 
     /** Whether this profile was verified to work on last use. */
     val verified: Boolean = false,
+
+    /** Timestamp of last successful health check. */
+    val lastHealthCheck: Long = 0,
+
+    /** Timestamp of last successful discovery/update. */
+    val lastUpdated: Long = 0,
+
+    /** Number of consecutive failures. */
+    val failureCount: Int = 0,
+
+    /** Optional scraper filename if this profile uses a JS scraper. */
+    val scraperFilename: String? = null,
+
+    /** Optional repository ID if this profile represents a local repository. */
+    val repositoryId: String? = null,
 )
+
+/**
+ * The type of content source.
+ */
+enum class SourceType {
+    /** Legacy APK-based extension source. */
+    LEGACY_EXTENSION,
+
+    /** JavaScript scraper running in QuickJS sandbox. */
+    JS_SCRAPER,
+
+    /** Heuristic auto-discovery engine. */
+    HEURISTIC,
+
+    /** Local/network media repository (Jellyfin-style). */
+    REPOSITORY,
+}
 
 /** Known endpoint types for a content source. */
 enum class Endpoint {

@@ -49,7 +49,7 @@ class ExtensionReposScreenModel @Inject constructor(
                             repos = repos.toImmutableSet(),
                             oldRepos = currentSuccess?.oldRepos,
                             dialog = currentSuccess?.dialog,
-                            isAdding = currentSuccess?.isAdding ?: false
+                            isAdding = currentSuccess?.isAdding ?: false,
                         )
                     }
                 }
@@ -115,7 +115,7 @@ class ExtensionReposScreenModel @Inject constructor(
                                 RepoScreenState.Loading -> oldState
                                 is RepoScreenState.Success -> oldState.copy(
                                     isAdding = false,
-                                    dialog = RepoDialog.Conflict(result.oldRepo, result.newRepo)
+                                    dialog = RepoDialog.Conflict(result.oldRepo, result.newRepo),
                                 )
                             }
                         }

@@ -363,7 +363,9 @@ class MainActivity : BaseActivity(), AppReadySignal {
             }
             Intent.ACTION_VIEW -> {
                 val data = intent.data
-                if (data != null && (data.scheme == "tachiyomi" || data.scheme == "ephyra") && data.host == "add-repo") {
+                if (data != null && (data.scheme == "tachiyomi" || data.scheme == "ephyra") &&
+                    data.host == "add-repo"
+                ) {
                     val repoUrl = data.getQueryParameter("url")
                     if (!repoUrl.isNullOrEmpty()) {
                         navController.popBackStack(navController.graph.findStartDestination().id, inclusive = false)

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+   <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name" translatable="false">Ephyra</string>
     <string name="startup_failure_title">App failed to start</string>
@@ -695,6 +695,10 @@
 
     <!-- Browse section -->
     <string name="pref_hide_in_library_items">Hide entries already in library</string>
+
+    <!-- Source Management -->
+    <string name="label_source_management">Source Management</string>
+    <string name="pref_source_management_summary">Manage JS scrapers, heuristic profiles, and source mappings</string>
 
     <!-- Data and storage section -->
     <string name="pref_storage_location">Storage location</string>

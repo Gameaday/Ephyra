@@ -103,6 +103,7 @@ sealed class ScreenRoutes(val route: String) {
     object SettingsSecurity : ScreenRoutes("settings_security")
     object SettingsAdvanced : ScreenRoutes("settings_advanced")
     data object ContentSourcing : ScreenRoutes("content_sourcing")
+    object SourceManagement : ScreenRoutes("source_management")
 }
 
 @kotlinx.serialization.Serializable

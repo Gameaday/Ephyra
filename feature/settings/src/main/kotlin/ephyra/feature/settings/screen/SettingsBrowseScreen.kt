@@ -54,6 +54,13 @@ object SettingsBrowseScreen : SearchableSettings {
                             navController.navigate(ScreenRoutes.ExtensionRepos.createRoute(null))
                         },
                     ),
+                    Preference.PreferenceItem.TextPreference(
+                        title = stringResource(ephyra.app.core.common.R.string.label_source_management),
+                        subtitle = stringResource(ephyra.app.core.common.R.string.pref_source_management_summary),
+                        onClick = {
+                            navController.navigate(ScreenRoutes.SourceManagement.createRoute(null))
+                        },
+                    ),
                 ),
             ),
             Preference.PreferenceGroup(

@@ -13,6 +13,7 @@ import ephyra.feature.settings.screen.SettingsReaderScreen
 import ephyra.feature.settings.screen.SettingsSearchScreen
 import ephyra.feature.settings.screen.SettingsSecurityScreen
 import ephyra.feature.settings.screen.SettingsTrackingScreen
+import ephyra.feature.settings.screen.SourceManagementScreen
 import ephyra.feature.settings.screen.about.AboutScreen
 import ephyra.feature.settings.screen.about.OpenSourceLibraryLicenseScreen
 import ephyra.feature.settings.screen.about.OpenSourceLicensesScreen
@@ -144,6 +145,10 @@ class SettingsFeatureApi @Inject constructor() : FeatureApi {
 
         navGraphBuilder.composable(ScreenRoutes.SettingsAdvanced.route) {
             SettingsAdvancedScreen.Content()
+        }
+
+        navGraphBuilder.composable(ScreenRoutes.SourceManagement.route) {
+            SourceManagementScreen(navController)
         }
     }
 }

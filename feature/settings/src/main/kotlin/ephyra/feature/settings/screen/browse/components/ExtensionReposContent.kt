@@ -72,7 +72,7 @@ private fun ExtensionRepoListItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(MaterialTheme.padding.medium),
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small)
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -81,7 +81,7 @@ private fun ExtensionRepoListItem(
                 Icon(
                     imageVector = Icons.AutoMirrored.Outlined.Label,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.primary,
                 )
                 Text(
                     text = repo.name,
@@ -94,14 +94,14 @@ private fun ExtensionRepoListItem(
                 text = repo.baseUrl,
                 modifier = Modifier.padding(start = MaterialTheme.padding.medium + MaterialTheme.padding.medium),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
             Text(
                 text = "Fingerprint: ${repo.signingKeyFingerprint.take(16)}...",
                 modifier = Modifier.padding(start = MaterialTheme.padding.medium + MaterialTheme.padding.medium),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
             )
 
             Row(

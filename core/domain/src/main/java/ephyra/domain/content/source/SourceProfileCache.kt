@@ -83,6 +83,14 @@ class SourceProfileCache(
         return preferenceStore.getString(key, "").isSet()
     }
 
+    /**
+     * Get all cached source profiles.
+     */
+    suspend fun getAll(): List<SourceProfile> {
+        val domains = getAllProfiledDomains()
+        return domains.mapNotNull { get(it) }
+    }
+
     private fun cacheKey(baseUrl: String): String {
         return PREFIX + baseUrl
             .removePrefix("https://")
@@ -100,6 +108,8 @@ class SourceProfileCache(
 internal data class SerializableProfile(
     val baseUrl: String,
     val contentType: String,
+    val sourceType: String = "HEURISTIC",
+    val enabled: Boolean = true,
     val endpoints: Map<String, SerializableEndpointPattern> = emptyMap(),
     val responseType: String,
     val pagination: String = "PAGE_BASED",
@@ -110,12 +120,19 @@ internal data class SerializableProfile(
     val rateLimitMs: Long = 0L,
     val displayName: String,
     val verified: Boolean = false,
+    val lastHealthCheck: Long = 0,
+    val lastUpdated: Long = 0,
+    val failureCount: Int = 0,
+    val scraperFilename: String? = null,
+    val repositoryId: String? = null,
 ) {
     companion object {
         fun fromDomain(profile: SourceProfile): SerializableProfile {
             return SerializableProfile(
                 baseUrl = profile.baseUrl,
                 contentType = profile.contentType.name,
+                sourceType = profile.sourceType.name,
+                enabled = profile.enabled,
                 endpoints = profile.endpoints.mapKeys { it.key.name }.mapValues { (_, ep) ->
                     SerializableEndpointPattern(
                         pathTemplate = ep.pathTemplate,
@@ -133,6 +150,11 @@ internal data class SerializableProfile(
                 rateLimitMs = profile.rateLimitMs,
                 displayName = profile.displayName,
                 verified = profile.verified,
+                lastHealthCheck = profile.lastHealthCheck,
+                lastUpdated = profile.lastUpdated,
+                failureCount = profile.failureCount,
+                scraperFilename = profile.scraperFilename,
+                repositoryId = profile.repositoryId,
             )
         }
     }
@@ -147,6 +169,12 @@ internal data class SerializableProfile(
             ) {
                 ephyra.domain.content.model.ContentType.UNKNOWN
             },
+            sourceType = try {
+                SourceType.valueOf(sourceType)
+            } catch (e: Exception) {
+                SourceType.HEURISTIC
+            },
+            enabled = enabled,
             endpoints = endpoints.mapKeys {
                 try {
                     Endpoint.valueOf(it.key)
@@ -219,6 +247,11 @@ internal data class SerializableProfile(
             rateLimitMs = rateLimitMs,
             displayName = displayName,
             verified = verified,
+            lastHealthCheck = lastHealthCheck,
+            lastUpdated = lastUpdated,
+            failureCount = failureCount,
+            scraperFilename = scraperFilename,
+            repositoryId = repositoryId,
         )
     }
 }
