@@ -17,10 +17,10 @@ fun ExtensionDetailsScreen(
     pkgName: String,
     navController: NavController = LocalNavController.current,
 ) {
-    val ViewModel = hiltViewModel<ExtensionDetailsViewModel, ExtensionDetailsViewModel.Factory> { factory ->
+    val viewModel = hiltViewModel<ExtensionDetailsViewModel, ExtensionDetailsViewModel.Factory> { factory ->
         factory.create(pkgName)
     }
-    val state by ViewModel.state.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     if (state.isLoading) {
         LoadingScreen()
@@ -31,16 +31,16 @@ fun ExtensionDetailsScreen(
         navigateUp = { navController.popBackStack() },
         state = state,
         onClickSourcePreferences = { navController.navigate(ScreenRoutes.SourcePreferences.createRoute(it)) },
-        onClickEnableAll = { ViewModel.onEvent(ExtensionDetailsScreenEvent.ToggleSources(true)) },
-        onClickDisableAll = { ViewModel.onEvent(ExtensionDetailsScreenEvent.ToggleSources(false)) },
-        onClickClearCookies = { ViewModel.onEvent(ExtensionDetailsScreenEvent.ClearCookies) },
-        onClickUninstall = { ViewModel.onEvent(ExtensionDetailsScreenEvent.UninstallExtension) },
-        onClickSource = { ViewModel.onEvent(ExtensionDetailsScreenEvent.ToggleSource(it)) },
-        onClickIncognito = { ViewModel.onEvent(ExtensionDetailsScreenEvent.ToggleIncognito(it)) },
+        onClickEnableAll = { viewModel.onEvent(ExtensionDetailsScreenEvent.ToggleSources(true)) },
+        onClickDisableAll = { viewModel.onEvent(ExtensionDetailsScreenEvent.ToggleSources(false)) },
+        onClickClearCookies = { viewModel.onEvent(ExtensionDetailsScreenEvent.ClearCookies) },
+        onClickUninstall = { viewModel.onEvent(ExtensionDetailsScreenEvent.UninstallExtension) },
+        onClickSource = { viewModel.onEvent(ExtensionDetailsScreenEvent.ToggleSource(it)) },
+        onClickIncognito = { viewModel.onEvent(ExtensionDetailsScreenEvent.ToggleIncognito(it)) },
     )
 
     LaunchedEffect(Unit) {
-        ViewModel.events.collectLatest { event ->
+        viewModel.events.collectLatest { event ->
             if (event is ExtensionDetailsEvent.Uninstalled) {
                 navController.popBackStack()
             }

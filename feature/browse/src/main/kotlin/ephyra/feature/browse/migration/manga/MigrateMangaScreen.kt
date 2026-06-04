@@ -47,13 +47,13 @@ fun MigrateMangaScreen(
     navController: NavController = LocalNavController.current,
 ) {
     val context = LocalContext.current
-    val ViewModel = hiltViewModel<MigrateMangaViewModel>()
+    val viewModel = hiltViewModel<MigrateMangaViewModel>()
 
     LaunchedEffect(sourceId) {
-        ViewModel.init(sourceId)
+        viewModel.init(sourceId)
     }
 
-    val state by ViewModel.state.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     if (state.isLoading) {
         LoadingScreen()
@@ -61,7 +61,7 @@ fun MigrateMangaScreen(
     }
 
     BackHandler(enabled = state.selectionMode) {
-        ViewModel.onEvent(MigrateMangaScreenEvent.ClearSelection)
+        viewModel.onEvent(MigrateMangaScreenEvent.ClearSelection)
     }
 
     val lazyListState = rememberLazyListState()
@@ -72,7 +72,7 @@ fun MigrateMangaScreen(
                 title = state.source!!.name,
                 navigateUp = {
                     if (state.selectionMode) {
-                        ViewModel.onEvent(MigrateMangaScreenEvent.ClearSelection)
+                        viewModel.onEvent(MigrateMangaScreenEvent.ClearSelection)
                     } else {
                         navController.popBackStack()
                     }

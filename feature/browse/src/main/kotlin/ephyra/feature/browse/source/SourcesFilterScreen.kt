@@ -16,8 +16,8 @@ import ephyra.presentation.core.util.system.toast
 fun SourcesFilterScreen(
     navController: NavController = LocalNavController.current,
 ) {
-    val ViewModel = hiltViewModel<SourcesFilterViewModel>()
-    val state by ViewModel.state.collectAsStateWithLifecycle()
+    val viewModel = hiltViewModel<SourcesFilterViewModel>()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     if (state is SourcesFilterViewModel.State.Loading) {
         LoadingScreen()
@@ -38,7 +38,7 @@ fun SourcesFilterScreen(
     SourcesFilterScreen(
         navigateUp = { navController.popBackStack() },
         state = successState,
-        onClickLanguage = { ViewModel.onEvent(SourcesFilterScreenEvent.ToggleLanguage(it)) },
-        onClickSource = { ViewModel.onEvent(SourcesFilterScreenEvent.ToggleSource(it)) },
+        onClickLanguage = { viewModel.onEvent(SourcesFilterScreenEvent.ToggleLanguage(it)) },
+        onClickSource = { viewModel.onEvent(SourcesFilterScreenEvent.ToggleSource(it)) },
     )
 }

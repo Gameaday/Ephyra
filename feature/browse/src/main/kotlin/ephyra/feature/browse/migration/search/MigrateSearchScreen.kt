@@ -19,21 +19,21 @@ fun MigrateSearchScreen(
     mangaId: Long,
     navController: NavController = LocalNavController.current,
 ) {
-    val ViewModel = hiltViewModel<MigrateSearchViewModel>()
+    val viewModel = hiltViewModel<MigrateSearchViewModel>()
     LaunchedEffect(mangaId) {
-        ViewModel.init(mangaId)
+        viewModel.init(mangaId)
     }
-    val state by ViewModel.state.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     MigrateSearchScreen(
         state = state,
         fromSourceId = state.from?.source,
         navigateUp = { navController.popBackStack() },
-        onChangeSearchQuery = { ViewModel.onEvent(SearchScreenEvent.UpdateSearchQuery(it)) },
-        onSearch = { ViewModel.onEvent(SearchScreenEvent.Search) },
-        getManga = { ViewModel.getManga(it) },
-        onChangeSearchFilter = { ViewModel.onEvent(SearchScreenEvent.SetSourceFilter(it)) },
-        onToggleResults = { ViewModel.onEvent(SearchScreenEvent.ToggleFilterResults) },
+        onChangeSearchQuery = { viewModel.onEvent(SearchScreenEvent.UpdateSearchQuery(it)) },
+        onSearch = { viewModel.onEvent(SearchScreenEvent.Search) },
+        getManga = { viewModel.getManga(it) },
+        onChangeSearchFilter = { viewModel.onEvent(SearchScreenEvent.SetSourceFilter(it)) },
+        onToggleResults = { viewModel.onEvent(SearchScreenEvent.ToggleFilterResults) },
         onClickSource = {
             navController.navigate(
                 ScreenRoutes.MigrateSourceSearch.createRoute(mangaId, it.id),
@@ -45,7 +45,7 @@ fun MigrateSearchScreen(
                 migrateListEntry.savedStateHandle["match_override"] = mangaId to it.id
                 navController.popBackStack()
             } else {
-                ViewModel.onEvent(SearchScreenEvent.SetMigrateDialog(mangaId, it))
+                viewModel.onEvent(SearchScreenEvent.SetMigrateDialog(mangaId, it))
             }
         },
         onLongClickItem = {

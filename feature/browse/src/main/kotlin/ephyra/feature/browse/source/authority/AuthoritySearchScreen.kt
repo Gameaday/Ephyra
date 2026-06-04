@@ -95,8 +95,8 @@ import kotlinx.collections.immutable.persistentListOf
  */
 @Composable
 fun discoverTab(navController: NavController = LocalNavController.current): TabContent {
-    val ViewModel = hiltViewModel<AuthoritySearchViewModel>()
-    val state by ViewModel.state.collectAsStateWithLifecycle()
+    val viewModel = hiltViewModel<AuthoritySearchViewModel>()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     return TabContent(
         titleRes = ephyra.app.core.common.R.string.label_search,
@@ -104,13 +104,13 @@ fun discoverTab(navController: NavController = LocalNavController.current): TabC
         content = { contentPadding, _ ->
             DiscoverContent(
                 state = state,
-                trackersForFilter = ViewModel::trackersForFilter,
-                onSelectTracker = { ViewModel.onEvent(AuthoritySearchScreenEvent.SelectTracker(it)) },
-                onSearch = { ViewModel.onEvent(AuthoritySearchScreenEvent.Search(it)) },
-                onRetrySearch = { ViewModel.onEvent(AuthoritySearchScreenEvent.RetrySearch) },
-                onAddToLibrary = { ViewModel.onEvent(AuthoritySearchScreenEvent.AddToLibrary(it)) },
-                onSelectResult = { ViewModel.onEvent(AuthoritySearchScreenEvent.SelectResult(it)) },
-                onSetContentTypeFilter = { ViewModel.onEvent(AuthoritySearchScreenEvent.SetContentTypeFilter(it)) },
+                trackersForFilter = viewModel::trackersForFilter,
+                onSelectTracker = { viewModel.onEvent(AuthoritySearchScreenEvent.SelectTracker(it)) },
+                onSearch = { viewModel.onEvent(AuthoritySearchScreenEvent.Search(it)) },
+                onRetrySearch = { viewModel.onEvent(AuthoritySearchScreenEvent.RetrySearch) },
+                onAddToLibrary = { viewModel.onEvent(AuthoritySearchScreenEvent.AddToLibrary(it)) },
+                onSelectResult = { viewModel.onEvent(AuthoritySearchScreenEvent.SelectResult(it)) },
+                onSetContentTypeFilter = { viewModel.onEvent(AuthoritySearchScreenEvent.SetContentTypeFilter(it)) },
                 contentPadding = contentPadding,
             )
 
@@ -124,10 +124,10 @@ fun discoverTab(navController: NavController = LocalNavController.current): TabC
                     result = selectedResult,
                     isAdded = isAdded,
                     onAdd = {
-                        ViewModel.onEvent(AuthoritySearchScreenEvent.AddToLibrary(selectedResult))
-                        ViewModel.onEvent(AuthoritySearchScreenEvent.DismissDetail)
+                        viewModel.onEvent(AuthoritySearchScreenEvent.AddToLibrary(selectedResult))
+                        viewModel.onEvent(AuthoritySearchScreenEvent.DismissDetail)
                     },
-                    onDismiss = { ViewModel.onEvent(AuthoritySearchScreenEvent.DismissDetail) },
+                    onDismiss = { viewModel.onEvent(AuthoritySearchScreenEvent.DismissDetail) },
                 )
             }
 

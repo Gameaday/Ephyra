@@ -56,7 +56,7 @@ fun MigrateSourceSearchScreen(
     val uriHandler = LocalUriHandler.current
     val scope = rememberCoroutineScope()
 
-    val ViewModel = hiltViewModel<BrowseSourceViewModel>()
+    val viewModel = hiltViewModel<BrowseSourceViewModel>()
     // We need to fetch currentManga
     val mangaModel = hiltViewModel<ephyra.feature.manga.MangaViewModel>()
     LaunchedEffect(mangaId) {
@@ -65,7 +65,7 @@ fun MigrateSourceSearchScreen(
     val mangaState by mangaModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(sourceId, query) {
-        ViewModel.init(sourceId, query)
+        viewModel.init(sourceId, query)
     }
 
     val source = ViewModel.source

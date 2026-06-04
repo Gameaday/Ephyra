@@ -20,8 +20,8 @@ import kotlinx.collections.immutable.persistentListOf
 @Composable
 fun migrateSourceTab(navController: NavController = LocalNavController.current): TabContent {
     val uriHandler = LocalUriHandler.current
-    val ViewModel = hiltViewModel<MigrateSourceViewModel>()
-    val state by ViewModel.state.collectAsStateWithLifecycle()
+    val viewModel = hiltViewModel<MigrateSourceViewModel>()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     return TabContent(
         titleRes = ephyra.app.core.common.R.string.label_migration,

@@ -18,8 +18,8 @@ fun ExtensionFilterScreen(
     navController: NavController = LocalNavController.current,
 ) {
     val context = LocalContext.current
-    val ViewModel = hiltViewModel<ExtensionFilterViewModel>()
-    val state by ViewModel.state.collectAsStateWithLifecycle()
+    val viewModel = hiltViewModel<ExtensionFilterViewModel>()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     if (state is ExtensionFilterState.Loading) {
         LoadingScreen()
@@ -31,11 +31,11 @@ fun ExtensionFilterScreen(
     ExtensionFilterScreen(
         navigateUp = { navController.popBackStack() },
         state = successState,
-        onClickToggle = ViewModel::toggle,
+        onClickToggle = viewModel::toggle,
     )
 
     LaunchedEffect(Unit) {
-        ViewModel.events.collectLatest {
+        viewModel.events.collectLatest {
             when (it) {
                 ExtensionFilterEvent.FailedFetchingLanguages -> {
                     context.stringResource(ephyra.app.core.common.R.string.internal_error)

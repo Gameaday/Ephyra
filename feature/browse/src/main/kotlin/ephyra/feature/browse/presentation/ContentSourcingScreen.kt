@@ -81,13 +81,13 @@ import kotlinx.coroutines.flow.collectLatest
 fun ContentSourcingScreen(
     navController: NavController = LocalNavController.current,
 ) {
-    val ViewModel = hiltViewModel<ContentSourcingViewModel>()
-    val state by ViewModel.state.collectAsStateWithLifecycle()
+    val viewModel = hiltViewModel<ContentSourcingViewModel>()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
-        ViewModel.effects.collectLatest { effect ->
+        viewModel.effects.collectLatest { effect ->
             when (effect) {
                 is ContentSourcingViewModel.Effect.ShowSnackbar -> {
                     snackbarMessage = effect.message
@@ -111,7 +111,7 @@ fun ContentSourcingScreen(
             ContentSourcingLayout(
                 contentPadding = contentPadding,
                 state = state,
-                onEvent = ViewModel::onEvent,
+                onEvent = viewModel::onEvent,
             )
         }
 
