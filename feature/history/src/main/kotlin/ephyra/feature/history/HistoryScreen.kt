@@ -169,36 +169,36 @@ fun HistoryTabScreen(
     navController: NavController = LocalNavController.current,
 ) {
     val context = LocalContext.current
-    val ViewModel = hiltViewModel<HistoryViewModel>()
-    val state by ViewModel.state.collectAsStateWithLifecycle()
+    val viewModel = hiltViewModel<HistoryViewModel>()
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     HistoryScreen(
         state = state,
         snackbarHostState = snackbarHostState,
-        onSearchQueryChange = { ViewModel.onEvent(HistoryScreenEvent.UpdateSearchQuery(it)) },
+        onSearchQueryChange = { viewModel.onEvent(HistoryScreenEvent.UpdateSearchQuery(it)) },
         onClickCover = {
             navController.navigate(
                 ephyra.presentation.core.ui.navigation.Screen.MangaDetails(mangaId = it, fromSource = false),
             )
         },
         onClickResume = { mangaId, chapterId ->
-            ViewModel.onEvent(HistoryScreenEvent.GetNextChapterForManga(mangaId, chapterId))
+            viewModel.onEvent(HistoryScreenEvent.GetNextChapterForManga(mangaId, chapterId))
         },
-        onDialogChange = { ViewModel.onEvent(HistoryScreenEvent.SetDialog(it)) },
-        onClickFavorite = { ViewModel.onEvent(HistoryScreenEvent.AddFavoriteById(it)) },
+        onDialogChange = { viewModel.onEvent(HistoryScreenEvent.SetDialog(it)) },
+        onClickFavorite = { viewModel.onEvent(HistoryScreenEvent.AddFavoriteById(it)) },
     )
 
-    val onDismissRequest = { ViewModel.onEvent(HistoryScreenEvent.SetDialog(null)) }
+    val onDismissRequest = { viewModel.onEvent(HistoryScreenEvent.SetDialog(null)) }
     when (val dialog = state.dialog) {
         is HistoryViewModel.Dialog.Delete -> {
             HistoryDeleteDialog(
                 onDismissRequest = onDismissRequest,
                 onDelete = { all ->
                     if (all) {
-                        ViewModel.onEvent(HistoryScreenEvent.RemoveAllForManga(dialog.history.mangaId))
+                        viewModel.onEvent(HistoryScreenEvent.RemoveAllForManga(dialog.history.mangaId))
                     } else {
-                        ViewModel.onEvent(HistoryScreenEvent.RemoveFromHistory(dialog.history))
+                        viewModel.onEvent(HistoryScreenEvent.RemoveFromHistory(dialog.history))
                     }
                 },
             )
@@ -207,7 +207,7 @@ fun HistoryTabScreen(
         is HistoryViewModel.Dialog.DeleteAll -> {
             HistoryDeleteAllDialog(
                 onDismissRequest = onDismissRequest,
-                onDelete = { ViewModel.onEvent(HistoryScreenEvent.RemoveAllHistory) },
+                onDelete = { viewModel.onEvent(HistoryScreenEvent.RemoveAllHistory) },
             )
         }
 
@@ -215,14 +215,14 @@ fun HistoryTabScreen(
             DuplicateMangaDialog(
                 duplicates = dialog.duplicates,
                 onDismissRequest = onDismissRequest,
-                onConfirm = { ViewModel.onEvent(HistoryScreenEvent.AddFavorite(dialog.manga)) },
+                onConfirm = { viewModel.onEvent(HistoryScreenEvent.AddFavorite(dialog.manga)) },
                 onOpenManga = {
                     navController.navigate(
                         ephyra.presentation.core.ui.navigation.Screen.MangaDetails(mangaId = it.id, fromSource = false),
                     )
                 },
-                onMigrate = { ViewModel.onEvent(HistoryScreenEvent.ShowMigrateDialog(dialog.manga, it)) },
-                sourceManager = ViewModel.sourceManager,
+                onMigrate = { viewModel.onEvent(HistoryScreenEvent.ShowMigrateDialog(dialog.manga, it)) },
+                sourceManager = viewModel.sourceManager,
             )
         }
 
@@ -232,7 +232,7 @@ fun HistoryTabScreen(
                 onDismissRequest = onDismissRequest,
                 onEditCategories = { navController.navigate(ephyra.presentation.core.ui.navigation.Screen.Category) },
                 onConfirm = { include, _ ->
-                    ViewModel.onEvent(
+                    viewModel.onEvent(
                         HistoryScreenEvent.MoveMangaToCategoriesAndAddToLibrary(dialog.manga, include),
                     )
                 },
