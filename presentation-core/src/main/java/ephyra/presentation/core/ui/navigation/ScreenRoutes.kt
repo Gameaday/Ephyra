@@ -21,9 +21,15 @@ object BottomNavVisibilityController {
     private val _isBottomNavVisible = MutableStateFlow(true)
     val isBottomNavVisible: StateFlow<Boolean> = _isBottomNavVisible.asStateFlow()
 
-    fun hide() { _isBottomNavVisible.value = false }
-    fun show() { _isBottomNavVisible.value = true }
-    fun setVisible(visible: Boolean) { _isBottomNavVisible.value = visible }
+    fun hide() {
+        _isBottomNavVisible.value = false
+    }
+    fun show() {
+        _isBottomNavVisible.value = true
+    }
+    fun setVisible(visible: Boolean) {
+        _isBottomNavVisible.value = visible
+    }
 }
 
 val LocalBottomNavVisibilityController = staticCompositionLocalOf<BottomNavVisibilityController> {
