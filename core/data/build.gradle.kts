@@ -71,7 +71,7 @@ dependencies {
     testImplementation(kotlinx.coroutines.test)
     testImplementation(libs.room.testing)
     testImplementation("org.robolectric:robolectric:4.16.1")
-    testImplementation("androidx.test:core:1.5.0")
+    testImplementation("androidx.test:core:1.7.0")
     testImplementation("androidx.test.ext:junit:1.1.5")
     testImplementation(libs.bundles.test)
     testRuntimeOnly(libs.junit.platform.launcher)
