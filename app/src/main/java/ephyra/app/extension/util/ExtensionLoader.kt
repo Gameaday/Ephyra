@@ -385,7 +385,10 @@ class ExtensionLoader(
      * @param pkgInfo The package info of the application.
      */
     private fun isPackageAnExtension(pkgInfo: PackageInfo): Boolean {
-        return pkgInfo.reqFeatures.orEmpty().any { it.name == EXTENSION_FEATURE }
+        return pkgInfo.reqFeatures.orEmpty().any { it.name == EXTENSION_FEATURE } ||
+            pkgInfo.applicationInfo?.metaData?.containsKey(METADATA_SOURCE_CLASS) == true ||
+            pkgInfo.packageName.startsWith("eu.kanade.tachiyomi.extension.") ||
+            pkgInfo.packageName.startsWith("app.ephyra.extension.")
     }
 
     /**
