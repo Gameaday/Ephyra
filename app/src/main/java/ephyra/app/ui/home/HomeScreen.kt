@@ -55,6 +55,7 @@ import ephyra.presentation.core.components.material.NavigationRail
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.theme.MotionTokens
+import ephyra.presentation.core.ui.navigation.BottomNavVisibilityController
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.NavigationEvents
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
@@ -139,8 +140,7 @@ fun HomeScreen(
             },
             bottomBar = {
                 if (!isTabletUi()) {
-                    // TODO: communicate visibility from screens
-                    val bottomNavVisible = true
+                            val bottomNavVisible by BottomNavVisibilityController.isBottomNavVisible.collectAsStateWithLifecycle()
                     AnimatedVisibility(
                         visible = bottomNavVisible,
                         enter = expandVertically(

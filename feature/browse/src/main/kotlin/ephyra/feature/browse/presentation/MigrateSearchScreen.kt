@@ -4,14 +4,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import ephyra.domain.manga.model.Manga
 import ephyra.feature.browse.presentation.components.GlobalSearchToolbar
-import ephyra.feature.browse.source.globalsearch.SearchScreenModel
+import ephyra.feature.browse.source.globalsearch.SearchViewModel
 import ephyra.feature.browse.source.globalsearch.SourceFilter
 import ephyra.presentation.core.components.material.Scaffold
 import eu.kanade.tachiyomi.source.CatalogueSource
 
 @Composable
 fun MigrateSearchScreen(
-    state: SearchScreenModel.State,
+    state: SearchViewModel.State,
     fromSourceId: Long?,
     navigateUp: () -> Unit,
     onChangeSearchQuery: (String?) -> Unit,

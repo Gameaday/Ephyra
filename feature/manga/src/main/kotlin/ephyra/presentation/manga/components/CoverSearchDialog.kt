@@ -39,7 +39,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import ephyra.feature.manga.CoverResult
-import ephyra.feature.manga.CoverSearchScreenModel
+import ephyra.feature.manga.CoverSearchViewModel
 import ephyra.presentation.core.R
 import ephyra.presentation.core.components.DropdownMenu
 import ephyra.presentation.core.components.material.Scaffold
@@ -49,7 +49,7 @@ import ephyra.presentation.core.util.rememberResourceBitmapPainter
 
 @Composable
 fun CoverSearchDialog(
-    state: CoverSearchScreenModel.State,
+    state: CoverSearchViewModel.State,
     onCoverSelected: (CoverResult) -> Unit,
     onSetAsMetadataSource: ((CoverResult) -> Unit)?,
     onRefresh: () -> Unit,

@@ -30,7 +30,7 @@ import kotlinx.collections.immutable.persistentListOf
 @Composable
 fun UpdatesFilterDialog(
     onDismissRequest: () -> Unit,
-    screenModel: UpdatesSettingsScreenModel,
+    ViewModel: UpdatesSettingsViewModel,
 ) {
     TabbedDialog(
         onDismissRequest = onDismissRequest,
@@ -43,53 +43,53 @@ fun UpdatesFilterDialog(
                 .padding(vertical = TabbedDialogPaddings.Vertical)
                 .verticalScroll(rememberScrollState()),
         ) {
-            FilterSheet(screenModel = screenModel)
+            FilterSheet(ViewModel = ViewModel)
         }
     }
 }
 
 @Composable
 private fun ColumnScope.FilterSheet(
-    screenModel: UpdatesSettingsScreenModel,
+    ViewModel: UpdatesSettingsViewModel,
 ) {
-    val filterDownloaded by screenModel.updatesPreferences.filterDownloaded().collectAsState()
+    val filterDownloaded by ViewModel.updatesPreferences.filterDownloaded().collectAsState()
     TriStateItem(
         label = stringResource(ephyra.app.core.common.R.string.label_downloaded),
         state = filterDownloaded,
         onClick = {
-            screenModel.onEvent(UpdatesSettingsScreenEvent.ToggleFilter(UpdatesPreferences::filterDownloaded))
+            ViewModel.onEvent(UpdatesSettingsScreenEvent.ToggleFilter(UpdatesPreferences::filterDownloaded))
         },
     )
 
-    val filterUnread by screenModel.updatesPreferences.filterUnread().collectAsState()
+    val filterUnread by ViewModel.updatesPreferences.filterUnread().collectAsState()
     TriStateItem(
         label = stringResource(ephyra.app.core.common.R.string.action_filter_unread),
         state = filterUnread,
-        onClick = { screenModel.onEvent(UpdatesSettingsScreenEvent.ToggleFilter(UpdatesPreferences::filterUnread)) },
+        onClick = { ViewModel.onEvent(UpdatesSettingsScreenEvent.ToggleFilter(UpdatesPreferences::filterUnread)) },
     )
 
-    val filterStarted by screenModel.updatesPreferences.filterStarted().collectAsState()
+    val filterStarted by ViewModel.updatesPreferences.filterStarted().collectAsState()
     TriStateItem(
         label = stringResource(ephyra.app.core.common.R.string.label_started),
         state = filterStarted,
-        onClick = { screenModel.onEvent(UpdatesSettingsScreenEvent.ToggleFilter(UpdatesPreferences::filterStarted)) },
+        onClick = { ViewModel.onEvent(UpdatesSettingsScreenEvent.ToggleFilter(UpdatesPreferences::filterStarted)) },
     )
 
-    val filterBookmarked by screenModel.updatesPreferences.filterBookmarked().collectAsState()
+    val filterBookmarked by ViewModel.updatesPreferences.filterBookmarked().collectAsState()
     TriStateItem(
         label = stringResource(ephyra.app.core.common.R.string.action_filter_bookmarked),
         state = filterBookmarked,
         onClick = {
-            screenModel.onEvent(UpdatesSettingsScreenEvent.ToggleFilter(UpdatesPreferences::filterBookmarked))
+            ViewModel.onEvent(UpdatesSettingsScreenEvent.ToggleFilter(UpdatesPreferences::filterBookmarked))
         },
     )
 
     HorizontalDivider(modifier = Modifier.padding(MaterialTheme.padding.small))
 
-    val filterExcludedScanlators by screenModel.updatesPreferences.filterExcludedScanlators().collectAsState()
+    val filterExcludedScanlators by ViewModel.updatesPreferences.filterExcludedScanlators().collectAsState()
 
     fun toggleScanlatorFilter() {
-        val pref = screenModel.updatesPreferences.filterExcludedScanlators()
+        val pref = ViewModel.updatesPreferences.filterExcludedScanlators()
         pref.set(!pref.getSync())
     }
 

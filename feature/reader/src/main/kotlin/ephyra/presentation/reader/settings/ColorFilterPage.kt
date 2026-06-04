@@ -13,7 +13,7 @@ import androidx.core.graphics.green
 import androidx.core.graphics.red
 import ephyra.core.common.preference.getAndSet
 import ephyra.domain.reader.service.ReaderPreferences.Companion.ColorFilterMode
-import ephyra.feature.reader.setting.ReaderSettingsScreenModel
+import ephyra.feature.reader.setting.ReaderSettingsViewModel
 import ephyra.presentation.core.components.CheckboxItem
 import ephyra.presentation.core.components.SettingsChipRow
 import ephyra.presentation.core.components.SliderItem
@@ -22,11 +22,11 @@ import ephyra.presentation.core.util.collectAsState
 import kotlinx.coroutines.launch
 
 @Composable
-internal fun ColumnScope.ColorFilterPage(screenModel: ReaderSettingsScreenModel) {
-    val customBrightness by screenModel.preferences.customBrightness().collectAsState()
+internal fun ColumnScope.ColorFilterPage(ViewModel: ReaderSettingsViewModel) {
+    val customBrightness by ViewModel.preferences.customBrightness().collectAsState()
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.pref_custom_brightness),
-        pref = screenModel.preferences.customBrightness(),
+        pref = ViewModel.preferences.customBrightness(),
     )
 
     /*
@@ -36,25 +36,25 @@ internal fun ColumnScope.ColorFilterPage(screenModel: ReaderSettingsScreenModel)
      * 0 sets system brightness and hides the overlay.
      */
     if (customBrightness) {
-        val customBrightnessValue by screenModel.preferences.customBrightnessValue().collectAsState()
+        val customBrightnessValue by ViewModel.preferences.customBrightnessValue().collectAsState()
         SliderItem(
             value = customBrightnessValue,
             valueRange = -75..100,
             steps = 0,
             label = stringResource(ephyra.app.core.common.R.string.pref_custom_brightness),
-            onChange = { screenModel.preferences.customBrightnessValue().set(it) },
+            onChange = { ViewModel.preferences.customBrightnessValue().set(it) },
             pillColor = MaterialTheme.colorScheme.surfaceContainerHighest,
         )
     }
 
-    val colorFilter by screenModel.preferences.colorFilter().collectAsState()
+    val colorFilter by ViewModel.preferences.colorFilter().collectAsState()
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.pref_custom_color_filter),
-        pref = screenModel.preferences.colorFilter(),
+        pref = ViewModel.preferences.colorFilter(),
     )
     val scope = rememberCoroutineScope()
     if (colorFilter) {
-        val colorFilterValue by screenModel.preferences.colorFilterValue().collectAsState()
+        val colorFilterValue by ViewModel.preferences.colorFilterValue().collectAsState()
         SliderItem(
             value = colorFilterValue.red,
             valueRange = 0..255,
@@ -62,7 +62,7 @@ internal fun ColumnScope.ColorFilterPage(screenModel: ReaderSettingsScreenModel)
             label = stringResource(ephyra.app.core.common.R.string.color_filter_r_value),
             onChange = { newRValue ->
                 scope.launch {
-                    screenModel.preferences.colorFilterValue().getAndSet {
+                    ViewModel.preferences.colorFilterValue().getAndSet {
                         getColorValue(it, newRValue, RED_MASK, 16)
                     }
                 }
@@ -76,7 +76,7 @@ internal fun ColumnScope.ColorFilterPage(screenModel: ReaderSettingsScreenModel)
             label = stringResource(ephyra.app.core.common.R.string.color_filter_g_value),
             onChange = { newGValue ->
                 scope.launch {
-                    screenModel.preferences.colorFilterValue().getAndSet {
+                    ViewModel.preferences.colorFilterValue().getAndSet {
                         getColorValue(it, newGValue, GREEN_MASK, 8)
                     }
                 }
@@ -90,7 +90,7 @@ internal fun ColumnScope.ColorFilterPage(screenModel: ReaderSettingsScreenModel)
             label = stringResource(ephyra.app.core.common.R.string.color_filter_b_value),
             onChange = { newBValue ->
                 scope.launch {
-                    screenModel.preferences.colorFilterValue().getAndSet {
+                    ViewModel.preferences.colorFilterValue().getAndSet {
                         getColorValue(it, newBValue, BLUE_MASK, 0)
                     }
                 }
@@ -104,7 +104,7 @@ internal fun ColumnScope.ColorFilterPage(screenModel: ReaderSettingsScreenModel)
             label = stringResource(ephyra.app.core.common.R.string.color_filter_a_value),
             onChange = { newAValue ->
                 scope.launch {
-                    screenModel.preferences.colorFilterValue().getAndSet {
+                    ViewModel.preferences.colorFilterValue().getAndSet {
                         getColorValue(it, newAValue, ALPHA_MASK, 24)
                     }
                 }
@@ -112,12 +112,12 @@ internal fun ColumnScope.ColorFilterPage(screenModel: ReaderSettingsScreenModel)
             pillColor = MaterialTheme.colorScheme.surfaceContainerHighest,
         )
 
-        val colorFilterMode by screenModel.preferences.colorFilterMode().collectAsState()
+        val colorFilterMode by ViewModel.preferences.colorFilterMode().collectAsState()
         SettingsChipRow(ephyra.app.core.common.R.string.pref_color_filter_mode) {
             ColorFilterMode.mapIndexed { index, it ->
                 FilterChip(
                     selected = colorFilterMode == index,
-                    onClick = { screenModel.preferences.colorFilterMode().set(index) },
+                    onClick = { ViewModel.preferences.colorFilterMode().set(index) },
                     label = { Text(stringResource(it.first)) },
                 )
             }
@@ -126,11 +126,11 @@ internal fun ColumnScope.ColorFilterPage(screenModel: ReaderSettingsScreenModel)
 
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.pref_grayscale),
-        pref = screenModel.preferences.grayscale(),
+        pref = ViewModel.preferences.grayscale(),
     )
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.pref_inverted_colors),
-        pref = screenModel.preferences.invertedColors(),
+        pref = ViewModel.preferences.invertedColors(),
     )
 }
 

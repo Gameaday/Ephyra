@@ -26,7 +26,7 @@ import ephyra.domain.library.model.sort
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.feature.library.LibraryEntryPoint
 import ephyra.feature.library.LibrarySettingsScreenEvent
-import ephyra.feature.library.LibrarySettingsScreenModel
+import ephyra.feature.library.LibrarySettingsViewModel
 import ephyra.presentation.core.components.BaseSortItem
 import ephyra.presentation.core.components.CheckboxItem
 import ephyra.presentation.core.components.HeadingItem
@@ -44,7 +44,7 @@ import kotlinx.collections.immutable.persistentListOf
 @Composable
 fun LibrarySettingsDialog(
     onDismissRequest: () -> Unit,
-    screenModel: LibrarySettingsScreenModel,
+    ViewModel: LibrarySettingsViewModel,
     category: Category?,
 ) {
     TabbedDialog(
@@ -62,16 +62,16 @@ fun LibrarySettingsDialog(
         ) {
             when (page) {
                 0 -> FilterPage(
-                    screenModel = screenModel,
+                    ViewModel = ViewModel,
                 )
 
                 1 -> SortPage(
                     category = category,
-                    screenModel = screenModel,
+                    ViewModel = ViewModel,
                 )
 
                 2 -> DisplayPage(
-                    screenModel = screenModel,
+                    ViewModel = ViewModel,
                 )
             }
         }
@@ -80,7 +80,7 @@ fun LibrarySettingsDialog(
 
 @Composable
 private fun ColumnScope.FilterPage(
-    screenModel: LibrarySettingsScreenModel,
+    ViewModel: LibrarySettingsViewModel,
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val appInfo = remember {
@@ -89,9 +89,9 @@ private fun ColumnScope.FilterPage(
             LibraryEntryPoint::class.java,
         ).appInfo()
     }
-    val filterDownloaded by screenModel.libraryPreferences.filterDownloaded().collectAsState()
-    val downloadedOnly by screenModel.preferences.downloadedOnly().collectAsState()
-    val autoUpdateMangaRestrictions by screenModel.libraryPreferences.autoUpdateMangaRestrictions()
+    val filterDownloaded by ViewModel.libraryPreferences.filterDownloaded().collectAsState()
+    val downloadedOnly by ViewModel.preferences.downloadedOnly().collectAsState()
+    val autoUpdateMangaRestrictions by ViewModel.libraryPreferences.autoUpdateMangaRestrictions()
         .collectAsState()
 
     TriStateItem(
@@ -103,64 +103,64 @@ private fun ColumnScope.FilterPage(
         },
         enabled = !downloadedOnly,
         onClick = {
-            screenModel.onEvent(LibrarySettingsScreenEvent.ToggleFilter(LibraryPreferences::filterDownloaded))
+            ViewModel.onEvent(LibrarySettingsScreenEvent.ToggleFilter(LibraryPreferences::filterDownloaded))
         },
     )
-    val filterUnread by screenModel.libraryPreferences.filterUnread().collectAsState()
+    val filterUnread by ViewModel.libraryPreferences.filterUnread().collectAsState()
     TriStateItem(
         label = stringResource(ephyra.app.core.common.R.string.action_filter_unread),
         state = filterUnread,
-        onClick = { screenModel.onEvent(LibrarySettingsScreenEvent.ToggleFilter(LibraryPreferences::filterUnread)) },
+        onClick = { ViewModel.onEvent(LibrarySettingsScreenEvent.ToggleFilter(LibraryPreferences::filterUnread)) },
     )
-    val filterStarted by screenModel.libraryPreferences.filterStarted().collectAsState()
+    val filterStarted by ViewModel.libraryPreferences.filterStarted().collectAsState()
     TriStateItem(
         label = stringResource(ephyra.app.core.common.R.string.label_started),
         state = filterStarted,
-        onClick = { screenModel.onEvent(LibrarySettingsScreenEvent.ToggleFilter(LibraryPreferences::filterStarted)) },
+        onClick = { ViewModel.onEvent(LibrarySettingsScreenEvent.ToggleFilter(LibraryPreferences::filterStarted)) },
     )
-    val filterBookmarked by screenModel.libraryPreferences.filterBookmarked().collectAsState()
+    val filterBookmarked by ViewModel.libraryPreferences.filterBookmarked().collectAsState()
     TriStateItem(
         label = stringResource(ephyra.app.core.common.R.string.action_filter_bookmarked),
         state = filterBookmarked,
         onClick = {
-            screenModel.onEvent(LibrarySettingsScreenEvent.ToggleFilter(LibraryPreferences::filterBookmarked))
+            ViewModel.onEvent(LibrarySettingsScreenEvent.ToggleFilter(LibraryPreferences::filterBookmarked))
         },
     )
-    val filterCompleted by screenModel.libraryPreferences.filterCompleted().collectAsState()
+    val filterCompleted by ViewModel.libraryPreferences.filterCompleted().collectAsState()
     TriStateItem(
         label = stringResource(ephyra.app.core.common.R.string.completed),
         state = filterCompleted,
-        onClick = { screenModel.onEvent(LibrarySettingsScreenEvent.ToggleFilter(LibraryPreferences::filterCompleted)) },
+        onClick = { ViewModel.onEvent(LibrarySettingsScreenEvent.ToggleFilter(LibraryPreferences::filterCompleted)) },
     )
-    val filterSourceHealthDead by screenModel.libraryPreferences.filterSourceHealthDead().collectAsState()
+    val filterSourceHealthDead by ViewModel.libraryPreferences.filterSourceHealthDead().collectAsState()
     TriStateItem(
         label = stringResource(ephyra.app.core.common.R.string.action_filter_source_health_dead),
         state = filterSourceHealthDead,
         onClick = {
-            screenModel.onEvent(LibrarySettingsScreenEvent.ToggleFilter(LibraryPreferences::filterSourceHealthDead))
+            ViewModel.onEvent(LibrarySettingsScreenEvent.ToggleFilter(LibraryPreferences::filterSourceHealthDead))
         },
     )
-    val filterContentTypeManga by screenModel.libraryPreferences.filterContentTypeManga().collectAsState()
+    val filterContentTypeManga by ViewModel.libraryPreferences.filterContentTypeManga().collectAsState()
     TriStateItem(
         label = stringResource(ephyra.app.core.common.R.string.action_filter_content_type_manga),
         state = filterContentTypeManga,
         onClick = {
-            screenModel.onEvent(LibrarySettingsScreenEvent.ToggleFilter(LibraryPreferences::filterContentTypeManga))
+            ViewModel.onEvent(LibrarySettingsScreenEvent.ToggleFilter(LibraryPreferences::filterContentTypeManga))
         },
     )
     // TODO: re-enable when custom intervals are ready for stable
     if ((!appInfo.isRelease) && LibraryPreferences.MANGA_OUTSIDE_RELEASE_PERIOD in autoUpdateMangaRestrictions) {
-        val filterIntervalCustom by screenModel.libraryPreferences.filterIntervalCustom().collectAsState()
+        val filterIntervalCustom by ViewModel.libraryPreferences.filterIntervalCustom().collectAsState()
         TriStateItem(
             label = stringResource(ephyra.app.core.common.R.string.action_filter_interval_custom),
             state = filterIntervalCustom,
             onClick = {
-                screenModel.onEvent(LibrarySettingsScreenEvent.ToggleFilter(LibraryPreferences::filterIntervalCustom))
+                ViewModel.onEvent(LibrarySettingsScreenEvent.ToggleFilter(LibraryPreferences::filterIntervalCustom))
             },
         )
     }
 
-    val trackers by screenModel.trackersFlow.collectAsStateWithLifecycle()
+    val trackers by ViewModel.trackersFlow.collectAsStateWithLifecycle()
     when (trackers.size) {
         0 -> {
             // No trackers
@@ -168,24 +168,24 @@ private fun ColumnScope.FilterPage(
 
         1 -> {
             val service = trackers[0]
-            val filterTracker by screenModel.libraryPreferences.filterTracking(service.id.toInt())
+            val filterTracker by ViewModel.libraryPreferences.filterTracking(service.id.toInt())
                 .collectAsState()
             TriStateItem(
                 label = stringResource(ephyra.app.core.common.R.string.action_filter_tracked),
                 state = filterTracker,
-                onClick = { screenModel.onEvent(LibrarySettingsScreenEvent.ToggleTracker(service.id.toInt())) },
+                onClick = { ViewModel.onEvent(LibrarySettingsScreenEvent.ToggleTracker(service.id.toInt())) },
             )
         }
 
         else -> {
             HeadingItem(ephyra.app.core.common.R.string.action_filter_tracked)
             trackers.map { service ->
-                val filterTracker by screenModel.libraryPreferences.filterTracking(service.id.toInt())
+                val filterTracker by ViewModel.libraryPreferences.filterTracking(service.id.toInt())
                     .collectAsState()
                 TriStateItem(
                     label = service.name,
                     state = filterTracker,
-                    onClick = { screenModel.onEvent(LibrarySettingsScreenEvent.ToggleTracker(service.id.toInt())) },
+                    onClick = { ViewModel.onEvent(LibrarySettingsScreenEvent.ToggleTracker(service.id.toInt())) },
                 )
             }
         }
@@ -195,9 +195,9 @@ private fun ColumnScope.FilterPage(
 @Composable
 private fun ColumnScope.SortPage(
     category: Category?,
-    screenModel: LibrarySettingsScreenModel,
+    ViewModel: LibrarySettingsViewModel,
 ) {
-    val trackers by screenModel.trackersFlow.collectAsStateWithLifecycle()
+    val trackers by ViewModel.trackersFlow.collectAsStateWithLifecycle()
     val sortingMode = category.sort.type
     val sortDescending = !category.sort.isAscending
 
@@ -228,7 +228,7 @@ private fun ColumnScope.SortPage(
                 icon = Icons.Default.Refresh
                     .takeIf { sortingMode == LibrarySort.Type.Random },
                 onClick = {
-                    screenModel.onEvent(
+                    ViewModel.onEvent(
                         LibrarySettingsScreenEvent.SetSort(category, mode, LibrarySort.Direction.Ascending),
                     )
                 },
@@ -253,7 +253,7 @@ private fun ColumnScope.SortPage(
                         LibrarySort.Direction.Ascending
                     }
                 }
-                screenModel.onEvent(LibrarySettingsScreenEvent.SetSort(category, mode, direction))
+                ViewModel.onEvent(LibrarySettingsScreenEvent.SetSort(category, mode, direction))
             },
         )
     }
@@ -268,14 +268,14 @@ private val displayModes = listOf(
 
 @Composable
 private fun ColumnScope.DisplayPage(
-    screenModel: LibrarySettingsScreenModel,
+    ViewModel: LibrarySettingsViewModel,
 ) {
-    val displayMode by screenModel.libraryPreferences.displayMode().collectAsState()
+    val displayMode by ViewModel.libraryPreferences.displayMode().collectAsState()
     SettingsChipRow(ephyra.app.core.common.R.string.action_display_mode) {
         displayModes.map { (titleRes, mode) ->
             FilterChip(
                 selected = displayMode == mode,
-                onClick = { screenModel.onEvent(LibrarySettingsScreenEvent.SetDisplayMode(mode)) },
+                onClick = { ViewModel.onEvent(LibrarySettingsScreenEvent.SetDisplayMode(mode)) },
                 label = { Text(stringResource(titleRes)) },
             )
         }
@@ -285,9 +285,9 @@ private fun ColumnScope.DisplayPage(
         val configuration = LocalConfiguration.current
         val columnPreference = remember {
             if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                screenModel.libraryPreferences.landscapeColumns()
+                ViewModel.libraryPreferences.landscapeColumns()
             } else {
-                screenModel.libraryPreferences.portraitColumns()
+                ViewModel.libraryPreferences.portraitColumns()
             }
         }
 
@@ -309,32 +309,32 @@ private fun ColumnScope.DisplayPage(
     HeadingItem(ephyra.app.core.common.R.string.overlay_header)
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.action_display_download_badge),
-        pref = screenModel.libraryPreferences.downloadBadge(),
+        pref = ViewModel.libraryPreferences.downloadBadge(),
     )
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.action_display_unread_badge),
-        pref = screenModel.libraryPreferences.unreadBadge(),
+        pref = ViewModel.libraryPreferences.unreadBadge(),
     )
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.action_display_local_badge),
-        pref = screenModel.libraryPreferences.localBadge(),
+        pref = ViewModel.libraryPreferences.localBadge(),
     )
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.action_display_language_badge),
-        pref = screenModel.libraryPreferences.languageBadge(),
+        pref = ViewModel.libraryPreferences.languageBadge(),
     )
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.action_display_show_continue_reading_button),
-        pref = screenModel.libraryPreferences.showContinueReadingButton(),
+        pref = ViewModel.libraryPreferences.showContinueReadingButton(),
     )
 
     HeadingItem(ephyra.app.core.common.R.string.tabs_header)
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.action_display_show_tabs),
-        pref = screenModel.libraryPreferences.categoryTabs(),
+        pref = ViewModel.libraryPreferences.categoryTabs(),
     )
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.action_display_show_number_of_items),
-        pref = screenModel.libraryPreferences.categoryNumberOfItems(),
+        pref = ViewModel.libraryPreferences.categoryNumberOfItems(),
     )
 }

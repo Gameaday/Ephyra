@@ -67,7 +67,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import ephyra.domain.content.source.DataField
 import ephyra.domain.content.source.SourceProfile
-import ephyra.feature.browse.source.sourcing.ContentSourcingScreenModel
+import ephyra.feature.browse.source.sourcing.ContentSourcingViewModel
 import ephyra.feature.browse.source.sourcing.RepositoryItem
 import ephyra.feature.browse.source.sourcing.ScraperItem
 import ephyra.presentation.core.components.AppBar
@@ -81,15 +81,15 @@ import kotlinx.coroutines.flow.collectLatest
 fun ContentSourcingScreen(
     navController: NavController = LocalNavController.current,
 ) {
-    val screenModel = hiltViewModel<ContentSourcingScreenModel>()
-    val state by screenModel.state.collectAsStateWithLifecycle()
+    val ViewModel = hiltViewModel<ContentSourcingViewModel>()
+    val state by ViewModel.state.collectAsStateWithLifecycle()
 
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
-        screenModel.effects.collectLatest { effect ->
+        ViewModel.effects.collectLatest { effect ->
             when (effect) {
-                is ContentSourcingScreenModel.Effect.ShowSnackbar -> {
+                is ContentSourcingViewModel.Effect.ShowSnackbar -> {
                     snackbarMessage = effect.message
                 }
             }
@@ -111,7 +111,7 @@ fun ContentSourcingScreen(
             ContentSourcingLayout(
                 contentPadding = contentPadding,
                 state = state,
-                onEvent = screenModel::onEvent,
+                onEvent = ViewModel::onEvent,
             )
         }
 
@@ -130,9 +130,9 @@ fun ContentSourcingScreen(
 
         state.dialog?.let { dialog ->
             when (dialog) {
-                is ContentSourcingScreenModel.Dialog.ScanComplete -> {
+                is ContentSourcingViewModel.Dialog.ScanComplete -> {
                     AlertDialog(
-                        onDismissRequest = { screenModel.onEvent(ContentSourcingScreenModel.Event.DismissDialog) },
+                        onDismissRequest = { ViewModel.onEvent(ContentSourcingViewModel.Event.DismissDialog) },
                         title = { Text("Scan Results: ${dialog.repoName}") },
                         text = {
                             Column(modifier = Modifier.fillMaxWidth()) {
@@ -174,7 +174,7 @@ fun ContentSourcingScreen(
                         },
                         confirmButton = {
                             TextButton(onClick = {
-                                screenModel.onEvent(ContentSourcingScreenModel.Event.DismissDialog)
+                                ViewModel.onEvent(ContentSourcingViewModel.Event.DismissDialog)
                             }) {
                                 Text("Close")
                             }
@@ -189,8 +189,8 @@ fun ContentSourcingScreen(
 @Composable
 private fun ContentSourcingLayout(
     contentPadding: PaddingValues,
-    state: ContentSourcingScreenModel.State,
-    onEvent: (ContentSourcingScreenModel.Event) -> Unit,
+    state: ContentSourcingViewModel.State,
+    onEvent: (ContentSourcingViewModel.Event) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -203,19 +203,19 @@ private fun ContentSourcingLayout(
         ) {
             Tab(
                 selected = state.selectedTab == 0,
-                onClick = { onEvent(ContentSourcingScreenModel.Event.SelectTab(0)) },
+                onClick = { onEvent(ContentSourcingViewModel.Event.SelectTab(0)) },
                 text = { Text("JS Scrapers") },
                 icon = { Icon(Icons.Outlined.CloudSync, contentDescription = null) },
             )
             Tab(
                 selected = state.selectedTab == 1,
-                onClick = { onEvent(ContentSourcingScreenModel.Event.SelectTab(1)) },
+                onClick = { onEvent(ContentSourcingViewModel.Event.SelectTab(1)) },
                 text = { Text("Local & SMB") },
                 icon = { Icon(Icons.Outlined.Dns, contentDescription = null) },
             )
             Tab(
                 selected = state.selectedTab == 2,
-                onClick = { onEvent(ContentSourcingScreenModel.Event.SelectTab(2)) },
+                onClick = { onEvent(ContentSourcingViewModel.Event.SelectTab(2)) },
                 text = { Text("Heuristics") },
                 icon = { Icon(Icons.Outlined.Autorenew, contentDescription = null) },
             )
@@ -233,8 +233,8 @@ private fun ContentSourcingLayout(
 
 @Composable
 private fun ScrapersTabContent(
-    state: ContentSourcingScreenModel.State,
-    onEvent: (ContentSourcingScreenModel.Event) -> Unit,
+    state: ContentSourcingViewModel.State,
+    onEvent: (ContentSourcingViewModel.Event) -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier
@@ -268,7 +268,7 @@ private fun ScrapersTabContent(
                     Spacer(modifier = Modifier.height(16.dp))
                     OutlinedTextField(
                         value = state.githubUrl,
-                        onValueChange = { onEvent(ContentSourcingScreenModel.Event.UpdateGithubUrl(it)) },
+                        onValueChange = { onEvent(ContentSourcingViewModel.Event.UpdateGithubUrl(it)) },
                         label = { Text("GitHub Scraper URL") },
                         placeholder = { Text("https://github.com/user/repo/scraper.js") },
                         modifier = Modifier.fillMaxWidth(),
@@ -277,7 +277,7 @@ private fun ScrapersTabContent(
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = state.scraperName,
-                        onValueChange = { onEvent(ContentSourcingScreenModel.Event.UpdateScraperName(it)) },
+                        onValueChange = { onEvent(ContentSourcingViewModel.Event.UpdateScraperName(it)) },
                         label = { Text("Scraper Filename") },
                         placeholder = { Text("mangadex_scraper.js") },
                         modifier = Modifier.fillMaxWidth(),
@@ -292,7 +292,7 @@ private fun ScrapersTabContent(
                             onClick = {
                                 if (state.githubUrl.isNotBlank() && state.scraperName.isNotBlank()) {
                                     onEvent(
-                                        ContentSourcingScreenModel.Event.DownloadScraper(
+                                        ContentSourcingViewModel.Event.DownloadScraper(
                                             state.githubUrl,
                                             state.scraperName,
                                         ),
@@ -311,7 +311,7 @@ private fun ScrapersTabContent(
                         }
 
                         OutlinedButton(
-                            onClick = { onEvent(ContentSourcingScreenModel.Event.ShowImportDialog(true)) },
+                            onClick = { onEvent(ContentSourcingViewModel.Event.ShowImportDialog(true)) },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(12.dp),
                         ) {
@@ -350,7 +350,7 @@ private fun ScrapersTabContent(
                     Spacer(modifier = Modifier.height(16.dp))
                     OutlinedTextField(
                         value = state.mapBaseUrl,
-                        onValueChange = { onEvent(ContentSourcingScreenModel.Event.UpdateMapBaseUrl(it)) },
+                        onValueChange = { onEvent(ContentSourcingViewModel.Event.UpdateMapBaseUrl(it)) },
                         label = { Text("Website Base URL") },
                         placeholder = { Text("https://mangadex.org") },
                         modifier = Modifier.fillMaxWidth(),
@@ -359,7 +359,7 @@ private fun ScrapersTabContent(
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = state.mapScraperName,
-                        onValueChange = { onEvent(ContentSourcingScreenModel.Event.UpdateMapScraperName(it)) },
+                        onValueChange = { onEvent(ContentSourcingViewModel.Event.UpdateMapScraperName(it)) },
                         label = { Text("Mapped Scraper Filename") },
                         placeholder = { Text("mangadex_scraper.js") },
                         modifier = Modifier.fillMaxWidth(),
@@ -370,7 +370,7 @@ private fun ScrapersTabContent(
                         onClick = {
                             if (state.mapBaseUrl.isNotBlank() && state.mapScraperName.isNotBlank()) {
                                 onEvent(
-                                    ContentSourcingScreenModel.Event.LinkBaseUrlToScraper(
+                                    ContentSourcingViewModel.Event.LinkBaseUrlToScraper(
                                         state.mapBaseUrl,
                                         state.mapScraperName,
                                     ),
@@ -420,7 +420,7 @@ private fun ScrapersTabContent(
                             )
                         }
                         IconButton(onClick = {
-                            onEvent(ContentSourcingScreenModel.Event.RemoveScraperMapping(mapping.baseUrl))
+                            onEvent(ContentSourcingViewModel.Event.RemoveScraperMapping(mapping.baseUrl))
                         }) {
                             Icon(
                                 imageVector = Icons.Outlined.DeleteOutline,
@@ -461,13 +461,13 @@ private fun ScrapersTabContent(
 
     if (state.showImportDialog) {
         AlertDialog(
-            onDismissRequest = { onEvent(ContentSourcingScreenModel.Event.ShowImportDialog(false)) },
+            onDismissRequest = { onEvent(ContentSourcingViewModel.Event.ShowImportDialog(false)) },
             title = { Text("Import Sandboxed JavaScript") },
             text = {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
                         value = state.importScriptName,
-                        onValueChange = { onEvent(ContentSourcingScreenModel.Event.UpdateImportScriptName(it)) },
+                        onValueChange = { onEvent(ContentSourcingViewModel.Event.UpdateImportScriptName(it)) },
                         label = { Text("Script Name (e.g. custom.js)") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp),
@@ -475,7 +475,7 @@ private fun ScrapersTabContent(
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = state.importScriptContent,
-                        onValueChange = { onEvent(ContentSourcingScreenModel.Event.UpdateImportScriptContent(it)) },
+                        onValueChange = { onEvent(ContentSourcingViewModel.Event.UpdateImportScriptContent(it)) },
                         label = { Text("JavaScript Content") },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -488,7 +488,7 @@ private fun ScrapersTabContent(
                 TextButton(onClick = {
                     if (state.importScriptName.isNotBlank() && state.importScriptContent.isNotBlank()) {
                         onEvent(
-                            ContentSourcingScreenModel.Event.ImportLocalScraper(
+                            ContentSourcingViewModel.Event.ImportLocalScraper(
                                 state.importScriptName,
                                 state.importScriptContent,
                             ),
@@ -499,7 +499,7 @@ private fun ScrapersTabContent(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { onEvent(ContentSourcingScreenModel.Event.ShowImportDialog(false)) }) {
+                TextButton(onClick = { onEvent(ContentSourcingViewModel.Event.ShowImportDialog(false)) }) {
                     Text("Cancel")
                 }
             },
@@ -510,7 +510,7 @@ private fun ScrapersTabContent(
 @Composable
 private fun ScraperRow(
     item: ScraperItem,
-    onEvent: (ContentSourcingScreenModel.Event) -> Unit,
+    onEvent: (ContentSourcingViewModel.Event) -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -564,7 +564,7 @@ private fun ScraperRow(
             }
 
             if (item.hasUpdatesUrl) {
-                IconButton(onClick = { onEvent(ContentSourcingScreenModel.Event.CheckScraperUpdate(item.name)) }) {
+                IconButton(onClick = { onEvent(ContentSourcingViewModel.Event.CheckScraperUpdate(item.name)) }) {
                     Icon(
                         imageVector = Icons.Outlined.CloudDownload,
                         contentDescription = "Check for updates",
@@ -578,8 +578,8 @@ private fun ScraperRow(
 
 @Composable
 private fun RepositoriesTabContent(
-    state: ContentSourcingScreenModel.State,
-    onEvent: (ContentSourcingScreenModel.Event) -> Unit,
+    state: ContentSourcingViewModel.State,
+    onEvent: (ContentSourcingViewModel.Event) -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier
@@ -627,7 +627,7 @@ private fun RepositoriesTabContent(
                                         Color.Transparent
                                     },
                                 )
-                                .clickable { onEvent(ContentSourcingScreenModel.Event.UpdateShowNetworkForm(false)) }
+                                .clickable { onEvent(ContentSourcingViewModel.Event.UpdateShowNetworkForm(false)) }
                                 .padding(8.dp),
                             horizontalArrangement = Arrangement.Center,
                         ) {
@@ -647,7 +647,7 @@ private fun RepositoriesTabContent(
                                         Color.Transparent
                                     },
                                 )
-                                .clickable { onEvent(ContentSourcingScreenModel.Event.UpdateShowNetworkForm(true)) }
+                                .clickable { onEvent(ContentSourcingViewModel.Event.UpdateShowNetworkForm(true)) }
                                 .padding(8.dp),
                             horizontalArrangement = Arrangement.Center,
                         ) {
@@ -660,7 +660,7 @@ private fun RepositoriesTabContent(
                     Spacer(modifier = Modifier.height(16.dp))
                     OutlinedTextField(
                         value = state.repoName,
-                        onValueChange = { onEvent(ContentSourcingScreenModel.Event.UpdateRepoName(it)) },
+                        onValueChange = { onEvent(ContentSourcingViewModel.Event.UpdateRepoName(it)) },
                         label = { Text("Repository Friendly Name") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
@@ -670,7 +670,7 @@ private fun RepositoriesTabContent(
                     if (state.showNetworkForm) {
                         OutlinedTextField(
                             value = state.repoPath,
-                            onValueChange = { onEvent(ContentSourcingScreenModel.Event.UpdateRepoPath(it)) },
+                            onValueChange = { onEvent(ContentSourcingViewModel.Event.UpdateRepoPath(it)) },
                             label = { Text("SMB Connection String") },
                             placeholder = { Text("smb://user:password@192.168.1.50/share") },
                             modifier = Modifier.fillMaxWidth(),
@@ -679,7 +679,7 @@ private fun RepositoriesTabContent(
                     } else {
                         OutlinedTextField(
                             value = state.repoPath,
-                            onValueChange = { onEvent(ContentSourcingScreenModel.Event.UpdateRepoPath(it)) },
+                            onValueChange = { onEvent(ContentSourcingViewModel.Event.UpdateRepoPath(it)) },
                             label = { Text("Storage Directory URI") },
                             placeholder = { Text("content://com.android.externalstorage...") },
                             modifier = Modifier.fillMaxWidth(),
@@ -691,7 +691,7 @@ private fun RepositoriesTabContent(
                     Button(
                         onClick = {
                             if (state.repoName.isNotBlank() && state.repoPath.isNotBlank()) {
-                                onEvent(ContentSourcingScreenModel.Event.AddRepository(state.repoName, state.repoPath))
+                                onEvent(ContentSourcingViewModel.Event.AddRepository(state.repoName, state.repoPath))
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
@@ -736,7 +736,7 @@ private fun RepositoriesTabContent(
 @Composable
 private fun RepositoryRow(
     item: RepositoryItem,
-    onEvent: (ContentSourcingScreenModel.Event) -> Unit,
+    onEvent: (ContentSourcingViewModel.Event) -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -785,7 +785,7 @@ private fun RepositoryRow(
                 }
             }
 
-            IconButton(onClick = { onEvent(ContentSourcingScreenModel.Event.ScanRepository(item)) }) {
+            IconButton(onClick = { onEvent(ContentSourcingViewModel.Event.ScanRepository(item)) }) {
                 Icon(
                     imageVector = Icons.Outlined.PlayCircleOutline,
                     contentDescription = "Scan directory",
@@ -793,7 +793,7 @@ private fun RepositoryRow(
                 )
             }
 
-            IconButton(onClick = { onEvent(ContentSourcingScreenModel.Event.RemoveRepository(item.name)) }) {
+            IconButton(onClick = { onEvent(ContentSourcingViewModel.Event.RemoveRepository(item.name)) }) {
                 Icon(
                     imageVector = Icons.Outlined.DeleteOutline,
                     contentDescription = "Delete repository",
@@ -806,8 +806,8 @@ private fun RepositoryRow(
 
 @Composable
 private fun HeuristicsTabContent(
-    state: ContentSourcingScreenModel.State,
-    onEvent: (ContentSourcingScreenModel.Event) -> Unit,
+    state: ContentSourcingViewModel.State,
+    onEvent: (ContentSourcingViewModel.Event) -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier
@@ -882,7 +882,7 @@ private fun HeuristicsTabContent(
 @Composable
 private fun ProfileRow(
     profile: SourceProfile,
-    onEvent: (ContentSourcingScreenModel.Event) -> Unit,
+    onEvent: (ContentSourcingViewModel.Event) -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -909,7 +909,7 @@ private fun ProfileRow(
                     )
                 }
 
-                IconButton(onClick = { onEvent(ContentSourcingScreenModel.Event.ForceRediscover(profile.baseUrl)) }) {
+                IconButton(onClick = { onEvent(ContentSourcingViewModel.Event.ForceRediscover(profile.baseUrl)) }) {
                     Icon(
                         imageVector = Icons.Outlined.Refresh,
                         contentDescription = "Force discovery",
@@ -917,7 +917,7 @@ private fun ProfileRow(
                     )
                 }
 
-                IconButton(onClick = { onEvent(ContentSourcingScreenModel.Event.DeleteProfile(profile.baseUrl)) }) {
+                IconButton(onClick = { onEvent(ContentSourcingViewModel.Event.DeleteProfile(profile.baseUrl)) }) {
                     Icon(
                         imageVector = Icons.Outlined.DeleteOutline,
                         contentDescription = "Delete profile",

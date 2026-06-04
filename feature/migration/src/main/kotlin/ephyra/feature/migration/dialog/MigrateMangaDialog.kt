@@ -62,11 +62,11 @@ fun MigrateMangaDialog(
 ) {
     val scope = rememberCoroutineScope()
 
-    val screenModel = hiltViewModel<MigrateDialogScreenModel>()
+    val ViewModel = hiltViewModel<MigrateDialogViewModel>()
     LaunchedEffect(current, target) {
-        screenModel.init(current, target)
+        ViewModel.init(current, target)
     }
-    val state by screenModel.state.collectAsStateWithLifecycle()
+    val state by ViewModel.state.collectAsStateWithLifecycle()
 
     if (state.isMigrated) return
 
@@ -90,7 +90,7 @@ fun MigrateMangaDialog(
                     LabeledCheckbox(
                         label = stringResource(flag.getLabel()),
                         checked = flag in state.selectedFlags,
-                        onCheckedChange = { screenModel.toggleSelection(flag) },
+                        onCheckedChange = { ViewModel.toggleSelection(flag) },
                     )
                 }
             }
@@ -113,7 +113,7 @@ fun MigrateMangaDialog(
                 TextButton(
                     onClick = {
                         scope.launchIO {
-                            screenModel.migrateManga(replace = false)
+                            ViewModel.migrateManga(replace = false)
                             withContext(Dispatchers.Main) { onComplete() }
                         }
                     },
@@ -123,7 +123,7 @@ fun MigrateMangaDialog(
                 TextButton(
                     onClick = {
                         scope.launchIO {
-                            screenModel.migrateManga(replace = true)
+                            ViewModel.migrateManga(replace = true)
                             withContext(Dispatchers.Main) { onComplete() }
                         }
                     },
@@ -136,7 +136,7 @@ fun MigrateMangaDialog(
 }
 
 @HiltViewModel
-class MigrateDialogScreenModel @Inject constructor(
+class MigrateDialogViewModel @Inject constructor(
     private val sourcePreference: SourcePreferences,
     private val coverCache: CoverCache,
     private val downloadManager: DownloadManager,

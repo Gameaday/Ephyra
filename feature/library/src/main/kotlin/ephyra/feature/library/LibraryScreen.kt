@@ -56,13 +56,13 @@ fun LibraryScreen(
 ) {
     SafeFeatureContainer(
         featureName = "Library",
-        viewModelClass = LibraryScreenModel::class.java,
+        viewModelClass = LibraryViewModel::class.java,
         onBack = { navController.popBackStack() },
-    ) { screenModel ->
-        val settingsScreenModel = hiltViewModel<LibrarySettingsScreenModel>()
+    ) { ViewModel ->
+        val settingsViewModel = hiltViewModel<LibrarySettingsViewModel>()
         LibraryScreen(
-            screenModel = screenModel,
-            settingsScreenModel = settingsScreenModel,
+            ViewModel = ViewModel,
+            settingsViewModel = settingsViewModel,
             navController = navController,
             searchQuery = searchQuery,
         )
@@ -71,8 +71,8 @@ fun LibraryScreen(
 
 @Composable
 fun LibraryScreen(
-    screenModel: LibraryScreenModel,
-    settingsScreenModel: LibrarySettingsScreenModel,
+    ViewModel: LibraryViewModel,
+    settingsViewModel: LibrarySettingsViewModel,
     navController: NavController,
     searchQuery: String? = null,
 ) {
@@ -80,12 +80,12 @@ fun LibraryScreen(
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
 
-    val state by screenModel.state.collectAsStateWithLifecycle()
+    val state by ViewModel.state.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
     val onClickRefresh: (Category?) -> Unit = { category ->
-        screenModel.onEvent(LibraryScreenEvent.RefreshLibrary(category))
+        ViewModel.onEvent(LibraryScreenEvent.RefreshLibrary(category))
     }
 
     Scaffold(
@@ -99,15 +99,15 @@ fun LibraryScreen(
                 hasActiveFilters = state.hasActiveFilters,
                 selectedCount = state.selection.size,
                 title = title,
-                onClickUnselectAll = { screenModel.onEvent(LibraryScreenEvent.ClearSelection) },
-                onClickSelectAll = { screenModel.onEvent(LibraryScreenEvent.SelectAll) },
-                onClickInvertSelection = { screenModel.onEvent(LibraryScreenEvent.InvertSelection) },
-                onClickFilter = { screenModel.onEvent(LibraryScreenEvent.ShowSettingsDialog) },
+                onClickUnselectAll = { ViewModel.onEvent(LibraryScreenEvent.ClearSelection) },
+                onClickSelectAll = { ViewModel.onEvent(LibraryScreenEvent.SelectAll) },
+                onClickInvertSelection = { ViewModel.onEvent(LibraryScreenEvent.InvertSelection) },
+                onClickFilter = { ViewModel.onEvent(LibraryScreenEvent.ShowSettingsDialog) },
                 onClickRefresh = { onClickRefresh(state.activeCategory) },
                 onClickGlobalUpdate = { onClickRefresh(null) },
                 onClickOpenRandomManga = {
                     scope.launch {
-                        val randomItem = screenModel.getRandomLibraryItemForCurrentCategory()
+                        val randomItem = ViewModel.getRandomLibraryItemForCurrentCategory()
                         if (randomItem != null) {
                             navController.navigate(
                                 Screen.MangaDetails(
@@ -123,7 +123,7 @@ fun LibraryScreen(
                     }
                 },
                 searchQuery = state.searchQuery,
-                onSearchQueryChange = { screenModel.onEvent(LibraryScreenEvent.Search(it)) },
+                onSearchQueryChange = { ViewModel.onEvent(LibraryScreenEvent.Search(it)) },
                 // For scroll overlay when no tab
                 scrollBehavior = scrollBehavior.takeIf { !state.showCategoryTabs },
             )
@@ -131,17 +131,19 @@ fun LibraryScreen(
         bottomBar = {
             LibraryBottomActionMenu(
                 visible = state.selectionMode,
-                onChangeCategoryClicked = { screenModel.onEvent(LibraryScreenEvent.OpenChangeCategoryDialog) },
-                onMarkAsReadClicked = { screenModel.onEvent(LibraryScreenEvent.MarkReadSelection(read = true)) },
-                onMarkAsUnreadClicked = { screenModel.onEvent(LibraryScreenEvent.MarkReadSelection(read = false)) },
+                onChangeCategoryClicked = { ViewModel.onEvent(LibraryScreenEvent.OpenChangeCategoryDialog) },
+                onMarkAsReadClicked = { ViewModel.onEvent(LibraryScreenEvent.MarkReadSelection(read = true)) },
+                onMarkAsUnreadClicked = { ViewModel.onEvent(LibraryScreenEvent.MarkReadSelection(read = false)) },
                 onDownloadClicked = { action: DownloadAction ->
-                    screenModel.onEvent(LibraryScreenEvent.PerformDownloadAction(action))
+                    ViewModel.onEvent(LibraryScreenEvent.PerformDownloadAction(action))
                 }.takeIf { state.selectedManga.fastAll { !it.isLocal() } },
-                onDeleteClicked = { screenModel.onEvent(LibraryScreenEvent.OpenDeleteMangaDialog) },
+                onDeleteClicked = { ViewModel.onEvent(LibraryScreenEvent.OpenDeleteMangaDialog) },
                 onMigrateClicked = {
-                    screenModel.onEvent(LibraryScreenEvent.ClearSelection)
-                    // TODO: MigrationConfigScreen doesn't have a route yet
-                    // navController.navigate(...)
+                    val selectedIds = state.selection.map { it.id }
+                    ViewModel.onEvent(LibraryScreenEvent.ClearSelection)
+                    navController.navigate(
+                        ScreenRoutes.MigrationConfig.createRoute(selectedIds),
+                    )
                 },
             )
         },
@@ -178,7 +180,7 @@ fun LibraryScreen(
                     showPageTabs = state.showCategoryTabs || !state.searchQuery.isNullOrEmpty(),
                     deadSourceCount = state.deadSourceCount,
                     degradedSourceCount = state.degradedSourceCount,
-                    onChangeCurrentPage = { screenModel.onEvent(LibraryScreenEvent.UpdateActiveCategoryIndex(it)) },
+                    onChangeCurrentPage = { ViewModel.onEvent(LibraryScreenEvent.UpdateActiveCategoryIndex(it)) },
                     onClickManga = {
                         navController.navigate(
                             ephyra.presentation.core.ui.navigation.Screen.MangaDetails(
@@ -189,7 +191,7 @@ fun LibraryScreen(
                     },
                     onContinueReadingClicked = { it: LibraryManga ->
                         scope.launchIO {
-                            val chapter = screenModel.getNextUnreadChapter(it.manga)
+                            val chapter = ViewModel.getNextUnreadChapter(it.manga)
                             if (chapter != null) {
                                 context.startActivity(
                                     ReaderActivity.newIntent(context, chapter.mangaId, chapter.id),
@@ -203,10 +205,10 @@ fun LibraryScreen(
                         Unit
                     }.takeIf { state.showMangaContinueButton },
                     onToggleSelection = { cat, manga ->
-                        screenModel.onEvent(LibraryScreenEvent.ToggleSelection(cat, manga))
+                        ViewModel.onEvent(LibraryScreenEvent.ToggleSelection(cat, manga))
                     },
                     onToggleRangeSelection = { category, manga ->
-                        screenModel.onEvent(LibraryScreenEvent.ToggleRangeSelection(category, manga))
+                        ViewModel.onEvent(LibraryScreenEvent.ToggleRangeSelection(category, manga))
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     },
                     onRefresh = {
@@ -215,52 +217,52 @@ fun LibraryScreen(
                     },
                     onGlobalSearchClicked = {
                         navController.navigate(
-                            Screen.GlobalSearch(screenModel.state.value.searchQuery),
+                            Screen.GlobalSearch(ViewModel.state.value.searchQuery),
                         )
                     },
-                    onClickHealthFilter = { screenModel.onEvent(LibraryScreenEvent.EnableHealthFilter) },
+                    onClickHealthFilter = { ViewModel.onEvent(LibraryScreenEvent.EnableHealthFilter) },
                     getItemCountForCategory = { state.getItemCountForCategory(it) },
-                    getDisplayMode = { screenModel.getDisplayMode() },
-                    getColumnsForOrientation = { screenModel.getColumnsForOrientation(it) },
+                    getDisplayMode = { ViewModel.getDisplayMode() },
+                    getColumnsForOrientation = { ViewModel.getColumnsForOrientation(it) },
                     getItemsForCategory = { state.getItemsForCategory(it) },
-                    onShowSettingsDialog = { screenModel.onEvent(LibraryScreenEvent.ShowSettingsDialog) },
+                    onShowSettingsDialog = { ViewModel.onEvent(LibraryScreenEvent.ShowSettingsDialog) },
                 )
             }
         }
     }
 
-    val onDismissRequest = { screenModel.onEvent(LibraryScreenEvent.CloseDialog) }
+    val onDismissRequest = { ViewModel.onEvent(LibraryScreenEvent.CloseDialog) }
     when (val dialog = state.dialog) {
-        is LibraryScreenModel.Dialog.SettingsSheet -> run {
+        is LibraryViewModel.Dialog.SettingsSheet -> run {
             LibrarySettingsDialog(
                 onDismissRequest = onDismissRequest,
-                screenModel = settingsScreenModel,
+                ViewModel = settingsViewModel,
                 category = state.activeCategory,
             )
         }
 
-        is LibraryScreenModel.Dialog.ChangeCategory -> {
+        is LibraryViewModel.Dialog.ChangeCategory -> {
             ephyra.feature.category.components.ChangeCategoryDialog(
                 initialSelection = dialog.initialSelection,
                 onDismissRequest = onDismissRequest,
                 onEditCategories = {
-                    screenModel.onEvent(LibraryScreenEvent.ClearSelection)
+                    ViewModel.onEvent(LibraryScreenEvent.ClearSelection)
                     navController.navigate(ephyra.presentation.core.ui.navigation.Screen.Category)
                 },
                 onConfirm = { include, exclude ->
-                    screenModel.onEvent(LibraryScreenEvent.ClearSelection)
-                    screenModel.onEvent(LibraryScreenEvent.SetMangaCategories(dialog.manga, include, exclude))
+                    ViewModel.onEvent(LibraryScreenEvent.ClearSelection)
+                    ViewModel.onEvent(LibraryScreenEvent.SetMangaCategories(dialog.manga, include, exclude))
                 },
             )
         }
 
-        is LibraryScreenModel.Dialog.DeleteManga -> {
+        is LibraryViewModel.Dialog.DeleteManga -> {
             DeleteLibraryMangaDialog(
                 containsLocalManga = dialog.manga.any(Manga::isLocal),
                 onDismissRequest = onDismissRequest,
                 onConfirm = { deleteManga, deleteChapter ->
-                    screenModel.onEvent(LibraryScreenEvent.RemoveMangas(dialog.manga, deleteManga, deleteChapter))
-                    screenModel.onEvent(LibraryScreenEvent.ClearSelection)
+                    ViewModel.onEvent(LibraryScreenEvent.RemoveMangas(dialog.manga, deleteManga, deleteChapter))
+                    ViewModel.onEvent(LibraryScreenEvent.ClearSelection)
                 },
             )
         }
@@ -270,14 +272,17 @@ fun LibraryScreen(
 
     BackHandler(enabled = state.selectionMode || (state.searchQuery != null)) {
         when {
-            state.selectionMode -> screenModel.onEvent(LibraryScreenEvent.ClearSelection)
-            state.searchQuery != null -> screenModel.onEvent(LibraryScreenEvent.Search(null))
+            state.selectionMode -> ViewModel.onEvent(LibraryScreenEvent.ClearSelection)
+            state.searchQuery != null -> ViewModel.onEvent(LibraryScreenEvent.Search(null))
         }
     }
 
-    LaunchedEffect(state.selectionMode, state.dialog) {
-        // TODO: We need a way to communicate to the host about bottom nav visibility
-        // (context as? MainActivity)?.showBottomNav(!state.selectionMode)
+    LaunchedEffect(state.selectionMode) {
+        if (state.selectionMode) {
+            ephyra.presentation.core.ui.navigation.BottomNavVisibilityController.hide()
+        } else {
+            ephyra.presentation.core.ui.navigation.BottomNavVisibilityController.show()
+        }
     }
 
     LaunchedEffect(state.isLoading) {
@@ -288,18 +293,18 @@ fun LibraryScreen(
 
     searchQuery?.let {
         LaunchedEffect(it) {
-            screenModel.onEvent(LibraryScreenEvent.Search(it))
+            ViewModel.onEvent(LibraryScreenEvent.Search(it))
         }
     }
 
     LaunchedEffect(Unit) {
         NavigationEvents.reselectEvent
             .filter { it == ScreenRoutes.Library.route }
-            .collect { screenModel.onEvent(LibraryScreenEvent.ShowSettingsDialog) }
+            .collect { ViewModel.onEvent(LibraryScreenEvent.ShowSettingsDialog) }
     }
 
     LaunchedEffect(Unit) {
-        screenModel.effects.collectLatest { effect ->
+        ViewModel.effects.collectLatest { effect ->
             when (effect) {
                 is LibraryScreenEffect.NavigateToManga -> {
                     navController.navigate(

@@ -42,7 +42,7 @@ import java.time.YearMonth
 
 @Composable
 fun UpcomingScreenContent(
-    state: UpcomingScreenModel.State,
+    state: UpcomingViewModel.State,
     setSelectedYearMonth: (YearMonth) -> Unit,
     onClickUpcoming: (manga: Manga) -> Unit,
     navController: NavController = LocalNavController.current,

@@ -52,7 +52,7 @@ import kotlin.collections.isNotEmpty
 
 @Composable
 fun UpdateScreen(
-    state: UpdatesScreenModel.State,
+    state: UpdatesViewModel.State,
     snackbarHostState: SnackbarHostState,
     lastUpdated: Long,
     isRefreshing: Boolean,
@@ -237,35 +237,35 @@ fun UpdatesScreen(
     navController: NavController = LocalNavController.current,
 ) {
     val context = LocalContext.current
-    val screenModel = hiltViewModel<UpdatesScreenModel>()
-    val settingsScreenModel = hiltViewModel<UpdatesSettingsScreenModel>()
-    val state by screenModel.state.collectAsStateWithLifecycle()
+    val ViewModel = hiltViewModel<UpdatesViewModel>()
+    val settingsViewModel = hiltViewModel<UpdatesSettingsViewModel>()
+    val state by ViewModel.state.collectAsStateWithLifecycle()
 
     UpdateScreen(
         state = state,
-        snackbarHostState = screenModel.snackbarHostState,
-        lastUpdated = screenModel.lastUpdated,
+        snackbarHostState = ViewModel.snackbarHostState,
+        lastUpdated = ViewModel.lastUpdated,
         isRefreshing = state.isLibraryUpdating,
         onClickCover = { item ->
             navController.navigate(Screen.MangaDetails(item.update.mangaId, false))
         },
-        onSelectAll = { screenModel.onEvent(UpdatesScreenEvent.ToggleAllSelection(it)) },
-        onInvertSelection = { screenModel.onEvent(UpdatesScreenEvent.InvertSelection) },
-        onUpdateLibrary = { screenModel.onEvent(UpdatesScreenEvent.UpdateLibrary) },
+        onSelectAll = { ViewModel.onEvent(UpdatesScreenEvent.ToggleAllSelection(it)) },
+        onInvertSelection = { ViewModel.onEvent(UpdatesScreenEvent.InvertSelection) },
+        onUpdateLibrary = { ViewModel.onEvent(UpdatesScreenEvent.UpdateLibrary) },
         onDownloadChapter = { items, action ->
-            screenModel.onEvent(UpdatesScreenEvent.DownloadChapters(items, action))
+            ViewModel.onEvent(UpdatesScreenEvent.DownloadChapters(items, action))
         },
         onMultiBookmarkClicked = { items, bookmark ->
-            screenModel.onEvent(UpdatesScreenEvent.BookmarkUpdates(items, bookmark))
+            ViewModel.onEvent(UpdatesScreenEvent.BookmarkUpdates(items, bookmark))
         },
         onMultiMarkAsReadClicked = { items, read ->
-            screenModel.onEvent(UpdatesScreenEvent.MarkUpdatesRead(items, read))
+            ViewModel.onEvent(UpdatesScreenEvent.MarkUpdatesRead(items, read))
         },
         onMultiDeleteClicked = { items ->
-            screenModel.onEvent(UpdatesScreenEvent.ShowConfirmDeleteChapters(items))
+            ViewModel.onEvent(UpdatesScreenEvent.ShowConfirmDeleteChapters(items))
         },
         onUpdateSelected = { item, selected, fromLongPress ->
-            screenModel.onEvent(UpdatesScreenEvent.ToggleSelection(item, selected, fromLongPress))
+            ViewModel.onEvent(UpdatesScreenEvent.ToggleSelection(item, selected, fromLongPress))
         },
         onOpenChapter = {
             val intent = ReaderActivity.newIntent(context, it.update.mangaId, it.update.chapterId)
@@ -274,23 +274,23 @@ fun UpdatesScreen(
         onCalendarClicked = {
             navController.navigate(ScreenRoutes.Upcoming.route)
         },
-        onFilterClicked = { screenModel.onEvent(UpdatesScreenEvent.ShowFilterDialog) },
+        onFilterClicked = { ViewModel.onEvent(UpdatesScreenEvent.ShowFilterDialog) },
         hasActiveFilters = state.hasActiveFilters,
     )
 
-    val onDismissDialog = { screenModel.onEvent(UpdatesScreenEvent.SetDialog(null)) }
+    val onDismissDialog = { ViewModel.onEvent(UpdatesScreenEvent.SetDialog(null)) }
     when (val dialog = state.dialog) {
-        is UpdatesScreenModel.Dialog.DeleteConfirmation -> {
+        is UpdatesViewModel.Dialog.DeleteConfirmation -> {
             UpdatesDeleteConfirmationDialog(
                 onDismissRequest = onDismissDialog,
-                onConfirm = { screenModel.onEvent(UpdatesScreenEvent.DeleteChapters(dialog.toDelete)) },
+                onConfirm = { ViewModel.onEvent(UpdatesScreenEvent.DeleteChapters(dialog.toDelete)) },
             )
         }
 
-        is UpdatesScreenModel.Dialog.FilterSheet -> {
+        is UpdatesViewModel.Dialog.FilterSheet -> {
             UpdatesFilterDialog(
                 onDismissRequest = onDismissDialog,
-                screenModel = settingsScreenModel,
+                ViewModel = settingsViewModel,
             )
         }
 
@@ -298,19 +298,19 @@ fun UpdatesScreen(
     }
 
     LaunchedEffect(Unit) {
-        screenModel.events.collectLatest { event ->
+        ViewModel.events.collectLatest { event ->
             when (event) {
-                UpdatesScreenModel.Event.InternalError -> screenModel.snackbarHostState.showSnackbar(
+                UpdatesViewModel.Event.InternalError -> ViewModel.snackbarHostState.showSnackbar(
                     context.stringResource(ephyra.app.core.common.R.string.internal_error),
                 )
 
-                is UpdatesScreenModel.Event.LibraryUpdateTriggered -> {
+                is UpdatesViewModel.Event.LibraryUpdateTriggered -> {
                     val msg = if (event.started) {
                         ephyra.app.core.common.R.string.updating_library
                     } else {
                         ephyra.app.core.common.R.string.update_already_running
                     }
-                    screenModel.snackbarHostState.showSnackbar(context.stringResource(msg))
+                    ViewModel.snackbarHostState.showSnackbar(context.stringResource(msg))
                 }
             }
         }
@@ -329,10 +329,10 @@ fun UpdatesScreen(
     }
 
     DisposableEffect(Unit) {
-        screenModel.onEvent(UpdatesScreenEvent.ResetNewUpdatesCount)
+        ViewModel.onEvent(UpdatesScreenEvent.ResetNewUpdatesCount)
 
         onDispose {
-            screenModel.onEvent(UpdatesScreenEvent.ResetNewUpdatesCount)
+            ViewModel.onEvent(UpdatesScreenEvent.ResetNewUpdatesCount)
         }
     }
 }

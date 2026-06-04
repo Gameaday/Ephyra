@@ -26,11 +26,11 @@ fun ExtensionReposScreen(
 ) {
     val context = LocalContext.current
 
-    val screenModel = hiltViewModel<ExtensionReposScreenModel>()
-    val state by screenModel.state.collectAsStateWithLifecycle()
+    val ViewModel = hiltViewModel<ExtensionReposViewModel>()
+    val state by ViewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(url) {
-        url?.let { screenModel.onEvent(ExtensionReposScreenEvent.ShowDialog(RepoDialog.Confirm(it))) }
+        url?.let { ViewModel.onEvent(ExtensionReposScreenEvent.ShowDialog(RepoDialog.Confirm(it))) }
     }
 
     if (state is RepoScreenState.Loading) {
@@ -42,10 +42,10 @@ fun ExtensionReposScreen(
 
     ExtensionReposScreen(
         state = successState,
-        onClickCreate = { screenModel.onEvent(ExtensionReposScreenEvent.ShowDialog(RepoDialog.Create)) },
+        onClickCreate = { ViewModel.onEvent(ExtensionReposScreenEvent.ShowDialog(RepoDialog.Create)) },
         onOpenWebsite = { context.openInBrowser(it.website) },
-        onClickDelete = { screenModel.onEvent(ExtensionReposScreenEvent.ShowDialog(RepoDialog.Delete(it))) },
-        onClickRefresh = { screenModel.onEvent(ExtensionReposScreenEvent.RefreshRepos) },
+        onClickDelete = { ViewModel.onEvent(ExtensionReposScreenEvent.ShowDialog(RepoDialog.Delete(it))) },
+        onClickRefresh = { ViewModel.onEvent(ExtensionReposScreenEvent.RefreshRepos) },
         navigateUp = { navController.popBackStack() },
     )
 
@@ -53,8 +53,8 @@ fun ExtensionReposScreen(
         null -> {}
         is RepoDialog.Create -> {
             ExtensionRepoCreateDialog(
-                onDismissRequest = { screenModel.onEvent(ExtensionReposScreenEvent.DismissDialog) },
-                onCreate = { screenModel.onEvent(ExtensionReposScreenEvent.CreateRepo(it)) },
+                onDismissRequest = { ViewModel.onEvent(ExtensionReposScreenEvent.DismissDialog) },
+                onCreate = { ViewModel.onEvent(ExtensionReposScreenEvent.CreateRepo(it)) },
                 repoUrls = successState.repos.map { it.baseUrl }.toImmutableSet(),
                 isAdding = successState.isAdding,
             )
@@ -62,16 +62,16 @@ fun ExtensionReposScreen(
 
         is RepoDialog.Delete -> {
             ExtensionRepoDeleteDialog(
-                onDismissRequest = { screenModel.onEvent(ExtensionReposScreenEvent.DismissDialog) },
-                onDelete = { screenModel.onEvent(ExtensionReposScreenEvent.DeleteRepo(dialog.repo)) },
+                onDismissRequest = { ViewModel.onEvent(ExtensionReposScreenEvent.DismissDialog) },
+                onDelete = { ViewModel.onEvent(ExtensionReposScreenEvent.DeleteRepo(dialog.repo)) },
                 repo = dialog.repo,
             )
         }
 
         is RepoDialog.Conflict -> {
             ExtensionRepoConflictDialog(
-                onDismissRequest = { screenModel.onEvent(ExtensionReposScreenEvent.DismissDialog) },
-                onMigrate = { screenModel.onEvent(ExtensionReposScreenEvent.ReplaceRepo(dialog.newRepo)) },
+                onDismissRequest = { ViewModel.onEvent(ExtensionReposScreenEvent.DismissDialog) },
+                onMigrate = { ViewModel.onEvent(ExtensionReposScreenEvent.ReplaceRepo(dialog.newRepo)) },
                 oldRepo = dialog.oldRepo,
                 newRepo = dialog.newRepo,
             )
@@ -79,8 +79,8 @@ fun ExtensionReposScreen(
 
         is RepoDialog.Confirm -> {
             ExtensionRepoConfirmDialog(
-                onDismissRequest = { screenModel.onEvent(ExtensionReposScreenEvent.DismissDialog) },
-                onCreate = { screenModel.onEvent(ExtensionReposScreenEvent.CreateRepo(dialog.url)) },
+                onDismissRequest = { ViewModel.onEvent(ExtensionReposScreenEvent.DismissDialog) },
+                onCreate = { ViewModel.onEvent(ExtensionReposScreenEvent.CreateRepo(dialog.url)) },
                 repo = dialog.url,
                 isAdding = successState.isAdding,
             )
@@ -88,7 +88,7 @@ fun ExtensionReposScreen(
     }
 
     LaunchedEffect(Unit) {
-        screenModel.events.collectLatest { event ->
+        ViewModel.events.collectLatest { event ->
             if (event is RepoEvent.LocalizedMessage) {
                 context.toast(event.stringRes)
             }

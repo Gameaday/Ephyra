@@ -16,7 +16,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ephyra.domain.manga.model.readingMode
 import ephyra.domain.reader.model.ReadingMode
-import ephyra.feature.reader.setting.ReaderSettingsScreenModel
+import ephyra.feature.reader.setting.ReaderSettingsViewModel
 import ephyra.feature.reader.setting.iconRes
 import ephyra.presentation.core.components.AdaptiveSheet
 import ephyra.presentation.core.components.SettingsIconGrid
@@ -30,17 +30,17 @@ private val ReadingModesWithoutDefault = ReadingMode.entries - ReadingMode.DEFAU
 @Composable
 fun ReadingModeSelectDialog(
     onDismissRequest: () -> Unit,
-    screenModel: ReaderSettingsScreenModel,
+    ViewModel: ReaderSettingsViewModel,
     onChange: (Int) -> Unit,
 ) {
-    val manga by screenModel.mangaFlow.collectAsStateWithLifecycle()
+    val manga by ViewModel.mangaFlow.collectAsStateWithLifecycle()
     val readingMode = remember(manga) { ReadingMode.fromPreference(manga?.readingMode?.toInt()) }
 
     AdaptiveSheet(onDismissRequest = onDismissRequest) {
         DialogContent(
             readingMode = readingMode,
             onChangeReadingMode = {
-                screenModel.onChangeReadingMode(it)
+                ViewModel.onChangeReadingMode(it)
                 onChange(it.stringRes)
                 onDismissRequest()
             },

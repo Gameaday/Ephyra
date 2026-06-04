@@ -13,7 +13,7 @@ import ephyra.domain.manga.model.readingMode
 import ephyra.domain.reader.model.ReaderOrientation
 import ephyra.domain.reader.model.ReadingMode
 import ephyra.domain.reader.service.ReaderPreferences
-import ephyra.feature.reader.setting.ReaderSettingsScreenModel
+import ephyra.feature.reader.setting.ReaderSettingsViewModel
 import ephyra.feature.reader.viewer.webtoon.WebtoonViewer
 import ephyra.presentation.core.components.CheckboxItem
 import ephyra.presentation.core.components.HeadingItem
@@ -24,16 +24,16 @@ import ephyra.presentation.core.util.collectAsState
 import java.text.NumberFormat
 
 @Composable
-internal fun ColumnScope.ReadingModePage(screenModel: ReaderSettingsScreenModel) {
+internal fun ColumnScope.ReadingModePage(ViewModel: ReaderSettingsViewModel) {
     HeadingItem(ephyra.app.core.common.R.string.pref_category_for_this_series)
-    val manga by screenModel.mangaFlow.collectAsStateWithLifecycle()
+    val manga by ViewModel.mangaFlow.collectAsStateWithLifecycle()
 
     val readingMode = remember(manga) { ReadingMode.fromPreference(manga?.readingMode?.toInt()) }
     SettingsChipRow(ephyra.app.core.common.R.string.pref_category_reading_mode) {
         ReadingMode.entries.map {
             FilterChip(
                 selected = it == readingMode,
-                onClick = { screenModel.onChangeReadingMode(it) },
+                onClick = { ViewModel.onChangeReadingMode(it) },
                 label = { Text(stringResource(it.stringRes)) },
             )
         }
@@ -44,50 +44,50 @@ internal fun ColumnScope.ReadingModePage(screenModel: ReaderSettingsScreenModel)
         ReaderOrientation.entries.map {
             FilterChip(
                 selected = it == orientation,
-                onClick = { screenModel.onChangeOrientation(it) },
+                onClick = { ViewModel.onChangeOrientation(it) },
                 label = { Text(stringResource(it.stringRes)) },
             )
         }
     }
 
-    val viewer by screenModel.viewerFlow.collectAsStateWithLifecycle()
+    val viewer by ViewModel.viewerFlow.collectAsStateWithLifecycle()
     if (viewer is WebtoonViewer) {
-        WebtoonViewerSettings(screenModel)
+        WebtoonViewerSettings(ViewModel)
     } else {
-        PagerViewerSettings(screenModel)
+        PagerViewerSettings(ViewModel)
     }
 }
 
 @Composable
-private fun ColumnScope.PagerViewerSettings(screenModel: ReaderSettingsScreenModel) {
+private fun ColumnScope.PagerViewerSettings(ViewModel: ReaderSettingsViewModel) {
     HeadingItem(ephyra.app.core.common.R.string.pager_viewer)
 
-    val navigationModePager by screenModel.preferences.navigationModePager().collectAsState()
-    val pagerNavInverted by screenModel.preferences.pagerNavInverted().collectAsState()
+    val navigationModePager by ViewModel.preferences.navigationModePager().collectAsState()
+    val pagerNavInverted by ViewModel.preferences.pagerNavInverted().collectAsState()
     TapZonesItems(
         selected = navigationModePager,
-        onSelect = screenModel.preferences.navigationModePager()::set,
+        onSelect = ViewModel.preferences.navigationModePager()::set,
         invertMode = pagerNavInverted,
-        onSelectInvertMode = screenModel.preferences.pagerNavInverted()::set,
+        onSelectInvertMode = ViewModel.preferences.pagerNavInverted()::set,
     )
 
-    val imageScaleType by screenModel.preferences.imageScaleType().collectAsState()
+    val imageScaleType by ViewModel.preferences.imageScaleType().collectAsState()
     SettingsChipRow(ephyra.app.core.common.R.string.pref_image_scale_type) {
         ReaderPreferences.ImageScaleType.mapIndexed { index, it ->
             FilterChip(
                 selected = imageScaleType == index + 1,
-                onClick = { screenModel.preferences.imageScaleType().set(index + 1) },
+                onClick = { ViewModel.preferences.imageScaleType().set(index + 1) },
                 label = { Text(stringResource(it)) },
             )
         }
     }
 
-    val zoomStart by screenModel.preferences.zoomStart().collectAsState()
+    val zoomStart by ViewModel.preferences.zoomStart().collectAsState()
     SettingsChipRow(ephyra.app.core.common.R.string.pref_zoom_start) {
         ReaderPreferences.ZoomStart.mapIndexed { index, it ->
             FilterChip(
                 selected = zoomStart == index + 1,
-                onClick = { screenModel.preferences.zoomStart().set(index + 1) },
+                onClick = { ViewModel.preferences.zoomStart().set(index + 1) },
                 label = { Text(stringResource(it)) },
             )
         }
@@ -95,116 +95,116 @@ private fun ColumnScope.PagerViewerSettings(screenModel: ReaderSettingsScreenMod
 
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.pref_crop_borders),
-        pref = screenModel.preferences.cropBorders(),
+        pref = ViewModel.preferences.cropBorders(),
     )
 
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.pref_landscape_zoom),
-        pref = screenModel.preferences.landscapeZoom(),
+        pref = ViewModel.preferences.landscapeZoom(),
     )
 
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.pref_navigate_pan),
-        pref = screenModel.preferences.navigateToPan(),
+        pref = ViewModel.preferences.navigateToPan(),
     )
 
-    val dualPageSplitPaged by screenModel.preferences.dualPageSplitPaged().collectAsState()
+    val dualPageSplitPaged by ViewModel.preferences.dualPageSplitPaged().collectAsState()
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.pref_dual_page_split),
-        pref = screenModel.preferences.dualPageSplitPaged(),
+        pref = ViewModel.preferences.dualPageSplitPaged(),
     )
 
     if (dualPageSplitPaged) {
         CheckboxItem(
             label = stringResource(ephyra.app.core.common.R.string.pref_dual_page_invert),
-            pref = screenModel.preferences.dualPageInvertPaged(),
+            pref = ViewModel.preferences.dualPageInvertPaged(),
         )
     }
 
-    val dualPageRotateToFit by screenModel.preferences.dualPageRotateToFit().collectAsState()
+    val dualPageRotateToFit by ViewModel.preferences.dualPageRotateToFit().collectAsState()
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.pref_page_rotate),
-        pref = screenModel.preferences.dualPageRotateToFit(),
+        pref = ViewModel.preferences.dualPageRotateToFit(),
     )
 
     if (dualPageRotateToFit) {
         CheckboxItem(
             label = stringResource(ephyra.app.core.common.R.string.pref_page_rotate_invert),
-            pref = screenModel.preferences.dualPageRotateToFitInvert(),
+            pref = ViewModel.preferences.dualPageRotateToFitInvert(),
         )
     }
 
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.pref_smart_page_combine),
-        pref = screenModel.preferences.smartCombinePaged(),
+        pref = ViewModel.preferences.smartCombinePaged(),
     )
 }
 
 @Composable
-private fun ColumnScope.WebtoonViewerSettings(screenModel: ReaderSettingsScreenModel) {
+private fun ColumnScope.WebtoonViewerSettings(ViewModel: ReaderSettingsViewModel) {
     val numberFormat = remember { NumberFormat.getPercentInstance() }
 
     HeadingItem(ephyra.app.core.common.R.string.webtoon_viewer)
 
-    val navigationModeWebtoon by screenModel.preferences.navigationModeWebtoon().collectAsState()
-    val webtoonNavInverted by screenModel.preferences.webtoonNavInverted().collectAsState()
+    val navigationModeWebtoon by ViewModel.preferences.navigationModeWebtoon().collectAsState()
+    val webtoonNavInverted by ViewModel.preferences.webtoonNavInverted().collectAsState()
     TapZonesItems(
         selected = navigationModeWebtoon,
-        onSelect = screenModel.preferences.navigationModeWebtoon()::set,
+        onSelect = ViewModel.preferences.navigationModeWebtoon()::set,
         invertMode = webtoonNavInverted,
-        onSelectInvertMode = screenModel.preferences.webtoonNavInverted()::set,
+        onSelectInvertMode = ViewModel.preferences.webtoonNavInverted()::set,
     )
 
-    val webtoonSidePadding by screenModel.preferences.webtoonSidePadding().collectAsState()
+    val webtoonSidePadding by ViewModel.preferences.webtoonSidePadding().collectAsState()
     SliderItem(
         value = webtoonSidePadding,
         valueRange = ReaderPreferences.let { it.WEBTOON_PADDING_MIN..it.WEBTOON_PADDING_MAX },
         label = stringResource(ephyra.app.core.common.R.string.pref_webtoon_side_padding),
         valueString = numberFormat.format(webtoonSidePadding / 100f),
         onChange = {
-            screenModel.preferences.webtoonSidePadding().set(it)
+            ViewModel.preferences.webtoonSidePadding().set(it)
         },
         pillColor = MaterialTheme.colorScheme.surfaceContainerHighest,
     )
 
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.pref_crop_borders),
-        pref = screenModel.preferences.cropBordersWebtoon(),
+        pref = ViewModel.preferences.cropBordersWebtoon(),
     )
 
-    val dualPageSplitWebtoon by screenModel.preferences.dualPageSplitWebtoon().collectAsState()
+    val dualPageSplitWebtoon by ViewModel.preferences.dualPageSplitWebtoon().collectAsState()
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.pref_dual_page_split),
-        pref = screenModel.preferences.dualPageSplitWebtoon(),
+        pref = ViewModel.preferences.dualPageSplitWebtoon(),
     )
 
     if (dualPageSplitWebtoon) {
         CheckboxItem(
             label = stringResource(ephyra.app.core.common.R.string.pref_dual_page_invert),
-            pref = screenModel.preferences.dualPageInvertWebtoon(),
+            pref = ViewModel.preferences.dualPageInvertWebtoon(),
         )
     }
 
-    val dualPageRotateToFitWebtoon by screenModel.preferences.dualPageRotateToFitWebtoon().collectAsState()
+    val dualPageRotateToFitWebtoon by ViewModel.preferences.dualPageRotateToFitWebtoon().collectAsState()
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.pref_page_rotate),
-        pref = screenModel.preferences.dualPageRotateToFitWebtoon(),
+        pref = ViewModel.preferences.dualPageRotateToFitWebtoon(),
     )
 
     if (dualPageRotateToFitWebtoon) {
         CheckboxItem(
             label = stringResource(ephyra.app.core.common.R.string.pref_page_rotate_invert),
-            pref = screenModel.preferences.dualPageRotateToFitInvertWebtoon(),
+            pref = ViewModel.preferences.dualPageRotateToFitInvertWebtoon(),
         )
     }
 
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.pref_double_tap_zoom),
-        pref = screenModel.preferences.webtoonDoubleTapZoomEnabled(),
+        pref = ViewModel.preferences.webtoonDoubleTapZoomEnabled(),
     )
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.pref_webtoon_disable_zoom_out),
-        pref = screenModel.preferences.webtoonDisableZoomOut(),
+        pref = ViewModel.preferences.webtoonDisableZoomOut(),
     )
 }
 

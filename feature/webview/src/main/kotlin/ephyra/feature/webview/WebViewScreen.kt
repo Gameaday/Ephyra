@@ -23,17 +23,17 @@ fun WebViewScreen(
     navController: NavController = LocalNavController.current,
 ) {
     val context = LocalContext.current
-    val screenModel = hiltViewModel<WebViewScreenModel>()
+    val ViewModel = hiltViewModel<WebViewViewModel>()
 
     var assistUrl by remember { mutableStateOf<String?>(null) }
     // TODO: handle assistUrl if needed for parent activity
 
-    LaunchedEffect(screenModel, sourceId) {
-        screenModel.initialize(sourceId)
+    LaunchedEffect(ViewModel, sourceId) {
+        ViewModel.initialize(sourceId)
     }
 
-    LaunchedEffect(screenModel) {
-        screenModel.effectFlow.collect { effect ->
+    LaunchedEffect(ViewModel) {
+        ViewModel.effectFlow.collect { effect ->
             when (effect) {
                 is WebViewEffect.ShareWebpage -> {
                     try {
@@ -53,10 +53,10 @@ fun WebViewScreen(
         onNavigateUp = { navController.popBackStack() },
         initialTitle = initialTitle,
         url = url,
-        headers = screenModel.headers,
+        headers = ViewModel.headers,
         onUrlChange = { assistUrl = it },
-        onShare = { screenModel.onEvent(WebViewScreenEvent.ShareWebpage(it)) },
-        onOpenInBrowser = { screenModel.onEvent(WebViewScreenEvent.OpenInBrowser(it)) },
-        onClearCookies = { screenModel.onEvent(WebViewScreenEvent.ClearCookies(it)) },
+        onShare = { ViewModel.onEvent(WebViewScreenEvent.ShareWebpage(it)) },
+        onOpenInBrowser = { ViewModel.onEvent(WebViewScreenEvent.OpenInBrowser(it)) },
+        onClearCookies = { ViewModel.onEvent(WebViewScreenEvent.ClearCookies(it)) },
     )
 }

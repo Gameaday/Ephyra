@@ -22,9 +22,9 @@ fun CategoryScreen(
     navController: NavController = LocalNavController.current,
 ) {
     val context = LocalContext.current
-    val screenModel = hiltViewModel<CategoryScreenModel>()
+    val ViewModel = hiltViewModel<CategoryViewModel>()
 
-    val state by screenModel.state.collectAsStateWithLifecycle()
+    val state by ViewModel.state.collectAsStateWithLifecycle()
 
     if (state is CategoryScreenState.Loading) {
         LoadingScreen()
@@ -35,11 +35,11 @@ fun CategoryScreen(
 
     ephyra.feature.category.presentation.CategoryScreen(
         state = successState,
-        onClickCreate = { screenModel.onEvent(CategoryScreenEvent.ShowDialog(CategoryDialog.Create)) },
-        onClickRename = { screenModel.onEvent(CategoryScreenEvent.ShowDialog(CategoryDialog.Rename(it))) },
-        onClickDelete = { screenModel.onEvent(CategoryScreenEvent.ShowDialog(CategoryDialog.Delete(it))) },
+        onClickCreate = { ViewModel.onEvent(CategoryScreenEvent.ShowDialog(CategoryDialog.Create)) },
+        onClickRename = { ViewModel.onEvent(CategoryScreenEvent.ShowDialog(CategoryDialog.Rename(it))) },
+        onClickDelete = { ViewModel.onEvent(CategoryScreenEvent.ShowDialog(CategoryDialog.Delete(it))) },
         onChangeOrder = { category, newIndex ->
-            screenModel.onEvent(CategoryScreenEvent.ChangeOrder(category, newIndex))
+            ViewModel.onEvent(CategoryScreenEvent.ChangeOrder(category, newIndex))
         },
         navigateUp = { navController.popBackStack() },
     )
@@ -48,16 +48,16 @@ fun CategoryScreen(
         null -> {}
         CategoryDialog.Create -> {
             CategoryCreateDialog(
-                onDismissRequest = { screenModel.onEvent(CategoryScreenEvent.DismissDialog) },
-                onCreate = { screenModel.onEvent(CategoryScreenEvent.CreateCategory(it)) },
+                onDismissRequest = { ViewModel.onEvent(CategoryScreenEvent.DismissDialog) },
+                onCreate = { ViewModel.onEvent(CategoryScreenEvent.CreateCategory(it)) },
                 categories = successState.categories.fastMap { it.name }.toImmutableList(),
             )
         }
 
         is CategoryDialog.Rename -> {
             CategoryRenameDialog(
-                onDismissRequest = { screenModel.onEvent(CategoryScreenEvent.DismissDialog) },
-                onRename = { screenModel.onEvent(CategoryScreenEvent.RenameCategory(dialog.category, it)) },
+                onDismissRequest = { ViewModel.onEvent(CategoryScreenEvent.DismissDialog) },
+                onRename = { ViewModel.onEvent(CategoryScreenEvent.RenameCategory(dialog.category, it)) },
                 categories = successState.categories.fastMap { it.name }.toImmutableList(),
                 category = dialog.category.name,
             )
@@ -65,15 +65,15 @@ fun CategoryScreen(
 
         is CategoryDialog.Delete -> {
             CategoryDeleteDialog(
-                onDismissRequest = { screenModel.onEvent(CategoryScreenEvent.DismissDialog) },
-                onDelete = { screenModel.onEvent(CategoryScreenEvent.DeleteCategory(dialog.category.id)) },
+                onDismissRequest = { ViewModel.onEvent(CategoryScreenEvent.DismissDialog) },
+                onDelete = { ViewModel.onEvent(CategoryScreenEvent.DeleteCategory(dialog.category.id)) },
                 category = dialog.category.name,
             )
         }
     }
 
     LaunchedEffect(Unit) {
-        screenModel.events.collectLatest { event ->
+        ViewModel.events.collectLatest { event ->
             (event as? CategoryEvent.LocalizedMessage)?.let {
                 context.toast(it.stringRes)
             }

@@ -23,7 +23,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import ephyra.domain.source.interactor.SetMigrateSorting
 import ephyra.domain.source.model.Source
-import ephyra.feature.browse.migration.sources.MigrateSourceScreenModel
+import ephyra.feature.browse.migration.sources.MigrateSourceViewModel
 import ephyra.feature.browse.presentation.components.BaseSourceItem
 import ephyra.presentation.core.components.Badge
 import ephyra.presentation.core.components.BadgeGroup
@@ -43,7 +43,7 @@ import kotlinx.collections.immutable.ImmutableList
 
 @Composable
 fun MigrateSourceScreen(
-    state: MigrateSourceScreenModel.State,
+    state: MigrateSourceViewModel.State,
     contentPadding: PaddingValues,
     onClickItem: (Source) -> Unit,
     onToggleSortingDirection: () -> Unit,

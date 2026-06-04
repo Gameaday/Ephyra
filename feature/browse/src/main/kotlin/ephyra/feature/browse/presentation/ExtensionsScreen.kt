@@ -45,7 +45,7 @@ import ephyra.core.common.util.system.LocaleHelper
 import ephyra.domain.extension.model.Extension
 import ephyra.domain.extension.model.InstallStep
 import ephyra.feature.browse.extension.ExtensionUiModel
-import ephyra.feature.browse.extension.ExtensionsScreenModel
+import ephyra.feature.browse.extension.ExtensionsViewModel
 import ephyra.feature.browse.presentation.components.BaseBrowseItem
 import ephyra.feature.manga.presentation.components.DotSeparatorNoSpaceText
 import ephyra.presentation.core.components.ExtensionIcon
@@ -70,7 +70,7 @@ import kotlinx.collections.immutable.persistentListOf
 
 @Composable
 fun ExtensionScreen(
-    state: ExtensionsScreenModel.State,
+    state: ExtensionsViewModel.State,
     contentPadding: PaddingValues,
     searchQuery: String?,
     onLongClickItem: (Extension) -> Unit,
@@ -132,7 +132,7 @@ fun ExtensionScreen(
 
 @Composable
 private fun ExtensionContent(
-    state: ExtensionsScreenModel.State,
+    state: ExtensionsViewModel.State,
     contentPadding: PaddingValues,
     onLongClickItem: (Extension) -> Unit,
     onClickItemCancel: (Extension) -> Unit,

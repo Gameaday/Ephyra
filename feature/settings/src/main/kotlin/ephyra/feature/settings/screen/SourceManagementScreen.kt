@@ -1,37 +1,43 @@
 package ephyra.feature.settings.screen
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Autorenew
+import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.DeleteOutline
-import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.Storage
+import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -51,35 +57,33 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import ephyra.core.common.i18n.stringResource
 import ephyra.domain.content.source.SourceType
 import ephyra.domain.content.source.model.UnifiedSource
-import ephyra.feature.settings.Preference
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.material.Scaffold
-import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.navigation.LocalNavController
-import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun SourceManagementScreen(
     navController: NavController = LocalNavController.current,
 ) {
-    val screenModel = hiltViewModel<SourceManagementScreenModel>()
-    val sources by screenModel.sources.collectAsStateWithLifecycle()
-    val isLoading by screenModel.isLoading.collectAsStateWithLifecycle()
-    val error by screenModel.error.collectAsStateWithLifecycle()
+    val ViewModel = hiltViewModel<SourceManagementViewModel>()
+    val sources by ViewModel.sources.collectAsStateWithLifecycle()
+    val isLoading by ViewModel.isLoading.collectAsStateWithLifecycle()
+    val error by ViewModel.error.collectAsStateWithLifecycle()
 
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
     var showAddJsScraperDialog by remember { mutableStateOf(false) }
     var showImportJsScraperDialog by remember { mutableStateOf(false) }
     var showAddHeuristicDialog by remember { mutableStateOf(false) }
     var showLinkScraperDialog by remember { mutableStateOf(false) }
+    var showRemoveConfirmDialog by remember { mutableStateOf(false) }
+    var selectedSourceToRemove by remember { mutableStateOf<UnifiedSource?>(null) }
     var selectedSourceForLink by remember { mutableStateOf<UnifiedSource?>(null) }
 
     var githubUrl by remember { mutableStateOf("") }
@@ -94,7 +98,7 @@ fun SourceManagementScreen(
     LaunchedEffect(error) {
         if (error != null) {
             snackbarMessage = error
-            screenModel.clearError()
+            ViewModel.clearError()
         }
     }
 
@@ -129,16 +133,38 @@ fun SourceManagementScreen(
                     linkScraperName = ""
                     showLinkScraperDialog = true
                 },
-                onRefresh = { screenModel.loadSources() },
+                onRefresh = { ViewModel.loadSources() },
                 onSourceClick = { source ->
-                    // Navigate to source details
+                    snackbarMessage = buildString {
+                        appendLine("Source: ${source.name}")
+                        appendLine("URL: ${source.baseUrl}")
+                        appendLine("Type: ${source.sourceType.displayName}")
+                        appendLine("Enabled: ${source.enabled}")
+                        if (source.failureCount > 0) {
+                            appendLine("Failures: ${source.failureCount}")
+                        }
+                        if (source.extensionId != null) {
+                            appendLine("Extension: ${source.extensionId}")
+                        }
+                    }
                 },
                 onSourceLongClick = { source ->
-                    // Show context menu
+                    snackbarMessage = "Long-press actions coming soon for ${source.name}"
+                },
+                onCheckUpdates = { source ->
+                    ViewModel.checkAndUpdateScraper(source.baseUrl)
+                },
+                onForceRediscover = { source ->
+                    ViewModel.forceRediscover(source.baseUrl)
+                },
+                onRemoveSource = { source ->
+                    selectedSourceToRemove = source
+                    showRemoveConfirmDialog = true
                 },
             )
         }
 
+        // Notification dialog
         snackbarMessage?.let { msg ->
             AlertDialog(
                 onDismissRequest = { snackbarMessage = null },
@@ -147,6 +173,46 @@ fun SourceManagementScreen(
                 confirmButton = {
                     TextButton(onClick = { snackbarMessage = null }) {
                         Text("OK")
+                    }
+                },
+            )
+        }
+
+        // Remove source confirmation dialog
+        if (showRemoveConfirmDialog && selectedSourceToRemove != null) {
+            AlertDialog(
+                onDismissRequest = {
+                    showRemoveConfirmDialog = false
+                    selectedSourceToRemove = null
+                },
+                title = { Text("Remove Source") },
+                text = {
+                    Text(
+                        "Are you sure you want to remove \"${selectedSourceToRemove!!.name}\"? " +
+                            "This action cannot be undone.",
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            selectedSourceToRemove?.let { source ->
+                                ViewModel.removeSource(source.baseUrl)
+                            }
+                            showRemoveConfirmDialog = false
+                            selectedSourceToRemove = null
+                        },
+                    ) {
+                        Text("Remove", color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            showRemoveConfirmDialog = false
+                            selectedSourceToRemove = null
+                        },
+                    ) {
+                        Text("Cancel")
                     }
                 },
             )
@@ -161,7 +227,7 @@ fun SourceManagementScreen(
                     scraperFilename = ""
                 },
                 onConfirm = { url, name ->
-                    screenModel.addJsScraper(url, name)
+                    ViewModel.addJsScraper(url, name)
                     showAddJsScraperDialog = false
                     githubUrl = ""
                     scraperFilename = ""
@@ -182,7 +248,7 @@ fun SourceManagementScreen(
                     importScriptContent = ""
                 },
                 onConfirm = { name, content ->
-                    screenModel.importJsScraper(name, content)
+                    ViewModel.importJsScraper(name, content)
                     showImportJsScraperDialog = false
                     importFilename = ""
                     importScriptContent = ""
@@ -203,7 +269,7 @@ fun SourceManagementScreen(
                     heuristicName = ""
                 },
                 onConfirm = { url, name ->
-                    screenModel.addHeuristicProfile(url, name.ifBlank { null })
+                    ViewModel.addHeuristicProfile(url, name.ifBlank { null })
                     showAddHeuristicDialog = false
                     heuristicUrl = ""
                     heuristicName = ""
@@ -225,7 +291,7 @@ fun SourceManagementScreen(
                     selectedSourceForLink = null
                 },
                 onConfirm = { baseUrl, scraperName ->
-                    screenModel.linkScraperToUrl(baseUrl, scraperName)
+                    ViewModel.linkScraperToUrl(baseUrl, scraperName)
                     showLinkScraperDialog = false
                     linkBaseUrl = ""
                     linkScraperName = ""
@@ -254,6 +320,9 @@ private fun SourceManagementLayout(
     onRefresh: () -> Unit,
     onSourceClick: (UnifiedSource) -> Unit,
     onSourceLongClick: (UnifiedSource) -> Unit,
+    onCheckUpdates: (UnifiedSource) -> Unit,
+    onForceRediscover: (UnifiedSource) -> Unit,
+    onRemoveSource: (UnifiedSource) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -316,6 +385,9 @@ private fun SourceManagementLayout(
                             onSourceClick = onSourceClick,
                             onSourceLongClick = onSourceLongClick,
                             onLinkScraper = onLinkScraper,
+                            onCheckUpdates = onCheckUpdates,
+                            onForceRediscover = onForceRediscover,
+                            onRemoveSource = onRemoveSource,
                         )
                     }
                 }
@@ -338,13 +410,13 @@ private fun SourceManagementLayout(
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(48.dp),
                             )
-                            androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.height(16.dp))
                             Text(
                                 text = "No sources configured",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
-                            androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = "Add a JS scraper, import a script, or create a " +
                                     "heuristic profile to get started",
@@ -389,7 +461,7 @@ private fun QuickActionButton(
                 contentDescription = null,
                 modifier = Modifier.size(24.dp),
             )
-            androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelMedium,
@@ -406,6 +478,9 @@ private fun SourceTypeSection(
     onSourceClick: (UnifiedSource) -> Unit,
     onSourceLongClick: (UnifiedSource) -> Unit,
     onLinkScraper: (UnifiedSource) -> Unit,
+    onCheckUpdates: (UnifiedSource) -> Unit,
+    onForceRediscover: (UnifiedSource) -> Unit,
+    onRemoveSource: (UnifiedSource) -> Unit,
 ) {
     val (icon, color) = when (sourceType) {
         SourceType.LEGACY_EXTENSION -> Icons.Outlined.Security to MaterialTheme.colorScheme.primary
@@ -441,14 +516,14 @@ private fun SourceTypeSection(
                         modifier = Modifier.size(20.dp),
                     )
                 }
-                androidx.compose.foundation.layout.Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(12.dp))
                 Text(
                     text = sourceType.displayName,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = color,
                 )
-                androidx.compose.foundation.layout.Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 Box(
                     modifier = Modifier
                         .background(color.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
@@ -463,7 +538,7 @@ private fun SourceTypeSection(
                 }
             }
 
-            androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             // Source items
             Column(
@@ -476,6 +551,9 @@ private fun SourceTypeSection(
                         onClick = { onSourceClick(source) },
                         onLongClick = { onSourceLongClick(source) },
                         onLinkScraper = { onLinkScraper(source) },
+                        onCheckUpdates = { onCheckUpdates(source) },
+                        onForceRediscover = { onForceRediscover(source) },
+                        onRemoveSource = { onRemoveSource(source) },
                     )
                 }
             }
@@ -489,29 +567,21 @@ private fun SourceRow(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onLinkScraper: () -> Unit,
+    onCheckUpdates: () -> Unit,
+    onForceRediscover: () -> Unit,
+    onRemoveSource: () -> Unit,
 ) {
-    val (statusColor, statusIcon) = if (source.enabled) {
-        MaterialTheme.colorScheme.primary to Icons.Outlined.Visibility
+    val statusColor = if (source.enabled) {
+        MaterialTheme.colorScheme.primary
     } else {
-        MaterialTheme.colorScheme.outline to Icons.Outlined.VisibilityOff
+        MaterialTheme.colorScheme.outline
     }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(
-                if (source.enabled) {
-                    MaterialTheme.colorScheme.surface
-                } else {
-                    MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
-                },
-                shape = RoundedCornerShape(12.dp),
-            )
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick,
-            ),
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (source.enabled) {
@@ -534,7 +604,7 @@ private fun SourceRow(
                     .height(40.dp)
                     .background(statusColor, RoundedCornerShape(2.dp)),
             )
-            androidx.compose.foundation.layout.Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(12.dp))
 
             // Source info
             Column(modifier = Modifier.weight(1f)) {
@@ -546,9 +616,9 @@ private fun SourceRow(
                         text = source.name,
                         style = MaterialTheme.typography.titleSmall,
                         maxLines = 1,
-                        overflow = androidx.compose.ui.text.TextOverflow.Ellipsis,
+                        overflow = TextOverflow.Ellipsis,
                     )
-                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     if (!source.enabled) {
                         Text(
                             text = "DISABLED",
@@ -558,15 +628,15 @@ private fun SourceRow(
                         )
                     }
                 }
-                androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = source.baseUrl,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
-                    overflow = androidx.compose.ui.text.TextOverflow.Ellipsis,
+                    overflow = TextOverflow.Ellipsis,
                 )
-                androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -588,7 +658,7 @@ private fun SourceRow(
                     }
 
                     if (source.extensionId != null) {
-                        androidx.compose.foundation.layout.Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
                         Box(
                             modifier = Modifier
                                 .background(
@@ -606,7 +676,7 @@ private fun SourceRow(
                     }
 
                     if (source.failureCount > 0) {
-                        androidx.compose.foundation.layout.Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
                         Box(
                             modifier = Modifier
                                 .background(
@@ -622,7 +692,7 @@ private fun SourceRow(
                                     tint = MaterialTheme.colorScheme.error,
                                     modifier = Modifier.size(10.dp),
                                 )
-                                androidx.compose.foundation.layout.Spacer(modifier = Modifier.width(2.dp))
+                                Spacer(modifier = Modifier.width(2.dp))
                                 Text(
                                     text = "${source.failureCount} failures",
                                     style = MaterialTheme.typography.labelSmall,
@@ -648,26 +718,26 @@ private fun SourceRow(
                     }
                 }
                 if (source.sourceType == SourceType.JS_SCRAPER) {
-                    IconButton(onClick = { /* TODO: check for updates */ }) {
+                    IconButton(onClick = onCheckUpdates) {
                         Icon(
                             imageVector = Icons.Outlined.CloudDownload,
-                            contentDescription = "Check updates",
+                            contentDescription = "Check for updates",
                             tint = MaterialTheme.colorScheme.secondary,
                         )
                     }
                 }
-                IconButton(onClick = { /* TODO: force rediscover */ }) {
+                IconButton(onClick = onForceRediscover) {
                     Icon(
                         imageVector = Icons.Outlined.Refresh,
-                        contentDescription = "Rediscover",
+                        contentDescription = "Force rediscover",
                         tint = MaterialTheme.colorScheme.outline,
                     )
                 }
                 if (source.sourceType != SourceType.LEGACY_EXTENSION) {
-                    IconButton(onClick = { /* TODO: remove source */ }) {
+                    IconButton(onClick = onRemoveSource) {
                         Icon(
                             imageVector = Icons.Outlined.DeleteOutline,
-                            contentDescription = "Remove",
+                            contentDescription = "Remove source",
                             tint = MaterialTheme.colorScheme.error,
                         )
                     }
@@ -700,7 +770,7 @@ private fun AddJsScraperDialog(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
                 )
-                androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = scraperFilename,
                     onValueChange = onScraperFilenameChange,
@@ -709,7 +779,7 @@ private fun AddJsScraperDialog(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
                 )
-                androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "The script will be downloaded and sandboxed. Auto-updates enabled if from GitHub.",
                     style = MaterialTheme.typography.bodySmall,
@@ -756,7 +826,7 @@ private fun ImportJsScraperDialog(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
                 )
-                androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = scriptContent,
                     onValueChange = onScriptContentChange,
@@ -807,7 +877,7 @@ private fun AddHeuristicDialog(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
                 )
-                androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = name,
                     onValueChange = onNameChange,
@@ -816,7 +886,7 @@ private fun AddHeuristicDialog(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
                 )
-                androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "The adaptive heuristic engine will analyze the page structure on first use.",
                     style = MaterialTheme.typography.bodySmall,
@@ -851,6 +921,8 @@ private fun LinkScraperDialog(
     onScraperNameChange: (String) -> Unit,
     availableScrapers: List<String>,
 ) {
+    var dropdownExpanded by remember { mutableStateOf(false) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Link Scraper to Website") },
@@ -864,18 +936,45 @@ private fun LinkScraperDialog(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
                 )
-                androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 if (availableScrapers.isNotEmpty()) {
-                    // Dropdown-style selection
-                    OutlinedTextField(
-                        value = scraperName,
-                        onValueChange = onScraperNameChange,
-                        label = { Text("Select Scraper") },
-                        placeholder = { Text("Choose a scraper...") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
-                    )
-                    // TODO: Replace with proper dropdown
+                    Box {
+                        OutlinedTextField(
+                            value = scraperName,
+                            onValueChange = onScraperNameChange,
+                            label = { Text("Select Scraper") },
+                            placeholder = { Text("Choose a scraper...") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp),
+                            trailingIcon = {
+                                IconButton(onClick = { dropdownExpanded = true }) {
+                                    Icon(
+                                        imageVector = if (dropdownExpanded) {
+                                            Icons.Outlined.ExpandLess
+                                        } else {
+                                            Icons.Outlined.ExpandMore
+                                        },
+                                        contentDescription = "Show available scrapers",
+                                    )
+                                }
+                            },
+                            readOnly = false,
+                        )
+                        DropdownMenu(
+                            expanded = dropdownExpanded,
+                            onDismissRequest = { dropdownExpanded = false },
+                        ) {
+                            availableScrapers.forEach { name ->
+                                DropdownMenuItem(
+                                    text = { Text(name) },
+                                    onClick = {
+                                        onScraperNameChange(name)
+                                        dropdownExpanded = false
+                                    },
+                                )
+                            }
+                        }
+                    }
                 } else {
                     OutlinedTextField(
                         value = scraperName,

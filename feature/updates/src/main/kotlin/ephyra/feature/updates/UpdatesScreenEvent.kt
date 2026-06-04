@@ -5,8 +5,8 @@ import ephyra.feature.manga.presentation.components.ChapterDownloadAction
 /**
  * All user intents originating from the Updates screen.
  *
- * The [UpdatesScreenModel] is the single consumer of these events via [UpdatesScreenModel.onEvent].
- * No other public methods should be called on the ScreenModel from UI code.
+ * The [UpdatesViewModel] is the single consumer of these events via [UpdatesViewModel.onEvent].
+ * No other public methods should be called on the ViewModel from UI code.
  */
 sealed interface UpdatesScreenEvent {
 
@@ -45,7 +45,7 @@ sealed interface UpdatesScreenEvent {
     data object InvertSelection : UpdatesScreenEvent
 
     /** User dismissed the active dialog (or code closes it programmatically). */
-    data class SetDialog(val dialog: UpdatesScreenModel.Dialog?) : UpdatesScreenEvent
+    data class SetDialog(val dialog: UpdatesViewModel.Dialog?) : UpdatesScreenEvent
 
     /** App lifecycle / tab re-entry — reset the new-update badge counter. */
     data object ResetNewUpdatesCount : UpdatesScreenEvent

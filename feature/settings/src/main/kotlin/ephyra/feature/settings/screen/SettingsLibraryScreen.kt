@@ -51,24 +51,24 @@ object SettingsLibraryScreen : SearchableSettings {
 
     @Composable
     override fun getPreferences(): List<Preference> {
-        val screenModel = hiltViewModel<SettingsLibraryScreenModel>()
-        val allCategories by screenModel.getCategories().collectAsState(emptyList())
+        val ViewModel = hiltViewModel<SettingsLibraryViewModel>()
+        val allCategories by ViewModel.getCategories().collectAsState(emptyList())
         val navController = LocalNavController.current
 
         return listOf(
             getCategoriesGroup(
                 navController = navController,
                 allCategories = allCategories,
-                libraryPreferences = screenModel.libraryPreferences,
-                resetCategoryFlags = screenModel.resetCategoryFlags,
+                libraryPreferences = ViewModel.libraryPreferences,
+                resetCategoryFlags = ViewModel.resetCategoryFlags,
             ),
             getGlobalUpdateGroup(
                 allCategories = allCategories,
-                libraryPreferences = screenModel.libraryPreferences,
-                scheduler = screenModel.libraryUpdateScheduler,
+                libraryPreferences = ViewModel.libraryPreferences,
+                scheduler = ViewModel.libraryUpdateScheduler,
             ),
-            getCoverQualityGroup(screenModel.libraryPreferences),
-            getBehaviorGroup(screenModel.libraryPreferences),
+            getCoverQualityGroup(ViewModel.libraryPreferences),
+            getBehaviorGroup(ViewModel.libraryPreferences),
         )
     }
 

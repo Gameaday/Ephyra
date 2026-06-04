@@ -23,11 +23,11 @@ fun MigrationListScreen(
     extraSearchQuery: String?,
     navController: NavController = LocalNavController.current,
 ) {
-    val screenModel = hiltViewModel<MigrationListScreenModel>()
+    val ViewModel = hiltViewModel<MigrationListViewModel>()
     LaunchedEffect(mangaIds, extraSearchQuery) {
-        screenModel.init(mangaIds, extraSearchQuery)
+        ViewModel.init(mangaIds, extraSearchQuery)
     }
-    val state by screenModel.state.collectAsStateWithLifecycle()
+    val state by ViewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     val matchOverride by navController.currentBackStackEntry
@@ -38,16 +38,16 @@ fun MigrationListScreen(
 
     LaunchedEffect(matchOverride) {
         val (current, target) = matchOverride ?: return@LaunchedEffect
-        screenModel.onEvent(MigrationListScreenEvent.UseMangaForMigration(current, target))
+        ViewModel.onEvent(MigrationListScreenEvent.UseMangaForMigration(current, target))
         navController.currentBackStackEntry?.savedStateHandle?.remove<Pair<Long, Long>>("match_override")
     }
 
-    LaunchedEffect(screenModel) {
-        screenModel.navigateBackEvent.collect { navController.popBackStack() }
+    LaunchedEffect(ViewModel) {
+        ViewModel.navigateBackEvent.collect { navController.popBackStack() }
     }
 
-    LaunchedEffect(screenModel) {
-        screenModel.missingChaptersEvent.collect {
+    LaunchedEffect(ViewModel) {
+        ViewModel.missingChaptersEvent.collect {
             context.toast(
                 ephyra.app.core.common.R.string.migrationListScreen_matchWithoutChapterToast,
                 Toast.LENGTH_LONG,
@@ -65,37 +65,37 @@ fun MigrationListScreen(
         onSearchManually = { migrationItem ->
             navController.navigate(ScreenRoutes.MigrateSearch.createRoute(migrationItem.manga.id))
         },
-        onSkip = { screenModel.onEvent(MigrationListScreenEvent.RemoveManga(it)) },
-        onMigrate = { screenModel.onEvent(MigrationListScreenEvent.MigrateNow(it, replace = true)) },
-        onCopy = { screenModel.onEvent(MigrationListScreenEvent.MigrateNow(it, replace = false)) },
-        openMigrationDialog = { copy -> screenModel.onEvent(MigrationListScreenEvent.ShowMigrateDialog(copy)) },
+        onSkip = { ViewModel.onEvent(MigrationListScreenEvent.RemoveManga(it)) },
+        onMigrate = { ViewModel.onEvent(MigrationListScreenEvent.MigrateNow(it, replace = true)) },
+        onCopy = { ViewModel.onEvent(MigrationListScreenEvent.MigrateNow(it, replace = false)) },
+        openMigrationDialog = { copy -> ViewModel.onEvent(MigrationListScreenEvent.ShowMigrateDialog(copy)) },
     )
 
     when (val dialog = state.dialog) {
-        is MigrationListScreenModel.Dialog.Migrate -> {
+        is MigrationListViewModel.Dialog.Migrate -> {
             MigrationMangaDialog(
-                onDismissRequest = { screenModel.onEvent(MigrationListScreenEvent.DismissDialog) },
+                onDismissRequest = { ViewModel.onEvent(MigrationListScreenEvent.DismissDialog) },
                 copy = dialog.copy,
                 totalCount = dialog.totalCount,
                 skippedCount = dialog.skippedCount,
                 onMigrate = {
                     if (dialog.copy) {
-                        screenModel.onEvent(MigrationListScreenEvent.CopyMangas)
+                        ViewModel.onEvent(MigrationListScreenEvent.CopyMangas)
                     } else {
-                        screenModel.onEvent(MigrationListScreenEvent.MigrateMangas)
+                        ViewModel.onEvent(MigrationListScreenEvent.MigrateMangas)
                     }
                 },
             )
         }
-        is MigrationListScreenModel.Dialog.Progress -> {
+        is MigrationListViewModel.Dialog.Progress -> {
             MigrationProgressDialog(
                 progress = dialog.progress,
-                exitMigration = { screenModel.onEvent(MigrationListScreenEvent.CancelMigrate) },
+                exitMigration = { ViewModel.onEvent(MigrationListScreenEvent.CancelMigrate) },
             )
         }
-        MigrationListScreenModel.Dialog.Exit -> {
+        MigrationListViewModel.Dialog.Exit -> {
             MigrationExitDialog(
-                onDismissRequest = { screenModel.onEvent(MigrationListScreenEvent.DismissDialog) },
+                onDismissRequest = { ViewModel.onEvent(MigrationListScreenEvent.DismissDialog) },
                 exitMigration = { navController.popBackStack() },
             )
         }
@@ -103,6 +103,6 @@ fun MigrationListScreen(
     }
 
     BackHandler(true) {
-        screenModel.onEvent(MigrationListScreenEvent.ShowExitDialog)
+        ViewModel.onEvent(MigrationListScreenEvent.ShowExitDialog)
     }
 }

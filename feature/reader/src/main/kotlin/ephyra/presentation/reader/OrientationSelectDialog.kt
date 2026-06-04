@@ -14,7 +14,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ephyra.domain.manga.model.readerOrientation
 import ephyra.domain.reader.model.ReaderOrientation
-import ephyra.feature.reader.setting.ReaderSettingsScreenModel
+import ephyra.feature.reader.setting.ReaderSettingsViewModel
 import ephyra.feature.reader.setting.icon
 import ephyra.presentation.core.components.AdaptiveSheet
 import ephyra.presentation.core.components.SettingsIconGrid
@@ -28,17 +28,17 @@ private val ReaderOrientationsWithoutDefault = ReaderOrientation.entries - Reade
 @Composable
 fun OrientationSelectDialog(
     onDismissRequest: () -> Unit,
-    screenModel: ReaderSettingsScreenModel,
+    ViewModel: ReaderSettingsViewModel,
     onChange: (Int) -> Unit,
 ) {
-    val manga by screenModel.mangaFlow.collectAsStateWithLifecycle()
+    val manga by ViewModel.mangaFlow.collectAsStateWithLifecycle()
     val orientation = remember(manga) { ReaderOrientation.fromPreference(manga?.readerOrientation?.toInt()) }
 
     AdaptiveSheet(onDismissRequest = onDismissRequest) {
         DialogContent(
             orientation = orientation,
             onChangeOrientation = {
-                screenModel.onChangeOrientation(it)
+                ViewModel.onChangeOrientation(it)
                 onChange(it.stringRes)
                 onDismissRequest()
             },

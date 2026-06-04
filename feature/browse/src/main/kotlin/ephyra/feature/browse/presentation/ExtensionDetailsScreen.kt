@@ -46,7 +46,7 @@ import androidx.compose.ui.unit.dp
 import ephyra.core.common.util.system.LocaleHelper
 import ephyra.domain.extension.interactor.ExtensionSourceItem
 import ephyra.domain.extension.model.Extension
-import ephyra.feature.browse.extension.details.ExtensionDetailsScreenModel
+import ephyra.feature.browse.extension.details.ExtensionDetailsViewModel
 import ephyra.presentation.core.R
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
@@ -65,7 +65,7 @@ import kotlinx.collections.immutable.persistentListOf
 @Composable
 fun ExtensionDetailsScreen(
     navigateUp: () -> Unit,
-    state: ExtensionDetailsScreenModel.State,
+    state: ExtensionDetailsViewModel.State,
     onClickSourcePreferences: (sourceId: Long) -> Unit,
     onClickEnableAll: () -> Unit,
     onClickDisableAll: () -> Unit,

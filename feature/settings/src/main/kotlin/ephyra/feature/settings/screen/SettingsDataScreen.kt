@@ -96,26 +96,26 @@ object SettingsDataScreen : SearchableSettings {
 
     @Composable
     override fun getPreferences(): List<Preference> {
-        val screenModel = hiltViewModel<SettingsDataScreenModel>()
+        val ViewModel = hiltViewModel<SettingsDataViewModel>()
         val navController = LocalNavController.current
 
         return persistentListOf(
-            getStorageLocationPref(storagePreferences = screenModel.storagePreferences),
+            getStorageLocationPref(storagePreferences = ViewModel.storagePreferences),
             Preference.PreferenceItem.InfoPreference(
                 stringResource(ephyra.app.core.common.R.string.pref_storage_location_info),
             ),
 
             getBackupAndRestoreGroup(
-                backupPreferences = screenModel.backupPreferences,
-                backupScheduler = screenModel.backupScheduler,
-                restoreScheduler = screenModel.restoreScheduler,
+                backupPreferences = ViewModel.backupPreferences,
+                backupScheduler = ViewModel.backupScheduler,
+                restoreScheduler = ViewModel.restoreScheduler,
                 navController = navController,
             ),
             getDataGroup(
-                libraryPreferences = screenModel.libraryPreferences,
-                chapterCache = screenModel.chapterCache,
+                libraryPreferences = ViewModel.libraryPreferences,
+                chapterCache = ViewModel.chapterCache,
             ),
-            getExportGroup(getFavorites = screenModel.getFavorites, libraryExporter = screenModel.libraryExporter),
+            getExportGroup(getFavorites = ViewModel.getFavorites, libraryExporter = ViewModel.libraryExporter),
         )
     }
 

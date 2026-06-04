@@ -14,7 +14,7 @@ import ephyra.core.common.util.system.WebViewUtil
 import ephyra.feature.settings.Preference
 import ephyra.feature.settings.PreferenceScaffold
 import ephyra.feature.settings.screen.about.AboutScreen
-import ephyra.feature.settings.screen.about.AboutScreenModel
+import ephyra.feature.settings.screen.about.AboutViewModel
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import kotlinx.collections.immutable.mutate
@@ -25,7 +25,7 @@ import kotlinx.coroutines.guava.await
 fun DebugInfoScreen(
     navController: NavController = LocalNavController.current,
 ) {
-    val aboutModel = hiltViewModel<AboutScreenModel>()
+    val aboutModel = hiltViewModel<AboutViewModel>()
     PreferenceScaffold(
         titleRes = ephyra.app.core.common.R.string.pref_debug_info,
         onBackPressed = { navController.popBackStack() },
@@ -47,7 +47,7 @@ fun DebugInfoScreen(
 }
 
 @Composable
-private fun getAppInfoGroup(aboutModel: AboutScreenModel): Preference.PreferenceGroup {
+private fun getAppInfoGroup(aboutModel: AboutViewModel): Preference.PreferenceGroup {
     return Preference.PreferenceGroup(
         title = "App info",
         preferenceItems = persistentListOf(

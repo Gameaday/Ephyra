@@ -88,6 +88,14 @@ data class Manga(
         return chapterFlags and CHAPTER_SORT_DIR_MASK == CHAPTER_SORT_DESC
     }
 
+    /** The reading mode derived from [viewerFlags]. */
+    val readingMode: Long
+        get() = viewerFlags and ReadingMode.MASK.toLong()
+
+    /** The reader orientation derived from [viewerFlags]. */
+    val readerOrientation: Long
+        get() = viewerFlags and ReaderOrientation.MASK.toLong()
+
     companion object {
         // Generic filter that does not filter anything
         const val SHOW_ALL = 0x00000000L
@@ -155,12 +163,13 @@ data class Manga(
     }
 }
 
-// TODO: move these into the domain model
+@Deprecated("Use Manga.readingMode property directly", ReplaceWith("readingMode"))
 val Manga.readingMode: Long
-    get() = viewerFlags and ReadingMode.MASK.toLong()
+    get() = readingMode
 
+@Deprecated("Use Manga.readerOrientation property directly", ReplaceWith("readerOrientation"))
 val Manga.readerOrientation: Long
-    get() = viewerFlags and ReaderOrientation.MASK.toLong()
+    get() = readerOrientation
 
 fun Manga.downloadedFilter(basePreferences: BasePreferences): TriState {
     if (basePreferences.downloadedOnly().getSync()) return TriState.ENABLED_IS

@@ -28,10 +28,10 @@ object SettingsSecurityScreen : SearchableSettings {
 
     @Composable
     override fun getPreferences(): List<Preference> {
-        val screenModel = hiltViewModel<SettingsSecurityScreenModel>()
-        val securityPreferences = screenModel.securityPreferences
-        val privacyPreferences = screenModel.privacyPreferences
-        val appInfo = screenModel.appInfo
+        val ViewModel = hiltViewModel<SettingsSecurityViewModel>()
+        val securityPreferences = ViewModel.securityPreferences
+        val privacyPreferences = ViewModel.privacyPreferences
+        val appInfo = ViewModel.appInfo
 
         return buildList(2) {
             add(getSecurityGroup(securityPreferences))

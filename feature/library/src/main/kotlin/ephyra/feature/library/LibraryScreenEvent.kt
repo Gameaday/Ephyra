@@ -8,7 +8,7 @@ import ephyra.presentation.core.util.manga.DownloadAction
 /**
  * All user intents originating from the Library screen.
  *
- * [LibraryScreenModel.onEvent] is the single entry-point for all mutations.
+ * [LibraryViewModel.onEvent] is the single entry-point for all mutations.
  * No public accessors bypass the event channel — the screen emits Events, ViewModel emits Effects.
  */
 sealed interface LibraryScreenEvent {

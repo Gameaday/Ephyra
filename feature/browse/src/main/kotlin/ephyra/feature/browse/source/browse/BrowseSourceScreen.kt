@@ -41,7 +41,7 @@ import ephyra.feature.browse.presentation.BrowseSourceContent
 import ephyra.feature.browse.presentation.MissingSourceScreen
 import ephyra.feature.browse.presentation.components.BrowseSourceToolbar
 import ephyra.feature.browse.presentation.components.RemoveMangaDialog
-import ephyra.feature.browse.source.browse.BrowseSourceScreenModel.Listing
+import ephyra.feature.browse.source.browse.BrowseSourceViewModel.Listing
 import ephyra.feature.category.presentation.components.ChangeCategoryDialog
 import ephyra.feature.manga.presentation.DuplicateMangaDialog
 import ephyra.feature.migration.dialog.MigrateMangaDialog
@@ -72,23 +72,23 @@ fun BrowseSourceScreen(
         return
     }
 
-    val screenModel = hiltViewModel<BrowseSourceScreenModel>()
+    val ViewModel = hiltViewModel<BrowseSourceViewModel>()
     LaunchedEffect(sourceId, listingQuery) {
-        screenModel.init(sourceId, listingQuery)
+        ViewModel.init(sourceId, listingQuery)
     }
 
-    val source = screenModel.source
+    val source = ViewModel.source
     if (source == null) {
         LoadingScreen()
         return
     }
 
-    val state by screenModel.state.collectAsStateWithLifecycle()
+    val state by ViewModel.state.collectAsStateWithLifecycle()
 
     val navigateUp: () -> Unit = {
         when {
             !state.isUserQuery && state.toolbarQuery != null ->
-                screenModel.onEvent(BrowseSourceScreenEvent.SetToolbarQuery(null))
+                ViewModel.onEvent(BrowseSourceScreenEvent.SetToolbarQuery(null))
             else -> navController.popBackStack()
         }
     }
@@ -127,17 +127,19 @@ fun BrowseSourceScreen(
             ) {
                 BrowseSourceToolbar(
                     searchQuery = state.toolbarQuery,
-                    onSearchQueryChange = { screenModel.onEvent(BrowseSourceScreenEvent.SetToolbarQuery(it)) },
+                    onSearchQueryChange = { ViewModel.onEvent(BrowseSourceScreenEvent.SetToolbarQuery(it)) },
                     source = source,
-                    displayMode = screenModel.displayMode,
-                    onDisplayModeChange = { screenModel.displayMode = it },
+                    displayMode = ViewModel.displayMode,
+                    onDisplayModeChange = { ViewModel.displayMode = it },
                     navigateUp = navigateUp,
                     onWebViewClick = onWebViewClick,
                     onHelpClick = onHelpClick,
                     onSettingsClick = {
-                        /* TODO: navController.navigate(ScreenRoutes.SourcePreferences.createRoute(sourceId)) */
+                        navController.navigate(
+                            ephyra.presentation.core.ui.navigation.ScreenRoutes.SourcePreferences.createRoute(sourceId),
+                        )
                     },
-                    onSearch = { screenModel.onEvent(BrowseSourceScreenEvent.Search(it)) },
+                    onSearch = { ViewModel.onEvent(BrowseSourceScreenEvent.Search(it)) },
                 )
 
                 Row(
@@ -149,8 +151,8 @@ fun BrowseSourceScreen(
                     FilterChip(
                         selected = state.listing == Listing.Popular,
                         onClick = {
-                            screenModel.onEvent(BrowseSourceScreenEvent.ResetFilters)
-                            screenModel.onEvent(BrowseSourceScreenEvent.SetListing(Listing.Popular))
+                            ViewModel.onEvent(BrowseSourceScreenEvent.ResetFilters)
+                            ViewModel.onEvent(BrowseSourceScreenEvent.SetListing(Listing.Popular))
                         },
                         leadingIcon = {
                             Icon(
@@ -168,8 +170,8 @@ fun BrowseSourceScreen(
                         FilterChip(
                             selected = state.listing == Listing.Latest,
                             onClick = {
-                                screenModel.onEvent(BrowseSourceScreenEvent.ResetFilters)
-                                screenModel.onEvent(BrowseSourceScreenEvent.SetListing(Listing.Latest))
+                                ViewModel.onEvent(BrowseSourceScreenEvent.ResetFilters)
+                                ViewModel.onEvent(BrowseSourceScreenEvent.SetListing(Listing.Latest))
                             },
                             leadingIcon = {
                                 Icon(
@@ -187,7 +189,7 @@ fun BrowseSourceScreen(
                     if (state.filters.isNotEmpty()) {
                         FilterChip(
                             selected = state.listing is Listing.Search,
-                            onClick = { screenModel.onEvent(BrowseSourceScreenEvent.OpenFilterSheet) },
+                            onClick = { ViewModel.onEvent(BrowseSourceScreenEvent.OpenFilterSheet) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Outlined.FilterList,
@@ -210,9 +212,9 @@ fun BrowseSourceScreen(
     ) { paddingValues ->
         BrowseSourceContent(
             source = source,
-            mangaList = screenModel.mangaPagerFlowFlow.collectAsLazyPagingItems(),
-            columns = screenModel.getColumnsPreference(LocalConfiguration.current.orientation),
-            displayMode = screenModel.displayMode,
+            mangaList = ViewModel.mangaPagerFlowFlow.collectAsLazyPagingItems(),
+            columns = ViewModel.getColumnsPreference(LocalConfiguration.current.orientation),
+            displayMode = ViewModel.displayMode,
             snackbarHostState = snackbarHostState,
             contentPadding = paddingValues,
             onWebViewClick = onWebViewClick,
@@ -225,21 +227,21 @@ fun BrowseSourceScreen(
             },
             onMangaLongClick = { manga ->
                 scope.launchIO {
-                    val duplicates = screenModel.getDuplicateLibraryManga(manga)
+                    val duplicates = ViewModel.getDuplicateLibraryManga(manga)
                     when {
                         manga.favorite ->
-                            screenModel.onEvent(
+                            ViewModel.onEvent(
                                 BrowseSourceScreenEvent.SetDialog(
-                                    BrowseSourceScreenModel.Dialog.RemoveManga(manga),
+                                    BrowseSourceViewModel.Dialog.RemoveManga(manga),
                                 ),
                             )
                         duplicates.isNotEmpty() ->
-                            screenModel.onEvent(
+                            ViewModel.onEvent(
                                 BrowseSourceScreenEvent.SetDialog(
-                                    BrowseSourceScreenModel.Dialog.AddDuplicateManga(manga, duplicates),
+                                    BrowseSourceViewModel.Dialog.AddDuplicateManga(manga, duplicates),
                                 ),
                             )
-                        else -> screenModel.onEvent(BrowseSourceScreenEvent.AddFavorite(manga))
+                        else -> ViewModel.onEvent(BrowseSourceScreenEvent.AddFavorite(manga))
                     }
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 }
@@ -247,38 +249,38 @@ fun BrowseSourceScreen(
         )
     }
 
-    val onDismissRequest = { screenModel.onEvent(BrowseSourceScreenEvent.SetDialog(null)) }
+    val onDismissRequest = { ViewModel.onEvent(BrowseSourceScreenEvent.SetDialog(null)) }
     when (val dialog = state.dialog) {
-        is BrowseSourceScreenModel.Dialog.Filter -> {
+        is BrowseSourceViewModel.Dialog.Filter -> {
             SourceFilterDialog(
                 onDismissRequest = onDismissRequest,
                 filters = state.filters,
-                onReset = { screenModel.onEvent(BrowseSourceScreenEvent.ResetFilters) },
-                onFilter = { screenModel.onEvent(BrowseSourceScreenEvent.Search(filters = state.filters)) },
-                onUpdate = { screenModel.onEvent(BrowseSourceScreenEvent.SetFilters(it)) },
+                onReset = { ViewModel.onEvent(BrowseSourceScreenEvent.ResetFilters) },
+                onFilter = { ViewModel.onEvent(BrowseSourceScreenEvent.Search(filters = state.filters)) },
+                onUpdate = { ViewModel.onEvent(BrowseSourceScreenEvent.SetFilters(it)) },
             )
         }
 
-        is BrowseSourceScreenModel.Dialog.AddDuplicateManga -> {
+        is BrowseSourceViewModel.Dialog.AddDuplicateManga -> {
             DuplicateMangaDialog(
                 duplicates = dialog.duplicates,
                 onDismissRequest = onDismissRequest,
-                onConfirm = { screenModel.onEvent(BrowseSourceScreenEvent.AddFavorite(dialog.manga)) },
+                onConfirm = { ViewModel.onEvent(BrowseSourceScreenEvent.AddFavorite(dialog.manga)) },
                 onOpenManga = {
                     navController.navigate(
                         ephyra.presentation.core.ui.navigation.Screen.MangaDetails(mangaId = it.id, fromSource = false),
                     )
                 },
                 onMigrate = {
-                    screenModel.onEvent(
-                        BrowseSourceScreenEvent.SetDialog(BrowseSourceScreenModel.Dialog.Migrate(dialog.manga, it)),
+                    ViewModel.onEvent(
+                        BrowseSourceScreenEvent.SetDialog(BrowseSourceViewModel.Dialog.Migrate(dialog.manga, it)),
                     )
                 },
-                sourceManager = screenModel.sourceManager,
+                sourceManager = ViewModel.sourceManager,
             )
         }
 
-        is BrowseSourceScreenModel.Dialog.Migrate -> {
+        is BrowseSourceViewModel.Dialog.Migrate -> {
             MigrateMangaDialog(
                 current = dialog.current,
                 target = dialog.target,
@@ -294,24 +296,24 @@ fun BrowseSourceScreen(
             )
         }
 
-        is BrowseSourceScreenModel.Dialog.RemoveManga -> {
+        is BrowseSourceViewModel.Dialog.RemoveManga -> {
             RemoveMangaDialog(
                 onDismissRequest = onDismissRequest,
                 onConfirm = {
-                    screenModel.onEvent(BrowseSourceScreenEvent.ChangeMangaFavorite(dialog.manga))
+                    ViewModel.onEvent(BrowseSourceScreenEvent.ChangeMangaFavorite(dialog.manga))
                 },
                 mangaToRemove = dialog.manga,
             )
         }
 
-        is BrowseSourceScreenModel.Dialog.ChangeMangaCategory -> {
+        is BrowseSourceViewModel.Dialog.ChangeMangaCategory -> {
             ChangeCategoryDialog(
                 initialSelection = dialog.initialSelection,
                 onDismissRequest = onDismissRequest,
                 onEditCategories = { navController.navigate(ephyra.presentation.core.ui.navigation.Screen.Category) },
                 onConfirm = { include, _ ->
-                    screenModel.onEvent(BrowseSourceScreenEvent.ChangeMangaFavorite(dialog.manga))
-                    screenModel.onEvent(BrowseSourceScreenEvent.MoveMangaToCategories(dialog.manga, include))
+                    ViewModel.onEvent(BrowseSourceScreenEvent.ChangeMangaFavorite(dialog.manga))
+                    ViewModel.onEvent(BrowseSourceScreenEvent.MoveMangaToCategories(dialog.manga, include))
                 },
             )
         }
@@ -323,8 +325,8 @@ fun BrowseSourceScreen(
         queryEvent.receiveAsFlow()
             .collectLatest {
                 when (it) {
-                    is SearchType.Genre -> screenModel.onEvent(BrowseSourceScreenEvent.SearchGenre(it.txt))
-                    is SearchType.Text -> screenModel.onEvent(BrowseSourceScreenEvent.Search(it.txt))
+                    is SearchType.Genre -> ViewModel.onEvent(BrowseSourceScreenEvent.SearchGenre(it.txt))
+                    is SearchType.Text -> ViewModel.onEvent(BrowseSourceScreenEvent.Search(it.txt))
                 }
             }
     }

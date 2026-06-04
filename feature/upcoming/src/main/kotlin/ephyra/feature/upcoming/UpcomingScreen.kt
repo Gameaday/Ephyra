@@ -12,13 +12,13 @@ import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun UpcomingScreen(
-    screenModel: UpcomingScreenModel,
+    ViewModel: UpcomingViewModel,
     navController: NavController = LocalNavController.current,
 ) {
-    val state by screenModel.state.collectAsStateWithLifecycle()
+    val state by ViewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
-        screenModel.effects.collectLatest { effect ->
+        ViewModel.effects.collectLatest { effect ->
             when (effect) {
                 is UpcomingScreenEffect.NavigateToMangaDetails -> {
                     navController.navigate(Screen.MangaDetails(effect.mangaId, false))
@@ -29,7 +29,7 @@ fun UpcomingScreen(
 
     UpcomingScreenContent(
         state = state,
-        setSelectedYearMonth = { screenModel.onEvent(UpcomingScreenEvent.SetSelectedYearMonth(it)) },
-        onClickUpcoming = { screenModel.onEvent(UpcomingScreenEvent.ClickUpcoming(it.id)) },
+        setSelectedYearMonth = { ViewModel.onEvent(UpcomingScreenEvent.SetSelectedYearMonth(it)) },
+        onClickUpcoming = { ViewModel.onEvent(UpcomingScreenEvent.ClickUpcoming(it.id)) },
     )
 }

@@ -47,13 +47,13 @@ fun MigrateMangaScreen(
     navController: NavController = LocalNavController.current,
 ) {
     val context = LocalContext.current
-    val screenModel = hiltViewModel<MigrateMangaScreenModel>()
+    val ViewModel = hiltViewModel<MigrateMangaViewModel>()
 
     LaunchedEffect(sourceId) {
-        screenModel.init(sourceId)
+        ViewModel.init(sourceId)
     }
 
-    val state by screenModel.state.collectAsStateWithLifecycle()
+    val state by ViewModel.state.collectAsStateWithLifecycle()
 
     if (state.isLoading) {
         LoadingScreen()
@@ -61,7 +61,7 @@ fun MigrateMangaScreen(
     }
 
     BackHandler(enabled = state.selectionMode) {
-        screenModel.onEvent(MigrateMangaScreenEvent.ClearSelection)
+        ViewModel.onEvent(MigrateMangaScreenEvent.ClearSelection)
     }
 
     val lazyListState = rememberLazyListState()
@@ -72,7 +72,7 @@ fun MigrateMangaScreen(
                 title = state.source!!.name,
                 navigateUp = {
                     if (state.selectionMode) {
-                        screenModel.onEvent(MigrateMangaScreenEvent.ClearSelection)
+                        ViewModel.onEvent(MigrateMangaScreenEvent.ClearSelection)
                     } else {
                         navController.popBackStack()
                     }
@@ -99,7 +99,7 @@ fun MigrateMangaScreen(
                     },
                     onClick = {
                         val selection = state.selection
-                        screenModel.onEvent(MigrateMangaScreenEvent.ClearSelection)
+                        ViewModel.onEvent(MigrateMangaScreenEvent.ClearSelection)
                         navController.navigate(ScreenRoutes.MigrationConfig.createRoute(selection))
                     },
                     expanded = lazyListState.shouldExpandFAB(),
@@ -119,13 +119,13 @@ fun MigrateMangaScreen(
             lazyListState = lazyListState,
             contentPadding = contentPadding,
             state = state,
-            onClickItem = { screenModel.onEvent(MigrateMangaScreenEvent.ToggleSelection(it)) },
+            onClickItem = { ViewModel.onEvent(MigrateMangaScreenEvent.ToggleSelection(it)) },
             onClickCover = { navController.navigate(Screen.MangaDetails(it.id, true)) },
         )
     }
 
     LaunchedEffect(Unit) {
-        screenModel.events.collectLatest { event ->
+        ViewModel.events.collectLatest { event ->
             when (event) {
                 MigrationMangaEvent.FailedFetchingFavorites -> {
                     context.toast(ephyra.app.core.common.R.string.internal_error)
@@ -139,7 +139,7 @@ fun MigrateMangaScreen(
 private fun MigrateMangaContent(
     lazyListState: LazyListState,
     contentPadding: PaddingValues,
-    state: MigrateMangaScreenModel.State,
+    state: MigrateMangaViewModel.State,
     onClickItem: (Manga) -> Unit,
     onClickCover: (Manga) -> Unit,
 ) {

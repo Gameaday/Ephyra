@@ -25,11 +25,11 @@ fun DeepLinkScreen(
 ) {
     val context = LocalContext.current
 
-    val screenModel = hiltViewModel<DeepLinkScreenModel>()
+    val ViewModel = hiltViewModel<DeepLinkViewModel>()
     LaunchedEffect(query) {
-        screenModel.init(query)
+        ViewModel.init(query)
     }
-    val state by screenModel.state.collectAsStateWithLifecycle()
+    val state by ViewModel.state.collectAsStateWithLifecycle()
     Scaffold(
         topBar = { scrollBehavior ->
             AppBar(
@@ -40,16 +40,16 @@ fun DeepLinkScreen(
         },
     ) { contentPadding ->
         when (state) {
-            is DeepLinkScreenModel.State.Loading -> {
+            is DeepLinkViewModel.State.Loading -> {
                 LoadingScreen(Modifier.padding(contentPadding))
             }
-            is DeepLinkScreenModel.State.NoResults -> {
+            is DeepLinkViewModel.State.NoResults -> {
                 navController.navigate(Screen.GlobalSearch(query)) {
                     popUpTo(ScreenRoutes.Home.route) { inclusive = false }
                 }
             }
-            is DeepLinkScreenModel.State.Result -> {
-                val resultState = state as DeepLinkScreenModel.State.Result
+            is DeepLinkViewModel.State.Result -> {
+                val resultState = state as DeepLinkViewModel.State.Result
                 if (resultState.chapterId == null) {
                     navController.navigate(Screen.MangaDetails(resultState.manga.id, true)) {
                         popUpTo(ScreenRoutes.Home.route) { inclusive = false }

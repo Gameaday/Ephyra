@@ -13,14 +13,14 @@ import ephyra.feature.browse.presentation.components.GlobalSearchLoadingResultIt
 import ephyra.feature.browse.presentation.components.GlobalSearchResultItem
 import ephyra.feature.browse.presentation.components.GlobalSearchToolbar
 import ephyra.feature.browse.source.globalsearch.SearchItemResult
-import ephyra.feature.browse.source.globalsearch.SearchScreenModel
+import ephyra.feature.browse.source.globalsearch.SearchViewModel
 import ephyra.feature.browse.source.globalsearch.SourceFilter
 import ephyra.presentation.core.components.material.Scaffold
 import eu.kanade.tachiyomi.source.CatalogueSource
 
 @Composable
 fun GlobalSearchScreen(
-    state: SearchScreenModel.State,
+    state: SearchViewModel.State,
     navigateUp: () -> Unit,
     onChangeSearchQuery: (String?) -> Unit,
     onSearch: (String) -> Unit,

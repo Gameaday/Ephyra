@@ -64,8 +64,8 @@ import ephyra.presentation.core.util.system.openInBrowser
 fun MatchResultsScreen(
     navController: NavController = LocalNavController.current,
 ) {
-    val screenModel = hiltViewModel<MatchResultsScreenModel>()
-    val state by screenModel.state.collectAsStateWithLifecycle()
+    val ViewModel = hiltViewModel<MatchResultsViewModel>()
+    val state by ViewModel.state.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = { scrollBehavior ->
@@ -83,8 +83,8 @@ fun MatchResultsScreen(
 
         MatchResultsContent(
             state = state,
-            onRetrySingle = screenModel::retrySingle,
-            onRetryAll = screenModel::retryAll,
+            onRetrySingle = ViewModel::retrySingle,
+            onRetryAll = ViewModel::retryAll,
             onOpenManga = { manga ->
                 navController.navigate(Screen.MangaDetails(manga.id, true))
             },

@@ -16,15 +16,15 @@ import ephyra.presentation.core.util.system.toast
 fun SourcesFilterScreen(
     navController: NavController = LocalNavController.current,
 ) {
-    val screenModel = hiltViewModel<SourcesFilterScreenModel>()
-    val state by screenModel.state.collectAsStateWithLifecycle()
+    val ViewModel = hiltViewModel<SourcesFilterViewModel>()
+    val state by ViewModel.state.collectAsStateWithLifecycle()
 
-    if (state is SourcesFilterScreenModel.State.Loading) {
+    if (state is SourcesFilterViewModel.State.Loading) {
         LoadingScreen()
         return
     }
 
-    if (state is SourcesFilterScreenModel.State.Error) {
+    if (state is SourcesFilterViewModel.State.Error) {
         val context = LocalContext.current
         LaunchedEffect(Unit) {
             context.toast(ephyra.app.core.common.R.string.internal_error)
@@ -33,12 +33,12 @@ fun SourcesFilterScreen(
         return
     }
 
-    val successState = state as SourcesFilterScreenModel.State.Success
+    val successState = state as SourcesFilterViewModel.State.Success
 
     SourcesFilterScreen(
         navigateUp = { navController.popBackStack() },
         state = successState,
-        onClickLanguage = { screenModel.onEvent(SourcesFilterScreenEvent.ToggleLanguage(it)) },
-        onClickSource = { screenModel.onEvent(SourcesFilterScreenEvent.ToggleSource(it)) },
+        onClickLanguage = { ViewModel.onEvent(SourcesFilterScreenEvent.ToggleLanguage(it)) },
+        onClickSource = { ViewModel.onEvent(SourcesFilterScreenEvent.ToggleSource(it)) },
     )
 }

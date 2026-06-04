@@ -8,7 +8,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import ephyra.feature.browse.presentation.MigrateSearchScreen
 import ephyra.feature.browse.source.globalsearch.SearchScreenEvent
-import ephyra.feature.browse.source.globalsearch.SearchScreenModel
+import ephyra.feature.browse.source.globalsearch.SearchViewModel
 import ephyra.feature.migration.dialog.MigrateMangaDialog
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.Screen
@@ -19,21 +19,21 @@ fun MigrateSearchScreen(
     mangaId: Long,
     navController: NavController = LocalNavController.current,
 ) {
-    val screenModel = hiltViewModel<MigrateSearchScreenModel>()
+    val ViewModel = hiltViewModel<MigrateSearchViewModel>()
     LaunchedEffect(mangaId) {
-        screenModel.init(mangaId)
+        ViewModel.init(mangaId)
     }
-    val state by screenModel.state.collectAsStateWithLifecycle()
+    val state by ViewModel.state.collectAsStateWithLifecycle()
 
     MigrateSearchScreen(
         state = state,
         fromSourceId = state.from?.source,
         navigateUp = { navController.popBackStack() },
-        onChangeSearchQuery = { screenModel.onEvent(SearchScreenEvent.UpdateSearchQuery(it)) },
-        onSearch = { screenModel.onEvent(SearchScreenEvent.Search) },
-        getManga = { screenModel.getManga(it) },
-        onChangeSearchFilter = { screenModel.onEvent(SearchScreenEvent.SetSourceFilter(it)) },
-        onToggleResults = { screenModel.onEvent(SearchScreenEvent.ToggleFilterResults) },
+        onChangeSearchQuery = { ViewModel.onEvent(SearchScreenEvent.UpdateSearchQuery(it)) },
+        onSearch = { ViewModel.onEvent(SearchScreenEvent.Search) },
+        getManga = { ViewModel.getManga(it) },
+        onChangeSearchFilter = { ViewModel.onEvent(SearchScreenEvent.SetSourceFilter(it)) },
+        onToggleResults = { ViewModel.onEvent(SearchScreenEvent.ToggleFilterResults) },
         onClickSource = {
             navController.navigate(
                 ScreenRoutes.MigrateSourceSearch.createRoute(mangaId, it.id),
@@ -45,7 +45,7 @@ fun MigrateSearchScreen(
                 migrateListEntry.savedStateHandle["match_override"] = mangaId to it.id
                 navController.popBackStack()
             } else {
-                screenModel.onEvent(SearchScreenEvent.SetMigrateDialog(mangaId, it))
+                ViewModel.onEvent(SearchScreenEvent.SetMigrateDialog(mangaId, it))
             }
         },
         onLongClickItem = {
@@ -54,14 +54,14 @@ fun MigrateSearchScreen(
     )
 
     when (val dialog = state.dialog) {
-        is SearchScreenModel.Dialog.Migrate -> {
+        is SearchViewModel.Dialog.Migrate -> {
             MigrateMangaDialog(
                 current = dialog.current,
                 target = dialog.target,
                 onClickTitle = {
                     navController.navigate(Screen.MangaDetails(dialog.target.id, true))
                 },
-                onDismissRequest = { screenModel.onEvent(SearchScreenEvent.ClearDialog) },
+                onDismissRequest = { ViewModel.onEvent(SearchScreenEvent.ClearDialog) },
                 onComplete = {
                     navController.navigate(Screen.MangaDetails(dialog.target.id, true)) {
                         popUpTo(ScreenRoutes.MigrateSearch.route) { inclusive = true }

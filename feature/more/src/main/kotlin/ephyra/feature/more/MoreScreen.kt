@@ -59,14 +59,14 @@ fun MoreTabScreen(
     navController: NavController = LocalNavController.current,
 ) {
     val context = LocalContext.current
-    val screenModel = hiltViewModel<MoreScreenModel>()
-    val downloadQueueState by screenModel.downloadQueueState.collectAsStateWithLifecycle()
+    val ViewModel = hiltViewModel<MoreViewModel>()
+    val downloadQueueState by ViewModel.downloadQueueState.collectAsStateWithLifecycle()
     MoreScreen(
         downloadQueueStateProvider = { downloadQueueState },
-        downloadedOnly = screenModel.downloadedOnly,
-        onDownloadedOnlyChange = { screenModel.downloadedOnly = it },
-        incognitoMode = screenModel.incognitoMode,
-        onIncognitoModeChange = { screenModel.incognitoMode = it },
+        downloadedOnly = ViewModel.downloadedOnly,
+        onDownloadedOnlyChange = { ViewModel.downloadedOnly = it },
+        incognitoMode = ViewModel.incognitoMode,
+        onIncognitoModeChange = { ViewModel.incognitoMode = it },
         onClickDownloadQueue = { navController.navigate(ScreenRoutes.DownloadQueue.route) },
         onClickCategories = { navController.navigate(ephyra.presentation.core.ui.navigation.Screen.Category) },
         onClickStats = { navController.navigate(ScreenRoutes.Stats.route) },
@@ -81,7 +81,7 @@ fun MoreTabScreen(
 }
 
 @HiltViewModel
-class MoreScreenModel @Inject constructor(
+class MoreViewModel @Inject constructor(
     private val downloadManager: DownloadManager,
     preferences: BasePreferences,
 ) : ViewModel() {

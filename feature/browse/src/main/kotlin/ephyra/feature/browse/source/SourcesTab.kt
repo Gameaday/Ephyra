@@ -25,10 +25,10 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun sourcesTab(
-    screenModel: SourcesScreenModel,
+    ViewModel: SourcesViewModel,
     navController: NavController = LocalNavController.current,
 ): TabContent {
-    val state by screenModel.state.collectAsStateWithLifecycle()
+    val state by ViewModel.state.collectAsStateWithLifecycle()
 
     return TabContent(
         titleRes = ephyra.app.core.common.R.string.label_content_sources,
@@ -52,7 +52,7 @@ fun sourcesTab(
         ),
         content = { contentPadding, snackbarHostState ->
             BackHandler(enabled = state.searchQuery != null) {
-                screenModel.search(null)
+                ViewModel.search(null)
             }
 
             SourcesScreen(
@@ -61,8 +61,8 @@ fun sourcesTab(
                 onClickItem = { source, listing ->
                     navController.navigate(Screen.BrowseSource(source.id, listing.query))
                 },
-                onClickPin = { screenModel.onEvent(SourcesScreenEvent.TogglePin(it)) },
-                onLongClickItem = { screenModel.onEvent(SourcesScreenEvent.ShowSourceDialog(it)) },
+                onClickPin = { ViewModel.onEvent(SourcesScreenEvent.TogglePin(it)) },
+                onLongClickItem = { ViewModel.onEvent(SourcesScreenEvent.ShowSourceDialog(it)) },
             )
 
             state.dialog?.let { dialog ->
@@ -70,22 +70,22 @@ fun sourcesTab(
                 SourceOptionsDialog(
                     source = source,
                     onClickPin = {
-                        screenModel.onEvent(SourcesScreenEvent.TogglePin(source))
-                        screenModel.onEvent(SourcesScreenEvent.CloseDialog)
+                        ViewModel.onEvent(SourcesScreenEvent.TogglePin(source))
+                        ViewModel.onEvent(SourcesScreenEvent.CloseDialog)
                     },
                     onClickDisable = {
-                        screenModel.onEvent(SourcesScreenEvent.ToggleSource(source))
-                        screenModel.onEvent(SourcesScreenEvent.CloseDialog)
+                        ViewModel.onEvent(SourcesScreenEvent.ToggleSource(source))
+                        ViewModel.onEvent(SourcesScreenEvent.CloseDialog)
                     },
-                    onDismiss = { screenModel.onEvent(SourcesScreenEvent.CloseDialog) },
+                    onDismiss = { ViewModel.onEvent(SourcesScreenEvent.CloseDialog) },
                 )
             }
 
             val internalErrString = stringResource(ephyra.app.core.common.R.string.internal_error)
             LaunchedEffect(Unit) {
-                screenModel.events.collectLatest { event ->
+                ViewModel.events.collectLatest { event ->
                     when (event) {
-                        SourcesScreenModel.Event.FailedFetchingSources -> {
+                        SourcesViewModel.Event.FailedFetchingSources -> {
                             launch { snackbarHostState.showSnackbar(internalErrString) }
                         }
                     }

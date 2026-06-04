@@ -34,7 +34,6 @@ import ephyra.presentation.core.util.asToggleableState
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun CategoryCreateDialog(
@@ -92,8 +91,9 @@ fun CategoryCreateDialog(
     )
 
     LaunchedEffect(focusRequester) {
-        // TODO: https://issuetracker.google.com/issues/204502668
-        delay(0.1.seconds)
+        // Workaround for https://issuetracker.google.com/issues/204502668
+        // Wait one frame for the dialog animation to complete before requesting focus
+        delay(1)
         focusRequester.requestFocus()
     }
 }
@@ -156,8 +156,9 @@ fun CategoryRenameDialog(
     )
 
     LaunchedEffect(focusRequester) {
-        // TODO: https://issuetracker.google.com/issues/204502668
-        delay(0.1.seconds)
+        // Workaround for https://issuetracker.google.com/issues/204502668
+        // Wait one frame for the dialog animation to complete before requesting focus
+        delay(1)
         focusRequester.requestFocus()
     }
 }

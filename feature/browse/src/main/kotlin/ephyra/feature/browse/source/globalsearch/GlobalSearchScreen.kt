@@ -26,11 +26,11 @@ fun GlobalSearchScreen(
         return
     }
 
-    val screenModel = hiltViewModel<GlobalSearchScreenModel>()
+    val ViewModel = hiltViewModel<GlobalSearchViewModel>()
     LaunchedEffect(searchQuery, extensionFilter) {
-        screenModel.init(searchQuery, extensionFilter)
+        ViewModel.init(searchQuery, extensionFilter)
     }
-    val state by screenModel.state.collectAsStateWithLifecycle()
+    val state by ViewModel.state.collectAsStateWithLifecycle()
     var showSingleLoadingScreen by remember {
         mutableStateOf(searchQuery.isNotEmpty() && !extensionFilter.isNullOrEmpty() && state.total == 1)
     }
@@ -58,11 +58,11 @@ fun GlobalSearchScreen(
         ephyra.feature.browse.presentation.GlobalSearchScreen(
             state = state,
             navigateUp = { navController.popBackStack() },
-            onChangeSearchQuery = { screenModel.onEvent(SearchScreenEvent.UpdateSearchQuery(it)) },
-            onSearch = { screenModel.onEvent(SearchScreenEvent.Search) },
-            getManga = { screenModel.getManga(it) },
-            onChangeSearchFilter = { screenModel.onEvent(SearchScreenEvent.SetSourceFilter(it)) },
-            onToggleResults = { screenModel.onEvent(SearchScreenEvent.ToggleFilterResults) },
+            onChangeSearchQuery = { ViewModel.onEvent(SearchScreenEvent.UpdateSearchQuery(it)) },
+            onSearch = { ViewModel.onEvent(SearchScreenEvent.Search) },
+            getManga = { ViewModel.getManga(it) },
+            onChangeSearchFilter = { ViewModel.onEvent(SearchScreenEvent.SetSourceFilter(it)) },
+            onToggleResults = { ViewModel.onEvent(SearchScreenEvent.ToggleFilterResults) },
             onClickSource = {
                 navController.navigate(Screen.BrowseSource(it.id, state.searchQuery))
             },

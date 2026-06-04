@@ -77,16 +77,16 @@ object SettingsAdvancedScreen : SearchableSettings {
 
     @Composable
     override fun getPreferences(): List<Preference> {
-        val screenModel = hiltViewModel<SettingsAdvancedScreenModel>()
+        val ViewModel = hiltViewModel<SettingsAdvancedViewModel>()
         val scope = rememberCoroutineScope()
         val context = LocalContext.current
         val navController = LocalNavController.current
-        val appInfo = screenModel.appInfo
-        val extensionManager: ExtensionManager = screenModel.extensionManager
+        val appInfo = ViewModel.appInfo
+        val extensionManager: ExtensionManager = ViewModel.extensionManager
 
-        val basePreferences = screenModel.basePreferences
-        val networkPreferences = screenModel.networkPreferences
-        val libraryPreferences = screenModel.libraryPreferences
+        val basePreferences = ViewModel.basePreferences
+        val networkPreferences = ViewModel.networkPreferences
+        val libraryPreferences = ViewModel.libraryPreferences
 
         return listOf(
             Preference.PreferenceItem.TextPreference(
@@ -125,21 +125,21 @@ object SettingsAdvancedScreen : SearchableSettings {
                 },
             ),
             getBackgroundActivityGroup(),
-            getDataGroup(downloadCache = screenModel.downloadCache, navController = navController),
+            getDataGroup(downloadCache = ViewModel.downloadCache, navController = navController),
             getNetworkGroup(
                 networkPreferences = networkPreferences,
-                networkHelper = screenModel.networkHelper,
+                networkHelper = ViewModel.networkHelper,
             ),
             getLibraryGroup(
                 libraryPreferences = libraryPreferences,
-                resetViewerFlags = screenModel.resetViewerFlags,
-                metadataUpdateScheduler = screenModel.metadataUpdateScheduler,
+                resetViewerFlags = ViewModel.resetViewerFlags,
+                metadataUpdateScheduler = ViewModel.metadataUpdateScheduler,
             ),
             getReaderGroup(basePreferences = basePreferences),
             getExtensionsGroup(
                 appInfo = appInfo,
                 basePreferences = basePreferences,
-                trustExtension = screenModel.trustExtension,
+                trustExtension = ViewModel.trustExtension,
             ),
         )
     }

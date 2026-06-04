@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test
 class LibrarySourceHealthFilterTest {
 
     /**
-     * Replicates the filter logic from LibraryScreenModel.applyFilters():
+     * Replicates the filter logic from LibraryViewModel.applyFilters():
      * ```
      * val status = SourceStatus.fromValue(it.libraryManga.manga.sourceStatus)
      * status == SourceStatus.DEAD || status == SourceStatus.DEGRADED
@@ -30,7 +30,7 @@ class LibrarySourceHealthFilterTest {
     }
 
     /**
-     * Simulates applyFilter() behavior from LibraryScreenModel.
+     * Simulates applyFilter() behavior from LibraryViewModel.
      */
     private fun applyFilter(filterState: TriState, predicate: () -> Boolean): Boolean {
         return when (filterState) {

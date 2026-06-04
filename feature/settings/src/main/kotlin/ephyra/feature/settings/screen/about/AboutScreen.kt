@@ -47,17 +47,18 @@ import logcat.LogPriority
 fun AboutScreen(
     navController: NavController = LocalNavController.current,
 ) {
-    val screenModel = hiltViewModel<AboutScreenModel>()
-    val state by screenModel.state.collectAsState()
+    val ViewModel = hiltViewModel<AboutViewModel>()
+    val state by ViewModel.state.collectAsState()
 
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
 
     LaunchedEffect(Unit) {
-        screenModel.events.collectLatest { event ->
+        ViewModel.events.collectLatest { event ->
             when (event) {
                 is AboutEvent.NewUpdate -> {
-                    // TODO: handle new update navigation
+                    // Update is handled via the state-driven AlertDialog below
+                    // which reads from ViewModel.state.updateResult
                 }
 
                 is AboutEvent.UpdateError -> {
@@ -78,10 +79,10 @@ fun AboutScreen(
                 }
                 GetApplicationRelease.Result.NoNewUpdate -> {
                     context.toast(ephyra.app.core.common.R.string.update_check_no_new_updates)
-                    screenModel.clearUpdateResult()
+                    ViewModel.clearUpdateResult()
                 }
                 else -> {
-                    screenModel.clearUpdateResult()
+                    ViewModel.clearUpdateResult()
                 }
             }
         }
@@ -90,7 +91,7 @@ fun AboutScreen(
     if (updateResult is GetApplicationRelease.Result.NewUpdate) {
         val release = updateResult.release
         AlertDialog(
-            onDismissRequest = { screenModel.clearUpdateResult() },
+            onDismissRequest = { ViewModel.clearUpdateResult() },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -105,14 +106,14 @@ fun AboutScreen(
                         } catch (e: Exception) {
                             context.toast(e.message)
                         }
-                        screenModel.clearUpdateResult()
+                        ViewModel.clearUpdateResult()
                     },
                 ) {
                     Text(stringResource(ephyra.app.core.common.R.string.update_check_confirm))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { screenModel.clearUpdateResult() }) {
+                TextButton(onClick = { ViewModel.clearUpdateResult() }) {
                     Text(stringResource(ephyra.app.core.common.R.string.action_cancel))
                 }
             },
@@ -144,15 +145,15 @@ fun AboutScreen(
             item {
                 TextPreferenceWidget(
                     title = stringResource(ephyra.app.core.common.R.string.version),
-                    subtitle = screenModel.getVersionName(withBuildDate = true),
+                    subtitle = ViewModel.getVersionName(withBuildDate = true),
                     onPreferenceClick = {
-                        val deviceInfo = CrashLogUtil(context, screenModel.extensionManager).getDebugInfo()
+                        val deviceInfo = CrashLogUtil(context, ViewModel.extensionManager).getDebugInfo()
                         context.copyToClipboard("Debug information", deviceInfo)
                     },
                 )
             }
 
-            if (screenModel.appInfo.updaterEnabled) {
+            if (ViewModel.appInfo.updaterEnabled) {
                 item {
                     TextPreferenceWidget(
                         title = stringResource(ephyra.app.core.common.R.string.check_for_updates),
@@ -164,16 +165,16 @@ fun AboutScreen(
                                 )
                             }
                         },
-                        onPreferenceClick = { screenModel.checkVersion() },
+                        onPreferenceClick = { ViewModel.checkVersion() },
                     )
                 }
             }
 
-            if (!screenModel.appInfo.isDebug) {
+            if (!ViewModel.appInfo.isDebug) {
                 item {
                     TextPreferenceWidget(
                         title = stringResource(ephyra.app.core.common.R.string.whats_new),
-                        onPreferenceClick = { uriHandler.openUri(screenModel.appInfo.releaseUrl) },
+                        onPreferenceClick = { uriHandler.openUri(ViewModel.appInfo.releaseUrl) },
                     )
                 }
             }

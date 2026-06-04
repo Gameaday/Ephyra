@@ -3,10 +3,31 @@ package ephyra.presentation.core.ui.navigation
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 val LocalNavController = staticCompositionLocalOf<NavHostController> {
     error("No NavController provided")
+}
+
+/**
+ * Provides a way for child screens to communicate bottom navigation bar visibility
+ * to the host (HomeScreen). Child screens can call [BottomNavVisibilityController.hide]
+ * or [BottomNavVisibilityController.show] to control the bottom bar.
+ */
+object BottomNavVisibilityController {
+    private val _isBottomNavVisible = MutableStateFlow(true)
+    val isBottomNavVisible: StateFlow<Boolean> = _isBottomNavVisible.asStateFlow()
+
+    fun hide() { _isBottomNavVisible.value = false }
+    fun show() { _isBottomNavVisible.value = true }
+    fun setVisible(visible: Boolean) { _isBottomNavVisible.value = visible }
+}
+
+val LocalBottomNavVisibilityController = staticCompositionLocalOf<BottomNavVisibilityController> {
+    BottomNavVisibilityController
 }
 
 object NavigationEvents {

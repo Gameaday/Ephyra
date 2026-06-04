@@ -51,4 +51,59 @@ class ArchitectureTest {
 
         rule.check(classes)
     }
+
+    /**
+     * Feature Module Isolation Rule:
+     * Feature modules must not directly depend on each other.
+     * All cross-feature communication must go through core/domain interfaces.
+     */
+    @Test
+    fun `feature modules must not depend on each other`() {
+        val classes = ClassFileImporter().importPackages("ephyra.feature")
+
+        val rule = noClasses()
+            .that().resideInAPackage("ephyra.feature.library..")
+            .should().dependOnClassesThat().resideInAnyPackage(
+                "ephyra.feature.browse..",
+                "ephyra.feature.reader..",
+                "ephyra.feature.manga..",
+                "ephyra.feature.updates..",
+                "ephyra.feature.history..",
+                "ephyra.feature.settings..",
+                "ephyra.feature.download..",
+                "ephyra.feature.migration..",
+                "ephyra.feature.stats..",
+                "ephyra.feature.upcoming..",
+                "ephyra.feature.webview..",
+                "ephyra.feature.more..",
+                "ephyra.feature.security..",
+                "ephyra.feature.player..",
+                "ephyra.feature.category..",
+            )
+
+        rule.check(classes)
+    }
+
+    /**
+     * Domain Layer Android Framework Purity Rule:
+     * The domain layer must be pure Kotlin with no Android framework dependencies.
+     * This enforces compile-time determinism and testability.
+     */
+    @Test
+    fun `domain layer must not depend on Android framework`() {
+        val classes = ClassFileImporter().importPackages("ephyra.core.domain")
+
+        val rule = noClasses()
+            .that().resideInAPackage("ephyra.core.domain..")
+            .should().dependOnClassesThat().resideInAnyPackage(
+                "androidx.workmanager..",
+                "androidx.compose..",
+                "androidx.paging.runtime..",
+                "android.app..",
+                "android.content..",
+                "android.view..",
+            )
+
+        rule.check(classes)
+    }
 }

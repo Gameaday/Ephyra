@@ -175,8 +175,8 @@ class AppModuleImplementationContractTest {
     /**
      * Hilt binds [ephyra.data.cache.CoverCache] with an additional
      * [ephyra.domain.manga.service.CoverCache] interface binding.
-     * Multiple ViewModels ([LibraryScreenModel], [BrowseSourceScreenModel],
-     * [MangaCoverScreenModel], [MigrateDialogScreenModel]) inject the domain interface,
+     * Multiple ViewModels ([LibraryViewModel], [BrowseSourceViewModel],
+     * [MangaCoverViewModel], [MigrateDialogViewModel]) inject the domain interface,
      * so this binding is required for them to resolve at runtime.
      */
     @Test

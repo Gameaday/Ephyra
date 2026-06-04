@@ -6,8 +6,8 @@ import ephyra.domain.manga.model.Manga
 /**
  * All user intents originating from the History screen.
  *
- * The [HistoryScreenModel] is the single consumer of these events via [HistoryScreenModel.onEvent].
- * No other public methods should be called on the ScreenModel from UI code.
+ * The [HistoryViewModel] is the single consumer of these events via [HistoryViewModel.onEvent].
+ * No other public methods should be called on the ViewModel from UI code.
  */
 sealed interface HistoryScreenEvent {
 
@@ -48,5 +48,5 @@ sealed interface HistoryScreenEvent {
     data class ShowChangeCategoryDialog(val manga: Manga) : HistoryScreenEvent
 
     /** Change (or dismiss) the active dialog. */
-    data class SetDialog(val dialog: HistoryScreenModel.Dialog?) : HistoryScreenEvent
+    data class SetDialog(val dialog: HistoryViewModel.Dialog?) : HistoryScreenEvent
 }

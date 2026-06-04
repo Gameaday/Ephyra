@@ -51,7 +51,14 @@ data class Chapter(
     }
 }
 
-// TODO: Remove when all deps are migrated
+/**
+ * Bridge to legacy [SChapter] extension API.
+ * This should be removed once all extension dependencies are migrated to use [Chapter] directly.
+ */
+@Deprecated(
+    message = "Use Chapter directly. This bridge exists only for legacy extension API compatibility.",
+    replaceWith = ReplaceWith("/* Remove: extension API should accept Chapter directly */"),
+)
 fun Chapter.toSChapter(): SChapter {
     return SChapter.create().also {
         it.url = url

@@ -1,0 +1,62 @@
+package ephyra.feature.download
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import ephyra.domain.download.model.Download
+import ephyra.domain.download.service.DownloadManager
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
+import javax.inject.Inject
+
+@HiltViewModel
+class DownloadQueueViewModel @Inject constructor(
+    private val downloadManager: DownloadManager,
+) : ViewModel() {
+
+    val state = downloadManager.queueState
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val isDownloaderRunning = downloadManager.isDownloaderRunning
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    fun onEvent(event: DownloadQueueScreenEvent) {
+        when (event) {
+            DownloadQueueScreenEvent.StartDownloads -> startDownloads()
+            DownloadQueueScreenEvent.PauseDownloads -> pauseDownloads()
+            DownloadQueueScreenEvent.ClearQueue -> clearQueue()
+            is DownloadQueueScreenEvent.Reorder -> reorder(event.downloads)
+            is DownloadQueueScreenEvent.Cancel -> cancel(event.downloads)
+        }
+    }
+
+    private fun startDownloads() {
+        downloadManager.startDownloads()
+    }
+
+    private fun pauseDownloads() {
+        downloadManager.pauseDownloads()
+    }
+
+    private fun clearQueue() {
+        downloadManager.clearQueue()
+    }
+
+    private fun reorder(downloads: List<Download>) {
+        downloadManager.reorderQueue(downloads)
+    }
+
+    private fun cancel(downloads: List<Download>) {
+        downloadManager.cancelQueuedDownloads(downloads)
+    }
+
+    fun <R : Comparable<R>> reorderQueue(selector: (Download) -> R, reverse: Boolean = false) {
+        val reordered = state.value
+            .groupBy { it.source.id }
+            .values
+            .flatMap { group ->
+                group.sortedBy(selector).let { if (reverse) it.reversed() else it }
+            }
+        reorder(reordered)
+    }
+}

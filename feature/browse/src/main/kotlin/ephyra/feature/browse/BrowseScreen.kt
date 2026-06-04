@@ -8,10 +8,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import ephyra.feature.browse.extension.ExtensionsScreenModel
+import ephyra.feature.browse.extension.ExtensionsViewModel
 import ephyra.feature.browse.extension.extensionsTab
 import ephyra.feature.browse.migration.sources.migrateSourceTab
-import ephyra.feature.browse.source.SourcesScreenModel
+import ephyra.feature.browse.source.SourcesViewModel
 import ephyra.feature.browse.source.authority.discoverTab
 import ephyra.feature.browse.source.sourcesTab
 import ephyra.presentation.core.components.TabbedScreen
@@ -28,17 +28,17 @@ fun BrowseTabScreen(
     val context = LocalContext.current
 
     // Hoisted for extensions tab's search bar
-    val extensionsScreenModel = hiltViewModel<ExtensionsScreenModel>()
-    val extensionsState by extensionsScreenModel.state.collectAsStateWithLifecycle()
+    val extensionsViewModel = hiltViewModel<ExtensionsViewModel>()
+    val extensionsState by extensionsViewModel.state.collectAsStateWithLifecycle()
 
     // Hoisted for sources tab's search bar
-    val sourcesScreenModel = hiltViewModel<SourcesScreenModel>()
-    val sourcesState by sourcesScreenModel.state.collectAsStateWithLifecycle()
+    val sourcesViewModel = hiltViewModel<SourcesViewModel>()
+    val sourcesState by sourcesViewModel.state.collectAsStateWithLifecycle()
 
     val tabs = persistentListOf(
         discoverTab(navController),
-        sourcesTab(sourcesScreenModel, navController),
-        extensionsTab(extensionsScreenModel, navController),
+        sourcesTab(sourcesViewModel, navController),
+        extensionsTab(extensionsViewModel, navController),
         migrateSourceTab(navController),
     )
 
@@ -52,8 +52,8 @@ fun BrowseTabScreen(
 
     val onQueryChange: (String?) -> Unit = { query ->
         when (state.currentPage) {
-            1 -> sourcesScreenModel.search(query)
-            2 -> extensionsScreenModel.search(query)
+            1 -> sourcesViewModel.search(query)
+            2 -> extensionsViewModel.search(query)
         }
     }
 

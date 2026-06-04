@@ -16,7 +16,7 @@ import androidx.compose.ui.platform.LocalContext
 import ephyra.core.common.util.system.LocaleHelper
 import ephyra.domain.source.model.Source
 import ephyra.feature.browse.presentation.components.BaseSourceItem
-import ephyra.feature.browse.source.SourcesFilterScreenModel
+import ephyra.feature.browse.source.SourcesFilterViewModel
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.FastScrollLazyColumn
 import ephyra.presentation.core.components.material.Scaffold
@@ -28,7 +28,7 @@ import ephyra.presentation.core.util.animateItemFastScroll
 @Composable
 fun SourcesFilterScreen(
     navigateUp: () -> Unit,
-    state: SourcesFilterScreenModel.State.Success,
+    state: SourcesFilterViewModel.State.Success,
     onClickLanguage: (String) -> Unit,
     onClickSource: (Source) -> Unit,
 ) {
@@ -60,7 +60,7 @@ fun SourcesFilterScreen(
 @Composable
 private fun SourcesFilterContent(
     contentPadding: PaddingValues,
-    state: SourcesFilterScreenModel.State.Success,
+    state: SourcesFilterViewModel.State.Success,
     onClickLanguage: (String) -> Unit,
     onClickSource: (Source) -> Unit,
 ) {

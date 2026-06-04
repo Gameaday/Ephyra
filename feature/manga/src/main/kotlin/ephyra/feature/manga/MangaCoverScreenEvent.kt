@@ -5,7 +5,7 @@ import android.net.Uri
 /**
  * All user intents for the manga cover screen.
  * Events must not carry Android framework types (Context, Activity, View).
- * For side-effects requiring Activity context, [MangaCoverScreenModel] emits a [MangaCoverEffect].
+ * For side-effects requiring Activity context, [MangaCoverViewModel] emits a [MangaCoverEffect].
  */
 sealed interface MangaCoverScreenEvent {
     /** Save the current cover to the device Pictures folder. */
@@ -25,7 +25,7 @@ sealed interface MangaCoverScreenEvent {
 }
 
 /**
- * One-shot UI side-effects emitted by [MangaCoverScreenModel].
+ * One-shot UI side-effects emitted by [MangaCoverViewModel].
  * Collected by the composable to perform Activity-context-dependent operations.
  */
 sealed interface MangaCoverEffect {

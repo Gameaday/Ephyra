@@ -2,7 +2,7 @@ package ephyra.feature.migration.list
 
 /**
  * All user intents originating from the Migration List screen.
- * [MigrationListScreenModel.onEvent] is the single mutation entry-point.
+ * [MigrationListViewModel.onEvent] is the single mutation entry-point.
  *
  * Output flows that remain public:
  *   • `navigateBackEvent` — the screen pops when this emits

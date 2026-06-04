@@ -12,7 +12,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.window.DialogWindowProvider
-import ephyra.feature.reader.setting.ReaderSettingsScreenModel
+import ephyra.feature.reader.setting.ReaderSettingsViewModel
 import ephyra.presentation.core.components.TabbedDialog
 import ephyra.presentation.core.components.TabbedDialogPaddings
 import ephyra.presentation.core.i18n.stringResource
@@ -23,7 +23,7 @@ fun ReaderSettingsDialog(
     onDismissRequest: () -> Unit,
     onShowMenus: () -> Unit,
     onHideMenus: () -> Unit,
-    screenModel: ReaderSettingsScreenModel,
+    ViewModel: ReaderSettingsViewModel,
 ) {
     val tabTitles = persistentListOf(
         stringResource(ephyra.app.core.common.R.string.pref_category_reading_mode),
@@ -60,9 +60,9 @@ fun ReaderSettingsDialog(
                     .verticalScroll(rememberScrollState()),
             ) {
                 when (page) {
-                    0 -> ReadingModePage(screenModel)
-                    1 -> GeneralPage(screenModel)
-                    2 -> ColorFilterPage(screenModel)
+                    0 -> ReadingModePage(ViewModel)
+                    1 -> GeneralPage(ViewModel)
+                    2 -> ColorFilterPage(ViewModel)
                 }
             }
         }

@@ -67,8 +67,8 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 fun DownloadQueueScreen(
     navController: NavController = LocalNavController.current,
 ) {
-    val screenModel = hiltViewModel<DownloadQueueScreenModel>()
-    val downloadList by screenModel.state.collectAsStateWithLifecycle()
+    val ViewModel = hiltViewModel<DownloadQueueViewModel>()
+    val downloadList by ViewModel.state.collectAsStateWithLifecycle()
     val downloadCount by remember { derivedStateOf { downloadList.size } }
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
@@ -144,7 +144,7 @@ fun DownloadQueueScreen(
                                             )
                                         },
                                         onClick = {
-                                            screenModel.reorderQueue(
+                                            ViewModel.reorderQueue(
                                                 { it.chapter.dateUpload },
                                                 true,
                                             )
@@ -160,7 +160,7 @@ fun DownloadQueueScreen(
                                             )
                                         },
                                         onClick = {
-                                            screenModel.reorderQueue(
+                                            ViewModel.reorderQueue(
                                                 { it.chapter.dateUpload },
                                                 false,
                                             )
@@ -187,7 +187,7 @@ fun DownloadQueueScreen(
                                             )
                                         },
                                         onClick = {
-                                            screenModel.reorderQueue(
+                                            ViewModel.reorderQueue(
                                                 { it.chapter.chapterNumber },
                                                 false,
                                             )
@@ -203,7 +203,7 @@ fun DownloadQueueScreen(
                                             )
                                         },
                                         onClick = {
-                                            screenModel.reorderQueue(
+                                            ViewModel.reorderQueue(
                                                 { it.chapter.chapterNumber },
                                                 true,
                                             )
@@ -223,7 +223,7 @@ fun DownloadQueueScreen(
                                 ),
                                 AppBar.OverflowAction(
                                     title = stringResource(ephyra.app.core.common.R.string.action_cancel_all),
-                                    onClick = { screenModel.onEvent(DownloadQueueScreenEvent.ClearQueue) },
+                                    onClick = { ViewModel.onEvent(DownloadQueueScreenEvent.ClearQueue) },
                                 ),
                             ),
                         )
@@ -233,7 +233,7 @@ fun DownloadQueueScreen(
             )
         },
         floatingActionButton = {
-            val isRunning by screenModel.isDownloaderRunning.collectAsStateWithLifecycle()
+            val isRunning by ViewModel.isDownloaderRunning.collectAsStateWithLifecycle()
             ExtendedFloatingActionButton(
                 text = {
                     val id = if (isRunning) {
@@ -255,10 +255,9 @@ fun DownloadQueueScreen(
                         DownloadQueueScreenEvent
                             .StartDownloads
                     }
-                    screenModel.onEvent(event)
+                    ViewModel.onEvent(event)
                 },
                 expanded = fabExpanded,
-                modifier = Modifier, // TODO: Add animation if needed
             )
         },
     ) { contentPadding ->
@@ -303,7 +302,7 @@ fun DownloadQueueScreen(
             val toIdx = downloads.indexOf(toItem.download)
             if (fromIdx != -1 && toIdx != -1) {
                 downloads.add(toIdx, downloads.removeAt(fromIdx))
-                screenModel.onEvent(DownloadQueueScreenEvent.Reorder(downloads))
+                ViewModel.onEvent(DownloadQueueScreenEvent.Reorder(downloads))
             }
         }
 
@@ -344,7 +343,7 @@ fun DownloadQueueScreen(
                                     val idx = downloads.indexOf(displayItem.download)
                                     if (idx > 0) {
                                         downloads.add(0, downloads.removeAt(idx))
-                                        screenModel.onEvent(DownloadQueueScreenEvent.Reorder(downloads))
+                                        ViewModel.onEvent(DownloadQueueScreenEvent.Reorder(downloads))
                                     }
                                 },
                                 onMoveToBottom = {
@@ -352,27 +351,27 @@ fun DownloadQueueScreen(
                                     val idx = downloads.indexOf(displayItem.download)
                                     if (idx < downloads.lastIndex) {
                                         downloads.add(downloads.removeAt(idx))
-                                        screenModel.onEvent(DownloadQueueScreenEvent.Reorder(downloads))
+                                        ViewModel.onEvent(DownloadQueueScreenEvent.Reorder(downloads))
                                     }
                                 },
                                 onMoveSeriesTop = {
                                     val mangaId = displayItem.download.manga.id
                                     val (series, others) = downloadList.partition { it.manga.id == mangaId }
-                                    screenModel.onEvent(DownloadQueueScreenEvent.Reorder(series + others))
+                                    ViewModel.onEvent(DownloadQueueScreenEvent.Reorder(series + others))
                                 },
                                 onMoveSeriesBottom = {
                                     val mangaId = displayItem.download.manga.id
                                     val (series, others) = downloadList.partition { it.manga.id == mangaId }
-                                    screenModel.onEvent(DownloadQueueScreenEvent.Reorder(others + series))
+                                    ViewModel.onEvent(DownloadQueueScreenEvent.Reorder(others + series))
                                 },
                                 onCancel = {
-                                    screenModel.onEvent(
+                                    ViewModel.onEvent(
                                         DownloadQueueScreenEvent.Cancel(listOf(displayItem.download)),
                                     )
                                 },
                                 onCancelSeries = {
                                     val mangaId = displayItem.download.manga.id
-                                    screenModel.onEvent(
+                                    ViewModel.onEvent(
                                         DownloadQueueScreenEvent.Cancel(
                                             downloadList.filter {
                                                 it.manga.id ==

@@ -69,13 +69,13 @@ fun ClearDatabaseScreen(
     navController: NavController = LocalNavController.current,
 ) {
     val context = LocalContext.current
-    val model = hiltViewModel<ClearDatabaseScreenModel>()
+    val model = hiltViewModel<ClearDatabaseViewModel>()
     val state by model.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
 
     when (val s = state) {
-        is ClearDatabaseScreenModel.State.Loading -> LoadingScreen()
-        is ClearDatabaseScreenModel.State.Ready -> {
+        is ClearDatabaseViewModel.State.Loading -> LoadingScreen()
+        is ClearDatabaseViewModel.State.Ready -> {
             if (s.showConfirmation) {
                 var keepReadManga by remember { mutableStateOf(true) }
                 AlertDialog(
@@ -226,7 +226,7 @@ private fun ClearDatabaseItem(
 }
 
 @HiltViewModel
-class ClearDatabaseScreenModel @Inject constructor(
+class ClearDatabaseViewModel @Inject constructor(
     private val getSourcesWithNonLibraryManga: GetSourcesWithNonLibraryManga,
     private val deleteNonLibraryManga: DeleteNonLibraryManga,
     private val removeResettedHistory: RemoveResettedHistory,

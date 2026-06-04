@@ -52,10 +52,10 @@ fun WorkerInfoScreen(
 ) {
     val context = LocalContext.current
 
-    val screenModel = hiltViewModel<WorkerInfoScreenModel>()
-    val enqueued by screenModel.enqueued.collectAsState()
-    val finished by screenModel.finished.collectAsState()
-    val running by screenModel.running.collectAsState()
+    val ViewModel = hiltViewModel<WorkerInfoViewModel>()
+    val enqueued by ViewModel.enqueued.collectAsState()
+    val finished by ViewModel.finished.collectAsState()
+    val running by ViewModel.running.collectAsState()
 
     Scaffold(
         topBar = {
@@ -118,7 +118,7 @@ private fun SectionText(text: String) {
 }
 
 @HiltViewModel
-class WorkerInfoScreenModel @Inject constructor(
+class WorkerInfoViewModel @Inject constructor(
     @ApplicationContext context: Context,
     private val uiPreferences: UiPreferences,
 ) : ViewModel() {

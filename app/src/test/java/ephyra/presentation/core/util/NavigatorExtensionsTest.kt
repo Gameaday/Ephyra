@@ -39,11 +39,11 @@ class NavigatorExtensionsTest {
      * This test verifies the factory closure used inside the extension:
      * `CoroutineScope(Dispatchers.IO + SupervisorJob()) + CoroutineName(key)`
      *
-     * We test the logic directly to avoid requiring a live ScreenModel / ScreenModelStore.
+     * We test the logic directly to avoid requiring a live ViewModel / ViewModelStore.
      */
     @Test
     fun `ioCoroutineScope factory creates scope on IO dispatcher`() {
-        val key = "ScreenModelIoCoroutineScope"
+        val key = "ViewModelIoCoroutineScope"
         val scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()) + CoroutineName(key)
 
         try {
@@ -60,7 +60,7 @@ class NavigatorExtensionsTest {
 
     @Test
     fun `ioCoroutineScope factory attaches CoroutineName to the scope`() {
-        val key = "ScreenModelIoCoroutineScope"
+        val key = "ViewModelIoCoroutineScope"
         val scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()) + CoroutineName(key)
 
         try {

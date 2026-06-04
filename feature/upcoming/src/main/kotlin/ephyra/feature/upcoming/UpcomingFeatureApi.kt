@@ -16,7 +16,7 @@ class UpcomingFeatureApi @Inject constructor() : FeatureApi {
         navGraphBuilder.composable(ScreenRoutes.Upcoming.route) {
             SafeFeatureContainer(
                 featureName = "Upcoming",
-                viewModelClass = UpcomingScreenModel::class.java,
+                viewModelClass = UpcomingViewModel::class.java,
                 onBack = { navController.popBackStack() },
             ) { viewModel ->
                 UpcomingScreen(viewModel, navController)

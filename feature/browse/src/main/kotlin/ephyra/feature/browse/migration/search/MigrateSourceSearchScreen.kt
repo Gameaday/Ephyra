@@ -24,7 +24,7 @@ import ephyra.core.common.Constants
 import ephyra.domain.manga.model.Manga
 import ephyra.feature.browse.presentation.BrowseSourceContent
 import ephyra.feature.browse.source.browse.BrowseSourceScreenEvent
-import ephyra.feature.browse.source.browse.BrowseSourceScreenModel
+import ephyra.feature.browse.source.browse.BrowseSourceViewModel
 import ephyra.feature.browse.source.browse.SourceFilterDialog
 import ephyra.feature.migration.dialog.MigrateMangaDialog
 import ephyra.presentation.core.components.SearchToolbar
@@ -56,35 +56,35 @@ fun MigrateSourceSearchScreen(
     val uriHandler = LocalUriHandler.current
     val scope = rememberCoroutineScope()
 
-    val screenModel = hiltViewModel<BrowseSourceScreenModel>()
+    val ViewModel = hiltViewModel<BrowseSourceViewModel>()
     // We need to fetch currentManga
-    val mangaModel = hiltViewModel<ephyra.feature.manga.MangaScreenModel>()
+    val mangaModel = hiltViewModel<ephyra.feature.manga.MangaViewModel>()
     LaunchedEffect(mangaId) {
         mangaModel.init(mangaId, false)
     }
     val mangaState by mangaModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(sourceId, query) {
-        screenModel.init(sourceId, query)
+        ViewModel.init(sourceId, query)
     }
 
-    val source = screenModel.source
-    if (source == null || mangaState is ephyra.feature.manga.MangaScreenModel.State.Loading) {
+    val source = ViewModel.source
+    if (source == null || mangaState is ephyra.feature.manga.MangaViewModel.State.Loading) {
         LoadingScreen()
         return
     }
 
-    val currentManga = (mangaState as ephyra.feature.manga.MangaScreenModel.State.Success).manga
-    val state by screenModel.state.collectAsStateWithLifecycle()
+    val currentManga = (mangaState as ephyra.feature.manga.MangaViewModel.State.Success).manga
+    val state by ViewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     Scaffold(
         topBar = { scrollBehavior ->
             SearchToolbar(
                 searchQuery = state.toolbarQuery ?: "",
-                onChangeSearchQuery = { screenModel.onEvent(BrowseSourceScreenEvent.SetToolbarQuery(it)) },
+                onChangeSearchQuery = { ViewModel.onEvent(BrowseSourceScreenEvent.SetToolbarQuery(it)) },
                 onClickCloseSearch = { navController.popBackStack() },
-                onSearch = { screenModel.onEvent(BrowseSourceScreenEvent.Search(it)) },
+                onSearch = { ViewModel.onEvent(BrowseSourceScreenEvent.Search(it)) },
                 scrollBehavior = scrollBehavior,
             )
         },
@@ -92,7 +92,7 @@ fun MigrateSourceSearchScreen(
             ExtendedFloatingActionButton(
                 text = { Text(text = stringResource(ephyra.app.core.common.R.string.action_filter)) },
                 icon = { Icon(Icons.Outlined.FilterList, contentDescription = null) },
-                onClick = { screenModel.onEvent(BrowseSourceScreenEvent.OpenFilterSheet) },
+                onClick = { ViewModel.onEvent(BrowseSourceScreenEvent.OpenFilterSheet) },
                 modifier = Modifier.alpha(if (state.filters.isNotEmpty()) 1f else 0f),
             )
         },
@@ -106,9 +106,9 @@ fun MigrateSourceSearchScreen(
             }
 
             if (migrateListEntry == null) {
-                screenModel.onEvent(
+                ViewModel.onEvent(
                     BrowseSourceScreenEvent.SetDialog(
-                        BrowseSourceScreenModel.Dialog.Migrate(target = it, current = currentManga),
+                        BrowseSourceViewModel.Dialog.Migrate(target = it, current = currentManga),
                     ),
                 )
             } else {
@@ -118,9 +118,9 @@ fun MigrateSourceSearchScreen(
         }
         BrowseSourceContent(
             source = source,
-            mangaList = screenModel.mangaPagerFlowFlow.collectAsLazyPagingItems(),
-            columns = screenModel.getColumnsPreference(LocalConfiguration.current.orientation),
-            displayMode = screenModel.displayMode,
+            mangaList = ViewModel.mangaPagerFlowFlow.collectAsLazyPagingItems(),
+            columns = ViewModel.getColumnsPreference(LocalConfiguration.current.orientation),
+            displayMode = ViewModel.displayMode,
             snackbarHostState = snackbarHostState,
             contentPadding = paddingValues,
             onWebViewClick = {
@@ -138,19 +138,19 @@ fun MigrateSourceSearchScreen(
         )
     }
 
-    val onDismissRequest = { screenModel.onEvent(BrowseSourceScreenEvent.SetDialog(null)) }
+    val onDismissRequest = { ViewModel.onEvent(BrowseSourceScreenEvent.SetDialog(null)) }
     when (val dialog = state.dialog) {
-        is BrowseSourceScreenModel.Dialog.Filter -> {
+        is BrowseSourceViewModel.Dialog.Filter -> {
             SourceFilterDialog(
                 onDismissRequest = onDismissRequest,
                 filters = state.filters,
-                onReset = { screenModel.onEvent(BrowseSourceScreenEvent.ResetFilters) },
-                onFilter = { screenModel.onEvent(BrowseSourceScreenEvent.Search(filters = state.filters)) },
-                onUpdate = { screenModel.onEvent(BrowseSourceScreenEvent.SetFilters(it)) },
+                onReset = { ViewModel.onEvent(BrowseSourceScreenEvent.ResetFilters) },
+                onFilter = { ViewModel.onEvent(BrowseSourceScreenEvent.Search(filters = state.filters)) },
+                onUpdate = { ViewModel.onEvent(BrowseSourceScreenEvent.SetFilters(it)) },
             )
         }
 
-        is BrowseSourceScreenModel.Dialog.Migrate -> {
+        is BrowseSourceViewModel.Dialog.Migrate -> {
             MigrateMangaDialog(
                 current = currentManga,
                 target = dialog.target,

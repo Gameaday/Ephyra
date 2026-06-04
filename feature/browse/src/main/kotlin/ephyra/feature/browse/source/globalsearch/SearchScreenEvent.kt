@@ -3,8 +3,8 @@ package ephyra.feature.browse.source.globalsearch
 import ephyra.domain.manga.model.Manga
 
 /**
- * All user intents for screens backed by [SearchScreenModel].
- * [SearchScreenModel.onEvent] is the sole external mutation entry-point.
+ * All user intents for screens backed by [SearchViewModel].
+ * [SearchViewModel.onEvent] is the sole external mutation entry-point.
  *
  * Value-returning / reactive accessors remain public:
  *   • `getManga()` — `@Composable` Compose State subscription

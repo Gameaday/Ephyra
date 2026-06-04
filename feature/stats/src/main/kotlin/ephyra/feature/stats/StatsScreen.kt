@@ -17,8 +17,8 @@ import ephyra.presentation.core.ui.navigation.LocalNavController
 fun StatsScreen(
     navController: NavController = LocalNavController.current,
 ) {
-    val screenModel = hiltViewModel<StatsScreenModel>()
-    val state by screenModel.state.collectAsStateWithLifecycle()
+    val ViewModel = hiltViewModel<StatsViewModel>()
+    val state by ViewModel.state.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = { scrollBehavior ->

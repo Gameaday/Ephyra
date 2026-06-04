@@ -50,13 +50,13 @@ import java.time.LocalDate
 
 @Composable
 fun HistoryScreen(
-    state: HistoryScreenModel.State,
+    state: HistoryViewModel.State,
     snackbarHostState: SnackbarHostState,
     onSearchQueryChange: (String?) -> Unit,
     onClickCover: (mangaId: Long) -> Unit,
     onClickResume: (mangaId: Long, chapterId: Long) -> Unit,
     onClickFavorite: (mangaId: Long) -> Unit,
-    onDialogChange: (HistoryScreenModel.Dialog?) -> Unit,
+    onDialogChange: (HistoryViewModel.Dialog?) -> Unit,
 ) {
     Scaffold(
         topBar = { scrollBehavior ->
@@ -71,7 +71,7 @@ fun HistoryScreen(
                                 title = stringResource(ephyra.app.core.common.R.string.pref_clear_history),
                                 icon = Icons.Outlined.DeleteSweep,
                                 onClick = {
-                                    onDialogChange(HistoryScreenModel.Dialog.DeleteAll)
+                                    onDialogChange(HistoryViewModel.Dialog.DeleteAll)
                                 },
                             ),
                         ),
@@ -101,7 +101,7 @@ fun HistoryScreen(
                     contentPadding = contentPadding,
                     onClickCover = { history -> onClickCover(history.mangaId) },
                     onClickResume = { history -> onClickResume(history.mangaId, history.chapterId) },
-                    onClickDelete = { item -> onDialogChange(HistoryScreenModel.Dialog.Delete(item)) },
+                    onClickDelete = { item -> onDialogChange(HistoryViewModel.Dialog.Delete(item)) },
                     onClickFavorite = { history -> onClickFavorite(history.mangaId) },
                 )
             }
@@ -169,77 +169,77 @@ fun HistoryTabScreen(
     navController: NavController = LocalNavController.current,
 ) {
     val context = LocalContext.current
-    val screenModel = hiltViewModel<HistoryScreenModel>()
-    val state by screenModel.state.collectAsStateWithLifecycle()
+    val ViewModel = hiltViewModel<HistoryViewModel>()
+    val state by ViewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     HistoryScreen(
         state = state,
         snackbarHostState = snackbarHostState,
-        onSearchQueryChange = { screenModel.onEvent(HistoryScreenEvent.UpdateSearchQuery(it)) },
+        onSearchQueryChange = { ViewModel.onEvent(HistoryScreenEvent.UpdateSearchQuery(it)) },
         onClickCover = {
             navController.navigate(
                 ephyra.presentation.core.ui.navigation.Screen.MangaDetails(mangaId = it, fromSource = false),
             )
         },
         onClickResume = { mangaId, chapterId ->
-            screenModel.onEvent(HistoryScreenEvent.GetNextChapterForManga(mangaId, chapterId))
+            ViewModel.onEvent(HistoryScreenEvent.GetNextChapterForManga(mangaId, chapterId))
         },
-        onDialogChange = { screenModel.onEvent(HistoryScreenEvent.SetDialog(it)) },
-        onClickFavorite = { screenModel.onEvent(HistoryScreenEvent.AddFavoriteById(it)) },
+        onDialogChange = { ViewModel.onEvent(HistoryScreenEvent.SetDialog(it)) },
+        onClickFavorite = { ViewModel.onEvent(HistoryScreenEvent.AddFavoriteById(it)) },
     )
 
-    val onDismissRequest = { screenModel.onEvent(HistoryScreenEvent.SetDialog(null)) }
+    val onDismissRequest = { ViewModel.onEvent(HistoryScreenEvent.SetDialog(null)) }
     when (val dialog = state.dialog) {
-        is HistoryScreenModel.Dialog.Delete -> {
+        is HistoryViewModel.Dialog.Delete -> {
             HistoryDeleteDialog(
                 onDismissRequest = onDismissRequest,
                 onDelete = { all ->
                     if (all) {
-                        screenModel.onEvent(HistoryScreenEvent.RemoveAllForManga(dialog.history.mangaId))
+                        ViewModel.onEvent(HistoryScreenEvent.RemoveAllForManga(dialog.history.mangaId))
                     } else {
-                        screenModel.onEvent(HistoryScreenEvent.RemoveFromHistory(dialog.history))
+                        ViewModel.onEvent(HistoryScreenEvent.RemoveFromHistory(dialog.history))
                     }
                 },
             )
         }
 
-        is HistoryScreenModel.Dialog.DeleteAll -> {
+        is HistoryViewModel.Dialog.DeleteAll -> {
             HistoryDeleteAllDialog(
                 onDismissRequest = onDismissRequest,
-                onDelete = { screenModel.onEvent(HistoryScreenEvent.RemoveAllHistory) },
+                onDelete = { ViewModel.onEvent(HistoryScreenEvent.RemoveAllHistory) },
             )
         }
 
-        is HistoryScreenModel.Dialog.DuplicateManga -> {
+        is HistoryViewModel.Dialog.DuplicateManga -> {
             DuplicateMangaDialog(
                 duplicates = dialog.duplicates,
                 onDismissRequest = onDismissRequest,
-                onConfirm = { screenModel.onEvent(HistoryScreenEvent.AddFavorite(dialog.manga)) },
+                onConfirm = { ViewModel.onEvent(HistoryScreenEvent.AddFavorite(dialog.manga)) },
                 onOpenManga = {
                     navController.navigate(
                         ephyra.presentation.core.ui.navigation.Screen.MangaDetails(mangaId = it.id, fromSource = false),
                     )
                 },
-                onMigrate = { screenModel.onEvent(HistoryScreenEvent.ShowMigrateDialog(dialog.manga, it)) },
-                sourceManager = screenModel.sourceManager,
+                onMigrate = { ViewModel.onEvent(HistoryScreenEvent.ShowMigrateDialog(dialog.manga, it)) },
+                sourceManager = ViewModel.sourceManager,
             )
         }
 
-        is HistoryScreenModel.Dialog.ChangeCategory -> {
+        is HistoryViewModel.Dialog.ChangeCategory -> {
             ephyra.feature.category.components.ChangeCategoryDialog(
                 initialSelection = dialog.initialSelection,
                 onDismissRequest = onDismissRequest,
                 onEditCategories = { navController.navigate(ephyra.presentation.core.ui.navigation.Screen.Category) },
                 onConfirm = { include, _ ->
-                    screenModel.onEvent(
+                    ViewModel.onEvent(
                         HistoryScreenEvent.MoveMangaToCategoriesAndAddToLibrary(dialog.manga, include),
                     )
                 },
             )
         }
 
-        is HistoryScreenModel.Dialog.Migrate -> {
+        is HistoryViewModel.Dialog.Migrate -> {
             MigrateMangaDialog(
                 current = dialog.current,
                 target = dialog.target,
@@ -265,19 +265,19 @@ fun HistoryTabScreen(
     }
 
     LaunchedEffect(Unit) {
-        screenModel.events.collectLatest { e ->
+        ViewModel.events.collectLatest { e ->
             when (e) {
-                HistoryScreenModel.Event.InternalError ->
+                HistoryViewModel.Event.InternalError ->
                     snackbarHostState.showSnackbar(
                         context.stringResource(ephyra.app.core.common.R.string.internal_error),
                     )
 
-                HistoryScreenModel.Event.HistoryCleared ->
+                HistoryViewModel.Event.HistoryCleared ->
                     snackbarHostState.showSnackbar(
                         context.stringResource(ephyra.app.core.common.R.string.clear_history_completed),
                     )
 
-                is HistoryScreenModel.Event.OpenChapter -> {
+                is HistoryViewModel.Event.OpenChapter -> {
                     val chapter = e.chapter
                     if (chapter != null) {
                         val intent = ReaderActivity.newIntent(context, chapter.mangaId, chapter.id)
@@ -292,7 +292,7 @@ fun HistoryTabScreen(
         NavigationEvents.reselectEvent
             .filter { it == ScreenRoutes.History.route }
             .collect {
-                val nextChapter = screenModel.getNextChapter()
+                val nextChapter = ViewModel.getNextChapter()
                 if (nextChapter != null) {
                     val intent = ReaderActivity.newIntent(context, nextChapter.mangaId, nextChapter.id)
                     context.startActivity(intent)
@@ -308,8 +308,8 @@ fun HistoryTabScreen(
 @PreviewLightDark
 @Composable
 internal fun HistoryScreenPreviews(
-    @PreviewParameter(HistoryScreenModelStateProvider::class)
-    historyState: HistoryScreenModel.State,
+    @PreviewParameter(HistoryViewModelStateProvider::class)
+    historyState: HistoryViewModel.State,
 ) {
     TachiyomiPreviewTheme {
         HistoryScreen(

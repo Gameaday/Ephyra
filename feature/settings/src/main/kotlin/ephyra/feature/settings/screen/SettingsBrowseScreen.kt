@@ -32,15 +32,15 @@ object SettingsBrowseScreen : SearchableSettings {
         val context = LocalContext.current
         val navController = LocalNavController.current
 
-        val screenModel = hiltViewModel<SettingsBrowseScreenModel>()
-        val reposCount by screenModel.getExtensionRepoCount().collectAsState(0)
+        val ViewModel = hiltViewModel<SettingsBrowseViewModel>()
+        val reposCount by ViewModel.getExtensionRepoCount().collectAsState(0)
 
         return listOf(
             Preference.PreferenceGroup(
                 title = stringResource(ephyra.app.core.common.R.string.label_sources),
                 preferenceItems = persistentListOf(
                     Preference.PreferenceItem.SwitchPreference(
-                        preference = screenModel.sourcePreferences.hideInLibraryItems(),
+                        preference = ViewModel.sourcePreferences.hideInLibraryItems(),
                         title = stringResource(ephyra.app.core.common.R.string.pref_hide_in_library_items),
                     ),
                     Preference.PreferenceItem.TextPreference(
@@ -67,7 +67,7 @@ object SettingsBrowseScreen : SearchableSettings {
                 title = stringResource(ephyra.app.core.common.R.string.pref_category_nsfw_content),
                 preferenceItems = persistentListOf(
                     Preference.PreferenceItem.SwitchPreference(
-                        preference = screenModel.sourcePreferences.showNsfwSource(),
+                        preference = ViewModel.sourcePreferences.showNsfwSource(),
                         title = stringResource(ephyra.app.core.common.R.string.pref_show_nsfw_source),
                         subtitle = stringResource(ephyra.app.core.common.R.string.requires_app_restart),
                         onValueChanged = {

@@ -62,7 +62,7 @@ import ephyra.feature.reader.databinding.ReaderActivityBinding
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.model.ViewerChapters
-import ephyra.feature.reader.setting.ReaderSettingsScreenModel
+import ephyra.feature.reader.setting.ReaderSettingsViewModel
 import ephyra.feature.reader.viewer.ReaderProgressIndicator
 import ephyra.presentation.core.data.coil.TachiyomiImageDecoder
 import ephyra.presentation.core.ui.activity.BaseActivity
@@ -257,7 +257,7 @@ class ReaderActivity : BaseActivity() {
                             onDismissRequest = { viewModel.onEvent(ReaderEvent.CloseDialog) },
                             onShowMenus = { viewModel.onEvent(ReaderEvent.ShowMenus(true)) },
                             onHideMenus = { viewModel.onEvent(ReaderEvent.ShowMenus(false)) },
-                            screenModel = ReaderSettingsScreenModel(
+                            ViewModel = ReaderSettingsViewModel(
                                 scope = lifecycleScope,
                                 readerState = viewModel.state,
                                 onChangeReadingMode = { viewModel.onEvent(ReaderEvent.SetMangaReadingMode(it)) },
@@ -269,7 +269,7 @@ class ReaderActivity : BaseActivity() {
                     is ReaderViewModel.Dialog.ReadingModeSelect -> {
                         ReadingModeSelectDialog(
                             onDismissRequest = { viewModel.onEvent(ReaderEvent.CloseDialog) },
-                            screenModel = ReaderSettingsScreenModel(
+                            ViewModel = ReaderSettingsViewModel(
                                 scope = lifecycleScope,
                                 readerState = viewModel.state,
                                 onChangeReadingMode = { viewModel.onEvent(ReaderEvent.SetMangaReadingMode(it)) },
@@ -282,7 +282,7 @@ class ReaderActivity : BaseActivity() {
                     is ReaderViewModel.Dialog.OrientationModeSelect -> {
                         OrientationSelectDialog(
                             onDismissRequest = { viewModel.onEvent(ReaderEvent.CloseDialog) },
-                            screenModel = ReaderSettingsScreenModel(
+                            ViewModel = ReaderSettingsViewModel(
                                 scope = lifecycleScope,
                                 readerState = viewModel.state,
                                 onChangeReadingMode = { viewModel.onEvent(ReaderEvent.SetMangaReadingMode(it)) },

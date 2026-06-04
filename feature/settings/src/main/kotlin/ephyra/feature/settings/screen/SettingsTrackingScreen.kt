@@ -97,14 +97,14 @@ object SettingsTrackingScreen : SearchableSettings {
     @Composable
     override fun getPreferences(): List<Preference> {
         val context = LocalContext.current
-        val screenModel = hiltViewModel<SettingsTrackingScreenModel>()
+        val ViewModel = hiltViewModel<SettingsTrackingViewModel>()
 
-        val trackPreferences = screenModel.trackPreferences
-        val trackerManager = screenModel.trackerManager
-        val sourceManager = screenModel.sourceManager
-        val libraryPreferences = screenModel.libraryPreferences
-        val trackerListImporter = screenModel.trackerListImporter
-        val matchUnlinkedJobRunner = screenModel.matchUnlinkedJobRunner
+        val trackPreferences = ViewModel.trackPreferences
+        val trackerManager = ViewModel.trackerManager
+        val sourceManager = ViewModel.sourceManager
+        val libraryPreferences = ViewModel.libraryPreferences
+        val trackerListImporter = ViewModel.trackerListImporter
+        val matchUnlinkedJobRunner = ViewModel.matchUnlinkedJobRunner
 
         val scope = rememberCoroutineScope()
 

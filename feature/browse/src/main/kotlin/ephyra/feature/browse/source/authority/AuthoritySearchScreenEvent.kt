@@ -7,7 +7,7 @@ import ephyra.domain.track.service.Tracker
 
 /**
  * All user intents for the Authority (Discover) screen.
- * [AuthoritySearchScreenModel.onEvent] is the sole external mutation entry-point.
+ * [AuthoritySearchViewModel.onEvent] is the sole external mutation entry-point.
  *
  * Value-returning accessors remain public:
  *   • `trackersForFilter()` — pure query, returns an [ImmutableList] used inline by the composable

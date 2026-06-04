@@ -8,7 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import ephyra.domain.reader.service.ReaderPreferences
-import ephyra.feature.reader.setting.ReaderSettingsScreenModel
+import ephyra.feature.reader.setting.ReaderSettingsViewModel
 import ephyra.presentation.core.components.CheckboxItem
 import ephyra.presentation.core.components.SettingsChipRow
 import ephyra.presentation.core.components.SliderItem
@@ -31,25 +31,25 @@ private val flashColors = listOf(
 )
 
 @Composable
-internal fun ColumnScope.GeneralPage(screenModel: ReaderSettingsScreenModel) {
-    val readerTheme by screenModel.preferences.readerTheme().collectAsState()
+internal fun ColumnScope.GeneralPage(ViewModel: ReaderSettingsViewModel) {
+    val readerTheme by ViewModel.preferences.readerTheme().collectAsState()
 
-    val flashPageState by screenModel.preferences.flashOnPageChange().collectAsState()
+    val flashPageState by ViewModel.preferences.flashOnPageChange().collectAsState()
 
-    val flashMillisPref = screenModel.preferences.flashDurationMillis()
+    val flashMillisPref = ViewModel.preferences.flashDurationMillis()
     val flashMillis by flashMillisPref.collectAsState()
 
-    val flashIntervalPref = screenModel.preferences.flashPageInterval()
+    val flashIntervalPref = ViewModel.preferences.flashPageInterval()
     val flashInterval by flashIntervalPref.collectAsState()
 
-    val flashColorPref = screenModel.preferences.flashColor()
+    val flashColorPref = ViewModel.preferences.flashColor()
     val flashColor by flashColorPref.collectAsState()
 
     SettingsChipRow(ephyra.app.core.common.R.string.pref_reader_theme) {
         themes.map { (labelRes, value) ->
             FilterChip(
                 selected = readerTheme == value,
-                onClick = { screenModel.preferences.readerTheme().set(value) },
+                onClick = { ViewModel.preferences.readerTheme().set(value) },
                 label = { Text(stringResource(labelRes)) },
             )
         }
@@ -57,43 +57,43 @@ internal fun ColumnScope.GeneralPage(screenModel: ReaderSettingsScreenModel) {
 
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.pref_show_page_number),
-        pref = screenModel.preferences.showPageNumber(),
+        pref = ViewModel.preferences.showPageNumber(),
     )
 
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.pref_fullscreen),
-        pref = screenModel.preferences.fullscreen(),
+        pref = ViewModel.preferences.fullscreen(),
     )
 
-    val isFullscreen by screenModel.preferences.fullscreen().collectAsState()
+    val isFullscreen by ViewModel.preferences.fullscreen().collectAsState()
     if (LocalActivity.current?.hasDisplayCutout() == true && isFullscreen) {
         CheckboxItem(
             label = stringResource(ephyra.app.core.common.R.string.pref_cutout_short),
-            pref = screenModel.preferences.drawUnderCutout(),
+            pref = ViewModel.preferences.drawUnderCutout(),
         )
     }
 
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.pref_keep_screen_on),
-        pref = screenModel.preferences.keepScreenOn(),
+        pref = ViewModel.preferences.keepScreenOn(),
     )
 
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.pref_read_with_long_tap),
-        pref = screenModel.preferences.readWithLongTap(),
+        pref = ViewModel.preferences.readWithLongTap(),
     )
 
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.pref_always_show_chapter_transition),
-        pref = screenModel.preferences.alwaysShowChapterTransition(),
+        pref = ViewModel.preferences.alwaysShowChapterTransition(),
     )
 
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.pref_page_transitions),
-        pref = screenModel.preferences.pageTransitions(),
+        pref = ViewModel.preferences.pageTransitions(),
     )
 
-    val sliderNavModePref = screenModel.preferences.sliderNavMode()
+    val sliderNavModePref = ViewModel.preferences.sliderNavMode()
     val sliderNavMode by sliderNavModePref.collectAsState()
     SettingsChipRow(ephyra.app.core.common.R.string.pref_slider_nav_mode) {
         FilterChip(
@@ -110,7 +110,7 @@ internal fun ColumnScope.GeneralPage(screenModel: ReaderSettingsScreenModel) {
 
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.pref_flash_page),
-        pref = screenModel.preferences.flashOnPageChange(),
+        pref = ViewModel.preferences.flashOnPageChange(),
     )
     if (flashPageState) {
         SliderItem(

@@ -230,15 +230,15 @@ private fun TrackInfoDialogHomeScreen(
 ) {
     val context = LocalContext.current
 
-    val screenModel = hiltViewModel<TrackInfoHomeViewModel, TrackInfoHomeViewModel.Factory> { factory ->
+    val ViewModel = hiltViewModel<TrackInfoHomeViewModel, TrackInfoHomeViewModel.Factory> { factory ->
         factory.create(mangaId, sourceId)
     }
 
-    val state by screenModel.state.collectAsStateWithLifecycle()
-    val dateFormat = remember { UiPreferences.dateFormat(screenModel.uiPreferences.dateFormat().getSync()) }
+    val state by ViewModel.state.collectAsStateWithLifecycle()
+    val dateFormat = remember { UiPreferences.dateFormat(ViewModel.uiPreferences.dateFormat().getSync()) }
 
-    LaunchedEffect(screenModel) {
-        screenModel.effects.collect { effect ->
+    LaunchedEffect(ViewModel) {
+        ViewModel.effects.collect { effect ->
             when (effect) {
                 is TrackInfoHomeViewModel.Effect.ShowToast -> context.toast(effect.message)
             }
@@ -256,7 +256,7 @@ private fun TrackInfoDialogHomeScreen(
         onEndDateEdit = onEndDateEdit,
         onNewSearch = {
             if (it.tracker is EnhancedTracker) {
-                screenModel.onEvent(TrackInfoHomeViewModel.Event.RegisterEnhancedTracking(it))
+                ViewModel.onEvent(TrackInfoHomeViewModel.Event.RegisterEnhancedTracking(it))
             } else {
                 onNewSearch(it)
             }
@@ -274,7 +274,7 @@ private fun TrackInfoDialogHomeScreen(
                 context.copyToClipboard(url, url)
             }
         },
-        onTogglePrivate = { screenModel.onEvent(TrackInfoHomeViewModel.Event.TogglePrivate(it)) },
+        onTogglePrivate = { ViewModel.onEvent(TrackInfoHomeViewModel.Event.TogglePrivate(it)) },
     )
 }
 
@@ -422,16 +422,16 @@ private fun TrackStatusSelectorScreen(
     onConfirm: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    val screenModel = hiltViewModel<TrackSelectorViewModel, TrackSelectorViewModel.Factory> { factory ->
+    val ViewModel = hiltViewModel<TrackSelectorViewModel, TrackSelectorViewModel.Factory> { factory ->
         factory.create(track, serviceId)
     }
-    val state by screenModel.state.collectAsStateWithLifecycle()
+    val state by ViewModel.state.collectAsStateWithLifecycle()
     TrackStatusSelector(
         selection = state.status,
-        onSelectionChange = { screenModel.onEvent(TrackSelectorViewModel.Event.SetStatusSelection(it)) },
-        selections = remember { screenModel.getStatusSelections() },
+        onSelectionChange = { ViewModel.onEvent(TrackSelectorViewModel.Event.SetStatusSelection(it)) },
+        selections = remember { ViewModel.getStatusSelections() },
         onConfirm = {
-            screenModel.onEvent(TrackSelectorViewModel.Event.ConfirmStatus)
+            ViewModel.onEvent(TrackSelectorViewModel.Event.ConfirmStatus)
             onConfirm()
         },
         onDismissRequest = onDismissRequest,
@@ -445,17 +445,17 @@ private fun TrackChapterSelectorScreen(
     onConfirm: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    val screenModel = hiltViewModel<TrackSelectorViewModel, TrackSelectorViewModel.Factory> { factory ->
+    val ViewModel = hiltViewModel<TrackSelectorViewModel, TrackSelectorViewModel.Factory> { factory ->
         factory.create(track, serviceId)
     }
-    val state by screenModel.state.collectAsStateWithLifecycle()
+    val state by ViewModel.state.collectAsStateWithLifecycle()
 
     TrackChapterSelector(
         selection = state.chapter,
-        onSelectionChange = { screenModel.onEvent(TrackSelectorViewModel.Event.SetChapterSelection(it)) },
-        range = remember { screenModel.getChapterRange() },
+        onSelectionChange = { ViewModel.onEvent(TrackSelectorViewModel.Event.SetChapterSelection(it)) },
+        range = remember { ViewModel.getChapterRange() },
         onConfirm = {
-            screenModel.onEvent(TrackSelectorViewModel.Event.ConfirmChapter)
+            ViewModel.onEvent(TrackSelectorViewModel.Event.ConfirmChapter)
             onConfirm()
         },
         onDismissRequest = onDismissRequest,
@@ -469,17 +469,17 @@ private fun TrackScoreSelectorScreen(
     onConfirm: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    val screenModel = hiltViewModel<TrackSelectorViewModel, TrackSelectorViewModel.Factory> { factory ->
+    val ViewModel = hiltViewModel<TrackSelectorViewModel, TrackSelectorViewModel.Factory> { factory ->
         factory.create(track, serviceId)
     }
-    val state by screenModel.state.collectAsStateWithLifecycle()
+    val state by ViewModel.state.collectAsStateWithLifecycle()
 
     TrackScoreSelector(
         selection = state.score,
-        onSelectionChange = { screenModel.onEvent(TrackSelectorViewModel.Event.SetScoreSelection(it)) },
-        selections = remember { screenModel.getScoreSelections().toImmutableList() },
+        onSelectionChange = { ViewModel.onEvent(TrackSelectorViewModel.Event.SetScoreSelection(it)) },
+        selections = remember { ViewModel.getScoreSelections().toImmutableList() },
         onConfirm = {
-            screenModel.onEvent(TrackSelectorViewModel.Event.ConfirmScore)
+            ViewModel.onEvent(TrackSelectorViewModel.Event.ConfirmScore)
             onConfirm()
         },
         onDismissRequest = onDismissRequest,
@@ -624,7 +624,7 @@ private fun TrackDateSelectorScreen(
         }
     }
 
-    val screenModel = hiltViewModel<TrackDateViewModel, TrackDateViewModel.Factory> { factory ->
+    val ViewModel = hiltViewModel<TrackDateViewModel, TrackDateViewModel.Factory> { factory ->
         factory.create(track, serviceId, start)
     }
 
@@ -639,10 +639,10 @@ private fun TrackDateSelectorScreen(
         } else {
             stringResource(ephyra.app.core.common.R.string.track_finished_reading_date)
         },
-        initialSelectedDateMillis = screenModel.initialSelection,
+        initialSelectedDateMillis = ViewModel.initialSelection,
         selectableDates = selectableDates,
         onConfirm = {
-            screenModel.onEvent(TrackDateViewModel.Event.SetDate(it))
+            ViewModel.onEvent(TrackDateViewModel.Event.SetDate(it))
             onConfirm(it)
         },
         onRemove = onRemove.takeIf { canRemove },
@@ -720,10 +720,10 @@ private fun TrackDateRemoverScreen(
     onConfirm: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    val screenModel = hiltViewModel<TrackDateViewModel, TrackDateViewModel.Factory> { factory ->
+    val ViewModel = hiltViewModel<TrackDateViewModel, TrackDateViewModel.Factory> { factory ->
         factory.create(track, serviceId, start)
     }
-    val state by screenModel.state.collectAsStateWithLifecycle()
+    val state by ViewModel.state.collectAsStateWithLifecycle()
     AlertDialogContent(
         modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars),
         icon = {
@@ -758,7 +758,7 @@ private fun TrackDateRemoverScreen(
                 }
                 FilledTonalButton(
                     onClick = {
-                        screenModel.onEvent(TrackDateViewModel.Event.RemoveDate)
+                        ViewModel.onEvent(TrackDateViewModel.Event.RemoveDate)
                         onConfirm()
                     },
                     colors = ButtonDefaults.filledTonalButtonColors(
@@ -782,27 +782,27 @@ fun TrackerSearchScreen(
     onConfirmSelection: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    val screenModel = hiltViewModel<TrackerSearchViewModel, TrackerSearchViewModel.Factory> { factory ->
+    val ViewModel = hiltViewModel<TrackerSearchViewModel, TrackerSearchViewModel.Factory> { factory ->
         factory.create(mangaId, serviceId, currentUrl, initialQuery)
     }
 
-    val state by screenModel.state.collectAsStateWithLifecycle()
+    val state by ViewModel.state.collectAsStateWithLifecycle()
 
     val textFieldState = rememberTextFieldState(initialQuery)
     TrackerSearch(
         state = textFieldState,
-        onDispatchQuery = { screenModel.onEvent(TrackerSearchViewModel.Event.Search(textFieldState.text.toString())) },
+        onDispatchQuery = { ViewModel.onEvent(TrackerSearchViewModel.Event.Search(textFieldState.text.toString())) },
         queryResult = state.queryResult,
         selected = state.selected,
-        onSelectedChange = { screenModel.onEvent(TrackerSearchViewModel.Event.UpdateSelection(it)) },
+        onSelectedChange = { ViewModel.onEvent(TrackerSearchViewModel.Event.UpdateSelection(it)) },
         onConfirmSelection = f@{ isPrivate: Boolean ->
             val selected = state.selected ?: return@f
             selected.isPrivate = isPrivate
-            screenModel.onEvent(TrackerSearchViewModel.Event.Register(selected))
+            ViewModel.onEvent(TrackerSearchViewModel.Event.Register(selected))
             onConfirmSelection()
         },
         onDismissRequest = onDismissRequest,
-        supportsPrivateTracking = screenModel.supportsPrivateTracking,
+        supportsPrivateTracking = ViewModel.supportsPrivateTracking,
     )
 }
 
@@ -913,10 +913,10 @@ private fun TrackerRemoveScreen(
     onConfirm: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    val screenModel = hiltViewModel<TrackerRemoveViewModel, TrackerRemoveViewModel.Factory> { factory ->
+    val ViewModel = hiltViewModel<TrackerRemoveViewModel, TrackerRemoveViewModel.Factory> { factory ->
         factory.create(mangaId, track, serviceId)
     }
-    val state by screenModel.state.collectAsStateWithLifecycle()
+    val state by ViewModel.state.collectAsStateWithLifecycle()
     var removeRemoteTrack by remember { mutableStateOf(false) }
     AlertDialogContent(
         modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars),
@@ -965,8 +965,8 @@ private fun TrackerRemoveScreen(
                 }
                 FilledTonalButton(
                     onClick = {
-                        screenModel.onEvent(TrackerRemoveViewModel.Event.Unregister)
-                        if (removeRemoteTrack) screenModel.onEvent(TrackerRemoveViewModel.Event.DeleteFromService)
+                        ViewModel.onEvent(TrackerRemoveViewModel.Event.Unregister)
+                        if (removeRemoteTrack) ViewModel.onEvent(TrackerRemoveViewModel.Event.DeleteFromService)
                         onConfirm()
                     },
                     colors = ButtonDefaults.filledTonalButtonColors(
