@@ -65,6 +65,10 @@ class AboutScreenModel @Inject constructor(
         }
     }
 
+    fun clearUpdateResult() {
+        _state.update { it.copy(updateResult = null) }
+    }
+
     fun getVersionName(withBuildDate: Boolean): String {
         return when {
             appInfo.isDebug -> {

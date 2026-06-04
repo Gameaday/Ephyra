@@ -1,5 +1,6 @@
 package ephyra.feature.settings.screen.about
 
+import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -8,7 +9,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -20,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import ephyra.core.common.util.system.logcat
+import ephyra.domain.release.interactor.GetApplicationRelease
 import ephyra.feature.settings.widget.TextPreferenceWidget
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.LinkIcon
@@ -61,6 +66,63 @@ fun AboutScreen(
                 }
             }
         }
+    }
+
+    val updateResult = state.updateResult
+
+    LaunchedEffect(updateResult) {
+        if (updateResult != null) {
+            when (updateResult) {
+                is GetApplicationRelease.Result.NewUpdate -> {
+                    // Handled via Dialog
+                }
+                GetApplicationRelease.Result.NoNewUpdate -> {
+                    context.toast(ephyra.app.core.common.R.string.update_check_no_new_updates)
+                    screenModel.clearUpdateResult()
+                }
+                else -> {
+                    screenModel.clearUpdateResult()
+                }
+            }
+        }
+    }
+
+    if (updateResult is GetApplicationRelease.Result.NewUpdate) {
+        val release = updateResult.release
+        AlertDialog(
+            onDismissRequest = { screenModel.clearUpdateResult() },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        try {
+                            val intent = Intent().apply {
+                                setClassName(context.packageName, "ephyra.app.data.notification.NotificationReceiver")
+                                action = "${context.packageName}.NotificationReceiver.ACTION_START_APP_UPDATE"
+                                putExtra("DOWNLOAD_URL", release.downloadLink)
+                                putExtra("DOWNLOAD_TITLE", release.version)
+                            }
+                            context.sendBroadcast(intent)
+                        } catch (e: Exception) {
+                            context.toast(e.message)
+                        }
+                        screenModel.clearUpdateResult()
+                    },
+                ) {
+                    Text(stringResource(ephyra.app.core.common.R.string.update_check_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { screenModel.clearUpdateResult() }) {
+                    Text(stringResource(ephyra.app.core.common.R.string.action_cancel))
+                }
+            },
+            title = {
+                Text(stringResource(ephyra.app.core.common.R.string.update_check_notification_update_available))
+            },
+            text = {
+                Text(release.version)
+            },
+        )
     }
 
     Scaffold(

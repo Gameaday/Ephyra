@@ -32,6 +32,7 @@ class ExtensionInstallService : Service() {
     private var installer: Installer? = null
 
     override fun onCreate() {
+        super.onCreate()
         val notification = notificationBuilder(Notifications.CHANNEL_EXTENSIONS_UPDATE) {
             setSmallIcon(R.drawable.ic_ephyra)
             setAutoCancel(false)
