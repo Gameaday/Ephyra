@@ -327,7 +327,7 @@ dependencies {
 
     testImplementation(kotlinx.coroutines.test)
     testImplementation("org.robolectric:robolectric:4.16.1")
-    testImplementation("androidx.test:core:1.5.0")
+    testImplementation("androidx.test:core:1.7.0")
     testImplementation("androidx.test.ext:junit:1.1.5")
     testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.11.0")
     testImplementation(compose.ui.test.junit4)
