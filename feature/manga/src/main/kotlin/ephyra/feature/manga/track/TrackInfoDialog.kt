@@ -422,16 +422,16 @@ private fun TrackStatusSelectorScreen(
     onConfirm: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    val ViewModel = hiltViewModel<TrackSelectorViewModel, TrackSelectorViewModel.Factory> { factory ->
+    val viewModel = hiltViewModel<TrackSelectorViewModel, TrackSelectorViewModel.Factory> { factory ->
         factory.create(track, serviceId)
     }
-    val state by ViewModel.state.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
     TrackStatusSelector(
         selection = state.status,
-        onSelectionChange = { ViewModel.onEvent(TrackSelectorViewModel.Event.SetStatusSelection(it)) },
-        selections = remember { ViewModel.getStatusSelections() },
+        onSelectionChange = { viewModel.onEvent(TrackSelectorViewModel.Event.SetStatusSelection(it)) },
+        selections = remember { viewModel.getStatusSelections() },
         onConfirm = {
-            ViewModel.onEvent(TrackSelectorViewModel.Event.ConfirmStatus)
+            viewModel.onEvent(TrackSelectorViewModel.Event.ConfirmStatus)
             onConfirm()
         },
         onDismissRequest = onDismissRequest,
