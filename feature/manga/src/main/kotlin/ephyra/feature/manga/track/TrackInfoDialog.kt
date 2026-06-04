@@ -469,17 +469,17 @@ private fun TrackScoreSelectorScreen(
     onConfirm: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    val ViewModel = hiltViewModel<TrackSelectorViewModel, TrackSelectorViewModel.Factory> { factory ->
+    val viewModel = hiltViewModel<TrackSelectorViewModel, TrackSelectorViewModel.Factory> { factory ->
         factory.create(track, serviceId)
     }
-    val state by ViewModel.state.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     TrackScoreSelector(
         selection = state.score,
-        onSelectionChange = { ViewModel.onEvent(TrackSelectorViewModel.Event.SetScoreSelection(it)) },
-        selections = remember { ViewModel.getScoreSelections().toImmutableList() },
+        onSelectionChange = { viewModel.onEvent(TrackSelectorViewModel.Event.SetScoreSelection(it)) },
+        selections = remember { viewModel.getScoreSelections().toImmutableList() },
         onConfirm = {
-            ViewModel.onEvent(TrackSelectorViewModel.Event.ConfirmScore)
+            viewModel.onEvent(TrackSelectorViewModel.Event.ConfirmScore)
             onConfirm()
         },
         onDismissRequest = onDismissRequest,
