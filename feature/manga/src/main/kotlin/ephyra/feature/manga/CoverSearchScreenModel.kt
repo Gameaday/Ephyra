@@ -1,20 +1,16 @@
 package ephyra.feature.manga
 
 import androidx.compose.runtime.Immutable
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.source.service.SourceManager
+import ephyra.presentation.core.udf.BaseUdfViewModel
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import logcat.LogPriority
@@ -23,10 +19,7 @@ import javax.inject.Inject
 @HiltViewModel
 class CoverSearchScreenModel @Inject constructor(
     private val sourceManager: SourceManager,
-) : ViewModel() {
-
-    private val _state = MutableStateFlow<State>(State())
-    val state: StateFlow<State> = _state.asStateFlow()
+) : BaseUdfViewModel<CoverSearchScreenModel.State, CoverSearchScreenEvent, Unit>(State()) {
 
     private val coroutineDispatcher = Dispatchers.IO.limitedParallelism(3)
     private var searchJob: Job? = null
@@ -35,28 +28,29 @@ class CoverSearchScreenModel @Inject constructor(
     private var currentSourceId: Long = -1L
     private var isInitialized = false
 
-    fun init(mangaTitle: String, currentSourceId: Long) {
+    private fun initModel(mangaTitle: String, currentSourceId: Long) {
         if (isInitialized) return
         isInitialized = true
         this.mangaTitle = mangaTitle
         this.currentSourceId = currentSourceId
     }
 
-    fun onEvent(event: CoverSearchScreenEvent) {
+    override fun onEvent(event: CoverSearchScreenEvent) {
         when (event) {
+            is CoverSearchScreenEvent.Init -> initModel(event.mangaTitle, event.currentSourceId)
             CoverSearchScreenEvent.Search -> search()
             CoverSearchScreenEvent.Refresh -> refresh()
         }
     }
 
-    fun search() {
+    private fun search() {
         val query = mangaTitle
         if (query.isBlank()) return
 
         // Return cached results if available
         val cached = coverResultsCache[query]
         if (cached != null) {
-            _state.update {
+            updateState {
                 it.copy(
                     isLoading = false,
                     results = cached,
@@ -69,7 +63,7 @@ class CoverSearchScreenModel @Inject constructor(
         fetchFromSources(query)
     }
 
-    fun refresh() {
+    private fun refresh() {
         val query = mangaTitle
         if (query.isBlank()) return
         coverResultsCache.remove(query)
@@ -102,7 +96,7 @@ class CoverSearchScreenModel @Inject constructor(
             .filterIsInstance<HttpSource>()
             .sortedBy { if (it.id == currentSourceId) 0 else 1 }
 
-        _state.update {
+        updateState {
             it.copy(
                 isLoading = true,
                 results = emptyList(),
@@ -142,21 +136,21 @@ class CoverSearchScreenModel @Inject constructor(
                         }
 
                         if (isActive && seriesCovers.isNotEmpty()) {
-                            _state.update { state ->
+                            updateState { state ->
                                 state.copy(
                                     results = deduplicateResults(state.results + seriesCovers),
                                     progress = state.progress + 1,
                                 )
                             }
                         } else if (isActive) {
-                            _state.update { state ->
+                            updateState { state ->
                                 state.copy(progress = state.progress + 1)
                             }
                         }
                     } catch (e: Exception) {
                         logcat(LogPriority.WARN, e) { "Cover search failed for source '${source.name}'; skipping" }
                         if (isActive) {
-                            _state.update { state ->
+                            updateState { state ->
                                 state.copy(progress = state.progress + 1)
                             }
                         }
@@ -170,7 +164,7 @@ class CoverSearchScreenModel @Inject constructor(
                 coverResultsCache[query] = results
             }
 
-            _state.update { it.copy(isLoading = false) }
+            updateState { it.copy(isLoading = false) }
         }
     }
 

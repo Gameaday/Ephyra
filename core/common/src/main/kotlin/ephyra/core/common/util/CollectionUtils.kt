@@ -1,8 +1,5 @@
 package ephyra.core.common.util
 
-import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.contract
-
 fun <E> HashSet<E>.addOrRemove(value: E, shouldAdd: Boolean) {
     if (shouldAdd) {
         add(value)
@@ -50,48 +47,4 @@ fun <T : R, R : Any> List<T>.insertSeparatorsReversed(
         separator?.let(newList::add)
     }
     return newList.asReversed()
-}
-
-/**
- * Returns a list containing all elements **not** matching the given [predicate].
- *
- * Only use for collections that are known to support random access.
- */
-@OptIn(ExperimentalContracts::class)
-inline fun <T> List<T>.fastFilterNot(predicate: (T) -> Boolean): List<T> {
-    contract { callsInPlace(predicate) }
-    return filter { !predicate(it) }
-}
-
-/**
- * Splits the original collection into a pair of lists.
- *
- * Only use for collections that are known to support random access.
- */
-@OptIn(ExperimentalContracts::class)
-inline fun <T> List<T>.fastPartition(predicate: (T) -> Boolean): Pair<List<T>, List<T>> {
-    contract { callsInPlace(predicate) }
-    val first = ArrayList<T>()
-    val second = ArrayList<T>()
-    forEach {
-        if (predicate(it)) {
-            first.add(it)
-        } else {
-            second.add(it)
-        }
-    }
-    return Pair(first, second)
-}
-
-/**
- * Returns the number of entries **not** matching the given [predicate].
- *
- * Only use for collections that are known to support random access.
- */
-@OptIn(ExperimentalContracts::class)
-inline fun <T> List<T>.fastCountNot(predicate: (T) -> Boolean): Int {
-    contract { callsInPlace(predicate) }
-    var count = size
-    forEach { if (predicate(it)) --count }
-    return count
 }

@@ -108,6 +108,17 @@ internal fun Project.configureAndroid(commonExtension: CommonExtension) {
     dependencies {
         "coreLibraryDesugaring"(libsCatalog.getLib("desugar"))
     }
+
+    val kotlinVersion = libsCatalog.findVersion("kotlin").get().requiredVersion
+    configurations.all {
+        resolutionStrategy {
+            eachDependency {
+                if (requested.group == "org.jetbrains.kotlin" && requested.name == "kotlin-metadata-jvm") {
+                    useVersion(kotlinVersion)
+                }
+            }
+        }
+    }
 }
 
 internal fun Project.configureCompose(commonExtension: CommonExtension) {

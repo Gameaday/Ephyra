@@ -5,7 +5,6 @@ import androidx.compose.ui.util.fastFilter
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import ephyra.core.common.util.fastCountNot
 import ephyra.core.common.util.lang.launchIO
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.history.interactor.GetTotalReadDuration
@@ -100,10 +99,12 @@ class StatsScreenModel @Inject constructor(
             val excluded = it.categories.any { cat -> cat in excludedCategories }
             included && !excluded
         }
-            .fastCountNot {
-                (MANGA_NON_COMPLETED in updateRestrictions && it.manga.status.toInt() == SManga.COMPLETED) ||
-                    (MANGA_HAS_UNREAD in updateRestrictions && it.unreadCount != 0L) ||
-                    (MANGA_NON_READ in updateRestrictions && it.totalChapters > 0 && !it.hasStarted)
+            .count {
+                !(
+                    (MANGA_NON_COMPLETED in updateRestrictions && it.manga.status.toInt() == SManga.COMPLETED) ||
+                        (MANGA_HAS_UNREAD in updateRestrictions && it.unreadCount != 0L) ||
+                        (MANGA_NON_READ in updateRestrictions && it.totalChapters > 0 && !it.hasStarted)
+                    )
             }
     }
 

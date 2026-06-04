@@ -48,6 +48,7 @@ import ephyra.core.common.util.system.logcat
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.service.SourceManager
+import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.DeleteTrack
 import ephyra.domain.track.interactor.GetTracks
 import ephyra.domain.track.interactor.RefreshTracks
@@ -63,6 +64,7 @@ import ephyra.presentation.core.components.LabeledCheckbox
 import ephyra.presentation.core.components.material.AlertDialogContent
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.presentation.core.util.system.copyToClipboard
 import ephyra.presentation.core.util.system.openInBrowser
 import ephyra.presentation.core.util.system.toast
@@ -236,7 +238,7 @@ private fun TrackInfoDialogHomeScreen(
     val dateFormat = remember { UiPreferences.dateFormat(screenModel.uiPreferences.dateFormat().getSync()) }
 
     LaunchedEffect(screenModel) {
-        screenModel.effectFlow.collect { effect ->
+        screenModel.effects.collect { effect ->
             when (effect) {
                 is TrackInfoHomeViewModel.Effect.ShowToast -> context.toast(effect.message)
             }
@@ -254,7 +256,7 @@ private fun TrackInfoDialogHomeScreen(
         onEndDateEdit = onEndDateEdit,
         onNewSearch = {
             if (it.tracker is EnhancedTracker) {
-                screenModel.registerEnhancedTracking(it)
+                screenModel.onEvent(TrackInfoHomeViewModel.Event.RegisterEnhancedTracking(it))
             } else {
                 onNewSearch(it)
             }
@@ -272,7 +274,7 @@ private fun TrackInfoDialogHomeScreen(
                 context.copyToClipboard(url, url)
             }
         },
-        onTogglePrivate = screenModel::togglePrivate,
+        onTogglePrivate = { screenModel.onEvent(TrackInfoHomeViewModel.Event.TogglePrivate(it)) },
     )
 }
 
@@ -287,14 +289,16 @@ class TrackInfoHomeViewModel @AssistedInject constructor(
     private val refreshTracks: RefreshTracks,
     private val application: Application,
     private val deleteTrack: DeleteTrack,
+    private val addTracks: AddTracks,
     val uiPreferences: UiPreferences,
-) : ViewModel() {
+) : BaseUdfViewModel<TrackInfoHomeViewModel.State, TrackInfoHomeViewModel.Event, TrackInfoHomeViewModel.Effect>(
+    State(),
+) {
 
-    private val _state = MutableStateFlow(State())
-    val state = _state.asStateFlow()
-
-    private val effectChannel = Channel<Effect>(Channel.BUFFERED)
-    val effectFlow = effectChannel.receiveAsFlow()
+    sealed interface Event {
+        data class RegisterEnhancedTracking(val item: TrackItem) : Event
+        data class TogglePrivate(val item: TrackItem) : Event
+    }
 
     @AssistedFactory
     interface Factory {
@@ -314,11 +318,18 @@ class TrackInfoHomeViewModel @AssistedInject constructor(
                 .catch { logcat(LogPriority.ERROR, it) }
                 .distinctUntilChanged()
                 .map { it.mapToTrackItem() }
-                .collectLatest { trackItems -> _state.update { it.copy(trackItems = trackItems) } }
+                .collectLatest { trackItems -> updateState { it.copy(trackItems = trackItems) } }
         }
     }
 
-    fun registerEnhancedTracking(item: TrackItem) {
+    override fun onEvent(event: Event) {
+        when (event) {
+            is Event.RegisterEnhancedTracking -> registerEnhancedTracking(event.item)
+            is Event.TogglePrivate -> togglePrivate(event.item)
+        }
+    }
+
+    private fun registerEnhancedTracking(item: TrackItem) {
         item.tracker as EnhancedTracker
         viewModelScope.launchNonCancellable {
             val manga = getManga.await(mangaId) ?: return@launchNonCancellable
@@ -340,12 +351,12 @@ class TrackInfoHomeViewModel @AssistedInject constructor(
                     finishDate = 0L,
                     isPrivate = matchResult.isPrivate,
                 )
-                item.tracker.register(track, mangaId)
+                addTracks.bind(item.tracker, track, mangaId)
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e) {
                     "Failed to register track for tracker '${item.tracker.name}'; manga id=$mangaId"
                 }
-                effectChannel.send(
+                emitEffect(
                     Effect.ShowToast(application.stringResource(ephyra.app.core.common.R.string.error_no_match)),
                 )
             }
@@ -359,7 +370,7 @@ class TrackInfoHomeViewModel @AssistedInject constructor(
                 logcat(LogPriority.ERROR, e) {
                     "Failed to refresh track data mangaId=$mangaId for service ${track!!.id}"
                 }
-                effectChannel.send(
+                emitEffect(
                     Effect.ShowToast(
                         application.stringResource(
                             ephyra.app.core.common.R.string.track_error,
@@ -371,7 +382,7 @@ class TrackInfoHomeViewModel @AssistedInject constructor(
             }
     }
 
-    fun togglePrivate(item: TrackItem) {
+    private fun togglePrivate(item: TrackItem) {
         viewModelScope.launchNonCancellable {
             item.tracker.setRemotePrivate(item.track!!, !item.track.isPrivate)
         }
@@ -411,55 +422,19 @@ private fun TrackStatusSelectorScreen(
     onConfirm: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    val screenModel = hiltViewModel<TrackStatusViewModel, TrackStatusViewModel.Factory> { factory ->
+    val screenModel = hiltViewModel<TrackSelectorViewModel, TrackSelectorViewModel.Factory> { factory ->
         factory.create(track, serviceId)
     }
     val state by screenModel.state.collectAsStateWithLifecycle()
     TrackStatusSelector(
-        selection = state.selection,
-        onSelectionChange = screenModel::setSelection,
-        selections = remember { screenModel.getSelections() },
+        selection = state.status,
+        onSelectionChange = { screenModel.onEvent(TrackSelectorViewModel.Event.SetStatusSelection(it)) },
+        selections = remember { screenModel.getStatusSelections() },
         onConfirm = {
-            screenModel.setStatus()
+            screenModel.onEvent(TrackSelectorViewModel.Event.ConfirmStatus)
             onConfirm()
         },
         onDismissRequest = onDismissRequest,
-    )
-}
-
-@HiltViewModel(assistedFactory = TrackStatusViewModel.Factory::class)
-class TrackStatusViewModel @AssistedInject constructor(
-    @Assisted private val track: Track,
-    @Assisted private val serviceId: Long,
-    private val trackerManager: TrackerManager,
-) : ViewModel() {
-
-    private val tracker = trackerManager.get(serviceId)!!
-    private val _state = MutableStateFlow(State(track.status))
-    val state = _state.asStateFlow()
-
-    @AssistedFactory
-    interface Factory {
-        fun create(track: Track, serviceId: Long): TrackStatusViewModel
-    }
-
-    fun getSelections(): Map<Long, Int?> {
-        return tracker.getStatusList().associateWith { tracker.getStatus(it) }
-    }
-
-    fun setSelection(selection: Long) {
-        _state.update { it.copy(selection = selection) }
-    }
-
-    fun setStatus() {
-        viewModelScope.launchNonCancellable {
-            tracker.setRemoteStatus(track, state.value.selection)
-        }
-    }
-
-    @Immutable
-    data class State(
-        val selection: Long,
     )
 }
 
@@ -470,61 +445,20 @@ private fun TrackChapterSelectorScreen(
     onConfirm: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    val screenModel = hiltViewModel<TrackChapterViewModel, TrackChapterViewModel.Factory> { factory ->
+    val screenModel = hiltViewModel<TrackSelectorViewModel, TrackSelectorViewModel.Factory> { factory ->
         factory.create(track, serviceId)
     }
     val state by screenModel.state.collectAsStateWithLifecycle()
 
     TrackChapterSelector(
-        selection = state.selection,
-        onSelectionChange = screenModel::setSelection,
-        range = remember { screenModel.getRange() },
+        selection = state.chapter,
+        onSelectionChange = { screenModel.onEvent(TrackSelectorViewModel.Event.SetChapterSelection(it)) },
+        range = remember { screenModel.getChapterRange() },
         onConfirm = {
-            screenModel.setChapter()
+            screenModel.onEvent(TrackSelectorViewModel.Event.ConfirmChapter)
             onConfirm()
         },
         onDismissRequest = onDismissRequest,
-    )
-}
-
-@HiltViewModel(assistedFactory = TrackChapterViewModel.Factory::class)
-class TrackChapterViewModel @AssistedInject constructor(
-    @Assisted private val track: Track,
-    @Assisted private val serviceId: Long,
-    private val trackerManager: TrackerManager,
-) : ViewModel() {
-
-    private val tracker = trackerManager.get(serviceId)!!
-    private val _state = MutableStateFlow(State(track.lastChapterRead.toInt()))
-    val state = _state.asStateFlow()
-
-    @AssistedFactory
-    interface Factory {
-        fun create(track: Track, serviceId: Long): TrackChapterViewModel
-    }
-
-    fun getRange(): Iterable<Int> {
-        val endRange = if (track.totalChapters > 0) {
-            track.totalChapters
-        } else {
-            10000
-        }
-        return 0..endRange.toInt()
-    }
-
-    fun setSelection(selection: Int) {
-        _state.update { it.copy(selection = selection) }
-    }
-
-    fun setChapter() {
-        viewModelScope.launchNonCancellable {
-            tracker.setRemoteLastChapterRead(track, state.value.selection)
-        }
-    }
-
-    @Immutable
-    data class State(
-        val selection: Int,
     )
 }
 
@@ -535,56 +469,99 @@ private fun TrackScoreSelectorScreen(
     onConfirm: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    val screenModel = hiltViewModel<TrackScoreViewModel, TrackScoreViewModel.Factory> { factory ->
+    val screenModel = hiltViewModel<TrackSelectorViewModel, TrackSelectorViewModel.Factory> { factory ->
         factory.create(track, serviceId)
     }
     val state by screenModel.state.collectAsStateWithLifecycle()
 
     TrackScoreSelector(
-        selection = state.selection,
-        onSelectionChange = screenModel::setSelection,
-        selections = remember { screenModel.getSelections().toImmutableList() },
+        selection = state.score,
+        onSelectionChange = { screenModel.onEvent(TrackSelectorViewModel.Event.SetScoreSelection(it)) },
+        selections = remember { screenModel.getScoreSelections().toImmutableList() },
         onConfirm = {
-            screenModel.setScore()
+            screenModel.onEvent(TrackSelectorViewModel.Event.ConfirmScore)
             onConfirm()
         },
         onDismissRequest = onDismissRequest,
     )
 }
 
-@HiltViewModel(assistedFactory = TrackScoreViewModel.Factory::class)
-class TrackScoreViewModel @AssistedInject constructor(
+@HiltViewModel(assistedFactory = TrackSelectorViewModel.Factory::class)
+class TrackSelectorViewModel @AssistedInject constructor(
     @Assisted private val track: Track,
     @Assisted private val serviceId: Long,
     private val trackerManager: TrackerManager,
-) : ViewModel() {
+) : BaseUdfViewModel<TrackSelectorViewModel.State, TrackSelectorViewModel.Event, Unit>(
+    State(
+        status = track.status,
+        chapter = track.lastChapterRead.toInt(),
+        score = trackerManager.get(serviceId)!!.displayScore(track),
+    ),
+) {
 
     private val tracker = trackerManager.get(serviceId)!!
-    private val _state = MutableStateFlow(State(tracker.displayScore(track)))
-    val state = _state.asStateFlow()
+
+    sealed interface Event {
+        data class SetStatusSelection(val selection: Long) : Event
+        data object ConfirmStatus : Event
+
+        data class SetChapterSelection(val selection: Int) : Event
+        data object ConfirmChapter : Event
+
+        data class SetScoreSelection(val selection: String) : Event
+        data object ConfirmScore : Event
+    }
 
     @AssistedFactory
     interface Factory {
-        fun create(track: Track, serviceId: Long): TrackScoreViewModel
+        fun create(track: Track, serviceId: Long): TrackSelectorViewModel
     }
 
-    fun getSelections(): List<String> {
+    fun getStatusSelections(): Map<Long, Int?> {
+        return tracker.getStatusList().associateWith { tracker.getStatus(it) }
+    }
+
+    fun getChapterRange(): Iterable<Int> {
+        val endRange = if (track.totalChapters > 0) {
+            track.totalChapters
+        } else {
+            10000
+        }
+        return 0..endRange.toInt()
+    }
+
+    fun getScoreSelections(): List<String> {
         return tracker.getScoreList()
     }
 
-    fun setSelection(selection: String) {
-        _state.update { it.copy(selection = selection) }
-    }
-
-    fun setScore() {
-        viewModelScope.launchNonCancellable {
-            tracker.setRemoteScore(track, state.value.selection)
+    override fun onEvent(event: Event) {
+        when (event) {
+            is Event.SetStatusSelection -> updateState { it.copy(status = event.selection) }
+            Event.ConfirmStatus -> {
+                viewModelScope.launchNonCancellable {
+                    tracker.setRemoteStatus(track, state.value.status)
+                }
+            }
+            is Event.SetChapterSelection -> updateState { it.copy(chapter = event.selection) }
+            Event.ConfirmChapter -> {
+                viewModelScope.launchNonCancellable {
+                    tracker.setRemoteLastChapterRead(track, state.value.chapter)
+                }
+            }
+            is Event.SetScoreSelection -> updateState { it.copy(score = event.selection) }
+            Event.ConfirmScore -> {
+                viewModelScope.launchNonCancellable {
+                    tracker.setRemoteScore(track, state.value.score)
+                }
+            }
         }
     }
 
     @Immutable
     data class State(
-        val selection: String,
+        val status: Long,
+        val chapter: Int,
+        val score: String,
     )
 }
 
@@ -665,7 +642,7 @@ private fun TrackDateSelectorScreen(
         initialSelectedDateMillis = screenModel.initialSelection,
         selectableDates = selectableDates,
         onConfirm = {
-            screenModel.setDate(it)
+            screenModel.onEvent(TrackDateViewModel.Event.SetDate(it))
             onConfirm(it)
         },
         onRemove = onRemove.takeIf { canRemove },
@@ -679,9 +656,16 @@ class TrackDateViewModel @AssistedInject constructor(
     @Assisted private val serviceId: Long,
     @Assisted private val start: Boolean,
     private val trackerManager: TrackerManager,
-) : ViewModel() {
+) : BaseUdfViewModel<TrackDateViewModel.State, TrackDateViewModel.Event, Unit>(
+    State(trackerManager.get(serviceId)!!.name),
+) {
 
     private val tracker = trackerManager.get(serviceId)!!
+
+    sealed interface Event {
+        data class SetDate(val millis: Long) : Event
+        data object RemoveDate : Event
+    }
 
     @AssistedFactory
     interface Factory {
@@ -697,18 +681,35 @@ class TrackDateViewModel @AssistedInject constructor(
             return millis.convertEpochMillisZone(ZoneOffset.systemDefault(), ZoneOffset.UTC)
         }
 
-    // In UTC
-    fun setDate(millis: Long) {
-        // Convert to local time
-        val localMillis = millis.convertEpochMillisZone(ZoneOffset.UTC, ZoneOffset.systemDefault())
-        viewModelScope.launchNonCancellable {
-            if (start) {
-                tracker.setRemoteStartDate(track, localMillis)
-            } else {
-                tracker.setRemoteFinishDate(track, localMillis)
+    override fun onEvent(event: Event) {
+        when (event) {
+            is Event.SetDate -> {
+                // Convert to local time
+                val localMillis = event.millis.convertEpochMillisZone(ZoneOffset.UTC, ZoneOffset.systemDefault())
+                viewModelScope.launchNonCancellable {
+                    if (start) {
+                        tracker.setRemoteStartDate(track, localMillis)
+                    } else {
+                        tracker.setRemoteFinishDate(track, localMillis)
+                    }
+                }
+            }
+            Event.RemoveDate -> {
+                viewModelScope.launchNonCancellable {
+                    if (start) {
+                        tracker.setRemoteStartDate(track, 0)
+                    } else {
+                        tracker.setRemoteFinishDate(track, 0)
+                    }
+                }
             }
         }
     }
+
+    @Immutable
+    data class State(
+        val serviceName: String,
+    )
 }
 
 @Composable
@@ -719,9 +720,10 @@ private fun TrackDateRemoverScreen(
     onConfirm: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    val screenModel = hiltViewModel<TrackDateRemoverViewModel, TrackDateRemoverViewModel.Factory> { factory ->
+    val screenModel = hiltViewModel<TrackDateViewModel, TrackDateViewModel.Factory> { factory ->
         factory.create(track, serviceId, start)
     }
+    val state by screenModel.state.collectAsStateWithLifecycle()
     AlertDialogContent(
         modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars),
         icon = {
@@ -737,7 +739,7 @@ private fun TrackDateRemoverScreen(
             )
         },
         text = {
-            val serviceName = screenModel.getServiceName()
+            val serviceName = state.serviceName
             Text(
                 text = if (start) {
                     stringResource(ephyra.app.core.common.R.string.track_remove_start_date_conf_text, serviceName)
@@ -756,7 +758,7 @@ private fun TrackDateRemoverScreen(
                 }
                 FilledTonalButton(
                     onClick = {
-                        screenModel.removeDate()
+                        screenModel.onEvent(TrackDateViewModel.Event.RemoveDate)
                         onConfirm()
                     },
                     colors = ButtonDefaults.filledTonalButtonColors(
@@ -769,34 +771,6 @@ private fun TrackDateRemoverScreen(
             }
         },
     )
-}
-
-@HiltViewModel(assistedFactory = TrackDateRemoverViewModel.Factory::class)
-class TrackDateRemoverViewModel @AssistedInject constructor(
-    @Assisted private val track: Track,
-    @Assisted private val serviceId: Long,
-    @Assisted private val start: Boolean,
-    private val trackerManager: TrackerManager,
-) : ViewModel() {
-
-    private val tracker = trackerManager.get(serviceId)!!
-
-    @AssistedFactory
-    interface Factory {
-        fun create(track: Track, serviceId: Long, start: Boolean): TrackDateRemoverViewModel
-    }
-
-    fun getServiceName() = tracker.name
-
-    fun removeDate() {
-        viewModelScope.launchNonCancellable {
-            if (start) {
-                tracker.setRemoteStartDate(track, 0)
-            } else {
-                tracker.setRemoteFinishDate(track, 0)
-            }
-        }
-    }
 }
 
 @Composable
@@ -817,14 +791,14 @@ fun TrackerSearchScreen(
     val textFieldState = rememberTextFieldState(initialQuery)
     TrackerSearch(
         state = textFieldState,
-        onDispatchQuery = { screenModel.trackingSearch(textFieldState.text.toString()) },
+        onDispatchQuery = { screenModel.onEvent(TrackerSearchViewModel.Event.Search(textFieldState.text.toString())) },
         queryResult = state.queryResult,
         selected = state.selected,
-        onSelectedChange = screenModel::updateSelection,
+        onSelectedChange = { screenModel.onEvent(TrackerSearchViewModel.Event.UpdateSelection(it)) },
         onConfirmSelection = f@{ isPrivate: Boolean ->
             val selected = state.selected ?: return@f
             selected.isPrivate = isPrivate
-            screenModel.registerTracking(selected)
+            screenModel.onEvent(TrackerSearchViewModel.Event.Register(selected))
             onConfirmSelection()
         },
         onDismissRequest = onDismissRequest,
@@ -839,13 +813,17 @@ class TrackerSearchViewModel @AssistedInject constructor(
     @Assisted("currentUrl") private val currentUrl: String? = null,
     @Assisted("initialQuery") initialQuery: String,
     private val trackerManager: TrackerManager,
-) : ViewModel() {
+    private val addTracks: AddTracks,
+) : BaseUdfViewModel<TrackerSearchViewModel.State, TrackerSearchViewModel.Event, Unit>(State()) {
 
     private val tracker = trackerManager.get(serviceId)!!
     val supportsPrivateTracking = tracker.supportsPrivateTracking
 
-    private val _state = MutableStateFlow(State())
-    val state = _state.asStateFlow()
+    sealed interface Event {
+        data class Search(val query: String) : Event
+        data class Register(val item: TrackSearch) : Event
+        data class UpdateSelection(val selected: TrackSearch) : Event
+    }
 
     @AssistedFactory
     interface Factory {
@@ -860,14 +838,22 @@ class TrackerSearchViewModel @AssistedInject constructor(
     init {
         // Run search on first launch
         if (initialQuery.isNotBlank()) {
-            trackingSearch(initialQuery)
+            onEvent(Event.Search(initialQuery))
         }
     }
 
-    fun trackingSearch(query: String) {
+    override fun onEvent(event: Event) {
+        when (event) {
+            is Event.Search -> trackingSearch(event.query)
+            is Event.Register -> registerTracking(event.item)
+            is Event.UpdateSelection -> updateSelection(event.selected)
+        }
+    }
+
+    private fun trackingSearch(query: String) {
         viewModelScope.launch {
             // To show loading state
-            _state.update { it.copy(queryResult = null, selected = null) }
+            updateState { it.copy(queryResult = null, selected = null) }
 
             val result = withIOContext {
                 try {
@@ -877,7 +863,7 @@ class TrackerSearchViewModel @AssistedInject constructor(
                     Result.failure(e)
                 }
             }
-            _state.update { oldState ->
+            updateState { oldState ->
                 oldState.copy(
                     queryResult = result,
                     selected = result.getOrNull()?.find { it.tracking_url == currentUrl },
@@ -886,7 +872,7 @@ class TrackerSearchViewModel @AssistedInject constructor(
         }
     }
 
-    fun registerTracking(item: TrackSearch) {
+    private fun registerTracking(item: TrackSearch) {
         viewModelScope.launchNonCancellable {
             val track = Track(
                 id = 0L,
@@ -904,12 +890,12 @@ class TrackerSearchViewModel @AssistedInject constructor(
                 finishDate = 0L,
                 isPrivate = item.isPrivate,
             )
-            tracker.register(track, mangaId)
+            addTracks.bind(tracker, track, mangaId)
         }
     }
 
-    fun updateSelection(selected: TrackSearch) {
-        _state.update { it.copy(selected = selected) }
+    private fun updateSelection(selected: TrackSearch) {
+        updateState { it.copy(selected = selected) }
     }
 
     @Immutable
@@ -930,7 +916,7 @@ private fun TrackerRemoveScreen(
     val screenModel = hiltViewModel<TrackerRemoveViewModel, TrackerRemoveViewModel.Factory> { factory ->
         factory.create(mangaId, track, serviceId)
     }
-    val serviceName = screenModel.getName()
+    val state by screenModel.state.collectAsStateWithLifecycle()
     var removeRemoteTrack by remember { mutableStateOf(false) }
     AlertDialogContent(
         modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars),
@@ -942,7 +928,7 @@ private fun TrackerRemoveScreen(
         },
         title = {
             Text(
-                text = stringResource(ephyra.app.core.common.R.string.track_delete_title, serviceName),
+                text = stringResource(ephyra.app.core.common.R.string.track_delete_title, state.serviceName),
                 textAlign = TextAlign.Center,
             )
         },
@@ -951,12 +937,15 @@ private fun TrackerRemoveScreen(
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
             ) {
                 Text(
-                    text = stringResource(ephyra.app.core.common.R.string.track_delete_text, serviceName),
+                    text = stringResource(ephyra.app.core.common.R.string.track_delete_text, state.serviceName),
                 )
 
-                if (screenModel.isDeletable()) {
+                if (state.isDeletable) {
                     LabeledCheckbox(
-                        label = stringResource(ephyra.app.core.common.R.string.track_delete_remote_text, serviceName),
+                        label = stringResource(
+                            ephyra.app.core.common.R.string.track_delete_remote_text,
+                            state.serviceName,
+                        ),
                         checked = removeRemoteTrack,
                         onCheckedChange = { removeRemoteTrack = it },
                     )
@@ -976,8 +965,8 @@ private fun TrackerRemoveScreen(
                 }
                 FilledTonalButton(
                     onClick = {
-                        screenModel.unregisterTracking()
-                        if (removeRemoteTrack) screenModel.deleteMangaFromService()
+                        screenModel.onEvent(TrackerRemoveViewModel.Event.Unregister)
+                        if (removeRemoteTrack) screenModel.onEvent(TrackerRemoveViewModel.Event.DeleteFromService)
                         onConfirm()
                     },
                     colors = ButtonDefaults.filledTonalButtonColors(
@@ -999,9 +988,19 @@ class TrackerRemoveViewModel @AssistedInject constructor(
     @Assisted("serviceId") private val serviceId: Long,
     private val trackerManager: TrackerManager,
     private val deleteTrack: DeleteTrack,
-) : ViewModel() {
+) : BaseUdfViewModel<TrackerRemoveViewModel.State, TrackerRemoveViewModel.Event, Unit>(
+    State(
+        serviceName = trackerManager.get(serviceId)!!.name,
+        isDeletable = trackerManager.get(serviceId)!! is DeletableTracker,
+    ),
+) {
 
     private val tracker = trackerManager.get(serviceId)!!
+
+    sealed interface Event {
+        data object Unregister : Event
+        data object DeleteFromService : Event
+    }
 
     @AssistedFactory
     interface Factory {
@@ -1012,11 +1011,14 @@ class TrackerRemoveViewModel @AssistedInject constructor(
         ): TrackerRemoveViewModel
     }
 
-    fun getName() = tracker.name
+    override fun onEvent(event: Event) {
+        when (event) {
+            Event.Unregister -> unregisterTracking()
+            Event.DeleteFromService -> deleteMangaFromService()
+        }
+    }
 
-    fun isDeletable() = tracker is DeletableTracker
-
-    fun deleteMangaFromService() {
+    private fun deleteMangaFromService() {
         viewModelScope.launchNonCancellable {
             try {
                 (tracker as DeletableTracker).delete(track)
@@ -1026,7 +1028,13 @@ class TrackerRemoveViewModel @AssistedInject constructor(
         }
     }
 
-    fun unregisterTracking() {
+    private fun unregisterTracking() {
         viewModelScope.launchNonCancellable { deleteTrack.await(mangaId, serviceId) }
     }
+
+    @Immutable
+    data class State(
+        val serviceName: String,
+        val isDeletable: Boolean,
+    )
 }

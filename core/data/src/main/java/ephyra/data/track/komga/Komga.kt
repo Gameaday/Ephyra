@@ -6,7 +6,6 @@ import ephyra.data.track.BaseTracker
 import ephyra.data.track.model.TrackSearch
 import ephyra.data.track.model.toDomainTrackSearch
 import ephyra.domain.manga.model.Manga
-import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.model.Track
 import ephyra.domain.track.service.EnhancedTracker
@@ -23,10 +22,9 @@ class Komga(
     context: Application,
     trackPreferences: TrackPreferences,
     networkService: NetworkHelper,
-    addTracks: AddTracks,
     insertTrack: InsertTrack,
     private val json: Json,
-) : BaseTracker(id, "Komga", context, trackPreferences, networkService, addTracks, insertTrack), EnhancedTracker {
+) : BaseTracker(id, "Komga", context, trackPreferences, networkService, insertTrack), EnhancedTracker {
 
     companion object {
         const val UNREAD = 1L

@@ -7,7 +7,6 @@ import ephyra.data.track.model.TrackSearch
 import ephyra.data.track.model.toDomainTrackSearch
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.service.SourceManager
-import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.model.Track
 import ephyra.domain.track.service.EnhancedTracker
@@ -25,11 +24,10 @@ class Kavita(
     context: Application,
     trackPreferences: TrackPreferences,
     networkService: NetworkHelper,
-    addTracks: AddTracks,
     insertTrack: InsertTrack,
     private val sourceManager: SourceManager,
     private val json: Json,
-) : BaseTracker(id, "Kavita", context, trackPreferences, networkService, addTracks, insertTrack), EnhancedTracker {
+) : BaseTracker(id, "Kavita", context, trackPreferences, networkService, insertTrack), EnhancedTracker {
 
     companion object {
         const val UNREAD = 1L

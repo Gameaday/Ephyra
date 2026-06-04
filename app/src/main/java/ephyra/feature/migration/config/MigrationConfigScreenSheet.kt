@@ -34,7 +34,6 @@ import androidx.compose.ui.util.fastForEach
 import ephyra.core.common.preference.Preference
 import ephyra.core.common.preference.getAndSet
 import ephyra.core.common.preference.toggle
-import ephyra.core.util.fastFilterNot
 import ephyra.domain.migration.models.MigrationFlag
 import ephyra.domain.source.service.SourcePreferences
 import ephyra.feature.common.utils.getLabel
@@ -82,7 +81,7 @@ fun MigrationConfigScreenSheet(
                     horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
                 ) {
                     MigrationFlag.entries
-                        .fastFilterNot { it == MigrationFlag.REMOVE_DOWNLOAD }
+                        .filterNot { it == MigrationFlag.REMOVE_DOWNLOAD }
                         .fastForEach { flag ->
                             val selected = flag in migrationFlags
                             FilterChip(

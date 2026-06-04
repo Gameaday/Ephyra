@@ -7,7 +7,6 @@ import ephyra.data.track.BaseTracker
 import ephyra.data.track.model.TrackSearch
 import ephyra.data.track.model.toDomainTrackSearch
 import ephyra.domain.library.service.LibraryPreferences
-import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.model.Track
 import ephyra.domain.track.service.DeletableTracker
@@ -33,11 +32,10 @@ class Jellyfin(
     context: Application,
     trackPreferences: TrackPreferences,
     networkService: NetworkHelper,
-    addTracks: AddTracks,
     insertTrack: InsertTrack,
     private val libraryPreferences: LibraryPreferences,
     private val json: Json,
-) : BaseTracker(id, "Jellyfin", context, trackPreferences, networkService, addTracks, insertTrack),
+) : BaseTracker(id, "Jellyfin", context, trackPreferences, networkService, insertTrack),
     EnhancedTracker,
     DeletableTracker {
 

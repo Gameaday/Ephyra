@@ -9,7 +9,6 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.preference.CheckboxState
 import ephyra.core.common.preference.TriState
-import ephyra.core.common.util.fastFilterNot
 import ephyra.core.common.util.lang.compareToWithCollator
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.launchNonCancellable
@@ -643,7 +642,7 @@ class LibraryScreenModel @Inject constructor(
             downloadManager.awaitCacheReady()
             mangas.forEach { manga ->
                 val chapters = getNextChapters.await(manga.id)
-                    .fastFilterNot { chapter ->
+                    .filterNot { chapter ->
                         downloadManager.getQueuedDownloadOrNull(chapter.id) != null ||
                             downloadManager.isChapterDownloaded(
                                 chapter.name,
@@ -668,7 +667,7 @@ class LibraryScreenModel @Inject constructor(
             downloadManager.awaitCacheReady()
             mangas.forEach { manga ->
                 val chapters = getBookmarkedChaptersByMangaId.await(manga.id)
-                    .fastFilterNot { chapter ->
+                    .filterNot { chapter ->
                         downloadManager.getQueuedDownloadOrNull(chapter.id) != null ||
                             downloadManager.isChapterDownloaded(
                                 chapter.name,

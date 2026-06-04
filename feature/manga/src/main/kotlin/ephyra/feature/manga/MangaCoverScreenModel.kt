@@ -23,6 +23,7 @@ import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.service.CoverCache
 import ephyra.domain.source.service.SourceManager
+import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.presentation.core.util.manga.editCover
 import ephyra.presentation.core.util.system.encoder
 import ephyra.presentation.core.util.system.getBitmapOrNull
@@ -30,12 +31,6 @@ import ephyra.source.local.image.LocalCoverManager
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.await
 import eu.kanade.tachiyomi.source.online.HttpSource
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import okhttp3.Request
@@ -53,15 +48,7 @@ class MangaCoverScreenModel @Inject constructor(
     private val application: Application,
     private val localCoverManager: LocalCoverManager,
     val snackbarHostState: SnackbarHostState = SnackbarHostState(),
-) : ViewModel() {
-
-    private val _state = MutableStateFlow<Manga?>(null)
-    val state: StateFlow<Manga?> = _state.asStateFlow()
-
-    private val effectChannel = Channel<MangaCoverEffect>(Channel.BUFFERED)
-
-    /** One-shot UI side-effects to be collected by the composable. */
-    val effectFlow = effectChannel.receiveAsFlow()
+) : BaseUdfViewModel<Manga?, MangaCoverScreenEvent, MangaCoverEffect>(null) {
 
     private var isInitialized = false
 
@@ -71,11 +58,11 @@ class MangaCoverScreenModel @Inject constructor(
 
         viewModelScope.launchIO {
             getManga.subscribe(mangaId)
-                .collect { newManga -> _state.update { newManga } }
+                .collect { newManga -> updateState { newManga } }
         }
     }
 
-    fun onEvent(event: MangaCoverScreenEvent) {
+    override fun onEvent(event: MangaCoverScreenEvent) {
         when (event) {
             is MangaCoverScreenEvent.SaveCover -> saveCover()
             is MangaCoverScreenEvent.ShareCover -> shareCover()
@@ -108,7 +95,7 @@ class MangaCoverScreenModel @Inject constructor(
             try {
                 val uri = saveCoverInternal(temp = true) ?: return@launch
                 // Emit effect — the UI layer handles startActivity with Activity context
-                effectChannel.send(MangaCoverEffect.StartShare(uri))
+                emitEffect(MangaCoverEffect.StartShare(uri))
             } catch (e: Throwable) {
                 logcat(LogPriority.ERROR, e)
                 snackbarHostState.showSnackbar(

@@ -338,7 +338,7 @@ fun MangaDetailsScreen(
                 sm.init(successState.manga.id)
             }
             LaunchedEffect(sm) {
-                sm.effectFlow.collect { effect ->
+                sm.effects.collect { effect ->
                     when (effect) {
                         is MangaCoverEffect.StartShare -> {
                             val intent = effect.uri.toShareIntent(context, type = "image/*")
@@ -357,11 +357,13 @@ fun MangaDetailsScreen(
                 if (showCoverSearch) {
                     val coverSearchSm = hiltViewModel<CoverSearchScreenModel>()
                     LaunchedEffect(manga!!.title, successState.source.id) {
-                        coverSearchSm.init(
-                            mangaTitle = manga!!.title,
-                            currentSourceId = successState.source.id,
+                        coverSearchSm.onEvent(
+                            CoverSearchScreenEvent.Init(
+                                mangaTitle = manga!!.title,
+                                currentSourceId = successState.source.id,
+                            ),
                         )
-                        coverSearchSm.search()
+                        coverSearchSm.onEvent(CoverSearchScreenEvent.Search)
                     }
                     val coverSearchState by coverSearchSm.state.collectAsStateWithLifecycle()
                     CoverSearchDialog(

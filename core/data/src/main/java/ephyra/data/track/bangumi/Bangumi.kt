@@ -7,7 +7,6 @@ import ephyra.data.track.BaseTracker
 import ephyra.data.track.bangumi.dto.BGMOAuth
 import ephyra.data.track.model.TrackSearch
 import ephyra.data.track.model.toDomainTrackSearch
-import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.model.Track
 import ephyra.domain.track.service.TrackPreferences
@@ -21,10 +20,9 @@ class Bangumi(
     context: Application,
     trackPreferences: TrackPreferences,
     networkService: NetworkHelper,
-    addTracks: AddTracks,
     insertTrack: InsertTrack,
     private val json: Json,
-) : BaseTracker(id, "Bangumi", context, trackPreferences, networkService, addTracks, insertTrack) {
+) : BaseTracker(id, "Bangumi", context, trackPreferences, networkService, insertTrack) {
 
     private val interceptor by lazy { BangumiInterceptor(this, json) }
 

@@ -6,7 +6,6 @@ import ephyra.data.track.BaseTracker
 import ephyra.data.track.myanimelist.dto.MALOAuth
 import ephyra.data.track.toDbTrack
 import ephyra.data.track.toDomainTrack
-import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.model.Track
 import ephyra.domain.track.model.TrackSearch
@@ -21,10 +20,9 @@ class MyAnimeList(
     context: Application,
     trackPreferences: TrackPreferences,
     networkService: NetworkHelper,
-    addTracks: AddTracks,
     insertTrack: InsertTrack,
     private val json: Json,
-) : BaseTracker(id, "MyAnimeList", context, trackPreferences, networkService, addTracks, insertTrack),
+) : BaseTracker(id, "MyAnimeList", context, trackPreferences, networkService, insertTrack),
     DeletableTracker {
 
     companion object {

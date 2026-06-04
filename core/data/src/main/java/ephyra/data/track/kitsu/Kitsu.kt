@@ -7,7 +7,6 @@ import ephyra.data.track.BaseTracker
 import ephyra.data.track.kitsu.dto.KitsuOAuth
 import ephyra.data.track.model.TrackSearch
 import ephyra.data.track.model.toDomainTrackSearch
-import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.model.Track
 import ephyra.domain.track.service.DeletableTracker
@@ -23,10 +22,9 @@ class Kitsu(
     context: Application,
     trackPreferences: TrackPreferences,
     networkService: NetworkHelper,
-    addTracks: AddTracks,
     insertTrack: InsertTrack,
     private val json: Json,
-) : BaseTracker(id, "Kitsu", context, trackPreferences, networkService, addTracks, insertTrack), DeletableTracker {
+) : BaseTracker(id, "Kitsu", context, trackPreferences, networkService, insertTrack), DeletableTracker {
 
     companion object {
         const val READING = 1L

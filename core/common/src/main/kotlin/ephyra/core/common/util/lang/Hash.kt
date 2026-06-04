@@ -2,13 +2,9 @@ package ephyra.core.common.util.lang
 
 import java.io.InputStream
 import java.security.MessageDigest
+import java.util.HexFormat
 
 object Hash {
-
-    private val chars = charArrayOf(
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        'a', 'b', 'c', 'd', 'e', 'f',
-    )
 
     private val MD5 get() = MessageDigest.getInstance("MD5")
 
@@ -46,15 +42,6 @@ object Hash {
     }
 
     private fun encodeHex(data: ByteArray): String {
-        val l = data.size
-        val out = CharArray(l shl 1)
-        var i = 0
-        var j = 0
-        while (i < l) {
-            out[j++] = chars[(240 and data[i].toInt()).ushr(4)]
-            out[j++] = chars[15 and data[i].toInt()]
-            i++
-        }
-        return String(out)
+        return HexFormat.of().formatHex(data)
     }
 }

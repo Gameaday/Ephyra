@@ -6,8 +6,6 @@ import ephyra.data.track.BaseTracker
 import ephyra.data.track.anilist.dto.ALOAuth
 import ephyra.data.track.model.TrackSearch
 import ephyra.data.track.model.toDomainTrackSearch
-import ephyra.data.track.toDomainTrack
-import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.model.Track
 import ephyra.domain.track.service.TrackPreferences
@@ -20,10 +18,9 @@ class Anilist(
     context: Application,
     trackPreferences: TrackPreferences,
     networkService: NetworkHelper,
-    addTracks: AddTracks,
     insertTrack: InsertTrack,
     private val json: Json,
-) : BaseTracker(id, "AniList", context, trackPreferences, networkService, addTracks, insertTrack) {
+) : BaseTracker(id, "AniList", context, trackPreferences, networkService, insertTrack) {
 
     companion object {
         const val READING = 1L

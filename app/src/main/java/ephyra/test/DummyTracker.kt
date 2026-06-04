@@ -82,11 +82,6 @@ data class DummyTracker(
 
     override fun saveCredentials(username: String, password: String) = Unit
 
-    override suspend fun register(
-        item: Track,
-        mangaId: Long,
-    ) = Unit
-
     override suspend fun setRemoteStatus(
         track: Track,
         status: Long,

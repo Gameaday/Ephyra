@@ -7,7 +7,6 @@ import ephyra.data.track.model.TrackSearch
 import ephyra.data.track.model.toDomainTrackSearch
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.service.SourceManager
-import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.model.Track
 import ephyra.domain.track.service.EnhancedTracker
@@ -22,11 +21,10 @@ class Suwayomi(
     context: Application,
     trackPreferences: TrackPreferences,
     networkService: NetworkHelper,
-    addTracks: AddTracks,
     insertTrack: InsertTrack,
     private val sourceManager: SourceManager,
     private val json: Json,
-) : BaseTracker(id, "Suwayomi", context, trackPreferences, networkService, addTracks, insertTrack), EnhancedTracker {
+) : BaseTracker(id, "Suwayomi", context, trackPreferences, networkService, insertTrack), EnhancedTracker {
     private val api by lazy { SuwayomiApi(id, sourceManager, json) }
 
     override fun getLogo() = R.drawable.brand_suwayomi

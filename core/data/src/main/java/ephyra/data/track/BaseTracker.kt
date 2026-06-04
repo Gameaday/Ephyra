@@ -5,7 +5,6 @@ import androidx.annotation.CallSuper
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.logcat
 import ephyra.core.common.util.system.toast
-import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.model.Track
 import ephyra.domain.track.model.TrackSearch
@@ -27,7 +26,6 @@ abstract class BaseTracker(
     private val context: Application,
     val trackPreferences: TrackPreferences,
     val networkService: NetworkHelper,
-    private val addTracks: AddTracks,
     private val insertTrack: InsertTrack,
 ) : Tracker {
 
@@ -75,18 +73,6 @@ abstract class BaseTracker(
 
     override fun saveCredentials(username: String, password: String) {
         trackPreferences.setCredentials(this, username, password)
-    }
-
-    override suspend fun register(item: Track, mangaId: Long) {
-        try {
-            addTracks.bind(this, item, mangaId)
-        } catch (e: Throwable) {
-            val errorDetail = when (e) {
-                is HttpException -> "$name: HTTP ${e.code}"
-                else -> "$name: ${e.message}"
-            }
-            withContext(Dispatchers.Main) { context.toast(errorDetail) }
-        }
     }
 
     override suspend fun setRemoteStatus(track: Track, status: Long) {

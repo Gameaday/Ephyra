@@ -6,7 +6,6 @@ import ephyra.data.track.BaseTracker
 import ephyra.data.track.model.TrackSearch
 import ephyra.data.track.model.toDomainTrackSearch
 import ephyra.data.track.shikimori.dto.SMOAuth
-import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.model.Track
 import ephyra.domain.track.service.DeletableTracker
@@ -20,10 +19,9 @@ class Shikimori(
     context: Application,
     trackPreferences: TrackPreferences,
     networkService: NetworkHelper,
-    addTracks: AddTracks,
     insertTrack: InsertTrack,
     private val json: Json,
-) : BaseTracker(id, "Shikimori", context, trackPreferences, networkService, addTracks, insertTrack), DeletableTracker {
+) : BaseTracker(id, "Shikimori", context, trackPreferences, networkService, insertTrack), DeletableTracker {
 
     companion object {
         const val READING = 1L

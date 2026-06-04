@@ -9,7 +9,6 @@ import ephyra.data.track.mangaupdates.dto.copyTo
 import ephyra.data.track.mangaupdates.dto.toTrackSearch
 import ephyra.data.track.model.TrackSearch
 import ephyra.data.track.model.toDomainTrackSearch
-import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.model.Track
 import ephyra.domain.track.service.DeletableTracker
@@ -23,10 +22,9 @@ class MangaUpdates(
     context: Application,
     trackPreferences: TrackPreferences,
     networkService: NetworkHelper,
-    addTracks: AddTracks,
     insertTrack: InsertTrack,
     private val json: Json,
-) : BaseTracker(id, "MangaUpdates", context, trackPreferences, networkService, addTracks, insertTrack),
+) : BaseTracker(id, "MangaUpdates", context, trackPreferences, networkService, insertTrack),
     DeletableTracker {
 
     companion object {

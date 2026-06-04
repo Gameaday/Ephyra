@@ -59,8 +59,6 @@ interface Tracker {
 
     fun saveCredentials(username: String, password: String)
 
-    suspend fun register(item: Track, mangaId: Long)
-
     suspend fun setRemoteStatus(track: Track, status: Long)
 
     suspend fun setRemoteLastChapterRead(track: Track, chapterNumber: Int)

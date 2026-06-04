@@ -765,7 +765,6 @@ object AppModule {
         libraryPreferences: LibraryPreferences,
         sourceManager: SourceManager,
         networkHelper: NetworkHelper,
-        addTracks: AddTracks,
         insertTrack: InsertTrack,
         json: Json,
     ): TrackerManager = TrackerManagerImpl(
@@ -774,7 +773,6 @@ object AppModule {
         libraryPreferences = libraryPreferences,
         sourceManager = sourceManager,
         networkService = networkHelper,
-        addTracks = addTracks,
         insertTrack = insertTrack,
         json = json,
     )

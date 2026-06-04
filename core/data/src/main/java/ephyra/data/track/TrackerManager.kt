@@ -15,7 +15,6 @@ import ephyra.data.track.shikimori.Shikimori
 import ephyra.data.track.suwayomi.Suwayomi
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.source.service.SourceManager
-import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.service.TrackPreferences
 import ephyra.domain.track.service.Tracker
@@ -30,7 +29,6 @@ class TrackerManagerImpl(
     libraryPreferences: LibraryPreferences,
     sourceManager: SourceManager,
     networkService: NetworkHelper,
-    addTracks: AddTracks,
     insertTrack: InsertTrack,
     json: Json,
 ) : TrackerManager {
@@ -42,17 +40,17 @@ class TrackerManagerImpl(
         const val JELLYFIN = TrackerManager.JELLYFIN
     }
 
-    val myAnimeList = MyAnimeList(1L, context, trackPreferences, networkService, addTracks, insertTrack, json)
-    val aniList = Anilist(ANILIST, context, trackPreferences, networkService, addTracks, insertTrack, json)
-    val kitsu = Kitsu(KITSU, context, trackPreferences, networkService, addTracks, insertTrack, json)
-    val shikimori = Shikimori(4L, context, trackPreferences, networkService, addTracks, insertTrack, json)
-    val bangumi = Bangumi(5L, context, trackPreferences, networkService, addTracks, insertTrack, json)
-    val komga = Komga(6L, context, trackPreferences, networkService, addTracks, insertTrack, json)
-    val mangaUpdates = MangaUpdates(7L, context, trackPreferences, networkService, addTracks, insertTrack, json)
-    val kavita = Kavita(KAVITA, context, trackPreferences, networkService, addTracks, insertTrack, sourceManager, json)
-    val suwayomi = Suwayomi(9L, context, trackPreferences, networkService, addTracks, insertTrack, sourceManager, json)
+    val myAnimeList = MyAnimeList(1L, context, trackPreferences, networkService, insertTrack, json)
+    val aniList = Anilist(ANILIST, context, trackPreferences, networkService, insertTrack, json)
+    val kitsu = Kitsu(KITSU, context, trackPreferences, networkService, insertTrack, json)
+    val shikimori = Shikimori(4L, context, trackPreferences, networkService, insertTrack, json)
+    val bangumi = Bangumi(5L, context, trackPreferences, networkService, insertTrack, json)
+    val komga = Komga(6L, context, trackPreferences, networkService, insertTrack, json)
+    val mangaUpdates = MangaUpdates(7L, context, trackPreferences, networkService, insertTrack, json)
+    val kavita = Kavita(KAVITA, context, trackPreferences, networkService, insertTrack, sourceManager, json)
+    val suwayomi = Suwayomi(9L, context, trackPreferences, networkService, insertTrack, sourceManager, json)
     val jellyfin =
-        Jellyfin(JELLYFIN, context, trackPreferences, networkService, addTracks, insertTrack, libraryPreferences, json)
+        Jellyfin(JELLYFIN, context, trackPreferences, networkService, insertTrack, libraryPreferences, json)
 
     val trackers =
         listOf(myAnimeList, aniList, kitsu, shikimori, bangumi, komga, mangaUpdates, kavita, suwayomi, jellyfin)

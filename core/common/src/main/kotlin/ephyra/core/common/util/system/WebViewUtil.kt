@@ -28,8 +28,7 @@ object WebViewUtil {
      *   Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.3
      */
     fun getInferredUserAgent(context: Context): String {
-        return WebView(context)
-            .getDefaultUserAgentString()
+        return WebSettings.getDefaultUserAgent(context)
             .replace("; Android .*?\\)".toRegex(), "; Android 10; K)")
             .replace("Version/.* Chrome/".toRegex(), "Chrome/")
     }
@@ -100,24 +99,10 @@ fun WebView.setDefaultSettings() {
 }
 
 private fun WebView.getWebViewMajorVersion(): Int {
-    val uaRegexMatch = """.*Chrome/(\d+)\..*""".toRegex().matchEntire(getDefaultUserAgentString())
+    val uaRegexMatch = """.*Chrome/(\d+)\..*""".toRegex().matchEntire(WebSettings.getDefaultUserAgent(context))
     return if (uaRegexMatch != null && uaRegexMatch.groupValues.size > 1) {
         uaRegexMatch.groupValues[1].toInt()
     } else {
         0
     }
-}
-
-// Based on https://stackoverflow.com/a/29218966
-private fun WebView.getDefaultUserAgentString(): String {
-    val originalUA: String = settings.userAgentString
-
-    // Next call to getUserAgentString() will get us the default
-    settings.userAgentString = null
-    val defaultUserAgentString = settings.userAgentString
-
-    // Revert to original UA string
-    settings.userAgentString = originalUA
-
-    return defaultUserAgentString
 }

@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.util.system.logcat
-import ephyra.core.common.utils.mutate
 import ephyra.domain.manga.interactor.GetFavorites
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.service.SourceManager
@@ -78,8 +77,8 @@ class MigrateMangaScreenModel @Inject constructor(
 
     private fun toggleSelection(item: Manga) {
         _state.update { state ->
-            val selection = state.selection.mutate { list ->
-                if (!list.remove(item.id)) list.add(item.id)
+            val selection = state.selection.toMutableSet().apply {
+                if (!remove(item.id)) add(item.id)
             }
             state.copy(selection = selection)
         }
