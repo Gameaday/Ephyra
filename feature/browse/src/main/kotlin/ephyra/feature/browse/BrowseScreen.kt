@@ -11,6 +11,7 @@ import androidx.navigation.NavController
 import ephyra.feature.browse.extension.ExtensionsScreenModel
 import ephyra.feature.browse.extension.extensionsTab
 import ephyra.feature.browse.migration.sources.migrateSourceTab
+import ephyra.feature.browse.source.SourcesScreenModel
 import ephyra.feature.browse.source.authority.discoverTab
 import ephyra.feature.browse.source.sourcesTab
 import ephyra.presentation.core.components.TabbedScreen
@@ -30,21 +31,38 @@ fun BrowseTabScreen(
     val extensionsScreenModel = hiltViewModel<ExtensionsScreenModel>()
     val extensionsState by extensionsScreenModel.state.collectAsStateWithLifecycle()
 
+    // Hoisted for sources tab's search bar
+    val sourcesScreenModel = hiltViewModel<SourcesScreenModel>()
+    val sourcesState by sourcesScreenModel.state.collectAsStateWithLifecycle()
+
     val tabs = persistentListOf(
         discoverTab(navController),
-        sourcesTab(navController),
+        sourcesTab(sourcesScreenModel, navController),
         extensionsTab(extensionsScreenModel, navController),
         migrateSourceTab(navController),
     )
 
     val state = rememberPagerState { tabs.size }
 
+    val currentQuery = when (state.currentPage) {
+        1 -> sourcesState.searchQuery
+        2 -> extensionsState.searchQuery
+        else -> null
+    }
+
+    val onQueryChange: (String?) -> Unit = { query ->
+        when (state.currentPage) {
+            1 -> sourcesScreenModel.search(query)
+            2 -> extensionsScreenModel.search(query)
+        }
+    }
+
     TabbedScreen(
         titleRes = ephyra.app.core.common.R.string.label_discover,
         tabs = tabs,
         state = state,
-        searchQuery = extensionsState.searchQuery,
-        onChangeSearchQuery = extensionsScreenModel::search,
+        searchQuery = currentQuery,
+        onChangeSearchQuery = onQueryChange,
     )
     LaunchedEffect(Unit) {
         BrowseTab.switchToExtensionTabChannel.receiveAsFlow()

@@ -23,12 +23,18 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.map
+import ephyra.presentation.core.components.SEARCH_DEBOUNCE_MILLIS
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import java.util.TreeMap
 import javax.inject.Inject
 
 @HiltViewModel
+@OptIn(kotlinx.coroutines.FlowPreview::class)
 class SourcesScreenModel @Inject constructor(
     private val getEnabledSources: GetEnabledSources,
     private val toggleSource: ToggleSource,
@@ -43,7 +49,21 @@ class SourcesScreenModel @Inject constructor(
 
     init {
         viewModelScope.launchIO {
-            getEnabledSources.subscribe()
+            combine(
+                getEnabledSources.subscribe(),
+                state.map { it.searchQuery }
+                    .distinctUntilChanged()
+                    .debounce(SEARCH_DEBOUNCE_MILLIS)
+            ) { sources, query ->
+                if (query.isNullOrBlank()) {
+                    sources
+                } else {
+                    sources.filter { source ->
+                        source.name.contains(query, ignoreCase = true) ||
+                            source.lang.contains(query, ignoreCase = true)
+                    }
+                }
+            }
                 .catch {
                     logcat(LogPriority.ERROR, it)
                     _events.send(Event.FailedFetchingSources)
@@ -86,6 +106,12 @@ class SourcesScreenModel @Inject constructor(
         }
     }
 
+    fun search(query: String?) {
+        _state.update {
+            it.copy(searchQuery = query)
+        }
+    }
+
     fun onEvent(event: SourcesScreenEvent) {
         when (event) {
             is SourcesScreenEvent.ToggleSource -> toggleSource(event.source)
@@ -122,6 +148,7 @@ class SourcesScreenModel @Inject constructor(
         val dialog: Dialog? = null,
         val isLoading: Boolean = true,
         val items: ImmutableList<SourceUiModel> = persistentListOf(),
+        val searchQuery: String? = null,
     ) {
         val isEmpty = items.isEmpty()
     }

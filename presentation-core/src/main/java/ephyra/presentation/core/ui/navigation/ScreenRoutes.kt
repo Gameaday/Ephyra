@@ -64,8 +64,12 @@ sealed class ScreenRoutes(val route: String) {
         fun createRoute(mangaId: Long, sourceId: Long) = "migrate_source_search/$mangaId/$sourceId"
     }
 
-    object RestoreBackup : ScreenRoutes("restore_backup")
-    object ExtensionRepos : ScreenRoutes("extension_repos")
+    object RestoreBackup : ScreenRoutes("restore_backup?uri={uri}") {
+        fun createRoute(uri: String) = "restore_backup?uri=$uri"
+    }
+    object ExtensionRepos : ScreenRoutes("extension_repos?url={url}") {
+        fun createRoute(url: String?) = "extension_repos" + (if (url != null) "?url=$url" else "")
+    }
 
     object SourcePreferences : ScreenRoutes("source_preferences/{sourceId}") {
         fun createRoute(sourceId: Long) = "source_preferences/$sourceId"

@@ -51,7 +51,7 @@ object SettingsBrowseScreen : SearchableSettings {
                             reposCount,
                         ),
                         onClick = {
-                            navController.navigate(ScreenRoutes.ExtensionRepos.route)
+                            navController.navigate(ScreenRoutes.ExtensionRepos.createRoute(null))
                         },
                     ),
                 ),

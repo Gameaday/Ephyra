@@ -1,6 +1,10 @@
 package ephyra.feature.more
 
+import android.content.Context
+import android.content.Intent
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -15,6 +19,7 @@ import ephyra.presentation.core.ui.AppReadySignal
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.collectAsState
+import ephyra.presentation.core.util.system.toast
 import ephyra.feature.more.onboarding.OnboardingScreen as OnboardingContent
 
 @Composable
@@ -43,6 +48,25 @@ fun OnboardingScreen(
         navController.popBackStack()
     }
 
+    val chooseBackup = rememberLauncherForActivityResult(
+        object : ActivityResultContracts.GetContent() {
+            override fun createIntent(context: Context, input: String): Intent {
+                val intent = super.createIntent(context, input)
+                return Intent.createChooser(
+                    intent,
+                    context.getString(ephyra.app.core.common.R.string.file_select_backup),
+                )
+            }
+        },
+    ) { uri ->
+        if (uri == null) {
+            context.toast(ephyra.app.core.common.R.string.file_null_uri_error)
+            return@rememberLauncherForActivityResult
+        }
+        finishOnboarding()
+        navController.navigate(ScreenRoutes.RestoreBackup.createRoute(uri.toString()))
+    }
+
     val restoreSettingKey = stringResource(SettingsDataScreen.restorePreferenceKeyString)
 
     BackHandler(enabled = !shownOnboardingFlow) {
@@ -52,9 +76,7 @@ fun OnboardingScreen(
     OnboardingContent(
         onComplete = finishOnboarding,
         onRestoreBackup = {
-            finishOnboarding()
-            // TODO: handle restoreSettingKey highlighting
-            navController.navigate(ScreenRoutes.RestoreBackup.route)
+            chooseBackup.launch("*/*")
         },
     )
 }

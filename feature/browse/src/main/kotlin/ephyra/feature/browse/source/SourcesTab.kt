@@ -17,18 +17,22 @@ import ephyra.presentation.core.components.TabContent
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.Screen
+import androidx.activity.compose.BackHandler
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @Composable
-fun sourcesTab(navController: NavController = LocalNavController.current): TabContent {
-    val screenModel = hiltViewModel<SourcesScreenModel>()
+fun sourcesTab(
+    screenModel: SourcesScreenModel,
+    navController: NavController = LocalNavController.current,
+): TabContent {
     val state by screenModel.state.collectAsStateWithLifecycle()
 
     return TabContent(
         titleRes = ephyra.app.core.common.R.string.label_content_sources,
+        searchEnabled = true,
         actions = persistentListOf(
             AppBar.Action(
                 title = stringResource(ephyra.app.core.common.R.string.action_global_search),
@@ -47,6 +51,10 @@ fun sourcesTab(navController: NavController = LocalNavController.current): TabCo
             ),
         ),
         content = { contentPadding, snackbarHostState ->
+            BackHandler(enabled = state.searchQuery != null) {
+                screenModel.search(null)
+            }
+
             SourcesScreen(
                 state = state,
                 contentPadding = contentPadding,

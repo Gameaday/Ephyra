@@ -105,7 +105,7 @@ fun ExtensionScreen(
                         EmptyScreenAction(
                             stringRes = ephyra.app.core.common.R.string.label_extension_repos,
                             icon = Icons.Outlined.Settings,
-                            onClick = { navController.navigate(ScreenRoutes.ExtensionRepos.route) },
+                            onClick = { navController.navigate(ScreenRoutes.ExtensionRepos.createRoute(null)) },
                         ),
                     ),
                 )

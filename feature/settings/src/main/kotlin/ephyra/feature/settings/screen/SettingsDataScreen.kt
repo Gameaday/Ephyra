@@ -215,7 +215,7 @@ object SettingsDataScreen : SearchableSettings {
                 return@rememberLauncherForActivityResult
             }
 
-            navController.navigate(ScreenRoutes.RestoreBackup.route + "?uri=$it")
+            navController.navigate(ScreenRoutes.RestoreBackup.createRoute(it.toString()))
         }
 
         return Preference.PreferenceGroup(

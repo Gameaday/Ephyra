@@ -45,7 +45,7 @@ fun extensionsTab(
             ),
             AppBar.OverflowAction(
                 title = stringResource(ephyra.app.core.common.R.string.label_extension_repos),
-                onClick = { navController.navigate(ScreenRoutes.ExtensionRepos.route) },
+                onClick = { navController.navigate(ScreenRoutes.ExtensionRepos.createRoute(null)) },
             ),
         ),
         content = { contentPadding, _ ->

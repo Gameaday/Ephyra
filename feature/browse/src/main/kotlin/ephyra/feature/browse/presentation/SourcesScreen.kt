@@ -48,7 +48,11 @@ fun SourcesScreen(
     when {
         state.isLoading -> LoadingScreen(Modifier.padding(contentPadding))
         state.isEmpty -> EmptyScreen(
-            stringRes = ephyra.app.core.common.R.string.source_empty_screen,
+            stringRes = if (!state.searchQuery.isNullOrEmpty()) {
+                ephyra.app.core.common.R.string.no_results_found
+            } else {
+                ephyra.app.core.common.R.string.source_empty_screen
+            },
             modifier = Modifier.padding(contentPadding),
         )
 
