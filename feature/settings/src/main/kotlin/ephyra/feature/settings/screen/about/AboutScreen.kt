@@ -47,14 +47,14 @@ import logcat.LogPriority
 fun AboutScreen(
     navController: NavController = LocalNavController.current,
 ) {
-    val ViewModel = hiltViewModel<AboutViewModel>()
-    val state by ViewModel.state.collectAsState()
+    val viewModel = hiltViewModel<AboutViewModel>()
+    val state by viewModel.state.collectAsState()
 
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
 
     LaunchedEffect(Unit) {
-        ViewModel.events.collectLatest { event ->
+        viewModel.events.collectLatest { event ->
             when (event) {
                 is AboutEvent.NewUpdate -> {
                     // Update is handled via the state-driven AlertDialog below

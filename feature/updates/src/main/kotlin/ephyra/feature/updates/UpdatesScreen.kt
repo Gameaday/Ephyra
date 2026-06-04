@@ -237,35 +237,35 @@ fun UpdatesScreen(
     navController: NavController = LocalNavController.current,
 ) {
     val context = LocalContext.current
-    val ViewModel = hiltViewModel<UpdatesViewModel>()
+    val viewModel = hiltViewModel<UpdatesViewModel>()
     val settingsViewModel = hiltViewModel<UpdatesSettingsViewModel>()
-    val state by ViewModel.state.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     UpdateScreen(
         state = state,
-        snackbarHostState = ViewModel.snackbarHostState,
-        lastUpdated = ViewModel.lastUpdated,
+        snackbarHostState = viewModel.snackbarHostState,
+        lastUpdated = viewModel.lastUpdated,
         isRefreshing = state.isLibraryUpdating,
         onClickCover = { item ->
             navController.navigate(Screen.MangaDetails(item.update.mangaId, false))
         },
-        onSelectAll = { ViewModel.onEvent(UpdatesScreenEvent.ToggleAllSelection(it)) },
-        onInvertSelection = { ViewModel.onEvent(UpdatesScreenEvent.InvertSelection) },
-        onUpdateLibrary = { ViewModel.onEvent(UpdatesScreenEvent.UpdateLibrary) },
+        onSelectAll = { viewModel.onEvent(UpdatesScreenEvent.ToggleAllSelection(it)) },
+        onInvertSelection = { viewModel.onEvent(UpdatesScreenEvent.InvertSelection) },
+        onUpdateLibrary = { viewModel.onEvent(UpdatesScreenEvent.UpdateLibrary) },
         onDownloadChapter = { items, action ->
-            ViewModel.onEvent(UpdatesScreenEvent.DownloadChapters(items, action))
+            viewModel.onEvent(UpdatesScreenEvent.DownloadChapters(items, action))
         },
         onMultiBookmarkClicked = { items, bookmark ->
-            ViewModel.onEvent(UpdatesScreenEvent.BookmarkUpdates(items, bookmark))
+            viewModel.onEvent(UpdatesScreenEvent.BookmarkUpdates(items, bookmark))
         },
         onMultiMarkAsReadClicked = { items, read ->
-            ViewModel.onEvent(UpdatesScreenEvent.MarkUpdatesRead(items, read))
+            viewModel.onEvent(UpdatesScreenEvent.MarkUpdatesRead(items, read))
         },
         onMultiDeleteClicked = { items ->
-            ViewModel.onEvent(UpdatesScreenEvent.ShowConfirmDeleteChapters(items))
+            viewModel.onEvent(UpdatesScreenEvent.ShowConfirmDeleteChapters(items))
         },
         onUpdateSelected = { item, selected, fromLongPress ->
-            ViewModel.onEvent(UpdatesScreenEvent.ToggleSelection(item, selected, fromLongPress))
+            viewModel.onEvent(UpdatesScreenEvent.ToggleSelection(item, selected, fromLongPress))
         },
         onOpenChapter = {
             val intent = ReaderActivity.newIntent(context, it.update.mangaId, it.update.chapterId)

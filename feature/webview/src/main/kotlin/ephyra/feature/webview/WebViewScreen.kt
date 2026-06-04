@@ -23,17 +23,17 @@ fun WebViewScreen(
     navController: NavController = LocalNavController.current,
 ) {
     val context = LocalContext.current
-    val ViewModel = hiltViewModel<WebViewViewModel>()
+    val viewModel = hiltViewModel<WebViewViewModel>()
 
     var assistUrl by remember { mutableStateOf<String?>(null) }
     // TODO: handle assistUrl if needed for parent activity
 
-    LaunchedEffect(ViewModel, sourceId) {
-        ViewModel.initialize(sourceId)
+    LaunchedEffect(viewModel, sourceId) {
+        viewModel.initialize(sourceId)
     }
 
-    LaunchedEffect(ViewModel) {
-        ViewModel.effectFlow.collect { effect ->
+    LaunchedEffect(viewModel) {
+        viewModel.effectFlow.collect { effect ->
             when (effect) {
                 is WebViewEffect.ShareWebpage -> {
                     try {

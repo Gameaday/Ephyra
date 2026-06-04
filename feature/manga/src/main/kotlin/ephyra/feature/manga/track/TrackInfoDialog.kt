@@ -782,27 +782,27 @@ fun TrackerSearchScreen(
     onConfirmSelection: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    val ViewModel = hiltViewModel<TrackerSearchViewModel, TrackerSearchViewModel.Factory> { factory ->
+    val viewModel = hiltViewModel<TrackerSearchViewModel, TrackerSearchViewModel.Factory> { factory ->
         factory.create(mangaId, serviceId, currentUrl, initialQuery)
     }
 
-    val state by ViewModel.state.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     val textFieldState = rememberTextFieldState(initialQuery)
     TrackerSearch(
         state = textFieldState,
-        onDispatchQuery = { ViewModel.onEvent(TrackerSearchViewModel.Event.Search(textFieldState.text.toString())) },
+        onDispatchQuery = { viewModel.onEvent(TrackerSearchViewModel.Event.Search(textFieldState.text.toString())) },
         queryResult = state.queryResult,
         selected = state.selected,
-        onSelectedChange = { ViewModel.onEvent(TrackerSearchViewModel.Event.UpdateSelection(it)) },
+        onSelectedChange = { viewModel.onEvent(TrackerSearchViewModel.Event.UpdateSelection(it)) },
         onConfirmSelection = f@{ isPrivate: Boolean ->
             val selected = state.selected ?: return@f
             selected.isPrivate = isPrivate
-            ViewModel.onEvent(TrackerSearchViewModel.Event.Register(selected))
+            viewModel.onEvent(TrackerSearchViewModel.Event.Register(selected))
             onConfirmSelection()
         },
         onDismissRequest = onDismissRequest,
-        supportsPrivateTracking = ViewModel.supportsPrivateTracking,
+        supportsPrivateTracking = viewModel.supportsPrivateTracking,
     )
 }
 

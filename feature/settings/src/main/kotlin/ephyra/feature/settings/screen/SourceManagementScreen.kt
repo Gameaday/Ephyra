@@ -72,10 +72,10 @@ import ephyra.presentation.core.ui.navigation.LocalNavController
 fun SourceManagementScreen(
     navController: NavController = LocalNavController.current,
 ) {
-    val ViewModel = hiltViewModel<SourceManagementViewModel>()
-    val sources by ViewModel.sources.collectAsStateWithLifecycle()
-    val isLoading by ViewModel.isLoading.collectAsStateWithLifecycle()
-    val error by ViewModel.error.collectAsStateWithLifecycle()
+    val viewModel = hiltViewModel<SourceManagementViewModel>()
+    val sources by viewModel.sources.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
 
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
     var showAddJsScraperDialog by remember { mutableStateOf(false) }
@@ -98,7 +98,7 @@ fun SourceManagementScreen(
     LaunchedEffect(error) {
         if (error != null) {
             snackbarMessage = error
-            ViewModel.clearError()
+            viewModel.clearError()
         }
     }
 

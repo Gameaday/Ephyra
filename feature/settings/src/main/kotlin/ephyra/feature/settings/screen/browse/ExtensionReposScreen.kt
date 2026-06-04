@@ -26,11 +26,11 @@ fun ExtensionReposScreen(
 ) {
     val context = LocalContext.current
 
-    val ViewModel = hiltViewModel<ExtensionReposViewModel>()
-    val state by ViewModel.state.collectAsStateWithLifecycle()
+    val viewModel = hiltViewModel<ExtensionReposViewModel>()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(url) {
-        url?.let { ViewModel.onEvent(ExtensionReposScreenEvent.ShowDialog(RepoDialog.Confirm(it))) }
+        url?.let { viewModel.onEvent(ExtensionReposScreenEvent.ShowDialog(RepoDialog.Confirm(it))) }
     }
 
     if (state is RepoScreenState.Loading) {
@@ -42,10 +42,10 @@ fun ExtensionReposScreen(
 
     ExtensionReposScreen(
         state = successState,
-        onClickCreate = { ViewModel.onEvent(ExtensionReposScreenEvent.ShowDialog(RepoDialog.Create)) },
+        onClickCreate = { viewModel.onEvent(ExtensionReposScreenEvent.ShowDialog(RepoDialog.Create)) },
         onOpenWebsite = { context.openInBrowser(it.website) },
-        onClickDelete = { ViewModel.onEvent(ExtensionReposScreenEvent.ShowDialog(RepoDialog.Delete(it))) },
-        onClickRefresh = { ViewModel.onEvent(ExtensionReposScreenEvent.RefreshRepos) },
+        onClickDelete = { viewModel.onEvent(ExtensionReposScreenEvent.ShowDialog(RepoDialog.Delete(it))) },
+        onClickRefresh = { viewModel.onEvent(ExtensionReposScreenEvent.RefreshRepos) },
         navigateUp = { navController.popBackStack() },
     )
 
@@ -53,8 +53,8 @@ fun ExtensionReposScreen(
         null -> {}
         is RepoDialog.Create -> {
             ExtensionRepoCreateDialog(
-                onDismissRequest = { ViewModel.onEvent(ExtensionReposScreenEvent.DismissDialog) },
-                onCreate = { ViewModel.onEvent(ExtensionReposScreenEvent.CreateRepo(it)) },
+                onDismissRequest = { viewModel.onEvent(ExtensionReposScreenEvent.DismissDialog) },
+                onCreate = { viewModel.onEvent(ExtensionReposScreenEvent.CreateRepo(it)) },
                 repoUrls = successState.repos.map { it.baseUrl }.toImmutableSet(),
                 isAdding = successState.isAdding,
             )
