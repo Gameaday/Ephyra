@@ -1,5 +1,6 @@
 package ephyra.feature.browse.source
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CloudSync
 import androidx.compose.material.icons.outlined.FilterList
@@ -17,7 +18,6 @@ import ephyra.presentation.core.components.TabContent
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.Screen
-import androidx.activity.compose.BackHandler
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.collectLatest

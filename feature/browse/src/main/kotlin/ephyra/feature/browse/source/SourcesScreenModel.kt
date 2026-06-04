@@ -12,6 +12,7 @@ import ephyra.domain.source.interactor.ToggleSourcePin
 import ephyra.domain.source.model.Pin
 import ephyra.domain.source.model.Source
 import ephyra.feature.browse.presentation.SourceUiModel
+import ephyra.presentation.core.components.SEARCH_DEBOUNCE_MILLIS
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -21,13 +22,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.map
-import ephyra.presentation.core.components.SEARCH_DEBOUNCE_MILLIS
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import java.util.TreeMap
@@ -53,7 +53,7 @@ class SourcesScreenModel @Inject constructor(
                 getEnabledSources.subscribe(),
                 state.map { it.searchQuery }
                     .distinctUntilChanged()
-                    .debounce(SEARCH_DEBOUNCE_MILLIS)
+                    .debounce(SEARCH_DEBOUNCE_MILLIS),
             ) { sources, query ->
                 if (query.isNullOrBlank()) {
                     sources
