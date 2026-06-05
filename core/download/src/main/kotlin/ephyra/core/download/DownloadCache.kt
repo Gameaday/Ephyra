@@ -57,6 +57,7 @@ import kotlinx.serialization.modules.contextual
 import kotlinx.serialization.protobuf.ProtoBuf
 import logcat.LogPriority
 import java.io.File
+import javax.inject.Provider
 import kotlin.time.Duration.Companion.hours
 
 /**
@@ -68,10 +69,12 @@ import kotlin.time.Duration.Companion.hours
 class DownloadCache(
     private val context: Application,
     private val provider: DownloadProvider,
-    private val sourceManager: SourceManager,
+    private val sourceManagerProvider: Provider<SourceManager>,
     private val storageManager: StorageManager,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) {
+
+    private val sourceManager get() = sourceManagerProvider.get()
 
     private val scope = CoroutineScope(ioDispatcher)
 

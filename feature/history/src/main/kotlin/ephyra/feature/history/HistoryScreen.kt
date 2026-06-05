@@ -227,7 +227,7 @@ fun HistoryTabScreen(
         }
 
         is HistoryViewModel.Dialog.ChangeCategory -> {
-            ephyra.feature.category.presentation.components.ChangeCategoryDialog(
+            ephyra.presentation.core.components.ChangeCategoryDialog(
                 initialSelection = dialog.initialSelection,
                 onDismissRequest = onDismissRequest,
                 onEditCategories = { navController.navigate(ephyra.presentation.core.ui.navigation.Screen.Category) },

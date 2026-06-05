@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onStart
 import logcat.LogPriority
+import javax.inject.Provider
 import ephyra.domain.download.service.DownloadManager as IDownloadManager
 
 /**
@@ -41,12 +42,14 @@ class DownloadManager(
     private val getCategories: GetCategories,
     private val getManga: GetManga,
     private val getChapter: GetChapter,
-    private val sourceManager: SourceManager,
+    private val sourceManagerProvider: Provider<SourceManager>,
     private val downloadPreferences: DownloadPreferences,
     private val libraryPreferences: LibraryPreferences,
     private val downloader: Downloader,
     private val pendingDeleter: DownloadPendingDeleter,
 ) : IDownloadManager {
+
+    private val sourceManager get() = sourceManagerProvider.get()
 
     private val scope = kotlinx.coroutines.CoroutineScope(
         kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO,

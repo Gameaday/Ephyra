@@ -60,10 +60,10 @@ import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaWithChapterCount
 import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.service.SourceManager
-import ephyra.feature.manga.presentation.components.MangaCover
 import ephyra.presentation.core.components.AdaptiveSheet
 import ephyra.presentation.core.components.Badge
 import ephyra.presentation.core.components.BadgeGroup
+import ephyra.presentation.core.components.MangaCover
 import ephyra.presentation.core.components.TabbedDialogPaddings
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.pluralStringResource

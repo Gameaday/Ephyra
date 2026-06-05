@@ -27,7 +27,6 @@ import ephyra.domain.content.model.toContentUnit
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.hasCustomCover
 import ephyra.domain.manga.model.toSManga
-import ephyra.feature.category.presentation.components.ChangeCategoryDialog
 import ephyra.feature.manga.presentation.ChapterSettingsDialog
 import ephyra.feature.manga.presentation.DuplicateMangaDialog
 import ephyra.feature.manga.presentation.EditCoverAction
@@ -40,6 +39,7 @@ import ephyra.feature.manga.presentation.components.ScanlatorFilterDialog
 import ephyra.feature.manga.presentation.components.SetIntervalDialog
 import ephyra.feature.migration.dialog.MigrateMangaDialog
 import ephyra.feature.reader.ReaderActivity
+import ephyra.presentation.core.components.ChangeCategoryDialog
 import ephyra.presentation.core.feature.SafeFeatureContainer
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.ui.navigation.LocalNavController

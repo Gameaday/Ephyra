@@ -47,10 +47,10 @@ import ephyra.domain.download.service.DownloadPreferences
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.track.service.TrackPreferences
 import ephyra.domain.track.service.TrackerManager
-import ephyra.feature.category.presentation.visualName
 import ephyra.feature.settings.Preference
 import ephyra.feature.settings.widget.TriStateListDialog
 import ephyra.presentation.core.components.material.padding
+import ephyra.presentation.core.components.visualName
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.collectAsState

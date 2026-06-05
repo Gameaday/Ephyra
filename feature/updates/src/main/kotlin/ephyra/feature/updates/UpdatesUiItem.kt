@@ -37,7 +37,7 @@ import ephyra.domain.updates.model.UpdatesWithRelations
 import ephyra.feature.manga.presentation.components.ChapterDownloadAction
 import ephyra.feature.manga.presentation.components.ChapterDownloadIndicator
 import ephyra.feature.manga.presentation.components.DotSeparatorText
-import ephyra.feature.manga.presentation.components.MangaCover
+import ephyra.presentation.core.components.MangaCover
 import ephyra.presentation.core.components.ListGroupHeader
 import ephyra.presentation.core.components.material.DISABLED_ALPHA
 import ephyra.presentation.core.components.material.padding

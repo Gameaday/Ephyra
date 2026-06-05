@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ephyra.domain.manga.model.Manga
+import ephyra.presentation.core.components.MangaCover
 import ephyra.presentation.core.components.material.padding
 
 @Composable

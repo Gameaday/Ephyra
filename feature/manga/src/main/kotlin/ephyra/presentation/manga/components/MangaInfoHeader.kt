@@ -97,6 +97,7 @@ import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.SourceStatus
 import ephyra.presentation.core.R
 import ephyra.presentation.core.components.DropdownMenu
+import ephyra.presentation.core.components.MangaCover
 import ephyra.presentation.core.components.material.DISABLED_ALPHA
 import ephyra.presentation.core.components.material.TextButton
 import ephyra.presentation.core.components.material.padding

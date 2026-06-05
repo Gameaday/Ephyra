@@ -21,17 +21,20 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import javax.inject.Provider
 
 /**
  * This class is used to persist active downloads across application restarts.
  */
 class DownloadStore(
     context: Context,
-    private val sourceManager: SourceManager,
+    private val sourceManagerProvider: Provider<SourceManager>,
     private val json: Json,
     private val getManga: GetManga,
     private val getChapter: GetChapter,
 ) {
+
+    private val sourceManager get() = sourceManagerProvider.get()
 
     /**
      * DataStore backing file for active downloads. Migrates from legacy SharedPreferences

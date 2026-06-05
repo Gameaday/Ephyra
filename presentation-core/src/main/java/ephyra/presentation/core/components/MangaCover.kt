@@ -1,4 +1,4 @@
-package ephyra.feature.manga.presentation.components
+package ephyra.presentation.core.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.aspectRatio

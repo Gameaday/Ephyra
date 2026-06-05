@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.platform.LocalContext
 import ephyra.domain.category.model.Category
-import ephyra.feature.category.presentation.visualName
+import ephyra.presentation.core.components.visualName
 import ephyra.presentation.core.i18n.stringResource
 
 /**

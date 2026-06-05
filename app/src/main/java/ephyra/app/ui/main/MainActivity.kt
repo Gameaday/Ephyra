@@ -72,6 +72,8 @@ import ephyra.presentation.core.ui.activity.BaseActivity
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
+import ephyra.presentation.core.util.AppNavigator
+import ephyra.presentation.core.util.LocalAppNavigator
 import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.core.util.system.openInBrowser
 import ephyra.presentation.core.util.view.setComposeContent
@@ -109,6 +111,8 @@ class MainActivity : BaseActivity(), AppReadySignal {
     @Inject lateinit var appUpdateChecker: AppUpdateChecker
 
     @Inject lateinit var appInfo: AppInfo
+
+    @Inject lateinit var appNavigator: AppNavigator
 
     @Inject lateinit var featureApis: Set<@JvmSuppressWildcards FeatureApi>
 
@@ -148,6 +152,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
                 ephyra.presentation.core.util.LocalUiPreferences provides uiPreferences,
                 ephyra.presentation.core.util.LocalPrivacyPreferences provides privacyPreferences,
                 LocalNavController provides navController,
+                LocalAppNavigator provides appNavigator,
             ) {
                 LaunchedEffect(Unit) {
                     val result = try {

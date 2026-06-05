@@ -29,9 +29,9 @@ import ephyra.domain.library.service.LibraryPreferences.Companion.MARK_DUPLICATE
 import ephyra.domain.library.service.LibraryPreferences.Companion.MARK_DUPLICATE_CHAPTER_READ_NEW
 import ephyra.domain.library.service.LibraryUpdateScheduler
 import ephyra.feature.category.CategoryScreen
-import ephyra.feature.category.presentation.visualName
 import ephyra.feature.settings.Preference
 import ephyra.feature.settings.widget.TriStateListDialog
+import ephyra.presentation.core.components.visualName
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.navigation.LocalNavController

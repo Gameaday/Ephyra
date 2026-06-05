@@ -29,8 +29,8 @@ import ephyra.feature.library.presentation.DeleteLibraryMangaDialog
 import ephyra.feature.library.presentation.LibrarySettingsDialog
 import ephyra.feature.library.presentation.components.LibraryContent
 import ephyra.feature.library.presentation.components.LibraryToolbar
-import ephyra.feature.manga.presentation.components.LibraryBottomActionMenu
-import ephyra.feature.reader.ReaderActivity
+import ephyra.presentation.core.components.ChangeCategoryDialog
+import ephyra.presentation.core.components.LibraryBottomActionMenu
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.feature.SafeFeatureContainer
 import ephyra.presentation.core.i18n.stringResource
@@ -42,6 +42,7 @@ import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.NavigationEvents
 import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
+import ephyra.presentation.core.util.LocalAppNavigator
 import ephyra.presentation.core.util.manga.DownloadAction
 import ephyra.source.local.isLocal
 import kotlinx.collections.immutable.persistentListOf
@@ -77,6 +78,7 @@ fun LibraryScreen(
     searchQuery: String? = null,
 ) {
     val context = LocalContext.current
+    val navigator = LocalAppNavigator.current
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
 
@@ -193,9 +195,7 @@ fun LibraryScreen(
                         scope.launchIO {
                             val chapter = ViewModel.getNextUnreadChapter(it.manga)
                             if (chapter != null) {
-                                context.startActivity(
-                                    ReaderActivity.newIntent(context, chapter.mangaId, chapter.id),
-                                )
+                                navigator.openReader(context, chapter.mangaId, chapter.id)
                             } else {
                                 snackbarHostState.showSnackbar(
                                     context.stringResource(ephyra.app.core.common.R.string.no_next_chapter),
@@ -242,7 +242,7 @@ fun LibraryScreen(
         }
 
         is LibraryViewModel.Dialog.ChangeCategory -> {
-            ephyra.feature.category.presentation.components.ChangeCategoryDialog(
+            ChangeCategoryDialog(
                 initialSelection = dialog.initialSelection,
                 onDismissRequest = onDismissRequest,
                 onEditCategories = {

@@ -97,7 +97,22 @@ class AppNavigatorContractTest {
     }
 
     /**
-     * Confirms that [NavigatorImpl] provides concrete implementations of both
+     * Checks that [AppNavigator] declares [AppNavigator.openReader] with the
+     * correct parameter types.
+     */
+    @Test
+    fun `AppNavigator declares openReader with Context, Long and Long parameters`() {
+        val method = AppNavigator::class.java.methods.firstOrNull { it.name == "openReader" }
+
+        assertNotNull(method) { "AppNavigator must declare openReader" }
+        assertEquals(3, method!!.parameterCount) { "openReader should have 3 parameters" }
+        assertEquals(android.content.Context::class.java, method.parameterTypes[0])
+        assertEquals(Long::class.javaPrimitiveType, method.parameterTypes[1])
+        assertEquals(Long::class.javaPrimitiveType, method.parameterTypes[2])
+    }
+
+    /**
+     * Confirms that [NavigatorImpl] provides concrete implementations of all
      * [AppNavigator] methods (i.e. it is not an abstract class).
      */
     @Test
@@ -106,9 +121,11 @@ class AppNavigatorContractTest {
 
         val openManga = navigatorImplClass.methods.firstOrNull { it.name == "openMangaScreen" }
         val openWebView = navigatorImplClass.methods.firstOrNull { it.name == "openWebView" }
+        val openReader = navigatorImplClass.methods.firstOrNull { it.name == "openReader" }
 
         assertNotNull(openManga) { "NavigatorImpl must override openMangaScreen" }
         assertNotNull(openWebView) { "NavigatorImpl must override openWebView" }
+        assertNotNull(openReader) { "NavigatorImpl must override openReader" }
 
         // Neither method should be abstract
         assertFalse(
@@ -118,6 +135,10 @@ class AppNavigatorContractTest {
         assertFalse(
             java.lang.reflect.Modifier.isAbstract(openWebView!!.modifiers),
             "openWebView in NavigatorImpl must not be abstract",
+        )
+        assertFalse(
+            java.lang.reflect.Modifier.isAbstract(openReader!!.modifiers),
+            "openReader in NavigatorImpl must not be abstract",
         )
     }
 }

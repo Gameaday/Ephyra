@@ -14,6 +14,14 @@ import androidx.compose.ui.Modifier
 interface AppNavigator {
     fun openMangaScreen(context: Context, mangaId: Long)
     fun openWebView(context: Context, url: String, sourceId: Long, title: String)
+    fun openReader(context: Context, mangaId: Long, chapterId: Long)
+}
+
+/**
+ * For retrieving AppNavigator from the compose hierarchy
+ */
+val LocalAppNavigator = staticCompositionLocalOf<AppNavigator> {
+    error("No AppNavigator provided")
 }
 
 /**

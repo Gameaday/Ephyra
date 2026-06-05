@@ -1,4 +1,4 @@
-package ephyra.feature.manga.presentation.components
+package ephyra.presentation.core.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -24,8 +23,6 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.ZeroCornerSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
-import androidx.compose.material.icons.outlined.BookmarkAdd
-import androidx.compose.material.icons.outlined.BookmarkRemove
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.DoneAll
 import androidx.compose.material.icons.outlined.Download
@@ -50,13 +47,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import ephyra.presentation.core.R
-import ephyra.presentation.core.components.DownloadDropdownMenu
-import ephyra.presentation.core.components.DropdownMenu
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.manga.DownloadAction
 import kotlinx.coroutines.Job
@@ -66,21 +59,20 @@ import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
-fun MangaBottomActionMenu(
+fun LibraryBottomActionMenu(
     visible: Boolean,
+    onChangeCategoryClicked: () -> Unit,
+    onMarkAsReadClicked: () -> Unit,
+    onMarkAsUnreadClicked: () -> Unit,
+    onDownloadClicked: ((DownloadAction) -> Unit)?,
+    onDeleteClicked: () -> Unit,
+    onMigrateClicked: () -> Unit,
     modifier: Modifier = Modifier,
-    onBookmarkClicked: (() -> Unit)? = null,
-    onRemoveBookmarkClicked: (() -> Unit)? = null,
-    onMarkAsReadClicked: (() -> Unit)? = null,
-    onMarkAsUnreadClicked: (() -> Unit)? = null,
-    onMarkPreviousAsReadClicked: (() -> Unit)? = null,
-    onDownloadClicked: (() -> Unit)? = null,
-    onDeleteClicked: (() -> Unit)? = null,
 ) {
     AnimatedVisibility(
         visible = visible,
-        enter = expandVertically(expandFrom = Alignment.Bottom),
-        exit = shrinkVertically(shrinkTowards = Alignment.Bottom),
+        enter = expandVertically(animationSpec = tween(delayMillis = 300)),
+        exit = shrinkVertically(animationSpec = tween()),
     ) {
         val scope = rememberCoroutineScope()
         Surface(
@@ -89,7 +81,7 @@ fun MangaBottomActionMenu(
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
         ) {
             val haptic = LocalHapticFeedback.current
-            val confirm = remember { mutableStateListOf(false, false, false, false, false, false, false) }
+            val confirm = remember { mutableStateListOf(false, false, false, false, false, false) }
             var resetJob by remember { mutableStateOf<Job?>(null) }
             val onLongClickItem: (Int) -> Unit = { toConfirmIndex ->
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -100,77 +92,92 @@ fun MangaBottomActionMenu(
                     if (isActive) confirm[toConfirmIndex] = false
                 }
             }
+            val itemOverflow = onDownloadClicked != null
             Row(
                 modifier = Modifier
-                    .padding(
+                    .windowInsetsPadding(
                         WindowInsets.navigationBars
-                            .only(WindowInsetsSides.Bottom)
-                            .asPaddingValues(),
+                            .only(WindowInsetsSides.Bottom),
                     )
                     .padding(horizontal = 8.dp, vertical = 12.dp),
             ) {
-                if (onBookmarkClicked != null) {
-                    Button(
-                        title = stringResource(ephyra.app.core.common.R.string.action_bookmark),
-                        icon = Icons.Outlined.BookmarkAdd,
-                        toConfirm = confirm[0],
-                        onLongClick = { onLongClickItem(0) },
-                        onClick = onBookmarkClicked,
-                    )
-                }
-                if (onRemoveBookmarkClicked != null) {
-                    Button(
-                        title = stringResource(ephyra.app.core.common.R.string.action_remove_bookmark),
-                        icon = Icons.Outlined.BookmarkRemove,
-                        toConfirm = confirm[1],
-                        onLongClick = { onLongClickItem(1) },
-                        onClick = onRemoveBookmarkClicked,
-                    )
-                }
-                if (onMarkAsReadClicked != null) {
-                    Button(
-                        title = stringResource(ephyra.app.core.common.R.string.action_mark_as_read),
-                        icon = Icons.Outlined.DoneAll,
-                        toConfirm = confirm[2],
-                        onLongClick = { onLongClickItem(2) },
-                        onClick = onMarkAsReadClicked,
-                    )
-                }
-                if (onMarkAsUnreadClicked != null) {
-                    Button(
-                        title = stringResource(ephyra.app.core.common.R.string.action_mark_as_unread),
-                        icon = Icons.Outlined.RemoveDone,
-                        toConfirm = confirm[3],
-                        onLongClick = { onLongClickItem(3) },
-                        onClick = onMarkAsUnreadClicked,
-                    )
-                }
-                if (onMarkPreviousAsReadClicked != null) {
-                    Button(
-                        title = stringResource(ephyra.app.core.common.R.string.action_mark_previous_as_read),
-                        icon = ImageVector.vectorResource(R.drawable.ic_done_prev_24dp),
-                        toConfirm = confirm[4],
-                        onLongClick = { onLongClickItem(4) },
-                        onClick = onMarkPreviousAsReadClicked,
-                    )
-                }
+                Button(
+                    title = stringResource(ephyra.app.core.common.R.string.action_move_category),
+                    icon = Icons.AutoMirrored.Outlined.Label,
+                    toConfirm = confirm[0],
+                    onLongClick = { onLongClickItem(0) },
+                    onClick = onChangeCategoryClicked,
+                )
+                Button(
+                    title = stringResource(ephyra.app.core.common.R.string.action_mark_as_read),
+                    icon = Icons.Outlined.DoneAll,
+                    toConfirm = confirm[1],
+                    onLongClick = { onLongClickItem(1) },
+                    onClick = onMarkAsReadClicked,
+                )
+                Button(
+                    title = stringResource(ephyra.app.core.common.R.string.action_mark_as_unread),
+                    icon = Icons.Outlined.RemoveDone,
+                    toConfirm = confirm[2],
+                    onLongClick = { onLongClickItem(2) },
+                    onClick = onMarkAsUnreadClicked,
+                )
                 if (onDownloadClicked != null) {
+                    var downloadExpanded by remember { mutableStateOf(false) }
                     Button(
                         title = stringResource(ephyra.app.core.common.R.string.action_download),
                         icon = Icons.Outlined.Download,
-                        toConfirm = confirm[5],
-                        onLongClick = { onLongClickItem(5) },
-                        onClick = onDownloadClicked,
-                    )
+                        toConfirm = confirm[3],
+                        onLongClick = { onLongClickItem(3) },
+                        onClick = { downloadExpanded = !downloadExpanded },
+                    ) {
+                        DownloadDropdownMenu(
+                            expanded = downloadExpanded,
+                            onDismissRequest = { downloadExpanded = false },
+                            onDownloadClicked = onDownloadClicked,
+                            offset = BottomBarMenuDpOffset,
+                        )
+                    }
                 }
-                if (onDeleteClicked != null) {
+                if (!itemOverflow) {
+                    Button(
+                        title = stringResource(ephyra.app.core.common.R.string.migrate),
+                        icon = Icons.Outlined.SwapCalls,
+                        toConfirm = confirm[4],
+                        onLongClick = { onLongClickItem(4) },
+                        onClick = onMigrateClicked,
+                    )
                     Button(
                         title = stringResource(ephyra.app.core.common.R.string.action_delete),
                         icon = Icons.Outlined.Delete,
-                        toConfirm = confirm[6],
-                        onLongClick = { onLongClickItem(6) },
+                        toConfirm = confirm[5],
+                        onLongClick = { onLongClickItem(5) },
                         onClick = onDeleteClicked,
                     )
+                } else {
+                    var overflowMenuOpen by remember { mutableStateOf(false) }
+                    Button(
+                        title = stringResource(ephyra.app.core.common.R.string.label_more),
+                        icon = Icons.Outlined.MoreVert,
+                        toConfirm = false,
+                        onLongClick = {},
+                        onClick = { overflowMenuOpen = true },
+                    ) {
+                        DropdownMenu(
+                            expanded = overflowMenuOpen,
+                            onDismissRequest = { overflowMenuOpen = false },
+                            offset = BottomBarMenuDpOffset,
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(ephyra.app.core.common.R.string.migrate)) },
+                                onClick = onMigrateClicked,
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(ephyra.app.core.common.R.string.action_delete)) },
+                                onClick = onDeleteClicked,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -226,3 +233,5 @@ private fun RowScope.Button(
         content?.invoke()
     }
 }
+
+private val BottomBarMenuDpOffset = DpOffset(0.dp, 0.dp)

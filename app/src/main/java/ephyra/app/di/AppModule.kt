@@ -653,11 +653,11 @@ object AppModule {
     @Singleton
     fun provideDownloadStore(
         @ApplicationContext context: Context,
-        sourceManager: SourceManager,
+        sourceManagerProvider: Provider<SourceManager>,
         json: Json,
         getManga: GetManga,
         getChapter: GetChapter,
-    ): DownloadStore = DownloadStore(context, sourceManager, json, getManga, getChapter)
+    ): DownloadStore = DownloadStore(context, sourceManagerProvider, json, getManga, getChapter)
 
     @Provides
     @Singleton
@@ -672,10 +672,10 @@ object AppModule {
     fun provideDownloadCache(
         application: Application,
         downloadProvider: DownloadProvider,
-        sourceManager: SourceManager,
+        sourceManagerProvider: Provider<SourceManager>,
         storageManager: StorageManager,
         @IoDispatcher ioDispatcher: CoroutineDispatcher,
-    ): DownloadCache = DownloadCache(application, downloadProvider, sourceManager, storageManager, ioDispatcher)
+    ): DownloadCache = DownloadCache(application, downloadProvider, sourceManagerProvider, storageManager, ioDispatcher)
 
     @Provides
     @Singleton
@@ -686,7 +686,7 @@ object AppModule {
         getCategories: GetCategories,
         getManga: GetManga,
         getChapter: GetChapter,
-        sourceManager: SourceManager,
+        sourceManagerProvider: Provider<SourceManager>,
         downloadPreferences: DownloadPreferences,
         libraryPreferences: LibraryPreferences,
         downloader: Downloader,
@@ -698,7 +698,7 @@ object AppModule {
         getCategories = getCategories,
         getManga = getManga,
         getChapter = getChapter,
-        sourceManager = sourceManager,
+        sourceManagerProvider = sourceManagerProvider,
         downloadPreferences = downloadPreferences,
         libraryPreferences = libraryPreferences,
         downloader = downloader,
@@ -717,7 +717,7 @@ object AppModule {
         @ApplicationContext context: Context,
         downloadProvider: DownloadProvider,
         downloadCache: DownloadCache,
-        sourceManager: SourceManager,
+        sourceManagerProvider: Provider<SourceManager>,
         chapterCache: ChapterCache,
         downloadPreferences: DownloadPreferences,
         readerPreferences: ReaderPreferences,
@@ -732,7 +732,7 @@ object AppModule {
         context = context,
         provider = downloadProvider,
         cache = downloadCache,
-        sourceManager = sourceManager,
+        sourceManagerProvider = sourceManagerProvider,
         chapterCache = chapterCache,
         downloadPreferences = downloadPreferences,
         readerPreferences = readerPreferences,

@@ -1,4 +1,4 @@
-package ephyra.feature.category
+package ephyra.presentation.core.components
 
 import android.content.Context
 import androidx.compose.runtime.Composable

@@ -55,7 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ephyra.app.R
 import ephyra.domain.manga.model.Manga
-import ephyra.feature.manga.presentation.components.MangaCover
+import ephyra.presentation.core.components.MangaCover
 import ephyra.feature.migration.list.models.MigratingManga
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions

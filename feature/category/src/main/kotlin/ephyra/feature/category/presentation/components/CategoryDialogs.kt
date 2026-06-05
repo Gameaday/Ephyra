@@ -27,8 +27,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import ephyra.core.common.preference.CheckboxState
 import ephyra.domain.category.model.Category
-import ephyra.feature.category.presentation.visualName
 import ephyra.presentation.core.components.material.padding
+import ephyra.presentation.core.components.visualName
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.asToggleableState
 import kotlinx.collections.immutable.ImmutableList
@@ -189,115 +189,6 @@ fun CategoryDeleteDialog(
         },
         text = {
             Text(text = stringResource(ephyra.app.core.common.R.string.delete_category_confirmation, category))
-        },
-    )
-}
-
-@Composable
-fun ChangeCategoryDialog(
-    initialSelection: ImmutableList<CheckboxState<Category>>,
-    onDismissRequest: () -> Unit,
-    onEditCategories: () -> Unit,
-    onConfirm: (List<Long>, List<Long>) -> Unit,
-) {
-    if (initialSelection.isEmpty()) {
-        AlertDialog(
-            onDismissRequest = onDismissRequest,
-            confirmButton = {
-                ephyra.presentation.core.components.material.TextButton(
-                    onClick = {
-                        onDismissRequest()
-                        onEditCategories()
-                    },
-                ) {
-                    Text(text = stringResource(ephyra.app.core.common.R.string.action_edit_categories))
-                }
-            },
-            title = {
-                Text(text = stringResource(ephyra.app.core.common.R.string.action_move_category))
-            },
-            text = {
-                Text(text = stringResource(ephyra.app.core.common.R.string.information_empty_category_dialog))
-            },
-        )
-        return
-    }
-    var selection by remember { mutableStateOf(initialSelection) }
-    AlertDialog(
-        onDismissRequest = onDismissRequest,
-        confirmButton = {
-            Row {
-                ephyra.presentation.core.components.material.TextButton(onClick = {
-                    onDismissRequest()
-                    onEditCategories()
-                }) {
-                    Text(text = stringResource(ephyra.app.core.common.R.string.action_edit))
-                }
-                Spacer(modifier = Modifier.weight(1f))
-                ephyra.presentation.core.components.material.TextButton(onClick = onDismissRequest) {
-                    Text(text = stringResource(ephyra.app.core.common.R.string.action_cancel))
-                }
-                ephyra.presentation.core.components.material.TextButton(
-                    onClick = {
-                        onDismissRequest()
-                        onConfirm(
-                            selection
-                                .filter { it is CheckboxState.State.Checked || it is CheckboxState.TriState.Include }
-                                .map { it.value.id },
-                            selection
-                                .filter { it is CheckboxState.State.None || it is CheckboxState.TriState.None }
-                                .map { it.value.id },
-                        )
-                    },
-                ) {
-                    Text(text = stringResource(ephyra.app.core.common.R.string.action_ok))
-                }
-            }
-        },
-        title = {
-            Text(text = stringResource(ephyra.app.core.common.R.string.action_move_category))
-        },
-        text = {
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-            ) {
-                selection.forEach { checkbox ->
-                    val onChange: (CheckboxState<Category>) -> Unit = {
-                        val index = selection.indexOf(it)
-                        if (index != -1) {
-                            val mutableList = selection.toMutableList()
-                            mutableList[index] = it.next()
-                            selection = mutableList.toList().toImmutableList()
-                        }
-                    }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onChange(checkbox) },
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        when (checkbox) {
-                            is CheckboxState.TriState -> {
-                                TriStateCheckbox(
-                                    state = checkbox.asToggleableState(),
-                                    onClick = { onChange(checkbox) },
-                                )
-                            }
-                            is CheckboxState.State -> {
-                                Checkbox(
-                                    checked = checkbox.isChecked,
-                                    onCheckedChange = { onChange(checkbox) },
-                                )
-                            }
-                        }
-
-                        Text(
-                            text = checkbox.value.visualName,
-                            modifier = Modifier.padding(horizontal = MaterialTheme.padding.medium),
-                        )
-                    }
-                }
-            }
         },
     )
 }

@@ -42,9 +42,9 @@ import ephyra.feature.browse.presentation.MissingSourceScreen
 import ephyra.feature.browse.presentation.components.BrowseSourceToolbar
 import ephyra.feature.browse.presentation.components.RemoveMangaDialog
 import ephyra.feature.browse.source.browse.BrowseSourceViewModel.Listing
-import ephyra.feature.category.presentation.components.ChangeCategoryDialog
 import ephyra.feature.manga.presentation.DuplicateMangaDialog
 import ephyra.feature.migration.dialog.MigrateMangaDialog
+import ephyra.presentation.core.components.ChangeCategoryDialog
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource

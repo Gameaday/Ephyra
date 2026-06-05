@@ -11,8 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import ephyra.domain.category.model.Category
-import ephyra.feature.category.visualName
 import ephyra.presentation.core.components.material.TabText
+import ephyra.presentation.core.components.visualName
 
 @Composable
 internal fun LibraryTabs(

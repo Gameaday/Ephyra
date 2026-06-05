@@ -30,8 +30,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import ephyra.feature.manga.presentation.components.MangaCover
 import ephyra.presentation.core.components.BadgeGroup
+import ephyra.presentation.core.components.MangaCover
 import ephyra.presentation.core.theme.LocalBrandedTheme
 import ephyra.presentation.core.theme.ShapeTokens
 import ephyra.domain.manga.model.MangaCover as MangaCoverModel

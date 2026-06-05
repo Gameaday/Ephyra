@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import ephyra.app.ui.main.MainActivity
 import ephyra.core.common.Constants
+import ephyra.feature.reader.ReaderActivity
 import ephyra.feature.webview.WebViewActivity
 import ephyra.presentation.core.util.AppNavigator
 
@@ -25,6 +26,13 @@ class NavigatorImpl : AppNavigator {
 
     override fun openWebView(context: Context, url: String, sourceId: Long, title: String) {
         val intent = WebViewActivity.newIntent(context, url, sourceId, title).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(intent)
+    }
+
+    override fun openReader(context: Context, mangaId: Long, chapterId: Long) {
+        val intent = ReaderActivity.newIntent(context, mangaId, chapterId).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         context.startActivity(intent)

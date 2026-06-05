@@ -64,6 +64,7 @@ import okio.Buffer
 import java.io.File
 import java.io.IOException
 import java.util.Locale
+import javax.inject.Provider
 import kotlin.math.abs
 import kotlin.math.min
 
@@ -76,7 +77,7 @@ class Downloader(
     private val context: Context,
     private val provider: DownloadProvider,
     private val cache: DownloadCache,
-    private val sourceManager: SourceManager,
+    private val sourceManagerProvider: Provider<SourceManager>,
     private val chapterCache: ChapterCache,
     private val downloadPreferences: DownloadPreferences,
     private val readerPreferences: ReaderPreferences,
@@ -88,6 +89,8 @@ class Downloader(
     private val store: DownloadStore,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) {
+
+    private val sourceManager get() = sourceManagerProvider.get()
 
     /**
      * Queue where active downloads are kept.
