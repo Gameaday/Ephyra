@@ -31,34 +31,7 @@ class DynamicScraperUpdater @Inject constructor(
     private val metadataKeyPrefix = "scraper_meta_"
 
     init {
-        try {
-            val assetManager = context.assets
-            val filename = "mangadex_scraper.js"
-            val targetFile = File(sandboxDir, filename)
-            if (!targetFile.exists()) {
-                assetManager.open("scrapers/$filename").use { input ->
-                    targetFile.outputStream().use { output ->
-                        input.copyTo(output)
-                    }
-                }
-                val content = targetFile.readText()
-                saveMetadata(
-                    ScraperMetadata(
-                        filename = filename,
-                        sourceUrl = "https://github.com/Gameaday/Ephyra/blob/" +
-                            "main/app/src/main/assets/scrapers/mangadex_scraper.js",
-                        lastUpdated = System.currentTimeMillis(),
-                        lastChecked = System.currentTimeMillis(),
-                        hasUpdates = false,
-                        contentHash = computeHash(content),
-                        version = extractVersion(content),
-                        description = extractDescription(content),
-                    ),
-                )
-            }
-        } catch (e: Exception) {
-            // Ignore asset extraction failures (e.g. during headless unit tests)
-        }
+        // Empty init block: Ephyra starts with a clean sandbox without pre-bundled assets.
     }
 
     /**

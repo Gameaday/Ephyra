@@ -15,9 +15,14 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows
 import org.robolectric.annotation.Config
+import ephyra.app.startup.ShadowAnimatedVectorResources
 
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [34], application = App::class)
+@Config(
+    sdk = [34],
+    application = App::class,
+    shadows = [ShadowAnimatedVectorResources::class],
+)
 class DeepLinkActivityTest {
 
     @Test

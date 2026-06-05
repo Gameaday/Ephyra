@@ -6,12 +6,21 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.util.Result
 import ephyra.core.common.util.lang.launchIO
+import ephyra.data.sourcing.LegacyExtensionTranspiler
+import ephyra.domain.content.source.ScraperScriptUpdater
 import ephyra.domain.content.source.SourceType
 import ephyra.domain.content.source.interactor.AddCustomSource
 import ephyra.domain.content.source.interactor.GetAvailableSources
 import ephyra.domain.content.source.interactor.RemoveCustomSource
 import ephyra.domain.content.source.interactor.UnifiedSource
 import ephyra.domain.content.source.interactor.UpdateCustomSource
+import ephyra.domain.extension.interactor.GetExtensionsByType
+import ephyra.domain.extension.model.Extension
+import ephyra.domain.extensionrepo.interactor.CreateExtensionRepo
+import ephyra.domain.extensionrepo.interactor.DeleteExtensionRepo
+import ephyra.domain.extensionrepo.interactor.GetExtensionRepo
+import ephyra.domain.extensionrepo.interactor.UpdateExtensionRepo
+import ephyra.domain.extensionrepo.model.ExtensionRepo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,6 +36,13 @@ class ExtensionsViewModel @Inject constructor(
     private val addCustomSource: AddCustomSource,
     private val updateCustomSource: UpdateCustomSource,
     private val removeCustomSource: RemoveCustomSource,
+    private val getExtensionRepo: GetExtensionRepo,
+    private val createExtensionRepo: CreateExtensionRepo,
+    private val deleteExtensionRepo: DeleteExtensionRepo,
+    private val updateExtensionRepo: UpdateExtensionRepo,
+    private val getExtensionsByType: GetExtensionsByType,
+    private val legacyExtensionTranspiler: LegacyExtensionTranspiler,
+    private val scraperUpdater: ScraperScriptUpdater,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(State())
@@ -34,6 +50,76 @@ class ExtensionsViewModel @Inject constructor(
 
     init {
         loadSources()
+        loadRepositories()
+        loadAvailableExtensions()
+    }
+
+    private fun loadRepositories() {
+        viewModelScope.launch {
+            getExtensionRepo.subscribeAll().collectLatest { repos ->
+                _state.update { it.copy(repos = repos) }
+            }
+        }
+    }
+
+    private fun loadAvailableExtensions() {
+        viewModelScope.launch {
+            getExtensionsByType.subscribe().collectLatest { extensions ->
+                _state.update { it.copy(availableExtensions = extensions.available) }
+            }
+        }
+    }
+
+    fun addRepository(url: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+            when (createExtensionRepo.await(url)) {
+                CreateExtensionRepo.Result.Success -> {
+                    updateExtensionRepo.awaitAll()
+                    _state.update { it.copy(isLoading = false) }
+                }
+                else -> {
+                    _state.update { it.copy(isLoading = false, error = "Failed to add repository") }
+                }
+            }
+        }
+    }
+
+    fun deleteRepository(url: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+            deleteExtensionRepo.await(url)
+            _state.update { it.copy(isLoading = false) }
+        }
+    }
+
+    fun installExtension(extension: Extension.Available, selectedUrls: Set<String>? = null) {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+            val success = legacyExtensionTranspiler.transpileAndInstall(extension, selectedUrls)
+            _state.update { it.copy(isLoading = false) }
+            if (success) {
+                loadSources()
+            } else {
+                _state.update { it.copy(error = "Failed to transpile and install extension") }
+            }
+        }
+    }
+
+    fun uninstallExtension(extension: Extension.Available) {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+            val pkgSuffix = extension.pkgName.substringAfterLast(".")
+            val filename = "${pkgSuffix}_scraper.js"
+
+            scraperUpdater.removeScraper(filename)
+            extension.sources.forEach { source ->
+                removeCustomSource.removeSource(source.baseUrl)
+            }
+
+            _state.update { it.copy(isLoading = false) }
+            loadSources()
+        }
     }
 
     fun loadSources() {
@@ -167,5 +253,7 @@ class ExtensionsViewModel @Inject constructor(
         val sources: List<UnifiedSource> = emptyList(),
         val searchQuery: String? = null,
         val error: String? = null,
+        val repos: List<ExtensionRepo> = emptyList(),
+        val availableExtensions: List<Extension.Available> = emptyList(),
     )
 }

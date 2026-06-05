@@ -40,6 +40,10 @@ fun extensionsTab(
                 onForceRediscover = extensionsViewModel::forceRediscover,
                 onRemoveSource = extensionsViewModel::removeSource,
                 onRefresh = extensionsViewModel::loadSources,
+                onAddRepository = extensionsViewModel::addRepository,
+                onDeleteRepository = extensionsViewModel::deleteRepository,
+                onInstallExtension = extensionsViewModel::installExtension,
+                onUninstallExtension = extensionsViewModel::uninstallExtension,
                 navController = navController,
             )
         },
