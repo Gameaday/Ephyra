@@ -77,26 +77,24 @@ all in one place with a polished, configurable reading experience.
 - Color filters, grayscale, and inverted color modes for comfortable reading.
 - Create backups locally or to your preferred cloud service.
 
-## 🔌 Content Sourcing Architecture (Dynamic Scrapers & Heuristics)
+## 🔌 Content Sourcing Architecture (Dynamic Scrapers, Heuristics, & On-Device Transpilation)
 
-Ephyra implements a highly modular and secure dynamic content sourcing system. This system allows the app to fetch and display content from arbitrary websites and APIs without requiring system-wide APK sideloading or external app installs (like Mihon or Tachiyomi), while remaining fully compliant with Play Store dynamic code loading policies.
+Ephyra implements a highly modular, secure, and lightweight dynamic content sourcing system. The application starts with a completely clean, empty sandbox (no pre-bundled scrapers). Users can add remote extension repositories (such as [Keiyoushi](https://github.com/keiyoushi/extensions-source)) and install extensions dynamically.
 
 The retrieval pipeline consists of three core components:
 
-1. **Layout Heuristics Engine (`AdaptiveHeuristicEngine`)**:
-   - **DOM Structure Heuristics**: Analyzes web pages on the fly using [Jsoup](https://jsoup.org/) to auto-discover selectors for search grids, item details, titles, covers, chapter lists, and reader images.
-   - **Intelligent Fallbacks**: Employs heuristic rules matching common classes/IDs (e.g., `.wp-manga-chapter`, `#reader img`, `a[href*=chapter]`) and falls back to text patterns (e.g., matching "chapter" or "ch.") if exact selectors are not declared.
-   - **Source Profiles Cache**: Caches the discovered selector rules into a serialized `SourceProfile` template, skipping discovery logic on subsequent requests for optimal performance.
+1. **On-Device Legacy Extension Transpiler**:
+   - **Raw Kotlin Compilation**: Ephyra downloads the raw Kotlin source code of extensions directly from remote repositories.
+   - **QuickJS Transpilation**: An on-device sandboxed compiler (`transpiler.js` running in QuickJS) translates the Kotlin code into secure, sandboxed JavaScript scraper files on the fly.
+   - **Auto-Updates**: When remote repositories are refreshed, Ephyra automatically checks version codes, fetches updated Kotlin sources, re-transpiles, and hot-updates the on-device JS scraper scripts in the background.
 
 2. **Sandboxed JavaScript Engine (`ScriptableContentSourceEngine`)**:
-   - **Play Store Compliant QuickJS**: Leverages a secure, fully sandboxed QuickJS runtime to execute user-provided `.js` scraper files.
-   - **Dynamic Script Scrapers**: Allows users to dynamically import scraper scripts or download/auto-update them directly from Git repositories.
-   - **Url Mapping**: Links specific base URLs to custom scraper scripts (e.g., `manga_scraper.js`), offering exact control over fetching, pagination, and API payloads without recompiling.
+   - **Play Store Compliant QuickJS**: Leverages a secure, fully sandboxed QuickJS runtime to execute user-provided or transpiled `.js` scraper files.
+   - **Url Mapping**: Links specific base URLs of content providers to their respective transpiled scraper scripts (e.g., `mangadex_scraper.js`), offering exact control over fetching, pagination, and API payloads in a secure sandbox.
 
-3. **Dynamic Source Registry Bridge (`DynamicHttpSource`)**:
-   - **Legacy Compatibility**: Bridges new heuristic-based profiles and scriptable QuickJS engines into Ephyra's legacy `HttpSource` and `CatalogueSource` models.
-   - **Seamless Integration**: This bridge allows all dynamic scrapers and layout heuristics to immediately and transparently support global search, updates, download scheduling, library sync, and reading modes without changes to UI or ViewModels.
-   - **Legacy JVM Extensions**: Retains backward compatibility for legacy APK/DEX-based extensions. They are loaded dynamically using a custom in-process ClassLoader, avoiding OS-level package installation alerts and multiple sandboxes.
+3. **Layout Heuristics Engine (`AdaptiveHeuristicEngine`)**:
+   - **DOM Structure Heuristics**: Analyzes web pages on the fly using [Jsoup](https://jsoup.org/) to auto-discover selectors for search grids, item details, titles, covers, chapter lists, and reader images if a custom scraper is not mapped.
+   - **Intelligent Fallbacks & Caching**: Employs heuristic rules matching common classes/IDs and caches the discovered selector rules into a serialized `SourceProfile` template for optimal performance on subsequent requests.
 
 ## Contributing
 

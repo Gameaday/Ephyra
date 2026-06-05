@@ -7,6 +7,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ephyra.app.App
+import ephyra.app.startup.ShadowAnimatedVectorResources
 import ephyra.app.ui.main.MainActivity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -15,7 +16,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows
 import org.robolectric.annotation.Config
-import ephyra.app.startup.ShadowAnimatedVectorResources
 
 @RunWith(AndroidJUnit4::class)
 @Config(

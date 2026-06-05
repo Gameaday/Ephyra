@@ -4,8 +4,10 @@ import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.common.util.Result
 import ephyra.core.common.util.lang.launchIO
+import ephyra.core.common.util.system.logcat
 import ephyra.data.sourcing.LegacyExtensionTranspiler
 import ephyra.domain.content.source.ScraperScriptUpdater
 import ephyra.domain.content.source.SourceType
@@ -27,6 +29,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import logcat.LogPriority
 import javax.inject.Inject
 
 @HiltViewModel
@@ -43,6 +46,7 @@ class ExtensionsViewModel @Inject constructor(
     private val getExtensionsByType: GetExtensionsByType,
     private val legacyExtensionTranspiler: LegacyExtensionTranspiler,
     private val scraperUpdater: ScraperScriptUpdater,
+    private val preferenceStore: PreferenceStore,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(State())
@@ -66,6 +70,41 @@ class ExtensionsViewModel @Inject constructor(
         viewModelScope.launch {
             getExtensionsByType.subscribe().collectLatest { extensions ->
                 _state.update { it.copy(availableExtensions = extensions.available) }
+                checkForTranspiledExtensionUpdates(extensions.available)
+            }
+        }
+    }
+
+    private fun checkForTranspiledExtensionUpdates(available: List<Extension.Available>) {
+        viewModelScope.launch {
+            available.forEach { ext ->
+                val installedVersionCode = preferenceStore.getLong(
+                    "transpiled_extension_versioncode_${ext.pkgName}",
+                    0L,
+                ).get()
+                if (installedVersionCode > 0L && ext.versionCode > installedVersionCode) {
+                    val pkgSuffix = ext.pkgName.substringAfterLast(".")
+                    val filename = "${pkgSuffix}_scraper.js"
+
+                    // Find currently mapped custom source URLs by checking PreferenceStore mapping directly
+                    val previouslySelectedUrls = ext.sources.filter { source ->
+                        val normalized = source.baseUrl
+                            .removePrefix("https://")
+                            .removePrefix("http://")
+                            .removeSuffix("/")
+                            .trim()
+                        val mappingKey = "baseUrl_scraper_mapping_$normalized"
+                        preferenceStore.getString(mappingKey, "").get() == filename
+                    }.map { it.baseUrl }.toSet()
+
+                    // Automatically update/re-transpile in the background!
+                    logcat(LogPriority.INFO) { "Updating legacy extension ${ext.name} to v${ext.versionName}" }
+                    val success = legacyExtensionTranspiler.transpileAndInstall(ext, previouslySelectedUrls)
+                    if (success) {
+                        _state.update { it.copy(error = "Legacy source ${ext.name} updated to v${ext.versionName}") }
+                        loadSources()
+                    }
+                }
             }
         }
     }
@@ -116,6 +155,9 @@ class ExtensionsViewModel @Inject constructor(
             extension.sources.forEach { source ->
                 removeCustomSource.removeSource(source.baseUrl)
             }
+
+            // Clean up version tracking
+            legacyExtensionTranspiler.clearExtensionMetadata(extension.pkgName)
 
             _state.update { it.copy(isLoading = false) }
             loadSources()

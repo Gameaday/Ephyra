@@ -1,6 +1,7 @@
 package ephyra.data.sourcing
 
 import android.app.Application
+import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.content.source.interactor.AddCustomSource
@@ -23,6 +24,7 @@ class LegacyExtensionTranspiler @Inject constructor(
     private val scraperUpdater: DynamicScraperUpdater,
     private val addCustomSource: AddCustomSource,
     private val removeCustomSource: RemoveCustomSource,
+    private val preferenceStore: PreferenceStore,
 ) {
     suspend fun transpileAndInstall(
         extension: Extension.Available,
@@ -109,11 +111,22 @@ class LegacyExtensionTranspiler @Inject constructor(
                     }
                 }
             }
+
+            // Save version and filename mapping for pseudo plugin update checking
+            preferenceStore.getLong("transpiled_extension_versioncode_$pkgName", 0L).set(extension.versionCode)
+            preferenceStore.getString("transpiled_extension_versionname_$pkgName", "").set(extension.versionName)
+            preferenceStore.getString("transpiled_extension_filename_$pkgName", "").set(filename)
             true
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e) { "Failed to save transpiled scraper for $name" }
             false
         }
+    }
+
+    fun clearExtensionMetadata(pkgName: String) {
+        preferenceStore.getLong("transpiled_extension_versioncode_$pkgName", 0L).delete()
+        preferenceStore.getString("transpiled_extension_versionname_$pkgName", "").delete()
+        preferenceStore.getString("transpiled_extension_filename_$pkgName", "").delete()
     }
 
     private fun escapeJsString(value: String): String {
