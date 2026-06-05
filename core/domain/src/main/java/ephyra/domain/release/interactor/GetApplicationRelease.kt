@@ -58,7 +58,7 @@ class GetApplicationRelease(
             isPreview -> {
                 // Preview builds: based on releases in "Gameaday/Ephyra-preview" repo
                 // tagged as something like "r1234"
-                newVersion.toInt() > commitCount
+                newVersion.toIntOrNull()?.let { it > commitCount } ?: false
             }
 
             isNightly -> {
@@ -72,15 +72,16 @@ class GetApplicationRelease(
                 // tagged as something like "v0.1.2"
                 val oldVersion = versionName.replace(NON_DIGIT_REGEX, "")
 
-                val newSemVer = newVersion.split(".").map { it.toInt() }
-                val oldSemVer = oldVersion.split(".").map { it.toInt() }
+                val newSemVer = newVersion.split(".").map { it.toIntOrNull() ?: 0 }
+                val oldSemVer = oldVersion.split(".").map { it.toIntOrNull() ?: 0 }
 
-                oldSemVer.mapIndexed { index, i ->
-                    if (newSemVer[index] > i) {
-                        return true
-                    }
+                val limit = maxOf(newSemVer.size, oldSemVer.size)
+                for (j in 0 until limit) {
+                    val newVal = newSemVer.getOrElse(j) { 0 }
+                    val oldVal = oldSemVer.getOrElse(j) { 0 }
+                    if (newVal > oldVal) return true
+                    if (newVal < oldVal) return false
                 }
-
                 false
             }
         }

@@ -19,6 +19,19 @@ class BrowseFeatureApi @Inject constructor() : FeatureApi {
             BrowseTabScreen(navController = navController)
         }
 
+        // Migrate Manga Screen
+        navGraphBuilder.composable(
+            route = ScreenRoutes.MigrateManga.route,
+            arguments = listOf(
+                androidx.navigation.navArgument("sourceId") {
+                    type = androidx.navigation.NavType.LongType
+                },
+            ),
+        ) { backStackEntry ->
+            val sourceId = backStackEntry.arguments?.getLong("sourceId") ?: return@composable
+            ephyra.feature.browse.migration.manga.MigrateMangaScreen(sourceId, navController)
+        }
+
         // Migrate Search Screen
         navGraphBuilder.composable(ScreenRoutes.MigrateSearch.route) { backStackEntry ->
             val mangaId = backStackEntry.arguments?.getString("mangaId")?.toLongOrNull() ?: return@composable

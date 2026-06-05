@@ -113,6 +113,32 @@ class GetApplicationReleaseTest {
     }
 
     @Test
+    fun `When version contains non-digits in beta expects correct comparison`() = runTest {
+        coEvery { preference.get() } returns 0
+        every { preference.set(any()) }.answers { }
+
+        val release = Release(
+            "v0.20.0",
+            "info",
+            "http://example.com/release_link",
+            "http://example.com/release_link.apk",
+        )
+
+        coEvery { releaseService.latest(any()) } returns release
+
+        val result = getApplicationRelease.await(
+            GetApplicationRelease.Arguments(
+                isPreview = false,
+                commitCount = 0,
+                versionName = "0.20.0-beta1",
+                repository = "test",
+            ),
+        )
+
+        result shouldBe GetApplicationRelease.Result.NoNewUpdate
+    }
+
+    @Test
     fun `When nightly has update with different SHA expect new update`() = runTest {
         coEvery { preference.get() } returns 0
         every { preference.set(any()) }.answers { }
