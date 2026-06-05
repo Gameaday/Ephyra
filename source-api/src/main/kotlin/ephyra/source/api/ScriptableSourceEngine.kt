@@ -20,12 +20,21 @@ class ScriptableSourceEngine @Inject constructor(
         functionName: String,
         payload: String,
     ): String {
+        val escapedPayload = escapeJsString(payload)
         val wrappedScript = """
             $scriptRule
 
             // Execute the entry function
-            $functionName('$payload');
+            $functionName('$escapedPayload');
         """.trimIndent()
         return jsEngine.evaluate(wrappedScript)
+    }
+
+    private fun escapeJsString(value: String): String {
+        return value
+            .replace("\\", "\\\\")
+            .replace("'", "\\'")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
     }
 }

@@ -12,8 +12,6 @@ import androidx.navigation.NavController
 import ephyra.core.common.i18n.stringResource
 import ephyra.domain.source.service.SourcePreferences
 import ephyra.feature.settings.Preference
-import ephyra.feature.settings.screen.browse.ExtensionReposScreen
-import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
@@ -33,7 +31,6 @@ object SettingsBrowseScreen : SearchableSettings {
         val navController = LocalNavController.current
 
         val viewModel = hiltViewModel<SettingsBrowseViewModel>()
-        val reposCount by viewModel.getExtensionRepoCount().collectAsState(0)
 
         return listOf(
             Preference.PreferenceGroup(
@@ -42,17 +39,6 @@ object SettingsBrowseScreen : SearchableSettings {
                     Preference.PreferenceItem.SwitchPreference(
                         preference = viewModel.sourcePreferences.hideInLibraryItems(),
                         title = stringResource(ephyra.app.core.common.R.string.pref_hide_in_library_items),
-                    ),
-                    Preference.PreferenceItem.TextPreference(
-                        title = stringResource(ephyra.app.core.common.R.string.label_extension_repos),
-                        subtitle = pluralStringResource(
-                            ephyra.app.core.common.R.plurals.num_repos,
-                            reposCount,
-                            reposCount,
-                        ),
-                        onClick = {
-                            navController.navigate(ScreenRoutes.ExtensionRepos.createRoute(null))
-                        },
                     ),
                     Preference.PreferenceItem.TextPreference(
                         title = stringResource(ephyra.app.core.common.R.string.label_source_management),

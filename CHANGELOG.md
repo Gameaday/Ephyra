@@ -7,6 +7,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### 🔌 Dynamic Sourcing & Legacy Extension Purge
+- **UI Scraper Management**: Reworked the "Extensions" tab in the Browse screen to act as a **Source Management** tab. It lists JS scrapers, heuristic profiles, and linked custom sources, supporting download from GitHub, script import, heuristic configuration, and custom source linking. Removed all legacy APK installer, Shizuku, and untrusted extension elements.
+- **Legacy Extension JS Converter**: Built a CLI tool `scripts/convert_legacy_extension.js` that compiles/transpiles legacy Tachiyomi/Mihon Kotlin extensions into sandboxed JS scrapers. Bundles a custom JavaScript HTML/DOM parser `MiniDOM` so that standard Jsoup selectors run natively inside the sandboxed QuickJS execution context.
+- **Update Check Loop Resolved**: Updated `AppUpdateChecker.kt` to dynamically resolve the app version from `PackageManager` instead of using the hardcoded `:core:data` BuildConfig value.
+- **JS Payload Security**: Added string escaping for payloads in `ScriptableSourceEngine.kt` to prevent command injection and parser crashes.
+
 ### 🔌 Complete Dynamic Sourcing & Scraping System
 - **Layout Heuristics Engine**: Implemented DOM structure auto-discovery in `AdaptiveHeuristicEngine.kt` using Jsoup. Automatically resolves and fallbacks to standard selectors for titles, covers, chapter links (e.g., `.wp-manga-chapter`, `a[href*=chapter]`), and reader pages.
 - **Sandboxed QuickJS Scripting**: Leveraged a sandboxed QuickJS execution runtime in `ScriptableContentSourceEngine.kt` to run dynamic JS scraper scripts securely and compliant with Play Store dynamic code guidelines.

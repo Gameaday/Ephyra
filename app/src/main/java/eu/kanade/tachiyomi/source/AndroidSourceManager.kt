@@ -68,7 +68,38 @@ internal class AndroidSourceManager(
                 } else {
                     domains
                 }
-                actualDomains.mapNotNull { profileCache.get(it) }
+                actualDomains.map { domain ->
+                    profileCache.get(domain) ?: run {
+                        val isMangaDex = domain.contains("mangadex.org")
+                        val displayName = if (isMangaDex) {
+                            "MangaDex"
+                        } else {
+                            domain.substringAfter("://").removeSuffix("/")
+                        }
+                        val sourceType = if (isMangaDex) {
+                            ephyra.domain.content.source.SourceType.JS_SCRAPER
+                        } else {
+                            ephyra.domain.content.source.SourceType.HEURISTIC
+                        }
+                        val scraperFilename = if (isMangaDex) {
+                            "mangadex_scraper.js"
+                        } else {
+                            null
+                        }
+                        val profile = ephyra.domain.content.source.SourceProfile(
+                            baseUrl = domain,
+                            contentType = ephyra.domain.content.model.ContentType.MANGA,
+                            displayName = displayName,
+                            verified = true,
+                            enabled = true,
+                            sourceType = sourceType,
+                            scraperFilename = scraperFilename,
+                            lastUpdated = System.currentTimeMillis(),
+                        )
+                        profileCache.save(profile)
+                        profile
+                    }
+                }
             }
 
         scope.launch {

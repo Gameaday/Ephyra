@@ -539,8 +539,10 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideJavaScriptEngine(@ApplicationContext context: Context) =
-        JavaScriptEngine(context)
+    fun provideJavaScriptEngine(
+        @ApplicationContext context: Context,
+        networkHelper: NetworkHelper,
+    ) = JavaScriptEngine(context, networkHelper)
 
     @Provides
     @Singleton
@@ -1634,11 +1636,15 @@ object AppModule {
         return object : ephyra.presentation.core.ui.AppInfo {
             override val isDebug: Boolean = ephyra.app.BuildConfig.DEBUG
             override val buildType: String = ephyra.app.BuildConfig.BUILD_TYPE
-            override val commitSha: String = "unknown"
-            override val commitCount: String = "0"
+            override val commitSha: String = ephyra.app.BuildConfig.COMMIT_SHA
+            override val commitCount: String = ephyra.app.BuildConfig.COMMIT_COUNT
             override val versionName: String = ephyra.app.BuildConfig.VERSION_NAME
-            override val buildTime: String = "unknown"
-            override val githubRepo: String = "Gameaday/Ephyra"
+            override val buildTime: String = ephyra.app.BuildConfig.BUILD_TIME
+            override val githubRepo: String = if (ephyra.app.BuildConfig.BUILD_TYPE == "preview") {
+                "Gameaday/Ephyra-preview"
+            } else {
+                "Gameaday/Ephyra"
+            }
             override val telemetryIncluded: Boolean = ephyra.app.BuildConfig.TELEMETRY_INCLUDED
             override val updaterEnabled: Boolean = ephyra.app.BuildConfig.UPDATER_ENABLED
         }

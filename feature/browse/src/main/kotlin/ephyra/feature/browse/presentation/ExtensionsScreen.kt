@@ -1,498 +1,730 @@
 package ephyra.feature.browse.presentation
 
-import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.GetApp
-import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material.icons.outlined.Autorenew
+import androidx.compose.material.icons.outlined.CloudDownload
+import androidx.compose.material.icons.outlined.Code
+import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.VerifiedUser
+import androidx.compose.material.icons.outlined.Security
+import androidx.compose.material.icons.outlined.Storage
+import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ProvideTextStyle
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import ephyra.core.common.util.system.LocaleHelper
-import ephyra.domain.extension.model.Extension
-import ephyra.domain.extension.model.InstallStep
-import ephyra.feature.browse.extension.ExtensionUiModel
+import ephyra.domain.content.source.SourceType
+import ephyra.domain.content.source.interactor.UnifiedSource
 import ephyra.feature.browse.extension.ExtensionsViewModel
-import ephyra.feature.browse.presentation.components.BaseBrowseItem
-import ephyra.feature.manga.presentation.components.DotSeparatorNoSpaceText
-import ephyra.presentation.core.components.ExtensionIcon
-import ephyra.presentation.core.components.FastScrollLazyColumn
-import ephyra.presentation.core.components.WarningBanner
-import ephyra.presentation.core.components.material.PullRefresh
-import ephyra.presentation.core.components.material.padding
-import ephyra.presentation.core.components.material.topSmallPaddingValues
-import ephyra.presentation.core.i18n.stringResource
-import ephyra.presentation.core.screens.EmptyScreen
-import ephyra.presentation.core.screens.EmptyScreenAction
-import ephyra.presentation.core.screens.LoadingScreen
-import ephyra.presentation.core.theme.header
 import ephyra.presentation.core.ui.navigation.LocalNavController
-import ephyra.presentation.core.ui.navigation.ScreenRoutes
-import ephyra.presentation.core.util.animateItemFastScroll
-import ephyra.presentation.core.util.plus
-import ephyra.presentation.core.util.rememberRequestPackageInstallsPermissionState
-import ephyra.presentation.core.util.secondaryItemAlpha
-import ephyra.presentation.core.util.system.launchRequestPackageInstallsPermission
-import kotlinx.collections.immutable.persistentListOf
 
 @Composable
 fun ExtensionScreen(
     state: ExtensionsViewModel.State,
     contentPadding: PaddingValues,
     searchQuery: String?,
-    onLongClickItem: (Extension) -> Unit,
-    onClickItemCancel: (Extension) -> Unit,
-    onOpenWebView: (Extension.Available) -> Unit,
-    onInstallExtension: (Extension.Available) -> Unit,
-    onUninstallExtension: (Extension) -> Unit,
-    onUpdateExtension: (Extension.Installed) -> Unit,
-    onTrustExtension: (Extension.Untrusted) -> Unit,
-    onOpenExtension: (Extension.Installed) -> Unit,
-    onClickUpdateAll: () -> Unit,
+    onAddJsScraper: (String, String) -> Unit,
+    onImportJsScraper: (String, String) -> Unit,
+    onAddHeuristic: (String, String?) -> Unit,
+    onLinkScraper: (String, String) -> Unit,
+    onCheckUpdates: (String) -> Unit,
+    onForceRediscover: (String) -> Unit,
+    onRemoveSource: (String) -> Unit,
     onRefresh: () -> Unit,
     navController: NavController = LocalNavController.current,
 ) {
-    PullRefresh(
-        refreshing = state.isRefreshing,
-        onRefresh = onRefresh,
-        enabled = !state.isLoading,
-    ) {
-        when {
-            state.isLoading -> LoadingScreen(Modifier.padding(contentPadding))
-            state.isEmpty -> {
-                val msg = if (!searchQuery.isNullOrEmpty()) {
-                    ephyra.app.core.common.R.string.no_results_found
-                } else {
-                    ephyra.app.core.common.R.string.empty_screen
-                }
-                EmptyScreen(
-                    stringRes = msg,
-                    modifier = Modifier.padding(contentPadding),
-                    actions = persistentListOf(
-                        EmptyScreenAction(
-                            stringRes = ephyra.app.core.common.R.string.label_extension_repos,
-                            icon = Icons.Outlined.Settings,
-                            onClick = { navController.navigate(ScreenRoutes.ExtensionRepos.createRoute(null)) },
-                        ),
-                    ),
-                )
-            }
+    var snackbarMessage by remember { mutableStateOf<String?>(null) }
+    var showAddJsScraperDialog by remember { mutableStateOf(false) }
+    var showImportJsScraperDialog by remember { mutableStateOf(false) }
+    var showAddHeuristicDialog by remember { mutableStateOf(false) }
+    var showLinkScraperDialog by remember { mutableStateOf(false) }
+    var showRemoveConfirmDialog by remember { mutableStateOf(false) }
+    var selectedSourceToRemove by remember { mutableStateOf<UnifiedSource?>(null) }
+    var selectedSourceForLink by remember { mutableStateOf<UnifiedSource?>(null) }
 
-            else -> {
-                ExtensionContent(
-                    state = state,
-                    contentPadding = contentPadding,
-                    onLongClickItem = onLongClickItem,
-                    onClickItemCancel = onClickItemCancel,
-                    onOpenWebView = onOpenWebView,
-                    onInstallExtension = onInstallExtension,
-                    onUninstallExtension = onUninstallExtension,
-                    onUpdateExtension = onUpdateExtension,
-                    onTrustExtension = onTrustExtension,
-                    onOpenExtension = onOpenExtension,
-                    onClickUpdateAll = onClickUpdateAll,
-                )
-            }
+    var githubUrl by remember { mutableStateOf("") }
+    var scraperFilename by remember { mutableStateOf("") }
+    var importFilename by remember { mutableStateOf("") }
+    var importScriptContent by remember { mutableStateOf("") }
+    var heuristicUrl by remember { mutableStateOf("") }
+    var heuristicName by remember { mutableStateOf("") }
+    var linkBaseUrl by remember { mutableStateOf("") }
+    var linkScraperName by remember { mutableStateOf("") }
+
+    LaunchedEffect(state.error) {
+        if (state.error != null) {
+            snackbarMessage = state.error
         }
     }
-}
 
-@Composable
-private fun ExtensionContent(
-    state: ExtensionsViewModel.State,
-    contentPadding: PaddingValues,
-    onLongClickItem: (Extension) -> Unit,
-    onClickItemCancel: (Extension) -> Unit,
-    onOpenWebView: (Extension.Available) -> Unit,
-    onInstallExtension: (Extension.Available) -> Unit,
-    onUninstallExtension: (Extension) -> Unit,
-    onUpdateExtension: (Extension.Installed) -> Unit,
-    onTrustExtension: (Extension.Untrusted) -> Unit,
-    onOpenExtension: (Extension.Installed) -> Unit,
-    onClickUpdateAll: () -> Unit,
-) {
-    val context = LocalContext.current
-    var trustState by remember { mutableStateOf<Extension.Untrusted?>(null) }
-    val installGranted = rememberRequestPackageInstallsPermissionState(initialValue = true)
-
-    FastScrollLazyColumn(
-        contentPadding = contentPadding + topSmallPaddingValues,
-    ) {
-        if (!installGranted && state.installer?.requiresSystemPermission == true) {
-            item(key = "extension-permissions-warning") {
-                WarningBanner(
-                    text = stringResource(ephyra.app.core.common.R.string.ext_permission_install_apps_warning),
-                    modifier = Modifier.clickable {
-                        context.launchRequestPackageInstallsPermission()
-                    },
-                )
-            }
+    if (state.isLoading) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(contentPadding),
+            contentAlignment = Alignment.Center,
+        ) {
+            CircularProgressIndicator()
         }
-
-        state.items.forEach { (header, items) ->
-            item(
-                contentType = "header",
-                key = when (header) {
-                    is ExtensionUiModel.Header.Resource -> "extensionHeader-res-${header.textRes}"
-                    is ExtensionUiModel.Header.Text -> "extensionHeader-txt-${header.text}"
-                },
-            ) {
-                when (header) {
-                    is ExtensionUiModel.Header.Resource -> {
-                        val action: @Composable RowScope.() -> Unit =
-                            if (header.textRes == ephyra.app.core.common.R.string.ext_updates_pending) {
-                                {
-                                    Button(onClick = { onClickUpdateAll() }) {
-                                        Text(
-                                            text = stringResource(ephyra.app.core.common.R.string.ext_update_all),
-                                            style = LocalTextStyle.current.copy(
-                                                color = MaterialTheme.colorScheme.onPrimary,
-                                            ),
-                                        )
-                                    }
-                                }
-                            } else {
-                                {}
-                            }
-                        ExtensionHeader(
-                            textRes = header.textRes,
-                            modifier = Modifier.animateItemFastScroll(),
-                            action = action,
-                        )
-                    }
-
-                    is ExtensionUiModel.Header.Text -> {
-                        ExtensionHeader(
-                            text = header.text,
-                            modifier = Modifier.animateItemFastScroll(),
-                        )
-                    }
+    } else {
+        val filteredSources = remember(state.sources, searchQuery) {
+            if (searchQuery.isNullOrBlank()) {
+                state.sources
+            } else {
+                state.sources.filter {
+                    it.name.contains(searchQuery, ignoreCase = true) ||
+                        it.baseUrl.contains(searchQuery, ignoreCase = true)
                 }
             }
-
-            items(
-                items = items,
-                contentType = { "item" },
-                key = { item -> "extension-${item.extension.pkgName}" },
-            ) { item ->
-                ExtensionItem(
-                    modifier = Modifier.animateItemFastScroll(),
-                    item = item,
-                    onClickItem = {
-                        when (it) {
-                            is Extension.Available -> onInstallExtension(it)
-                            is Extension.Installed -> onOpenExtension(it)
-                            is Extension.Untrusted -> {
-                                trustState = it
-                            }
-                        }
-                    },
-                    onLongClickItem = onLongClickItem,
-                    onClickItemSecondaryAction = {
-                        when (it) {
-                            is Extension.Available -> onOpenWebView(it)
-                            is Extension.Installed -> onOpenExtension(it)
-                            else -> {}
-                        }
-                    },
-                    onClickItemCancel = onClickItemCancel,
-                    onClickItemAction = {
-                        when (it) {
-                            is Extension.Available -> onInstallExtension(it)
-                            is Extension.Installed -> {
-                                if (it.hasUpdate) {
-                                    onUpdateExtension(it)
-                                } else {
-                                    onOpenExtension(it)
-                                }
-                            }
-
-                            is Extension.Untrusted -> {
-                                trustState = it
-                            }
-                        }
-                    },
-                )
-            }
         }
+
+        ExtensionScraperManagementLayout(
+            contentPadding = contentPadding,
+            sources = filteredSources,
+            onAddJsScraperClick = { showAddJsScraperDialog = true },
+            onImportJsScraperClick = { showImportJsScraperDialog = true },
+            onAddHeuristicClick = { showAddHeuristicDialog = true },
+            onLinkScraperClick = { source ->
+                selectedSourceForLink = source
+                linkBaseUrl = source.baseUrl
+                linkScraperName = ""
+                showLinkScraperDialog = true
+            },
+            onRefresh = onRefresh,
+            onSourceClick = { source ->
+                snackbarMessage = buildString {
+                    appendLine("Source: ${source.name}")
+                    appendLine("URL: ${source.baseUrl}")
+                    appendLine("Type: ${source.sourceType.displayName}")
+                    appendLine("Enabled: ${source.enabled}")
+                    if (source.failureCount > 0) {
+                        appendLine("Failures: ${source.failureCount}")
+                    }
+                    if (source.extensionId != null) {
+                        appendLine("Extension: ${source.extensionId}")
+                    }
+                }
+            },
+            onCheckUpdates = { source ->
+                onCheckUpdates(source.baseUrl)
+            },
+            onForceRediscover = { source ->
+                onForceRediscover(source.baseUrl)
+            },
+            onRemoveSource = { source ->
+                selectedSourceToRemove = source
+                showRemoveConfirmDialog = true
+            },
+        )
     }
-    val currentTrustState = trustState
-    if (currentTrustState != null) {
-        ExtensionTrustDialog(
-            onClickConfirm = {
-                onTrustExtension(currentTrustState)
-                trustState = null
+
+    // Notification dialog
+    snackbarMessage?.let { msg ->
+        AlertDialog(
+            onDismissRequest = { snackbarMessage = null },
+            title = { Text("Notification") },
+            text = { Text(msg) },
+            confirmButton = {
+                TextButton(onClick = { snackbarMessage = null }) {
+                    Text("OK")
+                }
             },
-            onClickDismiss = {
-                onUninstallExtension(currentTrustState)
-                trustState = null
-            },
+        )
+    }
+
+    // Remove source confirmation dialog
+    if (showRemoveConfirmDialog && selectedSourceToRemove != null) {
+        AlertDialog(
             onDismissRequest = {
-                trustState = null
+                showRemoveConfirmDialog = false
+                selectedSourceToRemove = null
+            },
+            title = { Text("Remove Source") },
+            text = {
+                Text(
+                    "Are you sure you want to remove \"${selectedSourceToRemove!!.name}\"? " +
+                        "This action cannot be undone.",
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        selectedSourceToRemove?.let { source ->
+                            onRemoveSource(source.baseUrl)
+                        }
+                        showRemoveConfirmDialog = false
+                        selectedSourceToRemove = null
+                    },
+                ) {
+                    Text("Remove", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showRemoveConfirmDialog = false
+                        selectedSourceToRemove = null
+                    },
+                ) {
+                    Text("Cancel")
+                }
             },
         )
     }
-}
 
-@Composable
-private fun ExtensionItem(
-    item: ExtensionUiModel.Item,
-    onClickItem: (Extension) -> Unit,
-    onLongClickItem: (Extension) -> Unit,
-    onClickItemCancel: (Extension) -> Unit,
-    onClickItemAction: (Extension) -> Unit,
-    onClickItemSecondaryAction: (Extension) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val (extension, installStep) = item
-    BaseBrowseItem(
-        modifier = modifier
-            .combinedClickable(
-                onClick = { onClickItem(extension) },
-                onLongClick = { onLongClickItem(extension) },
-            ),
-        onClickItem = { onClickItem(extension) },
-        onLongClickItem = { onLongClickItem(extension) },
-        icon = {
-            Box(
-                modifier = Modifier
-                    .size(40.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                val idle = installStep.isCompleted()
-                if (!idle) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(40.dp),
-                        strokeWidth = 2.dp,
-                    )
-                }
+    // Add JS Scraper Dialog
+    if (showAddJsScraperDialog) {
+        AddJsScraperDialog(
+            onDismiss = {
+                showAddJsScraperDialog = false
+                githubUrl = ""
+                scraperFilename = ""
+            },
+            onConfirm = { url, name ->
+                onAddJsScraper(url, name)
+                showAddJsScraperDialog = false
+                githubUrl = ""
+                scraperFilename = ""
+            },
+            githubUrl = githubUrl,
+            onGithubUrlChange = { githubUrl = it },
+            scraperFilename = scraperFilename,
+            onScraperFilenameChange = { scraperFilename = it },
+        )
+    }
 
-                val padding by animateDpAsState(
-                    targetValue = if (idle) 0.dp else 8.dp,
-                    label = "iconPadding",
-                )
-                ExtensionIcon(
-                    extension = extension,
-                    modifier = Modifier
-                        .matchParentSize()
-                        .padding(padding),
-                )
-            }
-        },
-        action = {
-            ExtensionItemActions(
-                extension = extension,
-                installStep = installStep,
-                onClickItemCancel = onClickItemCancel,
-                onClickItemAction = onClickItemAction,
-                onClickItemSecondaryAction = onClickItemSecondaryAction,
-            )
-        },
-    ) {
-        ExtensionItemContent(
-            extension = extension,
-            installStep = installStep,
-            modifier = Modifier.weight(1f),
+    // Import JS Scraper Dialog
+    if (showImportJsScraperDialog) {
+        ImportJsScraperDialog(
+            onDismiss = {
+                showImportJsScraperDialog = false
+                importFilename = ""
+                importScriptContent = ""
+            },
+            onConfirm = { name, content ->
+                onImportJsScraper(name, content)
+                showImportJsScraperDialog = false
+                importFilename = ""
+                importScriptContent = ""
+            },
+            filename = importFilename,
+            onFilenameChange = { importFilename = it },
+            scriptContent = importScriptContent,
+            onScriptContentChange = { importScriptContent = it },
+        )
+    }
+
+    // Add Heuristic Profile Dialog
+    if (showAddHeuristicDialog) {
+        AddHeuristicDialog(
+            onDismiss = {
+                showAddHeuristicDialog = false
+                heuristicUrl = ""
+                heuristicName = ""
+            },
+            onConfirm = { url, name ->
+                onAddHeuristic(url, name?.ifBlank { null })
+                showAddHeuristicDialog = false
+                heuristicUrl = ""
+                heuristicName = ""
+            },
+            url = heuristicUrl,
+            onUrlChange = { heuristicUrl = it },
+            name = heuristicName,
+            onNameChange = { heuristicName = it },
+        )
+    }
+
+    // Link Scraper Dialog
+    if (showLinkScraperDialog) {
+        LinkScraperDialog(
+            onDismiss = {
+                showLinkScraperDialog = false
+                linkBaseUrl = ""
+                linkScraperName = ""
+                selectedSourceForLink = null
+            },
+            onConfirm = { baseUrl, scraperName ->
+                onLinkScraper(baseUrl, scraperName)
+                showLinkScraperDialog = false
+                linkBaseUrl = ""
+                linkScraperName = ""
+                selectedSourceForLink = null
+            },
+            baseUrl = linkBaseUrl,
+            onBaseUrlChange = { linkBaseUrl = it },
+            scraperName = linkScraperName,
+            onScraperNameChange = { linkScraperName = it },
+            availableScrapers = state.sources
+                .filter { it.sourceType == SourceType.JS_SCRAPER }
+                .map { it.name },
         )
     }
 }
 
 @Composable
-private fun ExtensionItemContent(
-    extension: Extension,
-    installStep: InstallStep,
-    modifier: Modifier = Modifier,
+private fun ExtensionScraperManagementLayout(
+    contentPadding: PaddingValues,
+    sources: List<UnifiedSource>,
+    onAddJsScraperClick: () -> Unit,
+    onImportJsScraperClick: () -> Unit,
+    onAddHeuristicClick: () -> Unit,
+    onLinkScraperClick: (UnifiedSource) -> Unit,
+    onRefresh: () -> Unit,
+    onSourceClick: (UnifiedSource) -> Unit,
+    onCheckUpdates: (UnifiedSource) -> Unit,
+    onForceRediscover: (UnifiedSource) -> Unit,
+    onRemoveSource: (UnifiedSource) -> Unit,
 ) {
     Column(
-        modifier = modifier.padding(start = MaterialTheme.padding.medium),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(contentPadding),
     ) {
-        Text(
-            text = extension.name,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        // Won't look good but it's not like we can ellipsize overflowing content
-        FlowRow(
-            modifier = Modifier.secondaryItemAlpha(),
-            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.extraSmall),
+        // Quick Actions Row
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            ProvideTextStyle(value = MaterialTheme.typography.bodySmall) {
-                var hasAlreadyShownAnElement by remember { mutableStateOf(false) }
-                if (extension is Extension.Installed && extension.lang.isNotEmpty()) {
-                    hasAlreadyShownAnElement = true
-                    Text(
-                        text = LocaleHelper.getSourceDisplayName(extension.lang, LocalContext.current),
+            QuickActionButton(
+                icon = Icons.Outlined.Code,
+                label = "Add JS Scraper",
+                color = MaterialTheme.colorScheme.primary,
+                onClick = onAddJsScraperClick,
+            )
+            QuickActionButton(
+                icon = Icons.Outlined.UploadFile,
+                label = "Import Script",
+                color = MaterialTheme.colorScheme.secondary,
+                onClick = onImportJsScraperClick,
+            )
+            QuickActionButton(
+                icon = Icons.Outlined.Autorenew,
+                label = "Add Heuristic",
+                color = MaterialTheme.colorScheme.tertiary,
+                onClick = onAddHeuristicClick,
+            )
+            QuickActionButton(
+                icon = Icons.Outlined.Refresh,
+                label = "Refresh All",
+                color = MaterialTheme.colorScheme.outline,
+                onClick = onRefresh,
+            )
+        }
+
+        // Sources grouped by type
+        val grouped = sources.groupBy { it.sourceType }
+        val typeOrder = listOf(
+            SourceType.JS_SCRAPER,
+            SourceType.HEURISTIC,
+            SourceType.REPOSITORY,
+        )
+
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            items(typeOrder) { sourceType ->
+                val typeSources = grouped[sourceType] ?: emptyList()
+                if (typeSources.isNotEmpty()) {
+                    SourceTypeSection(
+                        sourceType = sourceType,
+                        sources = typeSources,
+                        onSourceClick = onSourceClick,
+                        onLinkScraper = onLinkScraperClick,
+                        onCheckUpdates = onCheckUpdates,
+                        onForceRediscover = onForceRediscover,
+                        onRemoveSource = onRemoveSource,
                     )
                 }
+            }
 
-                if (extension.versionName.isNotEmpty()) {
-                    if (hasAlreadyShownAnElement) DotSeparatorNoSpaceText()
-                    hasAlreadyShownAnElement = true
-                    Text(
-                        text = extension.versionName,
+            if (sources.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Security,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(48.dp),
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "No sources configured",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Add a JS scraper, import a script, or create a " +
+                                    "heuristic profile to get started",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RowScope.QuickActionButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    color: Color,
+    onClick: () -> Unit,
+) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = Modifier
+            .weight(1f)
+            .height(80.dp)
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+            contentColor = color,
+        ),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.5f)),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Medium,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SourceTypeSection(
+    sourceType: SourceType,
+    sources: List<UnifiedSource>,
+    onSourceClick: (UnifiedSource) -> Unit,
+    onLinkScraper: (UnifiedSource) -> Unit,
+    onCheckUpdates: (UnifiedSource) -> Unit,
+    onForceRediscover: (UnifiedSource) -> Unit,
+    onRemoveSource: (UnifiedSource) -> Unit,
+) {
+    val (icon, color) = when (sourceType) {
+        SourceType.LEGACY_EXTENSION -> Icons.Outlined.Security to MaterialTheme.colorScheme.primary
+        SourceType.JS_SCRAPER -> Icons.Outlined.Code to MaterialTheme.colorScheme.secondary
+        SourceType.HEURISTIC -> Icons.Outlined.Autorenew to MaterialTheme.colorScheme.tertiary
+        SourceType.REPOSITORY -> Icons.Outlined.Storage to MaterialTheme.colorScheme.outline
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = color.copy(alpha = 0.1f),
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .background(color.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
+                        .padding(8.dp),
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = color,
+                        modifier = Modifier.size(20.dp),
                     )
                 }
-
-                val warning = when {
-                    extension is Extension.Untrusted -> ephyra.app.core.common.R.string.ext_untrusted
-                    extension is Extension.Installed && extension.isObsolete ->
-                        ephyra.app.core.common.R.string.ext_obsolete
-                    extension.isNsfw -> ephyra.app.core.common.R.string.ext_nsfw_short
-                    else -> null
-                }
-                if (warning != null) {
-                    if (hasAlreadyShownAnElement) DotSeparatorNoSpaceText()
-                    hasAlreadyShownAnElement = true
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = sourceType.displayName,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = color,
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Box(
+                    modifier = Modifier
+                        .background(color.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                ) {
                     Text(
-                        text = stringResource(
-                            warning,
-                        ).uppercase(),
-                        color = MaterialTheme.colorScheme.error,
+                        text = sources.size.toString(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = color,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                sources.forEach { source ->
+                    SourceRow(
+                        source = source,
+                        onClick = { onSourceClick(source) },
+                        onLinkScraper = { onLinkScraper(source) },
+                        onCheckUpdates = { onCheckUpdates(source) },
+                        onForceRediscover = { onForceRediscover(source) },
+                        onRemoveSource = { onRemoveSource(source) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SourceRow(
+    source: UnifiedSource,
+    onClick: () -> Unit,
+    onLinkScraper: () -> Unit,
+    onCheckUpdates: () -> Unit,
+    onForceRediscover: () -> Unit,
+    onRemoveSource: () -> Unit,
+) {
+    val statusColor = if (source.enabled) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.outline
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (source.enabled) {
+                MaterialTheme.colorScheme.surface
+            } else {
+                MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+            },
+        ),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(4.dp)
+                    .height(40.dp)
+                    .background(statusColor, RoundedCornerShape(2.dp)),
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = source.name,
+                        style = MaterialTheme.typography.titleSmall,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    if (!source.enabled) {
+                        Text(
+                            text = "DISABLED",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
                 }
-                if (extension is Extension.Installed && !extension.isShared) {
-                    if (hasAlreadyShownAnElement) DotSeparatorNoSpaceText()
-                    Text(
-                        text = stringResource(ephyra.app.core.common.R.string.ext_installer_private),
-                    )
-                }
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = source.baseUrl,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                source.sourceType.color.copy(alpha = 0.2f),
+                                RoundedCornerShape(4.dp),
+                            )
+                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                    ) {
+                        Text(
+                            text = source.sourceType.displayName,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = source.sourceType.color,
+                            fontWeight = FontWeight.Medium,
+                        )
+                    }
 
-                if (!installStep.isCompleted()) {
-                    DotSeparatorNoSpaceText()
-                    Text(
-                        text = when (installStep) {
-                            InstallStep.Pending -> stringResource(ephyra.app.core.common.R.string.ext_pending)
-                            InstallStep.Downloading -> stringResource(ephyra.app.core.common.R.string.ext_downloading)
-                            InstallStep.Installing -> stringResource(ephyra.app.core.common.R.string.ext_installing)
-                            else -> error("Must not show non-install process text")
-                        },
-                    )
+                    if (source.extensionId != null) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+                                    RoundedCornerShape(4.dp),
+                                )
+                                .padding(horizontal = 6.dp, vertical = 2.dp),
+                        ) {
+                            Text(
+                                text = "Extension: ${source.extensionId}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.outline,
+                            )
+                        }
+                    }
+
+                    if (source.failureCount > 0) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    MaterialTheme.colorScheme.error.copy(alpha = 0.2f),
+                                    RoundedCornerShape(4.dp),
+                                )
+                                .padding(horizontal = 6.dp, vertical = 2.dp),
+                        ) {
+                            Row {
+                                Icon(
+                                    imageVector = Icons.Outlined.Info,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(10.dp),
+                                )
+                                Spacer(modifier = Modifier.width(2.dp))
+                                Text(
+                                    text = "${source.failureCount} failures",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            }
+                        }
+                    }
                 }
             }
-        }
-    }
-}
 
-@Composable
-private fun ExtensionItemActions(
-    extension: Extension,
-    installStep: InstallStep,
-    modifier: Modifier = Modifier,
-    onClickItemCancel: (Extension) -> Unit = {},
-    onClickItemAction: (Extension) -> Unit = {},
-    onClickItemSecondaryAction: (Extension) -> Unit = {},
-) {
-    val isIdle = installStep.isCompleted()
-
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small),
-    ) {
-        when {
-            !isIdle -> {
-                IconButton(onClick = { onClickItemCancel(extension) }) {
-                    Icon(
-                        imageVector = Icons.Outlined.Close,
-                        contentDescription = stringResource(ephyra.app.core.common.R.string.action_cancel),
-                    )
+            Column(
+                horizontalAlignment = Alignment.End,
+            ) {
+                if (source.sourceType == SourceType.HEURISTIC || source.sourceType == SourceType.REPOSITORY) {
+                    IconButton(onClick = onLinkScraper) {
+                        Icon(
+                            imageVector = Icons.Outlined.Link,
+                            contentDescription = "Link scraper",
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
                 }
-            }
-
-            installStep == InstallStep.Error -> {
-                IconButton(onClick = { onClickItemAction(extension) }) {
+                if (source.sourceType == SourceType.JS_SCRAPER) {
+                    IconButton(onClick = onCheckUpdates) {
+                        Icon(
+                            imageVector = Icons.Outlined.CloudDownload,
+                            contentDescription = "Check for updates",
+                            tint = MaterialTheme.colorScheme.secondary,
+                        )
+                    }
+                }
+                IconButton(onClick = onForceRediscover) {
                     Icon(
                         imageVector = Icons.Outlined.Refresh,
-                        contentDescription = stringResource(ephyra.app.core.common.R.string.action_retry),
+                        contentDescription = "Force rediscover",
+                        tint = MaterialTheme.colorScheme.outline,
                     )
                 }
-            }
-
-            installStep == InstallStep.Idle -> {
-                when (extension) {
-                    is Extension.Installed -> {
-                        IconButton(onClick = { onClickItemSecondaryAction(extension) }) {
-                            Icon(
-                                imageVector = Icons.Outlined.Settings,
-                                contentDescription = stringResource(ephyra.app.core.common.R.string.action_settings),
-                            )
-                        }
-
-                        if (extension.hasUpdate) {
-                            IconButton(onClick = { onClickItemAction(extension) }) {
-                                Icon(
-                                    imageVector = Icons.Outlined.GetApp,
-                                    contentDescription = stringResource(ephyra.app.core.common.R.string.ext_update),
-                                )
-                            }
-                        }
-                    }
-
-                    is Extension.Untrusted -> {
-                        IconButton(onClick = { onClickItemAction(extension) }) {
-                            Icon(
-                                imageVector = Icons.Outlined.VerifiedUser,
-                                contentDescription = stringResource(ephyra.app.core.common.R.string.ext_trust),
-                            )
-                        }
-                    }
-
-                    is Extension.Available -> {
-                        if (extension.sources.isNotEmpty()) {
-                            IconButton(
-                                onClick = { onClickItemSecondaryAction(extension) },
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Public,
-                                    contentDescription = stringResource(
-                                        ephyra.app.core.common.R.string.action_open_in_web_view,
-                                    ),
-                                )
-                            }
-                        }
-
-                        IconButton(onClick = { onClickItemAction(extension) }) {
-                            Icon(
-                                imageVector = Icons.Outlined.GetApp,
-                                contentDescription = stringResource(ephyra.app.core.common.R.string.ext_install),
-                            )
-                        }
-                    }
+                IconButton(onClick = onRemoveSource) {
+                    Icon(
+                        imageVector = Icons.Outlined.DeleteOutline,
+                        contentDescription = "Remove source",
+                        tint = MaterialTheme.colorScheme.error,
+                    )
                 }
             }
         }
@@ -500,62 +732,274 @@ private fun ExtensionItemActions(
 }
 
 @Composable
-private fun ExtensionHeader(
-    textRes: Int,
-    modifier: Modifier = Modifier,
-    action: @Composable RowScope.() -> Unit = {},
-) {
-    ExtensionHeader(
-        text = stringResource(textRes),
-        modifier = modifier,
-        action = action,
-    )
-}
-
-@Composable
-private fun ExtensionHeader(
-    text: String,
-    modifier: Modifier = Modifier,
-    action: @Composable RowScope.() -> Unit = {},
-) {
-    Row(
-        modifier = modifier.padding(horizontal = MaterialTheme.padding.medium),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = text,
-            modifier = Modifier
-                .padding(vertical = 8.dp)
-                .weight(1f),
-            style = MaterialTheme.typography.header,
-        )
-        action()
-    }
-}
-
-@Composable
-private fun ExtensionTrustDialog(
-    onClickConfirm: () -> Unit,
-    onClickDismiss: () -> Unit,
-    onDismissRequest: () -> Unit,
+private fun AddJsScraperDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String, String) -> Unit,
+    githubUrl: String,
+    onGithubUrlChange: (String) -> Unit,
+    scraperFilename: String,
+    onScraperFilenameChange: (String) -> Unit,
 ) {
     AlertDialog(
-        title = {
-            Text(text = stringResource(ephyra.app.core.common.R.string.untrusted_extension))
-        },
+        onDismissRequest = onDismiss,
+        title = { Text("Add JS Scraper from GitHub") },
         text = {
-            Text(text = stringResource(ephyra.app.core.common.R.string.untrusted_extension_message))
+            Column(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = githubUrl,
+                    onValueChange = onGithubUrlChange,
+                    label = { Text("GitHub URL") },
+                    placeholder = { Text("https://github.com/user/repo/scraper.js") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = scraperFilename,
+                    onValueChange = onScraperFilenameChange,
+                    label = { Text("Filename") },
+                    placeholder = { Text("mangadex_scraper.js") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "The script will be downloaded and sandboxed. Auto-updates enabled if from GitHub.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         },
         confirmButton = {
-            TextButton(onClick = onClickConfirm) {
-                Text(text = stringResource(ephyra.app.core.common.R.string.ext_trust))
+            TextButton(onClick = {
+                if (githubUrl.isNotBlank() && scraperFilename.isNotBlank()) {
+                    onConfirm(githubUrl, scraperFilename)
+                }
+            }) {
+                Text("Download")
             }
         },
         dismissButton = {
-            TextButton(onClick = onClickDismiss) {
-                Text(text = stringResource(ephyra.app.core.common.R.string.ext_uninstall))
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
             }
         },
-        onDismissRequest = onDismissRequest,
     )
 }
+
+@Composable
+private fun ImportJsScraperDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String, String) -> Unit,
+    filename: String,
+    onFilenameChange: (String) -> Unit,
+    scriptContent: String,
+    onScriptContentChange: (String) -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Import Local JS Script") },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = filename,
+                    onValueChange = onFilenameChange,
+                    label = { Text("Script Name") },
+                    placeholder = { Text("custom_scraper.js") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = scriptContent,
+                    onValueChange = onScriptContentChange,
+                    label = { Text("JavaScript Content") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    shape = RoundedCornerShape(8.dp),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                if (filename.isNotBlank() && scriptContent.isNotBlank()) {
+                    onConfirm(filename, scriptContent)
+                }
+            }) {
+                Text("Import")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+    )
+}
+
+@Composable
+private fun AddHeuristicDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String, String?) -> Unit,
+    url: String,
+    onUrlChange: (String) -> Unit,
+    name: String,
+    onNameChange: (String) -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add Heuristic Profile") },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = url,
+                    onValueChange = onUrlChange,
+                    label = { Text("Website Base URL") },
+                    placeholder = { Text("https://example.com") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = onNameChange,
+                    label = { Text("Display Name (optional)") },
+                    placeholder = { Text("Auto-detected from page title") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "The adaptive heuristic engine will analyze the page structure on first use.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                if (url.isNotBlank()) {
+                    onConfirm(url, name.ifBlank { null })
+                }
+            }) {
+                Text("Add")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+    )
+}
+
+@Composable
+private fun LinkScraperDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String, String) -> Unit,
+    baseUrl: String,
+    onBaseUrlChange: (String) -> Unit,
+    scraperName: String,
+    onScraperNameChange: (String) -> Unit,
+    availableScrapers: List<String>,
+) {
+    var dropdownExpanded by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Link Scraper to Website") },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = baseUrl,
+                    onValueChange = onBaseUrlChange,
+                    label = { Text("Website Base URL") },
+                    placeholder = { Text("https://example.com") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                if (availableScrapers.isNotEmpty()) {
+                    Box {
+                        OutlinedTextField(
+                            value = scraperName,
+                            onValueChange = onScraperNameChange,
+                            label = { Text("Select Scraper") },
+                            placeholder = { Text("Choose a scraper...") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp),
+                            trailingIcon = {
+                                IconButton(onClick = { dropdownExpanded = true }) {
+                                    Icon(
+                                        imageVector = if (dropdownExpanded) {
+                                            Icons.Outlined.ExpandLess
+                                        } else {
+                                            Icons.Outlined.ExpandMore
+                                        },
+                                        contentDescription = "Show available scrapers",
+                                    )
+                                }
+                            },
+                            readOnly = false,
+                        )
+                        DropdownMenu(
+                            expanded = dropdownExpanded,
+                            onDismissRequest = { dropdownExpanded = false },
+                        ) {
+                            availableScrapers.forEach { name ->
+                                DropdownMenuItem(
+                                    text = { Text(name) },
+                                    onClick = {
+                                        onScraperNameChange(name)
+                                        dropdownExpanded = false
+                                    },
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    OutlinedTextField(
+                        value = scraperName,
+                        onValueChange = onScraperNameChange,
+                        label = { Text("Scraper Filename") },
+                        placeholder = { Text("No JS scrapers available. Add one first.") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                if (baseUrl.isNotBlank() && scraperName.isNotBlank()) {
+                    onConfirm(baseUrl, scraperName)
+                }
+            }) {
+                Text("Link")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+    )
+}
+
+private val SourceType.displayName: String
+    get() = when (this) {
+        SourceType.LEGACY_EXTENSION -> "Legacy Extensions"
+        SourceType.JS_SCRAPER -> "JS Scrapers"
+        SourceType.HEURISTIC -> "Heuristic Profiles"
+        SourceType.REPOSITORY -> "Repositories"
+    }
+
+private val SourceType.color: Color
+    @Composable
+    get() = when (this) {
+        SourceType.LEGACY_EXTENSION -> MaterialTheme.colorScheme.primary
+        SourceType.JS_SCRAPER -> MaterialTheme.colorScheme.secondary
+        SourceType.HEURISTIC -> MaterialTheme.colorScheme.tertiary
+        SourceType.REPOSITORY -> MaterialTheme.colorScheme.outline
+    }

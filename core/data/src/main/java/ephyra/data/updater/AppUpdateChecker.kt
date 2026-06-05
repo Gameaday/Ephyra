@@ -16,6 +16,13 @@ class AppUpdateChecker(
         val isNightly = context.packageName.endsWith(".nightly")
         val repo = getGithubRepo(isPreview, isNightly)
 
+        val packageInfo = try {
+            context.packageManager.getPackageInfo(context.packageName, 0)
+        } catch (e: Exception) {
+            null
+        }
+        val installedVersionName = packageInfo?.versionName ?: BuildConfig.VERSION_NAME
+
         return withIOContext {
             val result = getApplicationRelease.await(
                 GetApplicationRelease.Arguments(
@@ -23,7 +30,7 @@ class AppUpdateChecker(
                     isNightly = isNightly,
                     commitCount = BuildConfig.COMMIT_COUNT.toInt(),
                     commitSha = BuildConfig.COMMIT_SHA,
-                    versionName = BuildConfig.VERSION_NAME,
+                    versionName = installedVersionName,
                     repository = repo,
                     forceCheck = forceCheck,
                 ),
@@ -47,11 +54,16 @@ class AppUpdateChecker(
             }
         }
 
-        fun getReleaseTag(isPreview: Boolean): String {
+        fun getReleaseTag(context: Context, isPreview: Boolean): String {
             return if (isPreview) {
                 "r${BuildConfig.COMMIT_COUNT}"
             } else {
-                "v${BuildConfig.VERSION_NAME}"
+                val packageInfo = try {
+                    context.packageManager.getPackageInfo(context.packageName, 0)
+                } catch (e: Exception) {
+                    null
+                }
+                "v${packageInfo?.versionName ?: BuildConfig.VERSION_NAME}"
             }
         }
 
@@ -59,7 +71,7 @@ class AppUpdateChecker(
             val isPreview = context.packageName.endsWith(".debug")
             val isNightly = context.packageName.endsWith(".nightly")
             val repo = getGithubRepo(isPreview, isNightly)
-            val tag = getReleaseTag(isPreview)
+            val tag = getReleaseTag(context, isPreview)
             return "https://github.com/$repo/releases/tag/$tag"
         }
     }
