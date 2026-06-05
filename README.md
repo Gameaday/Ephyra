@@ -10,8 +10,8 @@ A personal media reader and library manager for Android — organize, track, and
 comics, and webtoons in one place.
 
 [![GitHub downloads](https://img.shields.io/github/downloads/Gameaday/Ephyra/total?label=downloads&labelColor=27303D&color=0D1117&logo=github&logoColor=FFFFFF&style=flat)](https://github.com/Gameaday/Ephyra/releases)
-[![CI](https://img.shields.io/github/actions/workflow/status/Gameaday/Ephyra/build_push.yml?labelColor=27303D)](https://github.com/Gameaday/Ephyra/actions/workflows/build_push.yml)
-[![License: Apache-2.0](https://img.shields.io/github/license/Gameaday/Ephyra?labelColor=27303D&color=0877d2)](/LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/Gameaday/Ephyra/build.yml?labelColor=27303D)](https://github.com/Gameaday/Ephyra/actions/workflows/build.yml)
+[![License: Apache-2.0](https://img.shields.io/github/license/Gameaday/Ephyra?labelColor=27303D&color=0877d2)](./LICENSE)
 
 ## Download
 

@@ -127,22 +127,23 @@ data class ContentItem(
 
 The existing `Manga` type becomes a specialization; new content types target `ContentItem` directly.
 
-### Source Engine Abstraction — Swappable Resolution
+### Source Sourcing Engine (QuickJS Sandboxed & Heuristics)
 
-Content sourcing follows a "try known → fall back to heuristic → fail" pipeline:
+To comply with modern application distribution policies and completely isolate content parsing logic, the dynamic content sourcing system uses a swappable resolution pipeline mediated by `ContentSourceOrchestrator`:
 
-```
-ContentSourceOrchestrator
-  ├── knownEngines: Map<String, ContentSourceEngine>  // Hardcoded adapters (fast path)
-  └── heuristicEngine: ContentSourceEngine              // Auto-discovery (fallback)
-```
+1. **On-Device Legacy Extension Transpiler**:
+   - Downloads the raw Kotlin source files from remote git repositories.
+   - Executes a pure-JavaScript compiler (`transpiler.js`) inside a sandboxed QuickJS engine to dynamically transpile raw Kotlin code into sandboxed JavaScript scraper scripts on-device.
+   - Automatically tracks version metadata (`transpiled_extension_versioncode_${pkgName}`) via `PreferenceStore`. On remote repository updates, automatically re-transpiles and updates scrapers in the background.
 
-- `ContentSourceEngine` — sealed interface with `discover()`, `search()`, `getItem()`, `getPopular()`, `getLatest()`
-- `SourceProfile` — describes a source's API endpoints, selectors, JSON paths, pagination, auth, etc.
-- `SourceProfileCache` — persists discovered profiles in DataStore to avoid re-discovery
-- `ContentSourceOrchestrator` — single entry point; callers never touch engines directly
+2. **Sandboxed JavaScript Engine (`ScriptableContentSourceEngine`)**:
+   - Implements `ContentSourceEngine`.
+   - Executes the transpiled JS scraper scripts inside a secure, fully sandboxed QuickJS engine (`JavaScriptEngine`).
+   - Interacts with HTML nodes inside the sandbox using `MiniDOM` (a lightweight pure-JS DOM parser implementing Jsoup-like DOM selectors).
 
-This design supports any future engine (heuristic, WASM/JS sandbox, AI-grokked) without changing core code.
+3. **Layout Heuristics Engine (`AdaptiveHeuristicEngine`)**:
+   - Implements `ContentSourceEngine` as a generic fallback.
+   - Performs on-the-fly DOM parsing of arbitrary websites using layout patterns and selector caching (saved as `SourceProfile` in data store) to scrape search results, details, and pages dynamically.
 
 ### Reader Plugin Architecture
 
