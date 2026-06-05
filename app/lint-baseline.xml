@@ -2,224 +2,36 @@
 <issues format="6" by="lint 9.2.1" type="baseline" client="gradle" dependencies="true" name="AGP (9.2.1)" variant="all" version="9.2.1">
 
     <issue
-        id="MissingPermission"
-        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
-        errorLine1="        context.notify(id, build())"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/ephyra/app/data/updater/AppUpdateNotifier.kt"
-            line="30"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="MissingPermission"
-        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
-        errorLine1="        context.notify("
-        errorLine2="        ^">
-        <location
-            file="src/main/java/ephyra/app/data/backup/BackupNotifier.kt"
-            line="20"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="MissingPermission"
-        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
-        errorLine1="        context.notify("
-        errorLine2="        ^">
-        <location
-            file="src/main/java/ephyra/app/data/backup/BackupNotifier.kt"
-            line="34"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="MissingPermission"
-        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
-        errorLine1="        context.notify("
-        errorLine2="        ^">
-        <location
-            file="src/main/java/ephyra/app/data/backup/BackupNotifier.kt"
-            line="49"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="MissingPermission"
-        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
-        errorLine1="        context.notify("
-        errorLine2="        ^">
-        <location
-            file="src/main/java/ephyra/app/data/backup/BackupNotifier.kt"
-            line="62"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="MissingPermission"
-        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
-        errorLine1="        context.notify("
-        errorLine2="        ^">
-        <location
-            file="src/main/java/ephyra/app/data/backup/BackupNotifier.kt"
-            line="78"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="MissingPermission"
-        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
-        errorLine1="        context.notify("
-        errorLine2="        ^">
-        <location
-            file="src/main/java/ephyra/app/data/backup/BackupNotifier.kt"
-            line="93"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="MissingPermission"
-        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
-        errorLine1="        context.notify(id, build())"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/ephyra/app/data/download/DownloadNotifier.kt"
-            line="55"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="MissingPermission"
-        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
-        errorLine1="        context.notify("
-        errorLine2="        ^">
-        <location
-            file="src/main/java/ephyra/app/extension/api/ExtensionUpdateNotifier.kt"
-            line="19"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="MissingPermission"
-        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
-        errorLine1="        context.notify("
-        errorLine2="        ^">
-        <location
-            file="src/main/java/ephyra/app/data/library/LibraryUpdateNotifier.kt"
-            line="105"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="MissingPermission"
-        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
-        errorLine1="        context.notify("
-        errorLine2="        ^">
-        <location
-            file="src/main/java/ephyra/app/data/library/LibraryUpdateNotifier.kt"
-            line="126"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="MissingPermission"
-        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
-        errorLine1="        context.notify("
-        errorLine2="        ^">
-        <location
-            file="src/main/java/ephyra/app/data/library/LibraryUpdateNotifier.kt"
-            line="153"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="MissingPermission"
-        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
-        errorLine1="        context.notify("
-        errorLine2="        ^">
-        <location
-            file="src/main/java/ephyra/app/data/library/LibraryUpdateNotifier.kt"
-            line="173"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="MissingPermission"
-        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
-        errorLine1="        context.notify("
-        errorLine2="        ^">
-        <location
-            file="src/main/java/ephyra/app/data/library/LibraryUpdateNotifier.kt"
-            line="359"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="MissingPermission"
-        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
-        errorLine1="        context.notify("
-        errorLine2="        ^">
-        <location
-            file="src/main/java/ephyra/app/data/library/LibraryUpdateNotifier.kt"
-            line="412"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="MissingPermission"
-        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
-        errorLine1="        context.notify("
-        errorLine2="        ^">
-        <location
-            file="src/main/java/ephyra/app/track/MatchUnlinkedNotifier.kt"
-            line="72"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="MissingPermission"
-        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
-        errorLine1="        context.notify("
-        errorLine2="        ^">
-        <location
-            file="src/main/java/ephyra/app/track/MatchUnlinkedNotifier.kt"
-            line="101"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="MissingPermission"
-        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
-        errorLine1="        context.notify("
-        errorLine2="        ^">
-        <location
-            file="src/main/java/ephyra/app/track/MatchUnlinkedNotifier.kt"
-            line="120"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="MissingPermission"
-        message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
-        errorLine1="        context.notify(notificationId, notificationBuilder.build())"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/kotlin/ephyra/feature/reader/SaveImageNotifier.kt"
-            line="109"
-            column="9"/>
-    </issue>
-
-
-    <issue
-        id="GestureBackNavigation"
-        message="If intercepting back events, this should be handled through the registration of callbacks; see https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture"
-        errorLine1="        if (keyCode == KeyEvent.KEYCODE_BACK) {"
-        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~">
+        id="MissingSuperCall"
+        message="Overriding method should call `super.onDestroy`"
+        errorLine1="    override fun onDestroy() {"
+        errorLine2="                 ~~~~~~~~~">
         <location
             file="src/main/kotlin/ephyra/feature/reader/ReaderActivity.kt"
-            line="350"
-            column="24"/>
+            line="311"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="DefaultLocale"
+        message="Implicitly using the default locale is a common source of bugs: Use `capitalize(Locale)` instead. For strings meant to be internal use `Locale.ROOT`, otherwise `Locale.getDefault()`."
+        errorLine1="                displayName = filename.removeSuffix(&quot;.js&quot;).replace(&quot;_&quot;, &quot; &quot;).capitalize(),"
+        errorLine2="                                                                             ~~~~~~~~~~">
+        <location
+            file="src/main/java/ephyra/domain/content/source/interactor/AddCustomSource.kt"
+            line="39"
+            column="78"/>
+    </issue>
+
+    <issue
+        id="DefaultLocale"
+        message="Implicitly using the default locale is a common source of bugs: Use `capitalize(Locale)` instead. For strings meant to be internal use `Locale.ROOT`, otherwise `Locale.getDefault()`."
+        errorLine1="                displayName = filename.removeSuffix(&quot;.js&quot;).replace(&quot;_&quot;, &quot; &quot;).capitalize(),"
+        errorLine2="                                                                             ~~~~~~~~~~">
+        <location
+            file="src/main/java/ephyra/domain/content/source/interactor/AddCustomSource.kt"
+            line="66"
+            column="78"/>
     </issue>
 
     <issue
@@ -312,13 +124,13 @@
 
     <issue
         id="GradleDependency"
-        message="A newer version of androidx.compose.runtime:runtime than 1.6.7 is available: 1.11.2"
-        errorLine1="    implementation(&quot;androidx.compose.runtime:runtime:1.6.7&quot;)"
-        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        message="A newer version of androidx.core:core-ktx than 1.18.0 is available: 1.19.0"
+        errorLine1="corektx = &quot;androidx.core:core-ktx:1.18.0&quot;"
+        errorLine2="          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="build.gradle.kts"
-            line="18"
-            column="20"/>
+            file="../gradle/androidx.versions.toml"
+            line="12"
+            column="11"/>
     </issue>
 
     <issue
@@ -333,41 +145,8 @@
     </issue>
 
     <issue
-        id="GradleDependency"
-        message="A newer version of androidx.navigation:navigation-compose than 2.8.8 is available: 2.9.8"
-        errorLine1="navigation = &quot;2.8.8&quot;"
-        errorLine2="             ~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="11"
-            column="14"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of com.google.android.material:material than 1.13.0 is available: 1.14.0"
-        errorLine1="material = &quot;com.google.android.material:material:1.13.0&quot;"
-        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="54"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="GradleDependency"
-        message="A newer version of androidx.hilt:hilt-navigation-compose than 1.2.0 is available: 1.3.0"
-        errorLine1="hilt-navigation-compose = &quot;androidx.hilt:hilt-navigation-compose:1.2.0&quot;"
-        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="103"
-            column="27"/>
-    </issue>
-
-    <issue
         id="NewerVersionAvailable"
-        message="A newer version of org.jetbrains.kotlin.plugin.serialization than 2.3.20 is available: 2.3.21"
+        message="A newer version of org.jetbrains.kotlin.plugin.serialization than 2.3.20 is available: 2.4.0"
         errorLine1="kotlin_version = &quot;2.3.20&quot;"
         errorLine2="                 ~~~~~~~~">
         <location
@@ -418,50 +197,6 @@
             file="../gradle/kotlinx.versions.toml"
             line="12"
             column="87"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
-        message="A newer version of com.diffplug.spotless:spotless-plugin-gradle than 8.4.0 is available: 8.5.1"
-        errorLine1="spotless = &quot;8.4.0&quot;"
-        errorLine2="           ~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="10"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
-        message="A newer version of com.mikepenz:multiplatform-markdown-renderer than 0.40.2 is available: 0.41.0"
-        errorLine1="markdown = &quot;0.40.2&quot;"
-        errorLine2="           ~~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="14"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
-        message="A newer version of com.mikepenz:multiplatform-markdown-renderer-coil3 than 0.40.2 is available: 0.41.0"
-        errorLine1="markdown = &quot;0.40.2&quot;"
-        errorLine2="           ~~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="14"
-            column="12"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
-        message="A newer version of org.junit.jupiter:junit-jupiter than 6.0.3 is available: 6.1.0"
-        errorLine1="junit = &quot;6.0.3&quot;"
-        errorLine2="        ~~~~~~~">
-        <location
-            file="../gradle/libs.versions.toml"
-            line="15"
-            column="9"/>
     </issue>
 
     <issue
@@ -598,150 +333,1389 @@
 
     <issue
         id="PrivateResource"
+        message="The resource `@dimen/m3_alert_dialog_corner_size` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            &lt;corners android:radius=&quot;@dimen/m3_alert_dialog_corner_size&quot; />"
+        errorLine2="                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/drawable/material_popup_background.xml"
+            line="6"
+            column="38"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@dimen/m3_alert_dialog_corner_size` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            &lt;corners android:radius=&quot;@dimen/m3_alert_dialog_corner_size&quot; />"
+        errorLine2="                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/drawable/material_popup_background.xml"
+            line="6"
+            column="38"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_popupmenu_overlay_color` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            &lt;solid android:color=&quot;@color/m3_popupmenu_overlay_color&quot; />"
+        errorLine2="                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/drawable/material_popup_background.xml"
+            line="11"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_popupmenu_overlay_color` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            &lt;solid android:color=&quot;@color/m3_popupmenu_overlay_color&quot; />"
+        errorLine2="                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/drawable/material_popup_background.xml"
+            line="11"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@dimen/m3_alert_dialog_corner_size` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            &lt;corners android:radius=&quot;@dimen/m3_alert_dialog_corner_size&quot; />"
+        errorLine2="                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/drawable/material_popup_background.xml"
+            line="12"
+            column="38"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@dimen/m3_alert_dialog_corner_size` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            &lt;corners android:radius=&quot;@dimen/m3_alert_dialog_corner_size&quot; />"
+        errorLine2="                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/drawable/material_popup_background.xml"
+            line="12"
+            column="38"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
         message="Overriding `@string/copy` which is marked as private in androidx.preference:preference:1.2.1. If deliberate, use tools:override=&quot;true&quot;, otherwise pick a different name."
         errorLine1="    &lt;string name=&quot;copy&quot;>Copy&lt;/string>"
         errorLine2="                  ~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="1107"
+            line="1114"
             column="19"/>
     </issue>
 
     <issue
-        id="RememberReturnType"
-        message="`remember` calls must not return `Unit`"
-        errorLine1="    remember(screenModel, sourceId) {"
-        errorLine2="    ~~~~~~~~">
+        id="PrivateResource"
+        message="The resource `@layout/m3_alert_dialog` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;android:layout&quot;>@layout/m3_alert_dialog&lt;/item>"
+        errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/kotlin/ephyra/feature/webview/WebViewScreen.kt"
-            line="31"
-            column="5"/>
+            file="src/main/res/values/styles.xml"
+            line="17"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@dimen/m3_alert_dialog_corner_size` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;dialogCornerRadius&quot;>@dimen/m3_alert_dialog_corner_size&lt;/item>"
+        errorLine2="                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/styles.xml"
+            line="19"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_dark_primary` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorPrimary&quot;>@color/m3_sys_color_dynamic_dark_primary&lt;/item>"
+        errorLine2="                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="19"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_dark_on_primary` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorOnPrimary&quot;>@color/m3_sys_color_dynamic_dark_on_primary&lt;/item>"
+        errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="20"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_dark_inverse_primary` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorPrimaryInverse&quot;>@color/m3_sys_color_dynamic_dark_inverse_primary&lt;/item>"
+        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="21"
+            column="42"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_dark_primary_container` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorPrimaryContainer&quot;>@color/m3_sys_color_dynamic_dark_primary_container&lt;/item>"
+        errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="22"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_dark_on_primary_container` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorOnPrimaryContainer&quot;>@color/m3_sys_color_dynamic_dark_on_primary_container"
+        errorLine2="                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="23"
+            column="46"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_dark_secondary` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorSecondary&quot;>@color/m3_sys_color_dynamic_dark_secondary&lt;/item>"
+        errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="25"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_dark_on_secondary` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorOnSecondary&quot;>@color/m3_sys_color_dynamic_dark_on_secondary&lt;/item>"
+        errorLine2="                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="26"
+            column="39"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_dark_secondary_container` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorSecondaryContainer&quot;>@color/m3_sys_color_dynamic_dark_secondary_container"
+        errorLine2="                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="27"
+            column="46"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_dark_on_secondary_container` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            @color/m3_sys_color_dynamic_dark_on_secondary_container"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="30"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_dark_tertiary` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorTertiary&quot;>@color/m3_sys_color_dynamic_dark_tertiary&lt;/item>"
+        errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="32"
+            column="36"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_dark_on_tertiary` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorOnTertiary&quot;>@color/m3_sys_color_dynamic_dark_on_tertiary&lt;/item>"
+        errorLine2="                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="33"
+            column="38"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_dark_tertiary_container` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorTertiaryContainer&quot;>@color/m3_sys_color_dynamic_dark_tertiary_container"
+        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="34"
+            column="45"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_dark_on_tertiary_container` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            @color/m3_sys_color_dynamic_dark_on_tertiary_container"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="37"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_dark_background` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;android:colorBackground&quot;>@color/m3_sys_color_dynamic_dark_background&lt;/item>"
+        errorLine2="                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="39"
+            column="46"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_dark_on_background` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorOnBackground&quot;>@color/m3_sys_color_dynamic_dark_on_background&lt;/item>"
+        errorLine2="                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="40"
+            column="40"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_dark_surface` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorSurface&quot;>@color/m3_sys_color_dynamic_dark_surface&lt;/item>"
+        errorLine2="                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="41"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_dark_on_surface` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorOnSurface&quot;>@color/m3_sys_color_dynamic_dark_on_surface&lt;/item>"
+        errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="42"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_dark_surface_variant` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorSurfaceVariant&quot;>@color/m3_sys_color_dynamic_dark_surface_variant&lt;/item>"
+        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="43"
+            column="42"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_dark_on_surface_variant` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorOnSurfaceVariant&quot;>@color/m3_sys_color_dynamic_dark_on_surface_variant"
+        errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="44"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_dark_inverse_surface` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorSurfaceInverse&quot;>@color/m3_sys_color_dynamic_dark_inverse_surface&lt;/item>"
+        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="46"
+            column="42"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_dark_inverse_on_surface` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorOnSurfaceInverse&quot;>@color/m3_sys_color_dynamic_dark_inverse_on_surface"
+        errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="47"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_dark_outline` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorOutline&quot;>@color/m3_sys_color_dynamic_dark_outline&lt;/item>"
+        errorLine2="                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="49"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_dark_default_color_primary_text` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;android:textColorPrimary&quot;>@color/m3_dynamic_dark_default_color_primary_text"
+        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="52"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_default_color_primary_text` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;android:textColorPrimaryInverse&quot;>@color/m3_dynamic_default_color_primary_text"
+        errorLine2="                                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="54"
+            column="54"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_dark_default_color_secondary_text` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            @color/m3_dynamic_dark_default_color_secondary_text"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="57"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_default_color_secondary_text` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            @color/m3_dynamic_default_color_secondary_text"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="60"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_dark_default_color_secondary_text` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;android:textColorTertiary&quot;>@color/m3_dynamic_dark_default_color_secondary_text"
+        errorLine2="                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="62"
+            column="48"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_default_color_secondary_text` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            @color/m3_dynamic_default_color_secondary_text"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="65"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_dark_primary_text_disable_only` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            @color/m3_dynamic_dark_primary_text_disable_only"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="68"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_primary_text_disable_only` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            @color/m3_dynamic_primary_text_disable_only"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="71"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_dark_hint_foreground` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;android:textColorHint&quot;>@color/m3_dynamic_dark_hint_foreground&lt;/item>"
+        errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="73"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_hint_foreground` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;android:textColorHintInverse&quot;>@color/m3_dynamic_hint_foreground&lt;/item>"
+        errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="74"
+            column="51"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_dark_highlighted_text` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;android:textColorHighlight&quot;>@color/m3_dynamic_dark_highlighted_text&lt;/item>"
+        errorLine2="                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="75"
+            column="49"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_highlighted_text` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;android:textColorHighlightInverse&quot;>@color/m3_dynamic_highlighted_text&lt;/item>"
+        errorLine2="                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="76"
+            column="56"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_dark_default_color_primary_text` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            @color/m3_dynamic_dark_default_color_primary_text"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values-night/themes.xml"
+            line="78"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_primary` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorPrimary&quot;>@color/m3_sys_color_dynamic_light_primary&lt;/item>"
+        errorLine2="                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="98"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_on_primary` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorOnPrimary&quot;>@color/m3_sys_color_dynamic_light_on_primary&lt;/item>"
+        errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="99"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_inverse_primary` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorPrimaryInverse&quot;>@color/m3_sys_color_dynamic_light_inverse_primary&lt;/item>"
+        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="100"
+            column="42"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_primary_container` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorPrimaryContainer&quot;>@color/m3_sys_color_dynamic_light_primary_container"
+        errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="101"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_primary` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorPrimary&quot;>@color/m3_sys_color_dynamic_light_primary&lt;/item>"
+        errorLine2="                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="101"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_on_primary` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorOnPrimary&quot;>@color/m3_sys_color_dynamic_light_on_primary&lt;/item>"
+        errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="102"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_inverse_primary` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorPrimaryInverse&quot;>@color/m3_sys_color_dynamic_light_inverse_primary&lt;/item>"
+        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="103"
+            column="42"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_on_primary_container` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            @color/m3_sys_color_dynamic_light_on_primary_container"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="104"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_primary_container` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorPrimaryContainer&quot;>@color/m3_sys_color_dynamic_light_primary_container"
+        errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="104"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_secondary` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorSecondary&quot;>@color/m3_sys_color_dynamic_light_secondary&lt;/item>"
+        errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="106"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_on_primary_container` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            @color/m3_sys_color_dynamic_light_on_primary_container"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="107"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_on_secondary` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorOnSecondary&quot;>@color/m3_sys_color_dynamic_light_on_secondary&lt;/item>"
+        errorLine2="                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="107"
+            column="39"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_secondary_container` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorSecondaryContainer&quot;>@color/m3_sys_color_dynamic_light_secondary_container"
+        errorLine2="                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="108"
+            column="46"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_secondary` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorSecondary&quot;>@color/m3_sys_color_dynamic_light_secondary&lt;/item>"
+        errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="109"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_on_secondary` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorOnSecondary&quot;>@color/m3_sys_color_dynamic_light_on_secondary&lt;/item>"
+        errorLine2="                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="110"
+            column="39"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_on_secondary_container` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            @color/m3_sys_color_dynamic_light_on_secondary_container"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="111"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_secondary_container` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorSecondaryContainer&quot;>@color/m3_sys_color_dynamic_light_secondary_container"
+        errorLine2="                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="111"
+            column="46"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_tertiary` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorTertiary&quot;>@color/m3_sys_color_dynamic_light_tertiary&lt;/item>"
+        errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="113"
+            column="36"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_on_secondary_container` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            @color/m3_sys_color_dynamic_light_on_secondary_container"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="114"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_on_tertiary` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorOnTertiary&quot;>@color/m3_sys_color_dynamic_light_on_tertiary&lt;/item>"
+        errorLine2="                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="114"
+            column="38"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_tertiary_container` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorTertiaryContainer&quot;>@color/m3_sys_color_dynamic_light_tertiary_container"
+        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="115"
+            column="45"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_tertiary` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorTertiary&quot;>@color/m3_sys_color_dynamic_light_tertiary&lt;/item>"
+        errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="116"
+            column="36"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_on_tertiary` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorOnTertiary&quot;>@color/m3_sys_color_dynamic_light_on_tertiary&lt;/item>"
+        errorLine2="                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="117"
+            column="38"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_on_tertiary_container` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            @color/m3_sys_color_dynamic_light_on_tertiary_container"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="118"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_tertiary_container` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorTertiaryContainer&quot;>@color/m3_sys_color_dynamic_light_tertiary_container"
+        errorLine2="                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="118"
+            column="45"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_background` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;android:colorBackground&quot;>@color/m3_sys_color_dynamic_light_background&lt;/item>"
+        errorLine2="                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="120"
+            column="46"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_on_background` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorOnBackground&quot;>@color/m3_sys_color_dynamic_light_on_background&lt;/item>"
+        errorLine2="                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="121"
+            column="40"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_on_tertiary_container` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            @color/m3_sys_color_dynamic_light_on_tertiary_container"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="121"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_surface` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorSurface&quot;>@color/m3_sys_color_dynamic_light_surface&lt;/item>"
+        errorLine2="                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="122"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_background` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;android:colorBackground&quot;>@color/m3_sys_color_dynamic_light_background&lt;/item>"
+        errorLine2="                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="123"
+            column="46"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_on_surface` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorOnSurface&quot;>@color/m3_sys_color_dynamic_light_on_surface&lt;/item>"
+        errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="123"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_on_background` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorOnBackground&quot;>@color/m3_sys_color_dynamic_light_on_background&lt;/item>"
+        errorLine2="                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="124"
+            column="40"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_surface_variant` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorSurfaceVariant&quot;>@color/m3_sys_color_dynamic_light_surface_variant&lt;/item>"
+        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="124"
+            column="42"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_on_surface_variant` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorOnSurfaceVariant&quot;>@color/m3_sys_color_dynamic_light_on_surface_variant"
+        errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="125"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_surface` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorSurface&quot;>@color/m3_sys_color_dynamic_light_surface&lt;/item>"
+        errorLine2="                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="125"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_on_surface` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorOnSurface&quot;>@color/m3_sys_color_dynamic_light_on_surface&lt;/item>"
+        errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="126"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_inverse_surface` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorSurfaceInverse&quot;>@color/m3_sys_color_dynamic_light_inverse_surface&lt;/item>"
+        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="127"
+            column="42"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_surface_variant` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorSurfaceVariant&quot;>@color/m3_sys_color_dynamic_light_surface_variant&lt;/item>"
+        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="127"
+            column="42"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_inverse_on_surface` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorOnSurfaceInverse&quot;>@color/m3_sys_color_dynamic_light_inverse_on_surface"
+        errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="128"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_on_surface_variant` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorOnSurfaceVariant&quot;>@color/m3_sys_color_dynamic_light_on_surface_variant"
+        errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="128"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_inverse_surface` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorSurfaceInverse&quot;>@color/m3_sys_color_dynamic_light_inverse_surface&lt;/item>"
+        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="130"
+            column="42"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_outline` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorOutline&quot;>@color/m3_sys_color_dynamic_light_outline&lt;/item>"
+        errorLine2="                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="130"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_inverse_on_surface` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorOnSurfaceInverse&quot;>@color/m3_sys_color_dynamic_light_inverse_on_surface"
+        errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="131"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_default_color_primary_text` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;android:textColorPrimary&quot;>@color/m3_dynamic_default_color_primary_text&lt;/item>"
+        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="133"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_sys_color_dynamic_light_outline` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;colorOutline&quot;>@color/m3_sys_color_dynamic_light_outline&lt;/item>"
+        errorLine2="                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="133"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_dark_default_color_primary_text` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            @color/m3_dynamic_dark_default_color_primary_text"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="135"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_default_color_primary_text` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;android:textColorPrimary&quot;>@color/m3_dynamic_default_color_primary_text&lt;/item>"
+        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="136"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_default_color_secondary_text` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;android:textColorSecondary&quot;>@color/m3_dynamic_default_color_secondary_text"
+        errorLine2="                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="137"
+            column="49"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_dark_default_color_primary_text` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            @color/m3_dynamic_dark_default_color_primary_text"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="138"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_dark_default_color_secondary_text` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            @color/m3_dynamic_dark_default_color_secondary_text"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="140"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_default_color_secondary_text` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;android:textColorSecondary&quot;>@color/m3_dynamic_default_color_secondary_text"
+        errorLine2="                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="140"
+            column="49"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_default_color_secondary_text` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;android:textColorTertiary&quot;>@color/m3_dynamic_default_color_secondary_text&lt;/item>"
+        errorLine2="                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="142"
+            column="48"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_dark_default_color_secondary_text` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            @color/m3_dynamic_dark_default_color_secondary_text"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="143"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_dark_default_color_secondary_text` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            @color/m3_dynamic_dark_default_color_secondary_text"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="144"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_default_color_secondary_text` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;android:textColorTertiary&quot;>@color/m3_dynamic_default_color_secondary_text&lt;/item>"
+        errorLine2="                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="145"
+            column="48"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_dark_default_color_secondary_text` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            @color/m3_dynamic_dark_default_color_secondary_text"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="147"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_primary_text_disable_only` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            @color/m3_dynamic_primary_text_disable_only"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="147"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_dark_primary_text_disable_only` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            @color/m3_dynamic_dark_primary_text_disable_only"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="150"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_primary_text_disable_only` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            @color/m3_dynamic_primary_text_disable_only"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="150"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_hint_foreground` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;android:textColorHint&quot;>@color/m3_dynamic_hint_foreground&lt;/item>"
+        errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="152"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_dark_hint_foreground` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;android:textColorHintInverse&quot;>@color/m3_dynamic_dark_hint_foreground&lt;/item>"
+        errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="153"
+            column="51"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_dark_primary_text_disable_only` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            @color/m3_dynamic_dark_primary_text_disable_only"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="153"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_highlighted_text` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;android:textColorHighlight&quot;>@color/m3_dynamic_highlighted_text&lt;/item>"
+        errorLine2="                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="154"
+            column="49"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_dark_highlighted_text` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;android:textColorHighlightInverse&quot;>@color/m3_dynamic_dark_highlighted_text"
+        errorLine2="                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="155"
+            column="56"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_hint_foreground` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;android:textColorHint&quot;>@color/m3_dynamic_hint_foreground&lt;/item>"
+        errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="155"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_dark_hint_foreground` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;android:textColorHintInverse&quot;>@color/m3_dynamic_dark_hint_foreground&lt;/item>"
+        errorLine2="                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="156"
+            column="51"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_highlighted_text` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;android:textColorHighlight&quot;>@color/m3_dynamic_highlighted_text&lt;/item>"
+        errorLine2="                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="157"
+            column="49"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_dark_highlighted_text` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="        &lt;item name=&quot;android:textColorHighlightInverse&quot;>@color/m3_dynamic_dark_highlighted_text"
+        errorLine2="                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="158"
+            column="56"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_default_color_primary_text` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            @color/m3_dynamic_default_color_primary_text"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="158"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="PrivateResource"
+        message="The resource `@color/m3_dynamic_default_color_primary_text` is marked as private in com.google.android.material:material:1.14.0"
+        errorLine1="            @color/m3_dynamic_default_color_primary_text"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/values/themes.xml"
+            line="161"
+            column="13"/>
     </issue>
 
     <issue
         id="Aligned16KB"
         message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
         <location
-            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/b2625d5f7bdffad23b029615c9ba2c9c/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
     </issue>
 
     <issue
         id="Aligned16KB"
         message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
         <location
-            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/b2625d5f7bdffad23b029615c9ba2c9c/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
     </issue>
 
     <issue
         id="Aligned16KB"
         message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
         <location
-            file="../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+            file="../../../../Users/Carl/.gradle/caches/9.5.1/transforms/b2625d5f7bdffad23b029615c9ba2c9c/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
     </issue>
 
     <issue
         id="Aligned16KB"
         message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
         <location
-            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/b2625d5f7bdffad23b029615c9ba2c9c/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
     </issue>
 
     <issue
         id="Aligned16KB"
         message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
         <location
-            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/b2625d5f7bdffad23b029615c9ba2c9c/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
     </issue>
 
     <issue
         id="Aligned16KB"
         message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
         <location
-            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/b2625d5f7bdffad23b029615c9ba2c9c/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
     </issue>
 
     <issue
         id="Aligned16KB"
         message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
         <location
-            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/b2625d5f7bdffad23b029615c9ba2c9c/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
     </issue>
 
     <issue
         id="Aligned16KB"
         message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
         <location
-            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/b2625d5f7bdffad23b029615c9ba2c9c/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
     </issue>
 
     <issue
         id="Aligned16KB"
         message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
         <location
-            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/b2625d5f7bdffad23b029615c9ba2c9c/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
     </issue>
 
     <issue
         id="Aligned16KB"
         message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
         <location
-            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/b2625d5f7bdffad23b029615c9ba2c9c/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
     </issue>
 
     <issue
         id="Aligned16KB"
         message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
         <location
-            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/b2625d5f7bdffad23b029615c9ba2c9c/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
     </issue>
 
     <issue
         id="Aligned16KB"
         message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
         <location
-            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/b2625d5f7bdffad23b029615c9ba2c9c/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
     </issue>
 
     <issue
         id="Aligned16KB"
         message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
         <location
-            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/b2625d5f7bdffad23b029615c9ba2c9c/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
     </issue>
 
     <issue
         id="Aligned16KB"
         message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
         <location
-            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/b2625d5f7bdffad23b029615c9ba2c9c/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
     </issue>
 
     <issue
         id="Aligned16KB"
         message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
         <location
-            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/b2625d5f7bdffad23b029615c9ba2c9c/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
     </issue>
 
     <issue
         id="Aligned16KB"
         message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
         <location
-            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/b2625d5f7bdffad23b029615c9ba2c9c/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
     </issue>
 
     <issue
         id="Aligned16KB"
         message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
         <location
-            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/b2625d5f7bdffad23b029615c9ba2c9c/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
     </issue>
 
     <issue
         id="Aligned16KB"
         message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
         <location
-            file="../../../../Users/Carl/.gradle/caches/9.5.1/transforms/9879e9e61eab63652e0ca4b49a0d0f01/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+            file="../../../../Users/Carl/.gradle/caches/9.5.1/transforms/b2625d5f7bdffad23b029615c9ba2c9c/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+    </issue>
+
+    <issue
+        id="Aligned16KB"
+        message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
+        <location
+            file="../../../../../Users/Carl/.gradle/caches/9.5.1/transforms/b2625d5f7bdffad23b029615c9ba2c9c/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
     </issue>
 
     <issue
@@ -751,7 +1725,7 @@
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="../gradle/libs.versions.toml"
-            line="52"
+            line="55"
             column="17"/>
     </issue>
 
@@ -795,7 +1769,7 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="665"
+            line="668"
             column="5"/>
     </issue>
 
@@ -806,7 +1780,7 @@
         errorLine2="    ^">
         <location
             file="src/main/res/values/strings.xml"
-            line="673"
+            line="676"
             column="5"/>
     </issue>
 
@@ -817,7 +1791,7 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="720"
+            line="727"
             column="5"/>
     </issue>
 
@@ -828,7 +1802,7 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="749"
+            line="756"
             column="5"/>
     </issue>
 
@@ -839,7 +1813,7 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="778"
+            line="785"
             column="5"/>
     </issue>
 
@@ -850,7 +1824,7 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="959"
+            line="966"
             column="5"/>
     </issue>
 
@@ -861,7 +1835,7 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="1154"
+            line="1161"
             column="5"/>
     </issue>
 
@@ -872,7 +1846,7 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="1156"
+            line="1163"
             column="5"/>
     </issue>
 
@@ -883,7 +1857,7 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="1228"
+            line="1235"
             column="5"/>
     </issue>
 
@@ -894,7 +1868,7 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="1323"
+            line="1330"
             column="5"/>
     </issue>
 
@@ -905,7 +1879,7 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="1324"
+            line="1331"
             column="5"/>
     </issue>
 
@@ -916,7 +1890,7 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="1325"
+            line="1332"
             column="5"/>
     </issue>
 
@@ -927,7 +1901,7 @@
         errorLine2="    ^">
         <location
             file="src/main/res/values/strings.xml"
-            line="1330"
+            line="1337"
             column="5"/>
     </issue>
 
@@ -938,7 +1912,7 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="1336"
+            line="1343"
             column="5"/>
     </issue>
 
@@ -949,7 +1923,7 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="1339"
+            line="1346"
             column="5"/>
     </issue>
 
@@ -960,7 +1934,7 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="1340"
+            line="1347"
             column="5"/>
     </issue>
 
@@ -971,7 +1945,7 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="1356"
+            line="1363"
             column="5"/>
     </issue>
 
@@ -982,150 +1956,7 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="1357"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;manga&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;tracker_link_success&quot;>Linked %d manga to authority&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="1384"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;chapters&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;discover_find_source_chapters&quot;>%d chapters&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="1406"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;chapters&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;discover_merge_chapters&quot;>%d chapters&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="1414"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;results&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;discover_result_count&quot;>%d results&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="1426"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;results&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;discover_result_count_filtered&quot;>%1$d of %2$d results&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="1427"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;manga&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;tracker_match_all_result_detail&quot;>Resolved %1$d manga: %2$d from trackers, %3$d"
-        errorLine2="    ^">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="1443"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;unlinked&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;tracker_match_all_no_matches_detail&quot;>No matches found for %d unlinked manga — try"
-        errorLine2="    ^">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="1447"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;days&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;source_dead_duration_days&quot;>%d days&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="1472"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;manga&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;match_results_summary&quot;>Resolved %1$d of %2$d manga&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="1482"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;unlinked&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;match_results_unlinked_count&quot;>%d unlinked&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="1486"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;manga&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;match_results_count_manga&quot;>%d manga&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="1491"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;novels&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;match_results_count_novels&quot;>%d novels&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="1492"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="PluralsCandidate"
-        message="Formatting %d followed by words (&quot;other&quot;): This should probably be a plural rather than a string"
-        errorLine1="    &lt;string name=&quot;match_results_count_other&quot;>%d other&lt;/string>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="1493"
+            line="1364"
             column="5"/>
     </issue>
 
@@ -1136,278 +1967,19 @@
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="1525"
+            line="1567"
             column="5"/>
     </issue>
 
     <issue
-        id="UnsafeIntentLaunch"
-        message="This intent could be coming from an untrusted source. It is later launched by an unprotected component ephyra.app.ui.deeplink.DeepLinkActivity. You could either make the component ephyra.app.ui.deeplink.DeepLinkActivity protected; or sanitize this intent using androidx.core.content.IntentSanitizer."
-        errorLine1="        startActivity(intent)"
-        errorLine2="                      ~~~~~~">
+        id="AuthLeak"
+        message="Possible credential leak"
+        errorLine1="                            placeholder = { Text(&quot;smb://user:password@192.168.1.50/share&quot;) },"
+        errorLine2="                                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/java/ephyra/app/ui/deeplink/DeepLinkActivity.kt"
-            line="17"
-            column="23"/>
-        <location
-            file="src/main/java/ephyra/app/ui/deeplink/DeepLinkActivity.kt"
-            line="17"
-            column="9"
-            message="The unsafe intent is launched here."/>
-    </issue>
-
-    <issue
-        id="DataExtractionRules"
-        message="The attribute `android:allowBackup` is deprecated from Android 12 and may be removed in future versions. Consider adding the attribute `android:dataExtractionRules` specifying an `@xml` resource which configures backups and device transfers on Android 12 and higher."
-        errorLine1="        android:allowBackup=&quot;false&quot;"
-        errorLine2="                             ~~~~~">
-        <location
-            file="src/main/AndroidManifest.xml"
-            line="38"
-            column="30"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 34"
-        errorLine1="        val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {"
-        errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/ephyra/presentation/core/util/CrashLogUtil.kt"
-            line="47"
-            column="31"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="This folder configuration (`v33`) is unnecessary; `minSdkVersion` is 34. Merge all the resources in this folder into `anim`.">
-        <location
-            file="src/main/res/anim-v33"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 29"
-        errorLine1="        &lt;item name=&quot;android:forceDarkAllowed&quot; tools:targetApi=&quot;Q&quot;>false&lt;/item>"
-        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/themes.xml"
-            line="11"
-            column="47"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 29"
-        errorLine1="        &lt;item name=&quot;android:forceDarkAllowed&quot; tools:targetApi=&quot;Q&quot;>false&lt;/item>"
-        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/themes.xml"
-            line="11"
-            column="47"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 27"
-        errorLine1="        &lt;item name=&quot;android:navigationBarDividerColor&quot; tools:targetApi=&quot;o_mr1&quot;>@null&lt;/item>"
-        errorLine2="                                                       ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/themes.xml"
-            line="63"
-            column="56"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 27"
-        errorLine1="        &lt;item name=&quot;android:navigationBarDividerColor&quot; tools:targetApi=&quot;o_mr1&quot;>@null&lt;/item>"
-        errorLine2="                                                       ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/themes.xml"
-            line="63"
-            column="56"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 29"
-        errorLine1="        &lt;item name=&quot;android:enforceNavigationBarContrast&quot; tools:targetApi=&quot;Q&quot;>false&lt;/item>"
-        errorLine2="                                                          ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/themes.xml"
-            line="64"
-            column="59"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 29"
-        errorLine1="        &lt;item name=&quot;android:enforceNavigationBarContrast&quot; tools:targetApi=&quot;Q&quot;>false&lt;/item>"
-        errorLine2="                                                          ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/themes.xml"
-            line="64"
-            column="59"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 29"
-        errorLine1="        &lt;item name=&quot;android:enforceStatusBarContrast&quot; tools:targetApi=&quot;Q&quot;>false&lt;/item>"
-        errorLine2="                                                      ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/themes.xml"
-            line="65"
-            column="55"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 29"
-        errorLine1="        &lt;item name=&quot;android:enforceStatusBarContrast&quot; tools:targetApi=&quot;Q&quot;>false&lt;/item>"
-        errorLine2="                                                      ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/themes.xml"
-            line="65"
-            column="55"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="Unnecessary; `SDK_INT` is always >= 27"
-        errorLine1="        &lt;item name=&quot;android:windowLightNavigationBar&quot; tools:targetApi=&quot;o_mr1&quot;>false&lt;/item>"
-        errorLine2="                                                      ~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/themes.xml"
-            line="648"
-            column="55"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="This folder configuration (`v31`) is unnecessary; `minSdkVersion` is 34. Merge all the resources in this folder into `values-night`.">
-        <location
-            file="src/main/res/values-night-v31"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="This folder configuration (`v31`) is unnecessary; `minSdkVersion` is 34. Merge all the resources in this folder into `values-night`.">
-        <location
-            file="src/main/res/values-night-v31"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="This folder configuration (`v27`) is unnecessary; `minSdkVersion` is 34. Merge all the resources in this folder into `values`.">
-        <location
-            file="src/main/res/values-v27"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="This folder configuration (`v27`) is unnecessary; `minSdkVersion` is 34. Merge all the resources in this folder into `values`.">
-        <location
-            file="src/main/res/values-v27"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="This folder configuration (`v31`) is unnecessary; `minSdkVersion` is 34. Merge all the resources in this folder into `values`.">
-        <location
-            file="src/main/res/values-v31"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="This folder configuration (`v31`) is unnecessary; `minSdkVersion` is 34. Merge all the resources in this folder into `values`.">
-        <location
-            file="src/main/res/values-v31"/>
-    </issue>
-
-    <issue
-        id="ObsoleteSdkInt"
-        message="This folder configuration (`v31`) is unnecessary; `minSdkVersion` is 34. Merge all the resources in this folder into `values`.">
-        <location
-            file="src/main/res/values-v31"/>
-    </issue>
-
-    <issue
-        id="FrequentlyChangingValue"
-        message="Reading a value annotated with @FrequentlyChangingValue inside composition"
-        errorLine1="            val layoutInfo = listState.layoutInfo"
-        errorLine2="                                       ~~~~~~~~~~">
-        <location
-            file="src/main/java/ephyra/presentation/core/components/VerticalFastScroller.kt"
-            line="84"
-            column="40"/>
-    </issue>
-
-    <issue
-        id="FrequentlyChangingValue"
-        message="Reading a value annotated with @FrequentlyChangingValue inside composition"
-        errorLine1="                listState.layoutInfo.afterContentPadding"
-        errorLine2="                          ~~~~~~~~~~">
-        <location
-            file="src/main/java/ephyra/presentation/core/components/VerticalFastScroller.kt"
-            line="109"
-            column="27"/>
-    </issue>
-
-    <issue
-        id="FrequentlyChangingValue"
-        message="Reading a value annotated with @FrequentlyChangingValue inside composition"
-        errorLine1="                listState.layoutInfo.beforeContentPadding -"
-        errorLine2="                          ~~~~~~~~~~">
-        <location
-            file="src/main/java/ephyra/presentation/core/components/VerticalFastScroller.kt"
-            line="113"
-            column="27"/>
-    </issue>
-
-    <issue
-        id="FrequentlyChangingValue"
-        message="Reading a value annotated with @FrequentlyChangingValue inside composition"
-        errorLine1="                listState.layoutInfo.afterContentPadding -"
-        errorLine2="                          ~~~~~~~~~~">
-        <location
-            file="src/main/java/ephyra/presentation/core/components/VerticalFastScroller.kt"
-            line="114"
-            column="27"/>
-    </issue>
-
-    <issue
-        id="FrequentlyChangingValue"
-        message="Reading a value annotated with @FrequentlyChangingValue inside composition"
-        errorLine1="            val layoutInfo = state.layoutInfo"
-        errorLine2="                                   ~~~~~~~~~~">
-        <location
-            file="src/main/java/ephyra/presentation/core/components/VerticalFastScroller.kt"
-            line="302"
-            column="36"/>
-    </issue>
-
-    <issue
-        id="FrequentlyChangingValue"
-        message="Reading a value annotated with @FrequentlyChangingValue inside composition"
-        errorLine1="                state.layoutInfo.afterContentPadding"
-        errorLine2="                      ~~~~~~~~~~">
-        <location
-            file="src/main/java/ephyra/presentation/core/components/VerticalFastScroller.kt"
-            line="323"
-            column="23"/>
-    </issue>
-
-    <issue
-        id="FrequentlyChangingValue"
-        message="Reading a value annotated with @FrequentlyChangingValue inside composition"
-        errorLine1="            LaunchedEffect(state.firstVisibleItemScrollOffset) {"
-        errorLine2="                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/ephyra/presentation/core/components/VerticalFastScroller.kt"
-            line="350"
-            column="34"/>
+            file="src/main/kotlin/ephyra/feature/browse/presentation/ContentSourcingScreen.kt"
+            line="675"
+            column="52"/>
     </issue>
 
     <issue
@@ -1445,46 +2017,24 @@
 
     <issue
         id="AutoboxingStateCreation"
-        message="Prefer `mutableLongStateOf` instead of `mutableStateOf`"
-        errorLine1="    var editStatus by remember { mutableStateOf(status) }"
-        errorLine2="                                 ~~~~~~~~~~~~~~">
+        message="Prefer `mutableFloatStateOf` instead of `mutableStateOf`"
+        errorLine1="    var scaleAccumulator by remember(columns) { mutableStateOf(1f) }"
+        errorLine2="                                                ~~~~~~~~~~~~~~">
         <location
-            file="src/main/kotlin/ephyra/presentation/manga/components/EditMetadataDialog.kt"
-            line="96"
-            column="34"/>
+            file="src/main/kotlin/ephyra/feature/library/presentation/components/LazyLibraryGrid.kt"
+            line="30"
+            column="49"/>
     </issue>
 
     <issue
-        id="AutoboxingStateCreation"
-        message="Prefer `mutableLongStateOf` instead of `mutableStateOf`"
-        errorLine1="    var available by remember(file) { mutableStateOf(-1L) }"
-        errorLine2="                                      ~~~~~~~~~~~~~~">
+        id="NotShrinkingResources"
+        message="Avoid setting isShrinkResources = false"
+        errorLine1="            isShrinkResources = false"
+        errorLine2="                                ~~~~~">
         <location
-            file="src/main/kotlin/ephyra/feature/settings/screen/data/StorageInfo.kt"
-            line="53"
-            column="39"/>
-    </issue>
-
-    <issue
-        id="AutoboxingStateCreation"
-        message="Prefer `mutableLongStateOf` instead of `mutableStateOf`"
-        errorLine1="    var total by remember(file) { mutableStateOf(-1L) }"
-        errorLine2="                                  ~~~~~~~~~~~~~~">
-        <location
-            file="src/main/kotlin/ephyra/feature/settings/screen/data/StorageInfo.kt"
-            line="54"
-            column="35"/>
-    </issue>
-
-    <issue
-        id="ViewConstructor"
-        message="Custom view `Pager` is missing constructor used by tools: `(Context)` or `(Context,AttributeSet)` or `(Context,AttributeSet,int)`"
-        errorLine1="open class Pager("
-        errorLine2="           ~~~~~">
-        <location
-            file="src/main/kotlin/ephyra/feature/reader/viewer/pager/Pager.kt"
-            line="17"
-            column="12"/>
+            file="build.gradle.kts"
+            line="80"
+            column="33"/>
     </issue>
 
     <issue
@@ -1523,100 +2073,23 @@
     <issue
         id="UseKtx"
         message="Use the KTX extension function `String.toUri` instead?"
+        errorLine1="                    val mockFile = com.hippo.unifile.UniFile.fromUri(context, android.net.Uri.parse(item.path))"
+        errorLine2="                                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/kotlin/ephyra/feature/browse/source/sourcing/ContentSourcingViewModel.kt"
+            line="236"
+            column="79"/>
+    </issue>
+
+    <issue
+        id="UseKtx"
+        message="Use the KTX extension function `String.toUri` instead?"
         errorLine1="            val jellyfinRoot = UniFile.fromUri(context, android.net.Uri.parse(folderUri))"
         errorLine2="                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/kotlin/ephyra/core/download/Downloader.kt"
-            line="883"
+            line="886"
             column="57"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `Int.toDrawable` instead?"
-        errorLine1="        if (image == null) return ColorDrawable(whiteColor)"
-        errorLine2="                                  ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/kotlin/ephyra/core/common/util/system/ImageUtil.kt"
-            line="584"
-            column="35"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `Int.toDrawable` instead?"
-        errorLine1="            return ColorDrawable(whiteColor)"
-        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/kotlin/ephyra/core/common/util/system/ImageUtil.kt"
-            line="587"
-            column="20"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `Int.toDrawable` instead?"
-        errorLine1="            return ColorDrawable(topLeftPixel)"
-        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/kotlin/ephyra/core/common/util/system/ImageUtil.kt"
-            line="631"
-            column="20"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `Int.toDrawable` instead?"
-        errorLine1="                darkBG -> ColorDrawable(blackColor)"
-        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/kotlin/ephyra/core/common/util/system/ImageUtil.kt"
-            line="750"
-            column="27"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `Int.toDrawable` instead?"
-        errorLine1="                else -> ColorDrawable(whiteColor)"
-        errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/kotlin/ephyra/core/common/util/system/ImageUtil.kt"
-            line="751"
-            column="25"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `Int.toDrawable` instead?"
-        errorLine1="                return ColorDrawable(blackColor)"
-        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/kotlin/ephyra/core/common/util/system/ImageUtil.kt"
-            line="771"
-            column="24"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `Int.toDrawable` instead?"
-        errorLine1="                return ColorDrawable(whiteColor)"
-        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/kotlin/ephyra/core/common/util/system/ImageUtil.kt"
-            line="793"
-            column="24"/>
-    </issue>
-
-    <issue
-        id="UseKtx"
-        message="Use the KTX extension function `Bitmap.scale` instead?"
-        errorLine1="        val scaled = Bitmap.createScaledBitmap(coarse, DHASH_WIDTH, DHASH_HEIGHT, true)"
-        errorLine2="                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/kotlin/ephyra/core/common/util/system/ImageUtil.kt"
-            line="858"
-            column="22"/>
     </issue>
 
     <issue
@@ -1631,25 +2104,135 @@
     </issue>
 
     <issue
-        id="UseKtx"
-        message="Use the KTX extension function `Bitmap.toDrawable` instead?"
-        errorLine1="        setNonAnimatedImage(BitmapDrawable(context.resources, bitmap), config)"
-        errorLine2="                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        id="UseTomlInstead"
+        message="Use version catalog instead"
+        errorLine1="    api(&quot;javax.inject:javax.inject:1&quot;)"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/kotlin/ephyra/feature/reader/viewer/ReaderPageImageView.kt"
-            line="167"
-            column="29"/>
+            file="build.gradle.kts"
+            line="24"
+            column="9"/>
     </issue>
 
     <issue
         id="UseTomlInstead"
         message="Use version catalog instead"
-        errorLine1="    implementation(&quot;androidx.compose.runtime:runtime:1.6.7&quot;)"
-        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        errorLine1="    implementation(&quot;javax.inject:javax.inject:1&quot;)"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="build.gradle.kts"
-            line="18"
+            line="26"
             column="20"/>
+    </issue>
+
+    <issue
+        id="UseTomlInstead"
+        message="Use the existing version catalog reference (`libs.datastore`) instead"
+        errorLine1="    implementation(&quot;androidx.datastore:datastore-preferences:1.2.1&quot;)"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="35"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="UseTomlInstead"
+        message="Use version catalog instead"
+        errorLine1="    implementation(&quot;androidx.datastore:datastore-core:1.2.1&quot;)"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="36"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="UseTomlInstead"
+        message="Use version catalog instead"
+        errorLine1="    implementation(&quot;javax.inject:javax.inject:1&quot;)"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="67"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="UseTomlInstead"
+        message="Use version catalog instead"
+        errorLine1="    testImplementation(&quot;org.robolectric:robolectric:4.16.1&quot;)"
+        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="73"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="UseTomlInstead"
+        message="Use version catalog instead"
+        errorLine1="    testImplementation(&quot;androidx.test:core:1.7.0&quot;)"
+        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="74"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="UseTomlInstead"
+        message="Use version catalog instead"
+        errorLine1="    testImplementation(&quot;androidx.test.ext:junit:1.3.0&quot;)"
+        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="75"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="UseTomlInstead"
+        message="Use version catalog instead"
+        errorLine1="    testImplementation(&quot;org.robolectric:robolectric:4.16.1&quot;)"
+        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="328"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="UseTomlInstead"
+        message="Use version catalog instead"
+        errorLine1="    testImplementation(&quot;androidx.test:core:1.7.0&quot;)"
+        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="329"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="UseTomlInstead"
+        message="Use version catalog instead"
+        errorLine1="    testImplementation(&quot;androidx.test.ext:junit:1.3.0&quot;)"
+        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="330"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="UseTomlInstead"
+        message="Use version catalog instead"
+        errorLine1="    testRuntimeOnly(&quot;org.junit.vintage:junit-vintage-engine:6.1.0&quot;)"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="331"
+            column="21"/>
     </issue>
 
     <issue
@@ -1659,13 +2242,13 @@
         errorLine2="                 ~~~~~~~~~~~~">
         <location
             file="src/main/kotlin/ephyra/feature/reader/viewer/pager/Pager.kt"
-            line="87"
+            line="88"
             column="18"/>
     </issue>
 
     <issue
         id="ClickableViewAccessibility"
-        message="Custom view `ReaderButton` overrides `onTouchEvent` but not `performClick`"
+        message="`ReaderButton#onTouchEvent` should call `ReaderButton#performClick` when a click is detected"
         errorLine1="    override fun onTouchEvent(event: MotionEvent): Boolean {"
         errorLine2="                 ~~~~~~~~~~~~">
         <location
@@ -1676,7 +2259,7 @@
 
     <issue
         id="ClickableViewAccessibility"
-        message="Custom view `WebtoonRecyclerView` overrides `onTouchEvent` but not `performClick`"
+        message="`WebtoonRecyclerView#onTouchEvent` should call `WebtoonRecyclerView#performClick` when a click is detected"
         errorLine1="    override fun onTouchEvent(e: MotionEvent): Boolean {"
         errorLine2="                 ~~~~~~~~~~~~">
         <location
@@ -1694,61 +2277,6 @@
             file="src/main/kotlin/ephyra/feature/reader/viewer/webtoon/WebtoonSubsamplingImageView.kt"
             line="17"
             column="18"/>
-    </issue>
-
-    <issue
-        id="SetTextI18n"
-        message="String literal in `setText` can not be translated. Use Android resources instead."
-        errorLine1="            text = &quot;App failed to start&quot;"
-        errorLine2="                    ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/ephyra/app/crash/StartupFailureActivity.kt"
-            line="47"
-            column="21"/>
-    </issue>
-
-    <issue
-        id="SetTextI18n"
-        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
-        errorLine1="            text = &quot;A critical dependency could not be initialised. &quot; +"
-        errorLine2="                   ^">
-        <location
-            file="src/main/java/ephyra/app/crash/StartupFailureActivity.kt"
-            line="58"
-            column="20"/>
-    </issue>
-
-    <issue
-        id="SetTextI18n"
-        message="String literal in `setText` can not be translated. Use Android resources instead."
-        errorLine1="            text = &quot;A critical dependency could not be initialised. &quot; +"
-        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/ephyra/app/crash/StartupFailureActivity.kt"
-            line="58"
-            column="21"/>
-    </issue>
-
-    <issue
-        id="SetTextI18n"
-        message="String literal in `setText` can not be translated. Use Android resources instead."
-        errorLine1="                &quot;Please report this error or try reinstalling the app.&quot;"
-        errorLine2="                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/ephyra/app/crash/StartupFailureActivity.kt"
-            line="59"
-            column="18"/>
-    </issue>
-
-    <issue
-        id="SetTextI18n"
-        message="String literal in `setText` can not be translated. Use Android resources instead."
-        errorLine1="            text = &quot;Restart App&quot;"
-        errorLine2="                    ~~~~~~~~~~~">
-        <location
-            file="src/main/java/ephyra/app/crash/StartupFailureActivity.kt"
-            line="81"
-            column="21"/>
     </issue>
 
 </issues>

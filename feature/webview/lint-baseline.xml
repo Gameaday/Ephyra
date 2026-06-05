@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="5" by="lint Panda 4 | 2025.3.4 Canary 2">
+<issues format="6" by="lint 9.2.1" type="baseline" client="gradle" dependencies="false" name="AGP (9.2.1)" variant="all" version="9.2.1">
+
+    <issue
+        id="Aligned16KB"
+        message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
+        <location
+            file="$GRADLE_USER_HOME/caches/9.5.1/transforms/b2625d5f7bdffad23b029615c9ba2c9c/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
+    </issue>
 
 </issues>

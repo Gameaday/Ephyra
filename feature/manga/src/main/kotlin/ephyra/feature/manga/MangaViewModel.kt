@@ -302,8 +302,23 @@ class MangaViewModel @Inject constructor(
         }
 
         return items.insertSeparators { before, after ->
-            // TODO: missing chapters logic
-            null
+            // Detect gaps in chapter numbering and insert a missing count indicator
+            if (before != null && after != null) {
+                val beforeNum = before.chapter.chapterNumber
+                val afterNum = after.chapter.chapterNumber
+                if (beforeNum > 0 && afterNum > 0) {
+                    val diff = (beforeNum - afterNum).toInt() - 1
+                    if (diff > 0) {
+                        ChapterList.MissingCount(id = -1L, count = diff)
+                    } else {
+                        null
+                    }
+                } else {
+                    null
+                }
+            } else {
+                null
+            }
         }
     }
 

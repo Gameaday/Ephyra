@@ -70,7 +70,7 @@ fun MoreTabScreen(
         onClickDownloadQueue = { navController.navigate(ScreenRoutes.DownloadQueue.route) },
         onClickCategories = { navController.navigate(ephyra.presentation.core.ui.navigation.Screen.Category) },
         onClickStats = { navController.navigate(ScreenRoutes.Stats.route) },
-        onClickDataAndStorage = { navController.navigate(ScreenRoutes.Settings.route) }, // TODO: sub-route
+        onClickDataAndStorage = { navController.navigate(ScreenRoutes.SettingsData.route) },
         onClickSettings = { navController.navigate(ScreenRoutes.Settings.route) },
         onClickAbout = { navController.navigate(ScreenRoutes.About.route) },
     )

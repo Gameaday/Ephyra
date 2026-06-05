@@ -104,8 +104,9 @@ fun ExtensionRepoCreateDialog(
     )
 
     LaunchedEffect(focusRequester) {
-        // TODO: https://issuetracker.google.com/issues/204502668
-        delay(0.1.seconds)
+        // Workaround for https://issuetracker.google.com/issues/204502668
+        // Wait one frame for the dialog animation to complete before requesting focus
+        delay(1)
         focusRequester.requestFocus()
     }
 }
