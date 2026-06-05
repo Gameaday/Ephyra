@@ -4,6 +4,7 @@ import ephyra.core.common.di.IoDispatcher
 import ephyra.domain.content.model.ContentItem
 import ephyra.domain.content.model.ContentStatus
 import ephyra.domain.content.model.ContentType
+import ephyra.domain.content.model.ContentUnit
 import eu.kanade.tachiyomi.network.NetworkHelper
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -179,6 +180,135 @@ class AdaptiveHeuristicEngine @Inject constructor(
 
     override suspend fun getLatest(profile: SourceProfile, page: Int): List<ContentItem> {
         return search(profile, "", page)
+    }
+
+    override suspend fun getChapters(profile: SourceProfile, url: String): List<ContentUnit> = withContext(
+        ioDispatcher,
+    ) {
+        val request = Request.Builder().url(url).build()
+        val response = try {
+            networkHelper.client.newCall(request).execute()
+        } catch (e: Exception) {
+            throw IOException("Network error: ${e.message}", e)
+        }
+        if (!response.isSuccessful) throw IOException("Failed to load item page: $url")
+
+        val doc = Jsoup.parse(response.body.string(), url)
+
+        // Find potential chapter links
+        val selectors = listOf(
+            ".wp-manga-chapter a",
+            ".chapter-list a",
+            ".chapters a",
+            "a[href*=chapter]",
+            "a[href*=/c/]",
+            "tr:has(a) a",
+            "li:has(a) a",
+        )
+
+        var elements = org.jsoup.select.Elements()
+        for (selector in selectors) {
+            elements = doc.select(selector)
+            if (elements.isNotEmpty()) break
+        }
+
+        if (elements.isEmpty()) {
+            elements = doc.select("a").filter {
+                val text = it.text().lowercase()
+                val href = it.attr("href").lowercase()
+                text.contains("chapter") || text.contains("ch.") || text.contains("episode") ||
+                    href.contains("chapter") || href.contains("/c/") || href.contains("/ep-")
+            }.let { org.jsoup.select.Elements(it) }
+        }
+
+        var index = 0.0
+        elements.mapNotNull { element ->
+            val href = element.absUrl("href")
+            val title = element.text().ifBlank { href.substringAfterLast("/") }
+            if (href.isBlank()) return@mapNotNull null
+
+            val number = parseChapterNumber(title, href) ?: index++
+
+            ContentUnit(
+                id = -1L,
+                contentItemId = url.hashCode().toLong(),
+                url = href,
+                title = title,
+                number = number,
+                dateUpload = 0L,
+                progress = 0L,
+                totalLength = 0L,
+                lastRead = 0L,
+                read = false,
+                bookmark = false,
+            )
+        }.distinctBy { it.url }.sortedByDescending { it.number }
+    }
+
+    override suspend fun getPages(profile: SourceProfile, url: String): List<String> = withContext(ioDispatcher) {
+        val request = Request.Builder().url(url).build()
+        val response = try {
+            networkHelper.client.newCall(request).execute()
+        } catch (e: Exception) {
+            throw IOException("Network error: ${e.message}", e)
+        }
+        if (!response.isSuccessful) throw IOException("Failed to load chapter page: $url")
+
+        val html = response.body.string()
+        val doc = Jsoup.parse(html, url)
+
+        val readerSelectors = listOf(
+            "#reader img",
+            ".reader img",
+            ".read-container img",
+            ".wp-manga-chapter-img img",
+            ".entry-content img",
+            "#entry-content img",
+            "div.page-break img",
+        )
+
+        var images = org.jsoup.select.Elements()
+        for (selector in readerSelectors) {
+            images = doc.select(selector)
+            if (images.isNotEmpty()) break
+        }
+
+        if (images.isEmpty()) {
+            images = doc.select("img").filter { img ->
+                val src = (img.attr("data-src").ifBlank { img.attr("src") }).lowercase()
+                src.contains("manga") || src.contains("chapter") || src.contains("page") ||
+                    src.contains("wp-content/uploads") || src.contains("cdn")
+            }.let { org.jsoup.select.Elements(it) }
+        }
+
+        images.mapNotNull { img ->
+            val srcUrl = img.attr("data-src")
+                .ifBlank { img.attr("data-original") }
+                .ifBlank { img.attr("src") }
+            if (srcUrl.isBlank()) {
+                null
+            } else {
+                img.absUrl(
+                    if (img.hasAttr("data-src")) {
+                        "data-src"
+                    } else if (img.hasAttr("data-original")) {
+                        "data-original"
+                    } else {
+                        "src"
+                    },
+                )
+            }
+        }.distinct()
+    }
+
+    private fun parseChapterNumber(title: String, url: String): Double? {
+        val numberRegex = """(?i)(?:chapter|ch\.|episode|ep\.)\s*([0-9]+(?:\.[0-9]+)?)""".toRegex()
+        numberRegex.find(title)?.groupValues?.getOrNull(1)?.toDoubleOrNull()?.let { return it }
+        numberRegex.find(url)?.groupValues?.getOrNull(1)?.toDoubleOrNull()?.let { return it }
+
+        val genericRegex = """\b([0-9]+(?:\.[0-9]+)?)\b""".toRegex()
+        genericRegex.findAll(title).lastOrNull()?.groupValues?.getOrNull(1)?.toDoubleOrNull()?.let { return it }
+        return null
     }
 
     private fun inferContentType(doc: Document): ContentType {

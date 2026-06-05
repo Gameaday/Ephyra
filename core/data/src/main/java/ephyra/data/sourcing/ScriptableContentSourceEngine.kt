@@ -5,6 +5,7 @@ import ephyra.core.common.preference.PreferenceStore
 import ephyra.domain.content.model.ContentItem
 import ephyra.domain.content.model.ContentStatus
 import ephyra.domain.content.model.ContentType
+import ephyra.domain.content.model.ContentUnit
 import ephyra.domain.content.source.ContentSourceEngine
 import ephyra.domain.content.source.PaginationType
 import ephyra.domain.content.source.ResponseType
@@ -110,6 +111,41 @@ class ScriptableContentSourceEngine @Inject constructor(
         return search(profile, "", page)
     }
 
+    override suspend fun getChapters(profile: SourceProfile, url: String): List<ContentUnit> = withContext(
+        ioDispatcher,
+    ) {
+        val scriptName = getScraperNameForUrl(profile.baseUrl)
+            ?: throw IllegalArgumentException("No scraper script configured for ${profile.baseUrl}")
+        val scriptContent = scraperUpdater.getScraperScript(scriptName)
+            ?: throw IllegalArgumentException("Scraper script $scriptName not found")
+
+        val resultJson = try {
+            scriptEngine.executeScraper(scriptContent, "getChapters", url)
+        } catch (e: Exception) {
+            logcat(LogPriority.ERROR) { "QuickJS getChapters failed for $url: ${e.localizedMessage}" }
+            return@withContext emptyList()
+        }
+
+        val items = json.decodeFromString<List<ScraperContentUnitDto>>(resultJson)
+        items.map { it.toDomain(url.hashCode().toLong()) }
+    }
+
+    override suspend fun getPages(profile: SourceProfile, url: String): List<String> = withContext(ioDispatcher) {
+        val scriptName = getScraperNameForUrl(profile.baseUrl)
+            ?: throw IllegalArgumentException("No scraper script configured for ${profile.baseUrl}")
+        val scriptContent = scraperUpdater.getScraperScript(scriptName)
+            ?: throw IllegalArgumentException("Scraper script $scriptName not found")
+
+        val resultJson = try {
+            scriptEngine.executeScraper(scriptContent, "getPages", url)
+        } catch (e: Exception) {
+            logcat(LogPriority.ERROR) { "QuickJS getPages failed for $url: ${e.localizedMessage}" }
+            return@withContext emptyList()
+        }
+
+        json.decodeFromString<List<String>>(resultJson)
+    }
+
     private suspend fun getScraperNameForUrl(baseUrl: String): String? {
         val normalized = normalizeUrl(baseUrl)
         val mapped = preferenceStore.getString("baseUrl_scraper_mapping_$normalized", "").get()
@@ -174,6 +210,32 @@ internal data class ScraperContentItemDto(
             },
             metadata = metadata,
             initialized = author != null || description != null,
+        )
+    }
+}
+
+@Serializable
+internal data class ScraperContentUnitDto(
+    val url: String,
+    val title: String,
+    val number: Double,
+    val dateUpload: Long = 0L,
+    val scanlator: String? = null,
+) {
+    fun toDomain(contentItemId: Long): ContentUnit {
+        return ContentUnit(
+            id = -1L,
+            contentItemId = contentItemId,
+            url = url,
+            title = title,
+            number = number,
+            dateUpload = dateUpload,
+            progress = 0L,
+            totalLength = 0L,
+            lastRead = 0L,
+            read = false,
+            bookmark = false,
+            scanlator = scanlator,
         )
     }
 }

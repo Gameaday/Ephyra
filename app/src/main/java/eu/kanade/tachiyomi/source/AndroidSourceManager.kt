@@ -3,11 +3,15 @@ package eu.kanade.tachiyomi.source
 import android.content.Context
 import ephyra.app.extension.ExtensionManager
 import ephyra.core.common.i18n.stringResource
+import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.download.DownloadManager
+import ephyra.domain.content.source.ContentSourceOrchestrator
+import ephyra.domain.content.source.SourceProfileCache
 import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.repository.StubSourceRepository
 import ephyra.domain.source.service.SourceManager
 import ephyra.source.local.LocalSource
+import eu.kanade.tachiyomi.source.online.DynamicHttpSource
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +35,9 @@ internal class AndroidSourceManager(
     private val fileSystem: ephyra.source.local.io.LocalSourceFileSystem,
     private val coverManager: ephyra.source.local.image.LocalCoverManager,
     private val downloadManagerProvider: Provider<DownloadManager>,
+    private val orchestratorProvider: Provider<ContentSourceOrchestrator>,
+    private val profileCache: SourceProfileCache,
+    private val preferenceStore: PreferenceStore,
     private val json: Json,
     private val xml: XML,
 ) : SourceManager {
@@ -49,29 +56,59 @@ internal class AndroidSourceManager(
     }
 
     init {
-        scope.launch {
-            extensionManager.installedExtensionsFlow
-                .collectLatest { extensions ->
-                    val mutableMap = ConcurrentHashMap<Long, Source>(
-                        mapOf(
-                            LocalSource.ID to LocalSource(
-                                context,
-                                fileSystem,
-                                coverManager,
-                                json,
-                                xml,
-                            ),
-                        ),
+        val heuristicProfilesFlow = preferenceStore.getStringSet("profiled_domains_list", emptySet())
+            .changes()
+            .map { domains ->
+                val actualDomains = if (domains.isEmpty()) {
+                    setOf(
+                        "https://mangadex.org",
+                        "https://manganato.com",
+                        "https://asuratoons.com",
                     )
-                    extensions.forEach { extension ->
-                        extension.sources.forEach {
-                            mutableMap[it.id] = it
-                            registerStubSource(StubSource.from(it))
-                        }
-                    }
-                    sourcesMapFlow.value = mutableMap
-                    _isInitialized.value = true
+                } else {
+                    domains
                 }
+                actualDomains.mapNotNull { profileCache.get(it) }
+            }
+
+        scope.launch {
+            kotlinx.coroutines.flow.combine(
+                extensionManager.installedExtensionsFlow,
+                heuristicProfilesFlow,
+            ) { extensions, profiles ->
+                val mutableMap = ConcurrentHashMap<Long, Source>(
+                    mapOf(
+                        LocalSource.ID to LocalSource(
+                            context,
+                            fileSystem,
+                            coverManager,
+                            json,
+                            xml,
+                        ),
+                    ),
+                )
+
+                // Add legacy extensions
+                extensions.forEach { extension ->
+                    extension.sources.forEach {
+                        mutableMap[it.id] = it
+                        registerStubSource(StubSource.from(it))
+                    }
+                }
+
+                // Add custom JS scrapers and heuristic sources
+                val orchestrator = orchestratorProvider.get()
+                profiles.forEach { profile ->
+                    if (profile.enabled) {
+                        val source = eu.kanade.tachiyomi.source.online.DynamicHttpSource(profile, orchestrator)
+                        mutableMap[source.id] = source
+                        registerStubSource(StubSource.from(source))
+                    }
+                }
+
+                sourcesMapFlow.value = mutableMap
+                _isInitialized.value = true
+            }.collectLatest {}
         }
 
         scope.launch {

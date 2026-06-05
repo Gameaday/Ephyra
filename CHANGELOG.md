@@ -7,6 +7,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### 🔌 Complete Dynamic Sourcing & Scraping System
+- **Layout Heuristics Engine**: Implemented DOM structure auto-discovery in `AdaptiveHeuristicEngine.kt` using Jsoup. Automatically resolves and fallbacks to standard selectors for titles, covers, chapter links (e.g., `.wp-manga-chapter`, `a[href*=chapter]`), and reader pages.
+- **Sandboxed QuickJS Scripting**: Leveraged a sandboxed QuickJS execution runtime in `ScriptableContentSourceEngine.kt` to run dynamic JS scraper scripts securely and compliant with Play Store dynamic code guidelines.
+- **Dynamic Source Registry Bridge**: Created `DynamicHttpSource.kt` to bridge generic `SourceProfile` and scraper orchestration outputs into Tachiyomi's legacy `HttpSource` / `CatalogueSource` contracts.
+- **Dynamic Sources Registration**: Configured `AndroidSourceManager.kt` to listen to the preference flow for profiled domains, dynamically instantiate `DynamicHttpSource` wrappers, and register them concurrently alongside legacy extension sources.
+- **Hilt Dependency Cycle Resolution**: Fixed the circular dependency in the DI graph between `AndroidSourceManager` and `DownloadManager` / `Downloader` by injecting a deferred Hilt `Provider<ContentSourceOrchestrator>` inside `AndroidSourceManager`.
+- **ArchUnit Feature Isolation**: Resolved all feature module package/dependency boundary violations by moving shared components (`MangaCover`, `LibraryBottomActionMenu`, `CategoryExtensions`, `ChangeCategoryDialog`) to the common `:presentation-core` module, and introducing compositional navigation interfaces via `LocalAppNavigator`.
+- **Injekt Shim Removal**: Cleanly removed `uy.kohesive.injekt` package shims from `core:common` and fully migrated dependency lookups to standard Hilt constructor injection.
+
 ### 🏛️ Architecture & Clean Separation (Phase 8)
 - **Domain Abstractions**: Introduced generic, media-agnostic domain interfaces `ContentDatabase`, `RemoteSource`, and `TrackingService` inside `:core:domain`, separating high-level business rules from concrete database/network frames.
 - **Result Envelopes**: Wrapped database and remote crawling transactions in standard `Result<T>` sealed envelopes, guaranteeing explicit data mapping and strict exception boundaries.

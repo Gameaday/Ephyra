@@ -125,7 +125,6 @@ import ephyra.domain.content.repository.ContentUnitRepository
 import ephyra.domain.content.source.AdaptiveHeuristicEngine
 import ephyra.domain.content.source.ContentSourceEngine
 import ephyra.domain.content.source.ContentSourceOrchestrator
-import ephyra.domain.content.source.HeuristicContentSourceEngine
 import ephyra.domain.content.source.RemoteSource
 import ephyra.domain.content.source.SourceProfileCache
 import ephyra.domain.download.interactor.DeleteDownload
@@ -616,6 +615,9 @@ object AppModule {
         localSourceFileSystem: LocalSourceFileSystem,
         localCoverManager: LocalCoverManager,
         downloadManagerProvider: Provider<DownloadManager>,
+        orchestratorProvider: Provider<ContentSourceOrchestrator>,
+        profileCache: SourceProfileCache,
+        preferenceStore: PreferenceStore,
         json: Json,
         xml: XML,
     ): SourceManager = AndroidSourceManager(
@@ -625,6 +627,9 @@ object AppModule {
         fileSystem = localSourceFileSystem,
         coverManager = localCoverManager,
         downloadManagerProvider = downloadManagerProvider,
+        orchestratorProvider = orchestratorProvider,
+        profileCache = profileCache,
+        preferenceStore = preferenceStore,
         json = json,
         xml = xml,
     )

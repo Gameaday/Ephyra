@@ -78,4 +78,95 @@ class AdaptiveHeuristicEngineTest {
         assertEquals("div .item, div .card, a.manga-card", nonNullSelectors[DataField.ITEM_LIST])
         assertEquals("h3, h2, .title, .name", nonNullSelectors[DataField.ITEM_TITLE])
     }
+
+    @Test
+    fun `getChapters parses chapter links successfully`() = runBlocking {
+        val itemUrl = "https://example-manga.com/manga/1"
+        val htmlContent = """
+            <html>
+            <body>
+                <div class="chapters">
+                    <a href="https://example-manga.com/manga/1/chapter-2">Chapter 2</a>
+                    <a href="https://example-manga.com/manga/1/chapter-1.5">Chapter 1.5</a>
+                    <a href="https://example-manga.com/manga/1/chapter-1">Chapter 1</a>
+                </div>
+            </body>
+            </html>
+        """.trimIndent()
+
+        val mockClient = mockk<OkHttpClient>()
+        val mockCall = mockk<Call>()
+
+        every { networkHelper.client } returns mockClient
+        every { mockClient.newCall(any()) } returns mockCall
+
+        val dummyRequest = Request.Builder().url(itemUrl).build()
+        val dummyResponse = Response.Builder()
+            .request(dummyRequest)
+            .protocol(Protocol.HTTP_1_1)
+            .code(200)
+            .message("OK")
+            .body(htmlContent.toResponseBody())
+            .build()
+
+        every { mockCall.execute() } returns dummyResponse
+
+        val profile = SourceProfile(
+            baseUrl = "https://example-manga.com",
+            contentType = ContentType.MANGA,
+            displayName = "Example",
+        )
+        val chapters = engine.getChapters(profile, itemUrl)
+
+        assertEquals(3, chapters.size)
+        assertEquals("Chapter 2", chapters[0].title)
+        assertEquals(2.0, chapters[0].number)
+        assertEquals("Chapter 1.5", chapters[1].title)
+        assertEquals(1.5, chapters[1].number)
+        assertEquals("Chapter 1", chapters[2].title)
+        assertEquals(1.0, chapters[2].number)
+    }
+
+    @Test
+    fun `getPages parses reader image urls successfully`() = runBlocking {
+        val chapterUrl = "https://example-manga.com/manga/1/chapter-1"
+        val htmlContent = """
+            <html>
+            <body>
+                <div id="reader">
+                    <img src="https://example-manga.com/img/page1.jpg" />
+                    <img data-src="https://example-manga.com/img/page2.jpg" />
+                </div>
+            </body>
+            </html>
+        """.trimIndent()
+
+        val mockClient = mockk<OkHttpClient>()
+        val mockCall = mockk<Call>()
+
+        every { networkHelper.client } returns mockClient
+        every { mockClient.newCall(any()) } returns mockCall
+
+        val dummyRequest = Request.Builder().url(chapterUrl).build()
+        val dummyResponse = Response.Builder()
+            .request(dummyRequest)
+            .protocol(Protocol.HTTP_1_1)
+            .code(200)
+            .message("OK")
+            .body(htmlContent.toResponseBody())
+            .build()
+
+        every { mockCall.execute() } returns dummyResponse
+
+        val profile = SourceProfile(
+            baseUrl = "https://example-manga.com",
+            contentType = ContentType.MANGA,
+            displayName = "Example",
+        )
+        val pages = engine.getPages(profile, chapterUrl)
+
+        assertEquals(2, pages.size)
+        assertEquals("https://example-manga.com/img/page1.jpg", pages[0])
+        assertEquals("https://example-manga.com/img/page2.jpg", pages[1])
+    }
 }

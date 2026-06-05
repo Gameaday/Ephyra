@@ -55,13 +55,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ephyra.app.R
 import ephyra.domain.manga.model.Manga
-import ephyra.presentation.core.components.MangaCover
 import ephyra.feature.migration.list.models.MigratingManga
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.Badge
 import ephyra.presentation.core.components.BadgeGroup
 import ephyra.presentation.core.components.FastScrollLazyColumn
+import ephyra.presentation.core.components.MangaCover
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.components.material.topSmallPaddingValues

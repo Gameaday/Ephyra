@@ -2,6 +2,7 @@ package ephyra.domain.content.source
 
 import ephyra.core.common.util.Result
 import ephyra.domain.content.model.ContentItem
+import ephyra.domain.content.model.ContentUnit
 
 /**
  * Clean remote resolution contract abstracting QuickJS engines, scrapers, and network pipelines.
@@ -13,4 +14,6 @@ interface RemoteSource {
     suspend fun getItem(baseUrl: String, itemUrl: String): Result<ContentItem>
     suspend fun getPopular(baseUrl: String, page: Int): Result<List<ContentItem>>
     suspend fun getLatest(baseUrl: String, page: Int): Result<List<ContentItem>>
+    suspend fun getChapters(baseUrl: String, itemUrl: String): Result<List<ContentUnit>>
+    suspend fun getPages(baseUrl: String, unitUrl: String): Result<List<String>>
 }

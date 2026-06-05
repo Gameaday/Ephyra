@@ -77,6 +77,27 @@ all in one place with a polished, configurable reading experience.
 - Color filters, grayscale, and inverted color modes for comfortable reading.
 - Create backups locally or to your preferred cloud service.
 
+## 🔌 Content Sourcing Architecture (Dynamic Scrapers & Heuristics)
+
+Ephyra implements a highly modular and secure dynamic content sourcing system. This system allows the app to fetch and display content from arbitrary websites and APIs without requiring system-wide APK sideloading or external app installs (like Mihon or Tachiyomi), while remaining fully compliant with Play Store dynamic code loading policies.
+
+The retrieval pipeline consists of three core components:
+
+1. **Layout Heuristics Engine (`AdaptiveHeuristicEngine`)**:
+   - **DOM Structure Heuristics**: Analyzes web pages on the fly using [Jsoup](https://jsoup.org/) to auto-discover selectors for search grids, item details, titles, covers, chapter lists, and reader images.
+   - **Intelligent Fallbacks**: Employs heuristic rules matching common classes/IDs (e.g., `.wp-manga-chapter`, `#reader img`, `a[href*=chapter]`) and falls back to text patterns (e.g., matching "chapter" or "ch.") if exact selectors are not declared.
+   - **Source Profiles Cache**: Caches the discovered selector rules into a serialized `SourceProfile` template, skipping discovery logic on subsequent requests for optimal performance.
+
+2. **Sandboxed JavaScript Engine (`ScriptableContentSourceEngine`)**:
+   - **Play Store Compliant QuickJS**: Leverages a secure, fully sandboxed QuickJS runtime to execute user-provided `.js` scraper files.
+   - **Dynamic Script Scrapers**: Allows users to dynamically import scraper scripts or download/auto-update them directly from Git repositories.
+   - **Url Mapping**: Links specific base URLs to custom scraper scripts (e.g., `manga_scraper.js`), offering exact control over fetching, pagination, and API payloads without recompiling.
+
+3. **Dynamic Source Registry Bridge (`DynamicHttpSource`)**:
+   - **Legacy Compatibility**: Bridges new heuristic-based profiles and scriptable QuickJS engines into Ephyra's legacy `HttpSource` and `CatalogueSource` models.
+   - **Seamless Integration**: This bridge allows all dynamic scrapers and layout heuristics to immediately and transparently support global search, updates, download scheduling, library sync, and reading modes without changes to UI or ViewModels.
+   - **Legacy JVM Extensions**: Retains backward compatibility for legacy APK/DEX-based extensions. They are loaded dynamically using a custom in-process ClassLoader, avoiding OS-level package installation alerts and multiple sandboxes.
+
 ## Contributing
 
 [Code of conduct](./CODE_OF_CONDUCT.md) · [Contributing guide](./CONTRIBUTING.md)

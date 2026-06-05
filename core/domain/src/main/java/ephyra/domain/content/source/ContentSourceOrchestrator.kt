@@ -4,6 +4,7 @@ import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.common.util.Result
 import ephyra.core.common.util.getOrThrow
 import ephyra.domain.content.model.ContentItem
+import ephyra.domain.content.model.ContentUnit
 
 /**
  * Central orchestrator for resolving content from URLs, implementing [RemoteSource].
@@ -103,6 +104,38 @@ class ContentSourceOrchestrator(
             val items = engine.getLatest(profile, page)
             updateProfileHealth(profile, success = true)
             Result.Success(items)
+        } catch (e: Exception) {
+            updateProfileHealth(baseUrl, success = false)
+            Result.Error(e)
+        }
+    }
+
+    override suspend fun getChapters(baseUrl: String, itemUrl: String): Result<List<ContentUnit>> {
+        return try {
+            val profile = resolveProfile(baseUrl)
+            if (!profile.enabled) {
+                return Result.Error(IllegalStateException("Source is disabled: $baseUrl"))
+            }
+            val engine = resolveEngineForProfile(profile)
+            val chapters = engine.getChapters(profile, itemUrl)
+            updateProfileHealth(profile, success = true)
+            Result.Success(chapters)
+        } catch (e: Exception) {
+            updateProfileHealth(baseUrl, success = false)
+            Result.Error(e)
+        }
+    }
+
+    override suspend fun getPages(baseUrl: String, unitUrl: String): Result<List<String>> {
+        return try {
+            val profile = resolveProfile(baseUrl)
+            if (!profile.enabled) {
+                return Result.Error(IllegalStateException("Source is disabled: $baseUrl"))
+            }
+            val engine = resolveEngineForProfile(profile)
+            val pages = engine.getPages(profile, unitUrl)
+            updateProfileHealth(profile, success = true)
+            Result.Success(pages)
         } catch (e: Exception) {
             updateProfileHealth(baseUrl, success = false)
             Result.Error(e)

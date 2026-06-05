@@ -1,6 +1,7 @@
 package ephyra.domain.content.source
 
 import ephyra.domain.content.model.ContentItem
+import ephyra.domain.content.model.ContentUnit
 
 /**
  * Sealed abstraction over how content is resolved from URLs.
@@ -64,4 +65,14 @@ interface ContentSourceEngine {
      * @return A list of [ContentItem]s.
      */
     suspend fun getLatest(profile: SourceProfile, page: Int): List<ContentItem>
+
+    /**
+     * Fetch sequential content units (chapters/episodes/tracks) for a content item URL.
+     */
+    suspend fun getChapters(profile: SourceProfile, url: String): List<ContentUnit>
+
+    /**
+     * Fetch the page images or media resource paths for a unit URL.
+     */
+    suspend fun getPages(profile: SourceProfile, url: String): List<String>
 }
