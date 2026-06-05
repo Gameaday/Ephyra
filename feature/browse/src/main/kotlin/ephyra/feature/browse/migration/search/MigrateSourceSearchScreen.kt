@@ -68,23 +68,23 @@ fun MigrateSourceSearchScreen(
         viewModel.init(sourceId, query)
     }
 
-    val source = ViewModel.source
+    val source = viewModel.source
     if (source == null || mangaState is ephyra.feature.manga.MangaViewModel.State.Loading) {
         LoadingScreen()
         return
     }
 
     val currentManga = (mangaState as ephyra.feature.manga.MangaViewModel.State.Success).manga
-    val state by ViewModel.state.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     Scaffold(
         topBar = { scrollBehavior ->
             SearchToolbar(
                 searchQuery = state.toolbarQuery ?: "",
-                onChangeSearchQuery = { ViewModel.onEvent(BrowseSourceScreenEvent.SetToolbarQuery(it)) },
+                onChangeSearchQuery = { viewModel.onEvent(BrowseSourceScreenEvent.SetToolbarQuery(it)) },
                 onClickCloseSearch = { navController.popBackStack() },
-                onSearch = { ViewModel.onEvent(BrowseSourceScreenEvent.Search(it)) },
+                onSearch = { viewModel.onEvent(BrowseSourceScreenEvent.Search(it)) },
                 scrollBehavior = scrollBehavior,
             )
         },
@@ -92,7 +92,7 @@ fun MigrateSourceSearchScreen(
             ExtendedFloatingActionButton(
                 text = { Text(text = stringResource(ephyra.app.core.common.R.string.action_filter)) },
                 icon = { Icon(Icons.Outlined.FilterList, contentDescription = null) },
-                onClick = { ViewModel.onEvent(BrowseSourceScreenEvent.OpenFilterSheet) },
+                onClick = { viewModel.onEvent(BrowseSourceScreenEvent.OpenFilterSheet) },
                 modifier = Modifier.alpha(if (state.filters.isNotEmpty()) 1f else 0f),
             )
         },
@@ -106,7 +106,7 @@ fun MigrateSourceSearchScreen(
             }
 
             if (migrateListEntry == null) {
-                ViewModel.onEvent(
+                viewModel.onEvent(
                     BrowseSourceScreenEvent.SetDialog(
                         BrowseSourceViewModel.Dialog.Migrate(target = it, current = currentManga),
                     ),
@@ -118,9 +118,9 @@ fun MigrateSourceSearchScreen(
         }
         BrowseSourceContent(
             source = source,
-            mangaList = ViewModel.mangaPagerFlowFlow.collectAsLazyPagingItems(),
-            columns = ViewModel.getColumnsPreference(LocalConfiguration.current.orientation),
-            displayMode = ViewModel.displayMode,
+            mangaList = viewModel.mangaPagerFlowFlow.collectAsLazyPagingItems(),
+            columns = viewModel.getColumnsPreference(LocalConfiguration.current.orientation),
+            displayMode = viewModel.displayMode,
             snackbarHostState = snackbarHostState,
             contentPadding = paddingValues,
             onWebViewClick = {
@@ -138,15 +138,15 @@ fun MigrateSourceSearchScreen(
         )
     }
 
-    val onDismissRequest = { ViewModel.onEvent(BrowseSourceScreenEvent.SetDialog(null)) }
+    val onDismissRequest = { viewModel.onEvent(BrowseSourceScreenEvent.SetDialog(null)) }
     when (val dialog = state.dialog) {
         is BrowseSourceViewModel.Dialog.Filter -> {
             SourceFilterDialog(
                 onDismissRequest = onDismissRequest,
                 filters = state.filters,
-                onReset = { ViewModel.onEvent(BrowseSourceScreenEvent.ResetFilters) },
-                onFilter = { ViewModel.onEvent(BrowseSourceScreenEvent.Search(filters = state.filters)) },
-                onUpdate = { ViewModel.onEvent(BrowseSourceScreenEvent.SetFilters(it)) },
+                onReset = { viewModel.onEvent(BrowseSourceScreenEvent.ResetFilters) },
+                onFilter = { viewModel.onEvent(BrowseSourceScreenEvent.Search(filters = state.filters)) },
+                onUpdate = { viewModel.onEvent(BrowseSourceScreenEvent.SetFilters(it)) },
             )
         }
 

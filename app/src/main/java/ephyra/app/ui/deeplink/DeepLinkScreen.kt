@@ -25,11 +25,11 @@ fun DeepLinkScreen(
 ) {
     val context = LocalContext.current
 
-    val ViewModel = hiltViewModel<DeepLinkViewModel>()
+    val viewModel = hiltViewModel<DeepLinkViewModel>()
     LaunchedEffect(query) {
-        ViewModel.init(query)
+        viewModel.init(query)
     }
-    val state by ViewModel.state.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
     Scaffold(
         topBar = { scrollBehavior ->
             AppBar(

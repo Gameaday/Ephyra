@@ -139,7 +139,7 @@ fun discoverTab(navController: NavController = LocalNavController.current): TabC
                     sourceMatches = sourcePrompt.sourceMatches,
                     isSearching = sourcePrompt.isSearching,
                     onSelectSource = { match ->
-                        ViewModel.onEvent(AuthoritySearchScreenEvent.DismissSourcePrompt)
+                        viewModel.onEvent(AuthoritySearchScreenEvent.DismissSourcePrompt)
                         navController.navigate(
                             Screen.BrowseSource(
                                 match.sourceId,
@@ -148,10 +148,10 @@ fun discoverTab(navController: NavController = LocalNavController.current): TabC
                         )
                     },
                     onManualSearch = {
-                        ViewModel.onEvent(AuthoritySearchScreenEvent.DismissSourcePrompt)
+                        viewModel.onEvent(AuthoritySearchScreenEvent.DismissSourcePrompt)
                         navController.navigate(Screen.GlobalSearch(sourcePrompt.title))
                     },
-                    onDismiss = { ViewModel.onEvent(AuthoritySearchScreenEvent.DismissSourcePrompt) },
+                    onDismiss = { viewModel.onEvent(AuthoritySearchScreenEvent.DismissSourcePrompt) },
                 )
             }
 
@@ -161,9 +161,9 @@ fun discoverTab(navController: NavController = LocalNavController.current): TabC
                 MergeWithExistingDialog(
                     resultTitle = mergePrompt.result.title,
                     candidates = mergePrompt.candidates,
-                    onMerge = { ViewModel.onEvent(AuthoritySearchScreenEvent.MergeWithExisting(it)) },
-                    onSkip = { ViewModel.onEvent(AuthoritySearchScreenEvent.SkipMerge) },
-                    onDismiss = { ViewModel.onEvent(AuthoritySearchScreenEvent.DismissMergePrompt) },
+                    onMerge = { viewModel.onEvent(AuthoritySearchScreenEvent.MergeWithExisting(it)) },
+                    onSkip = { viewModel.onEvent(AuthoritySearchScreenEvent.SkipMerge) },
+                    onDismiss = { viewModel.onEvent(AuthoritySearchScreenEvent.DismissMergePrompt) },
                 )
             }
         },

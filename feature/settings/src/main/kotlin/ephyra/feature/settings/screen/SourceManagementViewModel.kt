@@ -1,6 +1,7 @@
 package ephyra.feature.settings.screen
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.util.Result
 import ephyra.domain.content.source.ScraperMetadata
@@ -9,10 +10,11 @@ import ephyra.domain.content.source.SourceType
 import ephyra.domain.content.source.interactor.AddCustomSource
 import ephyra.domain.content.source.interactor.GetAvailableSources
 import ephyra.domain.content.source.interactor.RemoveCustomSource
+import ephyra.domain.content.source.interactor.UnifiedSource
 import ephyra.domain.content.source.interactor.UpdateCustomSource
-import ephyra.domain.content.source.model.UnifiedSource
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -56,16 +58,16 @@ class SourceManagementViewModel @Inject constructor(
     fun addJsScraper(githubUrl: String, filename: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            addCustomSource.addJsScraper(githubUrl, filename).onResult { result ->
-                _isLoading.value = false
-                when (result) {
-                    is Result.Success -> {
-                        loadSources()
-                    }
-                    is Result.Error -> {
-                        _error.value = result.exception.message ?: "Failed to add scraper"
-                    }
+            val result = addCustomSource.addJsScraper(githubUrl, filename)
+            _isLoading.value = false
+            when (result) {
+                is Result.Success -> {
+                    loadSources()
                 }
+                is Result.Error -> {
+                    _error.value = result.exception.message ?: "Failed to add scraper"
+                }
+                else -> {}
             }
         }
     }
@@ -73,16 +75,16 @@ class SourceManagementViewModel @Inject constructor(
     fun importJsScraper(filename: String, scriptContent: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            addCustomSource.importJsScraper(filename, scriptContent).onResult { result ->
-                _isLoading.value = false
-                when (result) {
-                    is Result.Success -> {
-                        loadSources()
-                    }
-                    is Result.Error -> {
-                        _error.value = result.exception.message ?: "Failed to import scraper"
-                    }
+            val result = addCustomSource.importJsScraper(filename, scriptContent)
+            _isLoading.value = false
+            when (result) {
+                is Result.Success -> {
+                    loadSources()
                 }
+                is Result.Error -> {
+                    _error.value = result.exception.message ?: "Failed to import scraper"
+                }
+                else -> {}
             }
         }
     }
@@ -90,16 +92,16 @@ class SourceManagementViewModel @Inject constructor(
     fun addHeuristicProfile(baseUrl: String, displayName: String?) {
         viewModelScope.launch {
             _isLoading.value = true
-            addCustomSource.addHeuristicProfile(baseUrl, displayName).onResult { result ->
-                _isLoading.value = false
-                when (result) {
-                    is Result.Success -> {
-                        loadSources()
-                    }
-                    is Result.Error -> {
-                        _error.value = result.exception.message ?: "Failed to add profile"
-                    }
+            val result = addCustomSource.addHeuristicProfile(baseUrl, displayName)
+            _isLoading.value = false
+            when (result) {
+                is Result.Success -> {
+                    loadSources()
                 }
+                is Result.Error -> {
+                    _error.value = result.exception.message ?: "Failed to add profile"
+                }
+                else -> {}
             }
         }
     }
@@ -107,16 +109,16 @@ class SourceManagementViewModel @Inject constructor(
     fun linkScraperToUrl(baseUrl: String, scraperFilename: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            addCustomSource.linkScraperToUrl(baseUrl, scraperFilename).onResult { result ->
-                _isLoading.value = false
-                when (result) {
-                    is Result.Success -> {
-                        loadSources()
-                    }
-                    is Result.Error -> {
-                        _error.value = result.exception.message ?: "Failed to link scraper"
-                    }
+            val result = addCustomSource.linkScraperToUrl(baseUrl, scraperFilename)
+            _isLoading.value = false
+            when (result) {
+                is Result.Success -> {
+                    loadSources()
                 }
+                is Result.Error -> {
+                    _error.value = result.exception.message ?: "Failed to link scraper"
+                }
+                else -> {}
             }
         }
     }
@@ -124,16 +126,16 @@ class SourceManagementViewModel @Inject constructor(
     fun checkAndUpdateScraper(baseUrl: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            updateCustomSource.checkAndUpdateScraper(baseUrl).onResult { result ->
-                _isLoading.value = false
-                when (result) {
-                    is Result.Success -> {
-                        loadSources()
-                    }
-                    is Result.Error -> {
-                        _error.value = result.exception.message ?: "Failed to update scraper"
-                    }
+            val result = updateCustomSource.checkAndUpdateScraper(baseUrl)
+            _isLoading.value = false
+            when (result) {
+                is Result.Success -> {
+                    loadSources()
                 }
+                is Result.Error -> {
+                    _error.value = result.exception.message ?: "Failed to update scraper"
+                }
+                else -> {}
             }
         }
     }
@@ -141,16 +143,16 @@ class SourceManagementViewModel @Inject constructor(
     fun forceRediscover(baseUrl: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            updateCustomSource.forceRediscover(baseUrl).onResult { result ->
-                _isLoading.value = false
-                when (result) {
-                    is Result.Success -> {
-                        loadSources()
-                    }
-                    is Result.Error -> {
-                        _error.value = result.exception.message ?: "Failed to rediscover"
-                    }
+            val result = updateCustomSource.forceRediscover(baseUrl)
+            _isLoading.value = false
+            when (result) {
+                is Result.Success -> {
+                    loadSources()
                 }
+                is Result.Error -> {
+                    _error.value = result.exception.message ?: "Failed to rediscover"
+                }
+                else -> {}
             }
         }
     }
@@ -158,16 +160,16 @@ class SourceManagementViewModel @Inject constructor(
     fun renameScraper(baseUrl: String, newFilename: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            updateCustomSource.renameScraper(baseUrl, newFilename).onResult { result ->
-                _isLoading.value = false
-                when (result) {
-                    is Result.Success -> {
-                        loadSources()
-                    }
-                    is Result.Error -> {
-                        _error.value = result.exception.message ?: "Failed to rename scraper"
-                    }
+            val result = updateCustomSource.renameScraper(baseUrl, newFilename)
+            _isLoading.value = false
+            when (result) {
+                is Result.Success -> {
+                    loadSources()
                 }
+                is Result.Error -> {
+                    _error.value = result.exception.message ?: "Failed to rename scraper"
+                }
+                else -> {}
             }
         }
     }
@@ -175,16 +177,16 @@ class SourceManagementViewModel @Inject constructor(
     fun removeSource(baseUrl: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            removeCustomSource.removeSource(baseUrl).onResult { result ->
-                _isLoading.value = false
-                when (result) {
-                    is Result.Success -> {
-                        loadSources()
-                    }
-                    is Result.Error -> {
-                        _error.value = result.exception.message ?: "Failed to remove source"
-                    }
+            val result = removeCustomSource.removeSource(baseUrl)
+            _isLoading.value = false
+            when (result) {
+                is Result.Success -> {
+                    loadSources()
                 }
+                is Result.Error -> {
+                    _error.value = result.exception.message ?: "Failed to remove source"
+                }
+                else -> {}
             }
         }
     }
@@ -192,16 +194,16 @@ class SourceManagementViewModel @Inject constructor(
     fun disableSource(baseUrl: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            removeCustomSource.disableSource(baseUrl).onResult { result ->
-                _isLoading.value = false
-                when (result) {
-                    is Result.Success -> {
-                        loadSources()
-                    }
-                    is Result.Error -> {
-                        _error.value = result.exception.message ?: "Failed to disable source"
-                    }
+            val result = removeCustomSource.disableSource(baseUrl)
+            _isLoading.value = false
+            when (result) {
+                is Result.Success -> {
+                    loadSources()
                 }
+                is Result.Error -> {
+                    _error.value = result.exception.message ?: "Failed to disable source"
+                }
+                else -> {}
             }
         }
     }
@@ -209,16 +211,16 @@ class SourceManagementViewModel @Inject constructor(
     fun unlinkScraper(baseUrl: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            removeCustomSource.unlinkScraper(baseUrl).onResult { result ->
-                _isLoading.value = false
-                when (result) {
-                    is Result.Success -> {
-                        loadSources()
-                    }
-                    is Result.Error -> {
-                        _error.value = result.exception.message ?: "Failed to unlink scraper"
-                    }
+            val result = removeCustomSource.unlinkScraper(baseUrl)
+            _isLoading.value = false
+            when (result) {
+                is Result.Success -> {
+                    loadSources()
                 }
+                is Result.Error -> {
+                    _error.value = result.exception.message ?: "Failed to unlink scraper"
+                }
+                else -> {}
             }
         }
     }

@@ -79,10 +79,10 @@ fun AboutScreen(
                 }
                 GetApplicationRelease.Result.NoNewUpdate -> {
                     context.toast(ephyra.app.core.common.R.string.update_check_no_new_updates)
-                    ViewModel.clearUpdateResult()
+                    viewModel.clearUpdateResult()
                 }
                 else -> {
-                    ViewModel.clearUpdateResult()
+                    viewModel.clearUpdateResult()
                 }
             }
         }
@@ -91,7 +91,7 @@ fun AboutScreen(
     if (updateResult is GetApplicationRelease.Result.NewUpdate) {
         val release = updateResult.release
         AlertDialog(
-            onDismissRequest = { ViewModel.clearUpdateResult() },
+            onDismissRequest = { viewModel.clearUpdateResult() },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -106,14 +106,14 @@ fun AboutScreen(
                         } catch (e: Exception) {
                             context.toast(e.message)
                         }
-                        ViewModel.clearUpdateResult()
+                        viewModel.clearUpdateResult()
                     },
                 ) {
                     Text(stringResource(ephyra.app.core.common.R.string.update_check_confirm))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { ViewModel.clearUpdateResult() }) {
+                TextButton(onClick = { viewModel.clearUpdateResult() }) {
                     Text(stringResource(ephyra.app.core.common.R.string.action_cancel))
                 }
             },
@@ -145,15 +145,15 @@ fun AboutScreen(
             item {
                 TextPreferenceWidget(
                     title = stringResource(ephyra.app.core.common.R.string.version),
-                    subtitle = ViewModel.getVersionName(withBuildDate = true),
+                    subtitle = viewModel.getVersionName(withBuildDate = true),
                     onPreferenceClick = {
-                        val deviceInfo = CrashLogUtil(context, ViewModel.extensionManager).getDebugInfo()
+                        val deviceInfo = CrashLogUtil(context, viewModel.extensionManager).getDebugInfo()
                         context.copyToClipboard("Debug information", deviceInfo)
                     },
                 )
             }
 
-            if (ViewModel.appInfo.updaterEnabled) {
+            if (viewModel.appInfo.updaterEnabled) {
                 item {
                     TextPreferenceWidget(
                         title = stringResource(ephyra.app.core.common.R.string.check_for_updates),
@@ -165,16 +165,16 @@ fun AboutScreen(
                                 )
                             }
                         },
-                        onPreferenceClick = { ViewModel.checkVersion() },
+                        onPreferenceClick = { viewModel.checkVersion() },
                     )
                 }
             }
 
-            if (!ViewModel.appInfo.isDebug) {
+            if (!viewModel.appInfo.isDebug) {
                 item {
                     TextPreferenceWidget(
                         title = stringResource(ephyra.app.core.common.R.string.whats_new),
-                        onPreferenceClick = { uriHandler.openUri(ViewModel.appInfo.releaseUrl) },
+                        onPreferenceClick = { uriHandler.openUri(viewModel.appInfo.releaseUrl) },
                     )
                 }
             }

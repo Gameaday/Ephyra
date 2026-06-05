@@ -62,16 +62,16 @@ fun ExtensionReposScreen(
 
         is RepoDialog.Delete -> {
             ExtensionRepoDeleteDialog(
-                onDismissRequest = { ViewModel.onEvent(ExtensionReposScreenEvent.DismissDialog) },
-                onDelete = { ViewModel.onEvent(ExtensionReposScreenEvent.DeleteRepo(dialog.repo)) },
+                onDismissRequest = { viewModel.onEvent(ExtensionReposScreenEvent.DismissDialog) },
+                onDelete = { viewModel.onEvent(ExtensionReposScreenEvent.DeleteRepo(dialog.repo)) },
                 repo = dialog.repo,
             )
         }
 
         is RepoDialog.Conflict -> {
             ExtensionRepoConflictDialog(
-                onDismissRequest = { ViewModel.onEvent(ExtensionReposScreenEvent.DismissDialog) },
-                onMigrate = { ViewModel.onEvent(ExtensionReposScreenEvent.ReplaceRepo(dialog.newRepo)) },
+                onDismissRequest = { viewModel.onEvent(ExtensionReposScreenEvent.DismissDialog) },
+                onMigrate = { viewModel.onEvent(ExtensionReposScreenEvent.ReplaceRepo(dialog.newRepo)) },
                 oldRepo = dialog.oldRepo,
                 newRepo = dialog.newRepo,
             )
@@ -79,8 +79,8 @@ fun ExtensionReposScreen(
 
         is RepoDialog.Confirm -> {
             ExtensionRepoConfirmDialog(
-                onDismissRequest = { ViewModel.onEvent(ExtensionReposScreenEvent.DismissDialog) },
-                onCreate = { ViewModel.onEvent(ExtensionReposScreenEvent.CreateRepo(dialog.url)) },
+                onDismissRequest = { viewModel.onEvent(ExtensionReposScreenEvent.DismissDialog) },
+                onCreate = { viewModel.onEvent(ExtensionReposScreenEvent.CreateRepo(dialog.url)) },
                 repo = dialog.url,
                 isAdding = successState.isAdding,
             )
@@ -88,7 +88,7 @@ fun ExtensionReposScreen(
     }
 
     LaunchedEffect(Unit) {
-        ViewModel.events.collectLatest { event ->
+        viewModel.events.collectLatest { event ->
             if (event is RepoEvent.LocalizedMessage) {
                 context.toast(event.stringRes)
             }

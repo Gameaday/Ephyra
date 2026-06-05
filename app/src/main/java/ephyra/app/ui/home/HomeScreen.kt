@@ -140,7 +140,9 @@ fun HomeScreen(
             },
             bottomBar = {
                 if (!isTabletUi()) {
-                            val bottomNavVisible by BottomNavVisibilityController.isBottomNavVisible.collectAsStateWithLifecycle()
+                    val bottomNavVisible by BottomNavVisibilityController
+                        .isBottomNavVisible
+                        .collectAsStateWithLifecycle()
                     AnimatedVisibility(
                         visible = bottomNavVisible,
                         enter = expandVertically(

@@ -75,8 +75,8 @@ fun MigrationConfigScreen(
     mangaIds: Collection<Long>,
     navController: NavController = LocalNavController.current,
 ) {
-    val ViewModel = hiltViewModel<MigrationConfigViewModel>()
-    val state by ViewModel.state.collectAsStateWithLifecycle()
+    val viewModel = hiltViewModel<MigrationConfigViewModel>()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     var migrationSheetOpen by rememberSaveable { mutableStateOf(false) }
 
@@ -125,7 +125,7 @@ fun MigrationConfigScreen(
                                 ),
                                 icon = Icons.Outlined.SelectAll,
                                 onClick = {
-                                    ViewModel.toggleSelection(MigrationConfigViewModel.SelectionConfig.All)
+                                    viewModel.toggleSelection(MigrationConfigViewModel.SelectionConfig.All)
                                 },
                             ),
                             AppBar.Action(
@@ -134,7 +134,7 @@ fun MigrationConfigScreen(
                                 ),
                                 icon = Icons.Outlined.Deselect,
                                 onClick = {
-                                    ViewModel.toggleSelection(MigrationConfigViewModel.SelectionConfig.None)
+                                    viewModel.toggleSelection(MigrationConfigViewModel.SelectionConfig.None)
                                 },
                             ),
                             AppBar.OverflowAction(
@@ -142,7 +142,7 @@ fun MigrationConfigScreen(
                                     ephyra.app.core.common.R.string.migrationConfigScreen_selectEnabledLabel,
                                 ),
                                 onClick = {
-                                    ViewModel.toggleSelection(MigrationConfigViewModel.SelectionConfig.Enabled)
+                                    viewModel.toggleSelection(MigrationConfigViewModel.SelectionConfig.Enabled)
                                 },
                             ),
                             AppBar.OverflowAction(
@@ -150,7 +150,7 @@ fun MigrationConfigScreen(
                                     ephyra.app.core.common.R.string.migrationConfigScreen_selectPinnedLabel,
                                 ),
                                 onClick = {
-                                    ViewModel.toggleSelection(MigrationConfigViewModel.SelectionConfig.Pinned)
+                                    viewModel.toggleSelection(MigrationConfigViewModel.SelectionConfig.Pinned)
                                 },
                             ),
                         ),
@@ -167,7 +167,7 @@ fun MigrationConfigScreen(
                 },
                 icon = { Icon(imageVector = Icons.AutoMirrored.Outlined.ArrowForward, contentDescription = null) },
                 onClick = {
-                    ViewModel.saveSources()
+                    viewModel.saveSources()
                     continueMigration(openSheet = true, extraSearchQuery = null)
                 },
                 expanded = lazyListState.shouldExpandFAB(),
@@ -178,7 +178,7 @@ fun MigrationConfigScreen(
             val fromIndex = selectedSources.indexOfFirst { it.id == from.key }
             val toIndex = selectedSources.indexOfFirst { it.id == to.key }
             if (fromIndex == -1 || toIndex == -1) return@rememberReorderableLazyListState
-            ViewModel.orderSource(fromIndex, toIndex)
+            viewModel.orderSource(fromIndex, toIndex)
         }
 
         FastScrollLazyColumn(
@@ -218,7 +218,7 @@ fun MigrationConfigScreen(
                         dragEnabled = selectedSourceList && sources.size > 1,
                         state = reorderableState,
                         key = { if (selectedSourceList) it.id else "available-${it.id}" },
-                        onClick = { ViewModel.toggleSelection(item.id) },
+                        onClick = { viewModel.toggleSelection(item.id) },
                     )
                 }
             }
@@ -227,7 +227,7 @@ fun MigrationConfigScreen(
 
     if (migrationSheetOpen) {
         MigrationConfigScreenSheet(
-            preferences = ViewModel.sourcePreferences,
+            preferences = viewModel.sourcePreferences,
             onDismissRequest = { migrationSheetOpen = false },
             onStartMigration = { extraSearchQuery ->
                 migrationSheetOpen = false

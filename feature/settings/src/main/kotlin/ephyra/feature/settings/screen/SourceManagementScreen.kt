@@ -1,5 +1,6 @@
 package ephyra.feature.settings.screen
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -47,7 +49,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,13 +58,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import ephyra.domain.content.source.SourceType
-import ephyra.domain.content.source.model.UnifiedSource
+import ephyra.domain.content.source.interactor.UnifiedSource
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.ui.navigation.LocalNavController
@@ -133,7 +135,7 @@ fun SourceManagementScreen(
                     linkScraperName = ""
                     showLinkScraperDialog = true
                 },
-                onRefresh = { ViewModel.loadSources() },
+                onRefresh = { viewModel.loadSources() },
                 onSourceClick = { source ->
                     snackbarMessage = buildString {
                         appendLine("Source: ${source.name}")
@@ -152,10 +154,10 @@ fun SourceManagementScreen(
                     snackbarMessage = "Long-press actions coming soon for ${source.name}"
                 },
                 onCheckUpdates = { source ->
-                    ViewModel.checkAndUpdateScraper(source.baseUrl)
+                    viewModel.checkAndUpdateScraper(source.baseUrl)
                 },
                 onForceRediscover = { source ->
-                    ViewModel.forceRediscover(source.baseUrl)
+                    viewModel.forceRediscover(source.baseUrl)
                 },
                 onRemoveSource = { source ->
                     selectedSourceToRemove = source
@@ -196,7 +198,7 @@ fun SourceManagementScreen(
                     TextButton(
                         onClick = {
                             selectedSourceToRemove?.let { source ->
-                                ViewModel.removeSource(source.baseUrl)
+                                viewModel.removeSource(source.baseUrl)
                             }
                             showRemoveConfirmDialog = false
                             selectedSourceToRemove = null
@@ -227,7 +229,7 @@ fun SourceManagementScreen(
                     scraperFilename = ""
                 },
                 onConfirm = { url, name ->
-                    ViewModel.addJsScraper(url, name)
+                    viewModel.addJsScraper(url, name)
                     showAddJsScraperDialog = false
                     githubUrl = ""
                     scraperFilename = ""
@@ -248,7 +250,7 @@ fun SourceManagementScreen(
                     importScriptContent = ""
                 },
                 onConfirm = { name, content ->
-                    ViewModel.importJsScraper(name, content)
+                    viewModel.importJsScraper(name, content)
                     showImportJsScraperDialog = false
                     importFilename = ""
                     importScriptContent = ""
@@ -269,7 +271,7 @@ fun SourceManagementScreen(
                     heuristicName = ""
                 },
                 onConfirm = { url, name ->
-                    ViewModel.addHeuristicProfile(url, name.ifBlank { null })
+                    viewModel.addHeuristicProfile(url, name?.ifBlank { null })
                     showAddHeuristicDialog = false
                     heuristicUrl = ""
                     heuristicName = ""
@@ -291,7 +293,7 @@ fun SourceManagementScreen(
                     selectedSourceForLink = null
                 },
                 onConfirm = { baseUrl, scraperName ->
-                    ViewModel.linkScraperToUrl(baseUrl, scraperName)
+                    viewModel.linkScraperToUrl(baseUrl, scraperName)
                     showLinkScraperDialog = false
                     linkBaseUrl = ""
                     linkScraperName = ""
@@ -378,18 +380,16 @@ private fun SourceManagementLayout(
             items(typeOrder) { sourceType ->
                 val typeSources = grouped[sourceType] ?: emptyList()
                 if (typeSources.isNotEmpty()) {
-                    item {
-                        SourceTypeSection(
-                            sourceType = sourceType,
-                            sources = typeSources,
-                            onSourceClick = onSourceClick,
-                            onSourceLongClick = onSourceLongClick,
-                            onLinkScraper = onLinkScraper,
-                            onCheckUpdates = onCheckUpdates,
-                            onForceRediscover = onForceRediscover,
-                            onRemoveSource = onRemoveSource,
-                        )
-                    }
+                    SourceTypeSection(
+                        sourceType = sourceType,
+                        sources = typeSources,
+                        onSourceClick = onSourceClick,
+                        onSourceLongClick = onSourceLongClick,
+                        onLinkScraper = onLinkScraper,
+                        onCheckUpdates = onCheckUpdates,
+                        onForceRediscover = onForceRediscover,
+                        onRemoveSource = onRemoveSource,
+                    )
                 }
             }
 
@@ -422,7 +422,7 @@ private fun SourceManagementLayout(
                                     "heuristic profile to get started",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                textAlign = androidx.compose.ui.text.TextAlign.Center,
+                                textAlign = TextAlign.Center,
                             )
                         }
                     }
@@ -433,7 +433,7 @@ private fun SourceManagementLayout(
 }
 
 @Composable
-private fun QuickActionButton(
+private fun RowScope.QuickActionButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     color: Color,
@@ -448,8 +448,8 @@ private fun QuickActionButton(
         shape = RoundedCornerShape(12.dp),
         colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
             contentColor = color,
-            borderColor = color.copy(alpha = 0.5f),
         ),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.5f)),
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -1014,6 +1014,7 @@ private val SourceType.displayName: String
     }
 
 private val SourceType.color: Color
+    @Composable
     get() = when (this) {
         SourceType.LEGACY_EXTENSION -> MaterialTheme.colorScheme.primary
         SourceType.JS_SCRAPER -> MaterialTheme.colorScheme.secondary

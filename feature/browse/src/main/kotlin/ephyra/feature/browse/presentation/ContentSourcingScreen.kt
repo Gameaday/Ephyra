@@ -132,7 +132,7 @@ fun ContentSourcingScreen(
             when (dialog) {
                 is ContentSourcingViewModel.Dialog.ScanComplete -> {
                     AlertDialog(
-                        onDismissRequest = { ViewModel.onEvent(ContentSourcingViewModel.Event.DismissDialog) },
+                        onDismissRequest = { viewModel.onEvent(ContentSourcingViewModel.Event.DismissDialog) },
                         title = { Text("Scan Results: ${dialog.repoName}") },
                         text = {
                             Column(modifier = Modifier.fillMaxWidth()) {
@@ -174,7 +174,7 @@ fun ContentSourcingScreen(
                         },
                         confirmButton = {
                             TextButton(onClick = {
-                                ViewModel.onEvent(ContentSourcingViewModel.Event.DismissDialog)
+                                viewModel.onEvent(ContentSourcingViewModel.Event.DismissDialog)
                             }) {
                                 Text("Close")
                             }

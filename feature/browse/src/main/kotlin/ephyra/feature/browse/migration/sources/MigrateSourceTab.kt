@@ -41,8 +41,8 @@ fun migrateSourceTab(navController: NavController = LocalNavController.current):
                 onClickItem = { source ->
                     navController.navigate(ScreenRoutes.MigrateManga.createRoute(source.id))
                 },
-                onToggleSortingDirection = { ViewModel.onEvent(MigrateSourceScreenEvent.ToggleSortingDirection) },
-                onToggleSortingMode = { ViewModel.onEvent(MigrateSourceScreenEvent.ToggleSortingMode) },
+                onToggleSortingDirection = { viewModel.onEvent(MigrateSourceScreenEvent.ToggleSortingDirection) },
+                onToggleSortingMode = { viewModel.onEvent(MigrateSourceScreenEvent.ToggleSortingMode) },
             )
         },
     )

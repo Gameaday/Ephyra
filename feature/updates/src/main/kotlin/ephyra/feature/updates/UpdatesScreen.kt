@@ -274,23 +274,23 @@ fun UpdatesScreen(
         onCalendarClicked = {
             navController.navigate(ScreenRoutes.Upcoming.route)
         },
-        onFilterClicked = { ViewModel.onEvent(UpdatesScreenEvent.ShowFilterDialog) },
+        onFilterClicked = { viewModel.onEvent(UpdatesScreenEvent.ShowFilterDialog) },
         hasActiveFilters = state.hasActiveFilters,
     )
 
-    val onDismissDialog = { ViewModel.onEvent(UpdatesScreenEvent.SetDialog(null)) }
+    val onDismissDialog = { viewModel.onEvent(UpdatesScreenEvent.SetDialog(null)) }
     when (val dialog = state.dialog) {
         is UpdatesViewModel.Dialog.DeleteConfirmation -> {
             UpdatesDeleteConfirmationDialog(
                 onDismissRequest = onDismissDialog,
-                onConfirm = { ViewModel.onEvent(UpdatesScreenEvent.DeleteChapters(dialog.toDelete)) },
+                onConfirm = { viewModel.onEvent(UpdatesScreenEvent.DeleteChapters(dialog.toDelete)) },
             )
         }
 
         is UpdatesViewModel.Dialog.FilterSheet -> {
             UpdatesFilterDialog(
                 onDismissRequest = onDismissDialog,
-                ViewModel = settingsViewModel,
+                viewModel = settingsViewModel,
             )
         }
 
@@ -298,9 +298,9 @@ fun UpdatesScreen(
     }
 
     LaunchedEffect(Unit) {
-        ViewModel.events.collectLatest { event ->
+        viewModel.events.collectLatest { event ->
             when (event) {
-                UpdatesViewModel.Event.InternalError -> ViewModel.snackbarHostState.showSnackbar(
+                UpdatesViewModel.Event.InternalError -> viewModel.snackbarHostState.showSnackbar(
                     context.stringResource(ephyra.app.core.common.R.string.internal_error),
                 )
 
@@ -310,7 +310,7 @@ fun UpdatesScreen(
                     } else {
                         ephyra.app.core.common.R.string.update_already_running
                     }
-                    ViewModel.snackbarHostState.showSnackbar(context.stringResource(msg))
+                    viewModel.snackbarHostState.showSnackbar(context.stringResource(msg))
                 }
             }
         }
@@ -329,10 +329,10 @@ fun UpdatesScreen(
     }
 
     DisposableEffect(Unit) {
-        ViewModel.onEvent(UpdatesScreenEvent.ResetNewUpdatesCount)
+        viewModel.onEvent(UpdatesScreenEvent.ResetNewUpdatesCount)
 
         onDispose {
-            ViewModel.onEvent(UpdatesScreenEvent.ResetNewUpdatesCount)
+            viewModel.onEvent(UpdatesScreenEvent.ResetNewUpdatesCount)
         }
     }
 }

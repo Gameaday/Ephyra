@@ -1,10 +1,10 @@
 package ephyra.domain.content.source.interactor
 
+import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.common.util.Result
 import ephyra.domain.content.source.ContentSourceOrchestrator
 import ephyra.domain.content.source.ScraperScriptUpdater
 import ephyra.domain.content.source.SourceProfile
-import ephyra.domain.source.service.SourceManager
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -15,7 +15,7 @@ import javax.inject.Singleton
 class RemoveCustomSource @Inject constructor(
     private val orchestrator: ContentSourceOrchestrator,
     private val scraperUpdater: ScraperScriptUpdater,
-    private val sourceManager: SourceManager,
+    private val preferenceStore: PreferenceStore,
 ) {
 
     /**
@@ -36,7 +36,7 @@ class RemoveCustomSource @Inject constructor(
             // Remove URL-to-scraper mapping
             val normalized = normalizeUrl(baseUrl)
             val mappingKey = "baseUrl_scraper_mapping_$normalized"
-            sourceManager.sourcePreferences.preferenceStore.getString(mappingKey, "").delete()
+            preferenceStore.getString(mappingKey, "").delete()
 
             // Invalidate the cached profile
             orchestrator.invalidateProfile(baseUrl)
@@ -65,7 +65,7 @@ class RemoveCustomSource @Inject constructor(
             // Remove URL-to-scraper mapping
             val normalized = normalizeUrl(baseUrl)
             val mappingKey = "baseUrl_scraper_mapping_$normalized"
-            sourceManager.sourcePreferences.preferenceStore.getString(mappingKey, "").delete()
+            preferenceStore.getString(mappingKey, "").delete()
 
             // Update profile to heuristic type
             val updated = profile.copy(

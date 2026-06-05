@@ -27,8 +27,8 @@ object SettingsReaderScreen : SearchableSettings {
 
     @Composable
     override fun getPreferences(): List<Preference> {
-        val ViewModel = hiltViewModel<SettingsReaderViewModel>()
-        val readerPref = ViewModel.readerPreferences
+        val viewModel = hiltViewModel<SettingsReaderViewModel>()
+        val readerPref = viewModel.readerPreferences
 
         return listOf(
             Preference.PreferenceItem.ListPreference(

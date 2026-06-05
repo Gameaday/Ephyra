@@ -139,7 +139,7 @@ fun LibraryScreen(
                 }.takeIf { state.selectedManga.fastAll { !it.isLocal() } },
                 onDeleteClicked = { ViewModel.onEvent(LibraryScreenEvent.OpenDeleteMangaDialog) },
                 onMigrateClicked = {
-                    val selectedIds = state.selection.map { it.id }
+                    val selectedIds = state.selection
                     ViewModel.onEvent(LibraryScreenEvent.ClearSelection)
                     navController.navigate(
                         ScreenRoutes.MigrationConfig.createRoute(selectedIds),
@@ -242,7 +242,7 @@ fun LibraryScreen(
         }
 
         is LibraryViewModel.Dialog.ChangeCategory -> {
-            ephyra.feature.category.components.ChangeCategoryDialog(
+            ephyra.feature.category.presentation.components.ChangeCategoryDialog(
                 initialSelection = dialog.initialSelection,
                 onDismissRequest = onDismissRequest,
                 onEditCategories = {

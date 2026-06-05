@@ -69,10 +69,10 @@ object SettingsDownloadScreen : SearchableSettings {
 
     @Composable
     override fun getPreferences(): List<Preference> {
-        val ViewModel = hiltViewModel<SettingsDownloadViewModel>()
-        val allCategories by ViewModel.getCategories.subscribe().collectAsState(initial = emptyList())
+        val viewModel = hiltViewModel<SettingsDownloadViewModel>()
+        val allCategories by viewModel.getCategories.subscribe().collectAsState(initial = emptyList())
 
-        val downloadPreferences = ViewModel.downloadPreferences
+        val downloadPreferences = viewModel.downloadPreferences
         val parallelSourceLimit by downloadPreferences.parallelSourceLimit().collectAsState()
         val parallelPageLimit by downloadPreferences.parallelPageLimit().collectAsState()
 
@@ -115,9 +115,9 @@ object SettingsDownloadScreen : SearchableSettings {
             getPageFilterGroup(downloadPreferences = downloadPreferences),
             getJellyfinSyncGroup(
                 downloadPreferences = downloadPreferences,
-                trackerManager = ViewModel.trackerManager,
-                trackPreferences = ViewModel.trackPreferences,
-                libraryPreferences = ViewModel.libraryPreferences,
+                trackerManager = viewModel.trackerManager,
+                trackPreferences = viewModel.trackPreferences,
+                libraryPreferences = viewModel.libraryPreferences,
             ),
         )
     }

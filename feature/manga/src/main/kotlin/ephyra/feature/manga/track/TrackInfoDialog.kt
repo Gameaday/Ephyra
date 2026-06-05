@@ -913,10 +913,10 @@ private fun TrackerRemoveScreen(
     onConfirm: () -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    val ViewModel = hiltViewModel<TrackerRemoveViewModel, TrackerRemoveViewModel.Factory> { factory ->
+    val viewModel = hiltViewModel<TrackerRemoveViewModel, TrackerRemoveViewModel.Factory> { factory ->
         factory.create(mangaId, track, serviceId)
     }
-    val state by ViewModel.state.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
     var removeRemoteTrack by remember { mutableStateOf(false) }
     AlertDialogContent(
         modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars),
@@ -965,8 +965,8 @@ private fun TrackerRemoveScreen(
                 }
                 FilledTonalButton(
                     onClick = {
-                        ViewModel.onEvent(TrackerRemoveViewModel.Event.Unregister)
-                        if (removeRemoteTrack) ViewModel.onEvent(TrackerRemoveViewModel.Event.DeleteFromService)
+                        viewModel.onEvent(TrackerRemoveViewModel.Event.Unregister)
+                        if (removeRemoteTrack) viewModel.onEvent(TrackerRemoveViewModel.Event.DeleteFromService)
                         onConfirm()
                     },
                     colors = ButtonDefaults.filledTonalButtonColors(

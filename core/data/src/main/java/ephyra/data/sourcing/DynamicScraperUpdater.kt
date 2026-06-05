@@ -191,7 +191,7 @@ class DynamicScraperUpdater @Inject constructor(
         val renamed = oldFile.renameTo(newFile)
         if (renamed) {
             // Update URL mapping
-            val sourceUrl = preferenceStore.getString("scraper_url_$oldName", "").get()
+            val sourceUrl = preferenceStore.getString("scraper_url_$oldName", "").getSync()
             preferenceStore.getString("scraper_url_$oldName", "").delete()
             if (sourceUrl.isNotBlank()) {
                 preferenceStore.getString("scraper_url_$newName", "").set(sourceUrl)
@@ -227,7 +227,7 @@ class DynamicScraperUpdater @Inject constructor(
     }
 
     private fun getMetadata(filename: String): ScraperMetadata? {
-        val jsonStr = preferenceStore.getString("$metadataKeyPrefix$filename", "").get()
+        val jsonStr = preferenceStore.getString("$metadataKeyPrefix$filename", "").getSync()
         return if (jsonStr.isNotBlank()) {
             try {
                 json.decodeFromString<ScraperMetadata>(jsonStr)

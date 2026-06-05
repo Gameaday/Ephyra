@@ -52,10 +52,10 @@ fun WorkerInfoScreen(
 ) {
     val context = LocalContext.current
 
-    val ViewModel = hiltViewModel<WorkerInfoViewModel>()
-    val enqueued by ViewModel.enqueued.collectAsState()
-    val finished by ViewModel.finished.collectAsState()
-    val running by ViewModel.running.collectAsState()
+    val viewModel = hiltViewModel<WorkerInfoViewModel>()
+    val enqueued by viewModel.enqueued.collectAsState()
+    val finished by viewModel.finished.collectAsState()
+    val running by viewModel.running.collectAsState()
 
     Scaffold(
         topBar = {

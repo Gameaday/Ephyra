@@ -53,10 +53,10 @@ fun WebViewScreen(
         onNavigateUp = { navController.popBackStack() },
         initialTitle = initialTitle,
         url = url,
-        headers = ViewModel.headers,
+        headers = viewModel.headers,
         onUrlChange = { assistUrl = it },
-        onShare = { ViewModel.onEvent(WebViewScreenEvent.ShareWebpage(it)) },
-        onOpenInBrowser = { ViewModel.onEvent(WebViewScreenEvent.OpenInBrowser(it)) },
-        onClearCookies = { ViewModel.onEvent(WebViewScreenEvent.ClearCookies(it)) },
+        onShare = { viewModel.onEvent(WebViewScreenEvent.ShareWebpage(it)) },
+        onOpenInBrowser = { viewModel.onEvent(WebViewScreenEvent.OpenInBrowser(it)) },
+        onClearCookies = { viewModel.onEvent(WebViewScreenEvent.ClearCookies(it)) },
     )
 }

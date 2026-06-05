@@ -99,7 +99,7 @@ fun MigrateMangaScreen(
                     },
                     onClick = {
                         val selection = state.selection
-                        ViewModel.onEvent(MigrateMangaScreenEvent.ClearSelection)
+                        viewModel.onEvent(MigrateMangaScreenEvent.ClearSelection)
                         navController.navigate(ScreenRoutes.MigrationConfig.createRoute(selection))
                     },
                     expanded = lazyListState.shouldExpandFAB(),
@@ -119,13 +119,13 @@ fun MigrateMangaScreen(
             lazyListState = lazyListState,
             contentPadding = contentPadding,
             state = state,
-            onClickItem = { ViewModel.onEvent(MigrateMangaScreenEvent.ToggleSelection(it)) },
+            onClickItem = { viewModel.onEvent(MigrateMangaScreenEvent.ToggleSelection(it)) },
             onClickCover = { navController.navigate(Screen.MangaDetails(it.id, true)) },
         )
     }
 
     LaunchedEffect(Unit) {
-        ViewModel.events.collectLatest { event ->
+        viewModel.events.collectLatest { event ->
             when (event) {
                 MigrationMangaEvent.FailedFetchingFavorites -> {
                     context.toast(ephyra.app.core.common.R.string.internal_error)

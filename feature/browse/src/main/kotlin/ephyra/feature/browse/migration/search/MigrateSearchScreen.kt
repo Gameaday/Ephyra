@@ -61,7 +61,7 @@ fun MigrateSearchScreen(
                 onClickTitle = {
                     navController.navigate(Screen.MangaDetails(dialog.target.id, true))
                 },
-                onDismissRequest = { ViewModel.onEvent(SearchScreenEvent.ClearDialog) },
+                onDismissRequest = { viewModel.onEvent(SearchScreenEvent.ClearDialog) },
                 onComplete = {
                     navController.navigate(Screen.MangaDetails(dialog.target.id, true)) {
                         popUpTo(ScreenRoutes.MigrateSearch.route) { inclusive = true }

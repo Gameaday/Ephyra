@@ -450,7 +450,8 @@ object AppModule {
         @ApplicationContext context: Context,
         networkHelper: NetworkHelper,
         preferenceStore: PreferenceStore,
-    ): DynamicScraperUpdater = DynamicScraperUpdater(context, networkHelper, preferenceStore)
+        json: Json,
+    ): DynamicScraperUpdater = DynamicScraperUpdater(context, networkHelper, preferenceStore, json)
 
     @Provides
     @Singleton

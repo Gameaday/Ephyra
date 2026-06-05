@@ -34,8 +34,8 @@ object SettingsAppearanceScreen : SearchableSettings {
 
     @Composable
     override fun getPreferences(): List<Preference> {
-        val ViewModel = hiltViewModel<SettingsAppearanceViewModel>()
-        val uiPreferences = ViewModel.uiPreferences
+        val viewModel = hiltViewModel<SettingsAppearanceViewModel>()
+        val uiPreferences = viewModel.uiPreferences
         val navController = LocalNavController.current
 
         return listOf(

@@ -227,7 +227,7 @@ fun HistoryTabScreen(
         }
 
         is HistoryViewModel.Dialog.ChangeCategory -> {
-            ephyra.feature.category.components.ChangeCategoryDialog(
+            ephyra.feature.category.presentation.components.ChangeCategoryDialog(
                 initialSelection = dialog.initialSelection,
                 onDismissRequest = onDismissRequest,
                 onEditCategories = { navController.navigate(ephyra.presentation.core.ui.navigation.Screen.Category) },
@@ -265,7 +265,7 @@ fun HistoryTabScreen(
     }
 
     LaunchedEffect(Unit) {
-        ViewModel.events.collectLatest { e ->
+        viewModel.events.collectLatest { e ->
             when (e) {
                 HistoryViewModel.Event.InternalError ->
                     snackbarHostState.showSnackbar(
@@ -292,7 +292,7 @@ fun HistoryTabScreen(
         NavigationEvents.reselectEvent
             .filter { it == ScreenRoutes.History.route }
             .collect {
-                val nextChapter = ViewModel.getNextChapter()
+                val nextChapter = viewModel.getNextChapter()
                 if (nextChapter != null) {
                     val intent = ReaderActivity.newIntent(context, nextChapter.mangaId, nextChapter.id)
                     context.startActivity(intent)

@@ -1,12 +1,12 @@
 package ephyra.domain.content.source.interactor
 
+import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.common.util.Result
 import ephyra.domain.content.source.ContentSourceOrchestrator
 import ephyra.domain.content.source.ScraperScriptUpdater
 import ephyra.domain.content.source.SourceProfile
 import ephyra.domain.content.source.SourceType
 import ephyra.domain.extension.service.ExtensionManager
-import ephyra.domain.source.service.SourceManager
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -17,7 +17,7 @@ import javax.inject.Singleton
 class AddCustomSource @Inject constructor(
     private val orchestrator: ContentSourceOrchestrator,
     private val scraperUpdater: ScraperScriptUpdater,
-    private val sourceManager: SourceManager,
+    private val preferenceStore: PreferenceStore,
     private val extensionManager: ExtensionManager,
 ) {
 
@@ -121,7 +121,7 @@ class AddCustomSource @Inject constructor(
 
             // Save the mapping
             val mappingKey = "baseUrl_scraper_mapping_$normalized"
-            sourceManager.sourcePreferences.preferenceStore.getString(mappingKey, "").set(scraperFilename)
+            preferenceStore.getString(mappingKey, "").set(scraperFilename)
 
             orchestrator.setSourceType(baseUrl, SourceType.JS_SCRAPER, scraperFilename)
 
