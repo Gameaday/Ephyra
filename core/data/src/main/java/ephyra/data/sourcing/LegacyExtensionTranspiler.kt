@@ -37,7 +37,17 @@ class LegacyExtensionTranspiler @Inject constructor(
         val classPrefix = name.replace(" ", "")
         val pkgSuffix = pkgName.substringAfterLast(".")
 
-        val baseGithubUrl = "https://raw.githubusercontent.com/keiyoushi/extensions-source/main/src"
+        val baseGithubUrl = when {
+            extension.repoUrl.contains("/extensions/repo") -> {
+                extension.repoUrl.replace("/extensions/repo", "/extensions-source/main/src")
+            }
+            extension.repoUrl.endsWith("/repo") -> {
+                extension.repoUrl.removeSuffix("/repo") + "/main/src"
+            }
+            else -> {
+                extension.repoUrl
+            }
+        }
         val extensionPath = "$lang/$pkgSuffix/src/eu/kanade/tachiyomi/extension/$lang/$pkgSuffix"
 
         // Construct raw Kotlin source URLs to try in sequence

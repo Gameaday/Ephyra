@@ -79,7 +79,7 @@ all in one place with a polished, configurable reading experience.
 
 ## 🔌 Content Sourcing Architecture (Dynamic Scrapers, Heuristics, & On-Device Transpilation)
 
-Ephyra implements a highly modular, secure, and lightweight dynamic content sourcing system. The application starts with a completely clean, empty sandbox (no pre-bundled scrapers). Users can add remote extension repositories (such as [Keiyoushi](https://github.com/keiyoushi/extensions-source)) and install extensions dynamically.
+Ephyra implements a highly modular, secure, and lightweight dynamic content sourcing system. The application starts with a completely clean, empty sandbox (no pre-bundled scrapers). Users can add remote extension repositories and install extensions dynamically.
 
 The retrieval pipeline consists of three core components:
 

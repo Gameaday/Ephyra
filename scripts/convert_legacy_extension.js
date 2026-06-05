@@ -1,5 +1,5 @@
 /**
- * CLI tool to transpile legacy Tachiyomi/Mihon Kotlin extension sources (from keiyoushi/extensions-source)
+ * CLI tool to transpile legacy Tachiyomi/Mihon Kotlin extension sources
  * into sandboxed JavaScript scrapers compatible with Ephyra.
  *
  * Usage:

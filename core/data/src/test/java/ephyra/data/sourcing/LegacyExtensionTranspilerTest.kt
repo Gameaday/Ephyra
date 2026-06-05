@@ -77,7 +77,7 @@ class LegacyExtensionTranspilerTest {
             ),
             apkName = "mangadex.apk",
             iconUrl = "https://mangadex.org/icon.png",
-            repoUrl = "https://raw.githubusercontent.com/keiyoushi/extensions/repo",
+            repoUrl = "https://raw.githubusercontent.com/mock-user/extensions/repo",
         )
 
         // Mock assets loading for transpiler.js
@@ -146,7 +146,7 @@ class LegacyExtensionTranspilerTest {
             ),
             apkName = "multisource.apk",
             iconUrl = "https://multisource.com/icon.png",
-            repoUrl = "https://raw.githubusercontent.com/keiyoushi/extensions/repo",
+            repoUrl = "https://raw.githubusercontent.com/mock-user/extensions/repo",
         )
 
         // Mock assets loading for transpiler.js
@@ -214,7 +214,7 @@ class LegacyExtensionTranspilerTest {
             ),
             apkName = "testextension.apk",
             iconUrl = "https://testextension.com/icon.png",
-            repoUrl = "https://raw.githubusercontent.com/keiyoushi/extensions/repo",
+            repoUrl = "https://raw.githubusercontent.com/mock-user/extensions/repo",
         )
 
         // Mock assets loading for transpiler.js
