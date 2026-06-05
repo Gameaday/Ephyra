@@ -55,7 +55,7 @@ class SyncJellyfinImpl(
     override suspend fun markJellyfinFavoriteIfLinked(manga: Manga, favorite: Boolean) = withContext(Dispatchers.IO) {
         if (jellyfinApi == null || trackId < 0L) return@withContext
         try {
-            Log.d(tag, "Setting Jellyfin favorite=${favorite} for manga '${manga.title}'")
+            Log.d(tag, "Setting Jellyfin favorite=$favorite for manga '${manga.title}'")
         } catch (e: Exception) {
             Log.e(tag, "Failed to set favorite for manga '${manga.title}'", e)
         }
