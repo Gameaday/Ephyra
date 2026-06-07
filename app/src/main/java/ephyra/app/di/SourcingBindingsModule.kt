@@ -16,4 +16,10 @@ abstract class SourcingBindingsModule {
     abstract fun bindScraperScriptUpdater(
         impl: DynamicScraperUpdater,
     ): ScraperScriptUpdater
+
+    @Binds
+    @Singleton
+    abstract fun bindExtensionTranspiler(
+        impl: ephyra.data.sourcing.LegacyExtensionTranspiler,
+    ): ephyra.domain.extension.service.ExtensionTranspiler
 }

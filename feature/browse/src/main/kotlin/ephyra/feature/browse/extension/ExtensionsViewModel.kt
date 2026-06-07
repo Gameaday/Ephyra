@@ -8,7 +8,6 @@ import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.common.util.Result
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.system.logcat
-import ephyra.data.sourcing.LegacyExtensionTranspiler
 import ephyra.domain.content.source.ScraperScriptUpdater
 import ephyra.domain.content.source.SourceType
 import ephyra.domain.content.source.interactor.AddCustomSource
@@ -18,6 +17,7 @@ import ephyra.domain.content.source.interactor.UnifiedSource
 import ephyra.domain.content.source.interactor.UpdateCustomSource
 import ephyra.domain.extension.interactor.GetExtensionsByType
 import ephyra.domain.extension.model.Extension
+import ephyra.domain.extension.service.ExtensionTranspiler
 import ephyra.domain.extensionrepo.interactor.CreateExtensionRepo
 import ephyra.domain.extensionrepo.interactor.DeleteExtensionRepo
 import ephyra.domain.extensionrepo.interactor.GetExtensionRepo
@@ -44,7 +44,7 @@ class ExtensionsViewModel @Inject constructor(
     private val deleteExtensionRepo: DeleteExtensionRepo,
     private val updateExtensionRepo: UpdateExtensionRepo,
     private val getExtensionsByType: GetExtensionsByType,
-    private val legacyExtensionTranspiler: LegacyExtensionTranspiler,
+    private val legacyExtensionTranspiler: ExtensionTranspiler,
     private val scraperUpdater: ScraperScriptUpdater,
     private val preferenceStore: PreferenceStore,
 ) : ViewModel() {

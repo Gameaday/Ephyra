@@ -7,6 +7,7 @@ import ephyra.core.common.util.system.logcat
 import ephyra.domain.content.source.interactor.AddCustomSource
 import ephyra.domain.content.source.interactor.RemoveCustomSource
 import ephyra.domain.extension.model.Extension
+import ephyra.domain.extension.service.ExtensionTranspiler
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.JavaScriptEngine
 import eu.kanade.tachiyomi.network.NetworkHelper
@@ -25,10 +26,10 @@ class LegacyExtensionTranspiler @Inject constructor(
     private val addCustomSource: AddCustomSource,
     private val removeCustomSource: RemoveCustomSource,
     private val preferenceStore: PreferenceStore,
-) {
-    suspend fun transpileAndInstall(
+) : ExtensionTranspiler {
+    override suspend fun transpileAndInstall(
         extension: Extension.Available,
-        selectedUrls: Set<String>? = null,
+        selectedUrls: Set<String>?,
     ): Boolean = withIOContext {
         val pkgName = extension.pkgName
         val name = extension.name
@@ -133,7 +134,7 @@ class LegacyExtensionTranspiler @Inject constructor(
         }
     }
 
-    fun clearExtensionMetadata(pkgName: String) {
+    override fun clearExtensionMetadata(pkgName: String) {
         preferenceStore.getLong("transpiled_extension_versioncode_$pkgName", 0L).delete()
         preferenceStore.getString("transpiled_extension_versionname_$pkgName", "").delete()
         preferenceStore.getString("transpiled_extension_filename_$pkgName", "").delete()
