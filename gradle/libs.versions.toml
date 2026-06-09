@@ -2,7 +2,7 @@
 agp = "9.2.1"
 kotlin = "2.4.0"
 aboutlib_version = "14.2.1"
-okhttp_version = "5.3.2"
+okhttp_version = "5.4.0"
 shizuku_version = "13.1.5"
 sqlite = "2.6.2"
 datastore = "1.2.1"
