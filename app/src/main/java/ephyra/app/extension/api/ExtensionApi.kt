@@ -113,7 +113,7 @@ class ExtensionApi(
         runCatching { json.decodeFromString<ModernExtensionIndexJsonObject>(indexBody) }
             .getOrNull()
             ?.toExtensions(repoUrl)
-            .takeIf { it.isNotEmpty() }
+            ?.takeIf { it.isNotEmpty() }
             ?.let { return it }
 
         return runCatching { json.decodeFromString<List<LegacyExtensionJsonObject>>(indexBody).toExtensions(repoUrl) }
