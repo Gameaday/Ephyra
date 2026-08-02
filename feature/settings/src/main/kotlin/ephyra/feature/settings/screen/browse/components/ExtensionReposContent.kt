@@ -117,7 +117,7 @@ private fun ExtensionRepoListItem(
 
                 IconButton(
                     onClick = {
-                        val url = "${repo.baseUrl}/index.min.json"
+                        val url = "${repo.baseUrl}/repo.json"
                         context.copyToClipboard(url, url)
                     },
                 ) {
