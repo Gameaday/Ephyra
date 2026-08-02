@@ -458,8 +458,8 @@
     <string name="information_empty_repos">You have no repos set.</string>
     <string name="action_add_repo">Add repo</string>
     <string name="label_add_repo_input">Repo URL</string>
-    <string name="action_add_repo_message">Add additional repos to %s. This should be a URL that
-        ends with \"index.min.json\".
+    <string name="action_add_repo_message">Add additional repos to %s. You can enter a base repo URL
+        or a URL ending with \"repo.json\", \"index.json\", \"index.min.json\", or \"index.pb\".
     </string>
     <string name="error_repo_exists">This repo already exists!</string>
     <string name="action_delete_repo">Delete repo</string>

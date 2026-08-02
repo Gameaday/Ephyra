@@ -12,16 +12,50 @@ class CreateExtensionRepo(
     private val repository: ExtensionRepoRepository,
     private val service: ExtensionRepoService,
 ) {
-    private val repoRegex = """^https://.*/index\.min\.json$""".toRegex()
+    private val supportedIndexFiles = setOf(
+        "index.min.json",
+        "index.json",
+        "index.pb",
+        "repo.json",
+    )
 
     suspend fun await(indexUrl: String): Result {
-        val formattedIndexUrl = indexUrl.toHttpUrlOrNull()
-            ?.toString()
-            ?.takeIf { it.matches(repoRegex) }
+        val baseUrl = parseBaseUrl(indexUrl)
             ?: return Result.InvalidUrl
 
-        val baseUrl = formattedIndexUrl.removeSuffix("/index.min.json")
-        return service.fetchRepoDetails(baseUrl)?.let { insert(it) } ?: Result.InvalidUrl
+        val normalizedBaseUrl = normalizeKnownRepoUrl(baseUrl)
+        return service.fetchRepoDetails(normalizedBaseUrl)?.let { insert(it) } ?: Result.InvalidUrl
+    }
+
+    private fun parseBaseUrl(input: String): String? {
+        val formattedInput = input.toHttpUrlOrNull()
+            ?.newBuilder()
+            ?.query(null)
+            ?.fragment(null)
+            ?.build()
+            ?.toString()
+            ?.removeSuffix("/")
+            ?: return null
+
+        val suffix = supportedIndexFiles.firstOrNull { formattedInput.endsWith("/$it") }
+        if (suffix != null) {
+            return formattedInput.removeSuffix("/$suffix")
+        }
+
+        val lastSegment = formattedInput.substringAfterLast('/', "")
+        if (lastSegment.contains('.')) {
+            return null
+        }
+
+        return formattedInput
+    }
+
+    private fun normalizeKnownRepoUrl(baseUrl: String): String {
+        val host = baseUrl.toHttpUrlOrNull()?.host.orEmpty()
+        if (host == "keiyoushi.github.io") {
+            return "https://raw.githubusercontent.com/keiyoushi/extensions/repo"
+        }
+        return baseUrl
     }
 
     private suspend fun insert(repo: ExtensionRepo): Result {
