@@ -210,7 +210,7 @@ fun ExtensionScreen(
                         value = repoUrlInput,
                         onValueChange = { repoUrlInput = it },
                         label = { Text("Repository URL") },
-                        placeholder = { Text("https://example.com/index.min.json") },
+                        placeholder = { Text("https://example.com/repo.json") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp),
                     )
