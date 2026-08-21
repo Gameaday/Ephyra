@@ -1,16 +1,16 @@
 [versions]
 agp = "9.2.1"
 kotlin = "2.4.0"
-aboutlib_version = "14.2.1"
+aboutlib_version = "15.0.0"
 okhttp_version = "5.3.2"
 shizuku_version = "13.1.5"
 sqlite = "2.6.2"
 datastore = "1.2.1"
-spotless = "8.6.0"
+spotless = "8.7.0"
 navigation = "2.9.8"
 ktlint-core = "1.8.0"
 firebase-bom = "34.14.0"
-markdown = "0.41.0"
+markdown = "0.43.0"
 junit = "6.1.0"
 materialKolor = "5.0.0-alpha07"
 archunit = "1.4.2"
@@ -35,7 +35,7 @@ quickjs-android = { group = "com.github.zhanghai.quickjs-java", name = "quickjs-
 jsoup = "org.jsoup:jsoup:1.22.2"
 unifile = "com.github.tachiyomiorg:unifile:e0def6b3dc"
 libarchive = "me.zhanghai.android.libarchive:library:1.1.6"
-compose-runtime = "androidx.compose.runtime:runtime:1.11.2"
+compose-runtime = "androidx.compose.runtime:runtime:1.11.3"
 
 sqlite-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "sqlite" }
 sqlite-ktx = { module = "androidx.sqlite:sqlite-ktx", version.ref = "sqlite" }
@@ -45,7 +45,7 @@ preferencektx = "androidx.preference:preference-ktx:1.2.1"
 datastore = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 
 # Coil
-coil-bom = { module = "io.coil-kt.coil3:coil-bom", version = "3.4.0" }
+coil-bom = { module = "io.coil-kt.coil3:coil-bom", version = "3.5.0" }
 coil-core = { module = "io.coil-kt.coil3:coil" }
 coil-gif = { module = "io.coil-kt.coil3:coil-gif" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose" }
@@ -84,7 +84,7 @@ paging-common = { module = "androidx.paging:paging-common", version.ref = "pagin
 
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
-kotest-assertions = "io.kotest:kotest-assertions-core:6.1.11"
+kotest-assertions = "io.kotest:kotest-assertions-core:6.2.1"
 mockk = "io.mockk:mockk:1.14.11"
 archunit = { module = "com.tngtech.archunit:archunit", version.ref = "archunit" }
 
@@ -112,7 +112,7 @@ media3-session = { module = "androidx.media3:media3-session", version.ref = "med
 agp = { id = "com.android.application", version.ref = "agp" }
 agp-library = { id = "com.android.library", version.ref = "agp" }
 agp-test = { id = "com.android.test", version.ref = "agp" }
-google-services = { id = "com.google.gms.google-services", version = "4.4.4" }
+google-services = { id = "com.google.gms.google-services", version = "4.5.0" }
 aboutLibraries = { id = "com.mikepenz.aboutlibraries.plugin.android", version.ref = "aboutlib_version" }
 firebase-crashlytics = { id = "com.google.firebase.crashlytics", version = "3.0.7" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
