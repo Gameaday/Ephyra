@@ -112,7 +112,7 @@ media3-session = { module = "androidx.media3:media3-session", version.ref = "med
 agp = { id = "com.android.application", version.ref = "agp" }
 agp-library = { id = "com.android.library", version.ref = "agp" }
 agp-test = { id = "com.android.test", version.ref = "agp" }
-google-services = { id = "com.google.gms.google-services", version = "4.4.4" }
+google-services = { id = "com.google.gms.google-services", version = "4.5.0" }
 aboutLibraries = { id = "com.mikepenz.aboutlibraries.plugin.android", version.ref = "aboutlib_version" }
 firebase-crashlytics = { id = "com.google.firebase.crashlytics", version = "3.0.7" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
