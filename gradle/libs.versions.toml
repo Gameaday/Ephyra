@@ -17,7 +17,7 @@ archunit = "1.4.2"
 
 # Compiler Tools
 hilt = "2.59.2"
-ksp = "2.3.9"
+ksp = "2.3.11"
 room = "2.8.4"
 paging = "3.5.0"
 media3 = "1.10.1"
