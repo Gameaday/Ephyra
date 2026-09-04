@@ -483,8 +483,15 @@ class MatchUnlinkedManga(
     }
 
     companion object {
-        private val PUNCT_REGEX = Regex("[^\\p{L}\\p{N}\\s]")
-        private val MULTI_SPACE_REGEX = Regex("\\s+")
+        /**
+         * Semantic title normalization that preserves word boundaries:
+         * "Re:Zero" → "re zero", "One   Piece" → "one piece".
+         *
+         * Delegates to [TitleNormalizer.forMatching], the single source of truth for
+         * title normalization, so tracker matching and search dedup never diverge.
+         */
+        fun normalizeTitle(title: String): String =
+            ephyra.domain.manga.interactor.TitleNormalizer.forMatching(title)
 
         /**
          * Minimum length for substring matching in Tier 4.
@@ -499,19 +506,6 @@ class MatchUnlinkedManga(
          * for large libraries (~120 manga/min).
          */
         private const val API_RATE_LIMIT_MS = 500L
-
-        /**
-         * Normalize a title for fuzzy comparison:
-         * - lowercase
-         * - replace punctuation with spaces (keeps letters, digits, whitespace)
-         * - collapse multiple spaces into one
-         */
-        fun normalizeTitle(title: String): String {
-            return title.lowercase()
-                .replace(PUNCT_REGEX, " ")
-                .replace(MULTI_SPACE_REGEX, " ")
-                .trim()
-        }
 
         /**
          * Checks if one normalized title is a substring of the other.

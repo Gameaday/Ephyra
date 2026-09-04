@@ -885,6 +885,9 @@
     <!-- missing prompt after Compose rewrite #7901 -->
     <string name="no_more_results">No more results</string>
     <string name="no_results_found">No results found</string>
+    <string name="search_recent_queries">Recent searches</string>
+    <string name="search_library_suggestions">From your library</string>
+    <string name="search_merged_banner">Smart Merge removed %1$d duplicate result(s) from other sources</string>
     <string name="local_source">Local source</string>
     <string name="other_source">Other</string>
     <string name="last_used_source">Last used</string>

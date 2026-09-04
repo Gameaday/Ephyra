@@ -24,6 +24,7 @@ internal fun LazyLibraryGrid(
     columns: Int,
     contentPadding: PaddingValues,
     onColumnsChange: ((Int) -> Unit)? = null,
+    testTag: String = LIBRARY_GRID_TAG,
     content: LazyGridScope.() -> Unit,
 ) {
     val config = LocalBrandedTheme.current
@@ -55,9 +56,13 @@ internal fun LazyLibraryGrid(
         contentPadding = contentPadding + PaddingValues(8.dp),
         verticalArrangement = Arrangement.spacedBy(config.gridVerticalSpacing),
         horizontalArrangement = Arrangement.spacedBy(config.gridHorizontalSpacing),
+        testTag = testTag,
         content = content,
     )
 }
+
+/** Stable tag for the primary library grid — used by macrobenchmarks + Compose UI tests. */
+const val LIBRARY_GRID_TAG = "library_grid"
 
 internal fun LazyGridScope.globalSearchItem(
     searchQuery: String?,

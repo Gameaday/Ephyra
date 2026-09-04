@@ -1,0 +1,54 @@
+﻿name: Macrobenchmark
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * *"  # Daily at 06:00 UTC
+
+concurrency:
+  group: macrobenchmark-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  macrobenchmark:
+    name: ${{ matrix.name }}
+    runs-on: macos-14
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - name: Startup (cold, warm, hot)
+            class: "ephyra.macrobenchmark.ColdStartupBenchmark,ephyra.macrobenchmark.WarmStartupBenchmark,ephyra.macrobenchmark.HotStartupBenchmark"
+          - name: Scroll (library grid)
+            class: "ephyra.macrobenchmark.ScrollBenchmark"
+          - name: Baseline Profile (collect)
+            class: "ephyra.macrobenchmark.BaselineProfileGenerator"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+
+      - name: Set up Gradle
+        uses: gradle/gradle-build-action@v3
+
+      - name: Run macrobenchmark on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          emulator-options: "-no-snapshot -gpu swiftshader_indirect -no-window"
+          force-avd-creation: true
+          script: ./gradlew :macrobenchmark:connectedBenchmarkAndroidTest --no-daemon -Pandroid.testInstrumentationRunnerArguments.class=${{ matrix.class }}
+
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macrobenchmark-${{ github.sha }}-${{ matrix.name }}
+          path: macrobenchmark/build/outputs/

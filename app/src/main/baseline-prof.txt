@@ -1,0 +1,55 @@
+# Ephyra Baseline Profile
+# Enables AOT compilation of the critical startup user path.
+# Re-generate by running the `BaselineProfileGenerator` macrobenchmark on an
+# AOSP emulator with the `benchmark` build variant, then copy the output here.
+#
+# Critical startup path covered:
+#   app launch -> Home screen (library feed) -> Updates tab -> History tab -> More tab -> Settings
+# Plus the Compose/Navigation/Hilt runtime used on every screen.
+#
+# AGP baseline-prof.txt format:
+#   - Class rule:   Landroidx/pkg/ClassName   (whole class, precompiled)
+#   - Method rule:  HLandroidx/pkg/ClassName;->method(Sig)V   (H=hot for startup)
+
+# Hilt / Dagger runtime — needed every process launch
+Landroid/hilt/internal/GeneratedComponentManagerHolder
+HLandroid/hilt/internal/GeneratedComponentManagerHolder;->generatedComponent()Ljava/lang/Object;
+Ldagger/hilt/android/internal/managers/SingletonComponentManager
+HLdagger/hilt/android/internal/managers/SingletonComponentManager;->create(Landroid/content/Context;)Ldagger/hilt/android/internal/managers/SingletonComponentManager;
+Ldagger/hilt/android/internal/managers/ActivityComponentManagerImpl
+HLdagger/hilt/android/internal/managers/ActivityComponentManagerImpl;-><init>(Ldagger/hilt/android/internal/managers/SingletonComponentManager;Landroid/app/Activity;)V
+Ldagger/internal/Preconditions
+HLdagger/internal/Preconditions;->checkNotNull(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;
+
+# Compose runtime — precompiled layout/measure used across every screen
+Landroidx/compose/runtime/ComposerImpl
+HLandroidx/compose/runtime/ComposerImpl;->ensureStarted(II)V
+Landroidx/compose/runtime/CompositionImpl
+HLandroidx/compose/runtime/CompositionImpl;->applyChanges()V
+Landroidx/compose/runtime/SlotWriter
+HLandroidx/compose/runtime/SlotWriter;->beginGroup(I)V
+Landroidx/compose/ui/platform/AndroidComposeView
+HLandroidx/compose/ui/platform/AndroidComposeView;-><init>(Landroid/content/Context;Landroid/util/AttributeSet;I)V
+Landroidx/compose/material3/ScaffoldKt
+Landroidx/compose/material3/NavigationBarKt
+Landroidx/compose/material3/NavigationBarItemKt
+Landroidx/compose/foundation/lazy/LazyListKt
+Landroidx/compose/foundation/lazy/LazyColumnKt
+
+# App entry point + main screen (startup path)
+Lephyra/app/App
+Lephyra/app/ui/home/HomeScreenKt
+Lephyra/app/ui/home/HomeViewModel
+Lephyra/app/theme/TachiyomiThemeKt
+
+# Navigation runtime
+Landroidx/navigation/NavHostController
+Landroidx/navigation/compose/NavHostKt
+
+# Coil image loading (covers, thumbnails — startup visible)
+Lcoil3/compose/AsyncImageKt
+Lcoil3/SingletonImageLoader
+
+# Core domain mapping (Manga, Chapter models used on every list screen)
+Lephyra/domain/manga/model/Manga
+Lephyra/domain/chapter/model/Chapter
