@@ -20,8 +20,8 @@ robolectric = "4.16.1"
 hilt = "2.60.1"
 ksp = "2.3.11"
 room = "2.8.4"
+media3 = "1.11.0"
 paging = "3.5.1"
-media3 = "1.10.1"
 
 
 [libraries]
