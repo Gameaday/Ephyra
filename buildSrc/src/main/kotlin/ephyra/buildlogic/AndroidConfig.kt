@@ -4,7 +4,8 @@ import org.gradle.api.JavaVersion as GradleJavaVersion
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget as KotlinJvmTarget
 
 object AndroidConfig {
-    const val COMPILE_SDK = 36
+    // 37 required by Coil 3.6.x AAR metadata (compileSdk can lead targetSdk).
+    const val COMPILE_SDK = 37
     const val TARGET_SDK = 36
     const val MIN_SDK = 34
 

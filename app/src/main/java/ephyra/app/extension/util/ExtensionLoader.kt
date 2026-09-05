@@ -6,7 +6,7 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import androidx.core.content.pm.PackageInfoCompat
 import ephyra.app.extension.model.LoadResult
-import ephyra.app.util.system.ChildFirstPathClassLoader
+import ephyra.app.util.system.DelegateLastClassLoaderCompat
 import ephyra.core.common.util.lang.Hash
 import ephyra.core.common.util.storage.copyAndSetReadOnlyTo
 import ephyra.core.common.util.system.logcat
@@ -47,8 +47,28 @@ class ExtensionLoader(
         private const val METADATA_SOURCE_CLASS = "tachiyomi.extension.class"
         private const val METADATA_SOURCE_FACTORY = "tachiyomi.extension.factory"
         private const val METADATA_NSFW = "tachiyomi.extension.nsfw"
+
+        // New-format metadata keys introduced by Mihon's updated extension structure.
+        // Read first, falling back to the legacy keys above for older APKs.
+        private const val METADATA_MIX_NAME = "tachiyomix.name"
+        private const val METADATA_MIX_EXTENSION_LIB = "tachiyomix.extensionLib"
+        private const val METADATA_MIX_CONTENT_WARNING = "tachiyomix.contentWarning"
+
+        /**
+         * Extension library versions supported by the loader.
+         *
+         * 1.4 — legacy Tachiyomi-era extensions.
+         * 1.5 — previous stable extension API.
+         * 1.6 — the new Mihon extension structure (updated extension-lib,
+         * `tachiyomix.*` metadata keys, delegate-last classloading).
+         */
+        val SUPPORTED_LIB_VERSIONS = listOf(1.4, 1.5, 1.6)
         const val LIB_VERSION_MIN = 1.4
-        const val LIB_VERSION_MAX = 1.5
+        const val LIB_VERSION_MAX = 1.6
+
+        fun isLibVersionSupported(libVersion: Double?): Boolean =
+            libVersion != null && libVersion in SUPPORTED_LIB_VERSIONS
+
         private const val PRIVATE_EXTENSION_EXTENSION = "ext"
     }
 
@@ -244,7 +264,18 @@ class ExtensionLoader(
         }
         val pkgName = pkgInfo.packageName
 
-        val extName = pkgManager.getApplicationLabel(appInfo).toString().substringAfter("Tachiyomi: ")
+        val metaData = appInfo.metaData
+        if (metaData == null) {
+            logcat(LogPriority.ERROR) { "Extension $pkgName has no meta-data" }
+            return LoadResult.Error
+        }
+
+        // Prefer the new-format `tachiyomix.name` metadata; fall back to the
+        // application label, stripping both legacy naming prefixes.
+        val extName = metaData.getString(METADATA_MIX_NAME)?.takeUnless { it.isBlank() }
+            ?: pkgManager.getApplicationLabel(appInfo).toString()
+                .substringAfter("Tachiyomi: ")
+                .substringAfter("Mihon: ")
         val versionName = pkgInfo.versionName
         val versionCode = PackageInfoCompat.getLongVersionCode(pkgInfo)
 
@@ -253,12 +284,15 @@ class ExtensionLoader(
             return LoadResult.Error
         }
 
-        // Validate lib version
-        val libVersion = versionName.substringBeforeLast('.').toDoubleOrNull()
-        if (libVersion == null || libVersion < LIB_VERSION_MIN || libVersion > LIB_VERSION_MAX) {
+        // Validate lib version. New-format extensions declare it explicitly via
+        // `tachiyomix.extensionLib`; older ones encode it in the version name
+        // (e.g. "1.4.6" -> 1.4).
+        val libVersion = metaData.getFloat(METADATA_MIX_EXTENSION_LIB, -1f).takeIf { it > 0f }?.toDouble()
+            ?: versionName.substringBeforeLast('.').toDoubleOrNull()
+        if (libVersion == null || !isLibVersionSupported(libVersion)) {
             logcat(LogPriority.WARN) {
                 "Lib version is $libVersion, while only versions " +
-                    "$LIB_VERSION_MIN to $LIB_VERSION_MAX are allowed"
+                    "$SUPPORTED_LIB_VERSIONS are allowed"
             }
             return LoadResult.Error
         }
@@ -284,20 +318,23 @@ class ExtensionLoader(
             return LoadResult.Untrusted(extension)
         }
 
-        val metaData = appInfo.metaData
-        if (metaData == null) {
-            logcat(LogPriority.ERROR) { "Extension $pkgName has no meta-data" }
-            return LoadResult.Error
-        }
-
         val isNsfw = metaData.getInt(METADATA_NSFW) == 1
+        // New-format extensions declare a content warning string; surface it so the
+        // UI can show the same advisory Mihon does. Falls back to the legacy NSFW bit.
+        val contentWarning = metaData.getString(METADATA_MIX_CONTENT_WARNING)?.takeUnless { it.isBlank() }
         if (!loadNsfwSource && isNsfw) {
             logcat(LogPriority.WARN) { "NSFW extension $pkgName not allowed" }
             return LoadResult.Error
         }
 
         val classLoader = try {
-            ChildFirstPathClassLoader(appInfo.sourceDir, null, context.classLoader)
+            // Delegate-last resolution matches Mihon's current extension loading
+            // semantics: the extension's own classes take priority, but any class it
+            // does not bundle resolves against the host (shared extension-lib classes
+            // such as OkHttp/Jsoup provided by Ephyra). This is required for the new
+            // Mihon extension structure (extension-lib 1.6) and remains compatible
+            // with 1.4/1.5 extensions.
+            DelegateLastClassLoaderCompat(appInfo.sourceDir, context.classLoader)
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e) { "Extension load error: $extName ($pkgName)" }
             return LoadResult.Error
@@ -387,7 +424,9 @@ class ExtensionLoader(
     private fun isPackageAnExtension(pkgInfo: PackageInfo): Boolean {
         return pkgInfo.reqFeatures.orEmpty().any { it.name == EXTENSION_FEATURE } ||
             pkgInfo.applicationInfo?.metaData?.containsKey(METADATA_SOURCE_CLASS) == true ||
+            pkgInfo.applicationInfo?.metaData?.containsKey(METADATA_MIX_NAME) == true ||
             pkgInfo.packageName.startsWith("eu.kanade.tachiyomi.extension.") ||
+            pkgInfo.packageName.startsWith("mihon.app.extension.") ||
             pkgInfo.packageName.startsWith("app.ephyra.extension.")
     }
 

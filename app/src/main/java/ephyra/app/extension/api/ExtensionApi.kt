@@ -124,9 +124,9 @@ class ExtensionApi(
         return this
             .mapNotNull {
                 val libVersion = it.extractLibVersion() ?: return@mapNotNull null
-                if (libVersion < ExtensionLoader.LIB_VERSION_MIN || libVersion > ExtensionLoader.LIB_VERSION_MAX) return@mapNotNull null
+                if (!ExtensionLoader.isLibVersionSupported(libVersion)) return@mapNotNull null
                 Extension.Available(
-                    name = it.name.substringAfter("Tachiyomi: "),
+                    name = it.name.substringAfter("Tachiyomi: ").substringAfter("Mihon: "),
                     pkgName = it.pkg,
                     versionName = it.version,
                     versionCode = it.code,
@@ -146,7 +146,7 @@ class ExtensionApi(
             val libVersion = extension.extensionLib.toDoubleOrNull()
                 ?: extension.versionName.substringBeforeLast('.').toDoubleOrNull()
                 ?: return@mapNotNull null
-            if (libVersion < ExtensionLoader.LIB_VERSION_MIN || libVersion > ExtensionLoader.LIB_VERSION_MAX) return@mapNotNull null
+            if (!ExtensionLoader.isLibVersionSupported(libVersion)) return@mapNotNull null
 
             val languageFromPackage = extension.packageName.substringAfter("extension.").substringBefore('.')
             val lang = languageFromPackage.ifBlank {

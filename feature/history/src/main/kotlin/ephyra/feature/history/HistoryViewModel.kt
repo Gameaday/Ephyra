@@ -9,6 +9,7 @@ import ephyra.core.common.preference.CheckboxState
 import ephyra.core.common.preference.mapAsCheckboxState
 import ephyra.core.common.util.insertSeparators
 import ephyra.core.common.util.lang.launchIO
+import ephyra.presentation.core.util.lang.searchResults
 import ephyra.core.common.util.lang.toLocalDate
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.logcat
@@ -30,15 +31,12 @@ import ephyra.domain.source.service.SourceManager
 import ephyra.domain.track.interactor.AddTracks
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
@@ -72,16 +70,14 @@ class HistoryViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             _state.map { it.searchQuery }
-                .distinctUntilChanged()
-                .flatMapLatest { query ->
-                    getHistory.subscribe(query ?: "")
+                .searchResults(debounce = 0L) { query ->
+                    getHistory.subscribe(query)
                         .distinctUntilChanged()
                         .catch { error ->
                             logcat(LogPriority.ERROR, error)
                             _events.send(Event.InternalError)
                         }
                         .map { it.toHistoryUiModels() }
-                        .flowOn(Dispatchers.IO)
                 }
                 .collect { newList -> _state.update { it.copy(list = newList) } }
         }

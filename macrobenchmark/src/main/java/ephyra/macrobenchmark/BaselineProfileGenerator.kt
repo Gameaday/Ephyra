@@ -1,4 +1,4 @@
-package ephyra.macrobenchmark
+﻿package ephyra.macrobenchmark
 
 import androidx.benchmark.macro.junit4.BaselineProfileRule
 import androidx.test.uiautomator.By
@@ -12,7 +12,7 @@ class BaselineProfileGenerator {
 
     @Test
     fun generate() = baselineProfileRule.collect(
-        packageName = "ephyra.app.benchmark",
+        packageName = "app.ephyra.benchmark",
         profileBlock = {
             pressHome()
             startActivityAndWait()
@@ -20,7 +20,6 @@ class BaselineProfileGenerator {
             device.findObject(By.text("Updates")).click()
 
             device.findObject(By.text("History")).click()
-
             // TODO: automate storage permissions and possibly open manga details screen too?
             // device.findObject(By.text("Browse")).click()
             // device.findObject(By.text("Extensions")).click()

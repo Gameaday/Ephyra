@@ -11,6 +11,10 @@ data class ParsedMetadata(
 )
 
 object MediaMatcher {
+    // Real file extensions (letters only, 2–4 chars). Deliberately does NOT strip
+    // numeric suffixes so decimal numbering like "Chapter 1.5" survives parsing.
+    private val FILE_EXTENSION_PATTERN = Pattern.compile("\\.[A-Za-z]{2,4}$")
+
     // Regex for TV/Anime episodes e.g. "Name - S01E02 - Title", "Name - 1x02"
     private val ANIME_PATTERN = Pattern.compile(
         """(?i)^(.+?)\s*-\s*S(\d+)\s*E(\d+(?:\.\d+)?).*$""",
@@ -35,7 +39,7 @@ object MediaMatcher {
      * Parses the name of a file or folder and extracts structural metadata.
      */
     fun parse(fileName: String): ParsedMetadata {
-        val cleanName = fileName.substringBeforeLast(".") // Remove extension
+        val cleanName = FILE_EXTENSION_PATTERN.matcher(fileName).replaceFirst("") // Remove extension
 
         val animeMatcher = ANIME_PATTERN.matcher(cleanName)
         if (animeMatcher.matches()) {

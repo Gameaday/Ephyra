@@ -1,17 +1,16 @@
 package ephyra.data.content.merge
 
-import com.aallam.similarity.NormalizedLevenshtein
 import ephyra.domain.content.model.ContentItem
+import ephyra.domain.manga.interactor.TitleNormalizer
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
  * Handles opportunistic matching and merging of duplicate series from local
- * file hierarchies and remote catalog sources using a normalized Levenshtein similarity threshold.
+ * file hierarchies and remote catalog sources using title similarity.
  */
 @Singleton
 class OpportunisticMergeManager @Inject constructor() {
-    private val similarityService = NormalizedLevenshtein()
     private val similarityThreshold = 0.85
 
     /**
@@ -22,9 +21,15 @@ class OpportunisticMergeManager @Inject constructor() {
         val processedRemoteUrls = mutableSetOf<String>()
 
         for (local in localItems) {
-            // Find a matching remote item using title similarity
+            // Find a matching remote item using title similarity. Titles are normalized
+            // via the shared TitleNormalizer so local/remote matching uses the same
+            // contract as search dedup and tracker matching.
             val match = remoteItems.firstOrNull { remote ->
-                similarityService.similarity(local.title.lowercase(), remote.title.lowercase()) >= similarityThreshold
+                TitleNormalizer.isFuzzyMatch(
+                    TitleNormalizer.forEquality(local.title),
+                    TitleNormalizer.forEquality(remote.title),
+                    similarityThreshold,
+                )
             }
 
             if (match != null) {

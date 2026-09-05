@@ -40,6 +40,7 @@ abstract class SearchViewModel(
     private val extensionManager: ExtensionManager,
     private val networkToLocalManga: NetworkToLocalManga,
     private val getManga: GetManga,
+    private val searchCache: GlobalSearchCache,
 ) : ViewModel() {
 
     private val stateMutable = MutableStateFlow(initialState)
@@ -147,7 +148,7 @@ abstract class SearchViewModel(
         viewModelScope.launch { sourcePreferences.globalSearchFilterState().toggle() }
     }
 
-    protected fun search() {
+    protected open fun search() {
         val query = state.value.searchQuery
         val sourceFilter = state.value.sourceFilter
 
@@ -163,20 +164,31 @@ abstract class SearchViewModel(
 
         val sources = getSelectedSources()
 
+        // Serve a previous result set for the same query instantly (back-navigation
+        // case); only sources missing from the cached map go back to Loading and are
+        // re-fetched.
+        val cached = searchCache.get(query)
+        val itemsForSources: Map<CatalogueSource, SearchItemResult> = if (cached != null) {
+            sources.associateWith { source ->
+                cached[source] ?: SearchItemResult.Loading
+            }
+        } else {
+            sources.associateWith { SearchItemResult.Loading }
+        }
+
         if (sameQuery) {
             val existingResults = state.value.items
             updateItems(
                 sources
-                    .associateWith { existingResults[it] ?: SearchItemResult.Loading }
+                    .associateWith { existingResults[it] ?: itemsForSources[it] ?: SearchItemResult.Loading }
                     .toPersistentMap(),
             )
         } else {
-            updateItems(
-                sources
-                    .associateWith { SearchItemResult.Loading }
-                    .toPersistentMap(),
-            )
+            updateItems(itemsForSources.toPersistentMap())
         }
+
+        val needsNetwork = itemsForSources.values.any { it is SearchItemResult.Loading }
+        if (!needsNetwork) return
 
         searchJob = viewModelScope.launchIO {
             sources.map { source ->
@@ -225,6 +237,8 @@ abstract class SearchViewModel(
             it[source] = result
         }
         updateItems(newItems)
+        // Keep the cache warm as results stream in so re-entering the screen is instant.
+        state.value.searchQuery?.let { query -> searchCache.put(query, newItems) }
     }
 
     protected fun setMigrateDialog(currentId: Long, target: Manga) {
@@ -260,6 +274,16 @@ abstract class SearchViewModel(
             items.filter { (_, result) ->
                 result.isVisible(onlyShowHasResults)
             }
+        }
+
+        /**
+         * Cross-source Smart-Merge view of all successful results: duplicates from
+         * different catalogues collapsed into one entry with a source-count badge.
+         */
+        val mergedResults: List<MergedSearchResult> by lazy {
+            SearchResultMerger.merge(
+                items.values.filterIsInstance<SearchItemResult.Success>().flatMap { it.result },
+            )
         }
     }
 

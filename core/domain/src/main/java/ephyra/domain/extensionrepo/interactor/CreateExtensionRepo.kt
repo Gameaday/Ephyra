@@ -12,6 +12,19 @@ class CreateExtensionRepo(
     private val repository: ExtensionRepoRepository,
     private val service: ExtensionRepoService,
 ) {
+
+    companion object {
+        /**
+         * The official Mihon extension repository, hosted by Keiyoushi (the
+         * designated maintainer of the Mihon extension catalog). Users migrating
+         * from Mihon can add this with one tap (see the Add Repository dialog)
+         * to bridge their existing extension-based sources over; installed
+         * extensions load through the same sandboxed loader and merge into
+         * Ephyra's Smart Merge library pipeline.
+         */
+        const val OFFICIAL_MIHON_REPO_URL = "https://raw.githubusercontent.com/keiyoushi/extensions/repo"
+    }
+
     private val supportedIndexFiles = setOf(
         "index.min.json",
         "index.json",
@@ -54,6 +67,9 @@ class CreateExtensionRepo(
         val host = baseUrl.toHttpUrlOrNull()?.host.orEmpty()
         if (host == "keiyoushi.github.io") {
             return "https://raw.githubusercontent.com/keiyoushi/extensions/repo"
+        }
+        if (host == "mihonapp.github.io") {
+            return OFFICIAL_MIHON_REPO_URL
         }
         return baseUrl
     }
