@@ -7,6 +7,7 @@ import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.interactor.NetworkToLocalManga
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
+import ephyra.feature.browse.source.globalsearch.GlobalSearchCache
 import ephyra.feature.browse.source.globalsearch.SearchItemResult
 import ephyra.feature.browse.source.globalsearch.SearchViewModel
 import eu.kanade.tachiyomi.source.CatalogueSource
@@ -21,12 +22,14 @@ class MigrateSearchViewModel @Inject constructor(
     sourceManager: SourceManager,
     extensionManager: ExtensionManager,
     networkToLocalManga: NetworkToLocalManga,
+    searchCache: GlobalSearchCache,
 ) : SearchViewModel(
     sourcePreferences = sourcePreferences,
     sourceManager = sourceManager,
     extensionManager = extensionManager,
     networkToLocalManga = networkToLocalManga,
     getManga = getManga,
+    searchCache = searchCache,
 ) {
 
     private val migrationSources by lazy { sourcePreferences.migrationSources().getSync() }

@@ -26,6 +26,12 @@ abstract class BaseUdfViewModel<State, Event, Effect>(initialState: State) : Vie
     val effects = _effects.receiveAsFlow()
 
     /**
+     * Helper property to easily fetch the current active UI state snapshot.
+     */
+    protected val currentState: State
+        get() = _state.value
+
+    /**
      * Primary entrance point for processing UI events.
      */
     abstract fun onEvent(event: Event)

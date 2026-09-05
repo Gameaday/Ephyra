@@ -41,6 +41,9 @@ fun OpenSourceLicensesScreen(
                 navController.navigate(
                     ScreenRoutes.OpenSourceLibraryLicense.createRoute(it.name),
                 )
+                // aboutlibraries 15.x expects the lambda to report whether the
+                // click was handled so it can decide to ripple/expand the row.
+                true
             },
         )
     }

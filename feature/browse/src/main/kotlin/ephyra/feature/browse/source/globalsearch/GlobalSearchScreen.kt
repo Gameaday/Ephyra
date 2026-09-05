@@ -68,6 +68,12 @@ fun GlobalSearchScreen(
             },
             onClickItem = { navController.navigate(Screen.MangaDetails(it.id, true)) },
             onLongClickItem = { navController.navigate(Screen.MangaDetails(it.id, true)) },
+            suggestions = viewModel.suggestions.collectAsStateWithLifecycle().value,
+            onSuggestionClick = { query ->
+                viewModel.onEvent(SearchScreenEvent.UpdateSearchQuery(query))
+                viewModel.onEvent(SearchScreenEvent.Search)
+            },
+            mergedDuplicateCount = state.mergedResults.count { it.sourceIds.size > 1 },
         )
     }
 }

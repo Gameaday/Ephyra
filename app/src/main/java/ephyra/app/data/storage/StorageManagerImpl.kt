@@ -16,6 +16,8 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.SupervisorJob
+
 
 class StorageManagerImpl(
     private val context: Context,
@@ -23,11 +25,16 @@ class StorageManagerImpl(
     ioDispatcher: CoroutineDispatcher,
 ) : StorageManager {
 
-    private val scope = CoroutineScope(ioDispatcher)
+    // SupervisorJob: a failure in one child (e.g. directory init) must not cancel
+    // the preference observation. Singleton-scoped, lives for the process lifetime.
+    private val scope = CoroutineScope(SupervisorJob() + ioDispatcher)
 
     private var baseDir: UniFile? = getBaseDir(storagePreferences.baseStorageDirectory().getSync())
 
-    private val _changes: Channel<Unit> = Channel(Channel.UNLIMITED)
+    // Conflated: only the latest change signal matters (shareIn replays 1), so an
+    // unbounded buffer is unnecessary — this prevents unbounded queue growth when
+    // storage-change signals fire faster than consumers collect.
+    private val _changes: Channel<Unit> = Channel(Channel.CONFLATED)
     override val changes = _changes.receiveAsFlow()
         .shareIn(scope, SharingStarted.Lazily, 1)
 

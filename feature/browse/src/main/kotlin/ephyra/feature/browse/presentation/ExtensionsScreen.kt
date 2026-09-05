@@ -68,6 +68,7 @@ import androidx.navigation.NavController
 import ephyra.domain.content.source.SourceType
 import ephyra.domain.content.source.interactor.UnifiedSource
 import ephyra.domain.extension.model.Extension
+import ephyra.domain.extensionrepo.interactor.CreateExtensionRepo
 import ephyra.domain.extensionrepo.model.ExtensionRepo
 import ephyra.feature.browse.extension.ExtensionsViewModel
 import ephyra.presentation.core.ui.navigation.LocalNavController
@@ -214,6 +215,11 @@ fun ExtensionScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp),
                     )
+                    TextButton(
+                        onClick = { repoUrlInput = CreateExtensionRepo.OFFICIAL_MIHON_REPO_URL },
+                    ) {
+                        Text("Use official Mihon repo")
+                    }
                 }
             },
             confirmButton = {

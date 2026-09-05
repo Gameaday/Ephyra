@@ -1,0 +1,60 @@
+name: Macrobenchmark
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * *"  # Daily at 06:00 UTC
+
+concurrency:
+  group: macrobenchmark-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  macrobenchmark:
+    name: ${{ matrix.name }}
+    runs-on: macos-14
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Startup (cold, warm, hot)
+            class: "ephyra.macrobenchmark.ColdStartupBenchmark,ephyra.macrobenchmark.WarmStartupBenchmark,ephyra.macrobenchmark.HotStartupBenchmark"
+          - name: Scroll (library grid)
+            class: "ephyra.macrobenchmark.ScrollBenchmark"
+          - name: Baseline Profile (collect)
+            class: "ephyra.macrobenchmark.BaselineProfileGenerator"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v6
+        with:
+          java-version: 21
+          distribution: temurin
+
+      - name: Set up Gradle
+        uses: gradle/gradle-build-action@v3
+
+      # API 35 (stable channel) instead of 36 (beta): the stable channel has no
+      # API 36 system images, which caused silent emulator boot failures.
+      - name: Run macrobenchmark on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          channel: stable
+          emulator-options: "-no-snapshot -gpu swiftshader_indirect -no-window"
+          force-avd-creation: true
+          emulator-boot-timeout: 600
+          script-timeout: 1800
+          script: ./gradlew :macrobenchmark:connectedBenchmarkAndroidTest --no-daemon -Pandroid.testInstrumentationRunnerArguments.class=${{ matrix.class }}
+
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macrobenchmark-${{ github.sha }}-${{ matrix.name }}
+          path: macrobenchmark/build/outputs/
