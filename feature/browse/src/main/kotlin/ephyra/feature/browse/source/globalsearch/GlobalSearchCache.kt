@@ -26,7 +26,9 @@ class GlobalSearchCache @Inject constructor() {
         0.75f,
         true, // access order: get() refreshes recency
     ) {
-        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, PersistentMap<CatalogueSource, SearchItemResult>>): Boolean =
+        override fun removeEldestEntry(
+            eldest: MutableMap.MutableEntry<String, PersistentMap<CatalogueSource, SearchItemResult>>,
+        ): Boolean =
             size > CACHE_SIZE
     }
 

@@ -1,7 +1,7 @@
 package ephyra.feature.browse.source.globalsearch
 
-import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.common.preference.Preference.Companion.appStateKey
+import ephyra.core.common.preference.PreferenceStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject

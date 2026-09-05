@@ -128,7 +128,6 @@ internal fun GlobalSearchMergedBanner(mergedCount: Int) {
     )
 }
 
-
 @Composable
 internal fun GlobalSearchContent(
     items: Map<CatalogueSource, SearchItemResult>,

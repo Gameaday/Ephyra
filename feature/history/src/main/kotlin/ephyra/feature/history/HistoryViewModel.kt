@@ -9,7 +9,6 @@ import ephyra.core.common.preference.CheckboxState
 import ephyra.core.common.preference.mapAsCheckboxState
 import ephyra.core.common.util.insertSeparators
 import ephyra.core.common.util.lang.launchIO
-import ephyra.presentation.core.util.lang.searchResults
 import ephyra.core.common.util.lang.toLocalDate
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.logcat
@@ -29,6 +28,7 @@ import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaWithChapterCount
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.track.interactor.AddTracks
+import ephyra.presentation.core.util.lang.searchResults
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.channels.Channel

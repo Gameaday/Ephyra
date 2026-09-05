@@ -1,12 +1,12 @@
 package ephyra.feature.browse.source.globalsearch
 
-import dagger.hilt.android.lifecycle.HiltViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.manga.interactor.GetLibraryManga
 import ephyra.domain.manga.interactor.GetManga
-import ephyra.domain.manga.interactor.TitleNormalizer
 import ephyra.domain.manga.interactor.NetworkToLocalManga
+import ephyra.domain.manga.interactor.TitleNormalizer
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
 import eu.kanade.tachiyomi.source.CatalogueSource
@@ -99,4 +99,3 @@ class GlobalSearchViewModel @Inject constructor(
         const val SUGGESTION_LIMIT = 6
     }
 }
-
