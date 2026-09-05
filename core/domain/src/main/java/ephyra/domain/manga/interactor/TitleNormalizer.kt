@@ -28,6 +28,7 @@ object TitleNormalizer {
 
     // Drops everything except unicode letters and digits — NO spaces. For exact-equality dedup.
     private val equalityRegex = Regex("[^\\p{L}\\p{N}]")
+
     // Keeps letters, digits and whitespace; drops punctuation. For word-boundary matching.
     private val matchingPunctRegex = Regex("[^\\p{L}\\p{N}\\s]")
     private val multiSpaceRegex = Regex("\\s+")
