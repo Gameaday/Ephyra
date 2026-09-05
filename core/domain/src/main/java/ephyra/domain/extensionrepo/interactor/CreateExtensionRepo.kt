@@ -15,12 +15,14 @@ class CreateExtensionRepo(
 
     companion object {
         /**
-         * The official Mihon extension repository. Users migrating from Mihon can add
-         * this with one tap (see the Add Repository dialog) to bridge their existing
-         * extension-based sources over; installed extensions load through the same
-         * sandboxed loader and merge into Ephyra's Smart Merge library pipeline.
+         * The official Mihon extension repository, hosted by Keiyoushi (the
+         * designated maintainer of the Mihon extension catalog). Users migrating
+         * from Mihon can add this with one tap (see the Add Repository dialog)
+         * to bridge their existing extension-based sources over; installed
+         * extensions load through the same sandboxed loader and merge into
+         * Ephyra's Smart Merge library pipeline.
          */
-        const val OFFICIAL_MIHON_REPO_URL = "https://raw.githubusercontent.com/mihonapp/repo/main"
+        const val OFFICIAL_MIHON_REPO_URL = "https://raw.githubusercontent.com/keiyoushi/extensions/repo"
     }
 
     private val supportedIndexFiles = setOf(

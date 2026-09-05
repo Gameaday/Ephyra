@@ -424,7 +424,9 @@ class ExtensionLoader(
     private fun isPackageAnExtension(pkgInfo: PackageInfo): Boolean {
         return pkgInfo.reqFeatures.orEmpty().any { it.name == EXTENSION_FEATURE } ||
             pkgInfo.applicationInfo?.metaData?.containsKey(METADATA_SOURCE_CLASS) == true ||
+            pkgInfo.applicationInfo?.metaData?.containsKey(METADATA_MIX_NAME) == true ||
             pkgInfo.packageName.startsWith("eu.kanade.tachiyomi.extension.") ||
+            pkgInfo.packageName.startsWith("mihon.app.extension.") ||
             pkgInfo.packageName.startsWith("app.ephyra.extension.")
     }
 

@@ -13,8 +13,9 @@ jobs:
   macrobenchmark:
     name: ${{ matrix.name }}
     runs-on: macos-14
+    timeout-minutes: 45
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         include:
           - name: Startup (cold, warm, hot)
@@ -36,14 +37,19 @@ jobs:
       - name: Set up Gradle
         uses: gradle/gradle-build-action@v3
 
+      # API 35 (stable channel) instead of 36 (beta): the stable channel has no
+      # API 36 system images, which caused silent emulator boot failures.
       - name: Run macrobenchmark on emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 36
+          api-level: 35
           target: google_apis
           arch: x86_64
+          channel: stable
           emulator-options: "-no-snapshot -gpu swiftshader_indirect -no-window"
           force-avd-creation: true
+          emulator-boot-timeout: 600
+          script-timeout: 1800
           script: ./gradlew :macrobenchmark:connectedBenchmarkAndroidTest --no-daemon -Pandroid.testInstrumentationRunnerArguments.class=${{ matrix.class }}
 
       - name: Upload benchmark results
