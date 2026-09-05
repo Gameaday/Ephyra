@@ -39,6 +39,14 @@ interface AppInfo {
     val updaterEnabled: Boolean
 
     /**
+     * True when developer-only shortcuts that hard-code third-party extension
+     * catalog URLs (e.g. the "Use official Mihon repo" button) may be shown.
+     * Release builds must not advertise built-in manga catalogs; enable via
+     * the `include-catalog-shortcuts` Gradle property for local testing.
+     */
+    val catalogShortcutsEnabled: Boolean get() = false
+
+    /**
      * URL of the current release tag on GitHub (e.g. the "What's New" link).
      * Computed from [githubRepo], [versionName], [commitCount], and [isPreview].
      */

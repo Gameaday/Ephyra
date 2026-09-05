@@ -1647,6 +1647,7 @@ object AppModule {
             }
             override val telemetryIncluded: Boolean = ephyra.app.BuildConfig.TELEMETRY_INCLUDED
             override val updaterEnabled: Boolean = ephyra.app.BuildConfig.UPDATER_ENABLED
+            override val catalogShortcutsEnabled: Boolean = ephyra.app.BuildConfig.INCLUDE_CATALOG_SHORTCUTS
         }
     }
 }

@@ -8,6 +8,7 @@ import ephyra.domain.storage.service.StorageManager
 import ephyra.domain.storage.service.StoragePreferences
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -16,8 +17,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.shareIn
-import kotlinx.coroutines.SupervisorJob
-
 
 class StorageManagerImpl(
     private val context: Context,

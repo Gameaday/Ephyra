@@ -1,0 +1,13 @@
+#!/bin/sh
+# Ephyra pre-commit hook — catches spotless/ktlint violations before CI does.
+# Install once with: scripts/setup-hooks.ps1  (sets git core.hooksPath to scripts/hooks)
+# Bypass in emergencies with: git commit --no-verify
+
+set -e
+
+# Only run when Kotlin/Gradle sources are staged
+if git diff --cached --name-only | grep -qE '\.(kt|kts|xml)$'; then
+    echo "==> Running spotlessCheck (pre-commit)..."
+    ./gradlew spotlessCheck --console=plain -q
+    echo "==> spotlessCheck passed."
+fi

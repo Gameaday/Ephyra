@@ -53,7 +53,12 @@ object SearchResultMerger {
         }
         return merged.sortedWith(
             compareByDescending<MergedSearchResult> { it.sourceIds.size }
-                .thenBy { results.indexOfFirst { m -> m === it.manga || m.id == it.manga.id && m.source == it.manga.source } },
+                .thenBy {
+                    results.indexOfFirst { m ->
+                        m === it.manga ||
+                            (m.id == it.manga.id && m.source == it.manga.source)
+                    }
+                },
         )
     }
 }

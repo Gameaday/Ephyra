@@ -60,16 +60,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import dagger.hilt.android.EntryPointAccessors
 import ephyra.domain.content.source.SourceType
 import ephyra.domain.content.source.interactor.UnifiedSource
 import ephyra.domain.extension.model.Extension
 import ephyra.domain.extensionrepo.interactor.CreateExtensionRepo
 import ephyra.domain.extensionrepo.model.ExtensionRepo
+import ephyra.feature.browse.BrowseEntryPoint
 import ephyra.feature.browse.extension.ExtensionsViewModel
 import ephyra.presentation.core.ui.navigation.LocalNavController
 
@@ -215,10 +218,22 @@ fun ExtensionScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp),
                     )
-                    TextButton(
-                        onClick = { repoUrlInput = CreateExtensionRepo.OFFICIAL_MIHON_REPO_URL },
-                    ) {
-                        Text("Use official Mihon repo")
+                    val context = LocalContext.current
+                    val appInfo = remember(context) {
+                        EntryPointAccessors.fromApplication(
+                            context.applicationContext,
+                            BrowseEntryPoint::class.java,
+                        ).appInfo()
+                    }
+                    // Hard-coded catalog shortcuts (e.g. the official Mihon repo)
+                    // are a piracy liability in shipped builds; only dev builds
+                    // built with -Pinclude-catalog-shortcuts expose them.
+                    if (appInfo.catalogShortcutsEnabled) {
+                        TextButton(
+                            onClick = { repoUrlInput = CreateExtensionRepo.OFFICIAL_MIHON_REPO_URL },
+                        ) {
+                            Text("Use official Mihon repo")
+                        }
                     }
                 }
             },

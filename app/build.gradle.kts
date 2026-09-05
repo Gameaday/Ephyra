@@ -38,6 +38,7 @@ android {
         buildConfigField("String", "BUILD_TIME", "\"${getBuildTime(useLastCommitTime = false)}\"")
         buildConfigField("boolean", "TELEMETRY_INCLUDED", "${Config.includeTelemetry}")
         buildConfigField("boolean", "UPDATER_ENABLED", "${Config.enableUpdater}")
+        buildConfigField("boolean", "INCLUDE_CATALOG_SHORTCUTS", "${Config.includeCatalogShortcuts}")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

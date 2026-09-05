@@ -14,6 +14,7 @@ import dalvik.system.DelegateLastClassLoader
  * [DelegateLastClassLoader] is final and requires API 28+; the app's minimum SDK is
  * well above this, so no fallback or subclassing is needed.
  */
+@Suppress("ktlint:standard:function-naming") // PascalCase factory mirroring the wrapped DelegateLastClassLoader API
 fun DelegateLastClassLoaderCompat(
     dexPath: String,
     parent: ClassLoader,
