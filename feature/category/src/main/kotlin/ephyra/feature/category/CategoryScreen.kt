@@ -73,7 +73,7 @@ fun CategoryScreen(
     }
 
     LaunchedEffect(Unit) {
-        viewModel.events.collectLatest { event ->
+        viewModel.effects.collectLatest { event ->
             (event as? CategoryEvent.LocalizedMessage)?.let {
                 context.toast(it.stringRes)
             }

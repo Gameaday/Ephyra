@@ -1,26 +1,46 @@
 package ephyra.feature.download
 
-import androidx.lifecycle.ViewModel
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.domain.download.model.Download
 import ephyra.domain.download.service.DownloadManager
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.stateIn
+import ephyra.presentation.core.udf.BaseUdfViewModel
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class DownloadQueueViewModel @Inject constructor(
     private val downloadManager: DownloadManager,
-) : ViewModel() {
+) : BaseUdfViewModel<DownloadQueueViewModel.State, DownloadQueueScreenEvent, Nothing>(State()) {
 
-    val state = downloadManager.queueState
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val isDownloaderRunning: Flow<Boolean>
+        get() = downloadManager.isDownloaderRunning
 
-    val isDownloaderRunning = downloadManager.isDownloaderRunning
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    init {
+        viewModelScope.launch {
+            combine(
+                downloadManager.queueState,
+                downloadManager.isDownloaderRunning,
+            ) { queue, isRunning ->
+                State(
+                    downloads = queue.toImmutableList(),
+                    isDownloaderRunning = isRunning,
+                )
+            }.distinctUntilChanged()
+                .collect { newState ->
+                    updateState { newState }
+                }
+        }
+    }
 
-    fun onEvent(event: DownloadQueueScreenEvent) {
+    override fun onEvent(event: DownloadQueueScreenEvent) {
         when (event) {
             DownloadQueueScreenEvent.StartDownloads -> startDownloads()
             DownloadQueueScreenEvent.PauseDownloads -> pauseDownloads()
@@ -51,12 +71,20 @@ class DownloadQueueViewModel @Inject constructor(
     }
 
     fun <R : Comparable<R>> reorderQueue(selector: (Download) -> R, reverse: Boolean = false) {
-        val reordered = state.value
+        val reordered = currentState.downloads
             .groupBy { it.source.id }
             .values
             .flatMap { group ->
                 group.sortedBy(selector).let { if (reverse) it.reversed() else it }
             }
         reorder(reordered)
+    }
+
+    @Immutable
+    data class State(
+        val downloads: ImmutableList<Download> = persistentListOf(),
+        val isDownloaderRunning: Boolean = false,
+    ) {
+        val isEmpty: Boolean get() = downloads.isEmpty()
     }
 }

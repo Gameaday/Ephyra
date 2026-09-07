@@ -60,6 +60,7 @@ import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.model.ViewerChapters
 import ephyra.feature.reader.viewer.Viewer
+import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.presentation.core.util.manga.editCover
 import ephyra.source.local.image.LocalCoverManager
 import ephyra.source.local.isLocal
@@ -67,17 +68,13 @@ import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.update
 import logcat.LogPriority
 import java.io.InputStream
 import java.time.Instant
@@ -112,16 +109,12 @@ class ReaderViewModel @Inject constructor(
     private val localCoverManager: LocalCoverManager,
     private val updateManga: UpdateManga,
     private val chapterCache: ChapterCache,
-) : ViewModel() {
+) : BaseUdfViewModel<ReaderViewModel.State, ReaderEvent, ReaderViewModel.Event>(State()) {
     private companion object {
         const val FALLBACK_LAST_PAGE_INDEX = Int.MAX_VALUE
     }
 
-    private val mutableState = MutableStateFlow(State())
-    val state = mutableState.asStateFlow()
-
-    private val eventChannel = Channel<Event>()
-    val eventFlow = eventChannel.receiveAsFlow()
+    val eventFlow: Flow<Event> get() = effects
 
     /**
      * Number of pages to proactively start loading when an adjacent chapter is preloaded,
@@ -304,7 +297,7 @@ class ReaderViewModel @Inject constructor(
     }
 
     // ── UDF entry-point ──────────────────────────────────────────────────────
-    fun onEvent(event: ReaderEvent) {
+    override fun onEvent(event: ReaderEvent) {
         when (event) {
             is ReaderEvent.ActivityFinish -> onActivityFinish()
             is ReaderEvent.ViewerLoaded -> onViewerLoaded(event.viewer)
@@ -356,7 +349,7 @@ class ReaderViewModel @Inject constructor(
                 val manga = getManga.await(mangaId)
                 if (manga != null) {
                     sourceManager.isInitialized.first { it }
-                    mutableState.update { it.copy(manga = manga) }
+                    updateState { it.copy(manga = manga) }
                     if (chapterId == -1L) chapterId = initialChapterId
 
                     val source = sourceManager.getOrStub(manga.source)
@@ -399,7 +392,7 @@ class ReaderViewModel @Inject constructor(
         // arrives), the adapter must rebuild its item list to exclude the newly hidden
         // page. Wire up the callback so the viewer refreshes automatically.
         chapter.pageLoader?.onPageFiltered = {
-            eventChannel.trySend(Event.ReloadViewerChapters)
+            emitEffect(Event.ReloadViewerChapters)
         }
 
         // Queue every page at the lowest background priority so the smart-combine pre-scan
@@ -417,7 +410,7 @@ class ReaderViewModel @Inject constructor(
         )
 
         // MutableStateFlow.update is thread-safe — no UI-thread dispatch needed.
-        mutableState.update {
+        updateState {
             // Add new references first to avoid unnecessary recycling
             newChapters.ref()
             it.viewerChapters?.unref()
@@ -478,7 +471,7 @@ class ReaderViewModel @Inject constructor(
             0
         }
 
-        mutableState.update { it.copy(isLoadingAdjacentChapter = true) }
+        updateState { it.copy(isLoadingAdjacentChapter = true) }
         try {
             withIOContext {
                 loadChapter(loader, chapter)
@@ -489,7 +482,7 @@ class ReaderViewModel @Inject constructor(
             }
             logcat(LogPriority.ERROR, e)
         } finally {
-            mutableState.update { it.copy(isLoadingAdjacentChapter = false) }
+            updateState { it.copy(isLoadingAdjacentChapter = false) }
         }
     }
 
@@ -565,11 +558,11 @@ class ReaderViewModel @Inject constructor(
             }
             return
         }
-        eventChannel.trySend(Event.ReloadViewerChapters)
+        emitEffect(Event.ReloadViewerChapters)
     }
 
     private fun onViewerLoaded(viewer: Viewer?) {
-        mutableState.update {
+        updateState {
             it.copy(viewer = viewer)
         }
     }
@@ -610,7 +603,7 @@ class ReaderViewModel @Inject constructor(
         // is first called.
         tryPreloadNextChapterImages(page.index, pages)
 
-        eventChannel.trySend(Event.PageChanged)
+        emitEffect(Event.PageChanged)
     }
 
     /**
@@ -725,7 +718,7 @@ class ReaderViewModel @Inject constructor(
         } else {
             pageIndex + 1
         }
-        mutableState.update {
+        updateState {
             it.copy(currentPage = displayIndex)
         }
         readerChapter.requestedPage = pageIndex
@@ -870,7 +863,7 @@ class ReaderViewModel @Inject constructor(
             )
         }
 
-        mutableState.update {
+        updateState {
             it.copy(
                 bookmarked = bookmarked,
             )
@@ -917,13 +910,14 @@ class ReaderViewModel @Inject constructor(
                 val currChapter = currChapters.currChapter
                 currChapter.requestedPage = currChapter.chapter.lastPageRead.toInt()
 
-                mutableState.update {
+                val newManga = getManga.await(manga.id)
+                updateState {
                     it.copy(
-                        manga = getManga.await(manga.id),
+                        manga = newManga,
                         viewerChapters = currChapters,
                     )
                 }
-                eventChannel.send(Event.ReloadViewerChapters)
+                emitEffect(Event.ReloadViewerChapters)
             }
         }
     }
@@ -953,14 +947,15 @@ class ReaderViewModel @Inject constructor(
                 val currChapter = currChapters.currChapter
                 currChapter.requestedPage = currChapter.chapter.lastPageRead.toInt()
 
-                mutableState.update {
+                val newManga = getManga.await(manga.id)
+                updateState {
                     it.copy(
-                        manga = getManga.await(manga.id),
+                        manga = newManga,
                         viewerChapters = currChapters,
                     )
                 }
-                eventChannel.send(Event.SetOrientation(getMangaOrientation()))
-                eventChannel.send(Event.ReloadViewerChapters)
+                emitEffect(Event.SetOrientation(getMangaOrientation()))
+                emitEffect(Event.ReloadViewerChapters)
             }
         }
     }
@@ -989,35 +984,35 @@ class ReaderViewModel @Inject constructor(
     }
 
     private fun showMenus(visible: Boolean) {
-        mutableState.update { it.copy(menuVisible = visible) }
+        updateState { it.copy(menuVisible = visible) }
     }
 
     private fun showLoadingDialog() {
-        mutableState.update { it.copy(dialog = Dialog.Loading) }
+        updateState { it.copy(dialog = Dialog.Loading) }
     }
 
     private fun openReadingModeSelectDialog() {
-        mutableState.update { it.copy(dialog = Dialog.ReadingModeSelect) }
+        updateState { it.copy(dialog = Dialog.ReadingModeSelect) }
     }
 
     private fun openOrientationModeSelectDialog() {
-        mutableState.update { it.copy(dialog = Dialog.OrientationModeSelect) }
+        updateState { it.copy(dialog = Dialog.OrientationModeSelect) }
     }
 
     private fun openPageDialog(page: ReaderPage) {
-        mutableState.update { it.copy(dialog = Dialog.PageActions(page)) }
+        updateState { it.copy(dialog = Dialog.PageActions(page)) }
     }
 
     private fun openSettingsDialog() {
-        mutableState.update { it.copy(dialog = Dialog.Settings) }
+        updateState { it.copy(dialog = Dialog.Settings) }
     }
 
     private fun closeDialog() {
-        mutableState.update { it.copy(dialog = null) }
+        updateState { it.copy(dialog = null) }
     }
 
     private fun setBrightnessOverlayValue(value: Int) {
-        mutableState.update { it.copy(brightnessOverlayValue = value) }
+        updateState { it.copy(brightnessOverlayValue = value) }
     }
 
     /**
@@ -1067,10 +1062,10 @@ class ReaderViewModel @Inject constructor(
                 )
                 // Emit the saved URI so the Activity can show the notification and toast
                 // from its own Context — keeping the ViewModel free of UI concerns.
-                eventChannel.send(Event.SavedImage(SaveImageResult.Success(uri)))
+                emitEffect(Event.SavedImage(SaveImageResult.Success(uri)))
             } catch (e: Throwable) {
                 notifier.onError(e.message)
-                eventChannel.send(Event.SavedImage(SaveImageResult.Error(e)))
+                emitEffect(Event.SavedImage(SaveImageResult.Error(e)))
             }
         }
     }
@@ -1110,7 +1105,7 @@ class ReaderViewModel @Inject constructor(
                         location = Location.Cache,
                     ),
                 )
-                eventChannel.send(if (copyToClipboard) Event.CopyImage(uri) else Event.ShareImage(uri, page))
+                emitEffect(if (copyToClipboard) Event.CopyImage(uri) else Event.ShareImage(uri, page))
             }
         } catch (e: Throwable) {
             logcat(LogPriority.ERROR, e)
@@ -1137,7 +1132,7 @@ class ReaderViewModel @Inject constructor(
             } catch (e: Exception) {
                 SetAsCoverResult.Error
             }
-            eventChannel.send(Event.SetCoverResult(result))
+            emitEffect(Event.SetCoverResult(result))
         }
     }
 
@@ -1168,7 +1163,7 @@ class ReaderViewModel @Inject constructor(
                 logcat(LogPriority.ERROR, e) { "Failed to block page" }
                 BlockPageResult.Error
             }
-            eventChannel.send(Event.BlockPageResult(result))
+            emitEffect(Event.BlockPageResult(result))
         }
     }
 

@@ -10,14 +10,11 @@ import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.category.interactor.RenameCategory
 import ephyra.domain.category.interactor.ReorderCategory
 import ephyra.domain.category.model.Category
+import ephyra.presentation.core.udf.BaseUdfViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -28,19 +25,15 @@ class CategoryViewModel @Inject constructor(
     private val deleteCategory: DeleteCategory,
     private val reorderCategory: ReorderCategory,
     private val renameCategory: RenameCategory,
-) : ViewModel() {
+) : BaseUdfViewModel<CategoryScreenState, CategoryScreenEvent, CategoryEvent>(CategoryScreenState.Loading) {
 
-    private val _state = MutableStateFlow<CategoryScreenState>(CategoryScreenState.Loading)
-    val state = _state.asStateFlow()
-
-    private val _events: Channel<CategoryEvent> = Channel()
-    val events = _events.receiveAsFlow()
+    val events: Flow<CategoryEvent> get() = effects
 
     init {
         viewModelScope.launch {
             getCategories.subscribe()
                 .collectLatest { categories ->
-                    _state.update {
+                    updateState {
                         CategoryScreenState.Success(
                             categories = categories
                                 .filterNot(Category::isSystemCategory)
@@ -51,7 +44,7 @@ class CategoryViewModel @Inject constructor(
         }
     }
 
-    fun onEvent(event: CategoryScreenEvent) {
+    override fun onEvent(event: CategoryScreenEvent) {
         when (event) {
             is CategoryScreenEvent.CreateCategory -> createCategory(event.name)
             is CategoryScreenEvent.DeleteCategory -> deleteCategory(event.categoryId)
@@ -65,7 +58,7 @@ class CategoryViewModel @Inject constructor(
     private fun createCategory(name: String) {
         viewModelScope.launch {
             when (createCategoryWithName.await(name)) {
-                is CreateCategoryWithName.Result.InternalError -> _events.send(CategoryEvent.InternalError)
+                is CreateCategoryWithName.Result.InternalError -> emitEffect(CategoryEvent.InternalError)
                 else -> {}
             }
         }
@@ -74,7 +67,7 @@ class CategoryViewModel @Inject constructor(
     private fun deleteCategory(categoryId: Long) {
         viewModelScope.launch {
             when (deleteCategory.await(categoryId = categoryId)) {
-                is DeleteCategory.Result.InternalError -> _events.send(CategoryEvent.InternalError)
+                is DeleteCategory.Result.InternalError -> emitEffect(CategoryEvent.InternalError)
                 else -> {}
             }
         }
@@ -83,7 +76,7 @@ class CategoryViewModel @Inject constructor(
     private fun changeOrder(category: Category, newIndex: Int) {
         viewModelScope.launch {
             when (reorderCategory.await(category, newIndex)) {
-                is ReorderCategory.Result.InternalError -> _events.send(CategoryEvent.InternalError)
+                is ReorderCategory.Result.InternalError -> emitEffect(CategoryEvent.InternalError)
                 else -> {}
             }
         }
@@ -92,14 +85,14 @@ class CategoryViewModel @Inject constructor(
     private fun renameCategory(category: Category, name: String) {
         viewModelScope.launch {
             when (renameCategory.await(category, name)) {
-                is RenameCategory.Result.InternalError -> _events.send(CategoryEvent.InternalError)
+                is RenameCategory.Result.InternalError -> emitEffect(CategoryEvent.InternalError)
                 else -> {}
             }
         }
     }
 
     private fun showDialog(dialog: CategoryDialog) {
-        _state.update {
+        updateState {
             when (it) {
                 CategoryScreenState.Loading -> it
                 is CategoryScreenState.Success -> it.copy(dialog = dialog)
@@ -108,7 +101,7 @@ class CategoryViewModel @Inject constructor(
     }
 
     private fun dismissDialog() {
-        _state.update {
+        updateState {
             when (it) {
                 CategoryScreenState.Loading -> it
                 is CategoryScreenState.Success -> it.copy(dialog = null)

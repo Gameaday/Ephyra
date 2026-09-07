@@ -68,8 +68,9 @@ fun DownloadQueueScreen(
     navController: NavController = LocalNavController.current,
 ) {
     val viewModel = hiltViewModel<DownloadQueueViewModel>()
-    val downloadList by viewModel.state.collectAsStateWithLifecycle()
-    val downloadCount by remember { derivedStateOf { downloadList.size } }
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val downloadList = state.downloads
+    val downloadCount = downloadList.size
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     var fabExpanded by remember { mutableStateOf(true) }
@@ -233,7 +234,7 @@ fun DownloadQueueScreen(
             )
         },
         floatingActionButton = {
-            val isRunning by viewModel.isDownloaderRunning.collectAsStateWithLifecycle()
+            val isRunning = state.isDownloaderRunning
             ExtendedFloatingActionButton(
                 text = {
                     val id = if (isRunning) {
