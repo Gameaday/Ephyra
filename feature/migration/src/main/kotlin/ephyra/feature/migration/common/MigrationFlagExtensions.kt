@@ -1,4 +1,4 @@
-package ephyra.feature.common.utils
+package ephyra.feature.migration.common
 
 import ephyra.domain.migration.models.MigrationFlag
 

@@ -36,16 +36,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
-import dagger.hilt.android.lifecycle.HiltViewModel
-import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.system.LocaleHelper
-import ephyra.domain.source.model.Source
-import ephyra.domain.source.service.SourceManager
-import ephyra.domain.source.service.SourcePreferences
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.FastScrollLazyColumn
@@ -58,17 +51,11 @@ import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.shouldExpandFAB
-import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import sh.calvin.reorderable.ReorderableCollectionItemScope
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.ReorderableLazyListState
 import sh.calvin.reorderable.rememberReorderableLazyListState
-import javax.inject.Inject
 
 @Composable
 fun MigrationConfigScreen(
@@ -125,7 +112,11 @@ fun MigrationConfigScreen(
                                 ),
                                 icon = Icons.Outlined.SelectAll,
                                 onClick = {
-                                    viewModel.toggleSelection(MigrationConfigViewModel.SelectionConfig.All)
+                                    viewModel.onEvent(
+                                        MigrationConfigEvent.ToggleSelectionConfig(
+                                            MigrationConfigViewModel.SelectionConfig.All,
+                                        ),
+                                    )
                                 },
                             ),
                             AppBar.Action(
@@ -134,7 +125,11 @@ fun MigrationConfigScreen(
                                 ),
                                 icon = Icons.Outlined.Deselect,
                                 onClick = {
-                                    viewModel.toggleSelection(MigrationConfigViewModel.SelectionConfig.None)
+                                    viewModel.onEvent(
+                                        MigrationConfigEvent.ToggleSelectionConfig(
+                                            MigrationConfigViewModel.SelectionConfig.None,
+                                        ),
+                                    )
                                 },
                             ),
                             AppBar.OverflowAction(
@@ -142,7 +137,11 @@ fun MigrationConfigScreen(
                                     ephyra.app.core.common.R.string.migrationConfigScreen_selectEnabledLabel,
                                 ),
                                 onClick = {
-                                    viewModel.toggleSelection(MigrationConfigViewModel.SelectionConfig.Enabled)
+                                    viewModel.onEvent(
+                                        MigrationConfigEvent.ToggleSelectionConfig(
+                                            MigrationConfigViewModel.SelectionConfig.Enabled,
+                                        ),
+                                    )
                                 },
                             ),
                             AppBar.OverflowAction(
@@ -150,7 +149,11 @@ fun MigrationConfigScreen(
                                     ephyra.app.core.common.R.string.migrationConfigScreen_selectPinnedLabel,
                                 ),
                                 onClick = {
-                                    viewModel.toggleSelection(MigrationConfigViewModel.SelectionConfig.Pinned)
+                                    viewModel.onEvent(
+                                        MigrationConfigEvent.ToggleSelectionConfig(
+                                            MigrationConfigViewModel.SelectionConfig.Pinned,
+                                        ),
+                                    )
                                 },
                             ),
                         ),
@@ -167,7 +170,7 @@ fun MigrationConfigScreen(
                 },
                 icon = { Icon(imageVector = Icons.AutoMirrored.Outlined.ArrowForward, contentDescription = null) },
                 onClick = {
-                    viewModel.saveSources()
+                    viewModel.onEvent(MigrationConfigEvent.SaveSources)
                     continueMigration(openSheet = true, extraSearchQuery = null)
                 },
                 expanded = lazyListState.shouldExpandFAB(),
@@ -178,7 +181,7 @@ fun MigrationConfigScreen(
             val fromIndex = selectedSources.indexOfFirst { it.id == from.key }
             val toIndex = selectedSources.indexOfFirst { it.id == to.key }
             if (fromIndex == -1 || toIndex == -1) return@rememberReorderableLazyListState
-            viewModel.orderSource(fromIndex, toIndex)
+            viewModel.onEvent(MigrationConfigEvent.OrderSource(fromIndex, toIndex))
         }
 
         FastScrollLazyColumn(
@@ -218,7 +221,7 @@ fun MigrationConfigScreen(
                         dragEnabled = selectedSourceList && sources.size > 1,
                         state = reorderableState,
                         key = { if (selectedSourceList) it.id else "available-${it.id}" },
-                        onClick = { viewModel.toggleSelection(item.id) },
+                        onClick = { viewModel.onEvent(MigrationConfigEvent.ToggleSelection(item.id)) },
                     )
                 }
             }
@@ -328,141 +331,4 @@ private fun SourceItem(
         ),
         modifier = Modifier.clickable(onClick = onClick),
     )
-}
-
-@HiltViewModel
-class MigrationConfigViewModel @Inject constructor(
-    val sourcePreferences: SourcePreferences,
-    private val sourceManager: SourceManager,
-) : ViewModel() {
-
-    private val _state = MutableStateFlow(State())
-    val state: StateFlow<State> = _state.asStateFlow()
-
-    private val sourcesComparator = { includedSources: List<Long> ->
-        val rankMap = includedSources.withIndex().associate { (i, id) -> id to i }
-        compareBy<MigrationSource>(
-            { !it.isSelected },
-            { rankMap.getOrDefault(it.id, Int.MAX_VALUE) },
-            { with(it) { "$name ($shortLanguage)" } },
-        )
-    }
-
-    init {
-        viewModelScope.launchIO {
-            initSources()
-            _state.update { it.copy(isLoading = false) }
-        }
-    }
-
-    private fun updateSources(action: (List<MigrationSource>) -> List<MigrationSource>) {
-        _state.update { state ->
-            val updatedSources = action(state.sources)
-            val includedSources = updatedSources.mapNotNull { it.id.takeIf { _ -> it.isSelected } }
-            state.copy(sources = updatedSources.sortedWith(sourcesComparator(includedSources)))
-        }
-        saveSources()
-    }
-
-    private suspend fun initSources() {
-        val languages = sourcePreferences.enabledLanguages().get()
-        val pinnedSources = sourcePreferences.pinnedSources().get().mapNotNull { it.toLongOrNull() }
-        val includedSources = sourcePreferences.migrationSources().get()
-        val disabledSources = sourcePreferences.disabledSources().get()
-            .mapNotNull { it.toLongOrNull() }
-        val sources = sourceManager.getCatalogueSources()
-            .asSequence()
-            .filterIsInstance<HttpSource>()
-            .filter { it.lang in languages }
-            .map {
-                val source = Source(
-                    id = it.id,
-                    lang = it.lang,
-                    name = it.name,
-                    supportsLatest = false,
-                    isStub = false,
-                )
-                MigrationSource(
-                    source = source,
-                    isSelected = when {
-                        includedSources.isNotEmpty() -> source.id in includedSources
-                        pinnedSources.isNotEmpty() -> source.id in pinnedSources
-                        else -> source.id !in disabledSources
-                    },
-                )
-            }
-            .toList()
-
-        _state.update { state ->
-            state.copy(sources = sources.sortedWith(sourcesComparator(includedSources)))
-        }
-    }
-
-    fun toggleSelection(id: Long) {
-        updateSources { sources ->
-            sources.map { source ->
-                source.copy(isSelected = if (source.source.id == id) !source.isSelected else source.isSelected)
-            }
-        }
-    }
-
-    fun toggleSelection(config: SelectionConfig) {
-        val pinnedSources = sourcePreferences.pinnedSources().getSync().mapNotNull { it.toLongOrNull() }
-        val disabledSources = sourcePreferences.disabledSources().getSync().mapNotNull { it.toLongOrNull() }
-        val isSelected: (Long) -> Boolean = {
-            when (config) {
-                SelectionConfig.All -> true
-                SelectionConfig.None -> false
-                SelectionConfig.Pinned -> it in pinnedSources
-                SelectionConfig.Enabled -> it !in disabledSources
-            }
-        }
-        updateSources { sources ->
-            sources.map { source ->
-                source.copy(isSelected = isSelected(source.source.id))
-            }
-        }
-    }
-
-    fun orderSource(from: Int, to: Int) {
-        updateSources {
-            it.toMutableList()
-                .apply {
-                    add(to, removeAt(from))
-                }
-                .toList()
-        }
-    }
-
-    fun saveSources() {
-        state.value.sources
-            .filter { source -> source.isSelected }
-            .map { source -> source.source.id }
-            .let { sources -> sourcePreferences.migrationSources().set(sources) }
-    }
-
-    data class State(
-        val isLoading: Boolean = true,
-        val sources: List<MigrationSource> = emptyList(),
-    )
-
-    enum class SelectionConfig {
-        All,
-        None,
-        Pinned,
-        Enabled,
-    }
-}
-
-data class MigrationSource(
-    val source: Source,
-    val isSelected: Boolean,
-) {
-    val id: Long
-        inline get() = source.id
-
-    val name: String
-        inline get() = source.name
-
-    val shortLanguage: String = LocaleHelper.getShortDisplayName(source.lang)
 }

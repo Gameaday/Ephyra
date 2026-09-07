@@ -1352,6 +1352,8 @@
 
     <!-- Migration match confidence -->
     <string name="migration_match_confidence">%d%% match</string>
+    <string name="migration_exact_match">Exact match</string>
+    <string name="migration_fewer_chapters_warning">Fewer chapters (%1$d vs %2$d)</string>
 
     <!-- Tracker import -->
     <string name="tracker_import_title">Import from %s</string>

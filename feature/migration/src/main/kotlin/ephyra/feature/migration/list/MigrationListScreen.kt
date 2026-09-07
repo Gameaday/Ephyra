@@ -43,15 +43,16 @@ fun MigrationListScreen(
     }
 
     LaunchedEffect(viewModel) {
-        viewModel.navigateBackEvent.collect { navController.popBackStack() }
-    }
-
-    LaunchedEffect(viewModel) {
-        viewModel.missingChaptersEvent.collect {
-            context.toast(
-                ephyra.app.core.common.R.string.migrationListScreen_matchWithoutChapterToast,
-                Toast.LENGTH_LONG,
-            )
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                is MigrationListViewModel.Effect.NavigateBack -> navController.popBackStack()
+                is MigrationListViewModel.Effect.ShowMissingChaptersToast -> {
+                    context.toast(
+                        ephyra.app.core.common.R.string.migrationListScreen_matchWithoutChapterToast,
+                        Toast.LENGTH_LONG,
+                    )
+                }
+            }
         }
     }
 

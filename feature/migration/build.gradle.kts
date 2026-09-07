@@ -12,6 +12,8 @@ android {
 dependencies {
     api(projects.presentationCore)
     api(projects.core.domain)
+    api(projects.core.common)
+    api(projects.sourceApi)
     implementation(projects.core.data)
     implementation(projects.core.download)
 

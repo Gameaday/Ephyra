@@ -36,7 +36,7 @@ import ephyra.core.common.preference.getAndSet
 import ephyra.core.common.preference.toggle
 import ephyra.domain.migration.models.MigrationFlag
 import ephyra.domain.source.service.SourcePreferences
-import ephyra.feature.common.utils.getLabel
+import ephyra.feature.migration.common.getLabel
 import ephyra.presentation.core.components.AdaptiveSheet
 import ephyra.presentation.core.components.material.Button
 import ephyra.presentation.core.components.material.padding

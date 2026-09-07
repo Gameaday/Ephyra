@@ -124,10 +124,10 @@ fun MigrateMangaScreen(
         )
     }
 
-    LaunchedEffect(Unit) {
-        viewModel.events.collectLatest { event ->
-            when (event) {
-                MigrationMangaEvent.FailedFetchingFavorites -> {
+    LaunchedEffect(viewModel) {
+        viewModel.effects.collectLatest { effect ->
+            when (effect) {
+                MigrateMangaViewModel.Effect.FailedFetchingFavorites -> {
                     context.toast(ephyra.app.core.common.R.string.internal_error)
                 }
             }

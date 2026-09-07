@@ -6,10 +6,13 @@ import ephyra.domain.chapter.interactor.SyncChaptersWithSource
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.manga.interactor.NetworkToLocalManga
 import ephyra.domain.manga.model.Manga
+import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.service.SourceManager
 import eu.kanade.tachiyomi.source.CatalogueSource
+import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.model.SChapter
 import eu.kanade.tachiyomi.source.model.SManga
+import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.source.online.ResolvableSource
 import eu.kanade.tachiyomi.source.online.UriType
 import io.mockk.coEvery
@@ -17,6 +20,10 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -30,7 +37,18 @@ import org.junit.jupiter.api.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class DeepLinkViewModelTest {
 
-    private val sourceManager: SourceManager = mockk(relaxed = true)
+    private var testCatalogueSources: List<CatalogueSource> = emptyList()
+
+    private val fakeSourceManager = object : SourceManager {
+        override val isInitialized: StateFlow<Boolean> = MutableStateFlow(true)
+        override val catalogueSources: Flow<List<CatalogueSource>> = flowOf(emptyList())
+        override fun get(sourceKey: Long): Source? = null
+        override fun getOrStub(sourceKey: Long): Source = mockk(relaxed = true)
+        override fun getOnlineSources(): List<HttpSource> = emptyList()
+        override fun getCatalogueSources(): List<CatalogueSource> = testCatalogueSources
+        override fun getStubSources(): List<StubSource> = emptyList()
+    }
+
     private val networkToLocalManga: NetworkToLocalManga = mockk(relaxed = true)
     private val getChapterByUrlAndMangaId: GetChapterByUrlAndMangaId = mockk(relaxed = true)
     private val syncChaptersWithSource: SyncChaptersWithSource = mockk(relaxed = true)
@@ -40,6 +58,7 @@ class DeepLinkViewModelTest {
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
+        testCatalogueSources = emptyList()
     }
 
     @AfterEach
@@ -48,7 +67,7 @@ class DeepLinkViewModelTest {
     }
 
     private fun createViewModel() = DeepLinkViewModel(
-        sourceManager = sourceManager,
+        sourceManager = fakeSourceManager,
         networkToLocalManga = networkToLocalManga,
         getChapterByUrlAndMangaId = getChapterByUrlAndMangaId,
         syncChaptersWithSource = syncChaptersWithSource,
@@ -56,7 +75,7 @@ class DeepLinkViewModelTest {
 
     @Test
     fun `when query has no resolvable source, transitions to NoResults and emits NavigateToGlobalSearch`() = runTest {
-        coEvery { sourceManager.getCatalogueSources() } returns emptyList()
+        testCatalogueSources = emptyList()
 
         val viewModel = createViewModel()
 
@@ -87,7 +106,7 @@ class DeepLinkViewModelTest {
         every { mockSource.getUriType("https://source.com/manga/42") } returns UriType.Manga
         coEvery { mockSource.getManga("https://source.com/manga/42") } returns mockSManga
         coEvery { networkToLocalManga.invoke(any<Manga>()) } returns mockManga
-        coEvery { sourceManager.getCatalogueSources() } returns listOf(mockSource)
+        testCatalogueSources = listOf(mockSource)
 
         val viewModel = createViewModel()
 
@@ -124,7 +143,7 @@ class DeepLinkViewModelTest {
         coEvery { mockSource.getChapter("https://source.com/chapter/100") } returns mockSChapter
         coEvery { networkToLocalManga.invoke(any<Manga>()) } returns mockManga
         coEvery { getChapterByUrlAndMangaId.await("/chapter/100", 42L) } returns mockChapter
-        coEvery { sourceManager.getCatalogueSources() } returns listOf(mockSource)
+        testCatalogueSources = listOf(mockSource)
 
         val viewModel = createViewModel()
 

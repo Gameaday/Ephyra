@@ -1,27 +1,23 @@
 package ephyra.feature.browse.migration.manga
 
 import androidx.compose.runtime.Immutable
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.manga.interactor.GetFavorites
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.service.SourceManager
+import ephyra.presentation.core.udf.BaseUdfViewModel
 import eu.kanade.tachiyomi.source.Source
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.collections.immutable.toPersistentSet
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import javax.inject.Inject
@@ -30,13 +26,9 @@ import javax.inject.Inject
 class MigrateMangaViewModel @Inject constructor(
     private val sourceManager: SourceManager,
     private val getFavorites: GetFavorites,
-) : ViewModel() {
+) : BaseUdfViewModel<MigrateMangaViewModel.State, MigrateMangaScreenEvent, MigrateMangaViewModel.Effect>(State()) {
 
-    private val _state = MutableStateFlow(State())
-    val state: StateFlow<State> = _state.asStateFlow()
-
-    private val _events: Channel<MigrationMangaEvent> = Channel()
-    val events: Flow<MigrationMangaEvent> = _events.receiveAsFlow()
+    val events = effects
 
     private var isInitialized = false
 
@@ -45,15 +37,15 @@ class MigrateMangaViewModel @Inject constructor(
         isInitialized = true
 
         viewModelScope.launch {
-            _state.update { state ->
+            updateState { state ->
                 state.copy(source = sourceManager.getOrStub(sourceId))
             }
 
             getFavorites.subscribe(sourceId)
                 .catch {
                     logcat(LogPriority.ERROR, it)
-                    _events.send(MigrationMangaEvent.FailedFetchingFavorites)
-                    _state.update { state ->
+                    emitEffect(Effect.FailedFetchingFavorites)
+                    updateState { state ->
                         state.copy(titleList = persistentListOf())
                     }
                 }
@@ -63,12 +55,12 @@ class MigrateMangaViewModel @Inject constructor(
                         .toImmutableList()
                 }
                 .collectLatest { list ->
-                    _state.update { it.copy(titleList = list) }
+                    updateState { it.copy(titleList = list) }
                 }
         }
     }
 
-    fun onEvent(event: MigrateMangaScreenEvent) {
+    override fun onEvent(event: MigrateMangaScreenEvent) {
         when (event) {
             is MigrateMangaScreenEvent.ToggleSelection -> toggleSelection(event.item)
             MigrateMangaScreenEvent.ClearSelection -> clearSelection()
@@ -76,22 +68,22 @@ class MigrateMangaViewModel @Inject constructor(
     }
 
     private fun toggleSelection(item: Manga) {
-        _state.update { state ->
+        updateState { state ->
             val selection = state.selection.toMutableSet().apply {
                 if (!remove(item.id)) add(item.id)
-            }
+            }.toPersistentSet()
             state.copy(selection = selection)
         }
     }
 
     private fun clearSelection() {
-        _state.update { it.copy(selection = emptySet()) }
+        updateState { it.copy(selection = persistentSetOf()) }
     }
 
     @Immutable
     data class State(
         val source: Source? = null,
-        val selection: Set<Long> = emptySet(),
+        val selection: ImmutableSet<Long> = persistentSetOf(),
         private val titleList: ImmutableList<Manga>? = null,
     ) {
 
@@ -106,8 +98,8 @@ class MigrateMangaViewModel @Inject constructor(
 
         val selectionMode = selection.isNotEmpty()
     }
-}
 
-sealed interface MigrationMangaEvent {
-    data object FailedFetchingFavorites : MigrationMangaEvent
+    sealed interface Effect {
+        data object FailedFetchingFavorites : Effect
+    }
 }

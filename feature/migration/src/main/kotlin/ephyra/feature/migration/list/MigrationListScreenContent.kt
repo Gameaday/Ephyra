@@ -53,15 +53,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import ephyra.app.R
 import ephyra.domain.manga.model.Manga
 import ephyra.feature.migration.list.models.MigratingManga
+import ephyra.presentation.core.R
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.Badge
 import ephyra.presentation.core.components.BadgeGroup
 import ephyra.presentation.core.components.FastScrollLazyColumn
 import ephyra.presentation.core.components.MangaCover
+import ephyra.presentation.core.components.Pill
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.components.material.topSmallPaddingValues
@@ -163,6 +164,7 @@ fun MigrationListScreenContent(
                             .align(Alignment.Top)
                             .fillMaxHeight(),
                         result = result,
+                        sourceItem = item,
                         onItemClick = onItemClick,
                     )
 
@@ -265,6 +267,7 @@ fun MigrationListItem(
 fun MigrationListItemResult(
     modifier: Modifier,
     result: MigratingManga.SearchResult,
+    sourceItem: MigratingManga,
     onItemClick: (Manga) -> Unit,
 ) {
     Box(modifier.height(IntrinsicSize.Min)) {
@@ -324,24 +327,51 @@ fun MigrationListItemResult(
                             latestChapter = targetResult.latestChapter,
                             onClick = { onItemClick(targetResult.manga) },
                         )
-                        if (targetResult.matchConfidence < 1.0) {
-                            val confidencePercent = (targetResult.matchConfidence * 100).toInt()
-                            Text(
-                                text = stringResource(
-                                    ephyra.app.core.common.R.string.migration_match_confidence,
-                                    confidencePercent,
-                                ),
-                                modifier = Modifier.padding(
-                                    horizontal = MaterialTheme.padding.extraSmall,
-                                ),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = when {
-                                    targetResult.matchConfidence >= 0.9 -> MaterialTheme.colorScheme.primary
-                                    targetResult.matchConfidence >= 0.7 -> MaterialTheme.colorScheme.tertiary
-                                    else -> MaterialTheme.colorScheme.error
-                                },
-                                maxLines = 1,
-                            )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = MaterialTheme.padding.extraSmall),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            if (targetResult.matchConfidence < 1.0) {
+                                val confidencePercent = (targetResult.matchConfidence * 100).toInt()
+                                Pill(
+                                    text = stringResource(
+                                        ephyra.app.core.common.R.string.migration_match_confidence,
+                                        confidencePercent,
+                                    ),
+                                    color = when {
+                                        targetResult.matchConfidence >= 0.9 ->
+                                            MaterialTheme.colorScheme.primaryContainer
+                                        targetResult.matchConfidence >= 0.7 ->
+                                            MaterialTheme.colorScheme.tertiaryContainer
+                                        else ->
+                                            MaterialTheme.colorScheme.errorContainer
+                                    },
+                                    contentColor = when {
+                                        targetResult.matchConfidence >= 0.9 ->
+                                            MaterialTheme.colorScheme.onPrimaryContainer
+                                        targetResult.matchConfidence >= 0.7 ->
+                                            MaterialTheme.colorScheme.onTertiaryContainer
+                                        else ->
+                                            MaterialTheme.colorScheme.onErrorContainer
+                                    },
+                                    style = MaterialTheme.typography.labelSmall,
+                                )
+                            }
+                            if (targetResult.chapterCount < sourceItem.chapterCount) {
+                                Pill(
+                                    text = stringResource(
+                                        ephyra.app.core.common.R.string.migration_fewer_chapters_warning,
+                                        targetResult.chapterCount,
+                                        sourceItem.chapterCount,
+                                    ),
+                                    color = MaterialTheme.colorScheme.errorContainer,
+                                    contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                                    style = MaterialTheme.typography.labelSmall,
+                                )
+                            }
                         }
                     }
                 }

@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.graphics.drawable.toBitmap
 import ephyra.domain.extension.service.ExtensionManager
+import ephyra.domain.source.service.SourcePreferences
 import eu.kanade.tachiyomi.source.Source
 
 fun Source.icon(extensionManager: ExtensionManager): ImageBitmap? {
@@ -22,3 +23,17 @@ fun ephyra.domain.source.model.Source.icon(extensionManager: ExtensionManager): 
 
 /** Returns a human-readable name suitable for display next to a manga info label. */
 fun Source.getNameForMangaInfo(): String = toString()
+
+fun Source.getNameForMangaInfo(preferences: SourcePreferences): String {
+    val enabledLanguages = preferences.enabledLanguages().getSync()
+        .filterNot { it in listOf("all", "other") }
+    val hasOneActiveLanguages = enabledLanguages.size == 1
+    val isInEnabledLanguages = lang in enabledLanguages
+    return when {
+        // For edge cases where user disables a source they got manga of in their library.
+        hasOneActiveLanguages && !isInEnabledLanguages -> toString()
+        // Hide the language tag when only one language is used.
+        hasOneActiveLanguages && isInEnabledLanguages -> name
+        else -> toString()
+    }
+}
