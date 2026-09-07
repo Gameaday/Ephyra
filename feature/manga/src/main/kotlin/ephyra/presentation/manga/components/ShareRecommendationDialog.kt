@@ -73,7 +73,7 @@ fun ShareRecommendationDialog(
             readChapters = readChapters.takeIf { includeProgress },
             totalChapters = totalChapters.takeIf { includeProgress },
             score = score.takeIf { includeScore },
-            genres = manga.genre.orEmpty().split(", ").filter { it.isNotBlank() },
+            genres = manga.genre.orEmpty().filter { it.isNotBlank() },
             options = RecommendationShareOptions(
                 includeUrl = includeUrl,
                 includeNotes = includeNotes,

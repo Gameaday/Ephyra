@@ -44,6 +44,7 @@ import ephyra.presentation.core.util.manga.removeCovers
 import ephyra.presentation.core.util.system.toast
 import ephyra.source.local.isLocal
 import eu.kanade.tachiyomi.source.Source
+import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.PersistentSet
 import kotlinx.collections.immutable.persistentSetOf
@@ -261,6 +262,33 @@ class MangaViewModel @Inject constructor(
                     success.copy(dialog = Dialog.SetFetchInterval(success.manga))
                 }
             }
+            MangaScreenEvent.ShowShareRecommendationDialog -> {
+                viewModelScope.launch {
+                    val success = state.value as? State.Success ?: return@launch
+                    val chapterItems = success.chapterListItems.filterIsInstance<ChapterList.Item>()
+                    val readCount = chapterItems.count { it.chapter.read }
+                    val totalCount = chapterItems.size
+                    val tracks = runCatching {
+                        mangaTrackInteractor.getTracks(success.manga.id)
+                    }.getOrDefault(emptyList())
+                    val trackingScore = tracks.firstOrNull { it.score > 0.0 }?.score
+                    val url = (success.source as? HttpSource)?.let {
+                        runCatching { it.getMangaUrl(success.manga.toSManga()) }.getOrNull()
+                    }
+                    updateState { state ->
+                        val current = state as? State.Success ?: return@updateState state
+                        current.copy(
+                            dialog = Dialog.ShareRecommendation(
+                                manga = current.manga,
+                                readChapters = readCount,
+                                totalChapters = totalCount,
+                                score = trackingScore,
+                                url = url,
+                            ),
+                        )
+                    }
+                }
+            }
             else -> {}
         }
     }
@@ -385,6 +413,13 @@ class MangaViewModel @Inject constructor(
         data class DeleteChapters(val chapters: List<Chapter>) : Dialog
         data class Migrate(val current: Manga, val target: Manga) : Dialog
         data class SetFetchInterval(val manga: Manga) : Dialog
+        data class ShareRecommendation(
+            val manga: Manga,
+            val readChapters: Int,
+            val totalChapters: Int,
+            val score: Double?,
+            val url: String?,
+        ) : Dialog
     }
 }
 

@@ -188,6 +188,24 @@ class MangaViewModelTest {
     }
 
     @Test
+    fun `ShowShareRecommendationDialog populates ShareRecommendation dialog in state`() = runTest {
+        viewModel.init(1L, false)
+
+        viewModel.state.test {
+            val initial = awaitItem() as MangaViewModel.State.Success
+            assertNull(initial.dialog)
+
+            viewModel.onEvent(MangaScreenEvent.ShowShareRecommendationDialog)
+
+            val shareDialogState = awaitItem() as MangaViewModel.State.Success
+            assertTrue(shareDialogState.dialog is MangaViewModel.Dialog.ShareRecommendation)
+            val dialog = shareDialogState.dialog as MangaViewModel.Dialog.ShareRecommendation
+            assertEquals(testManga, dialog.manga)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `toggleFavorite calls mangaInfoInteractor updateFavorite`() = runTest {
         coEvery { mangaInfoInteractor.updateFavorite(1L, true) } returns true
 

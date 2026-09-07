@@ -218,10 +218,8 @@ fun MangaDetailsScreen(
             }
         },
         onCoverClicked = { ViewModel.onEvent(MangaScreenEvent.ShowCoverDialog) },
-        onShareClicked = if (isHttpSource) {
-            { shareManga(context, ViewModel.manga, ViewModel.source) }
-        } else {
-            null
+        onShareClicked = {
+            ViewModel.onEvent(MangaScreenEvent.ShowShareRecommendationDialog)
         },
         onDownloadActionClicked = if (!successState.source.isLocalOrStub()) {
             { ViewModel.onEvent(MangaScreenEvent.RunDownloadAction(it)) }
@@ -475,6 +473,32 @@ fun MangaDetailsScreen(
                     null
                 },
                 onDismissRequest = onDismissRequest,
+            )
+        }
+        is MangaViewModel.Dialog.ShareRecommendation -> {
+            ephyra.presentation.manga.components.ShareRecommendationDialog(
+                manga = dialog.manga,
+                readChapters = dialog.readChapters,
+                totalChapters = dialog.totalChapters,
+                score = dialog.score,
+                url = dialog.url,
+                onDismissRequest = onDismissRequest,
+                onShare = { textToShare ->
+                    try {
+                        val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(android.content.Intent.EXTRA_TEXT, textToShare)
+                        }
+                        context.startActivity(
+                            android.content.Intent.createChooser(
+                                shareIntent,
+                                context.getString(ephyra.app.core.common.R.string.action_share),
+                            ),
+                        )
+                    } catch (e: Exception) {
+                        context.toast(e.message)
+                    }
+                },
             )
         }
     }
