@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.util.system.openInBrowser
@@ -49,11 +50,13 @@ fun WebViewScreen(
         }
     }
 
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
     WebViewScreenContent(
         onNavigateUp = { navController.popBackStack() },
         initialTitle = initialTitle,
         url = url,
-        headers = viewModel.headers,
+        headers = state.headers,
         onUrlChange = { assistUrl = it },
         onShare = { viewModel.onEvent(WebViewScreenEvent.ShareWebpage(it)) },
         onOpenInBrowser = { viewModel.onEvent(WebViewScreenEvent.OpenInBrowser(it)) },

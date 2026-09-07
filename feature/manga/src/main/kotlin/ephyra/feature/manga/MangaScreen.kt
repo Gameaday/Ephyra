@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -131,9 +132,19 @@ fun MangaDetailsScreen(
         }
     }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(ViewModel) {
+        ViewModel.effects.collect { effect ->
+            when (effect) {
+                is MangaScreenEffect.ShowToast -> context.toast(effect.message)
+                is MangaScreenEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
+            }
+        }
+    }
+
     MangaScreen(
         state = successState,
-        snackbarHostState = ViewModel.snackbarHostState,
+        snackbarHostState = snackbarHostState,
         nextUpdate = successState.manga.expectedNextUpdate,
         isTabletUi = isTabletUi(),
         chapterSwipeStartAction = successState.chapterSwipeStartAction,
@@ -334,6 +345,7 @@ fun MangaDetailsScreen(
         }
         MangaViewModel.Dialog.FullCover -> {
             val sm = hiltViewModel<MangaCoverViewModel>()
+            val coverSnackbarHostState = remember { SnackbarHostState() }
             LaunchedEffect(successState.manga.id) {
                 sm.init(successState.manga.id)
             }
@@ -343,6 +355,12 @@ fun MangaDetailsScreen(
                         is MangaCoverEffect.StartShare -> {
                             val intent = effect.uri.toShareIntent(context, type = "image/*")
                             context.startActivity(intent)
+                        }
+                        is MangaCoverEffect.ShowSnackbar -> {
+                            coverSnackbarHostState.showSnackbar(
+                                message = effect.message,
+                                withDismissAction = true,
+                            )
                         }
                     }
                 }
@@ -382,7 +400,7 @@ fun MangaDetailsScreen(
                 } else {
                     MangaCoverDialog(
                         manga = manga!!,
-                        snackbarHostState = sm.snackbarHostState,
+                        snackbarHostState = coverSnackbarHostState,
                         isCustomCover = remember(manga) { manga!!.hasCustomCover(ViewModel.coverCache) },
                         onShareClick = { sm.onEvent(MangaCoverScreenEvent.ShareCover) },
                         onSaveClick = { sm.onEvent(MangaCoverScreenEvent.SaveCover) },

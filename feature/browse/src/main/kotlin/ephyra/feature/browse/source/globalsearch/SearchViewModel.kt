@@ -14,6 +14,7 @@ import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.toDomainManga
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
+import ephyra.presentation.core.udf.BaseUdfViewModel
 import eu.kanade.tachiyomi.source.CatalogueSource
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.mutate
@@ -41,10 +42,7 @@ abstract class SearchViewModel(
     private val networkToLocalManga: NetworkToLocalManga,
     private val getManga: GetManga,
     private val searchCache: GlobalSearchCache,
-) : ViewModel() {
-
-    private val stateMutable = MutableStateFlow(initialState)
-    val state: StateFlow<State> = stateMutable.asStateFlow()
+) : BaseUdfViewModel<SearchViewModel.State, SearchScreenEvent, SearchEffect>(initialState) {
 
     private val coroutineDispatcher = Dispatchers.IO.limitedParallelism(5)
     private var searchJob: Job? = null
@@ -74,7 +72,7 @@ abstract class SearchViewModel(
     init {
         viewModelScope.launch {
             sourcePreferences.globalSearchFilterState().changes().collectLatest { filterState ->
-                stateMutable.update { it.copy(onlyShowHasResults = filterState) }
+                updateState { it.copy(onlyShowHasResults = filterState) }
             }
         }
     }
@@ -124,7 +122,7 @@ abstract class SearchViewModel(
         return result
     }
 
-    fun onEvent(event: SearchScreenEvent) {
+    override fun onEvent(event: SearchScreenEvent) {
         when (event) {
             is SearchScreenEvent.UpdateSearchQuery -> updateSearchQuery(event.query)
             is SearchScreenEvent.SetSourceFilter -> setSourceFilter(event.filter)
@@ -136,11 +134,11 @@ abstract class SearchViewModel(
     }
 
     protected fun updateSearchQuery(query: String?) {
-        stateMutable.update { it.copy(searchQuery = query) }
+        updateState { it.copy(searchQuery = query) }
     }
 
     protected fun setSourceFilter(filter: SourceFilter) {
-        stateMutable.update { it.copy(sourceFilter = filter) }
+        updateState { it.copy(sourceFilter = filter) }
         search()
     }
 
@@ -223,7 +221,7 @@ abstract class SearchViewModel(
     }
 
     private fun updateItems(items: PersistentMap<CatalogueSource, SearchItemResult>) {
-        stateMutable.update {
+        updateState {
             it.copy(
                 items = items
                     .toSortedMap(sortComparator(items))
@@ -244,17 +242,12 @@ abstract class SearchViewModel(
     protected fun setMigrateDialog(currentId: Long, target: Manga) {
         viewModelScope.launchIO {
             val current = getManga.await(currentId) ?: return@launchIO
-            stateMutable.update { it.copy(dialog = Dialog.Migrate(target, current)) }
+            updateState { it.copy(dialog = Dialog.Migrate(target, current)) }
         }
     }
 
     protected fun clearDialog() {
-        stateMutable.update { it.copy(dialog = null) }
-    }
-
-    // Allow subclasses to update the internal state safely
-    protected fun updateState(transform: (State) -> State) {
-        stateMutable.update { transform(it) }
+        updateState { it.copy(dialog = null) }
     }
 
     @Immutable

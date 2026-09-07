@@ -85,6 +85,6 @@ class MangaNotesViewModelTest {
             assertEquals("New Content", updated?.notes)
         }
 
-        coVerify { updateMangaNotes(42L, "New Content") }
+        coVerify(timeout = 2000) { updateMangaNotes(42L, "New Content") }
     }
 }

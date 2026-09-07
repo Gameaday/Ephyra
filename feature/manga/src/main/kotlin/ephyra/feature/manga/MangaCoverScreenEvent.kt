@@ -31,4 +31,8 @@ sealed interface MangaCoverScreenEvent {
 sealed interface MangaCoverEffect {
     /** Launch the system share chooser with the cached cover at [uri]. */
     data class StartShare(val uri: Uri) : MangaCoverEffect
+
+    /** Display a one-shot snackbar message. */
+    data class ShowSnackbar(val message: String) : MangaCoverEffect
 }
+

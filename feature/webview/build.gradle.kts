@@ -17,7 +17,12 @@ dependencies {
     api(projects.sourceApi)
     api(projects.presentationCore)
 
+    implementation(androidx.bundles.lifecycle)
     implementation(libs.hilt.android)
     implementation(libs.compose.webview)
     ksp(libs.hilt.compiler)
+
+    testImplementation(libs.bundles.test)
+    testImplementation(kotlinx.coroutines.test)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }

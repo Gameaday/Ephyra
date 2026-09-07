@@ -1,11 +1,12 @@
 package ephyra.feature.manga
 
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.util.fastAny
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.collections.immutable.PersistentSet
+import kotlinx.collections.immutable.persistentSetOf
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.preference.CheckboxState
 import ephyra.core.common.preference.TriState
@@ -84,7 +85,6 @@ class MangaViewModel @Inject constructor(
     val basePreferences: ephyra.domain.base.BasePreferences,
     val coverCache: ephyra.domain.manga.service.CoverCache,
     val appInfo: AppInfo,
-    val snackbarHostState: SnackbarHostState = SnackbarHostState(),
 ) : BaseUdfViewModel<MangaViewModel.State, MangaScreenEvent, MangaScreenEffect>(State.Loading) {
 
     private val successState: State.Success?
@@ -99,8 +99,6 @@ class MangaViewModel @Inject constructor(
     private val skipRead by readerPreferences.skipRead().asState(viewModelScope)
     private val skipFiltered by readerPreferences.skipFiltered().asState(viewModelScope)
     private val skipDupe by readerPreferences.skipDupe().asState(viewModelScope)
-
-    private val selectedChapterIds = HashSet<Long>()
 
     private var isInitialized = false
 
@@ -140,7 +138,7 @@ class MangaViewModel @Inject constructor(
                     success.copy(
                         manga = manga,
                         chapters = chapters,
-                        chapterListItems = chapters.toChapterListItems(manga, queue),
+                        chapterListItems = chapters.toChapterListItems(manga, queue, success.selectedChapterIds),
                         chapterSwipeStartAction = swipeStart,
                         chapterSwipeEndAction = swipeEnd,
                     )
@@ -179,26 +177,28 @@ class MangaViewModel @Inject constructor(
     override fun onEvent(event: MangaScreenEvent) {
         when (event) {
             is MangaScreenEvent.ToggleSelection -> {
-                selectedChapterIds.addOrRemove(event.item.id, event.selected)
-                updateSelectionState()
+                updateSelection { selected, _ ->
+                    if (event.selected) selected.adding(event.item.id) else selected.removing(event.item.id)
+                }
             }
             is MangaScreenEvent.ToggleAllSelection -> {
-                val success = successState ?: return
-                success.chapters.forEach { chapter ->
-                    selectedChapterIds.addOrRemove(chapter.id!!, event.selected)
+                updateSelection { selected, success ->
+                    if (event.selected) {
+                        selected.addingAll(success.chapters.mapNotNull { it.id })
+                    } else {
+                        selected.removingAll(success.chapters.mapNotNull { it.id })
+                    }
                 }
-                updateSelectionState()
             }
             is MangaScreenEvent.ClearSelection -> {
-                selectedChapterIds.clear()
-                updateSelectionState()
+                updateSelection { _, _ -> persistentSetOf() }
             }
             is MangaScreenEvent.InvertSelection -> {
-                val success = successState ?: return
-                success.chapters.forEach { chapter ->
-                    selectedChapterIds.addOrRemove(chapter.id!!, chapter.id !in selectedChapterIds)
+                updateSelection { selected, success ->
+                    val allIds = success.chapters.mapNotNull { it.id }.toSet()
+                    val inverted = allIds.filter { it !in selected }
+                    persistentSetOf<Long>().addingAll(inverted)
                 }
-                updateSelectionState()
             }
             MangaScreenEvent.DismissDialog -> {
                 updateState { state ->
@@ -265,14 +265,16 @@ class MangaViewModel @Inject constructor(
         }
     }
 
-    private fun updateSelectionState() {
+    private fun updateSelection(transform: (PersistentSet<Long>, State.Success) -> PersistentSet<Long>) {
         updateState { state ->
             val success = state as? State.Success ?: return@updateState state
+            val newSelection = transform(success.selectedChapterIds, success)
             success.copy(
-                isAnySelected = selectedChapterIds.isNotEmpty(),
+                selectedChapterIds = newSelection,
+                isAnySelected = newSelection.isNotEmpty(),
                 chapterListItems = success.chapterListItems.map { item ->
                     if (item is ChapterList.Item) {
-                        item.copy(selected = item.id in selectedChapterIds)
+                        item.copy(selected = item.id in newSelection)
                     } else {
                         item
                     }
@@ -281,7 +283,11 @@ class MangaViewModel @Inject constructor(
         }
     }
 
-    private fun List<Chapter>.toChapterListItems(manga: Manga, queue: List<Download>): List<ChapterList> {
+    private fun List<Chapter>.toChapterListItems(
+        manga: Manga,
+        queue: List<Download>,
+        selectedIds: PersistentSet<Long>,
+    ): List<ChapterList> {
         val items = map { chapter ->
             val download = queue.find { it.chapter.id == chapter.id }
             ChapterList.Item(
@@ -300,7 +306,7 @@ class MangaViewModel @Inject constructor(
                     Download.State.NOT_DOWNLOADED
                 },
                 downloadProgress = download?.progress ?: 0,
-                selected = chapter.id!! in selectedChapterIds,
+                selected = chapter.id in selectedIds,
             )
         }
 
@@ -343,6 +349,7 @@ class MangaViewModel @Inject constructor(
             val source: Source,
             val chapters: List<Chapter> = emptyList(),
             val chapterListItems: List<ChapterList> = emptyList(),
+            val selectedChapterIds: PersistentSet<Long> = persistentSetOf(),
             val isAnySelected: Boolean = false,
             val filterActive: Boolean = false,
             val scanlatorFilterActive: Boolean = false,
@@ -390,7 +397,7 @@ sealed class ChapterList {
         val downloadProgress: Int = 0,
         val selected: Boolean = false,
     ) : ChapterList() {
-        override val id: Long = chapter.id!!
+        override val id: Long = chapter.id
     }
 
     data class MissingCount(

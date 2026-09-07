@@ -2,7 +2,6 @@ package ephyra.feature.manga
 
 import android.app.Application
 import android.net.Uri
-import androidx.compose.material3.SnackbarHostState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil3.asDrawable
@@ -47,7 +46,6 @@ class MangaCoverViewModel @Inject constructor(
     private val networkHelper: NetworkHelper,
     private val application: Application,
     private val localCoverManager: LocalCoverManager,
-    val snackbarHostState: SnackbarHostState = SnackbarHostState(),
 ) : BaseUdfViewModel<Manga?, MangaCoverScreenEvent, MangaCoverEffect>(null) {
 
     private var isInitialized = false
@@ -76,15 +74,17 @@ class MangaCoverViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 saveCoverInternal(temp = false)
-                snackbarHostState.showSnackbar(
-                    application.stringResource(ephyra.app.core.common.R.string.cover_saved),
-                    withDismissAction = true,
+                emitEffect(
+                    MangaCoverEffect.ShowSnackbar(
+                        application.stringResource(ephyra.app.core.common.R.string.cover_saved),
+                    ),
                 )
             } catch (e: Throwable) {
                 logcat(LogPriority.ERROR, e)
-                snackbarHostState.showSnackbar(
-                    application.stringResource(ephyra.app.core.common.R.string.error_saving_cover),
-                    withDismissAction = true,
+                emitEffect(
+                    MangaCoverEffect.ShowSnackbar(
+                        application.stringResource(ephyra.app.core.common.R.string.error_saving_cover),
+                    ),
                 )
             }
         }
@@ -98,9 +98,10 @@ class MangaCoverViewModel @Inject constructor(
                 emitEffect(MangaCoverEffect.StartShare(uri))
             } catch (e: Throwable) {
                 logcat(LogPriority.ERROR, e)
-                snackbarHostState.showSnackbar(
-                    application.stringResource(ephyra.app.core.common.R.string.error_sharing_cover),
-                    withDismissAction = true,
+                emitEffect(
+                    MangaCoverEffect.ShowSnackbar(
+                        application.stringResource(ephyra.app.core.common.R.string.error_sharing_cover),
+                    ),
                 )
             }
         }
@@ -195,18 +196,20 @@ class MangaCoverViewModel @Inject constructor(
 
     private fun notifyCoverUpdated() {
         viewModelScope.launch {
-            snackbarHostState.showSnackbar(
-                application.stringResource(ephyra.app.core.common.R.string.cover_updated),
-                withDismissAction = true,
+            emitEffect(
+                MangaCoverEffect.ShowSnackbar(
+                    application.stringResource(ephyra.app.core.common.R.string.cover_updated),
+                ),
             )
         }
     }
 
     private fun notifyFailedCoverUpdate(e: Throwable) {
         viewModelScope.launch {
-            snackbarHostState.showSnackbar(
-                application.stringResource(ephyra.app.core.common.R.string.notification_cover_update_failed),
-                withDismissAction = true,
+            emitEffect(
+                MangaCoverEffect.ShowSnackbar(
+                    application.stringResource(ephyra.app.core.common.R.string.notification_cover_update_failed),
+                ),
             )
             logcat(LogPriority.ERROR, e)
         }
