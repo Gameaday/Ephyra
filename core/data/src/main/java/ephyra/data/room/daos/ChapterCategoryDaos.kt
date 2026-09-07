@@ -11,6 +11,9 @@ interface ChapterDao {
     @Query("SELECT * FROM chapters WHERE _id = :id")
     suspend fun getChapterById(id: Long): ChapterEntity?
 
+    @Query("SELECT * FROM chapters WHERE _id IN (:ids)")
+    suspend fun getChaptersByIds(ids: List<Long>): List<ChapterEntity>
+
     @Query(
         """
         SELECT * FROM chapters
@@ -51,8 +54,14 @@ interface ChapterDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(chapter: ChapterEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(chapters: List<ChapterEntity>): List<Long>
+
     @Update
     suspend fun update(chapter: ChapterEntity)
+
+    @Update
+    suspend fun updateAll(chapters: List<ChapterEntity>)
 
     @Delete
     suspend fun delete(chapter: ChapterEntity)
@@ -73,6 +82,12 @@ interface CategoryDao {
     @Query("SELECT * FROM categories")
     suspend fun getCategories(): List<CategoryEntity>
 
+    @Query("SELECT * FROM categories WHERE _id = :id")
+    suspend fun getCategoryById(id: Long): CategoryEntity?
+
+    @Query("SELECT * FROM categories WHERE _id IN (:ids)")
+    suspend fun getCategoriesByIds(ids: List<Long>): List<CategoryEntity>
+
     @Query(
         "SELECT * FROM categories WHERE _id IN (SELECT category_id FROM mangas_categories WHERE manga_id = :mangaId)",
     )
@@ -89,8 +104,14 @@ interface CategoryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(category: CategoryEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(categories: List<CategoryEntity>): List<Long>
+
     @Update
     suspend fun update(category: CategoryEntity)
+
+    @Update
+    suspend fun updateAll(categories: List<CategoryEntity>)
 
     @Query("DELETE FROM categories WHERE _id = :categoryId")
     suspend fun delete(categoryId: Long)

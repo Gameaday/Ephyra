@@ -1,24 +1,31 @@
 package ephyra.data.chapter
 
+import ephyra.core.common.di.IoDispatcher
 import ephyra.core.common.util.system.logcat
 import ephyra.data.room.daos.ChapterDao
 import ephyra.data.room.entities.ChapterEntity
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.model.ChapterUpdate
 import ephyra.domain.chapter.repository.ChapterRepository
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import logcat.LogPriority
 import javax.inject.Inject
 
 class ChapterRepositoryImpl @Inject constructor(
     private val chapterDao: ChapterDao,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ChapterRepository {
 
-    override suspend fun addAll(chapters: List<Chapter>): List<Chapter> {
-        return try {
-            chapters.map { chapter ->
-                val entity = ChapterEntity(
+    override suspend fun addAll(chapters: List<Chapter>): List<Chapter> = withContext(ioDispatcher) {
+        if (chapters.isEmpty()) return@withContext emptyList()
+        try {
+            val entities = chapters.map { chapter ->
+                ChapterEntity(
                     id = 0,
                     mangaId = chapter.mangaId,
                     url = chapter.url,
@@ -35,30 +42,30 @@ class ChapterRepositoryImpl @Inject constructor(
                     version = chapter.version,
                     isSyncing = false,
                 )
-                val id = chapterDao.insert(entity)
-                chapter.copy(id = id)
             }
+            val ids = chapterDao.insertAll(entities)
+            chapters.zip(ids) { chapter, id -> chapter.copy(id = id) }
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e)
             emptyList()
         }
     }
 
-    override suspend fun update(chapterUpdate: ChapterUpdate) {
+    override suspend fun update(chapterUpdate: ChapterUpdate): Unit = withContext(ioDispatcher) {
         partialUpdate(chapterUpdate)
     }
 
-    override suspend fun updateAll(chapterUpdates: List<ChapterUpdate>) {
+    override suspend fun updateAll(chapterUpdates: List<ChapterUpdate>): Unit = withContext(ioDispatcher) {
         partialUpdate(*chapterUpdates.toTypedArray())
     }
 
-    private suspend fun partialUpdate(vararg chapterUpdates: ChapterUpdate) {
-        // In a real implementation with Room, partial updates are handled via @Update or custom @Query.
-        // For simplicity and matching current logic, we fetch, update, and save.
-        // A better modern approach is a dedicated @Query for each update case.
-        chapterUpdates.forEach { chapterUpdate ->
-            val existing = chapterDao.getChapterById(chapterUpdate.id) ?: return@forEach
-            val updated = existing.copy(
+    private suspend fun partialUpdate(vararg chapterUpdates: ChapterUpdate) = withContext(ioDispatcher) {
+        if (chapterUpdates.isEmpty()) return@withContext
+        val ids = chapterUpdates.map { it.id }
+        val existingMap = chapterDao.getChaptersByIds(ids).associateBy { it.id }
+        val updatedList = chapterUpdates.mapNotNull { chapterUpdate ->
+            val existing = existingMap[chapterUpdate.id] ?: return@mapNotNull null
+            existing.copy(
                 mangaId = chapterUpdate.mangaId ?: existing.mangaId,
                 url = chapterUpdate.url ?: existing.url,
                 name = chapterUpdate.name ?: existing.name,
@@ -73,11 +80,13 @@ class ChapterRepositoryImpl @Inject constructor(
                 version = chapterUpdate.version ?: existing.version,
                 isSyncing = false,
             )
-            chapterDao.update(updated)
+        }
+        if (updatedList.isNotEmpty()) {
+            chapterDao.updateAll(updatedList)
         }
     }
 
-    override suspend fun removeChaptersWithIds(chapterIds: List<Long>) {
+    override suspend fun removeChaptersWithIds(chapterIds: List<Long>): Unit = withContext(ioDispatcher) {
         try {
             chapterDao.removeChaptersWithIds(chapterIds)
         } catch (e: Exception) {
@@ -85,37 +94,42 @@ class ChapterRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getChapterByMangaId(mangaId: Long, applyScanlatorFilter: Boolean): List<Chapter> {
-        return chapterDao.getChaptersByMangaId(mangaId, applyScanlatorFilter).map(ChapterMapper::mapChapter)
+    override suspend fun getChapterByMangaId(mangaId: Long, applyScanlatorFilter: Boolean): List<Chapter> = withContext(
+        ioDispatcher,
+    ) {
+        chapterDao.getChaptersByMangaId(mangaId, applyScanlatorFilter).map(ChapterMapper::mapChapter)
     }
 
-    override suspend fun getScanlatorsByMangaId(mangaId: Long): List<String> {
-        return chapterDao.getScanlatorsByMangaId(mangaId)
+    override suspend fun getScanlatorsByMangaId(mangaId: Long): List<String> = withContext(ioDispatcher) {
+        chapterDao.getScanlatorsByMangaId(mangaId)
     }
 
     override fun getScanlatorsByMangaIdAsFlow(mangaId: Long): Flow<List<String>> {
-        return chapterDao.getScanlatorsByMangaIdAsFlow(mangaId)
+        return chapterDao.getScanlatorsByMangaIdAsFlow(mangaId).flowOn(ioDispatcher)
     }
 
-    override suspend fun getBookmarkedChaptersByMangaId(mangaId: Long): List<Chapter> {
-        return chapterDao.getBookmarkedChaptersByMangaId(mangaId).map(ChapterMapper::mapChapter)
+    override suspend fun getBookmarkedChaptersByMangaId(mangaId: Long): List<Chapter> = withContext(ioDispatcher) {
+        chapterDao.getBookmarkedChaptersByMangaId(mangaId).map(ChapterMapper::mapChapter)
     }
 
-    override suspend fun getChapterById(id: Long): Chapter? {
-        return chapterDao.getChapterById(id)?.let(ChapterMapper::mapChapter)
+    override suspend fun getChapterById(id: Long): Chapter? = withContext(ioDispatcher) {
+        chapterDao.getChapterById(id)?.let(ChapterMapper::mapChapter)
     }
 
     override suspend fun getChapterByMangaIdAsFlow(mangaId: Long, applyScanlatorFilter: Boolean): Flow<List<Chapter>> {
-        return chapterDao.getChaptersByMangaIdAsFlow(mangaId, applyScanlatorFilter).map { chapters ->
-            chapters.map(ChapterMapper::mapChapter)
-        }
+        return chapterDao.getChaptersByMangaIdAsFlow(mangaId, applyScanlatorFilter)
+            .map { chapters -> chapters.map(ChapterMapper::mapChapter) }
+            .flowOn(ioDispatcher)
     }
 
-    override suspend fun getChapterByUrlAndMangaId(url: String, mangaId: Long): Chapter? {
-        return chapterDao.getChapterByUrlAndMangaId(url, mangaId)?.let(ChapterMapper::mapChapter)
+    override suspend fun getChapterByUrlAndMangaId(
+        url: String,
+        mangaId: Long,
+    ): Chapter? = withContext(ioDispatcher) {
+        chapterDao.getChapterByUrlAndMangaId(url, mangaId)?.let(ChapterMapper::mapChapter)
     }
 
-    override suspend fun getChapterByUrl(url: String): Chapter? {
-        return chapterDao.getChapterByUrl(url)?.let(ChapterMapper::mapChapter)
+    override suspend fun getChapterByUrl(url: String): Chapter? = withContext(ioDispatcher) {
+        chapterDao.getChapterByUrl(url)?.let(ChapterMapper::mapChapter)
     }
 }

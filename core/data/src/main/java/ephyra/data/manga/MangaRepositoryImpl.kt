@@ -1,5 +1,6 @@
 package ephyra.data.manga
 
+import ephyra.core.common.di.IoDispatcher
 import ephyra.core.common.util.system.logcat
 import ephyra.data.room.daos.MangaDao
 import ephyra.data.room.entities.MangaEntity
@@ -9,8 +10,12 @@ import ephyra.domain.manga.model.MangaNotFoundException
 import ephyra.domain.manga.model.MangaUpdate
 import ephyra.domain.manga.model.MangaWithChapterCount
 import ephyra.domain.manga.repository.MangaRepository
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import logcat.LogPriority
 import java.time.LocalDate
 import java.time.ZoneId
@@ -18,71 +23,85 @@ import javax.inject.Inject
 
 class MangaRepositoryImpl @Inject constructor(
     private val mangaDao: MangaDao,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : MangaRepository {
 
-    override suspend fun getMangaById(id: Long): Manga {
-        return mangaDao.getMangaById(id)?.let(MangaMapper::mapManga) ?: throw MangaNotFoundException(id)
+    override suspend fun getMangaById(id: Long): Manga = withContext(ioDispatcher) {
+        mangaDao.getMangaById(id)?.let(MangaMapper::mapManga) ?: throw MangaNotFoundException(id)
     }
 
-    override suspend fun isMangaFavorite(id: Long): Boolean {
-        return mangaDao.isMangaFavorite(id) ?: false
+    override suspend fun isMangaFavorite(id: Long): Boolean = withContext(ioDispatcher) {
+        mangaDao.isMangaFavorite(id) ?: false
     }
 
     override suspend fun getMangaByIdAsFlow(id: Long): Flow<Manga> {
         return mangaDao.getMangaByIdAsFlow(id)
             .map { it?.let(MangaMapper::mapManga) ?: throw MangaNotFoundException(id) }
+            .flowOn(ioDispatcher)
     }
 
-    override suspend fun getMangaByUrlAndSourceId(url: String, sourceId: Long): Manga? {
-        return mangaDao.getMangaByUrlAndSource(url, sourceId)?.let(MangaMapper::mapManga)
+    override suspend fun getMangaByUrlAndSourceId(url: String, sourceId: Long): Manga? = withContext(ioDispatcher) {
+        mangaDao.getMangaByUrlAndSource(url, sourceId)?.let(MangaMapper::mapManga)
     }
 
     override fun getMangaByUrlAndSourceIdAsFlow(url: String, sourceId: Long): Flow<Manga?> {
-        return mangaDao.getMangaByUrlAndSourceAsFlow(url, sourceId).map { it?.let(MangaMapper::mapManga) }
+        return mangaDao.getMangaByUrlAndSourceAsFlow(url, sourceId)
+            .map { it?.let(MangaMapper::mapManga) }
+            .flowOn(ioDispatcher)
     }
 
-    override suspend fun getFavoritesByCanonicalId(canonicalId: String, excludeMangaId: Long): List<Manga> {
-        return mangaDao.getFavoritesByCanonicalId(canonicalId, excludeMangaId).map(MangaMapper::mapManga)
+    override suspend fun getFavoritesByCanonicalId(
+        canonicalId: String,
+        excludeMangaId: Long,
+    ): List<Manga> = withContext(ioDispatcher) {
+        mangaDao.getFavoritesByCanonicalId(canonicalId, excludeMangaId).map(MangaMapper::mapManga)
     }
 
-    override suspend fun getDeadFavorites(deadSinceBefore: Long): List<Manga> {
-        return mangaDao.getFavoritesByDeadSinceBefore(deadSinceBefore).map(MangaMapper::mapManga)
+    override suspend fun getDeadFavorites(deadSinceBefore: Long): List<Manga> = withContext(ioDispatcher) {
+        mangaDao.getFavoritesByDeadSinceBefore(deadSinceBefore).map(MangaMapper::mapManga)
     }
 
-    override suspend fun getFavorites(): List<Manga> {
-        return mangaDao.getFavorites().map(MangaMapper::mapManga)
+    override suspend fun getFavorites(): List<Manga> = withContext(ioDispatcher) {
+        mangaDao.getFavorites().map(MangaMapper::mapManga)
     }
 
-    override suspend fun getReadMangaNotInLibrary(): List<Manga> {
-        return mangaDao.getReadMangaNotInLibrary().map(MangaMapper::mapManga)
+    override suspend fun getReadMangaNotInLibrary(): List<Manga> = withContext(ioDispatcher) {
+        mangaDao.getReadMangaNotInLibrary().map(MangaMapper::mapManga)
     }
 
-    override suspend fun getLibraryManga(): List<LibraryManga> {
-        return mangaDao.getLibraryManga().map(MangaMapper::mapLibraryManga)
+    override suspend fun getLibraryManga(): List<LibraryManga> = withContext(ioDispatcher) {
+        mangaDao.getLibraryManga().map(MangaMapper::mapLibraryManga)
     }
 
     override fun getLibraryMangaAsFlow(): Flow<List<LibraryManga>> {
-        return mangaDao.getLibraryMangaAsFlow().map { list -> list.map(MangaMapper::mapLibraryManga) }
+        return mangaDao.getLibraryMangaAsFlow()
+            .map { list -> list.map(MangaMapper::mapLibraryManga) }
+            .flowOn(ioDispatcher)
     }
 
     override fun getFavoritesBySourceId(sourceId: Long): Flow<List<Manga>> {
-        return mangaDao.getFavoritesBySourceIdAsFlow(sourceId).map { list -> list.map(MangaMapper::mapManga) }
+        return mangaDao.getFavoritesBySourceIdAsFlow(sourceId)
+            .map { list -> list.map(MangaMapper::mapManga) }
+            .flowOn(ioDispatcher)
     }
 
-    override suspend fun getDuplicateLibraryManga(id: Long, title: String): List<MangaWithChapterCount> {
-        // This is a bit tricky with Room views, but we can return MangaWithChapterCount if we have a view or aggregate query.
-        // For now, mirroring old logic using the entities.
-        return mangaDao.getDuplicateLibraryManga(id, title)
-            .map { MangaWithChapterCount(MangaMapper.mapManga(it), 0 /* count needs join */) }
+    override suspend fun getDuplicateLibraryManga(
+        id: Long,
+        title: String,
+    ): List<MangaWithChapterCount> = withContext(ioDispatcher) {
+        mangaDao.getDuplicateLibraryManga(id, title)
+            .map { MangaWithChapterCount(MangaMapper.mapManga(it), 0) }
     }
 
     override suspend fun getUpcomingManga(statuses: Set<Long>): Flow<List<Manga>> {
         val epochMillis = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toEpochSecond() * 1000
-        return mangaDao.getUpcomingMangaAsFlow(epochMillis, statuses).map { list -> list.map(MangaMapper::mapManga) }
+        return mangaDao.getUpcomingMangaAsFlow(epochMillis, statuses)
+            .map { list -> list.map(MangaMapper::mapManga) }
+            .flowOn(ioDispatcher)
     }
 
-    override suspend fun resetViewerFlags(): Boolean {
-        return try {
+    override suspend fun resetViewerFlags(): Boolean = withContext(ioDispatcher) {
+        try {
             mangaDao.resetViewerFlags()
             true
         } catch (e: Exception) {
@@ -91,12 +110,15 @@ class MangaRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun setMangaCategories(mangaId: Long, categoryIds: List<Long>) {
+    override suspend fun setMangaCategories(
+        mangaId: Long,
+        categoryIds: List<Long>,
+    ): Unit = withContext(ioDispatcher) {
         mangaDao.setMangaCategories(mangaId, categoryIds)
     }
 
-    override suspend fun update(update: MangaUpdate): Boolean {
-        return try {
+    override suspend fun update(update: MangaUpdate): Boolean = withContext(ioDispatcher) {
+        try {
             partialUpdate(update)
             true
         } catch (e: Exception) {
@@ -105,8 +127,8 @@ class MangaRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun updateAll(mangaUpdates: List<MangaUpdate>): Boolean {
-        return try {
+    override suspend fun updateAll(mangaUpdates: List<MangaUpdate>): Boolean = withContext(ioDispatcher) {
+        try {
             partialUpdate(*mangaUpdates.toTypedArray())
             true
         } catch (e: Exception) {
@@ -115,8 +137,8 @@ class MangaRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun clearMetadataSource(mangaId: Long): Boolean {
-        return try {
+    override suspend fun clearMetadataSource(mangaId: Long): Boolean = withContext(ioDispatcher) {
+        try {
             mangaDao.clearMetadataSource(mangaId)
             true
         } catch (e: Exception) {
@@ -125,8 +147,8 @@ class MangaRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun clearCanonicalId(mangaId: Long): Boolean {
-        return try {
+    override suspend fun clearCanonicalId(mangaId: Long): Boolean = withContext(ioDispatcher) {
+        try {
             mangaDao.clearCanonicalId(mangaId)
             true
         } catch (e: Exception) {
@@ -135,9 +157,10 @@ class MangaRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun insertNetworkManga(manga: List<Manga>): List<Manga> {
-        return manga.map {
-            val entity = MangaEntity(
+    override suspend fun insertNetworkManga(manga: List<Manga>): List<Manga> = withContext(ioDispatcher) {
+        if (manga.isEmpty()) return@withContext emptyList()
+        val entities = manga.map {
+            MangaEntity(
                 id = 0,
                 source = it.source,
                 url = it.url,
@@ -172,15 +195,18 @@ class MangaRepositoryImpl @Inject constructor(
                 contentType = it.contentType.value,
                 lockedFields = it.lockedFields,
             )
-            val id = mangaDao.upsert(entity)
-            it.copy(id = id)
         }
+        val ids = mangaDao.upsertAll(entities)
+        manga.zip(ids) { item, id -> item.copy(id = id) }
     }
 
-    private suspend fun partialUpdate(vararg mangaUpdates: MangaUpdate) {
-        mangaUpdates.forEach { value ->
-            val existing = mangaDao.getMangaById(value.id) ?: return@forEach
-            val updated = existing.copy(
+    private suspend fun partialUpdate(vararg mangaUpdates: MangaUpdate) = withContext(ioDispatcher) {
+        if (mangaUpdates.isEmpty()) return@withContext
+        val ids = mangaUpdates.map { it.id }
+        val existingMap = mangaDao.getMangaByIds(ids).associateBy { it.id }
+        val updatedList = mangaUpdates.mapNotNull { value ->
+            val existing = existingMap[value.id] ?: return@mapNotNull null
+            existing.copy(
                 source = value.source ?: existing.source,
                 url = value.url ?: existing.url,
                 artist = value.artist ?: existing.artist,
@@ -212,16 +238,20 @@ class MangaRepositoryImpl @Inject constructor(
                 contentType = value.contentType?.value ?: existing.contentType,
                 lockedFields = value.lockedFields ?: existing.lockedFields,
             )
-            mangaDao.update(updated)
+        }
+        if (updatedList.isNotEmpty()) {
+            mangaDao.updateAll(updatedList)
         }
     }
 
-    override suspend fun deleteNonLibraryManga(sourceIds: List<Long>, keepReadManga: Long) {
-        // Room DAO handles this. keepReadManga logic needs to be verified in SQL.
+    override suspend fun deleteNonLibraryManga(
+        sourceIds: List<Long>,
+        keepReadManga: Long,
+    ): Unit = withContext(ioDispatcher) {
         mangaDao.deleteNonLibraryManga(sourceIds)
     }
 
-    override suspend fun getAllMangaSourceAndUrl(): List<Pair<Long, String>> {
-        return mangaDao.getAllMangaSourceAndUrl().map { Pair(it.source, it.url) }
+    override suspend fun getAllMangaSourceAndUrl(): List<Pair<Long, String>> = withContext(ioDispatcher) {
+        mangaDao.getAllMangaSourceAndUrl().map { Pair(it.source, it.url) }
     }
 }

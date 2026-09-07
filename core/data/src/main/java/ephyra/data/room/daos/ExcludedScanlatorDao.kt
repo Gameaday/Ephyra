@@ -21,4 +21,17 @@ interface ExcludedScanlatorDao {
 
     @Query("DELETE FROM excluded_scanlators WHERE manga_id = :mangaId")
     suspend fun deleteAllForManga(mangaId: Long)
+
+    @Transaction
+    suspend fun setExcludedScanlators(mangaId: Long, scanlators: Set<String>) {
+        val current = getExcludedScanlators(mangaId).toSet()
+        val toRemove = (current - scanlators).toList()
+        val toAdd = (scanlators - current).map { ExcludedScanlatorEntity(mangaId = mangaId, scanlator = it) }
+        if (toRemove.isNotEmpty()) {
+            deleteByMangaIdAndScanlators(mangaId, toRemove)
+        }
+        if (toAdd.isNotEmpty()) {
+            insertAll(toAdd)
+        }
+    }
 }

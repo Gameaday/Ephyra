@@ -275,12 +275,12 @@ object AppModule {
             klass = EphyraDatabase::class.java,
             name = "tachiyomi.db",
         )
+            .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onOpen(db: SupportSQLiteDatabase) {
                     super.onOpen(db)
-                    db.query("PRAGMA foreign_keys = ON").close()
-                    db.query("PRAGMA journal_mode = WAL").close()
-                    db.query("PRAGMA synchronous = NORMAL").close()
+                    db.setForeignKeyConstraintsEnabled(true)
+                    db.execSQL("PRAGMA synchronous = NORMAL")
                 }
             })
             .build()

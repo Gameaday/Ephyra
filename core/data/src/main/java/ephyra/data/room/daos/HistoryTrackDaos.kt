@@ -56,6 +56,11 @@ interface HistoryDao {
             insert(history)
         }
     }
+
+    @Transaction
+    suspend fun upsertAll(histories: List<HistoryEntity>): List<Long> {
+        return histories.map { upsert(it) }
+    }
 }
 
 @Dao
@@ -75,6 +80,9 @@ interface TrackDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(track: TrackEntity): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(tracks: List<TrackEntity>): List<Long>
 
     @Update
     suspend fun update(track: TrackEntity)

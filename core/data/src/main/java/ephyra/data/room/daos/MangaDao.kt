@@ -24,6 +24,9 @@ interface MangaDao {
     @Query("SELECT * FROM mangas WHERE _id = :id")
     suspend fun getMangaById(id: Long): MangaEntity?
 
+    @Query("SELECT * FROM mangas WHERE _id IN (:ids)")
+    suspend fun getMangaByIds(ids: List<Long>): List<MangaEntity>
+
     @Query("SELECT * FROM mangas WHERE _id = :id")
     fun getMangaByIdAsFlow(id: Long): Flow<MangaEntity?>
 
@@ -81,6 +84,9 @@ interface MangaDao {
     @Update
     suspend fun update(manga: MangaEntity)
 
+    @Update
+    suspend fun updateAll(mangas: List<MangaEntity>)
+
     @Query("DELETE FROM mangas WHERE favorite = 0 AND source IN (:sourceIds)")
     suspend fun deleteNonLibraryManga(sourceIds: List<Long>)
 
@@ -93,11 +99,14 @@ interface MangaDao {
     @Insert
     suspend fun insertMangaCategory(mangaCategory: MangaCategoryEntity)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertMangaCategories(mangaCategories: List<MangaCategoryEntity>)
+
     @Transaction
     suspend fun setMangaCategories(mangaId: Long, categoryIds: List<Long>) {
         deleteMangaCategoriesByMangaId(mangaId)
-        categoryIds.forEach { categoryId ->
-            insertMangaCategory(MangaCategoryEntity(0, mangaId, categoryId))
+        if (categoryIds.isNotEmpty()) {
+            insertMangaCategories(categoryIds.map { categoryId -> MangaCategoryEntity(0, mangaId, categoryId) })
         }
     }
 
@@ -118,5 +127,10 @@ interface MangaDao {
         } else {
             insert(manga)
         }
+    }
+
+    @Transaction
+    suspend fun upsertAll(mangas: List<MangaEntity>): List<Long> {
+        return mangas.map { upsert(it) }
     }
 }
