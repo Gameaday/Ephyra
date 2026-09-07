@@ -32,4 +32,6 @@ dependencies {
     implementation(libs.swipe)
 
     testImplementation(libs.bundles.test)
+    testImplementation(kotlinx.coroutines.test)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
