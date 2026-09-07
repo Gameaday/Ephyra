@@ -31,6 +31,7 @@ dependencies {
     implementation(libs.logcat)
 
     testImplementation(libs.bundles.test)
+    testImplementation(kotlinx.coroutines.test)
     testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(libs.robolectric)
     testImplementation(libs.compose.ui.test.junit4)

@@ -1,8 +1,6 @@
 package ephyra.feature.history
 
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Immutable
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.preference.CheckboxState
@@ -28,18 +26,14 @@ import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaWithChapterCount
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.track.interactor.AddTracks
+import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.presentation.core.util.lang.searchResults
+import eu.kanade.tachiyomi.source.Source
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import javax.inject.Inject
@@ -57,29 +51,24 @@ class HistoryViewModel @Inject constructor(
     private val removeHistory: RemoveHistory,
     private val setMangaCategories: SetMangaCategories,
     private val updateManga: UpdateManga,
-    val sourceManager: SourceManager,
-    val snackbarHostState: SnackbarHostState = SnackbarHostState(),
-) : ViewModel() {
+    private val sourceManager: SourceManager,
+) : BaseUdfViewModel<HistoryViewModel.State, HistoryScreenEvent, HistoryViewModel.Effect>(State()) {
 
-    private val _state = MutableStateFlow(State())
-    val state = _state.asStateFlow()
-
-    private val _events: Channel<Event> = Channel(Channel.UNLIMITED)
-    val events: Flow<Event> = _events.receiveAsFlow()
+    fun getSource(sourceId: Long): Source = sourceManager.getOrStub(sourceId)
 
     init {
         viewModelScope.launch {
-            _state.map { it.searchQuery }
+            state.map { it.searchQuery }
                 .searchResults(debounce = 0L) { query ->
                     getHistory.subscribe(query)
                         .distinctUntilChanged()
                         .catch { error ->
                             logcat(LogPriority.ERROR, error)
-                            _events.send(Event.InternalError)
+                            emitEffect(Effect.InternalError)
                         }
                         .map { it.toHistoryUiModels() }
                 }
-                .collect { newList -> _state.update { it.copy(list = newList) } }
+                .collect { newList -> updateState { it.copy(list = newList) } }
         }
     }
 
@@ -100,7 +89,7 @@ class HistoryViewModel @Inject constructor(
     // UDF entry-point: all UI interactions are routed through this single method
     // ─────────────────────────────────────────────────────────────────────────
 
-    fun onEvent(event: HistoryScreenEvent) {
+    override fun onEvent(event: HistoryScreenEvent) {
         when (event) {
             is HistoryScreenEvent.UpdateSearchQuery -> updateSearchQuery(event.query)
             is HistoryScreenEvent.GetNextChapterForManga -> getNextChapterForManga(event.mangaId, event.chapterId)
@@ -138,7 +127,7 @@ class HistoryViewModel @Inject constructor(
 
     private suspend fun sendNextChapterEvent(chapters: List<Chapter>) {
         val chapter = chapters.firstOrNull()
-        _events.send(Event.OpenChapter(chapter))
+        emitEffect(Effect.OpenChapter(chapter))
     }
 
     private fun removeFromHistory(history: HistoryWithRelations) {
@@ -157,16 +146,16 @@ class HistoryViewModel @Inject constructor(
         viewModelScope.launchIO {
             val result = removeHistory.awaitAll()
             if (!result) return@launchIO
-            _events.send(Event.HistoryCleared)
+            emitEffect(Effect.HistoryCleared)
         }
     }
 
     private fun updateSearchQuery(query: String?) {
-        _state.update { it.copy(searchQuery = query) }
+        updateState { it.copy(searchQuery = query) }
     }
 
     private fun setDialog(dialog: Dialog?) {
-        _state.update { it.copy(dialog = dialog) }
+        updateState { it.copy(dialog = dialog) }
     }
 
     /**
@@ -209,7 +198,7 @@ class HistoryViewModel @Inject constructor(
 
             val duplicates = getDuplicateLibraryManga(manga)
             if (duplicates.isNotEmpty()) {
-                _state.update { it.copy(dialog = Dialog.DuplicateManga(manga, duplicates)) }
+                updateState { it.copy(dialog = Dialog.DuplicateManga(manga, duplicates)) }
                 return@launchIO
             }
 
@@ -249,7 +238,7 @@ class HistoryViewModel @Inject constructor(
     }
 
     private fun showMigrateDialog(target: Manga, current: Manga) {
-        _state.update { currentState ->
+        updateState { currentState ->
             currentState.copy(dialog = Dialog.Migrate(target = target, current = current))
         }
     }
@@ -258,7 +247,7 @@ class HistoryViewModel @Inject constructor(
         viewModelScope.launch {
             val categories = getCategories()
             val selection = getMangaCategoryIds(manga)
-            _state.update { currentState ->
+            updateState { currentState ->
                 currentState.copy(
                     dialog = Dialog.ChangeCategory(
                         manga = manga,
@@ -288,9 +277,9 @@ class HistoryViewModel @Inject constructor(
         data class Migrate(val target: Manga, val current: Manga) : Dialog
     }
 
-    sealed interface Event {
-        data class OpenChapter(val chapter: Chapter?) : Event
-        data object InternalError : Event
-        data object HistoryCleared : Event
+    sealed interface Effect {
+        data class OpenChapter(val chapter: Chapter?) : Effect
+        data object InternalError : Effect
+        data object HistoryCleared : Effect
     }
 }

@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.util.fastAll
@@ -240,11 +241,12 @@ fun UpdatesScreen(
     val viewModel = hiltViewModel<UpdatesViewModel>()
     val settingsViewModel = hiltViewModel<UpdatesSettingsViewModel>()
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     UpdateScreen(
         state = state,
-        snackbarHostState = viewModel.snackbarHostState,
-        lastUpdated = viewModel.lastUpdated,
+        snackbarHostState = snackbarHostState,
+        lastUpdated = state.lastUpdated,
         isRefreshing = state.isLibraryUpdating,
         onClickCover = { item ->
             navController.navigate(Screen.MangaDetails(item.update.mangaId, false))
@@ -298,19 +300,19 @@ fun UpdatesScreen(
     }
 
     LaunchedEffect(Unit) {
-        viewModel.events.collectLatest { event ->
+        viewModel.effects.collectLatest { event ->
             when (event) {
-                UpdatesViewModel.Event.InternalError -> viewModel.snackbarHostState.showSnackbar(
+                UpdatesViewModel.Effect.InternalError -> snackbarHostState.showSnackbar(
                     context.stringResource(ephyra.app.core.common.R.string.internal_error),
                 )
 
-                is UpdatesViewModel.Event.LibraryUpdateTriggered -> {
+                is UpdatesViewModel.Effect.LibraryUpdateTriggered -> {
                     val msg = if (event.started) {
                         ephyra.app.core.common.R.string.updating_library
                     } else {
                         ephyra.app.core.common.R.string.update_already_running
                     }
-                    viewModel.snackbarHostState.showSnackbar(context.stringResource(msg))
+                    snackbarHostState.showSnackbar(context.stringResource(msg))
                 }
             }
         }

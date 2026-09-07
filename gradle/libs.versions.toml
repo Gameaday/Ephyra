@@ -91,6 +91,7 @@ archunit = { module = "com.tngtech.archunit:archunit", version.ref = "archunit" 
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version = "1.11.3" }
 compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version = "1.11.3" }
+turbine = "app.cash.turbine:turbine:1.2.0"
 
 spotless-gradle = { group = "com.diffplug.spotless", name = "spotless-plugin-gradle", version.ref = "spotless" }
 ktlint-core = { module = "com.pinterest.ktlint:ktlint-cli", version.ref = "ktlint-core" }
@@ -132,5 +133,5 @@ shizuku = ["shizuku-api", "shizuku-provider"]
 room = ["room-runtime", "room-ktx", "room-paging"]
 paging = ["paging-runtime", "paging-compose", "paging-common"]
 js-engine = ["quickjs-android"]
-test = ["junit-jupiter", "kotest-assertions", "mockk", "archunit"]
+test = ["junit-jupiter", "kotest-assertions", "mockk", "archunit", "turbine"]
 markdown = ["markdown-core", "markdown-coil"]

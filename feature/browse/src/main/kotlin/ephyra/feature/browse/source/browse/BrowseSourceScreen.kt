@@ -276,7 +276,7 @@ fun BrowseSourceScreen(
                         BrowseSourceScreenEvent.SetDialog(BrowseSourceViewModel.Dialog.Migrate(dialog.manga, it)),
                     )
                 },
-                sourceManager = viewModel.sourceManager,
+                getSource = viewModel::getSource,
             )
         }
 

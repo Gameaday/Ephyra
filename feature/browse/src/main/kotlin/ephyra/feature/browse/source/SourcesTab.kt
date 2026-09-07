@@ -83,9 +83,9 @@ fun sourcesTab(
 
             val internalErrString = stringResource(ephyra.app.core.common.R.string.internal_error)
             LaunchedEffect(Unit) {
-                ViewModel.events.collectLatest { event ->
-                    when (event) {
-                        SourcesViewModel.Event.FailedFetchingSources -> {
+                ViewModel.effects.collectLatest { effect ->
+                    when (effect) {
+                        SourcesViewModel.Effect.FailedFetchingSources -> {
                             launch { snackbarHostState.showSnackbar(internalErrString) }
                         }
                     }

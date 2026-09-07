@@ -32,6 +32,7 @@ import ephyra.domain.source.interactor.GetRemoteManga
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
 import ephyra.domain.track.interactor.AddTracks
+import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.presentation.core.util.asState
 import ephyra.presentation.core.util.manga.removeCovers
 import eu.kanade.tachiyomi.source.CatalogueSource
@@ -55,7 +56,7 @@ import eu.kanade.tachiyomi.source.model.Filter as SourceModelFilter
 
 @HiltViewModel
 class BrowseSourceViewModel @Inject constructor(
-    val sourceManager: SourceManager,
+    private val sourceManager: SourceManager,
     private val sourcePreferences: SourcePreferences,
     private val libraryPreferences: LibraryPreferences,
     private val coverCache: CoverCache,
@@ -68,12 +69,13 @@ class BrowseSourceViewModel @Inject constructor(
     private val updateManga: UpdateManga,
     private val addTracks: AddTracks,
     private val getIncognitoState: GetIncognitoState,
-) : ViewModel() {
+) : BaseUdfViewModel<BrowseSourceViewModel.State, BrowseSourceScreenEvent, BrowseSourceViewModel.Effect>(
+    State(Listing.Popular),
+) {
+
+    fun getSource(id: Long): eu.kanade.tachiyomi.source.Source = sourceManager.getOrStub(id)
 
     var displayMode by sourcePreferences.sourceDisplayMode().asState(viewModelScope)
-
-    private val _state = MutableStateFlow<State>(State(Listing.Popular))
-    val state: StateFlow<State> = _state.asStateFlow()
 
     var sourceId: Long = -1L
         private set
@@ -93,10 +95,10 @@ class BrowseSourceViewModel @Inject constructor(
         val src = sourceManager.getOrStub(sourceId)
         this.source = src
 
-        _state.value = State(Listing.valueOf(listingQuery))
+        updateState { State(Listing.valueOf(listingQuery)) }
 
         if (src is CatalogueSource) {
-            _state.update {
+            updateState {
                 var query: String? = null
                 var listing = it.listing
 
@@ -152,7 +154,7 @@ class BrowseSourceViewModel @Inject constructor(
         return if (columns == 0) GridCells.Adaptive(128.dp) else GridCells.Fixed(columns)
     }
 
-    fun onEvent(event: BrowseSourceScreenEvent) {
+    override fun onEvent(event: BrowseSourceScreenEvent) {
         when (event) {
             is BrowseSourceScreenEvent.ResetFilters -> resetFilters()
             is BrowseSourceScreenEvent.SetListing -> setListing(event.listing)
@@ -171,27 +173,27 @@ class BrowseSourceViewModel @Inject constructor(
     private fun resetFilters() {
         val src = source ?: return
         if (src !is CatalogueSource) return
-        _state.update { it.copy(filters = src.getFilterList()) }
+        updateState { it.copy(filters = src.getFilterList()) }
     }
 
     private fun setListing(listing: Listing) {
-        _state.update { it.copy(listing = listing, toolbarQuery = null) }
+        updateState { it.copy(listing = listing, toolbarQuery = null) }
     }
 
     private fun setFilters(filters: FilterList) {
         val src = source ?: return
         if (src !is CatalogueSource) return
-        _state.update { it.copy(filters = filters) }
+        updateState { it.copy(filters = filters) }
     }
 
     private fun search(query: String? = null, filters: FilterList? = null) {
         val src = source ?: return
         if (src !is CatalogueSource) return
 
-        val input = state.value.listing as? Listing.Search
+        val input = currentState.listing as? Listing.Search
             ?: Listing.Search(query = null, filters = src.getFilterList())
 
-        _state.update {
+        updateState {
             it.copy(
                 listing = input.copy(
                     query = query ?: input.query,
@@ -233,7 +235,7 @@ class BrowseSourceViewModel @Inject constructor(
             }
         }
 
-        _state.update {
+        updateState {
             val listing = if (genreExists) {
                 Listing.Search(query = null, filters = defaultFilters)
             } else {
@@ -326,11 +328,11 @@ class BrowseSourceViewModel @Inject constructor(
     }
 
     private fun setDialog(dialog: Dialog?) {
-        _state.update { it.copy(dialog = dialog) }
+        updateState { it.copy(dialog = dialog) }
     }
 
     private fun setToolbarQuery(query: String?) {
-        _state.update { it.copy(toolbarQuery = query) }
+        updateState { it.copy(toolbarQuery = query) }
     }
 
     sealed class Listing(open val query: String?, open val filters: FilterList) {
@@ -361,6 +363,10 @@ class BrowseSourceViewModel @Inject constructor(
             val initialSelection: ImmutableList<CheckboxState.State<Category>>,
         ) : Dialog
         data class Migrate(val target: Manga, val current: Manga) : Dialog
+    }
+
+    sealed interface Effect {
+        data class ShowSnackbar(val messageRes: Int) : Effect
     }
 
     @Immutable

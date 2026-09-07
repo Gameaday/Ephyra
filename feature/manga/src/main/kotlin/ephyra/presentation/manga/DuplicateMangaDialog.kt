@@ -79,7 +79,7 @@ fun DuplicateMangaDialog(
     onConfirm: () -> Unit,
     onOpenManga: (manga: Manga) -> Unit,
     onMigrate: (manga: Manga) -> Unit,
-    sourceManager: SourceManager,
+    getSource: (Long) -> Source,
     modifier: Modifier = Modifier,
 ) {
     val minHeight = 48.dp
@@ -122,7 +122,7 @@ fun DuplicateMangaDialog(
                 ) {
                     DuplicateMangaListItem(
                         duplicate = it,
-                        getSource = { sourceManager.getOrStub(it.manga.source) },
+                        getSource = { getSource(it.manga.source) },
                         onMigrate = { onMigrate(it.manga) },
                         onDismissRequest = onDismissRequest,
                         onOpenManga = { onOpenManga(it.manga) },
@@ -393,6 +393,27 @@ private fun calculateMangaCardHeight(
 
     val totalHeight = coverHeight + titleHeight + authorHeight + artistHeight + statusHeight + sourceHeight
     return with(density) { ((2 * smallPadding) + totalHeight + (5 * extraSmallPadding)).toDp() }
+}
+
+@Composable
+fun DuplicateMangaDialog(
+    duplicates: List<MangaWithChapterCount>,
+    onDismissRequest: () -> Unit,
+    onConfirm: () -> Unit,
+    onOpenManga: (manga: Manga) -> Unit,
+    onMigrate: (manga: Manga) -> Unit,
+    sourceManager: SourceManager,
+    modifier: Modifier = Modifier,
+) {
+    DuplicateMangaDialog(
+        duplicates = duplicates,
+        onDismissRequest = onDismissRequest,
+        onConfirm = onConfirm,
+        onOpenManga = onOpenManga,
+        onMigrate = onMigrate,
+        getSource = { sourceManager.getOrStub(it) },
+        modifier = modifier,
+    )
 }
 
 private fun TextMeasurer.measureHeight(

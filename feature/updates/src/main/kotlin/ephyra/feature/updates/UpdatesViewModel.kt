@@ -1,10 +1,7 @@
 package ephyra.feature.updates
 
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.util.fastFilter
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.preference.TriState
@@ -30,17 +27,14 @@ import ephyra.domain.updates.interactor.GetUpdates
 import ephyra.domain.updates.model.UpdatesWithRelations
 import ephyra.domain.updates.service.UpdatesPreferences
 import ephyra.feature.manga.presentation.components.ChapterDownloadAction
-import ephyra.presentation.core.util.asState
+import ephyra.presentation.core.udf.BaseUdfViewModel
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.mutate
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
@@ -50,8 +44,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import java.time.ZonedDateTime
@@ -72,22 +64,20 @@ class UpdatesViewModel @Inject constructor(
     private val libraryPreferences: LibraryPreferences,
     private val updatesPreferences: UpdatesPreferences,
     private val libraryUpdateScheduler: LibraryUpdateScheduler,
-    val snackbarHostState: SnackbarHostState = SnackbarHostState(),
-) : ViewModel() {
+) : BaseUdfViewModel<UpdatesViewModel.State, UpdatesScreenEvent, UpdatesViewModel.Effect>(State()) {
 
-    private val _state = MutableStateFlow(State())
-    val state = _state.asStateFlow()
-
-    private val _events: Channel<Event> = Channel(Int.MAX_VALUE)
-    val events: Flow<Event> = _events.receiveAsFlow()
-
-    val lastUpdated by libraryPreferences.lastUpdatedTimestamp().asState(viewModelScope)
+    val lastUpdated: Long
+        get() = currentState.lastUpdated
 
     // First and last selected index in list
     private val selectedPositions: Array<Int> = arrayOf(-1, -1)
     private val selectedChapterIds: HashSet<Long> = HashSet()
 
     init {
+        libraryPreferences.lastUpdatedTimestamp().changes()
+            .onEach { timestamp -> updateState { it.copy(lastUpdated = timestamp) } }
+            .launchIn(viewModelScope)
+
         viewModelScope.launchIO {
             // Set date limit for recent chapters
             val limit = ZonedDateTime.now().minusMonths(3).toInstant()
@@ -118,7 +108,7 @@ class UpdatesViewModel @Inject constructor(
                     .toPersistentList()
             }
                 .collectLatest { updateItems ->
-                    _state.update {
+                    updateState {
                         it.copy(
                             isLoading = false,
                             items = updateItems,
@@ -145,7 +135,7 @@ class UpdatesViewModel @Inject constructor(
             }
             .distinctUntilChanged()
             .onEach {
-                _state.update { state ->
+                updateState { state ->
                     state.copy(hasActiveFilters = it)
                 }
             }
@@ -197,7 +187,7 @@ class UpdatesViewModel @Inject constructor(
     // UDF entry-point: all UI interactions are routed through this single method
     // ─────────────────────────────────────────────────────────────────────────
 
-    fun onEvent(event: UpdatesScreenEvent) {
+    override fun onEvent(event: UpdatesScreenEvent) {
         when (event) {
             is UpdatesScreenEvent.UpdateLibrary -> updateLibrary()
             is UpdatesScreenEvent.DownloadChapters -> downloadChapters(event.items, event.action)
@@ -222,15 +212,13 @@ class UpdatesViewModel @Inject constructor(
     private fun updateLibrary(): Boolean {
         val started = libraryUpdateScheduler.startNow()
         if (started) {
-            _state.update { it.copy(isLibraryUpdating = true) }
+            updateState { it.copy(isLibraryUpdating = true) }
             viewModelScope.launch {
                 delay(1.seconds)
-                _state.update { it.copy(isLibraryUpdating = false) }
+                updateState { it.copy(isLibraryUpdating = false) }
             }
         }
-        viewModelScope.launch {
-            _events.send(Event.LibraryUpdateTriggered(started))
-        }
+        emitEffect(Effect.LibraryUpdateTriggered(started))
         return started
     }
 
@@ -240,7 +228,7 @@ class UpdatesViewModel @Inject constructor(
      * @param download download object containing progress.
      */
     private fun updateDownloadState(download: Download) {
-        _state.update { state ->
+        updateState { state ->
             val newItems = state.items.mutate { list ->
                 val modifiedIndex = list.indexOfFirst { it.update.chapterId == download.chapter.id }
                 if (modifiedIndex < 0) return@mutate
@@ -372,7 +360,7 @@ class UpdatesViewModel @Inject constructor(
         selected: Boolean,
         fromLongPress: Boolean = false,
     ) {
-        _state.update { state ->
+        updateState { state ->
             val newItems = state.items.toMutableList().apply {
                 val selectedIndex = indexOfFirst { it.update.chapterId == item.update.chapterId }
                 if (selectedIndex < 0) return@apply
@@ -431,7 +419,7 @@ class UpdatesViewModel @Inject constructor(
     }
 
     private fun toggleAllSelection(selected: Boolean) {
-        _state.update { state ->
+        updateState { state ->
             val newItems = state.items.map {
                 selectedChapterIds.addOrRemove(it.update.chapterId, selected)
                 it.copy(selected = selected)
@@ -444,7 +432,7 @@ class UpdatesViewModel @Inject constructor(
     }
 
     private fun invertSelection() {
-        _state.update { state ->
+        updateState { state ->
             val newItems = state.items.map {
                 selectedChapterIds.addOrRemove(it.update.chapterId, !it.selected)
                 it.copy(selected = !it.selected)
@@ -456,7 +444,7 @@ class UpdatesViewModel @Inject constructor(
     }
 
     private fun setDialog(dialog: Dialog?) {
-        _state.update { it.copy(dialog = dialog) }
+        updateState { it.copy(dialog = dialog) }
     }
 
     private fun resetNewUpdatesCount() {
@@ -482,7 +470,7 @@ class UpdatesViewModel @Inject constructor(
     }
 
     private fun showFilterDialog() {
-        _state.update { it.copy(dialog = Dialog.FilterSheet) }
+        updateState { it.copy(dialog = Dialog.FilterSheet) }
     }
 
     @Immutable
@@ -501,6 +489,7 @@ class UpdatesViewModel @Inject constructor(
         val isLibraryUpdating: Boolean = false,
         val items: PersistentList<UpdatesItem> = persistentListOf(),
         val dialog: Dialog? = null,
+        val lastUpdated: Long = 0L,
     ) {
         val selected = items.filter { it.selected }
         val selectionMode = selected.isNotEmpty()
@@ -528,9 +517,9 @@ class UpdatesViewModel @Inject constructor(
         }
     }
 
-    sealed interface Event {
-        data object InternalError : Event
-        data class LibraryUpdateTriggered(val started: Boolean) : Event
+    sealed interface Effect {
+        data object InternalError : Effect
+        data class LibraryUpdateTriggered(val started: Boolean) : Effect
     }
 }
 

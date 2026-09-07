@@ -222,7 +222,7 @@ fun HistoryTabScreen(
                     )
                 },
                 onMigrate = { viewModel.onEvent(HistoryScreenEvent.ShowMigrateDialog(dialog.manga, it)) },
-                sourceManager = viewModel.sourceManager,
+                getSource = viewModel::getSource,
             )
         }
 
@@ -265,19 +265,19 @@ fun HistoryTabScreen(
     }
 
     LaunchedEffect(Unit) {
-        viewModel.events.collectLatest { e ->
+        viewModel.effects.collectLatest { e ->
             when (e) {
-                HistoryViewModel.Event.InternalError ->
+                HistoryViewModel.Effect.InternalError ->
                     snackbarHostState.showSnackbar(
                         context.stringResource(ephyra.app.core.common.R.string.internal_error),
                     )
 
-                HistoryViewModel.Event.HistoryCleared ->
+                HistoryViewModel.Effect.HistoryCleared ->
                     snackbarHostState.showSnackbar(
                         context.stringResource(ephyra.app.core.common.R.string.clear_history_completed),
                     )
 
-                is HistoryViewModel.Event.OpenChapter -> {
+                is HistoryViewModel.Effect.OpenChapter -> {
                     val chapter = e.chapter
                     if (chapter != null) {
                         val intent = ReaderActivity.newIntent(context, chapter.mangaId, chapter.id)

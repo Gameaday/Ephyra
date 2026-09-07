@@ -7,4 +7,5 @@ sealed interface SourcesScreenEvent {
     data class TogglePin(val source: Source) : SourcesScreenEvent
     data class ShowSourceDialog(val source: Source) : SourcesScreenEvent
     data object CloseDialog : SourcesScreenEvent
+    data class Search(val query: String?) : SourcesScreenEvent
 }
