@@ -1,10 +1,8 @@
 package ephyra.feature.settings.screen.browse
 
 import androidx.compose.runtime.Immutable
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import ephyra.core.common.util.lang.launchIO
 import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.extensionrepo.interactor.CreateExtensionRepo
 import ephyra.domain.extensionrepo.interactor.DeleteExtensionRepo
@@ -12,15 +10,12 @@ import ephyra.domain.extensionrepo.interactor.GetExtensionRepo
 import ephyra.domain.extensionrepo.interactor.ReplaceExtensionRepo
 import ephyra.domain.extensionrepo.interactor.UpdateExtensionRepo
 import ephyra.domain.extensionrepo.model.ExtensionRepo
+import ephyra.presentation.core.udf.BaseUdfViewModel
 import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.collections.immutable.toImmutableSet
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -31,19 +26,16 @@ class ExtensionReposViewModel @Inject constructor(
     private val replaceExtensionRepo: ReplaceExtensionRepo,
     private val updateExtensionRepo: UpdateExtensionRepo,
     private val extensionManager: ExtensionManager,
-) : ViewModel() {
+) : BaseUdfViewModel<RepoScreenState, ExtensionReposScreenEvent, RepoEvent>(RepoScreenState.Loading) {
 
-    private val _state = MutableStateFlow<RepoScreenState>(RepoScreenState.Loading)
-    val state: StateFlow<RepoScreenState> = _state.asStateFlow()
-
-    private val _events: Channel<RepoEvent> = Channel(Int.MAX_VALUE)
-    val events = _events.receiveAsFlow()
+    val events: Flow<RepoEvent>
+        get() = effects
 
     init {
-        viewModelScope.launchIO {
+        viewModelScope.launch {
             getExtensionRepo.subscribeAll()
                 .collectLatest { repos ->
-                    _state.update { oldState ->
+                    updateState { oldState ->
                         val currentSuccess = oldState as? RepoScreenState.Success
                         RepoScreenState.Success(
                             repos = repos.toImmutableSet(),
@@ -56,7 +48,7 @@ class ExtensionReposViewModel @Inject constructor(
         }
     }
 
-    fun onEvent(event: ExtensionReposScreenEvent) {
+    override fun onEvent(event: ExtensionReposScreenEvent) {
         when (event) {
             is ExtensionReposScreenEvent.CreateRepo -> createRepo(event.baseUrl)
             is ExtensionReposScreenEvent.ReplaceRepo -> replaceRepo(event.newRepo)
@@ -73,18 +65,18 @@ class ExtensionReposViewModel @Inject constructor(
      * @param baseUrl The baseUrl of the repo to create.
      */
     private fun createRepo(baseUrl: String) {
-        _state.update {
+        updateState {
             when (it) {
                 RepoScreenState.Loading -> it
                 is RepoScreenState.Success -> it.copy(isAdding = true)
             }
         }
-        viewModelScope.launchIO {
+        viewModelScope.launch {
             try {
                 when (val result = createExtensionRepo.await(baseUrl)) {
                     CreateExtensionRepo.Result.Success -> {
                         extensionManager.findAvailableExtensions()
-                        _state.update { oldState ->
+                        updateState { oldState ->
                             when (oldState) {
                                 RepoScreenState.Loading -> oldState
                                 is RepoScreenState.Success -> oldState.copy(isAdding = false, dialog = null)
@@ -92,8 +84,8 @@ class ExtensionReposViewModel @Inject constructor(
                         }
                     }
                     CreateExtensionRepo.Result.InvalidUrl -> {
-                        _events.send(RepoEvent.InvalidUrl)
-                        _state.update { oldState ->
+                        emitEffect(RepoEvent.InvalidUrl)
+                        updateState { oldState ->
                             when (oldState) {
                                 RepoScreenState.Loading -> oldState
                                 is RepoScreenState.Success -> oldState.copy(isAdding = false)
@@ -101,8 +93,8 @@ class ExtensionReposViewModel @Inject constructor(
                         }
                     }
                     CreateExtensionRepo.Result.RepoAlreadyExists -> {
-                        _events.send(RepoEvent.RepoAlreadyExists)
-                        _state.update { oldState ->
+                        emitEffect(RepoEvent.RepoAlreadyExists)
+                        updateState { oldState ->
                             when (oldState) {
                                 RepoScreenState.Loading -> oldState
                                 is RepoScreenState.Success -> oldState.copy(isAdding = false)
@@ -110,7 +102,7 @@ class ExtensionReposViewModel @Inject constructor(
                         }
                     }
                     is CreateExtensionRepo.Result.DuplicateFingerprint -> {
-                        _state.update { oldState ->
+                        updateState { oldState ->
                             when (oldState) {
                                 RepoScreenState.Loading -> oldState
                                 is RepoScreenState.Success -> oldState.copy(
@@ -121,7 +113,7 @@ class ExtensionReposViewModel @Inject constructor(
                         }
                     }
                     else -> {
-                        _state.update { oldState ->
+                        updateState { oldState ->
                             when (oldState) {
                                 RepoScreenState.Loading -> oldState
                                 is RepoScreenState.Success -> oldState.copy(isAdding = false)
@@ -130,7 +122,7 @@ class ExtensionReposViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
-                _state.update { oldState ->
+                updateState { oldState ->
                     when (oldState) {
                         RepoScreenState.Loading -> oldState
                         is RepoScreenState.Success -> oldState.copy(isAdding = false)
@@ -146,7 +138,7 @@ class ExtensionReposViewModel @Inject constructor(
      * @param newRepo The repo to insert
      */
     private fun replaceRepo(newRepo: ExtensionRepo) {
-        viewModelScope.launchIO {
+        viewModelScope.launch {
             replaceExtensionRepo.await(newRepo)
         }
     }
@@ -155,10 +147,10 @@ class ExtensionReposViewModel @Inject constructor(
      * Refreshes information for each repository.
      */
     private fun refreshRepos() {
-        val status = state.value
+        val status = currentState
 
         if (status is RepoScreenState.Success) {
-            viewModelScope.launchIO {
+            viewModelScope.launch {
                 updateExtensionRepo.awaitAll()
             }
         }
@@ -168,14 +160,14 @@ class ExtensionReposViewModel @Inject constructor(
      * Deletes the given repo from the database
      */
     private fun deleteRepo(baseUrl: String) {
-        viewModelScope.launchIO {
+        viewModelScope.launch {
             deleteExtensionRepo.await(baseUrl)
             extensionManager.findAvailableExtensions()
         }
     }
 
     private fun showDialog(dialog: RepoDialog) {
-        _state.update {
+        updateState {
             when (it) {
                 RepoScreenState.Loading -> it
                 is RepoScreenState.Success -> it.copy(dialog = dialog)
@@ -184,7 +176,7 @@ class ExtensionReposViewModel @Inject constructor(
     }
 
     private fun dismissDialog() {
-        _state.update {
+        updateState {
             when (it) {
                 RepoScreenState.Loading -> it
                 is RepoScreenState.Success -> it.copy(dialog = null)

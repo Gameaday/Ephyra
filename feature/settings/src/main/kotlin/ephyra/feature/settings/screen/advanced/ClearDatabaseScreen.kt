@@ -19,10 +19,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,13 +30,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastMap
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.util.lang.launchIO
-import ephyra.core.common.util.lang.launchUI
 import ephyra.core.common.util.lang.toLong
 import ephyra.core.common.util.lang.withNonCancellableContext
 import ephyra.domain.history.interactor.RemoveResettedHistory
@@ -53,15 +51,13 @@ import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.LoadingScreen
+import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.util.selectedBackground
 import ephyra.presentation.core.util.system.toast
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @Composable
@@ -71,7 +67,16 @@ fun ClearDatabaseScreen(
     val context = LocalContext.current
     val model = hiltViewModel<ClearDatabaseViewModel>()
     val state by model.state.collectAsStateWithLifecycle()
-    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        model.effects.collectLatest { effect ->
+            when (effect) {
+                ClearDatabaseEffect.DatabaseCleared -> {
+                    context.toast(ephyra.app.core.common.R.string.clear_database_completed)
+                }
+            }
+        }
+    }
 
     when (val s = state) {
         is ClearDatabaseViewModel.State.Loading -> LoadingScreen()
@@ -112,23 +117,18 @@ fun ClearDatabaseScreen(
                             }
                         }
                     },
-                    onDismissRequest = model::hideConfirmation,
+                    onDismissRequest = { model.onEvent(ClearDatabaseEvent.HideConfirmation) },
                     confirmButton = {
                         TextButton(
                             onClick = {
-                                scope.launchUI {
-                                    model.removeMangaBySourceId(keepReadManga)
-                                    model.clearSelection()
-                                    model.hideConfirmation()
-                                    context.toast(ephyra.app.core.common.R.string.clear_database_completed)
-                                }
+                                model.onEvent(ClearDatabaseEvent.RemoveManga(keepReadManga))
                             },
                         ) {
                             Text(text = stringResource(ephyra.app.core.common.R.string.action_ok))
                         }
                     },
                     dismissButton = {
-                        TextButton(onClick = model::hideConfirmation) {
+                        TextButton(onClick = { model.onEvent(ClearDatabaseEvent.HideConfirmation) }) {
                             Text(text = stringResource(ephyra.app.core.common.R.string.action_cancel))
                         }
                     },
@@ -147,14 +147,14 @@ fun ClearDatabaseScreen(
                                         AppBar.Action(
                                             title = stringResource(ephyra.app.core.common.R.string.action_select_all),
                                             icon = Icons.Outlined.SelectAll,
-                                            onClick = model::selectAll,
+                                            onClick = { model.onEvent(ClearDatabaseEvent.SelectAll) },
                                         ),
                                         AppBar.Action(
                                             title = stringResource(
                                                 ephyra.app.core.common.R.string.action_select_inverse,
                                             ),
                                             icon = Icons.Outlined.FlipToBack,
-                                            onClick = model::invertSelection,
+                                            onClick = { model.onEvent(ClearDatabaseEvent.InvertSelection) },
                                         ),
                                     ),
                                 )
@@ -174,14 +174,16 @@ fun ClearDatabaseScreen(
                         contentPadding = contentPadding,
                         actionLabel = stringResource(ephyra.app.core.common.R.string.action_delete),
                         actionEnabled = s.selection.isNotEmpty(),
-                        onClickAction = model::showConfirmation,
+                        onClickAction = { model.onEvent(ClearDatabaseEvent.ShowConfirmation) },
                     ) {
                         items(s.items, key = { it.id }) { sourceWithCount ->
                             ClearDatabaseItem(
                                 source = sourceWithCount.source,
                                 count = sourceWithCount.count,
                                 isSelected = s.selection.contains(sourceWithCount.id),
-                                onClickSelect = { model.toggleSelection(sourceWithCount.source) },
+                                onClickSelect = {
+                                    model.onEvent(ClearDatabaseEvent.ToggleSelection(sourceWithCount.source))
+                                },
                             )
                         }
                     }
@@ -230,16 +232,13 @@ class ClearDatabaseViewModel @Inject constructor(
     private val getSourcesWithNonLibraryManga: GetSourcesWithNonLibraryManga,
     private val deleteNonLibraryManga: DeleteNonLibraryManga,
     private val removeResettedHistory: RemoveResettedHistory,
-) : ViewModel() {
-
-    private val _state = MutableStateFlow<State>(State.Loading)
-    val state: StateFlow<State> = _state.asStateFlow()
+) : BaseUdfViewModel<ClearDatabaseViewModel.State, ClearDatabaseEvent, ClearDatabaseEffect>(State.Loading) {
 
     init {
-        viewModelScope.launchIO {
+        viewModelScope.launch {
             getSourcesWithNonLibraryManga.subscribe()
                 .collectLatest { list ->
-                    _state.update { old ->
+                    updateState { old ->
                         val items = list.sortedBy { it.name }
                         when (old) {
                             State.Loading -> State.Ready(items)
@@ -250,14 +249,33 @@ class ClearDatabaseViewModel @Inject constructor(
         }
     }
 
+    override fun onEvent(event: ClearDatabaseEvent) {
+        when (event) {
+            is ClearDatabaseEvent.ToggleSelection -> toggleSelection(event.source)
+            ClearDatabaseEvent.ClearSelection -> clearSelection()
+            ClearDatabaseEvent.SelectAll -> selectAll()
+            ClearDatabaseEvent.InvertSelection -> invertSelection()
+            ClearDatabaseEvent.ShowConfirmation -> showConfirmation()
+            ClearDatabaseEvent.HideConfirmation -> hideConfirmation()
+            is ClearDatabaseEvent.RemoveManga -> {
+                viewModelScope.launch {
+                    removeMangaBySourceId(event.keepReadManga)
+                    clearSelection()
+                    hideConfirmation()
+                    emitEffect(ClearDatabaseEffect.DatabaseCleared)
+                }
+            }
+        }
+    }
+
     suspend fun removeMangaBySourceId(keepReadManga: Boolean) = withNonCancellableContext {
-        val state = state.value as? State.Ready ?: return@withNonCancellableContext
-        deleteNonLibraryManga.await(state.selection, keepReadManga.toLong())
+        val ready = currentState as? State.Ready ?: return@withNonCancellableContext
+        deleteNonLibraryManga.await(ready.selection, keepReadManga.toLong())
         removeResettedHistory.await()
     }
 
-    fun toggleSelection(source: Source) = _state.update { state ->
-        if (state !is State.Ready) return@update state
+    fun toggleSelection(source: Source) = updateState { state ->
+        if (state !is State.Ready) return@updateState state
         val mutableList = state.selection.toMutableList()
         if (mutableList.contains(source.id)) {
             mutableList.remove(source.id)
@@ -267,18 +285,18 @@ class ClearDatabaseViewModel @Inject constructor(
         state.copy(selection = mutableList)
     }
 
-    fun clearSelection() = _state.update { state ->
-        if (state !is State.Ready) return@update state
+    fun clearSelection() = updateState { state ->
+        if (state !is State.Ready) return@updateState state
         state.copy(selection = emptyList())
     }
 
-    fun selectAll() = _state.update { state ->
-        if (state !is State.Ready) return@update state
+    fun selectAll() = updateState { state ->
+        if (state !is State.Ready) return@updateState state
         state.copy(selection = state.items.fastMap { it.id })
     }
 
-    fun invertSelection() = _state.update { state ->
-        if (state !is State.Ready) return@update state
+    fun invertSelection() = updateState { state ->
+        if (state !is State.Ready) return@updateState state
         state.copy(
             selection = state.items
                 .fastMap { it.id }
@@ -286,13 +304,13 @@ class ClearDatabaseViewModel @Inject constructor(
         )
     }
 
-    fun showConfirmation() = _state.update { state ->
-        if (state !is State.Ready) return@update state
+    fun showConfirmation() = updateState { state ->
+        if (state !is State.Ready) return@updateState state
         state.copy(showConfirmation = true)
     }
 
-    fun hideConfirmation() = _state.update { state ->
-        if (state !is State.Ready) return@update state
+    fun hideConfirmation() = updateState { state ->
+        if (state !is State.Ready) return@updateState state
         state.copy(showConfirmation = false)
     }
 
@@ -307,4 +325,18 @@ class ClearDatabaseViewModel @Inject constructor(
             val showConfirmation: Boolean = false,
         ) : State
     }
+}
+
+sealed interface ClearDatabaseEvent {
+    data class ToggleSelection(val source: Source) : ClearDatabaseEvent
+    data object ClearSelection : ClearDatabaseEvent
+    data object SelectAll : ClearDatabaseEvent
+    data object InvertSelection : ClearDatabaseEvent
+    data object ShowConfirmation : ClearDatabaseEvent
+    data object HideConfirmation : ClearDatabaseEvent
+    data class RemoveManga(val keepReadManga: Boolean) : ClearDatabaseEvent
+}
+
+sealed interface ClearDatabaseEffect {
+    data object DatabaseCleared : ClearDatabaseEffect
 }

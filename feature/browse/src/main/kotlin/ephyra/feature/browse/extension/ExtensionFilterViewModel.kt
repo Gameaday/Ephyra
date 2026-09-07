@@ -1,28 +1,22 @@
 package ephyra.feature.browse.extension
 
 import androidx.compose.runtime.Immutable
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.extension.interactor.GetExtensionLanguages
 import ephyra.domain.source.interactor.ToggleLanguage
 import ephyra.domain.source.service.SourcePreferences
+import ephyra.presentation.core.udf.BaseUdfViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toImmutableSet
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import javax.inject.Inject
@@ -32,13 +26,12 @@ class ExtensionFilterViewModel @Inject constructor(
     private val preferences: SourcePreferences,
     private val getExtensionLanguages: GetExtensionLanguages,
     private val toggleLanguage: ToggleLanguage,
-) : ViewModel() {
+) : BaseUdfViewModel<ExtensionFilterState, ExtensionFilterScreenEvent, ExtensionFilterEvent>(
+    ExtensionFilterState.Loading,
+) {
 
-    private val _state = MutableStateFlow<ExtensionFilterState>(ExtensionFilterState.Loading)
-    val state: StateFlow<ExtensionFilterState> = _state.asStateFlow()
-
-    private val _events: Channel<ExtensionFilterEvent> = Channel()
-    val events: Flow<ExtensionFilterEvent> = _events.receiveAsFlow()
+    val events: Flow<ExtensionFilterEvent>
+        get() = effects
 
     init {
         viewModelScope.launch {
@@ -48,10 +41,10 @@ class ExtensionFilterViewModel @Inject constructor(
             ) { a, b -> a to b }
                 .catch { throwable ->
                     logcat(LogPriority.ERROR, throwable)
-                    _events.send(ExtensionFilterEvent.FailedFetchingLanguages)
+                    emitEffect(ExtensionFilterEvent.FailedFetchingLanguages)
                 }
                 .collectLatest { (extensionLanguages, enabledLanguages) ->
-                    _state.update {
+                    updateState {
                         ExtensionFilterState.Success(
                             languages = extensionLanguages.toImmutableList(),
                             enabledLanguages = enabledLanguages.toImmutableSet(),
@@ -61,11 +54,23 @@ class ExtensionFilterViewModel @Inject constructor(
         }
     }
 
-    fun toggle(language: String) {
-        viewModelScope.launch {
-            toggleLanguage.await(language)
+    override fun onEvent(event: ExtensionFilterScreenEvent) {
+        when (event) {
+            is ExtensionFilterScreenEvent.Toggle -> {
+                viewModelScope.launch {
+                    toggleLanguage.await(event.language)
+                }
+            }
         }
     }
+
+    fun toggle(language: String) {
+        onEvent(ExtensionFilterScreenEvent.Toggle(language))
+    }
+}
+
+sealed interface ExtensionFilterScreenEvent {
+    data class Toggle(val language: String) : ExtensionFilterScreenEvent
 }
 
 sealed interface ExtensionFilterEvent {

@@ -28,9 +28,11 @@ fun NewUpdateScreen(
         onOpenInBrowser = { context.openInBrowser(releaseLink) },
         onRejectUpdate = { navController.popBackStack() },
         onAcceptUpdate = {
-            viewModel.acceptUpdate(
-                downloadLink = downloadLink,
-                versionName = versionName,
+            viewModel.onEvent(
+                NewUpdateEvent.AcceptUpdate(
+                    downloadLink = downloadLink,
+                    versionName = versionName,
+                ),
             )
             navController.popBackStack()
         },

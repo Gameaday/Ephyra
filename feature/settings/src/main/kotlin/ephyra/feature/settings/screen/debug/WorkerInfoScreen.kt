@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -20,7 +21,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
@@ -35,12 +35,17 @@ import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.util.system.copyToClipboard
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -53,9 +58,7 @@ fun WorkerInfoScreen(
     val context = LocalContext.current
 
     val viewModel = hiltViewModel<WorkerInfoViewModel>()
-    val enqueued by viewModel.enqueued.collectAsStateWithLifecycle()
-    val finished by viewModel.finished.collectAsStateWithLifecycle()
-    val running by viewModel.running.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -69,7 +72,10 @@ fun WorkerInfoScreen(
                                 title = stringResource(ephyra.app.core.common.R.string.action_copy_to_clipboard),
                                 icon = Icons.Default.ContentCopy,
                                 onClick = {
-                                    context.copyToClipboard(WorkerInfoScreen.TITLE, enqueued + finished + running)
+                                    context.copyToClipboard(
+                                        WorkerInfoScreen.TITLE,
+                                        state.enqueued + state.finished + state.running,
+                                    )
                                 },
                             ),
                         ),
@@ -84,13 +90,13 @@ fun WorkerInfoScreen(
             modifier = Modifier.horizontalScroll(rememberScrollState()),
         ) {
             item { SectionTitle(title = "Enqueued") }
-            item { SectionText(text = enqueued) }
+            item { SectionText(text = state.enqueued) }
 
             item { SectionTitle(title = "Finished") }
-            item { SectionText(text = finished) }
+            item { SectionText(text = state.finished) }
 
             item { SectionTitle(title = "Running") }
-            item { SectionText(text = running) }
+            item { SectionText(text = state.running) }
         }
     }
 }
@@ -117,29 +123,57 @@ private fun SectionText(text: String) {
     )
 }
 
+@Immutable
+data class WorkerInfoState(
+    val finished: String = "",
+    val running: String = "",
+    val enqueued: String = "",
+)
+
 @HiltViewModel
 class WorkerInfoViewModel @Inject constructor(
     @ApplicationContext context: Context,
     private val uiPreferences: UiPreferences,
-) : ViewModel() {
+) : BaseUdfViewModel<WorkerInfoState, Nothing, Nothing>(WorkerInfoState()) {
     private val workManager = context.workManager
 
-    val finished = workManager
-        .getWorkInfosFlow(
-            WorkQuery.fromStates(WorkInfo.State.SUCCEEDED, WorkInfo.State.FAILED, WorkInfo.State.CANCELLED),
-        )
-        .map(::constructString)
+    val finished: StateFlow<String> = state
+        .map { it.finished }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), "")
 
-    val running = workManager
-        .getWorkInfosFlow(WorkQuery.fromStates(WorkInfo.State.RUNNING))
-        .map(::constructString)
+    val running: StateFlow<String> = state
+        .map { it.running }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), "")
 
-    val enqueued = workManager
-        .getWorkInfosFlow(WorkQuery.fromStates(WorkInfo.State.ENQUEUED))
-        .map(::constructString)
+    val enqueued: StateFlow<String> = state
+        .map { it.enqueued }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), "")
+
+    init {
+        viewModelScope.launch {
+            val finishedFlow = workManager
+                .getWorkInfosFlow(
+                    WorkQuery.fromStates(WorkInfo.State.SUCCEEDED, WorkInfo.State.FAILED, WorkInfo.State.CANCELLED),
+                )
+                .map(::constructString)
+
+            val runningFlow = workManager
+                .getWorkInfosFlow(WorkQuery.fromStates(WorkInfo.State.RUNNING))
+                .map(::constructString)
+
+            val enqueuedFlow = workManager
+                .getWorkInfosFlow(WorkQuery.fromStates(WorkInfo.State.ENQUEUED))
+                .map(::constructString)
+
+            combine(finishedFlow, runningFlow, enqueuedFlow) { fin, run, enq ->
+                WorkerInfoState(finished = fin, running = run, enqueued = enq)
+            }.collectLatest { newState ->
+                updateState { newState }
+            }
+        }
+    }
+
+    override fun onEvent(event: Nothing) = Unit
 
     private fun constructString(list: List<WorkInfo>) = buildString {
         if (list.isEmpty()) {

@@ -18,22 +18,17 @@ import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.source.interactor.ToggleIncognito
 import ephyra.domain.source.interactor.ToggleSource
 import ephyra.domain.source.service.SourcePreferences
+import ephyra.presentation.core.udf.BaseUdfViewModel
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -48,13 +43,10 @@ class ExtensionDetailsViewModel @AssistedInject constructor(
     private val toggleSource: ToggleSource,
     private val toggleIncognito: ToggleIncognito,
     private val preferences: SourcePreferences,
-) : ViewModel() {
+) : BaseUdfViewModel<ExtensionDetailsViewModel.State, ExtensionDetailsScreenEvent, ExtensionDetailsEvent>(State()) {
 
-    private val _state = MutableStateFlow(State())
-    val state: StateFlow<State> = _state.asStateFlow()
-
-    private val _events: Channel<ExtensionDetailsEvent> = Channel()
-    val events: Flow<ExtensionDetailsEvent> = _events.receiveAsFlow()
+    val events: Flow<ExtensionDetailsEvent>
+        get() = effects
 
     @AssistedFactory
     interface Factory {
@@ -68,10 +60,10 @@ class ExtensionDetailsViewModel @AssistedInject constructor(
                     .map { it.firstOrNull { extension -> extension.pkgName == pkgName } }
                     .collectLatest { extension ->
                         if (extension == null) {
-                            _events.send(ExtensionDetailsEvent.Uninstalled)
+                            emitEffect(ExtensionDetailsEvent.Uninstalled)
                             return@collectLatest
                         }
-                        _state.update { state ->
+                        updateState { state ->
                             state.copy(extension = extension)
                         }
                     }
@@ -93,10 +85,10 @@ class ExtensionDetailsViewModel @AssistedInject constructor(
                         }
                         .catch { throwable ->
                             logcat(LogPriority.ERROR, throwable)
-                            _state.update { it.copy(_sources = persistentListOf()) }
+                            updateState { it.copy(_sources = persistentListOf()) }
                         }
                         .collectLatest { sources ->
-                            _state.update { it.copy(_sources = sources.toImmutableList()) }
+                            updateState { it.copy(_sources = sources.toImmutableList()) }
                         }
                 }
             }
@@ -106,13 +98,13 @@ class ExtensionDetailsViewModel @AssistedInject constructor(
                     .map { pkgName in it }
                     .distinctUntilChanged()
                     .collectLatest { isIncognito ->
-                        _state.update { it.copy(isIncognito = isIncognito) }
+                        updateState { it.copy(isIncognito = isIncognito) }
                     }
             }
         }
     }
 
-    fun onEvent(event: ExtensionDetailsScreenEvent) {
+    override fun onEvent(event: ExtensionDetailsScreenEvent) {
         when (event) {
             ExtensionDetailsScreenEvent.ClearCookies -> clearCookies()
             ExtensionDetailsScreenEvent.UninstallExtension -> uninstallExtension()

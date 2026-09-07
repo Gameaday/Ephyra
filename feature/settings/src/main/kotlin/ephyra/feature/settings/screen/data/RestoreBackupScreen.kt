@@ -21,7 +21,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -37,11 +36,8 @@ import ephyra.presentation.core.components.WarningBanner
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.presentation.core.ui.navigation.LocalNavController
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 
 @Composable
@@ -53,7 +49,7 @@ fun RestoreBackupScreen(
     val state by model.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(uri) {
-        model.initialize(uri)
+        model.onEvent(RestoreBackupEvent.Initialize(uri))
     }
 
     Scaffold(
@@ -70,7 +66,7 @@ fun RestoreBackupScreen(
             actionLabel = stringResource(ephyra.app.core.common.R.string.action_restore),
             actionEnabled = state.canRestore && state.options.canRestore(),
             onClickAction = {
-                model.startRestore()
+                model.onEvent(RestoreBackupEvent.StartRestore)
                 navController.popBackStack()
             },
         ) {
@@ -88,7 +84,7 @@ fun RestoreBackupScreen(
                                 label = stringResource(option.label),
                                 checked = option.getter(state.options),
                                 onCheckedChange = {
-                                    model.toggle(option.setter, it)
+                                    model.onEvent(RestoreBackupEvent.Toggle(option.setter, it))
                                 },
                             )
                         }
@@ -182,12 +178,17 @@ private fun LazyListScope.errorMessageItem(
 class RestoreBackupViewModel @Inject constructor(
     private val restoreScheduler: RestoreScheduler,
     private val backupFileValidator: BackupFileValidator,
-) : ViewModel() {
+) : BaseUdfViewModel<RestoreBackupViewModel.State, RestoreBackupEvent, Nothing>(State()) {
 
     private var uri: String? = null
 
-    private val _state = MutableStateFlow(State())
-    val state: StateFlow<State> = _state.asStateFlow()
+    override fun onEvent(event: RestoreBackupEvent) {
+        when (event) {
+            is RestoreBackupEvent.Initialize -> initialize(event.uri)
+            is RestoreBackupEvent.Toggle -> toggle(event.setter, event.enabled)
+            is RestoreBackupEvent.StartRestore -> startRestore()
+        }
+    }
 
     fun initialize(uri: String) {
         if (this.uri == null) {
@@ -197,7 +198,7 @@ class RestoreBackupViewModel @Inject constructor(
     }
 
     fun toggle(setter: (RestoreOptions, Boolean) -> RestoreOptions, enabled: Boolean) {
-        _state.update {
+        updateState {
             it.copy(
                 options = setter(it.options, enabled),
             )
@@ -239,7 +240,7 @@ class RestoreBackupViewModel @Inject constructor(
     }
 
     private fun setError(error: Any?, canRestore: Boolean) {
-        _state.update {
+        updateState {
             it.copy(
                 error = error,
                 canRestore = canRestore,
@@ -255,13 +256,22 @@ class RestoreBackupViewModel @Inject constructor(
     )
 }
 
-private data class MissingRestoreComponents(
+sealed interface RestoreBackupEvent {
+    data class Initialize(val uri: String) : RestoreBackupEvent
+    data class Toggle(
+        val setter: (RestoreOptions, Boolean) -> RestoreOptions,
+        val enabled: Boolean,
+    ) : RestoreBackupEvent
+    data object StartRestore : RestoreBackupEvent
+}
+
+internal data class MissingRestoreComponents(
     val uri: Uri,
     val sources: List<String>,
     val trackers: List<String>,
 )
 
-private data class InvalidRestore(
+internal data class InvalidRestore(
     val uri: Uri? = null,
     val message: String,
 )

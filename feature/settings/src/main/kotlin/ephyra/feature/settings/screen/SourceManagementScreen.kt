@@ -75,9 +75,10 @@ fun SourceManagementScreen(
     navController: NavController = LocalNavController.current,
 ) {
     val viewModel = hiltViewModel<SourceManagementViewModel>()
-    val sources by viewModel.sources.collectAsStateWithLifecycle()
-    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
-    val error by viewModel.error.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val sources = state.sources
+    val isLoading = state.isLoading
+    val error = state.error
 
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
     var showAddJsScraperDialog by remember { mutableStateOf(false) }
@@ -100,7 +101,7 @@ fun SourceManagementScreen(
     LaunchedEffect(error) {
         if (error != null) {
             snackbarMessage = error
-            viewModel.clearError()
+            viewModel.onEvent(SourceManagementEvent.ClearError)
         }
     }
 
@@ -135,7 +136,7 @@ fun SourceManagementScreen(
                     linkScraperName = ""
                     showLinkScraperDialog = true
                 },
-                onRefresh = { viewModel.loadSources() },
+                onRefresh = { viewModel.onEvent(SourceManagementEvent.LoadSources) },
                 onSourceClick = { source ->
                     snackbarMessage = buildString {
                         appendLine("Source: ${source.name}")
@@ -154,10 +155,10 @@ fun SourceManagementScreen(
                     snackbarMessage = "Long-press actions coming soon for ${source.name}"
                 },
                 onCheckUpdates = { source ->
-                    viewModel.checkAndUpdateScraper(source.baseUrl)
+                    viewModel.onEvent(SourceManagementEvent.CheckAndUpdateScraper(source.baseUrl))
                 },
                 onForceRediscover = { source ->
-                    viewModel.forceRediscover(source.baseUrl)
+                    viewModel.onEvent(SourceManagementEvent.ForceRediscover(source.baseUrl))
                 },
                 onRemoveSource = { source ->
                     selectedSourceToRemove = source
@@ -198,7 +199,7 @@ fun SourceManagementScreen(
                     TextButton(
                         onClick = {
                             selectedSourceToRemove?.let { source ->
-                                viewModel.removeSource(source.baseUrl)
+                                viewModel.onEvent(SourceManagementEvent.RemoveSource(source.baseUrl))
                             }
                             showRemoveConfirmDialog = false
                             selectedSourceToRemove = null
@@ -229,7 +230,7 @@ fun SourceManagementScreen(
                     scraperFilename = ""
                 },
                 onConfirm = { url, name ->
-                    viewModel.addJsScraper(url, name)
+                    viewModel.onEvent(SourceManagementEvent.AddJsScraper(url, name))
                     showAddJsScraperDialog = false
                     githubUrl = ""
                     scraperFilename = ""
@@ -250,7 +251,7 @@ fun SourceManagementScreen(
                     importScriptContent = ""
                 },
                 onConfirm = { name, content ->
-                    viewModel.importJsScraper(name, content)
+                    viewModel.onEvent(SourceManagementEvent.ImportJsScraper(name, content))
                     showImportJsScraperDialog = false
                     importFilename = ""
                     importScriptContent = ""
@@ -271,7 +272,9 @@ fun SourceManagementScreen(
                     heuristicName = ""
                 },
                 onConfirm = { url, name ->
-                    viewModel.addHeuristicProfile(url, name?.ifBlank { null })
+                    viewModel.onEvent(
+                        SourceManagementEvent.AddHeuristicProfile(url, name?.ifBlank { null }),
+                    )
                     showAddHeuristicDialog = false
                     heuristicUrl = ""
                     heuristicName = ""
@@ -293,7 +296,9 @@ fun SourceManagementScreen(
                     selectedSourceForLink = null
                 },
                 onConfirm = { baseUrl, scraperName ->
-                    viewModel.linkScraperToUrl(baseUrl, scraperName)
+                    viewModel.onEvent(
+                        SourceManagementEvent.LinkScraperToUrl(baseUrl, scraperName),
+                    )
                     showLinkScraperDialog = false
                     linkBaseUrl = ""
                     linkScraperName = ""

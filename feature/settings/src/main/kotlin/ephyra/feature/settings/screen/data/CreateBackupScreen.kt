@@ -25,13 +25,10 @@ import ephyra.presentation.core.components.SectionCard
 import ephyra.presentation.core.components.WarningBanner
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.util.system.toast
 import kotlinx.collections.immutable.ImmutableList
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 
 @Composable
@@ -51,7 +48,7 @@ fun CreateBackupScreen(
                 Intent.FLAG_GRANT_READ_URI_PERMISSION or
                     Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
             )
-            model.createBackup(it)
+            model.onEvent(CreateBackupEvent.CreateBackup(it))
             navController.popBackStack()
         }
     }
@@ -113,7 +110,7 @@ private fun Options(
             label = stringResource(option.label),
             checked = option.getter(state.options),
             onCheckedChange = {
-                model.toggle(option.setter, it)
+                model.onEvent(CreateBackupEvent.Toggle(option.setter, it))
             },
             enabled = option.enabled(state.options),
         )
@@ -123,17 +120,21 @@ private fun Options(
 @HiltViewModel
 class CreateBackupViewModel @Inject constructor(
     private val backupScheduler: BackupScheduler,
-) : ViewModel() {
-
-    private val _state = MutableStateFlow(State())
-    val state: StateFlow<State> = _state.asStateFlow()
+) : BaseUdfViewModel<CreateBackupViewModel.State, CreateBackupEvent, Nothing>(State()) {
 
     fun isBackupRunning(): Boolean = backupScheduler.isBackupRunning()
 
     fun getBackupFilename(): String = backupScheduler.getBackupFilename()
 
+    override fun onEvent(event: CreateBackupEvent) {
+        when (event) {
+            is CreateBackupEvent.Toggle -> toggle(event.setter, event.enabled)
+            is CreateBackupEvent.CreateBackup -> createBackup(event.uri)
+        }
+    }
+
     fun toggle(setter: (BackupOptions, Boolean) -> BackupOptions, enabled: Boolean) {
-        _state.update {
+        updateState {
             it.copy(
                 options = setter(it.options, enabled),
             )
@@ -148,4 +149,13 @@ class CreateBackupViewModel @Inject constructor(
     data class State(
         val options: BackupOptions = BackupOptions(),
     )
+}
+
+sealed interface CreateBackupEvent {
+    data class Toggle(
+        val setter: (BackupOptions, Boolean) -> BackupOptions,
+        val enabled: Boolean,
+    ) : CreateBackupEvent
+
+    data class CreateBackup(val uri: Uri) : CreateBackupEvent
 }

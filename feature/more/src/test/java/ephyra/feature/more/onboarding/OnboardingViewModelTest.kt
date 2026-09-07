@@ -24,6 +24,7 @@ class OnboardingViewModelTest {
     @BeforeEach
     fun setUp() {
         every { appInfo.telemetryIncluded } returns true
+        every { shownOnboardingPref.getSync() } returns false
         every { basePreferences.shownOnboardingFlow() } returns shownOnboardingPref
         every { storagePreferences.baseStorageDirectory() } returns storageDirPref
     }
@@ -32,17 +33,18 @@ class OnboardingViewModelTest {
     fun `initializes with preferences and app info telemetry`() {
         val viewModel = OnboardingViewModel(basePreferences, storagePreferences, appInfo)
 
-        assertEquals(shownOnboardingPref, viewModel.shownOnboardingFlow)
         assertEquals(storageDirPref, viewModel.storageDirPref)
-        assertTrue(viewModel.telemetryIncluded)
+        assertEquals(false, viewModel.state.value.shownOnboarding)
+        assertTrue(viewModel.state.value.telemetryIncluded)
     }
 
     @Test
-    fun `finishOnboarding sets shownOnboardingFlow preference to true`() {
+    fun `finishOnboarding event sets shownOnboardingFlow preference to true and updates state`() {
         val viewModel = OnboardingViewModel(basePreferences, storagePreferences, appInfo)
 
-        viewModel.finishOnboarding()
+        viewModel.onEvent(OnboardingEvent.FinishOnboarding)
 
         verify(exactly = 1) { shownOnboardingPref.set(true) }
+        assertTrue(viewModel.state.value.shownOnboarding)
     }
 }

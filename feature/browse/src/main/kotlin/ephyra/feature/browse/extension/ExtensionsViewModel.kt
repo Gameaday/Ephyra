@@ -1,7 +1,6 @@
 package ephyra.feature.browse.extension
 
 import android.app.Application
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.preference.PreferenceStore
@@ -23,12 +22,9 @@ import ephyra.domain.extensionrepo.interactor.DeleteExtensionRepo
 import ephyra.domain.extensionrepo.interactor.GetExtensionRepo
 import ephyra.domain.extensionrepo.interactor.UpdateExtensionRepo
 import ephyra.domain.extensionrepo.model.ExtensionRepo
+import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.presentation.core.ui.AppInfo
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import javax.inject.Inject
@@ -51,10 +47,9 @@ class ExtensionsViewModel @Inject constructor(
     private val trustExtension: ephyra.domain.extension.interactor.TrustExtension,
     private val extensionManager: ephyra.domain.extension.service.ExtensionManager,
     private val appInfo: AppInfo,
-) : ViewModel() {
-
-    private val _state = MutableStateFlow(State(catalogShortcutsEnabled = appInfo.catalogShortcutsEnabled))
-    val state: StateFlow<State> = _state.asStateFlow()
+) : BaseUdfViewModel<ExtensionsViewModel.State, ExtensionsScreenEvent, ExtensionsEffect>(
+    State(catalogShortcutsEnabled = appInfo.catalogShortcutsEnabled),
+) {
 
     init {
         loadSources()
@@ -65,7 +60,7 @@ class ExtensionsViewModel @Inject constructor(
     private fun loadRepositories() {
         viewModelScope.launch {
             getExtensionRepo.subscribeAll().collectLatest { repos ->
-                _state.update { it.copy(repos = repos) }
+                updateState { it.copy(repos = repos) }
             }
         }
     }
@@ -73,7 +68,7 @@ class ExtensionsViewModel @Inject constructor(
     private fun loadAvailableExtensions() {
         viewModelScope.launch {
             getExtensionsByType.subscribe().collectLatest { extensions ->
-                _state.update {
+                updateState {
                     it.copy(
                         availableExtensions = extensions.available,
                         installedExtensions = extensions.updates + extensions.installed,
@@ -112,7 +107,7 @@ class ExtensionsViewModel @Inject constructor(
                     logcat(LogPriority.INFO) { "Updating legacy extension ${ext.name} to v${ext.versionName}" }
                     val success = legacyExtensionTranspiler.transpileAndInstall(ext, previouslySelectedUrls)
                     if (success) {
-                        _state.update { it.copy(error = "Legacy source ${ext.name} updated to v${ext.versionName}") }
+                        updateState { it.copy(error = "Legacy source ${ext.name} updated to v${ext.versionName}") }
                         loadSources()
                     }
                 }
@@ -122,14 +117,14 @@ class ExtensionsViewModel @Inject constructor(
 
     fun addRepository(url: String) {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
+            updateState { it.copy(isLoading = true) }
             when (createExtensionRepo.await(url)) {
                 CreateExtensionRepo.Result.Success -> {
                     updateExtensionRepo.awaitAll()
-                    _state.update { it.copy(isLoading = false) }
+                    updateState { it.copy(isLoading = false) }
                 }
                 else -> {
-                    _state.update { it.copy(isLoading = false, error = "Failed to add repository") }
+                    updateState { it.copy(isLoading = false, error = "Failed to add repository") }
                 }
             }
         }
@@ -137,28 +132,28 @@ class ExtensionsViewModel @Inject constructor(
 
     fun deleteRepository(url: String) {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
+            updateState { it.copy(isLoading = true) }
             deleteExtensionRepo.await(url)
-            _state.update { it.copy(isLoading = false) }
+            updateState { it.copy(isLoading = false) }
         }
     }
 
     fun installExtension(extension: Extension.Available, selectedUrls: Set<String>? = null) {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
+            updateState { it.copy(isLoading = true) }
             val success = legacyExtensionTranspiler.transpileAndInstall(extension, selectedUrls)
-            _state.update { it.copy(isLoading = false) }
+            updateState { it.copy(isLoading = false) }
             if (success) {
                 loadSources()
             } else {
-                _state.update { it.copy(error = "Failed to transpile and install extension") }
+                updateState { it.copy(error = "Failed to transpile and install extension") }
             }
         }
     }
 
     fun uninstallExtension(extension: Extension.Available) {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
+            updateState { it.copy(isLoading = true) }
             val pkgSuffix = extension.pkgName.substringAfterLast(".")
             val filename = "${pkgSuffix}_scraper.js"
 
@@ -170,28 +165,28 @@ class ExtensionsViewModel @Inject constructor(
             // Clean up version tracking
             legacyExtensionTranspiler.clearExtensionMetadata(extension.pkgName)
 
-            _state.update { it.copy(isLoading = false) }
+            updateState { it.copy(isLoading = false) }
             loadSources()
         }
     }
 
     fun loadSources() {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, error = null) }
+            updateState { it.copy(isLoading = true, error = null) }
             getAvailableSources().collectLatest { result ->
-                _state.update { it.copy(sources = result, isLoading = false) }
+                updateState { it.copy(sources = result, isLoading = false) }
             }
         }
     }
 
     fun addJsScraper(githubUrl: String, filename: String) {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
+            updateState { it.copy(isLoading = true) }
             val result = addCustomSource.addJsScraper(githubUrl, filename)
-            _state.update { it.copy(isLoading = false) }
+            updateState { it.copy(isLoading = false) }
             when (result) {
                 is Result.Success -> loadSources()
-                is Result.Error -> _state.update {
+                is Result.Error -> updateState {
                     it.copy(error = result.exception.message ?: "Failed to add scraper")
                 }
                 else -> {}
@@ -201,12 +196,12 @@ class ExtensionsViewModel @Inject constructor(
 
     fun importJsScraper(filename: String, scriptContent: String) {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
+            updateState { it.copy(isLoading = true) }
             val result = addCustomSource.importJsScraper(filename, scriptContent)
-            _state.update { it.copy(isLoading = false) }
+            updateState { it.copy(isLoading = false) }
             when (result) {
                 is Result.Success -> loadSources()
-                is Result.Error -> _state.update {
+                is Result.Error -> updateState {
                     it.copy(
                         error =
                         result.exception.message ?: "Failed to import scraper",
@@ -219,12 +214,12 @@ class ExtensionsViewModel @Inject constructor(
 
     fun addHeuristicProfile(baseUrl: String, displayName: String?) {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
+            updateState { it.copy(isLoading = true) }
             val result = addCustomSource.addHeuristicProfile(baseUrl, displayName)
-            _state.update { it.copy(isLoading = false) }
+            updateState { it.copy(isLoading = false) }
             when (result) {
                 is Result.Success -> loadSources()
-                is Result.Error -> _state.update {
+                is Result.Error -> updateState {
                     it.copy(error = result.exception.message ?: "Failed to add profile")
                 }
                 else -> {}
@@ -234,12 +229,12 @@ class ExtensionsViewModel @Inject constructor(
 
     fun linkScraperToUrl(baseUrl: String, scraperFilename: String) {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
+            updateState { it.copy(isLoading = true) }
             val result = addCustomSource.linkScraperToUrl(baseUrl, scraperFilename)
-            _state.update { it.copy(isLoading = false) }
+            updateState { it.copy(isLoading = false) }
             when (result) {
                 is Result.Success -> loadSources()
-                is Result.Error -> _state.update {
+                is Result.Error -> updateState {
                     it.copy(error = result.exception.message ?: "Failed to link scraper")
                 }
                 else -> {}
@@ -249,12 +244,12 @@ class ExtensionsViewModel @Inject constructor(
 
     fun checkAndUpdateScraper(baseUrl: String) {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
+            updateState { it.copy(isLoading = true) }
             val result = updateCustomSource.checkAndUpdateScraper(baseUrl)
-            _state.update { it.copy(isLoading = false) }
+            updateState { it.copy(isLoading = false) }
             when (result) {
                 is Result.Success -> loadSources()
-                is Result.Error -> _state.update {
+                is Result.Error -> updateState {
                     it.copy(
                         error =
                         result.exception.message ?: "Failed to update scraper",
@@ -267,12 +262,12 @@ class ExtensionsViewModel @Inject constructor(
 
     fun forceRediscover(baseUrl: String) {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
+            updateState { it.copy(isLoading = true) }
             val result = updateCustomSource.forceRediscover(baseUrl)
-            _state.update { it.copy(isLoading = false) }
+            updateState { it.copy(isLoading = false) }
             when (result) {
                 is Result.Success -> loadSources()
-                is Result.Error -> _state.update { it.copy(error = result.exception.message ?: "Failed to rediscover") }
+                is Result.Error -> updateState { it.copy(error = result.exception.message ?: "Failed to rediscover") }
                 else -> {}
             }
         }
@@ -280,12 +275,12 @@ class ExtensionsViewModel @Inject constructor(
 
     fun removeSource(baseUrl: String) {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
+            updateState { it.copy(isLoading = true) }
             val result = removeCustomSource.removeSource(baseUrl)
-            _state.update { it.copy(isLoading = false) }
+            updateState { it.copy(isLoading = false) }
             when (result) {
                 is Result.Success -> loadSources()
-                is Result.Error -> _state.update {
+                is Result.Error -> updateState {
                     it.copy(error = result.exception.message ?: "Failed to remove source")
                 }
                 else -> {}
@@ -294,7 +289,7 @@ class ExtensionsViewModel @Inject constructor(
     }
 
     fun search(query: String?) {
-        _state.update { it.copy(searchQuery = query) }
+        updateState { it.copy(searchQuery = query) }
     }
 
     /** Marks an untrusted extension as trusted for its current version+signature. */
@@ -310,7 +305,28 @@ class ExtensionsViewModel @Inject constructor(
     }
 
     fun clearError() {
-        _state.update { it.copy(error = null) }
+        updateState { it.copy(error = null) }
+    }
+
+    override fun onEvent(event: ExtensionsScreenEvent) {
+        when (event) {
+            is ExtensionsScreenEvent.AddRepository -> addRepository(event.url)
+            is ExtensionsScreenEvent.DeleteRepository -> deleteRepository(event.url)
+            is ExtensionsScreenEvent.InstallExtension -> installExtension(event.extension, event.selectedUrls)
+            is ExtensionsScreenEvent.UninstallExtension -> uninstallExtension(event.extension)
+            ExtensionsScreenEvent.LoadSources -> loadSources()
+            is ExtensionsScreenEvent.AddJsScraper -> addJsScraper(event.githubUrl, event.filename)
+            is ExtensionsScreenEvent.ImportJsScraper -> importJsScraper(event.filename, event.scriptContent)
+            is ExtensionsScreenEvent.AddHeuristicProfile -> addHeuristicProfile(event.baseUrl, event.displayName)
+            is ExtensionsScreenEvent.LinkScraperToUrl -> linkScraperToUrl(event.baseUrl, event.scraperFilename)
+            is ExtensionsScreenEvent.CheckAndUpdateScraper -> checkAndUpdateScraper(event.baseUrl)
+            is ExtensionsScreenEvent.ForceRediscover -> forceRediscover(event.baseUrl)
+            is ExtensionsScreenEvent.RemoveSource -> removeSource(event.baseUrl)
+            is ExtensionsScreenEvent.Search -> search(event.query)
+            is ExtensionsScreenEvent.TrustExtension -> trustExtension(event.extension)
+            is ExtensionsScreenEvent.UninstallFailedExtension -> uninstallFailedExtension(event.pkgName)
+            ExtensionsScreenEvent.ClearError -> clearError()
+        }
     }
 
     data class State(
@@ -325,4 +341,30 @@ class ExtensionsViewModel @Inject constructor(
         val failedExtensions: List<Extension.Failed> = emptyList(),
         val catalogShortcutsEnabled: Boolean = false,
     )
+}
+
+sealed interface ExtensionsScreenEvent {
+    data class AddRepository(val url: String) : ExtensionsScreenEvent
+    data class DeleteRepository(val url: String) : ExtensionsScreenEvent
+    data class InstallExtension(
+        val extension: Extension.Available,
+        val selectedUrls: Set<String>? = null,
+    ) : ExtensionsScreenEvent
+    data class UninstallExtension(val extension: Extension.Available) : ExtensionsScreenEvent
+    data object LoadSources : ExtensionsScreenEvent
+    data class AddJsScraper(val githubUrl: String, val filename: String) : ExtensionsScreenEvent
+    data class ImportJsScraper(val filename: String, val scriptContent: String) : ExtensionsScreenEvent
+    data class AddHeuristicProfile(val baseUrl: String, val displayName: String?) : ExtensionsScreenEvent
+    data class LinkScraperToUrl(val baseUrl: String, val scraperFilename: String) : ExtensionsScreenEvent
+    data class CheckAndUpdateScraper(val baseUrl: String) : ExtensionsScreenEvent
+    data class ForceRediscover(val baseUrl: String) : ExtensionsScreenEvent
+    data class RemoveSource(val baseUrl: String) : ExtensionsScreenEvent
+    data class Search(val query: String?) : ExtensionsScreenEvent
+    data class TrustExtension(val extension: Extension.Untrusted) : ExtensionsScreenEvent
+    data class UninstallFailedExtension(val pkgName: String) : ExtensionsScreenEvent
+    data object ClearError : ExtensionsScreenEvent
+}
+
+sealed interface ExtensionsEffect {
+    data class ShowSnackbar(val message: String) : ExtensionsEffect
 }

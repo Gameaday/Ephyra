@@ -24,4 +24,19 @@ class NewUpdateViewModelTest {
             )
         }
     }
+
+    @Test
+    fun `onEvent AcceptUpdate starts download with download link and version name`() {
+        val downloadLink = "https://example.com/update2.apk"
+        val versionName = "v2.0.0"
+
+        viewModel.onEvent(NewUpdateEvent.AcceptUpdate(downloadLink, versionName))
+
+        verify(exactly = 1) {
+            appUpdateDownloader.start(
+                url = downloadLink,
+                title = versionName,
+            )
+        }
+    }
 }

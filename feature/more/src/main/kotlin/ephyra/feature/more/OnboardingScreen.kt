@@ -11,14 +11,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import ephyra.feature.more.onboarding.OnboardingEvent
 import ephyra.feature.more.onboarding.OnboardingViewModel
 import ephyra.feature.settings.screen.SettingsDataScreen
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.AppReadySignal
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
-import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.core.util.system.toast
 import ephyra.feature.more.onboarding.OnboardingScreen as OnboardingContent
 
@@ -29,7 +30,7 @@ fun OnboardingScreen(
 ) {
     val context = LocalContext.current
 
-    val shownOnboardingFlow by viewModel.shownOnboardingFlow.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     // Dismiss the splash screen promptly when onboarding is shown.  Without this,
     // the splash would linger until SPLASH_MAX_DURATION because tabs (LibraryTab,
@@ -39,7 +40,7 @@ fun OnboardingScreen(
     }
 
     val finishOnboarding: () -> Unit = {
-        viewModel.finishOnboarding()
+        viewModel.onEvent(OnboardingEvent.FinishOnboarding)
         // popBackStack can fail when onboarding is the only destination on the
         // stack (fresh-install process-death restore) — land on Home instead of
         // stranding the user on a finished onboarding screen.
@@ -69,13 +70,13 @@ fun OnboardingScreen(
         navController.navigate(ScreenRoutes.RestoreBackup.createRoute(uri.toString()))
     }
 
-    BackHandler(enabled = !shownOnboardingFlow) {
+    BackHandler(enabled = !state.shownOnboarding) {
         // Prevent exiting if onboarding hasn't been completed
     }
 
     OnboardingContent(
         storageDirPref = viewModel.storageDirPref,
-        telemetryIncluded = viewModel.telemetryIncluded,
+        telemetryIncluded = state.telemetryIncluded,
         onComplete = finishOnboarding,
         onRestoreBackup = {
             chooseBackup.launch("*/*")
