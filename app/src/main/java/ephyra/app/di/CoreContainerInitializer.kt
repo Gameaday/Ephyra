@@ -44,6 +44,8 @@ fun initializeCoreContainer(context: Context) {
             ephyra.domain.source.service.SourceManager::class.java -> entryPoint.sourceManager()
             kotlinx.serialization.json.Json::class.java -> entryPoint.json()
             nl.adaptivity.xmlutil.serialization.XML::class.java -> entryPoint.xml()
+            android.content.SharedPreferences::class.java ->
+                androidx.preference.PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
             else -> null
         }
     }
@@ -52,6 +54,9 @@ fun initializeCoreContainer(context: Context) {
     CoreContainer.register(Context::class.java) { CoreContainer.applicationContext }
     CoreContainer.register(android.app.Application::class.java) {
         CoreContainer.applicationContext as android.app.Application
+    }
+    CoreContainer.register(android.content.SharedPreferences::class.java) {
+        androidx.preference.PreferenceManager.getDefaultSharedPreferences(CoreContainer.applicationContext)
     }
     CoreContainer.register(eu.kanade.tachiyomi.network.NetworkHelper::class.java) { entryPoint.networkHelper() }
     CoreContainer.register(okhttp3.OkHttpClient::class.java) { entryPoint.networkHelper().client }

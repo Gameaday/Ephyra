@@ -40,5 +40,6 @@ fun SourcesFilterScreen(
         state = successState,
         onClickLanguage = { viewModel.onEvent(SourcesFilterScreenEvent.ToggleLanguage(it)) },
         onClickSource = { viewModel.onEvent(SourcesFilterScreenEvent.ToggleSource(it)) },
+        onClickReset = { viewModel.onEvent(SourcesFilterScreenEvent.ResetToDefault) },
     )
 }

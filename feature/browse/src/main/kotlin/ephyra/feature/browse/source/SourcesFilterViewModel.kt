@@ -55,6 +55,7 @@ class SourcesFilterViewModel @Inject constructor(
         when (event) {
             is SourcesFilterScreenEvent.ToggleSource -> toggleSource(event.source)
             is SourcesFilterScreenEvent.ToggleLanguage -> toggleLanguage(event.language)
+            SourcesFilterScreenEvent.ResetToDefault -> resetToDefault()
         }
     }
 
@@ -64,6 +65,10 @@ class SourcesFilterViewModel @Inject constructor(
 
     private fun toggleLanguage(language: String) {
         viewModelScope.launch { toggleLanguage.await(language) }
+    }
+
+    private fun resetToDefault() {
+        preferences.enabledLanguages().set(ephyra.core.common.util.system.LocaleHelper.getDefaultEnabledLanguages())
     }
 
     sealed interface State {

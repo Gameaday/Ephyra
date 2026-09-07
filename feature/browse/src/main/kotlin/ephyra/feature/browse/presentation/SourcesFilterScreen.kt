@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
@@ -31,12 +33,20 @@ fun SourcesFilterScreen(
     state: SourcesFilterViewModel.State.Success,
     onClickLanguage: (String) -> Unit,
     onClickSource: (Source) -> Unit,
+    onClickReset: () -> Unit = {},
 ) {
     Scaffold(
         topBar = { scrollBehavior ->
             AppBar(
                 title = stringResource(ephyra.app.core.common.R.string.label_sources),
                 navigateUp = navigateUp,
+                actions = {
+                    AppBar.Action(
+                        title = stringResource(ephyra.app.core.common.R.string.action_reset),
+                        icon = Icons.Outlined.Refresh,
+                        onClick = onClickReset,
+                    )
+                },
                 scrollBehavior = scrollBehavior,
             )
         },

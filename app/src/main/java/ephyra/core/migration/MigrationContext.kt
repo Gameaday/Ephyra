@@ -16,11 +16,12 @@ import ephyra.domain.storage.service.StoragePreferences
  * Hilt-native MigrationContext resolving migration dependencies dynamically via MigrationEntryPoint
  * without relying on a legacy compat-shim service locator.
  */
-class MigrationContext(val context: Context, val dryrun: Boolean) {
+open class MigrationContext(val context: Context, val dryrun: Boolean) {
 
-    inline fun <reified T : Any> get(): T? {
+    @Suppress("UNCHECKED_CAST")
+    open fun <T : Any> getInstance(clazz: Class<T>): T? {
         val app = context.applicationContext as? Application
-        if (T::class.java == Application::class.java || T::class.java == Context::class.java) {
+        if (clazz == Application::class.java || clazz == Context::class.java) {
             return app as? T ?: context as? T
         }
         return try {
@@ -28,7 +29,7 @@ class MigrationContext(val context: Context, val dryrun: Boolean) {
                 context.applicationContext,
                 MigrationEntryPoint::class.java,
             )
-            val result = when (T::class.java) {
+            val result = when (clazz) {
                 LibraryPreferences::class.java -> entryPoint.libraryPreferences()
                 DownloadPreferences::class.java -> entryPoint.downloadPreferences()
                 GetCategories::class.java -> entryPoint.getCategories()
@@ -43,4 +44,6 @@ class MigrationContext(val context: Context, val dryrun: Boolean) {
             null
         }
     }
+
+    inline fun <reified T : Any> get(): T? = getInstance(T::class.java)
 }

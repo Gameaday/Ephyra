@@ -202,19 +202,28 @@ class ExtensionManager(
             return
         }
 
+        val deviceLanguage = Locale.getDefault().language
+        if (deviceLanguage.isBlank()) {
+            return
+        }
+
         // Use the source lang as some aren't present on the extension level.
         val availableLanguages = extensions
             .flatMap(Extension.Available::sources)
             .distinctBy(Extension.Available.Source::lang)
             .map(Extension.Available.Source::lang)
 
-        val deviceLanguage = Locale.getDefault().language
         val defaultLanguages = preferences.enabledLanguages().defaultValue()
         val languagesToEnable = availableLanguages.filter {
-            it != deviceLanguage && it.startsWith(deviceLanguage)
+            it != deviceLanguage && (
+                it.startsWith("$deviceLanguage-", ignoreCase = true) ||
+                    it.startsWith("${deviceLanguage}_", ignoreCase = true)
+                )
         }
 
-        preferences.enabledLanguages().set(defaultLanguages + languagesToEnable)
+        if (languagesToEnable.isNotEmpty()) {
+            preferences.enabledLanguages().set(defaultLanguages + languagesToEnable)
+        }
         subLanguagesEnabledOnFirstRun = true
     }
 

@@ -29,18 +29,23 @@ class FakePreferenceStore : PreferenceStore {
         read: () -> T,
         write: (T) -> Unit,
     ) = object : Preference<T> {
+        private val flow = kotlinx.coroutines.flow.MutableStateFlow(read())
+
         override fun key(): String = key
         override fun getSync(): T = read()
         override suspend fun get(): T = read()
-        override fun set(value: T) = write(value)
+        override fun set(value: T) {
+            write(value)
+            flow.value = value
+        }
         override fun isSet(): Boolean = backing.containsKey(key)
         override fun delete() {
             backing.remove(key)
+            flow.value = defaultValue
         }
         override fun defaultValue(): T = defaultValue
-        override fun changes(): Flow<T> = flow { read() }
-        override fun stateIn(scope: CoroutineScope): StateFlow<T> =
-            changes().stateIn(scope, SharingStarted.Eagerly, getSync())
+        override fun changes(): Flow<T> = flow
+        override fun stateIn(scope: CoroutineScope): StateFlow<T> = flow
     }
 
     override fun getString(key: String, defaultValue: String): Preference<String> =

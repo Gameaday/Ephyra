@@ -19,6 +19,8 @@
 -keep,allowoptimization class okio.** { public protected *; }
 -keep,allowoptimization class org.jsoup.** { public protected *; }
 -keep,allowoptimization class rx.** { public protected *; }
+# Keep uy.kohesive.injekt shim for legacy Tachiyomi/Mihon extension compatibility
+-keep class uy.kohesive.injekt.** { *; }
 # JNI and Native library entry points must be fully preserved without optimization
 -keep class app.cash.quickjs.** { *; }
 
