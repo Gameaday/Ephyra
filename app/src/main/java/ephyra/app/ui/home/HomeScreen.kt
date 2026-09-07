@@ -97,9 +97,7 @@ fun HomeScreen(
         HomeTab.More,
     )
 
-    val incognito by viewModel.incognito.collectAsStateWithLifecycle()
-    val downloadOnly by viewModel.downloadOnly.collectAsStateWithLifecycle()
-    val indexing by viewModel.indexing.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         HomeScreen.openTabEvent.collect { tab ->
@@ -124,16 +122,21 @@ fun HomeScreen(
         Scaffold(
             topBar = {
                 AppStateBanners(
-                    downloadedOnlyMode = downloadOnly,
-                    incognitoMode = incognito,
-                    indexing = indexing,
+                    downloadedOnlyMode = state.downloadOnly,
+                    incognitoMode = state.incognito,
+                    indexing = state.indexing,
                 )
             },
             startBar = {
                 if (isTabletUi()) {
                     NavigationRail {
                         tabs.forEach {
-                            HomeNavigationRailItem(it, bottomNavController, viewModel)
+                            HomeNavigationRailItem(
+                                it,
+                                bottomNavController,
+                                state.updatesBadgeCount,
+                                state.extensionsBadgeCount,
+                            )
                         }
                     }
                 }
@@ -160,7 +163,12 @@ fun HomeScreen(
                     ) {
                         NavigationBar {
                             tabs.forEach {
-                                HomeNavigationBarItem(it, bottomNavController, viewModel)
+                                HomeNavigationBarItem(
+                                    it,
+                                    bottomNavController,
+                                    state.updatesBadgeCount,
+                                    state.extensionsBadgeCount,
+                                )
                             }
                         }
                     }
@@ -203,7 +211,8 @@ fun HomeScreen(
 private fun RowScope.HomeNavigationBarItem(
     tab: HomeTab,
     navController: NavHostController,
-    viewModel: HomeViewModel,
+    updatesBadgeCount: Int,
+    extensionsBadgeCount: Int,
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -224,7 +233,7 @@ private fun RowScope.HomeNavigationBarItem(
                 }
             }
         },
-        icon = { HomeTabIcon(tab, selected, viewModel) },
+        icon = { HomeTabIcon(tab, selected, updatesBadgeCount, extensionsBadgeCount) },
         label = {
             Text(
                 text = stringResource(tab.titleRes),
@@ -241,7 +250,8 @@ private fun RowScope.HomeNavigationBarItem(
 private fun HomeNavigationRailItem(
     tab: HomeTab,
     navController: NavHostController,
-    viewModel: HomeViewModel,
+    updatesBadgeCount: Int,
+    extensionsBadgeCount: Int,
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -262,7 +272,7 @@ private fun HomeNavigationRailItem(
                 }
             }
         },
-        icon = { HomeTabIcon(tab, selected, viewModel) },
+        icon = { HomeTabIcon(tab, selected, updatesBadgeCount, extensionsBadgeCount) },
         label = {
             Text(
                 text = stringResource(tab.titleRes),
@@ -279,37 +289,36 @@ private fun HomeNavigationRailItem(
 private fun HomeTabIcon(
     tab: HomeTab,
     selected: Boolean,
-    viewModel: HomeViewModel,
+    updatesBadgeCount: Int,
+    extensionsBadgeCount: Int,
 ) {
     BadgedBox(
         badge = {
             if (tab == HomeTab.Updates) {
-                val count by viewModel.updatesBadgeCount.collectAsStateWithLifecycle()
-                if (count > 0) {
+                if (updatesBadgeCount > 0) {
                     Badge {
                         val desc = pluralStringResource(
                             ephyra.app.core.common.R.plurals.notification_chapters_generic,
-                            count = count,
-                            count,
+                            count = updatesBadgeCount,
+                            updatesBadgeCount,
                         )
                         Text(
-                            text = count.toString(),
+                            text = updatesBadgeCount.toString(),
                             modifier = Modifier.semantics { contentDescription = desc },
                         )
                     }
                 }
             }
             if (tab == HomeTab.Browse) {
-                val count by viewModel.extensionsBadgeCount.collectAsStateWithLifecycle()
-                if (count > 0) {
+                if (extensionsBadgeCount > 0) {
                     Badge {
                         val desc = pluralStringResource(
                             ephyra.app.core.common.R.plurals.update_check_notification_ext_updates,
-                            count = count,
-                            count,
+                            count = extensionsBadgeCount,
+                            extensionsBadgeCount,
                         )
                         Text(
-                            text = count.toString(),
+                            text = extensionsBadgeCount.toString(),
                             modifier = Modifier.semantics { contentDescription = desc },
                         )
                     }

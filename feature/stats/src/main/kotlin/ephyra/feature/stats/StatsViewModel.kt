@@ -19,12 +19,9 @@ import ephyra.domain.track.model.Track
 import ephyra.domain.track.service.Tracker
 import ephyra.domain.track.service.TrackerManager
 import ephyra.feature.stats.data.StatsData
+import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.source.local.isLocal
 import eu.kanade.tachiyomi.source.model.SManga
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 
 @HiltViewModel
@@ -35,10 +32,9 @@ class StatsViewModel @Inject constructor(
     private val getTracks: GetTracks,
     private val preferences: LibraryPreferences,
     private val trackerManager: TrackerManager,
-) : ViewModel() {
+) : BaseUdfViewModel<StatsScreenState, Nothing, Nothing>(StatsScreenState.Loading) {
 
-    private val _state = MutableStateFlow<StatsScreenState>(StatsScreenState.Loading)
-    val state: StateFlow<StatsScreenState> = _state.asStateFlow()
+    override fun onEvent(event: Nothing) {}
 
     init {
         viewModelScope.launchIO {
@@ -78,7 +74,7 @@ class StatsViewModel @Inject constructor(
                 trackerCount = loggedInTrackers.size,
             )
 
-            _state.update {
+            updateState {
                 StatsScreenState.Success(
                     overview = overviewStatData,
                     titles = titlesStatData,

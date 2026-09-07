@@ -1,6 +1,6 @@
 package ephyra.app.ui.home
 
-import androidx.lifecycle.ViewModel
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.download.DownloadCache
@@ -8,10 +8,10 @@ import ephyra.domain.base.BasePreferences
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.source.interactor.GetIncognitoState
 import ephyra.domain.source.service.SourcePreferences
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
+import ephyra.presentation.core.udf.BaseUdfViewModel
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import javax.inject.Inject
 
 @HiltViewModel
@@ -21,28 +21,41 @@ class HomeViewModel @Inject constructor(
     private val downloadCache: DownloadCache,
     val libraryPreferences: LibraryPreferences,
     val sourcePreferences: SourcePreferences,
-) : ViewModel() {
+) : BaseUdfViewModel<HomeViewModel.State, Nothing, Nothing>(State()) {
 
-    val incognito: StateFlow<Boolean> = getIncognitoState.subscribe(null)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    init {
+        getIncognitoState.subscribe(null)
+            .onEach { incognito -> updateState { it.copy(incognito = incognito) } }
+            .launchIn(viewModelScope)
 
-    val downloadOnly: StateFlow<Boolean> = basePreferences.downloadedOnly().asState(viewModelScope)
+        basePreferences.downloadedOnly().changes()
+            .onEach { downloadOnly -> updateState { it.copy(downloadOnly = downloadOnly) } }
+            .launchIn(viewModelScope)
 
-    val indexing: StateFlow<Boolean> = downloadCache.isInitializing
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+        downloadCache.isInitializing
+            .onEach { indexing -> updateState { it.copy(indexing = indexing) } }
+            .launchIn(viewModelScope)
 
-    val updatesBadgeCount: StateFlow<Int> = combine(
-        libraryPreferences.newShowUpdatesCount().changes(),
-        libraryPreferences.newUpdatesCount().changes(),
-    ) { show, count -> if (show) count else 0 }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+        combine(
+            libraryPreferences.newShowUpdatesCount().changes(),
+            libraryPreferences.newUpdatesCount().changes(),
+        ) { show, count -> if (show) count else 0 }
+            .onEach { count -> updateState { it.copy(updatesBadgeCount = count) } }
+            .launchIn(viewModelScope)
 
-    val extensionsBadgeCount: StateFlow<Int> = sourcePreferences.extensionUpdatesCount().changes()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
-
-    private fun <T> ephyra.core.common.preference.Preference<T>.asState(
-        scope: kotlinx.coroutines.CoroutineScope,
-    ): StateFlow<T> {
-        return changes().stateIn(scope, SharingStarted.WhileSubscribed(5000), getSync())
+        sourcePreferences.extensionUpdatesCount().changes()
+            .onEach { count -> updateState { it.copy(extensionsBadgeCount = count) } }
+            .launchIn(viewModelScope)
     }
+
+    override fun onEvent(event: Nothing) {}
+
+    @Immutable
+    data class State(
+        val incognito: Boolean = false,
+        val downloadOnly: Boolean = false,
+        val indexing: Boolean = false,
+        val updatesBadgeCount: Int = 0,
+        val extensionsBadgeCount: Int = 0,
+    )
 }

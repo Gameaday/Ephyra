@@ -30,6 +30,31 @@ fun DeepLinkScreen(
         viewModel.init(query)
     }
     val state by viewModel.state.collectAsStateWithLifecycle()
+    LaunchedEffect(viewModel) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                is DeepLinkViewModel.Effect.NavigateToGlobalSearch -> {
+                    navController.navigate(Screen.GlobalSearch(effect.query)) {
+                        popUpTo(ScreenRoutes.Home.route) { inclusive = false }
+                    }
+                }
+                is DeepLinkViewModel.Effect.NavigateToMangaDetails -> {
+                    navController.navigate(Screen.MangaDetails(effect.mangaId, true)) {
+                        popUpTo(ScreenRoutes.Home.route) { inclusive = false }
+                    }
+                }
+                is DeepLinkViewModel.Effect.OpenReader -> {
+                    navController.popBackStack()
+                    ReaderActivity.newIntent(
+                        context,
+                        effect.mangaId,
+                        effect.chapterId,
+                    ).also(context::startActivity)
+                }
+            }
+        }
+    }
+
     Scaffold(
         topBar = { scrollBehavior ->
             AppBar(
@@ -39,30 +64,8 @@ fun DeepLinkScreen(
             )
         },
     ) { contentPadding ->
-        when (state) {
-            is DeepLinkViewModel.State.Loading -> {
-                LoadingScreen(Modifier.padding(contentPadding))
-            }
-            is DeepLinkViewModel.State.NoResults -> {
-                navController.navigate(Screen.GlobalSearch(query)) {
-                    popUpTo(ScreenRoutes.Home.route) { inclusive = false }
-                }
-            }
-            is DeepLinkViewModel.State.Result -> {
-                val resultState = state as DeepLinkViewModel.State.Result
-                if (resultState.chapterId == null) {
-                    navController.navigate(Screen.MangaDetails(resultState.manga.id, true)) {
-                        popUpTo(ScreenRoutes.Home.route) { inclusive = false }
-                    }
-                } else {
-                    navController.popBackStack()
-                    ReaderActivity.newIntent(
-                        context,
-                        resultState.manga.id,
-                        resultState.chapterId,
-                    ).also(context::startActivity)
-                }
-            }
+        if (state is DeepLinkViewModel.State.Loading) {
+            LoadingScreen(Modifier.padding(contentPadding))
         }
     }
 }
