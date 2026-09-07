@@ -49,6 +49,7 @@ sealed interface MangaScreenEvent {
     data object ShowTrackDialog : MangaScreenEvent
     data object ShowCoverDialog : MangaScreenEvent
     data object ShowEditMetadataDialog : MangaScreenEvent
+    data object ShowShareRecommendationDialog : MangaScreenEvent
     data class EditTitle(val value: String) : MangaScreenEvent
     data class EditAuthor(val value: String) : MangaScreenEvent
     data class EditArtist(val value: String) : MangaScreenEvent

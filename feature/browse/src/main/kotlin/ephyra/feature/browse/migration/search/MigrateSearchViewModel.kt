@@ -5,13 +5,13 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.interactor.NetworkToLocalManga
+import ephyra.domain.manga.interactor.SmartSourceSearchEngine
+import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
 import ephyra.feature.browse.source.globalsearch.GlobalSearchCache
 import ephyra.feature.browse.source.globalsearch.SearchItemResult
 import ephyra.feature.browse.source.globalsearch.SearchViewModel
-import ephyra.domain.manga.interactor.SmartSourceSearchEngine
-import ephyra.domain.manga.model.Manga
 import eu.kanade.tachiyomi.source.CatalogueSource
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
