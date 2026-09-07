@@ -55,8 +55,18 @@ abstract class BaseSourcePagingSource(
         return try {
             val mangasPage = withIOContext {
                 requestNextPage(page.toInt())
-                    .takeIf { it.mangas.isNotEmpty() }
-                    ?: throw NoResultsException()
+            }
+
+            if (mangasPage.mangas.isEmpty()) {
+                if (page == 1L) {
+                    throw NoResultsException()
+                } else {
+                    return LoadResult.Page(
+                        data = emptyList(),
+                        prevKey = null,
+                        nextKey = null,
+                    )
+                }
             }
 
             val manga = mangasPage.mangas

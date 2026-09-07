@@ -16,7 +16,7 @@ class GetExtensionSources(
             isMultiSource && extension.sources.map { it.name }.distinct().size == 1
 
         return preferences.disabledSources().changes().map { disabledSources ->
-            val disabledIds = disabledSources.mapTo(HashSet()) { it.toLong() }
+            val disabledIds = disabledSources.mapNotNullTo(HashSet()) { it.toLongOrNull() }
             fun Source.isEnabled() = id !in disabledIds
 
             extension.sources

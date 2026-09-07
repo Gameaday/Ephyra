@@ -9,11 +9,11 @@ class ToggleSource(
 ) {
 
     suspend fun await(source: Source, enable: Boolean? = null) {
-        await(source.id, enable ?: isEnabled(source.id))
+        await(source.id, enable ?: isDisabled(source.id))
     }
 
     suspend fun await(sourceId: Long, enable: Boolean? = null) {
-        val isEnable = enable ?: isEnabled(sourceId)
+        val isEnable = enable ?: isDisabled(sourceId)
         preferences.disabledSources().getAndSet { disabled ->
             if (isEnable) disabled.minus("$sourceId") else disabled.plus("$sourceId")
         }
@@ -26,7 +26,7 @@ class ToggleSource(
         }
     }
 
-    private suspend fun isEnabled(sourceId: Long): Boolean {
+    private suspend fun isDisabled(sourceId: Long): Boolean {
         return sourceId.toString() in preferences.disabledSources().get()
     }
 }

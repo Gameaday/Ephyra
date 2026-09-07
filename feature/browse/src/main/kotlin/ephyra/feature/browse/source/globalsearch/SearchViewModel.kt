@@ -51,9 +51,9 @@ abstract class SearchViewModel(
     private val enabledLanguages = sourcePreferences.enabledLanguages().getSync()
 
     private val disabledSourceIds = sourcePreferences.disabledSources().getSync()
-        .mapTo(HashSet()) { it.toLong() }
+        .mapNotNullTo(HashSet()) { it.toLongOrNull() }
     protected val pinnedSourceIds = sourcePreferences.pinnedSources().getSync()
-        .mapTo(HashSet()) { it.toLong() }
+        .mapNotNullTo(HashSet()) { it.toLongOrNull() }
 
     private var lastQuery: String? = null
     private var lastSourceFilter: SourceFilter? = null

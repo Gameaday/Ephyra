@@ -86,7 +86,7 @@ class GetAvailableSources @Inject constructor(
 
             // Add any catalogue sources not already covered
             for (source in catalogueSources) {
-                if (!unifiedSources.any { it.id == source.id && it.sourceType == SourceType.LEGACY_EXTENSION }) {
+                if (unifiedSources.none { it.id == source.id }) {
                     val isEnabled = source.id.toString() !in sourcePreferences.disabledSources().get()
                     unifiedSources.add(
                         UnifiedSource(
@@ -95,7 +95,7 @@ class GetAvailableSources @Inject constructor(
                             baseUrl = (source as? eu.kanade.tachiyomi.source.online.HttpSource)?.baseUrl ?: "",
                             sourceType = SourceType.LEGACY_EXTENSION,
                             enabled = isEnabled,
-                            extensionId = null,
+                            extensionId = extensionManager.getExtensionPackage(source.id),
                             lastHealthCheck = 0,
                             failureCount = 0,
                         ),

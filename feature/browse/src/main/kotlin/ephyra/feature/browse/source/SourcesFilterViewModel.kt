@@ -86,7 +86,9 @@ class SourcesFilterViewModel @Inject constructor(
             val isEmpty: Boolean
                 get() = items.isEmpty()
 
-            val disabledSourceIds: Set<Long> by lazy { disabledSources.mapTo(HashSet()) { it.toLong() } }
+            val disabledSourceIds: Set<Long> by lazy {
+                disabledSources.mapNotNullTo(HashSet()) { it.toLongOrNull() }
+            }
         }
     }
 }

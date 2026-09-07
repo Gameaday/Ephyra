@@ -24,9 +24,9 @@ class GetEnabledSources(
             repository.getSources(),
         ) { pinnedSourceIds, enabledLanguages, disabledSources, lastUsedSource, sources ->
             // Parse Set<String> IDs to Set<Long> once per emission to avoid creating a String
-            // for every source on every filter/flatMap call.
-            val disabledIds = disabledSources.mapTo(HashSet()) { it.toLong() }
-            val pinnedIds = pinnedSourceIds.mapTo(HashSet()) { it.toLong() }
+            // for every source on every filter/flatMap call. Safely ignore non-numeric entries.
+            val disabledIds = disabledSources.mapNotNullTo(HashSet()) { it.toLongOrNull() }
+            val pinnedIds = pinnedSourceIds.mapNotNullTo(HashSet()) { it.toLongOrNull() }
             val sortedSources = sources
                 .filter { (it.lang in enabledLanguages || it.isLocal()) && it.id !in disabledIds }
                 .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })

@@ -28,6 +28,18 @@ class DynamicHttpSource(
     override val id: Long = profile.baseUrl.hashCode().toLong()
     override val supportsLatest: Boolean = true
 
+    override fun headersBuilder(): okhttp3.Headers.Builder = okhttp3.Headers.Builder().apply {
+        add("User-Agent", network.defaultUserAgentProvider())
+        add("Referer", "$baseUrl/")
+    }
+
+    private fun resolveUrl(url: String): String {
+        if (url.startsWith("http://") || url.startsWith("https://")) return url
+        val cleanBase = baseUrl.trimEnd('/')
+        val cleanUrl = url.trimStart('/')
+        return "$cleanBase/$cleanUrl"
+    }
+
     override suspend fun getPopularManga(page: Int): MangasPage {
         val items = orchestrator.getPopular(baseUrl, page).getOrThrow()
         return MangasPage(
@@ -53,13 +65,13 @@ class DynamicHttpSource(
     }
 
     override suspend fun getMangaDetails(manga: SManga): SManga {
-        val fullUrl = if (manga.url.startsWith("http")) manga.url else baseUrl + manga.url
+        val fullUrl = resolveUrl(manga.url)
         val item = orchestrator.getItem(baseUrl, fullUrl).getOrThrow()
         return item.toSManga().apply { initialized = true }
     }
 
     override suspend fun getChapterList(manga: SManga): List<SChapter> {
-        val fullUrl = if (manga.url.startsWith("http")) manga.url else baseUrl + manga.url
+        val fullUrl = resolveUrl(manga.url)
         val units = orchestrator.getChapters(baseUrl, fullUrl).getOrThrow()
         return units.map { unit ->
             SChapter.create().apply {
@@ -73,11 +85,16 @@ class DynamicHttpSource(
     }
 
     override suspend fun getPageList(chapter: SChapter): List<Page> {
-        val fullUrl = if (chapter.url.startsWith("http")) chapter.url else baseUrl + chapter.url
+        val fullUrl = resolveUrl(chapter.url)
         val pages = orchestrator.getPages(baseUrl, fullUrl).getOrThrow()
         return pages.mapIndexed { index, imageUrl ->
-            Page(index = index, url = imageUrl, imageUrl = imageUrl)
+            val resolvedUrl = resolveUrl(imageUrl)
+            Page(index = index, url = resolvedUrl, imageUrl = resolvedUrl)
         }
+    }
+
+    override suspend fun getImageUrl(page: Page): String {
+        return page.imageUrl?.takeIf { it.isNotBlank() } ?: resolveUrl(page.url)
     }
 
     private fun ContentItem.toSManga(): SManga {
@@ -92,7 +109,7 @@ class DynamicHttpSource(
                     this@toSManga.url
                 }
             title = this@toSManga.title
-            thumbnail_url = this@toSManga.thumbnailUrl
+            thumbnail_url = this@toSManga.thumbnailUrl?.let { resolveUrl(it) }
             description = this@toSManga.description
             author = this@toSManga.author
             artist = this@toSManga.artist
