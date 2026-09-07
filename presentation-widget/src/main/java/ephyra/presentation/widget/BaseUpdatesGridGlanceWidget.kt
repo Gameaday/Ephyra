@@ -163,8 +163,18 @@ abstract class BaseUpdatesGridGlanceWidget : GlanceAppWidget() {
                             val workClass = Class.forName(
                                 "ephyra.app.data.work.WidgetUpdatesJob",
                             ) as Class<out ListenableWorker>
-                            val workRequest = OneTimeWorkRequest.Builder(workClass).build()
-                            WorkManager.getInstance(widgetContext).enqueue(workRequest)
+                            val constraints = androidx.work.Constraints.Builder()
+                                .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
+                                .setRequiresBatteryNotLow(true)
+                                .build()
+                            val workRequest = OneTimeWorkRequest.Builder(workClass)
+                                .setConstraints(constraints)
+                                .build()
+                            WorkManager.getInstance(widgetContext).enqueueUniqueWork(
+                                "WidgetUpdatesJob",
+                                androidx.work.ExistingWorkPolicy.KEEP,
+                                workRequest,
+                            )
                         } catch (e: Exception) {
                             logcat(LogPriority.WARN, e) { "Failed to enqueue WidgetUpdatesJob via reflection" }
                         }

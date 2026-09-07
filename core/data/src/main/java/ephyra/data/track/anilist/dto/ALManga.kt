@@ -76,6 +76,20 @@ data class ALUserManga(
         isPrivate = this@ALUserManga.isPrivate
     }
 
+    fun toTrackSearch() = manga.toTrack().apply {
+        status = try {
+            toTrackStatus()
+        } catch (_: Exception) {
+            0L
+        }
+        score = scoreRaw.toDouble()
+        started_reading_date = startDateFuzzy
+        finished_reading_date = completedDateFuzzy
+        last_chapter_read = chaptersRead.toDouble()
+        library_id = libraryId
+        isPrivate = this@ALUserManga.isPrivate
+    }
+
     private fun toTrackStatus() = when (listStatus) {
         "CURRENT" -> Anilist.READING
         "COMPLETED" -> Anilist.COMPLETED

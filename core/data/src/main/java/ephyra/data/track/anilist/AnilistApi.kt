@@ -357,6 +357,105 @@ class AnilistApi(
         return findLibManga(track, userId) ?: throw Exception("Could not find manga")
     }
 
+    suspend fun getUserFullList(userId: Int): List<TrackSearch> {
+        return withIOContext {
+            val query = """
+            |query (${'$'}id: Int!, ${'$'}page: Int) {
+                |Page(page: ${'$'}page, perPage: 50) {
+                    |pageInfo {
+                        |hasNextPage
+                    |}
+                    |mediaList(userId: ${'$'}id, type: MANGA) {
+                        |id
+                        |status
+                        |scoreRaw: score(format: POINT_100)
+                        |progress
+                        |private
+                        |startedAt {
+                            |year
+                            |month
+                            |day
+                        |}
+                        |completedAt {
+                            |year
+                            |month
+                            |day
+                        |}
+                        |media {
+                            |id
+                            |title {
+                                |userPreferred
+                            |}
+                            |coverImage {
+                                |large
+                            |}
+                            |format
+                            |status
+                            |chapters
+                            |description
+                            |startDate {
+                                |year
+                                |month
+                                |day
+                            |}
+                            |staff {
+                                |edges {
+                                    |role
+                                    |id
+                                    |node {
+                                        |name {
+                                            |full
+                                            |userPreferred
+                                            |native
+                                        |}
+                                    |}
+                                |}
+                            |}
+                        |}
+                    |}
+                |}
+            |}
+            |
+            """.trimMargin()
+
+            val allItems = mutableListOf<TrackSearch>()
+            var page = 1
+            var hasNextPage = true
+
+            while (hasNextPage) {
+                val payload = buildJsonObject {
+                    put("query", query)
+                    putJsonObject("variables") {
+                        put("id", userId)
+                        put("page", page)
+                    }
+                }
+
+                val result = with(json) {
+                    authClient.newCall(
+                        POST(
+                            API_URL,
+                            body = payload.toString().toRequestBody(jsonMime),
+                        ),
+                    )
+                        .awaitSuccess()
+                        .parseAs<ALUserListMangaQueryResult>()
+                }
+
+                val mediaList = result.data.page.mediaList
+                val pageItems = mediaList.map { item ->
+                    item.toALUserManga().toTrackSearch()
+                }
+                allItems.addAll(pageItems)
+
+                hasNextPage = (result.data.page.pageInfo?.hasNextPage == true) && pageItems.isNotEmpty()
+                page++
+            }
+
+            allItems
+        }
+    }
+
     fun createOAuth(token: String): ALOAuth {
         return ALOAuth(token, "Bearer", System.currentTimeMillis() + 31536000000, 31536000000)
     }

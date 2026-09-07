@@ -10,10 +10,12 @@ import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.model.Track
 import ephyra.domain.track.model.TrackSearch
 import ephyra.domain.track.service.DeletableTracker
+import ephyra.domain.track.service.ReadingListTracker
 import ephyra.domain.track.service.TrackPreferences
 import eu.kanade.tachiyomi.network.NetworkHelper
 import kotlinx.serialization.json.Json
 import ephyra.data.database.models.Track as DbTrack
+import ephyra.domain.track.model.TrackSearch as DomainTrackSearch
 
 class MyAnimeList(
     id: Long,
@@ -23,7 +25,8 @@ class MyAnimeList(
     insertTrack: InsertTrack,
     private val json: Json,
 ) : BaseTracker(id, "MyAnimeList", context, trackPreferences, networkService, insertTrack),
-    DeletableTracker {
+    DeletableTracker,
+    ReadingListTracker {
 
     companion object {
         const val READING = 1L
@@ -142,6 +145,10 @@ class MyAnimeList(
     }
 
     suspend fun getUserFullList() = api.getUserFullList()
+
+    override suspend fun getUserReadingList(): List<DomainTrackSearch> {
+        return api.getUserMangaList().map { it.toDomainTrackSearch() }
+    }
 
     override suspend fun login(username: String, password: String) = login(password)
 

@@ -111,8 +111,8 @@ We are currently executing a phased transition to reach the target state describ
 
 ### Phase 9: Advanced Features & Polish
 - [ ] Add Migration tools (Tachiyomi and Mihon).
-- [ ] Implement **AniList Reading List Import** (parity with MAL import).
-- [ ] Implement **Two-way Tracker Sync**: push library additions back to AniList/MAL.
+- [x] Implement **AniList Reading List Import** (parity with MAL import).
+- [x] Implement **Two-way Tracker Sync**: push library additions back to AniList/MAL.
 - [ ] Implement **Collections**: custom, smart, and auto-generated groups (beyond categories).
 - [ ] Implement **Personal Notes Sharing**: export manga cards with user-written notes.
 - [ ] Improve performance and memory usage.
@@ -141,7 +141,7 @@ We are currently executing a phased transition to reach the target state describ
 
 ---
 
-1. **Glance Widget Performance**: Move image loading out of the Glance lifecycle and implement a background worker to handle async pre-caching of bitmaps for `BaseUpdatesGridGlanceWidget`.
+1. [x] **Glance Widget Performance**: Move image loading out of the Glance lifecycle and implement a background worker to handle async pre-caching of bitmaps for `BaseUpdatesGridGlanceWidget`.
 
 
 

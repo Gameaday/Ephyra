@@ -8,10 +8,12 @@ import ephyra.data.track.model.TrackSearch
 import ephyra.data.track.model.toDomainTrackSearch
 import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.model.Track
+import ephyra.domain.track.service.ReadingListTracker
 import ephyra.domain.track.service.TrackPreferences
 import eu.kanade.tachiyomi.network.NetworkHelper
 import kotlinx.serialization.json.Json
 import ephyra.data.database.models.Track as DbTrack
+import ephyra.domain.track.model.TrackSearch as DomainTrackSearch
 
 class Anilist(
     id: Long,
@@ -20,7 +22,8 @@ class Anilist(
     networkService: NetworkHelper,
     insertTrack: InsertTrack,
     private val json: Json,
-) : BaseTracker(id, "AniList", context, trackPreferences, networkService, insertTrack) {
+) : BaseTracker(id, "AniList", context, trackPreferences, networkService, insertTrack),
+    ReadingListTracker {
 
     companion object {
         const val READING = 1L
@@ -135,6 +138,11 @@ class Anilist(
 
     override suspend fun refreshInternal(track: DbTrack): DbTrack {
         return api.findLibManga(track, getUsername().toInt()) ?: updateInternal(track)
+    }
+
+    override suspend fun getUserReadingList(): List<DomainTrackSearch> {
+        val userId = getUsername().toIntOrNull() ?: api.getCurrentUser().first
+        return api.getUserFullList(userId).map { it.toDomainTrackSearch() }
     }
 
     override suspend fun login(username: String, password: String) {

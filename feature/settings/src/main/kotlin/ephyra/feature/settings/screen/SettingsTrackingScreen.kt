@@ -75,7 +75,7 @@ object SettingsTrackingScreen : SearchableSettings {
 
     private data class LogoutDialog(val tracker: Tracker)
 
-    private data class ImportConfirmDialog(val trackerName: String)
+    private data class ImportConfirmDialog(val trackerId: Long, val trackerName: String)
 
     private data class JellyfinLogin(val tracker: ephyra.data.track.jellyfin.Jellyfin)
 
@@ -109,7 +109,7 @@ object SettingsTrackingScreen : SearchableSettings {
         val scope = rememberCoroutineScope()
 
         var dialog by remember { mutableStateOf<Any?>(null) }
-        var importingFromMal by remember { mutableStateOf(false) }
+        var importingTrackerId by remember { mutableStateOf<Long?>(null) }
         var resolveResultText by remember { mutableStateOf<String?>(null) }
         dialog?.run {
             when (this) {
@@ -129,15 +129,16 @@ object SettingsTrackingScreen : SearchableSettings {
                 }
 
                 is ImportConfirmDialog -> {
+                    val targetTrackerId = trackerId
                     TrackingImportConfirmDialog(
                         trackerName = trackerName,
                         onConfirm = {
                             dialog = null
-                            importingFromMal = true
+                            importingTrackerId = targetTrackerId
                             scope.launchIO {
-                                val result = trackerListImporter.importFromMal()
+                                val result = trackerListImporter.importFromTracker(targetTrackerId)
                                 withContext(Dispatchers.Main) {
-                                    importingFromMal = false
+                                    importingTrackerId = null
                                     if (result.isSuccess) {
                                         val msg = context.stringResource(
                                             ephyra.app.core.common.R.string.tracker_import_success,
@@ -197,24 +198,51 @@ object SettingsTrackingScreen : SearchableSettings {
         val malName = trackerManager.get(TrackerManager.MYANIMELIST)!!.name
         val isMalLoggedIn by trackerManager.get(TrackerManager.MYANIMELIST)!!.isLoggedInFlow
             .collectAsState(initial = false)
+        val anilistName = trackerManager.get(TrackerManager.ANILIST)!!.name
+        val isAnilistLoggedIn by trackerManager.get(TrackerManager.ANILIST)!!.isLoggedInFlow
+            .collectAsState(initial = false)
+
         val importPreferences = buildList {
             if (isMalLoggedIn) {
                 add(
                     Preference.PreferenceItem.TextPreference(
-                        title = if (importingFromMal) {
+                        title = if (importingTrackerId == TrackerManager.MYANIMELIST) {
                             stringResource(ephyra.app.core.common.R.string.tracker_import_loading, malName)
                         } else {
                             stringResource(ephyra.app.core.common.R.string.tracker_import_label, malName)
                         },
                         subtitle = stringResource(ephyra.app.core.common.R.string.tracker_import_subtitle, malName),
-                        enabled = !importingFromMal,
-                        onClick = { dialog = ImportConfirmDialog(malName) },
+                        enabled = importingTrackerId == null,
+                        onClick = { dialog = ImportConfirmDialog(TrackerManager.MYANIMELIST, malName) },
+                    ),
+                )
+            }
+            if (isAnilistLoggedIn) {
+                add(
+                    Preference.PreferenceItem.TextPreference(
+                        title = if (importingTrackerId == TrackerManager.ANILIST) {
+                            stringResource(ephyra.app.core.common.R.string.tracker_import_loading, anilistName)
+                        } else {
+                            stringResource(ephyra.app.core.common.R.string.tracker_import_label, anilistName)
+                        },
+                        subtitle = stringResource(ephyra.app.core.common.R.string.tracker_import_subtitle, anilistName),
+                        enabled = importingTrackerId == null,
+                        onClick = { dialog = ImportConfirmDialog(TrackerManager.ANILIST, anilistName) },
                     ),
                 )
             }
         }
 
         return buildList {
+            if (importPreferences.isNotEmpty()) {
+                add(
+                    Preference.PreferenceGroup(
+                        title = stringResource(ephyra.app.core.common.R.string.tracker_import_group_title),
+                        preferenceItems = importPreferences.toImmutableList(),
+                    ),
+                )
+            }
+
             add(
                 Preference.PreferenceItem.SwitchPreference(
                     preference = trackPreferences.autoUpdateTrack(),

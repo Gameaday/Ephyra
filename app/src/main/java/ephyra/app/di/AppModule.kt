@@ -1530,6 +1530,7 @@ object AppModule {
         syncJellyfin: SyncJellyfin,
         setExcludedScanlators: SetExcludedScanlators,
         setMangaCategories: SetMangaCategories,
+        addTracks: AddTracks,
     ) = MangaInfoInteractor(
         updateManga,
         mangaRepository,
@@ -1538,6 +1539,7 @@ object AppModule {
         syncJellyfin,
         setExcludedScanlators,
         setMangaCategories,
+        addTracks,
     )
 
     @Provides

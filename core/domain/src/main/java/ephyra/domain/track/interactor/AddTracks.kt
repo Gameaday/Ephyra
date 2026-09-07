@@ -138,6 +138,56 @@ class AddTracks(
     }
 
     /**
+     * Pushes a newly-favorited library manga back to logged-in authoritative trackers (AniList, MAL).
+     * If the manga already has a canonical ID corresponding to a logged-in tracker,
+     * this binds/adds the entry to the user's remote reading list with status [PLAN_TO_READ] or [READING].
+     */
+    suspend fun syncLibraryAdditionToTrackers(manga: Manga) = withNonCancellableContext {
+        withIOContext {
+            val canonicalId = manga.canonicalId ?: return@withIOContext
+            val parts = canonicalId.split(":", limit = 2)
+            if (parts.size != 2) return@withIOContext
+            val prefix = parts[0]
+            val remoteId = parts[1].toLongOrNull() ?: return@withIOContext
+
+            val trackerManager = trackerManagerProvider()
+            val loggedInTrackers = trackerManager.loggedInTrackers()
+
+            val matchingTrackerEntry = TRACKER_CANONICAL_PREFIXES.entries.firstOrNull { it.value == prefix }
+                ?: return@withIOContext
+            val tracker = loggedInTrackers.firstOrNull { it.id == matchingTrackerEntry.key }
+                ?: return@withIOContext
+
+            try {
+                val allChapters = getChaptersByMangaId.await(manga.id)
+                val readChapters = allChapters.filter { it.read }
+                val lastRead = readChapters.maxOfOrNull { it.chapterNumber } ?: 0.0
+
+                val track = Track(
+                    id = 0L,
+                    mangaId = manga.id,
+                    trackerId = tracker.id,
+                    remoteId = remoteId,
+                    libraryId = null,
+                    title = manga.title,
+                    lastChapterRead = lastRead,
+                    totalChapters = 0L,
+                    status = 0L,
+                    score = 0.0,
+                    remoteUrl = "",
+                    startDate = 0L,
+                    finishDate = 0L,
+                    isPrivate = false,
+                )
+                bind(tracker, track, manga.id)
+                logcat(LogPriority.INFO) { "Two-way sync: pushed '${manga.title}' to ${tracker.name} ($canonicalId)" }
+            } catch (e: Exception) {
+                logcat(LogPriority.WARN, e) { "Two-way sync failed for '${manga.title}' with ${tracker.name}" }
+            }
+        }
+    }
+
+    /**
      * Sets the canonical_id on a manga from a tracker's remote_id, if not already set.
      * Format: "al:21" for AniList, "mal:13" for MyAnimeList, "mu:abc123" for MangaUpdates.
      * Only authoritative trackers (AniList, MAL, MangaUpdates) produce canonical IDs.

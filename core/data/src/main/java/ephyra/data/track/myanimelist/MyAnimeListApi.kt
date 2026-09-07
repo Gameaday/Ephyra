@@ -224,6 +224,18 @@ class MyAnimeListApi(
         }
     }
 
+    /**
+     * Fetches the user's full reading list with populated user reading status.
+     */
+    suspend fun getUserMangaList(): List<TrackSearch> {
+        return getUserFullList().map { (trackSearch, listStatus) ->
+            if (listStatus != null) {
+                parseMangaItem(listStatus, trackSearch)
+            }
+            trackSearch
+        }
+    }
+
     private suspend fun getListPage(offset: Int): MALSearchResult {
         return withIOContext {
             val urlBuilder = "$BASE_API_URL/users/@me/mangalist".toUri().buildUpon()

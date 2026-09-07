@@ -96,27 +96,27 @@ To drive Ephyra to a production-grade 1.0 launch, the remaining work is divided 
 4. **Database Migration Verifications**:
    - Expand `EphyraDatabaseMigrationTest.kt` to validate future schema modifications, ensuring zero fallback to destructive migration in production.
 
-### Phase B: Advanced Features & Parity (Medium Priority)
+### Phase B: Advanced Features & Parity (In Progress - Active)
 *Objective: Build remaining features to achieve high parity and deliver extreme value to power users.*
 
-1. **AniList Reading List Import**:
-   - Implement import services in the tracking manager that fetch and parse lists from AniList, matching titles opportunistically via Ephyra's canonical matching system.
-2. **Two-Way Tracker Sync**:
-   - Build WorkManager-driven synchronization triggers to push reader progress updates (chapters read) back to AniList and MyAnimeList (MAL) in the background.
+1. **AniList Reading List Import (100% Completed)**:
+   - Implemented import services in the tracking manager that fetch and parse lists from AniList using paginated GraphQL, matching titles opportunistically via Ephyra's canonical matching system (`TrackerListImporter.kt`).
+2. **Two-Way Tracker Sync (100% Completed)**:
+   - Built background/library synchronization triggers (`AddTracks.kt`, `MangaInfoInteractor.kt`, `MangaViewModel.kt`) to push reader additions and progress back to AniList and MyAnimeList (MAL).
 3. **Collections & Smart Groups**:
    - Implement standard auto-generated smart groups (e.g. "Recently Read", "Completed", "Downloaded Offline") that dynamically compute membership from local Room entities.
 4. **Personal Notes Sharing**:
    - Design Compose UI bottom sheets to allow users to write and export custom manga reviews or metadata notes as beautifully styled sharing cards.
 
-### Phase C: Polish, Performance & Diagnostics (Low Priority)
+### Phase C: Polish, Performance & Diagnostics (In Progress - Active)
 *Objective: Eliminate memory leaks, optimize battery consumption, and perfect user onboarding.*
 
 1. **LeakCanary Memory Diagnostics**:
    - Add LeakCanary in the `debugImplementation` configuration of the launcher app to audit activity/fragment destruction lifecycles.
 2. **App Onboarding Flow**:
    - Build a responsive, Material 3 onboarding slider to welcome new users and guide them through folder permission setup.
-3. **Battery & Wakelock Auditing**:
-   - Audit the WorkManager background pre-caching cycles (`WidgetUpdatesJob`) to ensure they respect the device's charging/idle battery status.
+3. **Battery & Wakelock Auditing (100% Completed)**:
+   - Audited and hardened WorkManager background pre-caching cycles (`WidgetUpdatesJob` & `BaseUpdatesGridGlanceWidget`) with `requiresBatteryNotLow(true)`, `NetworkType.CONNECTED`, and headless-safe constraints.
 
 ---
 

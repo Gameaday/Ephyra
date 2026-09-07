@@ -29,8 +29,8 @@ class WidgetUpdatesJob(
             val updates = getUpdates.await(false, dateLimit)
 
             // Standard widget dimensions: 58.dp x 87.dp
-            val widthPx = 58.dpToPx
-            val heightPx = 87.dpToPx
+            val widthPx = runCatching { 58.dpToPx }.getOrDefault(116)
+            val heightPx = runCatching { 87.dpToPx }.getOrDefault(174)
 
             // Distinct cover pre-caching requests
             updates
@@ -85,6 +85,29 @@ class WidgetUpdatesJob(
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e) { "Failed to pre-cache widget cover bitmaps" }
             return Result.retry()
+        }
+    }
+
+    companion object {
+        const val TAG = "WidgetUpdatesJob"
+
+        fun createConstraints(): androidx.work.Constraints {
+            return androidx.work.Constraints.Builder()
+                .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
+                .setRequiresBatteryNotLow(true)
+                .build()
+        }
+
+        fun setupTask(context: Context) {
+            val request = androidx.work.OneTimeWorkRequestBuilder<WidgetUpdatesJob>()
+                .setConstraints(createConstraints())
+                .addTag(TAG)
+                .build()
+            androidx.work.WorkManager.getInstance(context).enqueueUniqueWork(
+                TAG,
+                androidx.work.ExistingWorkPolicy.KEEP,
+                request,
+            )
         }
     }
 }

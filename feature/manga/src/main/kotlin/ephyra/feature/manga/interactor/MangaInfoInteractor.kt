@@ -7,6 +7,7 @@ import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaUpdate
 import ephyra.domain.manga.repository.MangaRepository
+import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.MatchUnlinkedManga
 import ephyra.domain.track.interactor.RefreshCanonicalMetadata
 import javax.inject.Inject
@@ -19,7 +20,9 @@ class MangaInfoInteractor @Inject constructor(
     private val syncJellyfin: SyncJellyfin,
     private val setExcludedScanlators: SetExcludedScanlators,
     private val setMangaCategories: SetMangaCategories,
+    private val addTracks: AddTracks,
 ) {
+
     suspend fun updateManga(update: MangaUpdate) {
         updateManga.await(update)
     }
@@ -53,6 +56,10 @@ class MangaInfoInteractor @Inject constructor(
 
     suspend fun markJellyfinFavoriteIfLinked(manga: Manga, favorite: Boolean) {
         syncJellyfin.markJellyfinFavoriteIfLinked(manga, favorite)
+    }
+
+    suspend fun syncLibraryAdditionToTrackers(manga: Manga) {
+        addTracks.syncLibraryAdditionToTrackers(manga)
     }
 
     suspend fun updateUpdateStrategy(

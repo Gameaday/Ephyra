@@ -169,6 +169,9 @@ class MangaViewModel @Inject constructor(
             val favorite = !manga.favorite
             if (mangaInfoInteractor.updateFavorite(manga.id, favorite)) {
                 mangaInfoInteractor.markJellyfinFavoriteIfLinked(manga, favorite)
+                if (favorite) {
+                    mangaInfoInteractor.syncLibraryAdditionToTrackers(manga)
+                }
             }
         }
     }

@@ -84,6 +84,7 @@ class TrackSearch : Track {
 fun TrackSearch.toDomainTrackSearch() = ephyra.domain.track.model.TrackSearch(
     remote_id = remote_id,
     title = title,
+    tracker_id = tracker_id,
     tracking_url = tracking_url,
     summary = summary,
     authors = authors,
@@ -91,7 +92,14 @@ fun TrackSearch.toDomainTrackSearch() = ephyra.domain.track.model.TrackSearch(
     cover_url = cover_url,
     publishing_type = publishing_type,
     publishing_status = publishing_status,
+    start_date = start_date,
     alternative_titles = alternative_titles,
     genres = genres,
     total_chapters = total_chapters,
+    last_chapter_read = last_chapter_read,
+    status = status,
+    score = score,
+    started_reading_date = started_reading_date,
+    finished_reading_date = finished_reading_date,
+    isPrivate = isPrivate,
 )
