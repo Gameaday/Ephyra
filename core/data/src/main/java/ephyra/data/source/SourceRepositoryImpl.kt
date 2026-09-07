@@ -14,9 +14,10 @@ import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
 import ephyra.domain.source.model.Source as DomainSource
 
-class SourceRepositoryImpl(
+class SourceRepositoryImpl @Inject constructor(
     private val sourceManager: SourceManager,
     private val mangaDao: MangaDao,
     private val networkToLocalManga: NetworkToLocalManga,

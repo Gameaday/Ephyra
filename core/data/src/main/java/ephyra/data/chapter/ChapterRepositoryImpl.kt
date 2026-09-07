@@ -9,8 +9,9 @@ import ephyra.domain.chapter.repository.ChapterRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import logcat.LogPriority
+import javax.inject.Inject
 
-class ChapterRepositoryImpl(
+class ChapterRepositoryImpl @Inject constructor(
     private val chapterDao: ChapterDao,
 ) : ChapterRepository {
 

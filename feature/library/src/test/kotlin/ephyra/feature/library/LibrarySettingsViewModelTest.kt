@@ -12,6 +12,7 @@ import ephyra.domain.library.model.LibrarySort
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.track.service.Tracker
 import ephyra.domain.track.service.TrackerManager
+import ephyra.presentation.core.ui.AppInfo
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -37,6 +38,7 @@ class LibrarySettingsViewModelTest {
     private val setDisplayMode: SetDisplayMode = mockk(relaxed = true)
     private val setSortModeForCategory: SetSortModeForCategory = mockk(relaxed = true)
     private val trackerManager: TrackerManager = mockk(relaxed = true)
+    private val appInfo: AppInfo = mockk(relaxed = true)
 
     private val filterDownloadedPref: Preference<TriState> = mockk(relaxed = true)
     private val filterTrackingPref: Preference<TriState> = mockk(relaxed = true)
@@ -57,15 +59,18 @@ class LibrarySettingsViewModelTest {
         Dispatchers.resetMain()
     }
 
+    private fun createViewModel(): LibrarySettingsViewModel = LibrarySettingsViewModel(
+        basePreferences,
+        libraryPreferences,
+        setDisplayMode,
+        setSortModeForCategory,
+        trackerManager,
+        appInfo,
+    )
+
     @Test
     fun `initial state has empty trackers`() = runTest {
-        val viewModel = LibrarySettingsViewModel(
-            basePreferences,
-            libraryPreferences,
-            setDisplayMode,
-            setSortModeForCategory,
-            trackerManager,
-        )
+        val viewModel = createViewModel()
 
         viewModel.state.test {
             assertEquals(emptyList<Tracker>(), awaitItem().loggedInTrackers)
@@ -79,13 +84,7 @@ class LibrarySettingsViewModelTest {
             every { name } returns "MyAnimeList"
         }
 
-        val viewModel = LibrarySettingsViewModel(
-            basePreferences,
-            libraryPreferences,
-            setDisplayMode,
-            setSortModeForCategory,
-            trackerManager,
-        )
+        val viewModel = createViewModel()
 
         viewModel.state.test {
             assertEquals(emptyList<Tracker>(), awaitItem().loggedInTrackers)
@@ -100,13 +99,7 @@ class LibrarySettingsViewModelTest {
     @Test
     fun `ToggleFilter toggles TriState preference`() = runTest {
         coEvery { filterDownloadedPref.get() } returns TriState.DISABLED
-        val viewModel = LibrarySettingsViewModel(
-            basePreferences,
-            libraryPreferences,
-            setDisplayMode,
-            setSortModeForCategory,
-            trackerManager,
-        )
+        val viewModel = createViewModel()
 
         viewModel.onEvent(LibrarySettingsScreenEvent.ToggleFilter(LibraryPreferences::filterDownloaded))
 
@@ -116,13 +109,7 @@ class LibrarySettingsViewModelTest {
     @Test
     fun `ToggleTracker toggles tracker filter preference`() = runTest {
         coEvery { filterTrackingPref.get() } returns TriState.DISABLED
-        val viewModel = LibrarySettingsViewModel(
-            basePreferences,
-            libraryPreferences,
-            setDisplayMode,
-            setSortModeForCategory,
-            trackerManager,
-        )
+        val viewModel = createViewModel()
 
         viewModel.onEvent(LibrarySettingsScreenEvent.ToggleTracker(123))
 
@@ -131,13 +118,7 @@ class LibrarySettingsViewModelTest {
 
     @Test
     fun `SetDisplayMode invokes interactor`() = runTest {
-        val viewModel = LibrarySettingsViewModel(
-            basePreferences,
-            libraryPreferences,
-            setDisplayMode,
-            setSortModeForCategory,
-            trackerManager,
-        )
+        val viewModel = createViewModel()
 
         viewModel.onEvent(LibrarySettingsScreenEvent.SetDisplayMode(LibraryDisplayMode.List))
 
@@ -147,13 +128,7 @@ class LibrarySettingsViewModelTest {
     @Test
     fun `SetSort invokes interactor`() = runTest {
         val category: Category = mockk(relaxed = true)
-        val viewModel = LibrarySettingsViewModel(
-            basePreferences,
-            libraryPreferences,
-            setDisplayMode,
-            setSortModeForCategory,
-            trackerManager,
-        )
+        val viewModel = createViewModel()
 
         viewModel.onEvent(
             LibrarySettingsScreenEvent.SetSort(

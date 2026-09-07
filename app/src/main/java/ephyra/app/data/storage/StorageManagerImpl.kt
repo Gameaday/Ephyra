@@ -3,6 +3,8 @@ package ephyra.app.data.storage
 import android.content.Context
 import androidx.core.net.toUri
 import com.hippo.unifile.UniFile
+import dagger.hilt.android.qualifiers.ApplicationContext
+import ephyra.core.common.di.IoDispatcher
 import ephyra.core.common.util.storage.DiskUtil
 import ephyra.domain.storage.service.StorageManager
 import ephyra.domain.storage.service.StoragePreferences
@@ -17,11 +19,12 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.shareIn
+import javax.inject.Inject
 
-class StorageManagerImpl(
-    private val context: Context,
+class StorageManagerImpl @Inject constructor(
+    @ApplicationContext private val context: Context,
     storagePreferences: StoragePreferences,
-    ioDispatcher: CoroutineDispatcher,
+    @IoDispatcher ioDispatcher: CoroutineDispatcher,
 ) : StorageManager {
 
     // SupervisorJob: a failure in one child (e.g. directory init) must not cancel

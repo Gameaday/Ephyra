@@ -7,12 +7,13 @@ import ephyra.domain.content.model.toContentUnit
 import ephyra.domain.content.repository.ContentUnitRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
 
 /**
  * Implementation of [ContentUnitRepository] delegating to [ChapterRepository].
  * Transparently maps 'chapters' database structures to generic sequential [ContentUnit] entities.
  */
-class ContentUnitRepositoryImpl(
+class ContentUnitRepositoryImpl @Inject constructor(
     private val chapterRepository: ChapterRepository,
 ) : ContentUnitRepository {
 

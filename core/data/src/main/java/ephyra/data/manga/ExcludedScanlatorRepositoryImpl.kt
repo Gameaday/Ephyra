@@ -5,8 +5,9 @@ import ephyra.data.room.entities.ExcludedScanlatorEntity
 import ephyra.domain.manga.repository.ExcludedScanlatorRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
 
-class ExcludedScanlatorRepositoryImpl(
+class ExcludedScanlatorRepositoryImpl @Inject constructor(
     private val dao: ExcludedScanlatorDao,
 ) : ExcludedScanlatorRepository {
 

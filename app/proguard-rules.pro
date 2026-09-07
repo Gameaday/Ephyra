@@ -105,6 +105,12 @@
 -keep interface ephyra.app.di.ScreenEntryPoint { *; }
 -keep class * implements ephyra.app.di.ScreenEntryPoint { *; }
 
+-keep interface ephyra.app.di.ExtensionBridgeEntryPoint { *; }
+-keep class * implements ephyra.app.di.ExtensionBridgeEntryPoint { *; }
+
+-keep interface ephyra.app.di.MigrationEntryPoint { *; }
+-keep class * implements ephyra.app.di.MigrationEntryPoint { *; }
+
 -keep interface ephyra.app.di.CoreEntryPoint { *; }
 -keep class * implements ephyra.app.di.CoreEntryPoint { *; }
 
@@ -113,12 +119,6 @@
 
 -keep interface ephyra.core.util.SourceUtilEntryPoint { *; }
 -keep class * implements ephyra.core.util.SourceUtilEntryPoint { *; }
-
--keep interface ephyra.feature.library.LibraryEntryPoint { *; }
--keep class * implements ephyra.feature.library.LibraryEntryPoint { *; }
-
--keep interface ephyra.feature.more.MoreEntryPoint { *; }
--keep class * implements ephyra.feature.more.MoreEntryPoint { *; }
 
 -keep interface ephyra.presentation.core.ui.activity.BaseActivityEntryPoint { *; }
 -keep class * implements ephyra.presentation.core.ui.activity.BaseActivityEntryPoint { *; }

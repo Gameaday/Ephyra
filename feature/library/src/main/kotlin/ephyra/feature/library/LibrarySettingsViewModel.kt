@@ -16,6 +16,7 @@ import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.track.service.Tracker
 import ephyra.domain.track.service.TrackerManager
 import ephyra.presentation.core.udf.BaseUdfViewModel
+import ephyra.presentation.core.ui.AppInfo
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
@@ -34,6 +35,7 @@ class LibrarySettingsViewModel @Inject constructor(
     private val setDisplayMode: SetDisplayMode,
     private val setSortModeForCategory: SetSortModeForCategory,
     trackerManager: TrackerManager,
+    val appInfo: AppInfo,
 ) : BaseUdfViewModel<LibrarySettingsViewModel.State, LibrarySettingsScreenEvent, Nothing>(State()) {
 
     val preferences: BasePreferences get() = basePreferences

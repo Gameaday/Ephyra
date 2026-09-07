@@ -18,8 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
-import ephyra.domain.storage.service.StoragePreferences
-import ephyra.feature.more.MoreEntryPoint
+import ephyra.core.common.preference.Preference
 import ephyra.feature.settings.screen.SettingsDataScreen
 import ephyra.presentation.core.components.material.Button
 import ephyra.presentation.core.components.material.padding
@@ -27,7 +26,9 @@ import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.system.toast
 import kotlinx.coroutines.flow.collectLatest
 
-internal class StorageStep : OnboardingStep {
+internal class StorageStep(
+    private val storagePref: Preference<String>,
+) : OnboardingStep {
 
     private var _isComplete by mutableStateOf(false)
 
@@ -38,13 +39,6 @@ internal class StorageStep : OnboardingStep {
     override fun Content() {
         val context = LocalContext.current
         val handler = LocalUriHandler.current
-
-        val storagePref = remember {
-            dagger.hilt.android.EntryPointAccessors.fromApplication(
-                context.applicationContext,
-                MoreEntryPoint::class.java,
-            ).storagePreferences()
-        }.baseStorageDirectory()
 
         val pickStorageLocation = SettingsDataScreen.storageLocationPicker(storagePref)
 

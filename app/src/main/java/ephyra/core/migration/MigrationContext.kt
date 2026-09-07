@@ -3,7 +3,7 @@ package ephyra.core.migration
 import android.app.Application
 import android.content.Context
 import dagger.hilt.android.EntryPointAccessors
-import ephyra.app.di.ScreenEntryPoint
+import ephyra.app.di.MigrationEntryPoint
 import ephyra.domain.backup.service.BackupPreferences
 import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.download.service.DownloadPreferences
@@ -13,7 +13,7 @@ import ephyra.domain.source.service.SourcePreferences
 import ephyra.domain.storage.service.StoragePreferences
 
 /**
- * Hilt-native MigrationContext resolving migration dependencies dynamically via ScreenEntryPoint
+ * Hilt-native MigrationContext resolving migration dependencies dynamically via MigrationEntryPoint
  * without relying on a legacy compat-shim service locator.
  */
 class MigrationContext(val context: Context, val dryrun: Boolean) {
@@ -26,7 +26,7 @@ class MigrationContext(val context: Context, val dryrun: Boolean) {
         return try {
             val entryPoint = EntryPointAccessors.fromApplication(
                 context.applicationContext,
-                ScreenEntryPoint::class.java,
+                MigrationEntryPoint::class.java,
             )
             val result = when (T::class.java) {
                 LibraryPreferences::class.java -> entryPoint.libraryPreferences()

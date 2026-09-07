@@ -6,8 +6,9 @@ import ephyra.domain.updates.model.UpdatesWithRelations
 import ephyra.domain.updates.repository.UpdatesRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
 
-class UpdatesRepositoryImpl(
+class UpdatesRepositoryImpl @Inject constructor(
     private val updateDao: UpdateDao,
 ) : UpdatesRepository {
 

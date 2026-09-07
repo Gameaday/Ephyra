@@ -407,38 +407,7 @@ object AppModule {
         preferenceStore: PreferenceStore,
     ) = BasePreferences(capabilityProvider, preferenceStore)
 
-    // 4. Repositories Providers
-    @Provides
-    @Singleton
-    fun provideCategoryRepository(categoryDao: CategoryDao): CategoryRepository =
-        CategoryRepositoryImpl(categoryDao)
-
-    @Provides
-    @Singleton
-    fun provideMangaRepository(mangaDao: MangaDao): MangaRepository =
-        MangaRepositoryImpl(mangaDao)
-
-    @Provides
-    @Singleton
-    fun provideChapterRepository(chapterDao: ChapterDao): ChapterRepository =
-        ChapterRepositoryImpl(chapterDao)
-
-    @Provides
-    @Singleton
-    fun provideContentRepository(mangaRepository: MangaRepository): ContentRepository =
-        ContentRepositoryImpl(mangaRepository)
-
-    @Provides
-    @Singleton
-    fun provideContentUnitRepository(chapterRepository: ChapterRepository): ContentUnitRepository =
-        ContentUnitRepositoryImpl(chapterRepository)
-
-    @Provides
-    @Singleton
-    fun provideContentDatabase(
-        mangaDao: MangaDao,
-        chapterDao: ChapterDao,
-    ): ContentDatabase = ContentDatabaseImpl(mangaDao, chapterDao)
+    // 4. Content Source Engine & Orchestrator Providers
 
     @Provides
     @Singleton
@@ -494,44 +463,6 @@ object AppModule {
     fun provideRemoteSource(
         orchestrator: ContentSourceOrchestrator,
     ): RemoteSource = orchestrator
-
-    @Provides
-    @Singleton
-    fun provideHistoryRepository(historyDao: HistoryDao): HistoryRepository =
-        HistoryRepositoryImpl(historyDao)
-
-    @Provides
-    @Singleton
-    fun provideUpdatesRepository(updateDao: UpdateDao): UpdatesRepository =
-        UpdatesRepositoryImpl(updateDao)
-
-    @Provides
-    @Singleton
-    fun provideSourceRepository(
-        sourceManager: SourceManager,
-        mangaDao: MangaDao,
-        networkToLocalManga: NetworkToLocalManga,
-    ): SourceRepository = SourceRepositoryImpl(sourceManager, mangaDao, networkToLocalManga)
-
-    @Provides
-    @Singleton
-    fun provideStubSourceRepository(sourceDao: SourceDao): StubSourceRepository =
-        StubSourceRepositoryImpl(sourceDao)
-
-    @Provides
-    @Singleton
-    fun provideExtensionRepoRepository(extensionRepoDao: ExtensionRepoDao): ExtensionRepoRepository =
-        ExtensionRepoRepositoryImpl(extensionRepoDao)
-
-    @Provides
-    @Singleton
-    fun provideTrackRepository(trackDao: TrackDao): TrackRepository =
-        TrackRepositoryImpl(trackDao)
-
-    @Provides
-    @Singleton
-    fun provideExcludedScanlatorRepository(excludedScanlatorDao: ExcludedScanlatorDao): ExcludedScanlatorRepository =
-        ExcludedScanlatorRepositoryImpl(excludedScanlatorDao)
 
     // 5. Shared Core Services & Managers
     @Provides
@@ -649,14 +580,6 @@ object AppModule {
         @ApplicationContext context: Context,
         localSourceFileSystem: LocalSourceFileSystem,
     ) = LocalCoverManager(context, localSourceFileSystem)
-
-    @Provides
-    @Singleton
-    fun provideStorageManager(
-        @ApplicationContext context: Context,
-        storagePreferences: StoragePreferences,
-        @IoDispatcher ioDispatcher: CoroutineDispatcher,
-    ): StorageManager = StorageManagerImpl(context, storagePreferences, ioDispatcher)
 
     @Provides
     @Singleton
@@ -834,11 +757,6 @@ object AppModule {
     @Provides
     @Singleton
     fun provideNavigator(): AppNavigator = NavigatorImpl()
-
-    @Provides
-    @Singleton
-    fun provideNotificationManager(@ApplicationContext context: Context): NotificationManager =
-        NotificationManagerImpl(context)
 
     @Provides
     @Singleton

@@ -9,21 +9,12 @@ import ephyra.core.common.di.CoreContainer
 
 @EntryPoint
 @InstallIn(SingletonComponent::class)
-interface ScreenEntryPoint {
-    // Singletons
+interface ExtensionBridgeEntryPoint {
+    // Singletons for legacy extension bridge
     fun basePreferences(): ephyra.domain.base.BasePreferences
     fun coverCache(): ephyra.data.cache.CoverCache
     fun sourceManager(): ephyra.domain.source.service.SourceManager
     fun networkHelper(): eu.kanade.tachiyomi.network.NetworkHelper
-    fun libraryPreferences(): ephyra.domain.library.service.LibraryPreferences
-    fun sourcePreferences(): ephyra.domain.source.service.SourcePreferences
-    fun extensionRepoRepository(): ephyra.domain.extensionrepo.repository.ExtensionRepoRepository
-
-    // Preferences needed for migration & core
-    fun backupPreferences(): ephyra.domain.backup.service.BackupPreferences
-    fun storagePreferences(): ephyra.domain.storage.service.StoragePreferences
-    fun downloadPreferences(): ephyra.domain.download.service.DownloadPreferences
-    fun getCategories(): ephyra.domain.category.interactor.GetCategories
     fun preferenceStore(): ephyra.core.common.preference.PreferenceStore
 
     // Serialization
@@ -31,21 +22,29 @@ interface ScreenEntryPoint {
     fun xml(): nl.adaptivity.xmlutil.serialization.XML
 }
 
+@Deprecated("Use ExtensionBridgeEntryPoint instead.", ReplaceWith("ExtensionBridgeEntryPoint"))
+typealias ScreenEntryPoint = ExtensionBridgeEntryPoint
+
 @Deprecated("Use standard Hilt injection or Hilt EntryPoints instead. Retained strictly for legacy extension bridge.")
 fun initializeCoreContainer(context: Context) {
     CoreContainer.init(context)
-    val entryPoint = EntryPointAccessors.fromApplication(context.applicationContext, ScreenEntryPoint::class.java)
+    val entryPoint = EntryPointAccessors.fromApplication(
+        context.applicationContext,
+        ExtensionBridgeEntryPoint::class.java,
+    )
 
-    // Dynamic fallback provider using ScreenEntryPoint reflection as a safety net
+    // Direct type-safe fallback provider for legacy extension bridge (no reflection)
     CoreContainer.setFallbackProvider { requestedClass ->
-        try {
-            val matchingMethod = ScreenEntryPoint::class.java.methods.firstOrNull { method ->
-                method.parameterTypes.isEmpty() && requestedClass.isAssignableFrom(method.returnType)
-            }
-            matchingMethod?.invoke(entryPoint)
-        } catch (e: Throwable) {
-            android.util.Log.w("CoreContainer", "Dynamic fallback failed for ${requestedClass.name}", e)
-            null
+        when (requestedClass) {
+            eu.kanade.tachiyomi.network.NetworkHelper::class.java -> entryPoint.networkHelper()
+            okhttp3.OkHttpClient::class.java -> entryPoint.networkHelper().client
+            ephyra.core.common.preference.PreferenceStore::class.java -> entryPoint.preferenceStore()
+            ephyra.domain.base.BasePreferences::class.java -> entryPoint.basePreferences()
+            ephyra.data.cache.CoverCache::class.java -> entryPoint.coverCache()
+            ephyra.domain.source.service.SourceManager::class.java -> entryPoint.sourceManager()
+            kotlinx.serialization.json.Json::class.java -> entryPoint.json()
+            nl.adaptivity.xmlutil.serialization.XML::class.java -> entryPoint.xml()
+            else -> null
         }
     }
 

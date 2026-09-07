@@ -6,8 +6,9 @@ import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.repository.StubSourceRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
 
-class StubSourceRepositoryImpl(
+class StubSourceRepositoryImpl @Inject constructor(
     private val sourceDao: SourceDao,
 ) : StubSourceRepository {
 

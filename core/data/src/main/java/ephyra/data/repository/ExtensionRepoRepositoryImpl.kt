@@ -7,8 +7,9 @@ import ephyra.domain.extensionrepo.model.ExtensionRepo
 import ephyra.domain.extensionrepo.repository.ExtensionRepoRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
 
-class ExtensionRepoRepositoryImpl(
+class ExtensionRepoRepositoryImpl @Inject constructor(
     private val extensionRepoDao: ExtensionRepoDao,
 ) : ExtensionRepoRepository {
 

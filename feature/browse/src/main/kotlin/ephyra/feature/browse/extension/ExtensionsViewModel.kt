@@ -23,6 +23,7 @@ import ephyra.domain.extensionrepo.interactor.DeleteExtensionRepo
 import ephyra.domain.extensionrepo.interactor.GetExtensionRepo
 import ephyra.domain.extensionrepo.interactor.UpdateExtensionRepo
 import ephyra.domain.extensionrepo.model.ExtensionRepo
+import ephyra.presentation.core.ui.AppInfo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -49,9 +50,10 @@ class ExtensionsViewModel @Inject constructor(
     private val preferenceStore: PreferenceStore,
     private val trustExtension: ephyra.domain.extension.interactor.TrustExtension,
     private val extensionManager: ephyra.domain.extension.service.ExtensionManager,
+    private val appInfo: AppInfo,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(State())
+    private val _state = MutableStateFlow(State(catalogShortcutsEnabled = appInfo.catalogShortcutsEnabled))
     val state: StateFlow<State> = _state.asStateFlow()
 
     init {
@@ -321,5 +323,6 @@ class ExtensionsViewModel @Inject constructor(
         val installedExtensions: List<Extension.Installed> = emptyList(),
         val untrustedExtensions: List<Extension.Untrusted> = emptyList(),
         val failedExtensions: List<Extension.Failed> = emptyList(),
+        val catalogShortcutsEnabled: Boolean = false,
     )
 }

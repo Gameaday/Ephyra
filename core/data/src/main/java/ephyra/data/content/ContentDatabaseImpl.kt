@@ -15,8 +15,9 @@ import ephyra.domain.content.model.toContentUnit
 import ephyra.domain.content.repository.ContentDatabase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
 
-class ContentDatabaseImpl(
+class ContentDatabaseImpl @Inject constructor(
     private val mangaDao: MangaDao,
     private val chapterDao: ChapterDao,
 ) : ContentDatabase {

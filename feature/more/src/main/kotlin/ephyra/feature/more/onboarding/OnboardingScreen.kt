@@ -17,6 +17,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import ephyra.core.common.preference.Preference
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.InfoScreen
@@ -25,17 +26,19 @@ import soup.compose.material.motion.animation.rememberSlideDistance
 
 @Composable
 fun OnboardingScreen(
+    storageDirPref: Preference<String>,
+    telemetryIncluded: Boolean,
     onComplete: () -> Unit,
     onRestoreBackup: () -> Unit,
 ) {
     val slideDistance = rememberSlideDistance()
 
     var currentStep by rememberSaveable { mutableIntStateOf(0) }
-    val steps = remember {
+    val steps = remember(storageDirPref, telemetryIncluded) {
         listOf(
             ThemeStep(),
-            StorageStep(),
-            PermissionStep(),
+            StorageStep(storageDirPref),
+            PermissionStep(telemetryIncluded),
             GuidesStep(onRestoreBackup = onRestoreBackup),
         )
     }

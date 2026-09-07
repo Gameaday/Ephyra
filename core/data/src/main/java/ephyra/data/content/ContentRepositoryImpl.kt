@@ -7,12 +7,13 @@ import ephyra.domain.content.repository.ContentRepository
 import ephyra.domain.manga.repository.MangaRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
 
 /**
  * Implementation of [ContentRepository] delegating to [MangaRepository].
  * This avoids schema migrations by mapping 'mangas' SQLite tables to [ContentItem] dynamically.
  */
-class ContentRepositoryImpl(
+class ContentRepositoryImpl @Inject constructor(
     private val mangaRepository: MangaRepository,
 ) : ContentRepository {
 

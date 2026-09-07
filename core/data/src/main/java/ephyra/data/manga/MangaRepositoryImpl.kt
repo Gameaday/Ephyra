@@ -14,8 +14,9 @@ import kotlinx.coroutines.flow.map
 import logcat.LogPriority
 import java.time.LocalDate
 import java.time.ZoneId
+import javax.inject.Inject
 
-class MangaRepositoryImpl(
+class MangaRepositoryImpl @Inject constructor(
     private val mangaDao: MangaDao,
 ) : MangaRepository {
 

@@ -6,8 +6,9 @@ import ephyra.domain.track.model.Track
 import ephyra.domain.track.repository.TrackRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
 
-class TrackRepositoryImpl(
+class TrackRepositoryImpl @Inject constructor(
     private val trackDao: TrackDao,
 ) : TrackRepository {
 

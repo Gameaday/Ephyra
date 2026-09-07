@@ -10,9 +10,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
-import dagger.hilt.android.EntryPointAccessors
-import ephyra.domain.base.BasePreferences
+import ephyra.feature.more.onboarding.OnboardingViewModel
 import ephyra.feature.settings.screen.SettingsDataScreen
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.AppReadySignal
@@ -25,16 +25,11 @@ import ephyra.feature.more.onboarding.OnboardingScreen as OnboardingContent
 @Composable
 fun OnboardingScreen(
     navController: NavController = LocalNavController.current,
+    viewModel: OnboardingViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
 
-    val basePreferences = remember {
-        EntryPointAccessors.fromApplication(
-            context.applicationContext,
-            MoreEntryPoint::class.java,
-        ).basePreferences()
-    }
-    val shownOnboardingFlow by basePreferences.shownOnboardingFlow().collectAsState()
+    val shownOnboardingFlow by viewModel.shownOnboardingFlow.collectAsState()
 
     // Dismiss the splash screen promptly when onboarding is shown.  Without this,
     // the splash would linger until SPLASH_MAX_DURATION because tabs (LibraryTab,
@@ -44,7 +39,7 @@ fun OnboardingScreen(
     }
 
     val finishOnboarding: () -> Unit = {
-        basePreferences.shownOnboardingFlow().set(true)
+        viewModel.finishOnboarding()
         // popBackStack can fail when onboarding is the only destination on the
         // stack (fresh-install process-death restore) — land on Home instead of
         // stranding the user on a finished onboarding screen.
@@ -74,13 +69,13 @@ fun OnboardingScreen(
         navController.navigate(ScreenRoutes.RestoreBackup.createRoute(uri.toString()))
     }
 
-    val restoreSettingKey = stringResource(SettingsDataScreen.restorePreferenceKeyString)
-
     BackHandler(enabled = !shownOnboardingFlow) {
         // Prevent exiting if onboarding hasn't been completed
     }
 
     OnboardingContent(
+        storageDirPref = viewModel.storageDirPref,
+        telemetryIncluded = viewModel.telemetryIncluded,
         onComplete = finishOnboarding,
         onRestoreBackup = {
             chooseBackup.launch("*/*")

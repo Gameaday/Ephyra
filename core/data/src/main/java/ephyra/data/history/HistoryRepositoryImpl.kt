@@ -8,8 +8,9 @@ import ephyra.domain.history.model.HistoryWithRelations
 import ephyra.domain.history.repository.HistoryRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
 
-class HistoryRepositoryImpl(
+class HistoryRepositoryImpl @Inject constructor(
     private val historyDao: HistoryDao,
 ) : HistoryRepository {
 
