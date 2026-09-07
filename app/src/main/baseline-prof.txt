@@ -66,6 +66,10 @@ Lephyra/feature/manga/MangaViewModel;
 Lephyra/feature/browse/source/globalsearch/SearchViewModel;
 Lephyra/feature/browse/source/globalsearch/GlobalSearchViewModel;
 Lephyra/feature/browse/source/globalsearch/SearchResultMerger;
+Lephyra/feature/migration/config/MigrationConfigViewModel;
+Lephyra/feature/migration/list/MigrationListViewModel;
+Lephyra/feature/migration/list/search/BaseSmartSearchEngine;
+Lephyra/feature/migration/dialog/MigrateMangaDialog;
 
 # Compose Material 3 UI Components
 Landroidx/compose/material3/FilterChipKt;

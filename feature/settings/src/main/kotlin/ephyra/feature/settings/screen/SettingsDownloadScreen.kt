@@ -24,7 +24,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastMap
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hippo.unifile.UniFile
 import ephyra.core.common.storage.displayablePath
 import ephyra.core.common.util.system.logcat
@@ -70,7 +70,7 @@ object SettingsDownloadScreen : SearchableSettings {
     @Composable
     override fun getPreferences(): List<Preference> {
         val viewModel = hiltViewModel<SettingsDownloadViewModel>()
-        val allCategories by viewModel.getCategories.subscribe().collectAsState(initial = emptyList())
+        val allCategories by viewModel.getCategories.subscribe().collectAsStateWithLifecycle(initialValue = emptyList())
 
         val downloadPreferences = viewModel.downloadPreferences
         val parallelSourceLimit by downloadPreferences.parallelSourceLimit().collectAsState()
@@ -439,7 +439,9 @@ object SettingsDownloadScreen : SearchableSettings {
         libraryPreferences: LibraryPreferences,
     ): Preference.PreferenceGroup {
         val context = LocalContext.current
-        val isLoggedIn by trackerManager.get(TrackerManager.JELLYFIN)!!.isLoggedInFlow.collectAsState(initial = false)
+        val isLoggedIn by trackerManager.get(
+            TrackerManager.JELLYFIN,
+        )!!.isLoggedInFlow.collectAsStateWithLifecycle(initialValue = false)
         val isAdmin by trackPreferences.jellyfinIsAdmin().collectAsState()
         val autoSync by downloadPreferences.autoSyncToJellyfin().collectAsState()
 

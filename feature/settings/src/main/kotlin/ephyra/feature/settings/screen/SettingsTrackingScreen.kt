@@ -27,7 +27,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -48,6 +47,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.system.logcat
@@ -197,10 +197,10 @@ object SettingsTrackingScreen : SearchableSettings {
 
         val malName = trackerManager.get(TrackerManager.MYANIMELIST)!!.name
         val isMalLoggedIn by trackerManager.get(TrackerManager.MYANIMELIST)!!.isLoggedInFlow
-            .collectAsState(initial = false)
+            .collectAsStateWithLifecycle(initialValue = false)
         val anilistName = trackerManager.get(TrackerManager.ANILIST)!!.name
         val isAnilistLoggedIn by trackerManager.get(TrackerManager.ANILIST)!!.isLoggedInFlow
-            .collectAsState(initial = false)
+            .collectAsStateWithLifecycle(initialValue = false)
 
         val importPreferences = buildList {
             if (isMalLoggedIn) {
@@ -362,15 +362,15 @@ object SettingsTrackingScreen : SearchableSettings {
 
                 // Collect login states for trackers that require login (non-public-search ones)
                 val isAnilistLoggedIn by trackerManager.get(TrackerManager.ANILIST)!!.isLoggedInFlow
-                    .collectAsState(initial = false)
+                    .collectAsStateWithLifecycle(initialValue = false)
                 val isMalLoggedInForAuthority by trackerManager.get(TrackerManager.MYANIMELIST)!!.isLoggedInFlow
-                    .collectAsState(initial = false)
+                    .collectAsStateWithLifecycle(initialValue = false)
                 val isJellyfinLoggedIn by (
                     trackerManager.get(
                         TrackerManager.JELLYFIN,
                     ) as ephyra.data.track.jellyfin.Jellyfin
                     )
-                    .isLoggedInFlow.collectAsState(initial = false)
+                    .isLoggedInFlow.collectAsStateWithLifecycle(initialValue = false)
                 val trackerLoginState = mapOf(
                     trackerManager.get(TrackerManager.ANILIST)!!.id to isAnilistLoggedIn,
                     trackerManager.get(TrackerManager.MYANIMELIST)!!.id to isMalLoggedInForAuthority,

@@ -1,7 +1,6 @@
 package ephyra.feature.browse.source.authority
 
 import androidx.compose.runtime.Immutable
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.util.lang.withIOContext
@@ -11,33 +10,39 @@ import ephyra.domain.manga.interactor.GetFavorites
 import ephyra.domain.manga.model.CanonicalId
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.track.interactor.MatchUnlinkedManga
+import ephyra.presentation.core.udf.BaseUdfViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import javax.inject.Inject
+
+sealed interface MatchResultsEvent {
+    data class RetrySingle(val manga: Manga) : MatchResultsEvent
+    data object RetryAll : MatchResultsEvent
+}
 
 @HiltViewModel
 class MatchResultsViewModel @Inject constructor(
     private val getFavorites: GetFavorites,
     private val matchUnlinkedManga: MatchUnlinkedManga,
-) : ViewModel() {
-
-    private val _state = MutableStateFlow(MatchResultsState())
-    val state: StateFlow<MatchResultsState> = _state.asStateFlow()
+) : BaseUdfViewModel<MatchResultsState, MatchResultsEvent, Nothing>(MatchResultsState()) {
 
     init {
         loadManga()
     }
 
+    override fun onEvent(event: MatchResultsEvent) {
+        when (event) {
+            is MatchResultsEvent.RetrySingle -> retrySingle(event.manga)
+            MatchResultsEvent.RetryAll -> retryAll()
+        }
+    }
+
     private fun loadManga() {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
+            updateState { it.copy(isLoading = true) }
             try {
                 val favorites = withIOContext { getFavorites.await() }
                 val unlinked = favorites
@@ -51,7 +56,7 @@ class MatchResultsViewModel @Inject constructor(
                     .toImmutableList()
                 val mangaCount = favorites.count { it.contentType == ContentType.MANGA }
                 val novelCount = favorites.count { it.contentType == ContentType.NOVEL }
-                _state.update {
+                updateState {
                     it.copy(
                         isLoading = false,
                         unlinkedManga = unlinked,
@@ -63,16 +68,16 @@ class MatchResultsViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e) { "Failed to load manga for match results" }
-                _state.update { it.copy(isLoading = false) }
+                updateState { it.copy(isLoading = false) }
             }
         }
     }
 
     fun retrySingle(manga: Manga) {
-        if (manga.id in _state.value.matchingIds) return
-        if (_state.value.isRetryingAll) return
+        if (manga.id in currentState.matchingIds) return
+        if (currentState.isRetryingAll) return
         viewModelScope.launch {
-            _state.update { state ->
+            updateState { state ->
                 state.copy(
                     matchingIds = state.matchingIds + manga.id,
                     failedIds = state.failedIds - manga.id,
@@ -83,7 +88,7 @@ class MatchResultsViewModel @Inject constructor(
                 if (canonicalId != null) {
                     loadManga()
                 } else {
-                    _state.update { state ->
+                    updateState { state ->
                         state.copy(
                             matchingIds = state.matchingIds - manga.id,
                             failedIds = state.failedIds + manga.id,
@@ -92,7 +97,7 @@ class MatchResultsViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 logcat(LogPriority.WARN, e) { "Failed to match '${manga.title}'" }
-                _state.update { state ->
+                updateState { state ->
                     state.copy(
                         matchingIds = state.matchingIds - manga.id,
                         failedIds = state.failedIds + manga.id,
@@ -103,20 +108,20 @@ class MatchResultsViewModel @Inject constructor(
     }
 
     fun retryAll() {
-        if (_state.value.isRetryingAll) return
+        if (currentState.isRetryingAll) return
         viewModelScope.launch {
-            _state.update { it.copy(isRetryingAll = true) }
+            updateState { it.copy(isRetryingAll = true) }
             try {
                 withIOContext {
                     matchUnlinkedManga.await { current, total ->
-                        _state.update { it.copy(retryAllProgress = current to total) }
+                        updateState { it.copy(retryAllProgress = current to total) }
                     }
                 }
                 loadManga()
             } catch (e: Exception) {
                 logcat(LogPriority.WARN, e) { "Retry all failed" }
             } finally {
-                _state.update {
+                updateState {
                     it.copy(
                         isRetryingAll = false,
                         retryAllProgress = null,

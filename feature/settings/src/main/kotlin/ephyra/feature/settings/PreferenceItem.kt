@@ -9,13 +9,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.structuralEqualityPolicy
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ephyra.feature.settings.widget.EditTextPreferenceWidget
 import ephyra.feature.settings.widget.InfoWidget
 import ephyra.feature.settings.widget.ListPreferenceWidget
@@ -177,7 +177,7 @@ internal fun PreferenceItem(
             }
 
             is Preference.PreferenceItem.TrackerPreference -> {
-                val isLoggedIn by item.tracker.isLoggedInFlow.collectAsState(initial = false)
+                val isLoggedIn by item.tracker.isLoggedInFlow.collectAsStateWithLifecycle(initialValue = false)
                 TrackingPreferenceWidget(
                     tracker = item.tracker,
                     checked = isLoggedIn,

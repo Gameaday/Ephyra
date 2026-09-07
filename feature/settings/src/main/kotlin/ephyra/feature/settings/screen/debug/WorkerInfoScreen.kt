@@ -13,7 +13,6 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -22,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import androidx.work.WorkInfo
@@ -53,9 +53,9 @@ fun WorkerInfoScreen(
     val context = LocalContext.current
 
     val viewModel = hiltViewModel<WorkerInfoViewModel>()
-    val enqueued by viewModel.enqueued.collectAsState()
-    val finished by viewModel.finished.collectAsState()
-    val running by viewModel.running.collectAsState()
+    val enqueued by viewModel.enqueued.collectAsStateWithLifecycle()
+    val finished by viewModel.finished.collectAsStateWithLifecycle()
+    val running by viewModel.running.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {

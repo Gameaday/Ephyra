@@ -83,8 +83,8 @@ fun MatchResultsScreen(
 
         MatchResultsContent(
             state = state,
-            onRetrySingle = viewModel::retrySingle,
-            onRetryAll = viewModel::retryAll,
+            onRetrySingle = { viewModel.onEvent(MatchResultsEvent.RetrySingle(it)) },
+            onRetryAll = { viewModel.onEvent(MatchResultsEvent.RetryAll) },
             onOpenManga = { manga ->
                 navController.navigate(Screen.MangaDetails(manga.id, true))
             },

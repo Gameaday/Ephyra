@@ -1,7 +1,6 @@
 package ephyra.feature.browse.source.authority
 
 import androidx.compose.runtime.Immutable
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.util.lang.withIOContext
@@ -25,15 +24,12 @@ import ephyra.domain.track.model.Track
 import ephyra.domain.track.model.TrackSearch
 import ephyra.domain.track.service.Tracker
 import ephyra.domain.track.service.TrackerManager
+import ephyra.presentation.core.udf.BaseUdfViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import javax.inject.Inject
@@ -49,10 +45,7 @@ class AuthoritySearchViewModel @Inject constructor(
     private val insertTrack: InsertTrack,
     private val generateAuthorityChapters: GenerateAuthorityChapters,
     private val findContentSource: FindContentSource,
-) : ViewModel() {
-
-    private val _state = MutableStateFlow(AuthoritySearchState())
-    val state: StateFlow<AuthoritySearchState> = _state.asStateFlow()
+) : BaseUdfViewModel<AuthoritySearchState, AuthoritySearchScreenEvent, Nothing>(AuthoritySearchState()) {
 
     private var searchJob: Job? = null
 
@@ -66,7 +59,7 @@ class AuthoritySearchViewModel @Inject constructor(
                     }
                     .toImmutableList()
             }
-            _state.update { state ->
+            updateState { state ->
                 state.copy(
                     availableTrackers = trackers,
                     selectedTracker = state.selectedTracker ?: trackers.firstOrNull(),
@@ -76,13 +69,13 @@ class AuthoritySearchViewModel @Inject constructor(
     }
 
     fun trackersForFilter(contentType: ContentType): ImmutableList<Tracker> {
-        val available = _state.value.availableTrackers
+        val available = currentState.availableTrackers
         if (contentType == ContentType.UNKNOWN) return available
         val validIds = AddTracks.trackersForContentType(contentType)
         return available.filter { it.id in validIds }.toImmutableList()
     }
 
-    fun onEvent(event: AuthoritySearchScreenEvent) {
+    override fun onEvent(event: AuthoritySearchScreenEvent) {
         when (event) {
             is AuthoritySearchScreenEvent.SelectTracker -> selectTracker(event.tracker)
             is AuthoritySearchScreenEvent.SetContentTypeFilter -> setContentTypeFilter(event.contentType)
@@ -99,7 +92,7 @@ class AuthoritySearchViewModel @Inject constructor(
     }
 
     private fun selectTracker(tracker: Tracker) {
-        _state.update {
+        updateState {
             it.copy(
                 selectedTracker = tracker,
                 results = persistentListOf(),
@@ -110,7 +103,7 @@ class AuthoritySearchViewModel @Inject constructor(
 
     private fun setContentTypeFilter(contentType: ContentType) {
         val filteredTrackers = trackersForFilter(contentType)
-        val currentTracker = _state.value.selectedTracker
+        val currentTracker = currentState.selectedTracker
 
         val newTracker = if (currentTracker != null && currentTracker in filteredTrackers) {
             currentTracker
@@ -118,7 +111,7 @@ class AuthoritySearchViewModel @Inject constructor(
             filteredTrackers.firstOrNull()
         }
 
-        _state.update {
+        updateState {
             it.copy(
                 contentTypeFilter = contentType,
                 selectedTracker = newTracker,
@@ -128,9 +121,9 @@ class AuthoritySearchViewModel @Inject constructor(
     }
 
     private fun search(query: String) {
-        val tracker = _state.value.selectedTracker ?: return
+        val tracker = currentState.selectedTracker ?: return
         searchJob?.cancel()
-        _state.update {
+        updateState {
             it.copy(
                 query = query,
                 isSearching = true,
@@ -141,7 +134,7 @@ class AuthoritySearchViewModel @Inject constructor(
         searchJob = viewModelScope.launch {
             try {
                 val results = withIOContext { tracker.search(query) }
-                _state.update {
+                updateState {
                     it.copy(
                         results = results.toImmutableList(),
                         isSearching = false,
@@ -151,7 +144,7 @@ class AuthoritySearchViewModel @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e) { "Authority search failed: query=$query" }
-                _state.update {
+                updateState {
                     it.copy(
                         isSearching = false,
                         results = persistentListOf(),
@@ -163,18 +156,18 @@ class AuthoritySearchViewModel @Inject constructor(
     }
 
     private fun addToLibrary(result: TrackSearch) {
-        val tracker = _state.value.selectedTracker ?: return
+        val tracker = currentState.selectedTracker ?: return
         val prefix = AddTracks.TRACKER_CANONICAL_PREFIXES[tracker.id] ?: return
         val canonicalId = "$prefix:${result.remote_id}"
 
-        _state.update { it.copy(addingCanonicalIds = it.addingCanonicalIds + canonicalId) }
+        updateState { it.copy(addingCanonicalIds = it.addingCanonicalIds + canonicalId) }
 
         viewModelScope.launch {
             try {
                 withIOContext {
                     val existingByCanonical = getFavoritesByCanonicalId.await(canonicalId, -1L)
                     if (existingByCanonical.isNotEmpty()) {
-                        _state.update { state ->
+                        updateState { state ->
                             state.copy(
                                 addedCanonicalIds = state.addedCanonicalIds + canonicalId,
                                 addingCanonicalIds = state.addingCanonicalIds - canonicalId,
@@ -186,7 +179,7 @@ class AuthoritySearchViewModel @Inject constructor(
                     val unpairedMatches = getDuplicateLibraryManga.invoke(result.title)
                         .filter { it.manga.canonicalId == null }
                     if (unpairedMatches.isNotEmpty()) {
-                        _state.update { state ->
+                        updateState { state ->
                             state.copy(
                                 mergePrompt = MergePromptInfo(
                                     result = result,
@@ -205,13 +198,13 @@ class AuthoritySearchViewModel @Inject constructor(
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e) { "Failed to add authority manga: canonical_id=$canonicalId" }
             } finally {
-                _state.update { it.copy(addingCanonicalIds = it.addingCanonicalIds - canonicalId) }
+                updateState { it.copy(addingCanonicalIds = it.addingCanonicalIds - canonicalId) }
             }
         }
     }
 
     private fun mergeWithExisting(candidate: MangaWithChapterCount) {
-        val prompt = _state.value.mergePrompt ?: return
+        val prompt = currentState.mergePrompt ?: return
         viewModelScope.launch {
             try {
                 withIOContext {
@@ -264,7 +257,7 @@ class AuthoritySearchViewModel @Inject constructor(
                         insertTrack.await(track)
                     }
 
-                    _state.update { state ->
+                    updateState { state ->
                         state.copy(
                             addedCanonicalIds = state.addedCanonicalIds + prompt.canonicalId,
                             mergePrompt = null,
@@ -273,14 +266,14 @@ class AuthoritySearchViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e) { "Failed to merge with existing manga" }
-                _state.update { it.copy(mergePrompt = null) }
+                updateState { it.copy(mergePrompt = null) }
             }
         }
     }
 
     private fun skipMerge() {
-        val prompt = _state.value.mergePrompt ?: return
-        _state.update { it.copy(mergePrompt = null) }
+        val prompt = currentState.mergePrompt ?: return
+        updateState { it.copy(mergePrompt = null) }
         viewModelScope.launch {
             try {
                 withIOContext {
@@ -293,7 +286,7 @@ class AuthoritySearchViewModel @Inject constructor(
     }
 
     private fun dismissMergePrompt() {
-        _state.update { it.copy(mergePrompt = null) }
+        updateState { it.copy(mergePrompt = null) }
     }
 
     private suspend fun createAuthorityEntry(
@@ -362,7 +355,7 @@ class AuthoritySearchViewModel @Inject constructor(
             )
         }
 
-        _state.update { state ->
+        updateState { state ->
             state.copy(
                 addedCanonicalIds = state.addedCanonicalIds + canonicalId,
                 sourcePromptManga = SourcePromptInfo(
@@ -382,9 +375,9 @@ class AuthoritySearchViewModel @Inject constructor(
                 val matches = withIOContext {
                     findContentSource.findSources(manga, maxResults = 5, deepSearch = false)
                 }
-                val currentPrompt = _state.value.sourcePromptManga ?: return@launch
+                val currentPrompt = currentState.sourcePromptManga ?: return@launch
                 if (currentPrompt.mangaId == manga.id) {
-                    _state.update {
+                    updateState {
                         it.copy(
                             sourcePromptManga = currentPrompt.copy(
                                 sourceMatches = matches.toImmutableList(),
@@ -395,9 +388,9 @@ class AuthoritySearchViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 logcat(LogPriority.WARN, e) { "Auto-search for sources failed" }
-                val currentPrompt = _state.value.sourcePromptManga ?: return@launch
+                val currentPrompt = currentState.sourcePromptManga ?: return@launch
                 if (currentPrompt.mangaId == manga.id) {
-                    _state.update {
+                    updateState {
                         it.copy(sourcePromptManga = currentPrompt.copy(isSearching = false))
                     }
                 }
@@ -406,19 +399,19 @@ class AuthoritySearchViewModel @Inject constructor(
     }
 
     private fun dismissSourcePrompt() {
-        _state.update { it.copy(sourcePromptManga = null) }
+        updateState { it.copy(sourcePromptManga = null) }
     }
 
     private fun selectResult(result: TrackSearch) {
-        _state.update { it.copy(selectedResult = result) }
+        updateState { it.copy(selectedResult = result) }
     }
 
     private fun dismissDetail() {
-        _state.update { it.copy(selectedResult = null) }
+        updateState { it.copy(selectedResult = null) }
     }
 
     private fun retrySearch() {
-        val query = _state.value.query
+        val query = currentState.query
         if (query.isNotBlank()) search(query)
     }
 

@@ -25,4 +25,8 @@ dependencies {
     implementation(androidx.profileinstaller)
     implementation(kotlinx.bundles.serialization)
     implementation(kotlinx.bundles.coroutines)
+
+    testImplementation(libs.bundles.test)
+    testImplementation(kotlinx.coroutines.test)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }

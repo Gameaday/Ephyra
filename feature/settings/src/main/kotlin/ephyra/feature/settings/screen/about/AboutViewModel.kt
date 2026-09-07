@@ -1,7 +1,6 @@
 package ephyra.feature.settings.screen.about
 
 import androidx.compose.runtime.Immutable
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.util.lang.launchIO
@@ -9,13 +8,9 @@ import ephyra.core.common.util.lang.toDateTimestampString
 import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.release.interactor.GetApplicationRelease
 import ephyra.domain.ui.UiPreferences
+import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.presentation.core.ui.AppInfo
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.Flow
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -27,18 +22,22 @@ class AboutViewModel @Inject constructor(
     val uiPreferences: UiPreferences,
     val appInfo: AppInfo,
     val extensionManager: ExtensionManager,
-) : ViewModel() {
+) : BaseUdfViewModel<AboutScreenState, AboutScreenEvent, AboutEffect>(AboutScreenState()) {
 
-    private val _state = MutableStateFlow(AboutScreenState())
-    val state: StateFlow<AboutScreenState> = _state.asStateFlow()
+    val events: Flow<AboutEffect>
+        get() = effects
 
-    private val _events: Channel<AboutEvent> = Channel(Int.MAX_VALUE)
-    val events = _events.receiveAsFlow()
+    override fun onEvent(event: AboutScreenEvent) {
+        when (event) {
+            AboutScreenEvent.CheckVersion -> checkVersion()
+            AboutScreenEvent.ClearUpdateResult -> clearUpdateResult()
+        }
+    }
 
     fun checkVersion() {
-        if (state.value.isCheckingUpdates) return
+        if (currentState.isCheckingUpdates) return
 
-        _state.update { it.copy(isCheckingUpdates = true) }
+        updateState { it.copy(isCheckingUpdates = true) }
 
         viewModelScope.launchIO {
             try {
@@ -54,19 +53,19 @@ class AboutViewModel @Inject constructor(
                     ),
                 )
                 if (result is GetApplicationRelease.Result.NewUpdate) {
-                    _events.send(AboutEvent.NewUpdate(result))
+                    emitEffect(AboutEffect.NewUpdate(result))
                 }
-                _state.update { it.copy(updateResult = result) }
+                updateState { it.copy(updateResult = result) }
             } catch (e: Exception) {
-                _events.send(AboutEvent.UpdateError(e))
+                emitEffect(AboutEffect.UpdateError(e))
             } finally {
-                _state.update { it.copy(isCheckingUpdates = false) }
+                updateState { it.copy(isCheckingUpdates = false) }
             }
         }
     }
 
     fun clearUpdateResult() {
-        _state.update { it.copy(updateResult = null) }
+        updateState { it.copy(updateResult = null) }
     }
 
     fun getVersionName(withBuildDate: Boolean): String {
@@ -130,10 +129,17 @@ class AboutViewModel @Inject constructor(
     }
 }
 
-sealed class AboutEvent {
-    data class NewUpdate(val result: GetApplicationRelease.Result.NewUpdate) : AboutEvent()
-    data class UpdateError(val error: Throwable) : AboutEvent()
+sealed interface AboutScreenEvent {
+    data object CheckVersion : AboutScreenEvent
+    data object ClearUpdateResult : AboutScreenEvent
 }
+
+sealed interface AboutEffect {
+    data class NewUpdate(val result: GetApplicationRelease.Result.NewUpdate) : AboutEffect
+    data class UpdateError(val error: Throwable) : AboutEffect
+}
+
+typealias AboutEvent = AboutEffect
 
 @Immutable
 data class AboutScreenState(

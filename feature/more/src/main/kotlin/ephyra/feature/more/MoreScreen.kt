@@ -15,6 +15,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -26,13 +27,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.Constants
-import ephyra.core.common.util.lang.launchIO
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.download.service.DownloadManager
 import ephyra.feature.settings.widget.SwitchPreferenceWidget
@@ -43,15 +42,13 @@ import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.presentation.core.ui.AppReadySignal
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
-import ephyra.presentation.core.util.asState
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @Composable
@@ -60,13 +57,11 @@ fun MoreTabScreen(
 ) {
     val context = LocalContext.current
     val viewModel = hiltViewModel<MoreViewModel>()
-    val downloadQueueState by viewModel.downloadQueueState.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
     MoreScreen(
-        downloadQueueStateProvider = { downloadQueueState },
-        downloadedOnly = viewModel.downloadedOnly,
-        onDownloadedOnlyChange = { viewModel.downloadedOnly = it },
-        incognitoMode = viewModel.incognitoMode,
-        onIncognitoModeChange = { viewModel.incognitoMode = it },
+        state = state,
+        onEvent = viewModel::onEvent,
         onClickDownloadQueue = { navController.navigate(ScreenRoutes.DownloadQueue.route) },
         onClickCategories = { navController.navigate(ephyra.presentation.core.ui.navigation.Screen.Category) },
         onClickStats = { navController.navigate(ScreenRoutes.Stats.route) },
@@ -80,41 +75,76 @@ fun MoreTabScreen(
     }
 }
 
-@HiltViewModel
-class MoreViewModel @Inject constructor(
-    private val downloadManager: DownloadManager,
-    preferences: BasePreferences,
-) : ViewModel() {
+@Immutable
+data class MoreState(
+    val downloadedOnly: Boolean = false,
+    val incognitoMode: Boolean = false,
+    val downloadQueueState: DownloadQueueState = DownloadQueueState.Stopped,
+)
 
-    var downloadedOnly by preferences.downloadedOnly().asState(viewModelScope)
-    var incognitoMode by preferences.incognitoMode().asState(viewModelScope)
-
-    private var _downloadQueueState: MutableStateFlow<DownloadQueueState> = MutableStateFlow(DownloadQueueState.Stopped)
-    val downloadQueueState: StateFlow<DownloadQueueState> = _downloadQueueState.asStateFlow()
-
-    init {
-        // Handle running/paused status change and queue progress updating
-        viewModelScope.launchIO {
-            combine(
-                downloadManager.isDownloaderRunning,
-                downloadManager.queueState,
-            ) { isRunning, downloadQueue -> Pair(isRunning, downloadQueue.size) }
-                .collectLatest { (isDownloading, downloadQueueSize) ->
-                    val pendingDownloadExists = downloadQueueSize != 0
-                    _downloadQueueState.value = when {
-                        !pendingDownloadExists -> DownloadQueueState.Stopped
-                        !isDownloading -> DownloadQueueState.Paused(downloadQueueSize)
-                        else -> DownloadQueueState.Downloading(downloadQueueSize)
-                    }
-                }
-        }
-    }
+sealed interface MoreEvent {
+    data class SetDownloadedOnly(val enabled: Boolean) : MoreEvent
+    data class SetIncognitoMode(val enabled: Boolean) : MoreEvent
 }
 
 sealed interface DownloadQueueState {
     data object Stopped : DownloadQueueState
     data class Paused(val pending: Int) : DownloadQueueState
     data class Downloading(val pending: Int) : DownloadQueueState
+}
+
+@HiltViewModel
+class MoreViewModel @Inject constructor(
+    private val downloadManager: DownloadManager,
+    private val preferences: BasePreferences,
+) : BaseUdfViewModel<MoreState, MoreEvent, Nothing>(
+    MoreState(
+        downloadedOnly = preferences.downloadedOnly().getSync(),
+        incognitoMode = preferences.incognitoMode().getSync(),
+    ),
+) {
+
+    init {
+        viewModelScope.launch {
+            preferences.downloadedOnly().changes()
+                .collectLatest { enabled ->
+                    updateState { it.copy(downloadedOnly = enabled) }
+                }
+        }
+        viewModelScope.launch {
+            preferences.incognitoMode().changes()
+                .collectLatest { enabled ->
+                    updateState { it.copy(incognitoMode = enabled) }
+                }
+        }
+        // Handle running/paused status change and queue progress updating
+        viewModelScope.launch {
+            combine(
+                downloadManager.isDownloaderRunning,
+                downloadManager.queueState,
+            ) { isRunning, downloadQueue -> Pair(isRunning, downloadQueue.size) }
+                .collectLatest { (isDownloading, downloadQueueSize) ->
+                    val pendingDownloadExists = downloadQueueSize != 0
+                    val queueState = when {
+                        !pendingDownloadExists -> DownloadQueueState.Stopped
+                        !isDownloading -> DownloadQueueState.Paused(downloadQueueSize)
+                        else -> DownloadQueueState.Downloading(downloadQueueSize)
+                    }
+                    updateState { it.copy(downloadQueueState = queueState) }
+                }
+        }
+    }
+
+    override fun onEvent(event: MoreEvent) {
+        when (event) {
+            is MoreEvent.SetDownloadedOnly -> {
+                preferences.downloadedOnly().set(event.enabled)
+            }
+            is MoreEvent.SetIncognitoMode -> {
+                preferences.incognitoMode().set(event.enabled)
+            }
+        }
+    }
 }
 
 @Composable
@@ -124,6 +154,38 @@ fun MoreScreen(
     onDownloadedOnlyChange: (Boolean) -> Unit,
     incognitoMode: Boolean,
     onIncognitoModeChange: (Boolean) -> Unit,
+    onClickDownloadQueue: () -> Unit,
+    onClickCategories: () -> Unit,
+    onClickStats: () -> Unit,
+    onClickDataAndStorage: () -> Unit,
+    onClickSettings: () -> Unit,
+    onClickAbout: () -> Unit,
+) {
+    MoreScreen(
+        state = MoreState(
+            downloadedOnly = downloadedOnly,
+            incognitoMode = incognitoMode,
+            downloadQueueState = downloadQueueStateProvider(),
+        ),
+        onEvent = { event ->
+            when (event) {
+                is MoreEvent.SetDownloadedOnly -> onDownloadedOnlyChange(event.enabled)
+                is MoreEvent.SetIncognitoMode -> onIncognitoModeChange(event.enabled)
+            }
+        },
+        onClickDownloadQueue = onClickDownloadQueue,
+        onClickCategories = onClickCategories,
+        onClickStats = onClickStats,
+        onClickDataAndStorage = onClickDataAndStorage,
+        onClickSettings = onClickSettings,
+        onClickAbout = onClickAbout,
+    )
+}
+
+@Composable
+fun MoreScreen(
+    state: MoreState,
+    onEvent: (MoreEvent) -> Unit,
     onClickDownloadQueue: () -> Unit,
     onClickCategories: () -> Unit,
     onClickStats: () -> Unit,
@@ -145,8 +207,8 @@ fun MoreScreen(
                     title = stringResource(ephyra.app.core.common.R.string.label_downloaded_only),
                     subtitle = stringResource(ephyra.app.core.common.R.string.downloaded_only_summary),
                     icon = Icons.Outlined.CloudOff,
-                    checked = downloadedOnly,
-                    onCheckedChanged = onDownloadedOnlyChange,
+                    checked = state.downloadedOnly,
+                    onCheckedChanged = { onEvent(MoreEvent.SetDownloadedOnly(it)) },
                 )
             }
             item {
@@ -154,15 +216,15 @@ fun MoreScreen(
                     title = stringResource(ephyra.app.core.common.R.string.pref_incognito_mode),
                     subtitle = stringResource(ephyra.app.core.common.R.string.pref_incognito_mode_summary),
                     icon = ImageVector.vectorResource(R.drawable.ic_glasses_24dp),
-                    checked = incognitoMode,
-                    onCheckedChanged = onIncognitoModeChange,
+                    checked = state.incognitoMode,
+                    onCheckedChanged = { onEvent(MoreEvent.SetIncognitoMode(it)) },
                 )
             }
 
             item { HorizontalDivider() }
 
             item {
-                val downloadQueueState = downloadQueueStateProvider()
+                val downloadQueueState = state.downloadQueueState
                 TextPreferenceWidget(
                     title = stringResource(ephyra.app.core.common.R.string.label_download_queue),
                     subtitle = when (downloadQueueState) {

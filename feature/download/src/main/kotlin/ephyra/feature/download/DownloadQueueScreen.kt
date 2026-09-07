@@ -29,7 +29,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -418,7 +417,7 @@ private fun DownloadQueueItem(
     onCancelSeries: () -> Unit,
     dragHandle: @Composable () -> Unit,
 ) {
-    val progress by download.progressFlow.collectAsState(download.progress)
+    val progress by download.progressFlow.collectAsStateWithLifecycle(initialValue = download.progress)
     val pages = download.pages
     val downloadedImages = download.downloadedImages
 

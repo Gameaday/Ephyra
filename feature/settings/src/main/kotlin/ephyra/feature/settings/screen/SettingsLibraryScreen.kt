@@ -2,7 +2,6 @@ package ephyra.feature.settings.screen
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -13,6 +12,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.util.fastMap
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import ephyra.core.common.util.system.ImageFormat
 import ephyra.domain.category.interactor.ResetCategoryFlags
@@ -52,7 +52,7 @@ object SettingsLibraryScreen : SearchableSettings {
     @Composable
     override fun getPreferences(): List<Preference> {
         val viewModel = hiltViewModel<SettingsLibraryViewModel>()
-        val allCategories by viewModel.getCategories().collectAsState(emptyList())
+        val allCategories by viewModel.getCategories().collectAsStateWithLifecycle(initialValue = emptyList())
         val navController = LocalNavController.current
 
         return listOf(

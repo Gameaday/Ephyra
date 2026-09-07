@@ -1,15 +1,15 @@
 package ephyra.feature.player
 
-import androidx.lifecycle.ViewModel
+import androidx.compose.runtime.Immutable
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
+import ephyra.presentation.core.udf.BaseUdfViewModel
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
 
 /**
  * UI State for the Video Player.
  */
+@Immutable
 data class PlayerUiState(
     val title: String = "",
     val sourceName: String = "",
@@ -25,6 +25,7 @@ data class PlayerUiState(
  * UI Events for the Video Player.
  */
 sealed interface PlayerUiEvent {
+    data class Init(val title: String, val streamUrl: String) : PlayerUiEvent
     data class PlayPause(val play: Boolean) : PlayerUiEvent
     data class SeekTo(val positionMs: Long) : PlayerUiEvent
     data object Retry : PlayerUiEvent
@@ -34,34 +35,42 @@ sealed interface PlayerUiEvent {
  * ViewModel for the Anime/Video playback flow.
  */
 @HiltViewModel
-class VideoPlayerViewModel @Inject constructor() : ViewModel() {
-    private val _uiState = MutableStateFlow(PlayerUiState())
-    val uiState: StateFlow<PlayerUiState> = _uiState.asStateFlow()
+class VideoPlayerViewModel @Inject constructor() : BaseUdfViewModel<PlayerUiState, PlayerUiEvent, Nothing>(
+    PlayerUiState(),
+) {
+
+    val uiState: StateFlow<PlayerUiState>
+        get() = state
 
     /**
      * Initializes the player state with content information.
      */
     fun initPlayer(title: String, streamUrl: String) {
-        _uiState.value = PlayerUiState(
-            title = title,
-            streamUrl = streamUrl,
-            isLoading = false,
-        )
+        onEvent(PlayerUiEvent.Init(title, streamUrl))
     }
 
     /**
      * Dispatcher for events coming from the video player screen composable.
      */
-    fun onEvent(event: PlayerUiEvent) {
+    override fun onEvent(event: PlayerUiEvent) {
         when (event) {
+            is PlayerUiEvent.Init -> {
+                updateState {
+                    it.copy(
+                        title = event.title,
+                        streamUrl = event.streamUrl,
+                        isLoading = false,
+                    )
+                }
+            }
             is PlayerUiEvent.PlayPause -> {
-                _uiState.value = _uiState.value.copy(isPlaying = event.play)
+                updateState { it.copy(isPlaying = event.play) }
             }
             is PlayerUiEvent.SeekTo -> {
-                _uiState.value = _uiState.value.copy(currentPosition = event.positionMs)
+                updateState { it.copy(currentPosition = event.positionMs) }
             }
             PlayerUiEvent.Retry -> {
-                _uiState.value = _uiState.value.copy(errorMessage = null, isLoading = true)
+                updateState { it.copy(errorMessage = null, isLoading = true) }
             }
         }
     }

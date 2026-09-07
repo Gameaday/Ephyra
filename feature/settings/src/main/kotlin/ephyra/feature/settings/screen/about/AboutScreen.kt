@@ -15,13 +15,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.release.interactor.GetApplicationRelease
@@ -48,20 +48,20 @@ fun AboutScreen(
     navController: NavController = LocalNavController.current,
 ) {
     val viewModel = hiltViewModel<AboutViewModel>()
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
 
     LaunchedEffect(Unit) {
-        viewModel.events.collectLatest { event ->
+        viewModel.effects.collectLatest { event ->
             when (event) {
-                is AboutEvent.NewUpdate -> {
+                is AboutEffect.NewUpdate -> {
                     // Update is handled via the state-driven AlertDialog below
                     // which reads from ViewModel.state.updateResult
                 }
 
-                is AboutEvent.UpdateError -> {
+                is AboutEffect.UpdateError -> {
                     context.toast(event.error.message)
                     logcat(LogPriority.ERROR, event.error)
                 }
@@ -79,10 +79,10 @@ fun AboutScreen(
                 }
                 GetApplicationRelease.Result.NoNewUpdate -> {
                     context.toast(ephyra.app.core.common.R.string.update_check_no_new_updates)
-                    viewModel.clearUpdateResult()
+                    viewModel.onEvent(AboutScreenEvent.ClearUpdateResult)
                 }
                 else -> {
-                    viewModel.clearUpdateResult()
+                    viewModel.onEvent(AboutScreenEvent.ClearUpdateResult)
                 }
             }
         }
@@ -91,7 +91,7 @@ fun AboutScreen(
     if (updateResult is GetApplicationRelease.Result.NewUpdate) {
         val release = updateResult.release
         AlertDialog(
-            onDismissRequest = { viewModel.clearUpdateResult() },
+            onDismissRequest = { viewModel.onEvent(AboutScreenEvent.ClearUpdateResult) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -106,14 +106,14 @@ fun AboutScreen(
                         } catch (e: Exception) {
                             context.toast(e.message)
                         }
-                        viewModel.clearUpdateResult()
+                        viewModel.onEvent(AboutScreenEvent.ClearUpdateResult)
                     },
                 ) {
                     Text(stringResource(ephyra.app.core.common.R.string.update_check_confirm))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.clearUpdateResult() }) {
+                TextButton(onClick = { viewModel.onEvent(AboutScreenEvent.ClearUpdateResult) }) {
                     Text(stringResource(ephyra.app.core.common.R.string.action_cancel))
                 }
             },
@@ -165,7 +165,7 @@ fun AboutScreen(
                                 )
                             }
                         },
-                        onPreferenceClick = { viewModel.checkVersion() },
+                        onPreferenceClick = { viewModel.onEvent(AboutScreenEvent.CheckVersion) },
                     )
                 }
             }
