@@ -16,6 +16,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLayoutDirection
+import ephyra.core.common.preference.TriState
 import ephyra.domain.category.model.Category
 import ephyra.domain.library.model.LibraryDisplayMode
 import ephyra.domain.library.model.LibraryManga
@@ -37,6 +38,13 @@ fun LibraryContent(
     showPageTabs: Boolean,
     deadSourceCount: Int,
     degradedSourceCount: Int,
+    unreadFilterState: TriState = TriState.DISABLED,
+    downloadedFilterState: TriState = TriState.DISABLED,
+    startedFilterState: TriState = TriState.DISABLED,
+    bookmarkedFilterState: TriState = TriState.DISABLED,
+    completedFilterState: TriState = TriState.DISABLED,
+    sourceHealthFilterState: TriState = TriState.DISABLED,
+    onToggleFilter: ((LibraryFilterType) -> Unit)? = null,
     onChangeCurrentPage: (Int) -> Unit,
     onClickManga: (Long) -> Unit,
     onContinueReadingClicked: ((LibraryManga) -> Unit)?,
@@ -100,6 +108,20 @@ fun LibraryContent(
                         pagerState.animateScrollToPage(it)
                     }
                 },
+            )
+        }
+
+        if (onToggleFilter != null) {
+            LibraryFilterChips(
+                unreadState = unreadFilterState,
+                downloadedState = downloadedFilterState,
+                startedState = startedFilterState,
+                bookmarkedState = bookmarkedFilterState,
+                completedState = completedFilterState,
+                sourceHealthState = sourceHealthFilterState,
+                deadSourceCount = deadSourceCount,
+                degradedSourceCount = degradedSourceCount,
+                onToggleFilter = onToggleFilter,
             )
         }
 

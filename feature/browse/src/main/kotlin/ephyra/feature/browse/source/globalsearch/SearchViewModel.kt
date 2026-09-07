@@ -10,6 +10,7 @@ import ephyra.core.common.util.lang.launchIO
 import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.interactor.NetworkToLocalManga
+import ephyra.domain.manga.interactor.SmartSourceSearchEngine
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.toDomainManga
 import ephyra.domain.source.service.SourceManager
@@ -39,7 +40,7 @@ abstract class SearchViewModel(
     private val sourcePreferences: SourcePreferences,
     protected val sourceManager: SourceManager,
     private val extensionManager: ExtensionManager,
-    private val networkToLocalManga: NetworkToLocalManga,
+    protected val networkToLocalManga: NetworkToLocalManga,
     private val getManga: GetManga,
     private val searchCache: GlobalSearchCache,
 ) : BaseUdfViewModel<SearchViewModel.State, SearchScreenEvent, SearchEffect>(initialState) {
@@ -196,15 +197,7 @@ abstract class SearchViewModel(
                     }
 
                     try {
-                        val page = withContext(coroutineDispatcher) {
-                            source.getSearchManga(1, query, source.getFilterList())
-                        }
-
-                        val seenUrls = HashSet<String>(page.mangas.size)
-                        val domainMangas = page.mangas.mapNotNullTo(ArrayList(page.mangas.size)) { smanga ->
-                            if (seenUrls.add(smanga.url)) smanga.toDomainManga(source.id) else null
-                        }
-                        val titles = networkToLocalManga(domainMangas)
+                        val titles = searchSource(source, query)
 
                         if (isActive) {
                             updateItem(source, SearchItemResult.Success(titles))
@@ -217,6 +210,37 @@ abstract class SearchViewModel(
                 }
             }
                 .awaitAll()
+        }
+    }
+
+    protected open suspend fun searchSource(
+        source: CatalogueSource,
+        query: String,
+    ): List<Manga> {
+        val page = withContext(coroutineDispatcher) {
+            source.getSearchManga(1, query, source.getFilterList())
+        }
+
+        val seenUrls = HashSet<String>(page.mangas.size)
+        val domainMangas = page.mangas.mapNotNullTo(ArrayList(page.mangas.size)) { smanga ->
+            if (seenUrls.add(smanga.url)) smanga.toDomainManga(source.id) else null
+        }
+        val titles = networkToLocalManga(domainMangas)
+        if (titles.isNotEmpty()) {
+            return titles
+        }
+
+        // Library search fallback: If standard source search returned 0 results, try SmartSourceSearchEngine deep search
+        return try {
+            val smartEngine = SmartSourceSearchEngine(extraSearchParams = null)
+            val smartMatch = smartEngine.deepSearch(source, query)
+            if (smartMatch != null) {
+                networkToLocalManga(listOf(smartMatch))
+            } else {
+                emptyList()
+            }
+        } catch (_: Exception) {
+            emptyList()
         }
     }
 

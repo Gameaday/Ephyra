@@ -32,6 +32,7 @@ sealed interface LibraryScreenEvent {
         val removeCategories: List<Long>,
     ) : LibraryScreenEvent
     data object ShowSettingsDialog : LibraryScreenEvent
+    data class ToggleFilter(val filterType: ephyra.feature.library.presentation.components.LibraryFilterType) : LibraryScreenEvent
     data object EnableHealthFilter : LibraryScreenEvent
     data object OpenChangeCategoryDialog : LibraryScreenEvent
     data object OpenDeleteMangaDialog : LibraryScreenEvent

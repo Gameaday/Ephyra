@@ -10,6 +10,8 @@ import ephyra.domain.source.service.SourcePreferences
 import ephyra.feature.browse.source.globalsearch.GlobalSearchCache
 import ephyra.feature.browse.source.globalsearch.SearchItemResult
 import ephyra.feature.browse.source.globalsearch.SearchViewModel
+import ephyra.domain.manga.interactor.SmartSourceSearchEngine
+import ephyra.domain.manga.model.Manga
 import eu.kanade.tachiyomi.source.CatalogueSource
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -56,6 +58,29 @@ class MigrateSearchViewModel @Inject constructor(
                 )
             }
             search()
+        }
+    }
+
+    override suspend fun searchSource(source: CatalogueSource, query: String): List<Manga> {
+        val standardResults = super.searchSource(source, query)
+        if (standardResults.isNotEmpty()) return standardResults
+
+        val fromManga = state.value.from ?: return emptyList()
+        return try {
+            val smartEngine = SmartSourceSearchEngine(extraSearchParams = null)
+            val match = smartEngine.multiTitleSearch(
+                source = source,
+                primaryTitle = fromManga.title,
+                alternativeTitles = fromManga.alternativeTitles,
+                deepSearchFallback = true,
+            )
+            if (match != null) {
+                networkToLocalManga(listOf(match.first))
+            } else {
+                emptyList()
+            }
+        } catch (_: Exception) {
+            emptyList()
         }
     }
 

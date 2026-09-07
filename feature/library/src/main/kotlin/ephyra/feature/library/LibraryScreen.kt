@@ -182,6 +182,13 @@ fun LibraryScreen(
                     showPageTabs = state.showCategoryTabs || !state.searchQuery.isNullOrEmpty(),
                     deadSourceCount = state.deadSourceCount,
                     degradedSourceCount = state.degradedSourceCount,
+                    unreadFilterState = state.filterUnread,
+                    downloadedFilterState = state.filterDownloaded,
+                    startedFilterState = state.filterStarted,
+                    bookmarkedFilterState = state.filterBookmarked,
+                    completedFilterState = state.filterCompleted,
+                    sourceHealthFilterState = state.filterSourceHealthDead,
+                    onToggleFilter = { ViewModel.onEvent(LibraryScreenEvent.ToggleFilter(it)) },
                     onChangeCurrentPage = { ViewModel.onEvent(LibraryScreenEvent.UpdateActiveCategoryIndex(it)) },
                     onClickManga = {
                         navController.navigate(

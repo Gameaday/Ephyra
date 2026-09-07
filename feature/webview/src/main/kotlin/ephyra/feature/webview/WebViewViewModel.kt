@@ -79,4 +79,3 @@ class WebViewViewModel @Inject constructor(
         val headers: Map<String, String> = emptyMap(),
     )
 }
-

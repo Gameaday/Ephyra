@@ -43,6 +43,7 @@ import ephyra.domain.source.service.SourceManager
 import ephyra.domain.track.interactor.GetTracksPerManga
 import ephyra.domain.track.model.Track
 import ephyra.domain.track.service.TrackerManager
+import ephyra.feature.library.presentation.components.LibraryFilterType
 import ephyra.feature.library.presentation.components.LibraryToolbarTitle
 import ephyra.presentation.core.components.SEARCH_DEBOUNCE_MILLIS
 import ephyra.presentation.core.udf.BaseUdfViewModel
@@ -139,6 +140,7 @@ class LibraryViewModel @Inject constructor(
                 event.removeCategories,
             )
             is LibraryScreenEvent.ShowSettingsDialog -> showSettingsDialog()
+            is LibraryScreenEvent.ToggleFilter -> toggleFilter(event.filterType)
             is LibraryScreenEvent.EnableHealthFilter -> enableHealthFilter()
             is LibraryScreenEvent.OpenChangeCategoryDialog -> openChangeCategoryDialog()
             is LibraryScreenEvent.OpenDeleteMangaDialog -> openDeleteMangaDialog()
@@ -231,7 +233,7 @@ class LibraryViewModel @Inject constructor(
             getLibraryItemPreferencesFlow(),
             getTrackingFiltersFlow(),
         ) { prefs, trackFilters ->
-            prefs.filterDownloaded != TriState.DISABLED ||
+            val hasActive = prefs.filterDownloaded != TriState.DISABLED ||
                 prefs.filterUnread != TriState.DISABLED ||
                 prefs.filterStarted != TriState.DISABLED ||
                 prefs.filterBookmarked != TriState.DISABLED ||
@@ -240,11 +242,20 @@ class LibraryViewModel @Inject constructor(
                 prefs.filterSourceHealthDead != TriState.DISABLED ||
                 prefs.filterContentTypeManga != TriState.DISABLED ||
                 trackFilters.values.any { it != TriState.DISABLED }
+            hasActive to prefs
         }
             .distinctUntilChanged()
-            .onEach {
+            .onEach { (hasActive, prefs) ->
                 updateState { state ->
-                    state.copy(hasActiveFilters = it)
+                    state.copy(
+                        hasActiveFilters = hasActive,
+                        filterDownloaded = prefs.filterDownloaded,
+                        filterUnread = prefs.filterUnread,
+                        filterStarted = prefs.filterStarted,
+                        filterBookmarked = prefs.filterBookmarked,
+                        filterCompleted = prefs.filterCompleted,
+                        filterSourceHealthDead = prefs.filterSourceHealthDead,
+                    )
                 }
             }
             .launchIn(viewModelScope)
@@ -772,6 +783,20 @@ class LibraryViewModel @Inject constructor(
         libraryPreferences.filterSourceHealthDead().set(TriState.ENABLED_IS)
     }
 
+    private fun toggleFilter(filterType: LibraryFilterType) {
+        viewModelScope.launchIO {
+            val pref = when (filterType) {
+                LibraryFilterType.Unread -> libraryPreferences.filterUnread()
+                LibraryFilterType.Downloaded -> libraryPreferences.filterDownloaded()
+                LibraryFilterType.Started -> libraryPreferences.filterStarted()
+                LibraryFilterType.Bookmarked -> libraryPreferences.filterBookmarked()
+                LibraryFilterType.Completed -> libraryPreferences.filterCompleted()
+                LibraryFilterType.SourceHealthDead -> libraryPreferences.filterSourceHealthDead()
+            }
+            pref.set(pref.get().next())
+        }
+    }
+
     private var lastSelectionCategory: Long? = null
 
     private fun clearSelection() {
@@ -975,6 +1000,12 @@ class LibraryViewModel @Inject constructor(
         val showMangaContinueButton: Boolean = false,
         val dialog: Dialog? = null,
         val libraryData: LibraryData = LibraryData(),
+        val filterDownloaded: TriState = TriState.DISABLED,
+        val filterUnread: TriState = TriState.DISABLED,
+        val filterStarted: TriState = TriState.DISABLED,
+        val filterBookmarked: TriState = TriState.DISABLED,
+        val filterCompleted: TriState = TriState.DISABLED,
+        val filterSourceHealthDead: TriState = TriState.DISABLED,
         private val activeCategoryIndex: Int = 0,
         private val groupedFavorites: PersistentMap<Category, PersistentList<Long>> = persistentMapOf(),
     ) {

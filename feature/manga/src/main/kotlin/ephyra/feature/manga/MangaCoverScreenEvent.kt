@@ -35,4 +35,3 @@ sealed interface MangaCoverEffect {
     /** Display a one-shot snackbar message. */
     data class ShowSnackbar(val message: String) : MangaCoverEffect
 }
-

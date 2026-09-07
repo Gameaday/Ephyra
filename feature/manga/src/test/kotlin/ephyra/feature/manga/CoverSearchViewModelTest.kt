@@ -50,7 +50,8 @@ class CoverSearchViewModelTest {
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        coEvery { mockHttpSource.getSearchManga(1, "Solo Leveling", any()) } returns MangasPage(listOf(testManga), false)
+        coEvery { mockHttpSource.getSearchManga(1, "Solo Leveling", any()) } returns
+            MangasPage(listOf(testManga), false)
         fakeSourceManager.catalogueSourceList = listOf(mockHttpSource)
         viewModel = CoverSearchViewModel(fakeSourceManager)
     }
