@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.preference.PreferenceStore
+import ephyra.core.common.preference.getAndSet
 import ephyra.core.common.util.Result
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.system.logcat
@@ -22,6 +23,7 @@ import ephyra.domain.extensionrepo.interactor.DeleteExtensionRepo
 import ephyra.domain.extensionrepo.interactor.GetExtensionRepo
 import ephyra.domain.extensionrepo.interactor.UpdateExtensionRepo
 import ephyra.domain.extensionrepo.model.ExtensionRepo
+import ephyra.domain.source.service.SourcePreferences
 import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.presentation.core.ui.AppInfo
 import kotlinx.coroutines.flow.collectLatest
@@ -44,6 +46,7 @@ class ExtensionsViewModel @Inject constructor(
     private val legacyExtensionTranspiler: ExtensionTranspiler,
     private val scraperUpdater: ScraperScriptUpdater,
     private val preferenceStore: PreferenceStore,
+    private val sourcePreferences: SourcePreferences,
     private val trustExtension: ephyra.domain.extension.interactor.TrustExtension,
     private val extensionManager: ephyra.domain.extension.service.ExtensionManager,
     private val appInfo: AppInfo,
@@ -55,6 +58,13 @@ class ExtensionsViewModel @Inject constructor(
         loadSources()
         loadRepositories()
         loadAvailableExtensions()
+        viewModelScope.launch {
+            try {
+                extensionManager.findAvailableExtensions()
+            } catch (e: Exception) {
+                logcat(LogPriority.ERROR, e) { "Failed to find available extensions on init" }
+            }
+        }
     }
 
     private fun loadRepositories() {
@@ -118,10 +128,26 @@ class ExtensionsViewModel @Inject constructor(
     fun addRepository(url: String) {
         viewModelScope.launch {
             updateState { it.copy(isLoading = true) }
-            when (createExtensionRepo.await(url)) {
+            when (val result = createExtensionRepo.await(url)) {
                 CreateExtensionRepo.Result.Success -> {
                     updateExtensionRepo.awaitAll()
+                    extensionManager.findAvailableExtensions()
+                    extensionManager.reloadExtensions()
                     updateState { it.copy(isLoading = false) }
+                }
+                CreateExtensionRepo.Result.RepoAlreadyExists -> {
+                    updateState { it.copy(isLoading = false, error = "Repository already exists") }
+                }
+                is CreateExtensionRepo.Result.DuplicateFingerprint -> {
+                    updateState {
+                        it.copy(
+                            isLoading = false,
+                            error = "Repository with matching signing key already exists: ${result.oldRepo.name}",
+                        )
+                    }
+                }
+                CreateExtensionRepo.Result.InvalidUrl -> {
+                    updateState { it.copy(isLoading = false, error = "Invalid repository URL") }
                 }
                 else -> {
                     updateState { it.copy(isLoading = false, error = "Failed to add repository") }
@@ -134,6 +160,8 @@ class ExtensionsViewModel @Inject constructor(
         viewModelScope.launch {
             updateState { it.copy(isLoading = true) }
             deleteExtensionRepo.await(url)
+            extensionManager.findAvailableExtensions()
+            extensionManager.reloadExtensions()
             updateState { it.copy(isLoading = false) }
         }
     }
@@ -164,6 +192,9 @@ class ExtensionsViewModel @Inject constructor(
 
             // Clean up version tracking
             legacyExtensionTranspiler.clearExtensionMetadata(extension.pkgName)
+
+            // Ensure APK is also uninstalled if it was an installed APK
+            extensionManager.uninstallExtensionByPkgName(extension.pkgName)
 
             updateState { it.copy(isLoading = false) }
             loadSources()
@@ -276,14 +307,24 @@ class ExtensionsViewModel @Inject constructor(
     fun removeSource(baseUrl: String) {
         viewModelScope.launch {
             updateState { it.copy(isLoading = true) }
-            val result = removeCustomSource.removeSource(baseUrl)
-            updateState { it.copy(isLoading = false) }
-            when (result) {
-                is Result.Success -> loadSources()
-                is Result.Error -> updateState {
-                    it.copy(error = result.exception.message ?: "Failed to remove source")
+            val matchingSource = state.value.sources.firstOrNull { it.baseUrl == baseUrl }
+            if (matchingSource?.sourceType == SourceType.LEGACY_EXTENSION) {
+                matchingSource.extensionId?.let { pkgName ->
+                    extensionManager.uninstallExtensionByPkgName(pkgName)
                 }
-                else -> {}
+                sourcePreferences.disabledSources().getAndSet { it + matchingSource.id.toString() }
+                updateState { it.copy(isLoading = false) }
+                loadSources()
+            } else {
+                val result = removeCustomSource.removeSource(baseUrl)
+                updateState { it.copy(isLoading = false) }
+                when (result) {
+                    is Result.Success -> loadSources()
+                    is Result.Error -> updateState {
+                        it.copy(error = result.exception.message ?: "Failed to remove source")
+                    }
+                    else -> {}
+                }
             }
         }
     }
@@ -295,13 +336,29 @@ class ExtensionsViewModel @Inject constructor(
     /** Marks an untrusted extension as trusted for its current version+signature. */
     fun trustExtension(extension: Extension.Untrusted) {
         viewModelScope.launch {
-            trustExtension.trust(extension.pkgName, extension.versionCode, extension.signatureHash)
+            extensionManager.trust(extension)
+            loadSources()
         }
     }
 
     /** Uninstalls a broken/failed extension APK. */
     fun uninstallFailedExtension(pkgName: String) {
         extensionManager.uninstallExtensionByPkgName(pkgName)
+    }
+
+    fun refreshAll() {
+        viewModelScope.launch {
+            updateState { it.copy(isLoading = true) }
+            try {
+                updateExtensionRepo.awaitAll()
+                extensionManager.findAvailableExtensions()
+                extensionManager.reloadExtensions()
+            } catch (e: Exception) {
+                logcat(LogPriority.ERROR, e) { "Failed to refresh extension repositories" }
+            }
+            loadSources()
+            updateState { it.copy(isLoading = false) }
+        }
     }
 
     fun clearError() {
@@ -315,6 +372,7 @@ class ExtensionsViewModel @Inject constructor(
             is ExtensionsScreenEvent.InstallExtension -> installExtension(event.extension, event.selectedUrls)
             is ExtensionsScreenEvent.UninstallExtension -> uninstallExtension(event.extension)
             ExtensionsScreenEvent.LoadSources -> loadSources()
+            ExtensionsScreenEvent.RefreshAll -> refreshAll()
             is ExtensionsScreenEvent.AddJsScraper -> addJsScraper(event.githubUrl, event.filename)
             is ExtensionsScreenEvent.ImportJsScraper -> importJsScraper(event.filename, event.scriptContent)
             is ExtensionsScreenEvent.AddHeuristicProfile -> addHeuristicProfile(event.baseUrl, event.displayName)
@@ -352,6 +410,7 @@ sealed interface ExtensionsScreenEvent {
     ) : ExtensionsScreenEvent
     data class UninstallExtension(val extension: Extension.Available) : ExtensionsScreenEvent
     data object LoadSources : ExtensionsScreenEvent
+    data object RefreshAll : ExtensionsScreenEvent
     data class AddJsScraper(val githubUrl: String, val filename: String) : ExtensionsScreenEvent
     data class ImportJsScraper(val filename: String, val scriptContent: String) : ExtensionsScreenEvent
     data class AddHeuristicProfile(val baseUrl: String, val displayName: String?) : ExtensionsScreenEvent

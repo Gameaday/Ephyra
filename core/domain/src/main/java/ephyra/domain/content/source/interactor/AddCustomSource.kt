@@ -140,9 +140,10 @@ class AddCustomSource @Inject constructor(
 
     private fun normalizeUrl(url: String): String {
         return url
+            .trim()
             .removePrefix("https://")
             .removePrefix("http://")
             .removeSuffix("/")
-            .trim()
+            .lowercase()
     }
 }

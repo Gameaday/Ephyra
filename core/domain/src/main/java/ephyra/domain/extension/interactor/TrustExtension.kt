@@ -15,9 +15,15 @@ class TrustExtension(
         // signatures may differ in hex casing, which would silently fail trust.
         val trustedFingerprints = extensionRepoRepository.getAll()
             .mapTo(HashSet()) { it.signingKeyFingerprint.lowercase() }
-        val key = "${pkgInfo.packageName}:${pkgInfo.versionCode}:${fingerprints.last()}"
-        return fingerprints.any { it.lowercase() in trustedFingerprints } ||
-            key in preferences.trustedExtensions().get()
+        if (fingerprints.any { it.lowercase() in trustedFingerprints }) {
+            return true
+        }
+
+        val trustedKeys = preferences.trustedExtensions().get()
+            .mapTo(HashSet()) { it.lowercase() }
+        return fingerprints.any { fp ->
+            "${pkgInfo.packageName}:${pkgInfo.versionCode}:$fp".lowercase() in trustedKeys
+        }
     }
 
     suspend fun trust(pkgName: String, versionCode: Long, signatureHash: String) {
@@ -25,7 +31,7 @@ class TrustExtension(
             // Remove previously trusted versions
             val removed = exts.filterNot { it.startsWith("$pkgName:") }.toMutableSet()
 
-            removed.also { it += "$pkgName:$versionCode:$signatureHash" }
+            removed.also { it += "$pkgName:$versionCode:${signatureHash.lowercase()}" }
         }
     }
 

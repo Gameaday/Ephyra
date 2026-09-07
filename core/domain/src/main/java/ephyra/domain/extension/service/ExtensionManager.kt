@@ -34,6 +34,8 @@ interface ExtensionManager {
 
     suspend fun findAvailableExtensions()
 
+    fun reloadExtensions()
+
     suspend fun trust(extension: Extension.Untrusted)
 
     fun uninstallExtension(extension: Extension)

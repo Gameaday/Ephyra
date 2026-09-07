@@ -77,6 +77,8 @@ import ephyra.domain.extensionrepo.interactor.CreateExtensionRepo
 import ephyra.domain.extensionrepo.model.ExtensionRepo
 import ephyra.feature.browse.extension.ExtensionsViewModel
 import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.Screen
+import ephyra.presentation.core.ui.navigation.ScreenRoutes
 
 @Composable
 fun ExtensionScreen(
@@ -164,6 +166,7 @@ fun ExtensionScreen(
             onUninstallExtensionClick = onUninstallExtension,
             onTrustExtensionClick = onTrustExtension,
             onUninstallByPkgName = onUninstallByPkgName,
+            onClickExtension = { pkgName -> navController.navigate(Screen.ExtensionDetails(pkgName)) },
             onLinkScraperClick = { source ->
                 selectedSourceForLink = source
                 linkBaseUrl = source.baseUrl
@@ -427,6 +430,7 @@ private fun ExtensionScraperManagementLayout(
     onUninstallExtensionClick: (Extension.Available) -> Unit,
     onTrustExtensionClick: (Extension.Untrusted) -> Unit,
     onUninstallByPkgName: (String) -> Unit,
+    onClickExtension: (String) -> Unit,
     onLinkScraperClick: (UnifiedSource) -> Unit,
     onRefresh: () -> Unit,
     onSourceClick: (UnifiedSource) -> Unit,
@@ -475,9 +479,11 @@ private fun ExtensionScraperManagementLayout(
         // Sources grouped by type
         val grouped = sources.groupBy { it.sourceType }
         val typeOrder = listOf(
+            SourceType.LEGACY_EXTENSION,
             SourceType.JS_SCRAPER,
             SourceType.HEURISTIC,
-        )
+            SourceType.REPOSITORY,
+        ).filter { (grouped[it] ?: emptyList()).isNotEmpty() }
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -512,7 +518,11 @@ private fun ExtensionScraperManagementLayout(
             // Installed extension APKs (trusted & loaded)
             if (installedExtensions.isNotEmpty()) {
                 item {
-                    InstalledExtensionsSection(installedExtensions = installedExtensions)
+                    InstalledExtensionsSection(
+                        installedExtensions = installedExtensions,
+                        onUninstall = onUninstallByPkgName,
+                        onClickExtension = onClickExtension,
+                    )
                 }
             }
 
@@ -592,6 +602,8 @@ private fun ExtensionScraperManagementLayout(
 @Composable
 private fun InstalledExtensionsSection(
     installedExtensions: List<Extension.Installed>,
+    onUninstall: (String) -> Unit,
+    onClickExtension: (String) -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -623,7 +635,9 @@ private fun InstalledExtensionsSection(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 installedExtensions.forEach { ext ->
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onClickExtension(ext.pkgName) },
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
@@ -643,11 +657,13 @@ private fun InstalledExtensionsSection(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
-                        Text(
-                            text = "OK",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
+                        IconButton(onClick = { onUninstall(ext.pkgName) }) {
+                            Icon(
+                                imageVector = Icons.Outlined.Delete,
+                                contentDescription = "Uninstall",
+                                tint = MaterialTheme.colorScheme.error,
+                            )
+                        }
                     }
                 }
             }
@@ -707,7 +723,7 @@ private fun UntrustedExtensionsSection(
                             )
                         }
                         TextButton(onClick = { onTrust(ext) }) {
-                            Text("Trust")
+                            Text("Approve")
                         }
                         IconButton(onClick = { onUninstall(ext.pkgName) }) {
                             Icon(

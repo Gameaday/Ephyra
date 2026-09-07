@@ -314,6 +314,10 @@ class ExtensionManager(
         untrustedExtensionMapFlow.value -= pkgName
     }
 
+    override fun reloadExtensions() {
+        initExtensions()
+    }
+
     /**
      * Adds the given extension to the list of trusted extensions. It also loads in background the
      * now trusted extensions.
@@ -321,15 +325,31 @@ class ExtensionManager(
      * @param extension the extension to trust
      */
     override suspend fun trust(extension: Extension.Untrusted) {
-        untrustedExtensionMapFlow.value[extension.pkgName] ?: return
-
         trustExtension.trust(extension.pkgName, extension.versionCode, extension.signatureHash)
 
         untrustedExtensionMapFlow.value -= extension.pkgName
 
-        extensionLoader.loadExtensionFromPkgName(context, extension.pkgName)
-            .let { it as? LoadResult.Success }
-            ?.let { registerNewExtension(it.extension) }
+        when (val result = extensionLoader.loadExtensionFromPkgName(context, extension.pkgName)) {
+            is LoadResult.Success -> {
+                registerNewExtension(result.extension)
+                failedExtensionMapFlow.value -= extension.pkgName
+            }
+            is LoadResult.Untrusted -> {
+                untrustedExtensionMapFlow.value += result.extension
+            }
+            is LoadResult.Error -> {
+                val pkgName = result.pkgName ?: extension.pkgName
+                failedExtensionMapFlow.value += Extension.Failed(
+                    name = extension.name,
+                    pkgName = pkgName,
+                    versionName = extension.versionName,
+                    versionCode = extension.versionCode,
+                    libVersion = extension.libVersion,
+                    reason = result.reason,
+                    detail = result.detail,
+                )
+            }
+        }
     }
 
     /**

@@ -39,7 +39,7 @@ fun extensionsTab(
                 onCheckUpdates = extensionsViewModel::checkAndUpdateScraper,
                 onForceRediscover = extensionsViewModel::forceRediscover,
                 onRemoveSource = extensionsViewModel::removeSource,
-                onRefresh = extensionsViewModel::loadSources,
+                onRefresh = extensionsViewModel::refreshAll,
                 onAddRepository = extensionsViewModel::addRepository,
                 onDeleteRepository = extensionsViewModel::deleteRepository,
                 onInstallExtension = extensionsViewModel::installExtension,
