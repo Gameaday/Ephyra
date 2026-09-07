@@ -107,7 +107,7 @@ class App :
     lateinit var coverCache: CoverCache
 
     @Inject
-    lateinit var sourceManager: SourceManager
+    lateinit var sourceManagerProvider: javax.inject.Provider<SourceManager>
 
     @Volatile
     private var verboseLoggingEnabled = false
@@ -145,19 +145,29 @@ class App :
             android.util.Log.e("Ephyra", "Failed to initialize crash handler", e)
         }
         StartupGuard.completePhase("crash_handler")
+
+        // Early CoreContainer context initialization
+        try {
+            CoreContainer.init(base)
+        } catch (e: Throwable) {
+            android.util.Log.e("Ephyra", "Failed early CoreContainer init", e)
+        }
     }
 
     @SuppressLint("LaunchActivityFromNotification")
     override fun onCreate() {
-        super<Application>.onCreate()
-
-        // Phase 3: DI container initialization — wrapped in try/catch
+        // Phase 3: DI container initialization — must happen BEFORE super.onCreate()
+        // so CoreContainer is primed before Hilt injects members or starts background tasks
         try {
             initializeCoreContainer(this)
+            StartupGuard.completePhase("di_container")
         } catch (e: Throwable) {
-            logcat(LogPriority.ERROR, e) { "DI container initialization failed — app will degrade" }
+            ephyra.app.startup.StartupTracker.recordError(ephyra.app.startup.StartupTracker.Phase.APP_CREATED, e)
+            logcat(LogPriority.ERROR, e) { "Critical DI container initialization failed" }
+            throw e
         }
-        StartupGuard.completePhase("di_container")
+
+        super<Application>.onCreate()
         ephyra.app.startup.StartupTracker.complete(ephyra.app.startup.StartupTracker.Phase.APP_CREATED)
 
         // Phase 4: Telemetry (non-critical)
@@ -316,8 +326,9 @@ class App :
                 add(TachiyomiImageDecoder.Factory())
                 // Fetcher.Factory
                 add(BufferedSourceFetcher.Factory())
-                add(MangaCoverFetcher.MangaCoverFactory(callFactoryLazy, coverCache, sourceManager))
-                add(MangaCoverFetcher.MangaFactory(callFactoryLazy, coverCache, sourceManager))
+                val sourceMgr = sourceManagerProvider.get()
+                add(MangaCoverFetcher.MangaCoverFactory(callFactoryLazy, coverCache, sourceMgr))
+                add(MangaCoverFetcher.MangaFactory(callFactoryLazy, coverCache, sourceMgr))
                 // Keyer
                 add(MangaCoverKeyer(coverCache))
                 add(MangaKeyer(coverCache))

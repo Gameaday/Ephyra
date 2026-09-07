@@ -111,9 +111,17 @@ internal class AndroidSourceManager(
 
                 // Add legacy extensions
                 extensions.forEach { extension ->
-                    extension.sources.forEach {
-                        mutableMap[it.id] = it
-                        registerStubSource(StubSource.from(it))
+                    try {
+                        extension.sources.forEach {
+                            mutableMap[it.id] = it
+                            registerStubSource(StubSource.from(it))
+                        }
+                    } catch (e: Throwable) {
+                        android.util.Log.e(
+                            "AndroidSourceManager",
+                            "Failed to load extension sources for ${extension.name}",
+                            e,
+                        )
                     }
                 }
 
@@ -121,9 +129,17 @@ internal class AndroidSourceManager(
                 val orchestrator = orchestratorProvider.get()
                 profiles.forEach { profile ->
                     if (profile.enabled) {
-                        val source = eu.kanade.tachiyomi.source.online.DynamicHttpSource(profile, orchestrator)
-                        mutableMap[source.id] = source
-                        registerStubSource(StubSource.from(source))
+                        try {
+                            val source = eu.kanade.tachiyomi.source.online.DynamicHttpSource(profile, orchestrator)
+                            mutableMap[source.id] = source
+                            registerStubSource(StubSource.from(source))
+                        } catch (e: Throwable) {
+                            android.util.Log.e(
+                                "AndroidSourceManager",
+                                "Failed to load dynamic source for profile: ${profile.displayName}",
+                                e,
+                            )
+                        }
                     }
                 }
 

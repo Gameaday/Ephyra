@@ -106,4 +106,20 @@ class ArchitectureTest {
 
         rule.check(classes)
     }
+
+    /**
+     * CoreContainer Isolation Rule:
+     * Internal code in features must not depend on CoreContainer.
+     * CoreContainer is strictly a bridge for legacy extension compatibility.
+     */
+    @Test
+    fun `internal feature code must not depend on CoreContainer directly`() {
+        val classes = ClassFileImporter().importPackages("ephyra.feature")
+
+        val rule = noClasses()
+            .that().resideInAPackage("ephyra.feature..")
+            .should().dependOnClassesThat().haveFullyQualifiedName("ephyra.core.common.di.CoreContainer")
+
+        rule.check(classes)
+    }
 }

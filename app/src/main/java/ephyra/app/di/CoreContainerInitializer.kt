@@ -86,6 +86,19 @@ fun initializeCoreContainer(context: Context) {
     CoreContainer.init(context)
     val entryPoint = EntryPointAccessors.fromApplication(context.applicationContext, ScreenEntryPoint::class.java)
 
+    // Dynamic fallback provider using ScreenEntryPoint reflection as a safety net
+    CoreContainer.setFallbackProvider { requestedClass ->
+        try {
+            val matchingMethod = ScreenEntryPoint::class.java.methods.firstOrNull { method ->
+                method.parameterTypes.isEmpty() && requestedClass.isAssignableFrom(method.returnType)
+            }
+            matchingMethod?.invoke(entryPoint)
+        } catch (e: Throwable) {
+            android.util.Log.w("CoreContainer", "Dynamic fallback failed for ${requestedClass.name}", e)
+            null
+        }
+    }
+
     // Singletons
     CoreContainer.register(ephyra.domain.base.BasePreferences::class.java) { entryPoint.basePreferences() }
     CoreContainer.register(ephyra.data.cache.CoverCache::class.java) { entryPoint.coverCache() }

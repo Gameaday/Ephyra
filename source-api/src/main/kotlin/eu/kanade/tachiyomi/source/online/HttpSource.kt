@@ -28,7 +28,7 @@ abstract class HttpSource : CatalogueSource {
     /**
      * Network service.
      */
-    protected val network: NetworkHelper = CoreContainer.get()
+    protected open val network: NetworkHelper by lazy { CoreContainer.get() }
 
     /**
      * Base url of the website without the trailing slash, like: http://mysite.com
