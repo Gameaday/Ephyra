@@ -23,6 +23,8 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.supervisorScope
 import logcat.LogPriority
 import java.io.File
+import kotlin.math.abs
+import kotlin.math.round
 
 /**
  * Class that handles the loading of the extensions. Supports two kinds of extensions:
@@ -68,7 +70,7 @@ class ExtensionLoader(
         const val LIB_VERSION_MAX = 1.6
 
         fun isLibVersionSupported(libVersion: Double?): Boolean =
-            libVersion != null && libVersion in SUPPORTED_LIB_VERSIONS
+            libVersion != null && SUPPORTED_LIB_VERSIONS.any { abs(it - libVersion) < 0.001 }
 
         private const val PRIVATE_EXTENSION_EXTENSION = "ext"
     }
@@ -294,9 +296,12 @@ class ExtensionLoader(
         // (e.g. "1.4.6" -> 1.4). If neither source yields a version, assume the
         // legacy minimum rather than rejecting the APK — a real Mihon APK that
         // simply lacks the metadata key should still load.
-        val parsedLibVersion = metaData.getFloat(METADATA_MIX_EXTENSION_LIB, -1f).takeIf { it > 0f }?.toDouble()
+        val parsedLibVersion = metaData.getString(METADATA_MIX_EXTENSION_LIB)?.toDoubleOrNull()
+            ?: metaData.getFloat(METADATA_MIX_EXTENSION_LIB, -1f).takeIf { it > 0f }?.toString()?.toDoubleOrNull()
             ?: versionName.substringBeforeLast('.').toDoubleOrNull()
-        val libVersion = parsedLibVersion ?: LIB_VERSION_MIN
+        val rawLibVersion = parsedLibVersion ?: LIB_VERSION_MIN
+        val libVersion = SUPPORTED_LIB_VERSIONS.firstOrNull { abs(it - rawLibVersion) < 0.001 }
+            ?: (round(rawLibVersion * 100.0) / 100.0)
         if (!isLibVersionSupported(libVersion)) {
             logcat(LogPriority.WARN) {
                 "Lib version is $libVersion, while only versions " +

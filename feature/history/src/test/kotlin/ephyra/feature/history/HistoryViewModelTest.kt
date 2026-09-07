@@ -7,6 +7,7 @@ import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.history.interactor.GetHistory
 import ephyra.domain.history.interactor.GetNextChapters
 import ephyra.domain.history.interactor.RemoveHistory
+import ephyra.domain.history.model.HistoryWithRelations
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.interactor.GetDuplicateLibraryManga
 import ephyra.domain.manga.interactor.GetManga
@@ -18,13 +19,14 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -44,11 +46,12 @@ class HistoryViewModelTest {
     private val sourceManager: SourceManager = mockk(relaxed = true)
 
     private val testDispatcher = UnconfinedTestDispatcher()
+    private val historyFlow = MutableSharedFlow<List<HistoryWithRelations>>(replay = 1)
 
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        every { getHistory.subscribe(any()) } returns flowOf(emptyList())
+        every { getHistory.subscribe(any()) } returns historyFlow
     }
 
     @AfterEach
@@ -79,8 +82,22 @@ class HistoryViewModelTest {
         viewModel.state.test {
             val item = awaitItem()
             assertEquals(null, item.searchQuery)
-            assertEquals(emptyList<HistoryUiModel>(), item.list)
+            assertNull(item.list)
             assertEquals(null, item.dialog)
+        }
+    }
+
+    @Test
+    fun `history flow updates state list`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.state.test {
+            val initial = awaitItem()
+            assertNull(initial.list)
+
+            historyFlow.emit(emptyList())
+            val updated = awaitItem()
+            assertEquals(emptyList<HistoryUiModel>(), updated.list)
         }
     }
 
