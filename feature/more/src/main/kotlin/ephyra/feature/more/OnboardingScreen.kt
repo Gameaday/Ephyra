@@ -45,7 +45,14 @@ fun OnboardingScreen(
 
     val finishOnboarding: () -> Unit = {
         basePreferences.shownOnboardingFlow().set(true)
-        navController.popBackStack()
+        // popBackStack can fail when onboarding is the only destination on the
+        // stack (fresh-install process-death restore) — land on Home instead of
+        // stranding the user on a finished onboarding screen.
+        if (!navController.popBackStack()) {
+            navController.navigate(ScreenRoutes.Home.route) {
+                popUpTo(0) { inclusive = true }
+            }
+        }
     }
 
     val chooseBackup = rememberLauncherForActivityResult(

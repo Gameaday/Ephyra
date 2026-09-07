@@ -15,6 +15,14 @@ interface ExtensionManager {
 
     val untrustedExtensionsFlow: StateFlow<List<Extension.Untrusted>>
 
+    /**
+     * Recognized extensions that could not be loaded (bad lib version, unsigned,
+     * broken classes, ...). Every installed-but-broken extension must appear here —
+     * the Extensions screen surfaces this list so a problematic extension is never
+     * indistinguishable from one the app cannot see at all.
+     */
+    val failedExtensionsFlow: StateFlow<List<Extension.Failed>>
+
     fun getExtensionPackage(sourceId: Long): String?
 
     fun getExtensionPackageAsFlow(sourceId: Long): Flow<String?>
@@ -29,6 +37,9 @@ interface ExtensionManager {
     suspend fun trust(extension: Extension.Untrusted)
 
     fun uninstallExtension(extension: Extension)
+
+    /** Uninstalls an extension APK known only by its package name (e.g. failed loads). */
+    fun uninstallExtensionByPkgName(pkgName: String)
 
     fun installExtension(extension: Extension.Available): Flow<InstallStep>
 

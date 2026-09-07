@@ -12,6 +12,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -48,12 +49,19 @@ class RemoveCustomSourceTest {
 
         val pref = mockk<Preference<String>>(relaxed = true)
         every { preferenceStore.getString(any(), any()) } returns pref
+        val domainsPref = mockk<Preference<Set<String>>>()
+        coEvery { domainsPref.get() } returns setOf("mangadex.org")
+        every { domainsPref.set(any<Set<String>>()) } returns Unit
+        every { preferenceStore.getStringSet(any(), any()) } returns domainsPref
 
         val result = interactor.removeSource(baseUrl)
 
         assertTrue(result is Result.Success)
         coVerify { scraperUpdater.removeScraper("mangadex_scraper.js") }
         coVerify { orchestrator.invalidateProfile(baseUrl) }
+        // The domain must be removed from the profiled-domains set so the
+        // profile cannot resurrect on next launch.
+        verify { domainsPref.set(emptySet<String>()) }
     }
 
     @Test
@@ -77,6 +85,10 @@ class RemoveCustomSourceTest {
 
         val mockPref = mockk<Preference<String>>(relaxed = true)
         every { preferenceStore.getString(any(), any()) } returns mockPref
+        val domainsPref = mockk<Preference<Set<String>>>()
+        coEvery { domainsPref.get() } returns setOf("mangadex.org")
+        every { domainsPref.set(any<Set<String>>()) } returns Unit
+        every { preferenceStore.getStringSet(any(), any()) } returns domainsPref
 
         val result = interactor.removeSource(baseUrl)
 

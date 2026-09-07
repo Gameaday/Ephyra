@@ -34,16 +34,10 @@ class GetAvailableSources @Inject constructor(
         )
             .changes()
             .map { domains ->
-                val actualDomains = if (domains.isEmpty()) {
-                    setOf(
-                        "https://mangadex.org",
-                        "https://manganato.com",
-                        "https://asuratoons.com",
-                    )
-                } else {
-                    domains
-                }
-                actualDomains.mapNotNull { profileCache.get(it) }
+                // No hardcoded fallback: an empty set means the user removed every
+                // profile (or none was created yet) and injecting built-ins here
+                // made removed sources resurrect and default sources undeletable.
+                domains.mapNotNull { profileCache.get(it) }
             }
 
         return combine(

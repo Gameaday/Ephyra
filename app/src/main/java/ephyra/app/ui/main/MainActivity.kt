@@ -323,9 +323,18 @@ class MainActivity : BaseActivity(), AppReadySignal {
     @Composable
     private fun ShowOnboarding() {
         val navController = LocalNavController.current
+        // React to the flag instead of a one-shot blocking read: the flag is false
+        // during onboarding, and permission grants / file pickers can recreate the
+        // activity, re-running this effect. Without dedup, each recreation stacked
+        // another Onboarding destination on the back stack, so finishing popped
+        // only one and Back re-entered onboarding — the "onboarding loop".
         LaunchedEffect(Unit) {
-            if (!preferences.shownOnboardingFlow().get()) {
-                navController.navigate(ScreenRoutes.Onboarding.route)
+            preferences.shownOnboardingFlow().changes().collect { completed ->
+                if (!completed) {
+                    navController.navigate(ScreenRoutes.Onboarding.route) {
+                        launchSingleTop = true
+                    }
+                }
             }
         }
     }

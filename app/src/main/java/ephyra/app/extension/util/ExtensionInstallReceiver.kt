@@ -10,6 +10,7 @@ import ephyra.app.BuildConfig
 import ephyra.app.extension.model.LoadResult
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.extension.model.Extension
+import ephyra.domain.extension.model.LoadFailureReason
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
@@ -102,7 +103,7 @@ internal class ExtensionInstallReceiver(
         val pkgName = getPackageNameFromIntent(intent)
         if (pkgName == null) {
             logcat(LogPriority.WARN) { "Package name not found" }
-            return LoadResult.Error
+            return LoadResult.Error(reason = LoadFailureReason.PACKAGE_NOT_FOUND)
         }
         return extensionLoader.loadExtensionFromPkgName(context, pkgName)
     }

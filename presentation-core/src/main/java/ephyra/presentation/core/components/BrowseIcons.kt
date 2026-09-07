@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BrokenImage
 import androidx.compose.material.icons.filled.Dangerous
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.MaterialTheme
@@ -136,6 +137,13 @@ fun ExtensionIcon(
 
         is Extension.Untrusted -> Image(
             imageVector = Icons.Filled.Dangerous,
+            contentDescription = null,
+            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.error),
+            modifier = modifier.then(defaultModifier),
+        )
+
+        is Extension.Failed -> Image(
+            imageVector = Icons.Filled.BrokenImage,
             contentDescription = null,
             colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.error),
             modifier = modifier.then(defaultModifier),

@@ -13,15 +13,14 @@ class GetExtensionsByType(
 ) {
 
     fun subscribe(): Flow<Extensions> {
-        return combine(
-            preferences.showNsfwSource().changes(),
-            preferences.enabledLanguages().changes(),
+        val extensionLists = combine(
             extensionManager.installedExtensionsFlow,
             extensionManager.untrustedExtensionsFlow,
             extensionManager.availableExtensionsFlow,
-        ) { showNsfwSources, enabledLanguages, _installed, _untrusted, _available ->
+            extensionManager.failedExtensionsFlow,
+        ) { _installed, _untrusted, _available, _failed ->
             val (updates, installed) = _installed
-                .filter { (showNsfwSources || !it.isNsfw) }
+                .filter { preferences.showNsfwSource().getSync() || !it.isNsfw }
                 .sortedWith(
                     compareBy<Extension.Installed> { !it.isObsolete }
                         .thenBy(String.CASE_INSENSITIVE_ORDER) { it.name },
@@ -31,17 +30,26 @@ class GetExtensionsByType(
             val untrusted = _untrusted
                 .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
 
+            val failed = _failed
+                .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
+
+            val showNsfwSources = preferences.showNsfwSource().getSync()
             val available = _available
                 .filter { extension ->
                     _installed.none { it.pkgName == extension.pkgName } &&
                         _untrusted.none { it.pkgName == extension.pkgName } &&
+                        _failed.none { it.pkgName == extension.pkgName } &&
                         (showNsfwSources || !extension.isNsfw)
                 }
                 .flatMap { ext ->
                     if (ext.sources.isEmpty()) {
-                        return@flatMap if (ext.lang in enabledLanguages) listOf(ext) else emptyList()
+                        return@flatMap if (ext.lang in preferences.enabledLanguages().getSync()) {
+                            listOf(ext)
+                        } else {
+                            emptyList()
+                        }
                     }
-                    ext.sources.filter { it.lang in enabledLanguages }
+                    ext.sources.filter { it.lang in preferences.enabledLanguages().getSync() }
                         .map {
                             ext.copy(
                                 name = it.name,
@@ -53,7 +61,13 @@ class GetExtensionsByType(
                 }
                 .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
 
-            Extensions(updates, installed, available, untrusted)
+            Extensions(updates, installed, available, untrusted, failed)
         }
+
+        return combine(
+            preferences.showNsfwSource().changes(),
+            preferences.enabledLanguages().changes(),
+            extensionLists,
+        ) { _, _, extensions -> extensions }
     }
 }

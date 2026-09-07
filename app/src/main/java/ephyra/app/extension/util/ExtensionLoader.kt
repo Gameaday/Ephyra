@@ -13,6 +13,7 @@ import ephyra.core.common.util.system.logcat
 import ephyra.domain.extension.interactor.TrustExtension
 import ephyra.domain.extension.model.Extension
 import ephyra.domain.extension.model.ExtensionPackageInfo
+import ephyra.domain.extension.model.LoadFailureReason
 import ephyra.domain.source.service.SourcePreferences
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.Source
@@ -184,7 +185,11 @@ class ExtensionLoader(
                         logcat(LogPriority.ERROR, e) {
                             "Unexpected error loading extension ${extInfo.packageInfo.packageName}"
                         }
-                        LoadResult.Error
+                        LoadResult.Error(
+                            pkgName = extInfo.packageInfo.packageName,
+                            reason = LoadFailureReason.UNEXPECTED_ERROR,
+                            detail = e.message,
+                        )
                     }
                 }
             }.awaitAll()
@@ -199,7 +204,7 @@ class ExtensionLoader(
         val extensionPackage = getExtensionInfoFromPkgName(context, pkgName)
         if (extensionPackage == null) {
             logcat(LogPriority.ERROR) { "Extension package is not found ($pkgName)" }
-            return LoadResult.Error
+            return LoadResult.Error(pkgName, LoadFailureReason.PACKAGE_NOT_FOUND)
         }
         val loadNsfwSource = preferences.showNsfwSource().get()
         return loadExtension(context, extensionPackage, loadNsfwSource)
@@ -260,14 +265,14 @@ class ExtensionLoader(
         val pkgInfo = extensionInfo.packageInfo
         val appInfo = pkgInfo.applicationInfo ?: run {
             logcat(LogPriority.ERROR) { "Extension ${pkgInfo.packageName} has null applicationInfo" }
-            return LoadResult.Error
+            return LoadResult.Error(pkgInfo.packageName, LoadFailureReason.NO_METADATA, "null applicationInfo")
         }
         val pkgName = pkgInfo.packageName
 
         val metaData = appInfo.metaData
         if (metaData == null) {
             logcat(LogPriority.ERROR) { "Extension $pkgName has no meta-data" }
-            return LoadResult.Error
+            return LoadResult.Error(pkgName, LoadFailureReason.NO_METADATA)
         }
 
         // Prefer the new-format `tachiyomix.name` metadata; fall back to the
@@ -281,26 +286,33 @@ class ExtensionLoader(
 
         if (versionName.isNullOrEmpty()) {
             logcat(LogPriority.WARN) { "Missing versionName for extension $extName" }
-            return LoadResult.Error
+            return LoadResult.Error(pkgName, LoadFailureReason.MISSING_VERSION_NAME)
         }
 
         // Validate lib version. New-format extensions declare it explicitly via
         // `tachiyomix.extensionLib`; older ones encode it in the version name
-        // (e.g. "1.4.6" -> 1.4).
-        val libVersion = metaData.getFloat(METADATA_MIX_EXTENSION_LIB, -1f).takeIf { it > 0f }?.toDouble()
+        // (e.g. "1.4.6" -> 1.4). If neither source yields a version, assume the
+        // legacy minimum rather than rejecting the APK — a real Mihon APK that
+        // simply lacks the metadata key should still load.
+        val parsedLibVersion = metaData.getFloat(METADATA_MIX_EXTENSION_LIB, -1f).takeIf { it > 0f }?.toDouble()
             ?: versionName.substringBeforeLast('.').toDoubleOrNull()
-        if (libVersion == null || !isLibVersionSupported(libVersion)) {
+        val libVersion = parsedLibVersion ?: LIB_VERSION_MIN
+        if (!isLibVersionSupported(libVersion)) {
             logcat(LogPriority.WARN) {
                 "Lib version is $libVersion, while only versions " +
                     "$SUPPORTED_LIB_VERSIONS are allowed"
             }
-            return LoadResult.Error
+            return LoadResult.Error(
+                pkgName,
+                LoadFailureReason.UNSUPPORTED_LIB_VERSION,
+                detail = "extension-lib $libVersion, supported: $SUPPORTED_LIB_VERSIONS",
+            )
         }
 
         val signatures = getSignatures(pkgInfo)
         if (signatures.isNullOrEmpty()) {
             logcat(LogPriority.WARN) { "Package $pkgName isn't signed" }
-            return LoadResult.Error
+            return LoadResult.Error(pkgName, LoadFailureReason.UNSIGNED)
         } else if (!trustExtension.isTrusted(
                 ExtensionPackageInfo(pkgInfo.packageName, PackageInfoCompat.getLongVersionCode(pkgInfo)),
                 signatures,
@@ -324,7 +336,7 @@ class ExtensionLoader(
         val contentWarning = metaData.getString(METADATA_MIX_CONTENT_WARNING)?.takeUnless { it.isBlank() }
         if (!loadNsfwSource && isNsfw) {
             logcat(LogPriority.WARN) { "NSFW extension $pkgName not allowed" }
-            return LoadResult.Error
+            return LoadResult.Error(pkgName, LoadFailureReason.NSFW_NOT_ALLOWED)
         }
 
         val classLoader = try {
@@ -337,13 +349,17 @@ class ExtensionLoader(
             DelegateLastClassLoaderCompat(appInfo.sourceDir, context.classLoader)
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e) { "Extension load error: $extName ($pkgName)" }
-            return LoadResult.Error
+            return LoadResult.Error(pkgName, LoadFailureReason.CLASSLOADER_ERROR, e.message)
         }
 
         val sourceClassName = metaData.getString(METADATA_SOURCE_CLASS)
         if (sourceClassName.isNullOrEmpty()) {
             logcat(LogPriority.ERROR) { "Extension $pkgName missing required source class metadata" }
-            return LoadResult.Error
+            return LoadResult.Error(
+                pkgName,
+                LoadFailureReason.SOURCE_INSTANTIATION_FAILED,
+                "missing source class metadata",
+            )
         }
 
         val sources = sourceClassName
@@ -365,7 +381,7 @@ class ExtensionLoader(
                     }
                 } catch (e: Throwable) {
                     logcat(LogPriority.ERROR, e) { "Extension load error: $extName ($it)" }
-                    return LoadResult.Error
+                    return LoadResult.Error(pkgName, LoadFailureReason.SOURCE_INSTANTIATION_FAILED, it)
                 }
             }
 

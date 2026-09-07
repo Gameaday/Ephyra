@@ -70,4 +70,55 @@ sealed class Extension {
         override val lang: String? = null,
         override val isNsfw: Boolean = false,
     ) : Extension()
+
+    /**
+     * An installed extension APK that was recognized but could not be loaded.
+     * Every recognized extension must surface somewhere in the UI — an installed
+     * extension must never be silently invisible.
+     */
+    data class Failed(
+        override val name: String,
+        override val pkgName: String,
+        override val versionName: String,
+        override val versionCode: Long,
+        override val libVersion: Double,
+        val reason: LoadFailureReason,
+        val detail: String? = null,
+        override val lang: String? = null,
+        override val isNsfw: Boolean = false,
+    ) : Extension()
+}
+
+/**
+ * Why a recognized extension APK could not be loaded. Surfaced to the user in the
+ * Extensions screen's "failed to load" section so a broken extension is never
+ * indistinguishable from one the app simply cannot see.
+ */
+enum class LoadFailureReason {
+    /** Package disappeared between scan and load. */
+    PACKAGE_NOT_FOUND,
+
+    /** `applicationInfo` or its `metaData` is missing. */
+    NO_METADATA,
+
+    /** APK has no `versionName`. */
+    MISSING_VERSION_NAME,
+
+    /** Declared/inferred extension-lib version is outside the supported range. */
+    UNSUPPORTED_LIB_VERSION,
+
+    /** APK is not signed. */
+    UNSIGNED,
+
+    /** NSFW content is disallowed by user preferences. */
+    NSFW_NOT_ALLOWED,
+
+    /** Dex could not be loaded through the delegate-last class loader. */
+    CLASSLOADER_ERROR,
+
+    /** Required source class metadata missing or classes failed to instantiate. */
+    SOURCE_INSTANTIATION_FAILED,
+
+    /** Any unexpected throwable during load. */
+    UNEXPECTED_ERROR,
 }

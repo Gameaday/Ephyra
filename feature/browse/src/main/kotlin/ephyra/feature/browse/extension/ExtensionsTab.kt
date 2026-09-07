@@ -44,6 +44,8 @@ fun extensionsTab(
                 onDeleteRepository = extensionsViewModel::deleteRepository,
                 onInstallExtension = extensionsViewModel::installExtension,
                 onUninstallExtension = extensionsViewModel::uninstallExtension,
+                onTrustExtension = extensionsViewModel::trustExtension,
+                onUninstallByPkgName = extensionsViewModel::uninstallFailedExtension,
                 navController = navController,
             )
         },

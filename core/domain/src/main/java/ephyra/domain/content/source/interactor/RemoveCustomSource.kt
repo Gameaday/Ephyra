@@ -19,11 +19,13 @@ class RemoveCustomSource @Inject constructor(
 ) {
 
     /**
-     * Removes a custom source completely (scraper script, mappings, and profile).
+     * Removes a custom source completely (scraper script, mappings, profile, and
+     * the profiled-domain entry so it cannot resurrect on next launch).
      */
     suspend fun removeSource(baseUrl: String): Result<Unit> {
         return try {
-            val profile = orchestrator.getAllProfiles().firstOrNull { it.baseUrl == baseUrl }
+            val target = normalizeUrl(baseUrl)
+            val profile = orchestrator.getAllProfiles().firstOrNull { normalizeUrl(it.baseUrl) == target }
                 ?: return Result.Error(IllegalArgumentException("Source not found: $baseUrl"))
 
             // Remove scraper script if it's a JS scraper
@@ -34,9 +36,17 @@ class RemoveCustomSource @Inject constructor(
             }
 
             // Remove URL-to-scraper mapping
-            val normalized = normalizeUrl(baseUrl)
-            val mappingKey = "baseUrl_scraper_mapping_$normalized"
+            val mappingKey = "baseUrl_scraper_mapping_$target"
             preferenceStore.getString(mappingKey, "").delete()
+
+            // Remove the domain from the profiled-domains set. Without this the
+            // profile cache rebuilds the profile on next launch and the "removed"
+            // source resurrects.
+            val domainsKey = "profiled_domains_list"
+            val domains = preferenceStore.getStringSet(domainsKey, emptySet()).get()
+            preferenceStore.getStringSet(domainsKey, emptySet()).set(
+                domains.filterNot { normalizeUrl(it) == target }.toSet(),
+            )
 
             // Invalidate the cached profile
             orchestrator.invalidateProfile(baseUrl)
@@ -83,9 +93,10 @@ class RemoveCustomSource @Inject constructor(
 
     private fun normalizeUrl(url: String): String {
         return url
+            .trim()
             .removePrefix("https://")
             .removePrefix("http://")
             .removeSuffix("/")
-            .trim()
+            .lowercase()
     }
 }

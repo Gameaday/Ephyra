@@ -7,4 +7,5 @@ data class Extensions(
     val installed: List<Extension.Installed>,
     val available: List<Extension.Available>,
     val untrusted: List<Extension.Untrusted>,
+    val failed: List<Extension.Failed> = emptyList(),
 )

@@ -47,6 +47,8 @@ class ExtensionsViewModel @Inject constructor(
     private val legacyExtensionTranspiler: ExtensionTranspiler,
     private val scraperUpdater: ScraperScriptUpdater,
     private val preferenceStore: PreferenceStore,
+    private val trustExtension: ephyra.domain.extension.interactor.TrustExtension,
+    private val extensionManager: ephyra.domain.extension.service.ExtensionManager,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(State())
@@ -69,7 +71,14 @@ class ExtensionsViewModel @Inject constructor(
     private fun loadAvailableExtensions() {
         viewModelScope.launch {
             getExtensionsByType.subscribe().collectLatest { extensions ->
-                _state.update { it.copy(availableExtensions = extensions.available) }
+                _state.update {
+                    it.copy(
+                        availableExtensions = extensions.available,
+                        installedExtensions = extensions.updates + extensions.installed,
+                        untrustedExtensions = extensions.untrusted,
+                        failedExtensions = extensions.failed,
+                    )
+                }
                 checkForTranspiledExtensionUpdates(extensions.available)
             }
         }
@@ -286,6 +295,18 @@ class ExtensionsViewModel @Inject constructor(
         _state.update { it.copy(searchQuery = query) }
     }
 
+    /** Marks an untrusted extension as trusted for its current version+signature. */
+    fun trustExtension(extension: Extension.Untrusted) {
+        viewModelScope.launch {
+            trustExtension.trust(extension.pkgName, extension.versionCode, extension.signatureHash)
+        }
+    }
+
+    /** Uninstalls a broken/failed extension APK. */
+    fun uninstallFailedExtension(pkgName: String) {
+        extensionManager.uninstallExtensionByPkgName(pkgName)
+    }
+
     fun clearError() {
         _state.update { it.copy(error = null) }
     }
@@ -297,5 +318,8 @@ class ExtensionsViewModel @Inject constructor(
         val error: String? = null,
         val repos: List<ExtensionRepo> = emptyList(),
         val availableExtensions: List<Extension.Available> = emptyList(),
+        val installedExtensions: List<Extension.Installed> = emptyList(),
+        val untrustedExtensions: List<Extension.Untrusted> = emptyList(),
+        val failedExtensions: List<Extension.Failed> = emptyList(),
     )
 }

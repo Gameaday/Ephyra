@@ -83,6 +83,11 @@ class ScraperManagementTest {
         val mockPref = mockk<ephyra.core.common.preference.Preference<String>>()
         every { preferenceStore.getString("baseUrl_scraper_mapping_mangadex.org", "") } returns mockPref
         every { mockPref.delete() } returns Unit
+        every { preferenceStore.getStringSet(any(), any()) } returns
+            mockk<ephyra.core.common.preference.Preference<Set<String>>> {
+                coEvery { get() } returns setOf("mangadex.org")
+                every { set(any<Set<String>>()) } returns Unit
+            }
 
         val result = removeCustomSource.removeSource(baseUrl)
 

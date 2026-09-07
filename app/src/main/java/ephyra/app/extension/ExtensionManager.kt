@@ -81,6 +81,9 @@ class ExtensionManager(
     private val untrustedExtensionMapFlow = MutableStateFlow(emptyMap<String, Extension.Untrusted>())
     override val untrustedExtensionsFlow = untrustedExtensionMapFlow.mapExtensions(scope)
 
+    private val failedExtensionMapFlow = MutableStateFlow(emptyMap<String, Extension.Failed>())
+    override val failedExtensionsFlow = failedExtensionMapFlow.mapExtensions(scope)
+
     init {
         initExtensions()
         ExtensionInstallReceiver(InstallationListener(), extensionLoader).register(context)
@@ -142,6 +145,25 @@ class ExtensionManager(
             untrustedExtensionMapFlow.value = extensions
                 .filterIsInstance<LoadResult.Untrusted>()
                 .associate { it.extension.pkgName to it.extension }
+
+            // Every recognized-but-broken extension must be visible — never dropped
+            // silently. Display name is derived from the package name since the APK
+            // metadata could not be trusted/parsed.
+            failedExtensionMapFlow.value = extensions
+                .filterIsInstance<LoadResult.Error>()
+                .mapNotNull { result ->
+                    val pkgName = result.pkgName ?: return@mapNotNull null
+                    Extension.Failed(
+                        name = pkgName.substringAfterLast('.'),
+                        pkgName = pkgName,
+                        versionName = "",
+                        versionCode = 0,
+                        libVersion = 0.0,
+                        reason = result.reason,
+                        detail = result.detail,
+                    )
+                }
+                .associateBy { it.pkgName }
 
             _isInitialized.value = true
         }
@@ -283,6 +305,16 @@ class ExtensionManager(
     }
 
     /**
+     * Uninstalls an extension APK by package name — used for entries known only
+     * by package (e.g. extensions that failed to load and have no model object).
+     */
+    override fun uninstallExtensionByPkgName(pkgName: String) {
+        installer.uninstallApk(pkgName)
+        failedExtensionMapFlow.value -= pkgName
+        untrustedExtensionMapFlow.value -= pkgName
+    }
+
+    /**
      * Adds the given extension to the list of trusted extensions. It also loads in background the
      * now trusted extensions.
      *
@@ -328,6 +360,7 @@ class ExtensionManager(
     private fun unregisterExtension(pkgName: String) {
         installedExtensionMapFlow.value -= pkgName
         untrustedExtensionMapFlow.value -= pkgName
+        failedExtensionMapFlow.value -= pkgName
         iconMap.remove(pkgName)
     }
 

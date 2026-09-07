@@ -23,11 +23,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Autorenew
+import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.Code
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.Extension
+import androidx.compose.material.icons.outlined.GppMaybe
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.Refresh
@@ -70,6 +74,7 @@ import dagger.hilt.android.EntryPointAccessors
 import ephyra.domain.content.source.SourceType
 import ephyra.domain.content.source.interactor.UnifiedSource
 import ephyra.domain.extension.model.Extension
+import ephyra.domain.extension.model.LoadFailureReason
 import ephyra.domain.extensionrepo.interactor.CreateExtensionRepo
 import ephyra.domain.extensionrepo.model.ExtensionRepo
 import ephyra.feature.browse.BrowseEntryPoint
@@ -93,6 +98,8 @@ fun ExtensionScreen(
     onDeleteRepository: (String) -> Unit,
     onInstallExtension: (Extension.Available, Set<String>?) -> Unit,
     onUninstallExtension: (Extension.Available) -> Unit,
+    onTrustExtension: (Extension.Untrusted) -> Unit = {},
+    onUninstallByPkgName: (String) -> Unit = {},
     navController: NavController = LocalNavController.current,
 ) {
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
@@ -148,6 +155,9 @@ fun ExtensionScreen(
             sources = filteredSources,
             repos = state.repos,
             availableExtensions = state.availableExtensions,
+            installedExtensions = state.installedExtensions,
+            untrustedExtensions = state.untrustedExtensions,
+            failedExtensions = state.failedExtensions,
             onAddJsScraperClick = { showAddJsScraperDialog = true },
             onImportJsScraperClick = { showImportJsScraperDialog = true },
             onAddHeuristicClick = { showAddHeuristicDialog = true },
@@ -155,6 +165,8 @@ fun ExtensionScreen(
             onDeleteRepoClick = onDeleteRepository,
             onInstallExtensionClick = { ext -> showExtensionSourcesDialog = ext },
             onUninstallExtensionClick = onUninstallExtension,
+            onTrustExtensionClick = onTrustExtension,
+            onUninstallByPkgName = onUninstallByPkgName,
             onLinkScraperClick = { source ->
                 selectedSourceForLink = source
                 linkBaseUrl = source.baseUrl
@@ -413,6 +425,9 @@ private fun ExtensionScraperManagementLayout(
     sources: List<UnifiedSource>,
     repos: List<ExtensionRepo>,
     availableExtensions: List<Extension.Available>,
+    installedExtensions: List<Extension.Installed>,
+    untrustedExtensions: List<Extension.Untrusted>,
+    failedExtensions: List<Extension.Failed>,
     onAddJsScraperClick: () -> Unit,
     onImportJsScraperClick: () -> Unit,
     onAddHeuristicClick: () -> Unit,
@@ -420,6 +435,8 @@ private fun ExtensionScraperManagementLayout(
     onDeleteRepoClick: (String) -> Unit,
     onInstallExtensionClick: (Extension.Available) -> Unit,
     onUninstallExtensionClick: (Extension.Available) -> Unit,
+    onTrustExtensionClick: (Extension.Untrusted) -> Unit,
+    onUninstallByPkgName: (String) -> Unit,
     onLinkScraperClick: (UnifiedSource) -> Unit,
     onRefresh: () -> Unit,
     onSourceClick: (UnifiedSource) -> Unit,
@@ -502,6 +519,34 @@ private fun ExtensionScraperManagementLayout(
                 }
             }
 
+            // Installed extension APKs (trusted & loaded)
+            if (installedExtensions.isNotEmpty()) {
+                item {
+                    InstalledExtensionsSection(installedExtensions = installedExtensions)
+                }
+            }
+
+            // Untrusted extension APKs — visible with a trust action, never hidden
+            if (untrustedExtensions.isNotEmpty()) {
+                item {
+                    UntrustedExtensionsSection(
+                        untrustedExtensions = untrustedExtensions,
+                        onTrust = onTrustExtensionClick,
+                        onUninstall = onUninstallByPkgName,
+                    )
+                }
+            }
+
+            // Recognized extensions that failed to load — visible with the reason
+            if (failedExtensions.isNotEmpty()) {
+                item {
+                    FailedExtensionsSection(
+                        failedExtensions = failedExtensions,
+                        onUninstall = onUninstallByPkgName,
+                    )
+                }
+            }
+
             // Available extensions
             if (repos.isNotEmpty()) {
                 item {
@@ -514,7 +559,9 @@ private fun ExtensionScraperManagementLayout(
                 }
             }
 
-            if (sources.isEmpty() && repos.isEmpty() && availableExtensions.isEmpty()) {
+            if (sources.isEmpty() && repos.isEmpty() && availableExtensions.isEmpty() &&
+                installedExtensions.isEmpty() && untrustedExtensions.isEmpty() && failedExtensions.isEmpty()
+            ) {
                 item {
                     Box(
                         modifier = Modifier
@@ -550,6 +597,219 @@ private fun ExtensionScraperManagementLayout(
             }
         }
     }
+}
+
+@Composable
+private fun InstalledExtensionsSection(
+    installedExtensions: List<Extension.Installed>,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.05f),
+        ),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Extension,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.size(20.dp),
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "Installed Extensions (${installedExtensions.size})",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.secondary,
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                installedExtensions.forEach { ext ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = ext.name,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                text = buildString {
+                                    append("v${ext.versionName}")
+                                    append(" · ${ext.sources.size} source(s)")
+                                    if (ext.lang.isNotBlank()) append(" · ${ext.lang}")
+                                    if (ext.hasUpdate) append(" · update available")
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Text(
+                            text = "OK",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun UntrustedExtensionsSection(
+    untrustedExtensions: List<Extension.Untrusted>,
+    onTrust: (Extension.Untrusted) -> Unit,
+    onUninstall: (String) -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.05f),
+        ),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.GppMaybe,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.size(20.dp),
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "Needs Trust (${untrustedExtensions.size})",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.tertiary,
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                untrustedExtensions.forEach { ext ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = ext.name,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                text = "v${ext.versionName} · signature not trusted — sources hidden until trusted",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        TextButton(onClick = { onTrust(ext) }) {
+                            Text("Trust")
+                        }
+                        IconButton(onClick = { onUninstall(ext.pkgName) }) {
+                            Icon(
+                                imageVector = Icons.Outlined.Delete,
+                                contentDescription = "Uninstall",
+                                tint = MaterialTheme.colorScheme.error,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FailedExtensionsSection(
+    failedExtensions: List<Extension.Failed>,
+    onUninstall: (String) -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.05f),
+        ),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.BugReport,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(20.dp),
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "Couldn't Load (${failedExtensions.size})",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                failedExtensions.forEach { ext ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = ext.name,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Text(
+                                text = buildString {
+                                    append(ext.displayText())
+                                    ext.detail?.let { append(" — $it") }
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        IconButton(onClick = { onUninstall(ext.pkgName) }) {
+                            Icon(
+                                imageVector = Icons.Outlined.Delete,
+                                contentDescription = "Uninstall",
+                                tint = MaterialTheme.colorScheme.error,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun Extension.Failed.displayText(): String = when (reason) {
+    LoadFailureReason.PACKAGE_NOT_FOUND -> "Package not found"
+    LoadFailureReason.NO_METADATA -> "Invalid extension metadata"
+    LoadFailureReason.MISSING_VERSION_NAME -> "Missing version name"
+    LoadFailureReason.UNSUPPORTED_LIB_VERSION -> "Unsupported extension API version"
+    LoadFailureReason.UNSIGNED -> "Extension APK is not signed"
+    LoadFailureReason.NSFW_NOT_ALLOWED -> "Disabled by NSFW setting"
+    LoadFailureReason.CLASSLOADER_ERROR -> "Failed to load extension code"
+    LoadFailureReason.SOURCE_INSTANTIATION_FAILED -> "Failed to create sources"
+    LoadFailureReason.UNEXPECTED_ERROR -> "Unexpected error"
 }
 
 @Composable
