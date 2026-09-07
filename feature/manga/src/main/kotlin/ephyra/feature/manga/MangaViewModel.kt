@@ -370,8 +370,12 @@ class MangaViewModel @Inject constructor(
         return find { !it.chapter.read }?.chapter
     }
 
+    @Immutable
     sealed class State {
+        @Immutable
         data object Loading : State()
+
+        @Immutable
         data class Success(
             val manga: Manga,
             val source: Source,
@@ -400,19 +404,39 @@ class MangaViewModel @Inject constructor(
         ) : State()
     }
 
+    @Immutable
     sealed interface Dialog {
+        @Immutable
         data object SettingsSheet : Dialog
+
+        @Immutable
         data object TrackSheet : Dialog
+
+        @Immutable
         data object FullCover : Dialog
+
+        @Immutable
         data object EditMetadata : Dialog
+
+        @Immutable
         data class ChangeCategory(
             val manga: Manga,
             val initialSelection: List<CheckboxState<Category>>,
         ) : Dialog
+
+        @Immutable
         data class DuplicateManga(val duplicates: List<MangaWithChapterCount>) : Dialog
+
+        @Immutable
         data class DeleteChapters(val chapters: List<Chapter>) : Dialog
+
+        @Immutable
         data class Migrate(val current: Manga, val target: Manga) : Dialog
+
+        @Immutable
         data class SetFetchInterval(val manga: Manga) : Dialog
+
+        @Immutable
         data class ShareRecommendation(
             val manga: Manga,
             val readChapters: Int,
@@ -423,9 +447,11 @@ class MangaViewModel @Inject constructor(
     }
 }
 
+@Immutable
 sealed class ChapterList {
     abstract val id: Long
 
+    @Immutable
     data class Item(
         val chapter: Chapter,
         val downloadState: Download.State = Download.State.NOT_DOWNLOADED,
@@ -435,6 +461,7 @@ sealed class ChapterList {
         override val id: Long = chapter.id
     }
 
+    @Immutable
     data class MissingCount(
         override val id: Long,
         val count: Int,

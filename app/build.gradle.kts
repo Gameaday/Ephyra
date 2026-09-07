@@ -332,6 +332,7 @@ dependencies {
     testRuntimeOnly("org.junit.vintage:junit-vintage-engine:6.1.0")
     testImplementation(compose.ui.test.junit4)
     debugImplementation(compose.ui.test.manifest)
+    debugImplementation(libs.leakcanary)
 
     // Hilt dependencies
     implementation(libs.hilt.android)

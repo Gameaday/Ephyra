@@ -304,7 +304,9 @@ abstract class SearchViewModel(
         }
     }
 
+    @Immutable
     sealed interface Dialog {
+        @Immutable
         data class Migrate(val target: Manga, val current: Manga) : Dialog
     }
 }
@@ -314,13 +316,17 @@ enum class SourceFilter {
     PinnedOnly,
 }
 
+@Immutable
 sealed interface SearchItemResult {
+    @Immutable
     data object Loading : SearchItemResult
 
+    @Immutable
     data class Error(
         val throwable: Throwable,
     ) : SearchItemResult
 
+    @Immutable
     data class Success(
         val result: List<Manga>,
     ) : SearchItemResult {
