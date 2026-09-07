@@ -14,14 +14,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.util.fastForEach
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import ephyra.core.common.util.lang.launchIO
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.hasCustomCover
@@ -33,12 +31,8 @@ import ephyra.presentation.core.components.LabeledCheckbox
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.LoadingScreen
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.withContext
+import ephyra.presentation.core.udf.BaseUdfViewModel
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.collections.toMutableSet
 
@@ -60,11 +54,16 @@ fun MigrateMangaDialog(
     onDismissRequest: () -> Unit,
     onComplete: () -> Unit = onDismissRequest,
 ) {
-    val scope = rememberCoroutineScope()
-
     val viewModel = hiltViewModel<MigrateDialogViewModel>()
     LaunchedEffect(current, target) {
-        viewModel.init(current, target)
+        viewModel.onEvent(MigrateDialogEvent.Init(current, target))
+    }
+    LaunchedEffect(Unit) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                MigrateDialogEffect.MigrationCompleted -> onComplete()
+            }
+        }
     }
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -90,7 +89,7 @@ fun MigrateMangaDialog(
                     LabeledCheckbox(
                         label = stringResource(flag.getLabel()),
                         checked = flag in state.selectedFlags,
-                        onCheckedChange = { viewModel.toggleSelection(flag) },
+                        onCheckedChange = { viewModel.onEvent(MigrateDialogEvent.ToggleSelection(flag)) },
                     )
                 }
             }
@@ -112,20 +111,14 @@ fun MigrateMangaDialog(
 
                 TextButton(
                     onClick = {
-                        scope.launchIO {
-                            viewModel.migrateManga(replace = false)
-                            withContext(Dispatchers.Main) { onComplete() }
-                        }
+                        viewModel.onEvent(MigrateDialogEvent.Migrate(replace = false))
                     },
                 ) {
                     Text(text = stringResource(ephyra.app.core.common.R.string.copy))
                 }
                 TextButton(
                     onClick = {
-                        scope.launchIO {
-                            viewModel.migrateManga(replace = true)
-                            withContext(Dispatchers.Main) { onComplete() }
-                        }
+                        viewModel.onEvent(MigrateDialogEvent.Migrate(replace = true))
                     },
                 ) {
                     Text(text = stringResource(ephyra.app.core.common.R.string.migrate))
@@ -135,18 +128,39 @@ fun MigrateMangaDialog(
     )
 }
 
+sealed interface MigrateDialogEvent {
+    data class Init(val current: Manga, val target: Manga) : MigrateDialogEvent
+    data class ToggleSelection(val flag: MigrationFlag) : MigrateDialogEvent
+    data class Migrate(val replace: Boolean) : MigrateDialogEvent
+}
+
+sealed interface MigrateDialogEffect {
+    data object MigrationCompleted : MigrateDialogEffect
+}
+
 @HiltViewModel
 class MigrateDialogViewModel @Inject constructor(
     private val sourcePreference: SourcePreferences,
     private val coverCache: CoverCache,
     private val downloadManager: DownloadManager,
-    private val migrateManga: MigrateMangaUseCase,
-) : ViewModel() {
+    private val migrateMangaUseCase: MigrateMangaUseCase,
+) : BaseUdfViewModel<MigrateDialogViewModel.State, MigrateDialogEvent, MigrateDialogEffect>(State()) {
 
-    private val _state = MutableStateFlow(State())
-    val state: StateFlow<State> = _state.asStateFlow()
+    override fun onEvent(event: MigrateDialogEvent) {
+        when (event) {
+            is MigrateDialogEvent.Init -> initManga(event.current, event.target)
+            is MigrateDialogEvent.ToggleSelection -> toggleSelectionInternal(event.flag)
+            is MigrateDialogEvent.Migrate -> migrateMangaInternal(event.replace)
+        }
+    }
 
-    fun init(current: Manga, target: Manga) {
+    fun init(current: Manga, target: Manga) = onEvent(MigrateDialogEvent.Init(current, target))
+
+    fun toggleSelection(flag: MigrationFlag) = onEvent(MigrateDialogEvent.ToggleSelection(flag))
+
+    suspend fun migrateManga(replace: Boolean) = migrateMangaInternal(replace)
+
+    private fun initManga(current: Manga, target: Manga) {
         val applicableFlags = buildList {
             MigrationFlag.entries.forEach {
                 val applicable = when (it) {
@@ -160,7 +174,7 @@ class MigrateDialogViewModel @Inject constructor(
             }
         }
         val selectedFlags = sourcePreference.migrationFlags().getSync()
-        _state.update {
+        updateState {
             State(
                 current = current,
                 target = target,
@@ -170,8 +184,8 @@ class MigrateDialogViewModel @Inject constructor(
         }
     }
 
-    fun toggleSelection(flag: MigrationFlag) {
-        _state.update {
+    private fun toggleSelectionInternal(flag: MigrationFlag) {
+        updateState {
             val selectedFlags = it.selectedFlags.toMutableSet()
                 .apply { if (contains(flag)) remove(flag) else add(flag) }
                 .toSet()
@@ -179,14 +193,17 @@ class MigrateDialogViewModel @Inject constructor(
         }
     }
 
-    suspend fun migrateManga(replace: Boolean) {
-        val state = state.value
-        val current = state.current ?: return
-        val target = state.target ?: return
-        sourcePreference.migrationFlags().set(state.selectedFlags)
-        _state.update { it.copy(isMigrating = true) }
-        migrateManga(current, target, replace)
-        _state.update { it.copy(isMigrating = false, isMigrated = true) }
+    private fun migrateMangaInternal(replace: Boolean) {
+        viewModelScope.launch {
+            val currentState = state.value
+            val current = currentState.current ?: return@launch
+            val target = currentState.target ?: return@launch
+            sourcePreference.migrationFlags().set(currentState.selectedFlags)
+            updateState { it.copy(isMigrating = true) }
+            migrateMangaUseCase(current, target, replace)
+            updateState { it.copy(isMigrating = false, isMigrated = true) }
+            emitEffect(MigrateDialogEffect.MigrationCompleted)
+        }
     }
 
     data class State(

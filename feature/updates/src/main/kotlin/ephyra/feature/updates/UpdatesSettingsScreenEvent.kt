@@ -6,4 +6,5 @@ import ephyra.domain.updates.service.UpdatesPreferences
 
 sealed interface UpdatesSettingsScreenEvent {
     data class ToggleFilter(val preference: (UpdatesPreferences) -> Preference<TriState>) : UpdatesSettingsScreenEvent
+    data object ToggleExcludedScanlators : UpdatesSettingsScreenEvent
 }

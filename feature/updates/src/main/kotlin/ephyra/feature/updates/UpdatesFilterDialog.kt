@@ -88,14 +88,9 @@ private fun ColumnScope.FilterSheet(
 
     val filterExcludedScanlators by viewModel.updatesPreferences.filterExcludedScanlators().collectAsState()
 
-    fun toggleScanlatorFilter() {
-        val pref = viewModel.updatesPreferences.filterExcludedScanlators()
-        pref.set(!pref.getSync())
-    }
-
     Row(
         modifier = Modifier
-            .clickable { toggleScanlatorFilter() }
+            .clickable { viewModel.onEvent(UpdatesSettingsScreenEvent.ToggleExcludedScanlators) }
             .fillMaxWidth()
             .padding(horizontal = SettingsItemsPaddings.Horizontal),
         verticalAlignment = Alignment.CenterVertically,
@@ -109,7 +104,7 @@ private fun ColumnScope.FilterSheet(
 
         Switch(
             checked = filterExcludedScanlators,
-            onCheckedChange = { toggleScanlatorFilter() },
+            onCheckedChange = { viewModel.onEvent(UpdatesSettingsScreenEvent.ToggleExcludedScanlators) },
         )
     }
 }

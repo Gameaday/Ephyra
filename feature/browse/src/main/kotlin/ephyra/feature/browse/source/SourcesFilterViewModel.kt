@@ -9,13 +9,10 @@ import ephyra.domain.source.interactor.ToggleLanguage
 import ephyra.domain.source.interactor.ToggleSource
 import ephyra.domain.source.model.Source
 import ephyra.domain.source.service.SourcePreferences
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import ephyra.presentation.core.udf.BaseUdfViewModel
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.SortedMap
 import javax.inject.Inject
@@ -26,10 +23,7 @@ class SourcesFilterViewModel @Inject constructor(
     private val getLanguagesWithSources: GetLanguagesWithSources,
     private val toggleSource: ToggleSource,
     private val toggleLanguage: ToggleLanguage,
-) : ViewModel() {
-
-    private val _state = MutableStateFlow<State>(State.Loading)
-    val state: StateFlow<State> = _state.asStateFlow()
+) : BaseUdfViewModel<SourcesFilterViewModel.State, SourcesFilterScreenEvent, Nothing>(State.Loading) {
 
     init {
         viewModelScope.launch {
@@ -39,14 +33,14 @@ class SourcesFilterViewModel @Inject constructor(
                 preferences.disabledSources().changes(),
             ) { a, b, c -> Triple(a, b, c) }
                 .catch { throwable ->
-                    _state.update {
+                    updateState {
                         State.Error(
                             throwable = throwable,
                         )
                     }
                 }
                 .collectLatest { (languagesWithSources, enabledLanguages, disabledSources) ->
-                    _state.update {
+                    updateState {
                         State.Success(
                             items = languagesWithSources,
                             enabledLanguages = enabledLanguages,
@@ -57,7 +51,7 @@ class SourcesFilterViewModel @Inject constructor(
         }
     }
 
-    fun onEvent(event: SourcesFilterScreenEvent) {
+    override fun onEvent(event: SourcesFilterScreenEvent) {
         when (event) {
             is SourcesFilterScreenEvent.ToggleSource -> toggleSource(event.source)
             is SourcesFilterScreenEvent.ToggleLanguage -> toggleLanguage(event.language)
