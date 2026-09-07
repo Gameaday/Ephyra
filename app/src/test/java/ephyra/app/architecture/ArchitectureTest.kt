@@ -22,6 +22,7 @@ class ArchitectureTest {
             .that().resideInAPackage("ephyra.core.domain..")
             .should().dependOnClassesThat().resideInAnyPackage(
                 "ephyra.core.data..",
+                "ephyra.data..",
                 "ephyra.app..",
                 "ephyra.presentation..",
                 "ephyra.feature..",
@@ -96,12 +97,10 @@ class ArchitectureTest {
         val rule = noClasses()
             .that().resideInAPackage("ephyra.core.domain..")
             .should().dependOnClassesThat().resideInAnyPackage(
+                "android..",
                 "androidx.workmanager..",
                 "androidx.compose..",
                 "androidx.paging.runtime..",
-                "android.app..",
-                "android.content..",
-                "android.view..",
             )
 
         rule.check(classes)
@@ -119,6 +118,25 @@ class ArchitectureTest {
         val rule = noClasses()
             .that().resideInAPackage("ephyra.feature..")
             .should().dependOnClassesThat().haveFullyQualifiedName("ephyra.core.common.di.CoreContainer")
+
+        rule.check(classes)
+    }
+
+    /**
+     * ViewModels Data Layer Isolation Rule:
+     * ViewModels must not directly depend on data layer implementations.
+     * All data access must be mediated through domain interactors / repositories.
+     */
+    @Test
+    fun `viewmodels must not depend on data layer directly`() {
+        val classes = ClassFileImporter().importPackages("ephyra.feature")
+
+        val rule = noClasses()
+            .that().areAssignableTo("androidx.lifecycle.ViewModel")
+            .should().dependOnClassesThat().resideInAnyPackage(
+                "ephyra.core.data..",
+                "ephyra.data..",
+            )
 
         rule.check(classes)
     }

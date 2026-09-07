@@ -175,10 +175,12 @@ import ephyra.domain.migration.usecases.MigrateMangaUseCase
 import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.domain.release.interactor.GetApplicationRelease
 import ephyra.domain.release.service.ReleaseService
+import ephyra.domain.source.interactor.GetCatalogueSources
 import ephyra.domain.source.interactor.GetEnabledSources
 import ephyra.domain.source.interactor.GetIncognitoState
 import ephyra.domain.source.interactor.GetLanguagesWithSources
 import ephyra.domain.source.interactor.GetRemoteManga
+import ephyra.domain.source.interactor.GetSource
 import ephyra.domain.source.interactor.GetSourcesWithFavoriteCount
 import ephyra.domain.source.interactor.GetSourcesWithNonLibraryManga
 import ephyra.domain.source.interactor.SetMigrateSorting
@@ -1473,6 +1475,12 @@ object AppModule {
 
     @Provides
     fun provideToggleSourcePin(sourcePreferences: SourcePreferences) = ToggleSourcePin(sourcePreferences)
+
+    @Provides
+    fun provideGetSource(sourceManager: SourceManager) = GetSource(sourceManager)
+
+    @Provides
+    fun provideGetCatalogueSources(sourceManager: SourceManager) = GetCatalogueSources(sourceManager)
 
     @Provides
     fun provideGetExtensionRepo(extensionRepoRepository: ExtensionRepoRepository) =
