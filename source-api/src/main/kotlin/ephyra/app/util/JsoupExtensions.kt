@@ -1,26 +1,25 @@
 package ephyra.app.util
 
 import okhttp3.Response
-import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
+import eu.kanade.tachiyomi.util.asJsoup as tachiyomiAsJsoup
+import eu.kanade.tachiyomi.util.attrOrText as tachiyomiAttrOrText
+import eu.kanade.tachiyomi.util.selectInt as tachiyomiSelectInt
+import eu.kanade.tachiyomi.util.selectText as tachiyomiSelectText
 
-fun Element.selectText(css: String, defaultValue: String? = null): String? {
-    return select(css).first()?.text() ?: defaultValue
-}
+fun Element.selectText(css: String, defaultValue: String? = null): String? =
+    tachiyomiSelectText(css, defaultValue)
 
-fun Element.selectInt(css: String, defaultValue: Int = 0): Int {
-    return select(css).first()?.text()?.toInt() ?: defaultValue
-}
+fun Element.selectInt(css: String, defaultValue: Int = 0): Int =
+    tachiyomiSelectInt(css, defaultValue)
 
-fun Element.attrOrText(css: String): String {
-    return if (css != "text") attr(css) else text()
-}
+fun Element.attrOrText(css: String): String =
+    tachiyomiAttrOrText(css)
 
 /**
  * Returns a Jsoup document for this response.
  * @param html the body of the response. Use only if the body was read before calling this method.
  */
-fun Response.asJsoup(html: String? = null): Document {
-    return Jsoup.parse(html ?: body.string(), request.url.toString())
-}
+fun Response.asJsoup(html: String? = null): Document =
+    tachiyomiAsJsoup(html)

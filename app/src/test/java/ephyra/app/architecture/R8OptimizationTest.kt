@@ -98,6 +98,7 @@ class R8OptimizationTest {
 
         // Reflection-sensitive classes or packages that must never be stripped as dead code
         val reflectionSensitivePrefixes = listOf(
+            "eu.kanade.tachiyomi.AppInfo", // Canonical Tachiyomi extension-lib metadata ABI
             "ephyra.app.AppInfo", // Crucial app metadata shim used by external extensions
         )
 

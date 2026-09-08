@@ -202,7 +202,8 @@ abstract class SearchViewModel(
                         if (isActive) {
                             updateItem(source, SearchItemResult.Success(titles))
                         }
-                    } catch (e: Exception) {
+                    } catch (e: Throwable) {
+                        if (e is kotlinx.coroutines.CancellationException) throw e
                         if (isActive) {
                             updateItem(source, SearchItemResult.Error(e))
                         }
@@ -239,7 +240,7 @@ abstract class SearchViewModel(
             } else {
                 emptyList()
             }
-        } catch (_: Exception) {
+        } catch (_: Throwable) {
             emptyList()
         }
     }

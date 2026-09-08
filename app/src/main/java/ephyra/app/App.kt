@@ -170,6 +170,13 @@ class App :
             throw e
         }
 
+        // Initialize Tachiyomi extension-lib AppInfo ABI shim
+        try {
+            eu.kanade.tachiyomi.AppInfo.init(BuildConfig.VERSION_CODE, BuildConfig.VERSION_NAME)
+        } catch (e: Throwable) {
+            logcat(LogPriority.ERROR, e) { "AppInfo init failed" }
+        }
+
         super<Application>.onCreate()
         ephyra.app.startup.StartupTracker.complete(ephyra.app.startup.StartupTracker.Phase.APP_CREATED)
 

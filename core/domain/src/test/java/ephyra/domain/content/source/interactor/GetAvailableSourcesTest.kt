@@ -119,6 +119,44 @@ class GetAvailableSourcesTest {
     }
 
     @Test
+    fun `groups multi-language extension sources even when extension package lookup is null`() = runTest {
+        val subSources = (1..60).map { idx ->
+            TestCatalogueSource(id = 2000L + idx, name = "MangaDex ($idx)", lang = "lang_$idx")
+        }
+
+        val extension = Extension.Installed(
+            name = "MangaDex",
+            pkgName = "eu.kanade.tachiyomi.extension.all.mangadex",
+            versionName = "1.4.246",
+            versionCode = 1L,
+            libVersion = 1.0,
+            lang = "all",
+            isNsfw = false,
+            hasUpdate = false,
+            isObsolete = false,
+            isShared = false,
+            pkgFactory = null,
+            repoUrl = null,
+            sources = subSources,
+            icon = null,
+        )
+
+        installedExtensionsFlow.value = listOf(extension)
+        catalogueSourcesFlow.value = subSources
+        // Simulates async cold start where sourceIdToPkgFlow hasn't mapped yet
+        every { extensionManager.getExtensionPackage(any()) } returns null
+
+        val result = getAvailableSources().first()
+
+        assertEquals(1, result.size)
+        val unified = result.first()
+        assertEquals("MangaDex", unified.name)
+        assertEquals(SourceType.LEGACY_EXTENSION, unified.sourceType)
+        assertEquals("eu.kanade.tachiyomi.extension.all.mangadex", unified.extensionId)
+        assertTrue(unified.enabled)
+    }
+
+    @Test
     fun `includes heuristic profile alongside legacy extension`() = runTest {
         val subSources = listOf(
             TestCatalogueSource(id = 101L, name = "Extension Source", lang = "en"),

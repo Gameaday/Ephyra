@@ -1,9 +1,8 @@
 package ephyra.app
 
-import ephyra.core.common.util.system.ImageUtil
-
 /**
- * Used by extensions.
+ * Used by extensions and host app.
+ * Delegates to canonical Tachiyomi extension-lib ABI [eu.kanade.tachiyomi.AppInfo].
  */
 @Suppress("UNUSED")
 object AppInfo {
@@ -13,7 +12,8 @@ object AppInfo {
      *
      * @since extension-lib 1.3
      */
-    fun getVersionCode(): Int = BuildConfig.VERSION_CODE
+    @JvmStatic
+    fun getVersionCode(): Int = eu.kanade.tachiyomi.AppInfo.getVersionCode()
 
     /**
      * Version name of the host application. May be useful for sharing as User-Agent information.
@@ -21,7 +21,8 @@ object AppInfo {
      *
      * @since extension-lib 1.3
      */
-    fun getVersionName(): String = BuildConfig.VERSION_NAME
+    @JvmStatic
+    fun getVersionName(): String = eu.kanade.tachiyomi.AppInfo.getVersionName()
 
     /**
      * A list of supported image MIME types by the reader.
@@ -29,5 +30,6 @@ object AppInfo {
      *
      * @since extension-lib 1.5
      */
-    fun getSupportedImageMimeTypes(): List<String> = ImageUtil.ImageType.entries.map { it.mime }
+    @JvmStatic
+    fun getSupportedImageMimeTypes(): List<String> = eu.kanade.tachiyomi.AppInfo.getSupportedImageMimeTypes()
 }

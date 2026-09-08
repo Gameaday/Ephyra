@@ -82,15 +82,32 @@ class GetAvailableSources @Inject constructor(
                 )
             }
 
+            // Index all source IDs belonging to installed extensions
+            val extensionSourceIds = buildSet {
+                for (ext in extensions) {
+                    for (src in ext.sources) {
+                        add(src.id)
+                    }
+                }
+            }
+            val sourceIdToExtensionPkg = buildMap {
+                for (ext in extensions) {
+                    for (src in ext.sources) {
+                        put(src.id, ext.pkgName)
+                    }
+                }
+            }
+
             // Add any standalone catalogue sources not already covered by an installed extension
             for (source in catalogueSources) {
-                val pkgName = extensionManager.getExtensionPackage(source.id)
+                if (source.id == 0L || source.id in extensionSourceIds) continue
+                val pkgName = sourceIdToExtensionPkg[source.id] ?: extensionManager.getExtensionPackage(source.id)
                 val isAlreadyCovered = if (pkgName != null) {
                     unifiedSources.any { it.extensionId == pkgName }
                 } else {
                     unifiedSources.any { it.id == source.id }
                 }
-                if (!isAlreadyCovered && source.id != 0L) {
+                if (!isAlreadyCovered) {
                     val isEnabled = source.id.toString() !in disabledSources
                     unifiedSources.add(
                         UnifiedSource(

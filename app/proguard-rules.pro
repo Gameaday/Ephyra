@@ -33,7 +33,10 @@
 -keep,allowoptimization class eu.kanade.tachiyomi.network.NetworkHelper { public protected *; }
 -keep,allowoptimization class eu.kanade.tachiyomi.network.OkHttpExtensionsKt { public protected *; }
 -keep,allowoptimization class eu.kanade.tachiyomi.network.RequestsKt { public protected *; }
+-keep,allowoptimization class eu.kanade.tachiyomi.AppInfo { public protected *; }
+-keep,allowoptimization class eu.kanade.tachiyomi.util.JsoupExtensionsKt { public protected *; }
 -keep,allowoptimization class ephyra.app.AppInfo { public protected *; }
+-keep,allowoptimization class ephyra.app.util.JsoupExtensionsKt { public protected *; }
 
 ##---------------Begin: proguard configuration for RxJava 1.x  ----------
 -dontwarn sun.misc.**
