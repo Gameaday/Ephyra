@@ -17,6 +17,8 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -90,15 +92,16 @@ class MangaCoverViewModelTest {
     @Test
     fun `deleteCustomCover clears coverCache and updates timestamp`() = runTest {
         viewModel.init(101L)
+        viewModel.state.filterNotNull().first()
 
         viewModel.effects.test {
             viewModel.onEvent(MangaCoverScreenEvent.DeleteCustomCover)
 
-            coVerify { coverCache.deleteCustomCover(101L) }
-            coVerify { updateManga.awaitUpdateCoverLastModified(101L) }
-
             val effect = awaitItem()
             assert(effect is MangaCoverEffect.ShowSnackbar)
+
+            coVerify { coverCache.deleteCustomCover(101L) }
+            coVerify { updateManga.awaitUpdateCoverLastModified(101L) }
         }
     }
 }

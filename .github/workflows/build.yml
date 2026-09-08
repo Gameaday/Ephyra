@@ -66,9 +66,10 @@ jobs:
 
       - name: Architecture fitness – no Injekt.get()
         run: |
-          # The service locator pattern shim (Injekt) has been completely removed.
-          # Any usage of Injekt.get() is a regression and must be replaced with Hilt constructor injection.
-          VIOLATIONS=$(grep -rHn --include="*.kt" "Injekt\.get(" . || true)
+          # The service locator pattern shim (Injekt) has been removed from application code.
+          # Any usage of Injekt.get() in app or feature code is a regression and must be replaced with Hilt constructor injection.
+          # The uy.kohesive.injekt package is strictly a runtime compatibility bridge for external legacy extension APKs.
+          VIOLATIONS=$(grep -rHn --include="*.kt" --exclude-dir="uy" "Injekt\.get(" . || true)
           if [ -n "$VIOLATIONS" ]; then
             echo "::error::Injekt.get() found in codebase (use Hilt constructor injection instead):"
             echo "$VIOLATIONS"

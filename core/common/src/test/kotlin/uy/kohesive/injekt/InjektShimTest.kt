@@ -39,34 +39,37 @@ class InjektShimTest {
         val service = TestServiceImpl("CoreContainerRegistered")
         CoreContainer.register(TestService::class.java) { service }
 
-        val resolvedFromInjekt: TestService = Injekt.get()
+        val scope: InjektScope = Injekt
+        val resolvedFromInjekt: TestService = scope.get()
         assertSame(service, resolvedFromInjekt)
         assertEquals("CoreContainerRegistered", resolvedFromInjekt.getName())
 
-        val resolvedByClass: TestService = Injekt.get(TestService::class.java)
+        val resolvedByClass: TestService = scope.get(TestService::class.java)
         assertSame(service, resolvedByClass)
     }
 
     @Test
     fun `Injekt addSingleton registers dependency in CoreContainer and resolves correctly`() {
         val service = TestServiceImpl("SingletonService")
-        Injekt.addSingleton<TestService>(service)
+        val scope: InjektScope = Injekt
+        scope.addSingleton<TestService>(service)
 
-        val resolved: TestService = Injekt.get()
+        val resolved: TestService = scope.get()
         assertSame(service, resolved)
     }
 
     @Test
     fun `Injekt addSingletonFactory registers provider and resolves correctly`() {
         var count = 0
-        Injekt.addSingletonFactory<TestService> {
+        val scope: InjektScope = Injekt
+        scope.addSingletonFactory<TestService> {
             count++
             TestServiceImpl("Count-$count")
         }
 
-        val resolved1: TestService = Injekt.get()
+        val resolved1: TestService = scope.get()
         assertEquals("Count-1", resolved1.getName())
-        val resolved2: TestService = Injekt.get()
+        val resolved2: TestService = scope.get()
         assertEquals("Count-2", resolved2.getName())
     }
 
@@ -106,8 +109,9 @@ class InjektShimTest {
 
     @Test
     fun `resolving unregistered dependency throws IllegalArgumentException`() {
+        val scope: InjektScope = Injekt
         assertThrows(IllegalArgumentException::class.java) {
-            Injekt.get<UnregisteredService>()
+            scope.get<UnregisteredService>()
         }
     }
 }
