@@ -14,7 +14,10 @@ class MigratingManga(
     val source: String,
     parentContext: CoroutineContext,
 ) {
-    val migrationScope = CoroutineScope(parentContext + SupervisorJob() + Dispatchers.Default)
+    val migrationScope = CoroutineScope(
+        parentContext + SupervisorJob() +
+            (parentContext[kotlin.coroutines.ContinuationInterceptor] ?: Dispatchers.Default),
+    )
 
     val searchResult = MutableStateFlow<SearchResult>(SearchResult.Searching)
 

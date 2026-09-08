@@ -119,14 +119,15 @@ class MigrationListViewModelTest {
 
             viewModel.init(listOf(100L, 200L), extraSearchQuery = null)
 
-            val updated = awaitItem()
-            assertEquals(2, updated.items.size)
-            assertEquals(100L, updated.items[0].manga.id)
-            assertEquals(200L, updated.items[1].manga.id)
-            assertEquals(1, updated.items[0].chapterCount)
-
-            val finished = awaitItem()
-            assertEquals(2, finished.finishedCount)
+            var lastState = awaitItem()
+            while (lastState.finishedCount < 2) {
+                lastState = awaitItem()
+            }
+            assertEquals(2, lastState.items.size)
+            assertEquals(100L, lastState.items[0].manga.id)
+            assertEquals(200L, lastState.items[1].manga.id)
+            assertEquals(1, lastState.items[0].chapterCount)
+            assertEquals(2, lastState.finishedCount)
         }
     }
 
@@ -137,8 +138,10 @@ class MigrationListViewModelTest {
         viewModel.state.test {
             awaitItem()
             viewModel.init(listOf(100L), extraSearchQuery = null)
-            awaitItem()
-            awaitItem()
+            var current = awaitItem()
+            while (current.items.isEmpty() || current.finishedCount < 1) {
+                current = awaitItem()
+            }
 
             viewModel.onEvent(MigrationListScreenEvent.ShowMigrateDialog(copy = true))
             val dialogState = awaitItem()
