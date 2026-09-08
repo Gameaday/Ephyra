@@ -21,6 +21,8 @@
 -keep,allowoptimization class rx.** { public protected *; }
 # Keep uy.kohesive.injekt shim for legacy Tachiyomi/Mihon extension compatibility
 -keep class uy.kohesive.injekt.** { *; }
+-keep interface uy.kohesive.injekt.** { *; }
+-keep class dev.mihon.injekt.** { *; }
 # JNI and Native library entry points must be fully preserved without optimization
 -keep class app.cash.quickjs.** { *; }
 

@@ -47,25 +47,23 @@ class GetAvailableSources @Inject constructor(
         ) { catalogueSources, extensions, heuristicProfiles ->
             val unifiedSources = mutableListOf<UnifiedSource>()
 
-            // Legacy extension sources
+            // Legacy extension sources - represent each installed extension package once
+            val disabledSources = sourcePreferences.disabledSources().get()
             for (ext in extensions) {
-                for (source in ext.sources) {
-                    if (source is CatalogueSource) {
-                        val isEnabled = source.id.toString() !in sourcePreferences.disabledSources().get()
-                        unifiedSources.add(
-                            UnifiedSource(
-                                id = source.id,
-                                name = source.name,
-                                baseUrl = (source as? eu.kanade.tachiyomi.source.online.HttpSource)?.baseUrl ?: "",
-                                sourceType = SourceType.LEGACY_EXTENSION,
-                                enabled = isEnabled,
-                                extensionId = ext.pkgName,
-                                lastHealthCheck = 0,
-                                failureCount = 0,
-                            ),
-                        )
-                    }
-                }
+                val primarySource = ext.sources.firstOrNull { it is CatalogueSource } ?: ext.sources.firstOrNull()
+                val isEnabled = ext.sources.any { it.id.toString() !in disabledSources }
+                unifiedSources.add(
+                    UnifiedSource(
+                        id = primarySource?.id ?: ext.pkgName.hashCode().toLong(),
+                        name = ext.name,
+                        baseUrl = (primarySource as? eu.kanade.tachiyomi.source.online.HttpSource)?.baseUrl ?: "",
+                        sourceType = SourceType.LEGACY_EXTENSION,
+                        enabled = isEnabled,
+                        extensionId = ext.pkgName,
+                        lastHealthCheck = 0,
+                        failureCount = 0,
+                    ),
+                )
             }
 
             // Heuristic/JS scraper profiles
@@ -84,10 +82,16 @@ class GetAvailableSources @Inject constructor(
                 )
             }
 
-            // Add any catalogue sources not already covered
+            // Add any standalone catalogue sources not already covered by an installed extension
             for (source in catalogueSources) {
-                if (unifiedSources.none { it.id == source.id }) {
-                    val isEnabled = source.id.toString() !in sourcePreferences.disabledSources().get()
+                val pkgName = extensionManager.getExtensionPackage(source.id)
+                val isAlreadyCovered = if (pkgName != null) {
+                    unifiedSources.any { it.extensionId == pkgName }
+                } else {
+                    unifiedSources.any { it.id == source.id }
+                }
+                if (!isAlreadyCovered && source.id != 0L) {
+                    val isEnabled = source.id.toString() !in disabledSources
                     unifiedSources.add(
                         UnifiedSource(
                             id = source.id,
@@ -95,7 +99,7 @@ class GetAvailableSources @Inject constructor(
                             baseUrl = (source as? eu.kanade.tachiyomi.source.online.HttpSource)?.baseUrl ?: "",
                             sourceType = SourceType.LEGACY_EXTENSION,
                             enabled = isEnabled,
-                            extensionId = extensionManager.getExtensionPackage(source.id),
+                            extensionId = pkgName,
                             lastHealthCheck = 0,
                             failureCount = 0,
                         ),

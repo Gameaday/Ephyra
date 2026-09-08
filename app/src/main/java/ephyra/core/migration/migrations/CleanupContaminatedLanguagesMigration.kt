@@ -8,7 +8,7 @@ import ephyra.domain.source.service.SourcePreferences
 import java.util.Locale
 
 class CleanupContaminatedLanguagesMigration : Migration {
-    override val version: Float = 11f
+    override val version: Float = Migration.ALWAYS
 
     override suspend fun invoke(migrationContext: MigrationContext): Boolean = withIOContext {
         val sourcePreferences = migrationContext.get<SourcePreferences>() ?: return@withIOContext false

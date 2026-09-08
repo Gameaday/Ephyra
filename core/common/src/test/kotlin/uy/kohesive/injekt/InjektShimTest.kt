@@ -85,7 +85,7 @@ class InjektShimTest {
     }
 
     @Test
-    fun `Any injectLazy extension provides lazy resolution inside classes`() {
+    fun `injectLazy delegate provides lazy resolution inside classes`() {
         val service = TestServiceImpl("ExtensionClassService")
         CoreContainer.register(TestService::class.java) { service }
 
@@ -113,5 +113,42 @@ class InjektShimTest {
         assertThrows(IllegalArgumentException::class.java) {
             scope.get<UnregisteredService>()
         }
+    }
+
+    @Test
+    fun `Injekt implements InjektFactory, InjektRegistry, and InjektRegistrar interfaces`() {
+        val scope: InjektScope = Injekt
+        assertTrue(scope is uy.kohesive.injekt.api.InjektFactory)
+        assertTrue(scope is uy.kohesive.injekt.api.InjektRegistry)
+        assertTrue(scope is uy.kohesive.injekt.api.InjektRegistrar)
+
+        val factory: uy.kohesive.injekt.api.InjektFactory = Injekt
+        val service = TestServiceImpl("FactoryResolved")
+        CoreContainer.register(TestService::class.java) { service }
+
+        val resolvedFromFactory: TestService = factory.getInstance(TestService::class.java)
+        assertSame(service, resolvedFromFactory)
+    }
+
+    @Test
+    fun `InjektRegistrar imports InjektModule successfully`() {
+        val registrar: uy.kohesive.injekt.api.InjektRegistrar = Injekt
+        val service = TestServiceImpl("ModuleService")
+
+        val module = object : uy.kohesive.injekt.api.InjektModule {
+            override fun uy.kohesive.injekt.api.InjektRegistrar.registerInjectables() {
+                addSingleton(uy.kohesive.injekt.api.fullType<TestService>(), service)
+            }
+        }
+        registrar.importModule(module)
+
+        val scope: InjektScope = Injekt
+        val resolved: TestService = scope.get()
+        assertSame(service, resolved)
+    }
+
+    @Test
+    fun `patchInjekt function executes without error`() {
+        dev.mihon.injekt.patchInjekt()
     }
 }
