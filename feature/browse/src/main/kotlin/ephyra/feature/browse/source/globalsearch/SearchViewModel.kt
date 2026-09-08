@@ -5,6 +5,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.produceState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import ephyra.core.common.extension.runExtensionCall
 import ephyra.core.common.preference.toggle
 import ephyra.core.common.util.lang.launchIO
 import ephyra.domain.extension.service.ExtensionManager
@@ -219,7 +220,9 @@ abstract class SearchViewModel(
         query: String,
     ): List<Manga> {
         val page = withContext(coroutineDispatcher) {
-            source.getSearchManga(1, query, source.getFilterList())
+            runExtensionCall(sourceName = source.name) {
+                source.getSearchManga(1, query, source.getFilterList())
+            }
         }
 
         val seenUrls = HashSet<String>(page.mangas.size)

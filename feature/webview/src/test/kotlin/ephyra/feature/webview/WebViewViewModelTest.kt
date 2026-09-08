@@ -65,7 +65,6 @@ class WebViewViewModelTest {
         override fun searchMangaParse(response: Response): MangasPage = throw UnsupportedOperationException()
         override fun mangaDetailsParse(response: Response): SManga = throw UnsupportedOperationException()
         override fun chapterListParse(response: Response): List<SChapter> = throw UnsupportedOperationException()
-        override fun chapterPageParse(response: Response): SChapter = throw UnsupportedOperationException()
         override fun pageListParse(
             response: Response,
         ): List<eu.kanade.tachiyomi.source.model.Page> = throw UnsupportedOperationException()

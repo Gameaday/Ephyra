@@ -1,6 +1,7 @@
 package ephyra.data.source
 
 import androidx.paging.PagingState
+import ephyra.core.common.extension.runExtensionCall
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.domain.manga.interactor.NetworkToLocalManga
 import ephyra.domain.manga.model.Manga
@@ -54,7 +55,9 @@ abstract class BaseSourcePagingSource(
 
         return try {
             val mangasPage = withIOContext {
-                requestNextPage(page.toInt())
+                runExtensionCall(sourceName = source.name) {
+                    requestNextPage(page.toInt())
+                }
             }
 
             if (mangasPage.mangas.isEmpty()) {

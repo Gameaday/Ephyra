@@ -1,5 +1,6 @@
 package ephyra.feature.manga.interactor
 
+import ephyra.core.common.extension.runExtensionCall
 import ephyra.core.common.preference.TriState
 import ephyra.domain.chapter.interactor.FilterChaptersForDownload
 import ephyra.domain.chapter.interactor.SetMangaDefaultChapterFlags
@@ -98,11 +99,16 @@ class MangaChapterInteractor @Inject constructor(
     ): List<Chapter> {
         val sManga = manga.toSManga()
         runCatching {
-            val networkManga = source.getMangaDetails(sManga)
+            val networkManga = runExtensionCall(sourceName = source.name) {
+                source.getMangaDetails(sManga)
+            }
             updateManga.awaitUpdateFromSource(manga, networkManga, manualFetch = manualFetch)
         }
-        val sourceChapters = runCatching { source.getChapterList(sManga) }
-            .getOrElse { chapters.map { it.toSChapter() } }
+        val sourceChapters = runCatching {
+            runExtensionCall(sourceName = source.name) {
+                source.getChapterList(sManga)
+            }
+        }.getOrElse { chapters.map { it.toSChapter() } }
         return syncChaptersWithSource.await(
             sourceChapters,
             manga,

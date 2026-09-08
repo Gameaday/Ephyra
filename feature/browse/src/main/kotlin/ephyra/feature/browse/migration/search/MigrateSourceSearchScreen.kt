@@ -123,10 +123,10 @@ fun MigrateSourceSearchScreen(
             displayMode = viewModel.displayMode,
             snackbarHostState = snackbarHostState,
             contentPadding = paddingValues,
-            onWebViewClick = {
+            onWebViewClick = { targetUrl ->
                 val httpSource = source as? HttpSource ?: return@BrowseSourceContent
                 navController.navigate(
-                    Screen.WebView(httpSource.baseUrl, httpSource.name, httpSource.id),
+                    Screen.WebView(targetUrl ?: httpSource.baseUrl, httpSource.name, httpSource.id),
                 )
             },
             onHelpClick = { uriHandler.openUri(Constants.URL_HELP) },

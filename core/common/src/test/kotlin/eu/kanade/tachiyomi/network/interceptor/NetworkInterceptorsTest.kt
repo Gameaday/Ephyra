@@ -10,6 +10,7 @@ import okhttp3.Request
 import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -318,5 +319,35 @@ class NetworkInterceptorsTest {
         // Host B should NOT be blocked
         val resultB = interceptor.intercept(chainHostB)
         assertEquals(200, resultB.code)
+    }
+
+    @Test
+    fun `default client network interceptors do not contain IgnoreGzipInterceptor`() {
+        io.mockk.mockkStatic(android.webkit.CookieManager::class)
+        val mockCookieManager = mockk<android.webkit.CookieManager>(relaxed = true)
+        every { android.webkit.CookieManager.getInstance() } returns mockCookieManager
+
+        try {
+            val tempDir = java.nio.file.Files.createTempDirectory("cache_test").toFile()
+            val mockContext = mockk<android.content.Context>(relaxed = true)
+            every { mockContext.cacheDir } returns tempDir
+            val mockActivityManager = mockk<android.app.ActivityManager>(relaxed = true)
+            every { mockContext.getSystemService(android.app.ActivityManager::class.java) } returns mockActivityManager
+            every { mockContext.getSystemService(android.content.Context.ACTIVITY_SERVICE) } returns mockActivityManager
+            val mockPrefs = mockk<eu.kanade.tachiyomi.network.NetworkPreferences>(relaxed = true)
+            every { mockPrefs.defaultUserAgent().getSync() } returns defaultUserAgent
+            every { mockPrefs.verboseLogging().getSync() } returns false
+            every { mockPrefs.dohProvider().getSync() } returns -1
+
+            val networkHelper = eu.kanade.tachiyomi.network.NetworkHelper(mockContext, mockPrefs)
+            val hasIgnoreGzip = networkHelper.client.networkInterceptors.any { it is IgnoreGzipInterceptor }
+            assertFalse(
+                hasIgnoreGzip,
+                "IgnoreGzipInterceptor must not be present in default client (breaks modern extension ABI check)",
+            )
+            tempDir.deleteRecursively()
+        } finally {
+            io.mockk.unmockkStatic(android.webkit.CookieManager::class)
+        }
     }
 }

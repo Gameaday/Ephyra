@@ -31,6 +31,7 @@ import ephyra.presentation.core.screens.EmptyScreenAction
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.util.formattedMessage
 import ephyra.source.local.LocalSource
+import eu.kanade.tachiyomi.network.interceptor.CloudflareChallengeException
 import eu.kanade.tachiyomi.source.Source
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.StateFlow
@@ -43,7 +44,7 @@ fun BrowseSourceContent(
     displayMode: LibraryDisplayMode,
     snackbarHostState: SnackbarHostState,
     contentPadding: PaddingValues,
-    onWebViewClick: () -> Unit,
+    onWebViewClick: (String?) -> Unit,
     onHelpClick: () -> Unit,
     onLocalSourceHelpClick: () -> Unit,
     onMangaClick: (Manga) -> Unit,
@@ -51,8 +52,8 @@ fun BrowseSourceContent(
 ) {
     val context = LocalContext.current
 
-    val errorState = mangaList.loadState.refresh.takeIf { it is LoadState.Error }
-        ?: mangaList.loadState.append.takeIf { it is LoadState.Error }
+    val errorState = (mangaList.loadState.refresh as? LoadState.Error)
+        ?: (mangaList.loadState.append as? LoadState.Error)
 
     val getErrorMessage: (LoadState.Error) -> String = { state ->
         with(context) { state.error.formattedMessage }
@@ -102,7 +103,10 @@ fun BrowseSourceContent(
                     EmptyScreenAction(
                         stringRes = ephyra.app.core.common.R.string.action_open_in_web_view,
                         icon = Icons.Outlined.Public,
-                        onClick = onWebViewClick,
+                        onClick = {
+                            val challengeUrl = (errorState?.error as? CloudflareChallengeException)?.url
+                            onWebViewClick(challengeUrl)
+                        },
                     ),
                     EmptyScreenAction(
                         stringRes = ephyra.app.core.common.R.string.label_help,

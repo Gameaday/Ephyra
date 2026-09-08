@@ -21,6 +21,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -32,8 +33,12 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import androidx.paging.LoadState
 import ephyra.core.common.Constants
 import ephyra.core.common.util.lang.launchIO
 import ephyra.domain.source.model.StubSource
@@ -106,15 +111,36 @@ fun BrowseSourceScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     val onHelpClick = { uriHandler.openUri(LocalSource.HELP_URL) }
-    val onWebViewClick = f@{
-        val httpSource = source as? HttpSource ?: return@f
-        navController.navigate(
-            Screen.WebView(
-                url = httpSource.baseUrl,
-                title = httpSource.name,
-                sourceId = httpSource.id,
-            ),
-        )
+    val onWebViewClick: (String?) -> Unit = { targetUrl ->
+        val httpSource = source as? HttpSource
+        if (httpSource != null) {
+            navController.navigate(
+                Screen.WebView(
+                    url = targetUrl ?: httpSource.baseUrl,
+                    title = httpSource.name,
+                    sourceId = httpSource.id,
+                ),
+            )
+        }
+    }
+
+    val mangaList = viewModel.mangaPagerFlowFlow.collectAsLazyPagingItems()
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                android.webkit.CookieManager.getInstance().flush()
+                val hasError = mangaList.loadState.refresh is LoadState.Error ||
+                    mangaList.loadState.append is LoadState.Error
+                if (hasError) {
+                    mangaList.retry()
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
 
     Scaffold(
@@ -131,7 +157,7 @@ fun BrowseSourceScreen(
                     displayMode = viewModel.displayMode,
                     onDisplayModeChange = { viewModel.displayMode = it },
                     navigateUp = navigateUp,
-                    onWebViewClick = onWebViewClick,
+                    onWebViewClick = { onWebViewClick(null) },
                     onHelpClick = onHelpClick,
                     onSettingsClick = {
                         navController.navigate(
@@ -211,7 +237,7 @@ fun BrowseSourceScreen(
     ) { paddingValues ->
         BrowseSourceContent(
             source = source,
-            mangaList = viewModel.mangaPagerFlowFlow.collectAsLazyPagingItems(),
+            mangaList = mangaList,
             columns = viewModel.getColumnsPreference(LocalConfiguration.current.orientation),
             displayMode = viewModel.displayMode,
             snackbarHostState = snackbarHostState,

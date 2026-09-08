@@ -121,12 +121,17 @@ object DeviceUtil {
     fun performanceTier(context: Context): PerformanceTier =
         cachedPerformanceTier ?: run {
             val memInfo = ActivityManager.MemoryInfo()
-            context.getSystemService<ActivityManager>()!!.getMemoryInfo(memInfo)
-            val totalGb = memInfo.totalMem.toDouble() / (1024.0 * 1024.0 * 1024.0)
-            val tier = when {
-                totalGb < 2.0 -> PerformanceTier.LOW
-                totalGb < 4.0 -> PerformanceTier.MEDIUM
-                else -> PerformanceTier.HIGH
+            val activityManager = runCatching { context.getSystemService<ActivityManager>() }.getOrNull()
+            val tier = if (activityManager != null) {
+                runCatching { activityManager.getMemoryInfo(memInfo) }
+                val totalGb = memInfo.totalMem.toDouble() / (1024.0 * 1024.0 * 1024.0)
+                when {
+                    totalGb < 2.0 -> PerformanceTier.LOW
+                    totalGb < 4.0 -> PerformanceTier.MEDIUM
+                    else -> PerformanceTier.HIGH
+                }
+            } else {
+                PerformanceTier.MEDIUM
             }
             cachedPerformanceTier = tier
             tier

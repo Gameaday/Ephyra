@@ -17,5 +17,12 @@ class AppInfoTest {
         assertTrue(mimeTypes.contains("image/jpeg"))
         assertTrue(mimeTypes.contains("image/png"))
         assertTrue(mimeTypes.contains("image/webp"))
+
+        // ABI Contract: Extensions invoke getVersionName as a virtual method on AppInfo.INSTANCE
+        val versionNameMethod = AppInfo::class.java.getMethod("getVersionName")
+        org.junit.jupiter.api.Assertions.assertFalse(
+            java.lang.reflect.Modifier.isStatic(versionNameMethod.modifiers),
+            "getVersionName must be a virtual method on AppInfo instance to satisfy extension bytecode",
+        )
     }
 }

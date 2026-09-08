@@ -1,6 +1,8 @@
 package ephyra.presentation.core.util
 
 import android.content.Context
+import ephyra.core.common.extension.SourceExecutionException
+import ephyra.core.common.extension.SourceTimeoutException
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.system.isOnline
 import ephyra.domain.source.model.NoResultsException
@@ -34,6 +36,8 @@ val Throwable.formattedMessage: String
             is SourceNotInstalledException -> return context.stringResource(
                 ephyra.app.core.common.R.string.loader_not_implemented_error,
             )
+            is SourceTimeoutException -> return message ?: "Source operation timed out"
+            is SourceExecutionException -> return message ?: "Source extension error"
         }
         return when (val className = this::class.simpleName) {
             "Exception", "IOException" -> message ?: className

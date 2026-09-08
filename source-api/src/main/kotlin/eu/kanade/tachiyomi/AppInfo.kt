@@ -29,7 +29,6 @@ object AppInfo {
      *
      * @since extension-lib 1.3
      */
-    @JvmStatic
     fun getVersionCode(): Int = versionCode
 
     /**
@@ -38,7 +37,6 @@ object AppInfo {
      *
      * @since extension-lib 1.3
      */
-    @JvmStatic
     fun getVersionName(): String = versionName
 
     /**
@@ -47,6 +45,5 @@ object AppInfo {
      *
      * @since extension-lib 1.5
      */
-    @JvmStatic
     fun getSupportedImageMimeTypes(): List<String> = ImageUtil.ImageType.entries.map { it.mime }
 }

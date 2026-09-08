@@ -44,6 +44,12 @@ class CoreContainerContractTest {
         // Network stack
         val networkHelper = CoreContainer.get<NetworkHelper>()
         assertNotNull("NetworkHelper must be resolvable from CoreContainer", networkHelper)
+        assertTrue(
+            "IgnoreGzipInterceptor must not be present in default client (extension ABI requirement)",
+            networkHelper.client.networkInterceptors.none {
+                it is eu.kanade.tachiyomi.network.interceptor.IgnoreGzipInterceptor
+            },
+        )
 
         val okHttpClient = CoreContainer.get<OkHttpClient>()
         assertNotNull("OkHttpClient must be resolvable from CoreContainer", okHttpClient)

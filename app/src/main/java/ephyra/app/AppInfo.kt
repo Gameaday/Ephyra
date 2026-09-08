@@ -12,7 +12,6 @@ object AppInfo {
      *
      * @since extension-lib 1.3
      */
-    @JvmStatic
     fun getVersionCode(): Int = eu.kanade.tachiyomi.AppInfo.getVersionCode()
 
     /**
@@ -21,7 +20,6 @@ object AppInfo {
      *
      * @since extension-lib 1.3
      */
-    @JvmStatic
     fun getVersionName(): String = eu.kanade.tachiyomi.AppInfo.getVersionName()
 
     /**
@@ -30,6 +28,5 @@ object AppInfo {
      *
      * @since extension-lib 1.5
      */
-    @JvmStatic
     fun getSupportedImageMimeTypes(): List<String> = eu.kanade.tachiyomi.AppInfo.getSupportedImageMimeTypes()
 }
