@@ -1,3 +1,9 @@
 package dev.mihon.injekt
 
-fun patchInjekt() {}
+import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.InjektScope
+
+@Suppress("UNUSED")
+fun patchInjekt() {
+    Injekt = InjektScope(PatchedDefaultRegister())
+}

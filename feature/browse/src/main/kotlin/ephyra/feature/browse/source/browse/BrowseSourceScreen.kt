@@ -77,13 +77,12 @@ fun BrowseSourceScreen(
         viewModel.init(sourceId, listingQuery)
     }
 
-    val source = viewModel.source
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val source = state.source ?: viewModel.source
     if (source == null) {
         LoadingScreen()
         return
     }
-
-    val state by viewModel.state.collectAsStateWithLifecycle()
 
     val navigateUp: () -> Unit = {
         when {

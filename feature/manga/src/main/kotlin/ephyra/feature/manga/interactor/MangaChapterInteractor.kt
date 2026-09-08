@@ -12,7 +12,9 @@ import ephyra.domain.chapter.model.toSChapter
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.interactor.SetMangaChapterFlags
+import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.Manga
+import ephyra.domain.manga.model.toSManga
 import eu.kanade.tachiyomi.source.Source
 import javax.inject.Inject
 
@@ -21,6 +23,7 @@ class MangaChapterInteractor @Inject constructor(
     private val setMangaDefaultChapterFlags: SetMangaDefaultChapterFlags,
     private val setReadStatus: SetReadStatus,
     private val updateChapter: UpdateChapter,
+    private val updateManga: UpdateManga,
     private val libraryPreferences: LibraryPreferences,
     private val filterChaptersForDownload: FilterChaptersForDownload,
     private val syncChaptersWithSource: SyncChaptersWithSource,
@@ -93,8 +96,15 @@ class MangaChapterInteractor @Inject constructor(
         source: Source,
         manualFetch: Boolean,
     ): List<Chapter> {
+        val sManga = manga.toSManga()
+        runCatching {
+            val networkManga = source.getMangaDetails(sManga)
+            updateManga.awaitUpdateFromSource(manga, networkManga, manualFetch = manualFetch)
+        }
+        val sourceChapters = runCatching { source.getChapterList(sManga) }
+            .getOrElse { chapters.map { it.toSChapter() } }
         return syncChaptersWithSource.await(
-            chapters.map { it.toSChapter() },
+            sourceChapters,
             manga,
             source,
             manualFetch,

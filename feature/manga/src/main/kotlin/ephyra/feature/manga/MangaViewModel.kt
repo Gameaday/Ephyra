@@ -126,6 +126,23 @@ class MangaViewModel @Inject constructor(
                 }
         }
 
+        if (isFromSource) {
+            viewModelScope.launchIO {
+                val manga = getManga.await(mangaId) ?: return@launchIO
+                val src = sourceManager.getOrStub(manga.source)
+                runCatching {
+                    mangaChapterInteractor.syncChaptersWithSource(
+                        chapters = emptyList(),
+                        manga = manga,
+                        source = src,
+                        manualFetch = false,
+                    )
+                }.onFailure { e ->
+                    logcat(LogPriority.ERROR, e) { "Failed to auto-fetch manga from source" }
+                }
+            }
+        }
+
         viewModelScope.launch {
             combine(
                 getMangaAndChapters.subscribe(mangaId),
@@ -171,6 +188,24 @@ class MangaViewModel @Inject constructor(
                 if (favorite) {
                     mangaInfoInteractor.syncLibraryAdditionToTrackers(manga)
                 }
+            }
+        }
+    }
+
+    fun fetchAllFromSource(manualFetch: Boolean = true) {
+        viewModelScope.launchIO {
+            val success = successState ?: return@launchIO
+            val source = success.source ?: return@launchIO
+            val manga = success.manga
+            runCatching {
+                mangaChapterInteractor.syncChaptersWithSource(
+                    chapters = success.chapters,
+                    manga = manga,
+                    source = source,
+                    manualFetch = manualFetch,
+                )
+            }.onFailure { e ->
+                logcat(LogPriority.ERROR, e) { "Failed to fetch chapters from source" }
             }
         }
     }
@@ -288,6 +323,9 @@ class MangaViewModel @Inject constructor(
                         )
                     }
                 }
+            }
+            is MangaScreenEvent.FetchAllFromSource -> {
+                fetchAllFromSource(event.manualFetch)
             }
             else -> {}
         }

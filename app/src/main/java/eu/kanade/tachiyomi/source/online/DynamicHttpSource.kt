@@ -145,8 +145,6 @@ class DynamicHttpSource(
         throw UnsupportedOperationException("DynamicHttpSource delegates getMangaDetails directly")
     override fun chapterListParse(response: Response): List<SChapter> =
         throw UnsupportedOperationException("DynamicHttpSource delegates getChapterList directly")
-    override fun chapterPageParse(response: Response): SChapter =
-        throw UnsupportedOperationException("DynamicHttpSource delegates getChapterList directly")
     override fun pageListParse(response: Response): List<Page> =
         throw UnsupportedOperationException("DynamicHttpSource delegates getPageList directly")
     override fun imageUrlParse(response: Response): String =

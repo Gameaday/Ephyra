@@ -18,6 +18,8 @@ dependencies {
     implementation(libs.compose.runtime)
 
     implementation(projects.core.common)
+    api(libs.rxjava)
+    api(libs.injekt.core)
     api(libs.preferencektx)
 
     implementation(libs.hilt.android)

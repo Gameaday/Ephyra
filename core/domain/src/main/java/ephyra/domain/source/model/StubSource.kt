@@ -13,6 +13,21 @@ class StubSource(
 
     private val isInvalid: Boolean = name.isBlank() || lang.isBlank()
 
+    override val supportsLatest: Boolean = false
+
+    override suspend fun getPopularManga(page: Int): eu.kanade.tachiyomi.source.model.MangasPage =
+        throw SourceNotInstalledException()
+
+    override suspend fun getLatestUpdates(page: Int): eu.kanade.tachiyomi.source.model.MangasPage =
+        throw SourceNotInstalledException()
+
+    override suspend fun getSearchManga(
+        page: Int,
+        query: String,
+        filters: eu.kanade.tachiyomi.source.model.FilterList,
+    ): eu.kanade.tachiyomi.source.model.MangasPage =
+        throw SourceNotInstalledException()
+
     override suspend fun getMangaDetails(manga: SManga): SManga =
         throw SourceNotInstalledException()
 

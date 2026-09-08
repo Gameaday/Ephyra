@@ -214,4 +214,19 @@ class MangaViewModelTest {
 
         coVerify { mangaInfoInteractor.updateFavorite(1L, true) }
     }
+
+    @Test
+    fun `FetchAllFromSource triggers syncChaptersWithSource on mangaChapterInteractor`() = runTest {
+        viewModel.init(1L, false)
+        viewModel.onEvent(MangaScreenEvent.FetchAllFromSource(manualFetch = true))
+
+        coVerify {
+            mangaChapterInteractor.syncChaptersWithSource(
+                chapters = any(),
+                manga = any(),
+                source = any(),
+                manualFetch = true,
+            )
+        }
+    }
 }

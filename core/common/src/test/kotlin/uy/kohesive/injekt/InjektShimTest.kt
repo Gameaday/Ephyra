@@ -1,6 +1,6 @@
 package uy.kohesive.injekt
 
-import ephyra.core.common.di.CoreContainer
+import dev.mihon.injekt.patchInjekt
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertSame
@@ -9,6 +9,10 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import uy.kohesive.injekt.api.InjektScope
+import uy.kohesive.injekt.api.InjektionException
+import uy.kohesive.injekt.api.addSingleton
+import uy.kohesive.injekt.api.addSingletonFactory
+import uy.kohesive.injekt.api.get
 
 class InjektShimTest {
 
@@ -20,63 +24,53 @@ class InjektShimTest {
         override fun getName(): String = name
     }
 
-    @BeforeEach
-    fun setUp() {
-        // Reset or clear if needed
-    }
-
     private interface UnregisteredService
 
-    @Test
-    fun `Injekt instance resolves via InjektKt getInjekt and top-level Injekt object`() {
-        assertTrue(Injekt is InjektScope)
-        assertSame(Injekt, getInjekt())
-        assertSame(Injekt, injektInstance)
+    @BeforeEach
+    fun setUp() {
+        patchInjekt()
     }
 
     @Test
-    fun `Injekt get resolves dependencies registered in CoreContainer`() {
-        val service = TestServiceImpl("CoreContainerRegistered")
-        CoreContainer.register(TestService::class.java) { service }
+    fun `Injekt is InjektScope`() {
+        assertTrue(Injekt is InjektScope)
+    }
 
-        val scope: InjektScope = Injekt
-        val resolvedFromInjekt: TestService = scope.get()
-        assertSame(service, resolvedFromInjekt)
-        assertEquals("CoreContainerRegistered", resolvedFromInjekt.getName())
+    @Test
+    fun `Injekt addSingleton and get resolves correctly`() {
+        val service = TestServiceImpl("SingletonService")
+        Injekt.addSingleton<TestService>(service)
 
-        val resolvedByClass: TestService = scope.get(TestService::class.java)
+        val resolved: TestService = Injekt.get()
+        assertSame(service, resolved)
+        assertEquals("SingletonService", resolved.getName())
+
+        val resolvedByClass: TestService = Injekt.getInstance(TestService::class.java)
         assertSame(service, resolvedByClass)
     }
 
     @Test
-    fun `Injekt addSingleton registers dependency in CoreContainer and resolves correctly`() {
-        val service = TestServiceImpl("SingletonService")
-        val scope: InjektScope = Injekt
-        scope.addSingleton<TestService>(service)
-
-        val resolved: TestService = scope.get()
-        assertSame(service, resolved)
-    }
-
-    @Test
-    fun `Injekt addSingletonFactory registers provider and resolves correctly`() {
+    fun `Injekt addSingletonFactory registers provider and resolves lazily and once`() {
         var count = 0
-        val scope: InjektScope = Injekt
-        scope.addSingletonFactory<TestService> {
+        Injekt.addSingletonFactory<TestService> {
             count++
             TestServiceImpl("Count-$count")
         }
 
-        val resolved1: TestService = scope.get()
+        assertEquals(0, count)
+        val resolved1: TestService = Injekt.get()
+        assertEquals(1, count)
         assertEquals("Count-1", resolved1.getName())
-        val resolved2: TestService = scope.get()
-        assertEquals("Count-2", resolved2.getName())
+        val resolved2: TestService = Injekt.get()
+        assertEquals(1, count)
+        assertEquals("Count-1", resolved2.getName())
+        assertSame(resolved1, resolved2)
     }
 
     @Test
     fun `injectLazy provides lazy resolution from Injekt`() {
         val service = TestServiceImpl("LazyService")
-        CoreContainer.register(TestService::class.java) { service }
+        Injekt.addSingleton<TestService>(service)
 
         val lazyService: Lazy<TestService> = injectLazy()
         assertNotNull(lazyService)
@@ -87,7 +81,7 @@ class InjektShimTest {
     @Test
     fun `injectLazy delegate provides lazy resolution inside classes`() {
         val service = TestServiceImpl("ExtensionClassService")
-        CoreContainer.register(TestService::class.java) { service }
+        Injekt.addSingleton<TestService>(service)
 
         class DummyExtension {
             val injected: TestService by injectLazy()
@@ -101,17 +95,16 @@ class InjektShimTest {
     @Test
     fun `injectValue provides eager resolution from Injekt`() {
         val service = TestServiceImpl("EagerService")
-        CoreContainer.register(TestService::class.java) { service }
+        Injekt.addSingleton<TestService>(service)
 
         val resolved: Lazy<TestService> = injectValue()
         assertSame(service, resolved.value)
     }
 
     @Test
-    fun `resolving unregistered dependency throws IllegalArgumentException`() {
-        val scope: InjektScope = Injekt
-        assertThrows(IllegalArgumentException::class.java) {
-            scope.get<UnregisteredService>()
+    fun `resolving unregistered dependency throws InjektionException`() {
+        assertThrows(InjektionException::class.java) {
+            Injekt.get<UnregisteredService>()
         }
     }
 
@@ -124,7 +117,7 @@ class InjektShimTest {
 
         val factory: uy.kohesive.injekt.api.InjektFactory = Injekt
         val service = TestServiceImpl("FactoryResolved")
-        CoreContainer.register(TestService::class.java) { service }
+        Injekt.addSingleton<TestService>(service)
 
         val resolvedFromFactory: TestService = factory.getInstance(TestService::class.java)
         assertSame(service, resolvedFromFactory)
@@ -142,13 +135,13 @@ class InjektShimTest {
         }
         registrar.importModule(module)
 
-        val scope: InjektScope = Injekt
-        val resolved: TestService = scope.get()
+        val resolved: TestService = Injekt.get()
         assertSame(service, resolved)
     }
 
     @Test
     fun `patchInjekt function executes without error`() {
-        dev.mihon.injekt.patchInjekt()
+        patchInjekt()
+        assertTrue(Injekt is InjektScope)
     }
 }

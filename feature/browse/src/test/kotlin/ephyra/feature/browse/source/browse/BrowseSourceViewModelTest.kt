@@ -125,6 +125,20 @@ class BrowseSourceViewModelTest {
             assertTrue(state.listing is BrowseSourceViewModel.Listing.Popular)
             assertEquals(100L, viewModel.sourceId)
             assertEquals(catalogueSource, viewModel.source)
+            assertEquals(100L, state.sourceId)
+            assertEquals(catalogueSource, state.source)
+        }
+    }
+
+    @Test
+    fun `mangaPagerFlowFlow emits when initialized with popular listing`() = runTest {
+        val viewModel = createViewModel()
+        viewModel.init(100L, GetRemoteManga.QUERY_POPULAR)
+        advanceUntilIdle()
+
+        viewModel.mangaPagerFlowFlow.test {
+            val flow = awaitItem()
+            org.junit.jupiter.api.Assertions.assertNotNull(flow)
         }
     }
 

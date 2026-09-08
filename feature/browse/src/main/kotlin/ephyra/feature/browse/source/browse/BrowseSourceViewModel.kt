@@ -95,24 +95,23 @@ class BrowseSourceViewModel @Inject constructor(
         val src = sourceManager.getOrStub(sourceId)
         this.source = src
 
-        updateState { State(Listing.valueOf(listingQuery)) }
+        val initialListing = Listing.valueOf(listingQuery)
+        val initialFilters = (src as? CatalogueSource)?.getFilterList() ?: FilterList()
+        val query = if (initialListing is Listing.Search) initialListing.query else null
+        val resolvedListing = if (initialListing is Listing.Search) {
+            Listing.Search(query, initialFilters)
+        } else {
+            initialListing
+        }
 
-        if (src is CatalogueSource) {
-            updateState {
-                var query: String? = null
-                var listing = it.listing
-
-                if (listing is Listing.Search) {
-                    query = listing.query
-                    listing = Listing.Search(query, src.getFilterList())
-                }
-
-                it.copy(
-                    listing = listing,
-                    filters = src.getFilterList(),
-                    toolbarQuery = query,
-                )
-            }
+        updateState {
+            it.copy(
+                sourceId = sourceId,
+                source = src,
+                listing = resolvedListing,
+                filters = initialFilters,
+                toolbarQuery = query,
+            )
         }
 
         if (!getIncognitoState.await(src.id)) {
@@ -124,10 +123,11 @@ class BrowseSourceViewModel @Inject constructor(
             hideInLibraryItems = sourcePreferences.hideInLibraryItems().get()
         }
     }
-    val mangaPagerFlowFlow = state.map { it.listing }
+
+    val mangaPagerFlowFlow = state.map { it.sourceId to it.listing }
         .distinctUntilChanged()
-        .map { listing ->
-            if (sourceId == -1L) return@map emptyFlow()
+        .map { (sourceId, listing) ->
+            if (sourceId <= 0L) return@map emptyFlow()
             Pager(PagingConfig(pageSize = 25, prefetchDistance = 15)) {
                 getRemoteManga(sourceId, listing.query ?: "", listing.filters)
             }.flow.map { pagingData ->
@@ -371,7 +371,9 @@ class BrowseSourceViewModel @Inject constructor(
 
     @Immutable
     data class State(
-        val listing: Listing,
+        val listing: Listing = Listing.Popular,
+        val sourceId: Long = -1L,
+        val source: eu.kanade.tachiyomi.source.Source? = null,
         val filters: FilterList = FilterList(),
         val toolbarQuery: String? = null,
         val dialog: Dialog? = null,
