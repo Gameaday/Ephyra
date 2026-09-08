@@ -412,8 +412,63 @@ class LibraryUpdateJob(
             }
         }
 
-        fun setupTask(context: Context, preferences: LibraryPreferences) {
-            // Placeholder
+        fun createConstraints(restrictions: Set<String>): Constraints {
+            val networkType = if (
+                LibraryPreferences.DEVICE_ONLY_ON_WIFI in restrictions ||
+                LibraryPreferences.DEVICE_NETWORK_NOT_METERED in restrictions
+            ) {
+                NetworkType.UNMETERED
+            } else {
+                NetworkType.CONNECTED
+            }
+
+            return Constraints.Builder()
+                .setRequiredNetworkType(networkType)
+                .setRequiresBatteryNotLow(true)
+                .apply {
+                    if (LibraryPreferences.DEVICE_CHARGING in restrictions) {
+                        setRequiresCharging(true)
+                    }
+                }
+                .build()
+        }
+
+        fun setupTask(
+            context: Context,
+            interval: Int,
+            restrictions: Set<String>,
+        ) {
+            if (interval > 0) {
+                val constraints = createConstraints(restrictions)
+
+                val request = PeriodicWorkRequestBuilder<LibraryUpdateJob>(
+                    interval.toLong(),
+                    TimeUnit.HOURS,
+                    15,
+                    TimeUnit.MINUTES,
+                )
+                    .addTag(TAG)
+                    .addTag(WORK_NAME_AUTO)
+                    .setConstraints(constraints)
+                    .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 10, TimeUnit.MINUTES)
+                    .build()
+
+                context.workManager.enqueueUniquePeriodicWork(
+                    WORK_NAME_AUTO,
+                    ExistingPeriodicWorkPolicy.UPDATE,
+                    request,
+                )
+            } else {
+                context.workManager.cancelUniqueWork(WORK_NAME_AUTO)
+            }
+        }
+
+        suspend fun setupTask(context: Context, preferences: LibraryPreferences) {
+            setupTask(
+                context,
+                interval = preferences.autoUpdateInterval().get(),
+                restrictions = preferences.autoUpdateDeviceRestrictions().get(),
+            )
         }
 
         fun stop(context: Context) {

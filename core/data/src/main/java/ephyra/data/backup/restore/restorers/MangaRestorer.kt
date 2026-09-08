@@ -21,8 +21,10 @@ import ephyra.domain.manga.interactor.GetMangaByUrlAndSourceId
 import ephyra.domain.manga.interactor.SetExcludedScanlators
 import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.Manga
+import ephyra.domain.manga.model.MangaUpdate
 import ephyra.domain.manga.model.toMangaUpdate
 import ephyra.domain.manga.repository.MangaRepository
+import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.interactor.GetTracks
 import ephyra.domain.track.interactor.InsertTrack
 import ephyra.domain.track.model.Track
@@ -185,7 +187,22 @@ class MangaRestorer(
         restoreTracking(manga, tracks)
         restoreHistory(history)
         restoreExcludedScanlators(manga, excludedScanlators)
-        updateManga.awaitUpdateFetchInterval(manga, now, currentFetchWindow)
+        val finalManga = autoResolveCanonicalId(manga, tracks)
+        updateManga.awaitUpdateFetchInterval(finalManga, now, currentFetchWindow)
+        return finalManga
+    }
+
+    private suspend fun autoResolveCanonicalId(manga: Manga, tracks: List<BackupTracking>): Manga {
+        if (manga.canonicalId != null || tracks.isEmpty()) return manga
+        for (backupTrack in tracks) {
+            val track = backupTrack.getTrackImpl()
+            val prefix = AddTracks.TRACKER_CANONICAL_PREFIXES[track.trackerId] ?: continue
+            if (track.remoteId > 0) {
+                val canonicalId = "$prefix:${track.remoteId}"
+                updateManga.await(MangaUpdate(id = manga.id, canonicalId = canonicalId))
+                return manga.copy(canonicalId = canonicalId)
+            }
+        }
         return manga
     }
 

@@ -13,6 +13,7 @@ class SetupLibraryUpdateMigration : Migration {
         val context = migrationContext.get<Application>() ?: return false
         val libraryPreferences = migrationContext.get<LibraryPreferences>() ?: return false
         LibraryUpdateJob.setupTask(context, libraryPreferences)
+        ephyra.app.extension.ExtensionUpdateWorker.setupTask(context)
         return true
     }
 }

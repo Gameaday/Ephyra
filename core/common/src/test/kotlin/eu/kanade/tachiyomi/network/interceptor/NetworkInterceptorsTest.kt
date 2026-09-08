@@ -5,8 +5,10 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import okhttp3.Interceptor
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.Response
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -147,6 +149,82 @@ class NetworkInterceptorsTest {
         }
         assertTrue(thrown.message?.contains("NullPointerException") == true || thrown.cause == runtimeException) {
             "RuntimeExceptions must be wrapped inside a non-fatal IOException boundary"
+        }
+    }
+
+    // ── CloudflareInterceptor Tests ──────────────────────────────────────────
+
+    @Test
+    fun `CloudflareInterceptor intercepts 403 with cf-ray and turnstile challenge`() {
+        val mockContext = mockk<android.content.Context>(relaxed = true)
+        val mockCookieJar = mockk<eu.kanade.tachiyomi.network.AndroidCookieJar>(relaxed = true)
+        val interceptor = CloudflareInterceptor(mockContext, mockCookieJar, defaultUserAgentProvider)
+
+        val htmlBody = """
+            <!DOCTYPE html>
+            <html>
+            <body>
+                <div id="turnstile-wrapper">
+                    <div id="cf-turnstile"></div>
+                </div>
+            </body>
+            </html>
+        """.trimIndent()
+
+        val request = Request.Builder().url("https://example.com/source").build()
+        val response = Response.Builder()
+            .request(request)
+            .protocol(okhttp3.Protocol.HTTP_1_1)
+            .code(403)
+            .message("Forbidden")
+            .header("cf-ray", "8b123456789-DFW")
+            .body(htmlBody.toResponseBody("text/html".toMediaType()))
+            .build()
+
+        assertTrue(interceptor.shouldIntercept(response)) {
+            "CloudflareInterceptor must intercept 403 responses with Cloudflare cf-ray and Turnstile challenge"
+        }
+    }
+
+    @Test
+    fun `CloudflareInterceptor ignores normal 200 OK responses`() {
+        val mockContext = mockk<android.content.Context>(relaxed = true)
+        val mockCookieJar = mockk<eu.kanade.tachiyomi.network.AndroidCookieJar>(relaxed = true)
+        val interceptor = CloudflareInterceptor(mockContext, mockCookieJar, defaultUserAgentProvider)
+
+        val request = Request.Builder().url("https://example.com/source").build()
+        val response = Response.Builder()
+            .request(request)
+            .protocol(okhttp3.Protocol.HTTP_1_1)
+            .code(200)
+            .message("OK")
+            .header("Server", "cloudflare")
+            .body("<html><body>OK</body></html>".toResponseBody("text/html".toMediaType()))
+            .build()
+
+        org.junit.jupiter.api.Assertions.assertFalse(interceptor.shouldIntercept(response)) {
+            "CloudflareInterceptor must not intercept normal 200 responses"
+        }
+    }
+
+    @Test
+    fun `CloudflareInterceptor ignores non-Cloudflare 403 responses`() {
+        val mockContext = mockk<android.content.Context>(relaxed = true)
+        val mockCookieJar = mockk<eu.kanade.tachiyomi.network.AndroidCookieJar>(relaxed = true)
+        val interceptor = CloudflareInterceptor(mockContext, mockCookieJar, defaultUserAgentProvider)
+
+        val request = Request.Builder().url("https://example.com/source").build()
+        val response = Response.Builder()
+            .request(request)
+            .protocol(okhttp3.Protocol.HTTP_1_1)
+            .code(403)
+            .message("Forbidden")
+            .header("Server", "Apache")
+            .body("<html><body>Forbidden</body></html>".toResponseBody("text/html".toMediaType()))
+            .build()
+
+        org.junit.jupiter.api.Assertions.assertFalse(interceptor.shouldIntercept(response)) {
+            "CloudflareInterceptor must not intercept non-Cloudflare 403 responses"
         }
     }
 }

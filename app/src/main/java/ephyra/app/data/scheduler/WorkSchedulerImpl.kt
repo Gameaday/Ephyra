@@ -9,10 +9,17 @@ import ephyra.app.data.library.MetadataUpdateJob
 import ephyra.domain.backup.service.BackupScheduler
 import ephyra.domain.backup.service.RestoreScheduler
 import ephyra.domain.category.model.Category
+import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.library.service.LibraryUpdateScheduler
 import ephyra.domain.library.service.MetadataUpdateScheduler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
-class WorkSchedulerImpl(private val context: Context) :
+class WorkSchedulerImpl(
+    private val context: Context,
+    private val libraryPreferences: LibraryPreferences,
+) :
     BackupScheduler,
     RestoreScheduler,
     LibraryUpdateScheduler,
@@ -46,7 +53,9 @@ class WorkSchedulerImpl(private val context: Context) :
 
     // ── LibraryUpdateScheduler ─────────────────────────────────────────────
     override fun setupLibraryUpdateTask() {
-        // no-op: periodic library updates are managed elsewhere
+        CoroutineScope(Dispatchers.Default).launch {
+            LibraryUpdateJob.setupTask(context, libraryPreferences)
+        }
     }
 
     override fun startNow(category: Category?): Boolean {

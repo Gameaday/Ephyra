@@ -51,15 +51,44 @@ class BackupDecoder(
             val b2 = buffered.read()
             buffered.reset()
 
-            val bytes = if (b1 == 0x1F && b2 == 0x8B) {
-                GZIPInputStream(buffered).use { it.readBytes() }
-            } else {
-                buffered.readBytes()
+            val bytes = when {
+                b1 == 0x1F && b2 == 0x8B -> {
+                    // Direct gzip stream (standard .proto.gz or legacy .tachibk)
+                    GZIPInputStream(buffered).use { it.readBytes() }
+                }
+                b1 == 0x50 && b2 == 0x4B -> {
+                    // ZIP container archive (modern Mihon and Tachiyomi 0.15+ .tachibk)
+                    extractFromZip(buffered)
+                }
+                else -> {
+                    buffered.readBytes()
+                }
             }
 
             protoBuf.decodeFromByteArray(Backup.serializer(), bytes)
         } catch (e: Exception) {
             throw IOException(e)
         }
+    }
+
+    private fun extractFromZip(inputStream: java.io.InputStream): ByteArray {
+        java.util.zip.ZipInputStream(inputStream).use { zip ->
+            var entry = zip.nextEntry
+            while (entry != null) {
+                val name = entry.name.substringAfterLast('/')
+                if (name.equals("backup.proto.gz", ignoreCase = true) ||
+                    name.endsWith(".proto.gz", ignoreCase = true)
+                ) {
+                    val entryBytes = zip.readBytes()
+                    return GZIPInputStream(entryBytes.inputStream()).use { it.readBytes() }
+                } else if (name.equals("backup.proto", ignoreCase = true) ||
+                    name.endsWith(".proto", ignoreCase = true)
+                ) {
+                    return zip.readBytes()
+                }
+                entry = zip.nextEntry
+            }
+        }
+        throw IOException("No valid backup file found inside ZIP archive")
     }
 }

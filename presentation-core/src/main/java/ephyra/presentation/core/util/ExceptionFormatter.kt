@@ -6,13 +6,22 @@ import ephyra.core.common.util.system.isOnline
 import ephyra.domain.source.model.NoResultsException
 import ephyra.domain.source.model.SourceNotInstalledException
 import eu.kanade.tachiyomi.network.HttpException
+import eu.kanade.tachiyomi.network.interceptor.CloudflareChallengeException
 import java.net.UnknownHostException
 
 context(context: Context)
 val Throwable.formattedMessage: String
     get() {
         when (this) {
-            is HttpException -> return context.stringResource(ephyra.app.core.common.R.string.exception_http, code)
+            is CloudflareChallengeException -> return context.stringResource(
+                ephyra.app.core.common.R.string.information_cloudflare_challenge,
+            )
+            is HttpException -> {
+                if (code == 403 || code == 503) {
+                    return context.stringResource(ephyra.app.core.common.R.string.information_cloudflare_challenge)
+                }
+                return context.stringResource(ephyra.app.core.common.R.string.exception_http, code)
+            }
             is UnknownHostException -> {
                 return if (!context.isOnline()) {
                     context.stringResource(ephyra.app.core.common.R.string.exception_offline)

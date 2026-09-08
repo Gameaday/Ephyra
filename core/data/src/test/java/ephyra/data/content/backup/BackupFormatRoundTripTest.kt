@@ -140,4 +140,66 @@ class BackupFormatRoundTripTest {
         assertEquals(listOf(true, false), chapters.map { it.read })
         assertEquals(listOf(false, true), chapters.map { it.bookmark })
     }
+
+    @Test
+    fun `zip tachibk archive containing backup proto gz decodes properly`() {
+        val original = sampleBackup()
+        val protoBytes = protoBuf.encodeToByteArray(Backup.serializer(), original)
+        val gzipBytes = ByteArrayOutputStream().use { raw ->
+            GZIPOutputStream(raw).use { gzip -> gzip.write(protoBytes) }
+            raw.toByteArray()
+        }
+
+        // Build a ZIP container matching Mihon / modern Tachiyomi .tachibk
+        val zipBytes = ByteArrayOutputStream().use { byteOut ->
+            java.util.zip.ZipOutputStream(byteOut).use { zip ->
+                zip.putNextEntry(java.util.zip.ZipEntry("backup.proto.gz"))
+                zip.write(gzipBytes)
+                zip.closeEntry()
+
+                // Optional dummy cover entry to simulate full archive
+                zip.putNextEntry(java.util.zip.ZipEntry("covers/berserk.jpg"))
+                zip.write(byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte()))
+                zip.closeEntry()
+            }
+            byteOut.toByteArray()
+        }
+
+        assertTrue("ZIP magic bytes expected", zipBytes[0] == 0x50.toByte() && zipBytes[1] == 0x4B.toByte())
+
+        val decoder = BackupDecoder(
+            context = ApplicationProvider.getApplicationContext(),
+            protoBuf = protoBuf,
+        )
+        val restored = decoder.decode(ByteArrayInputStream(zipBytes))
+
+        assertEquals(1, restored.backupManga.size)
+        assertEquals("Berserk", restored.backupManga.single().title)
+        assertEquals(2, restored.backupManga.single().chapters.size)
+        assertEquals("Reading", restored.backupCategories.single().name)
+    }
+
+    @Test
+    fun `zip tachibk archive containing uncompressed backup proto decodes properly`() {
+        val original = sampleBackup()
+        val protoBytes = protoBuf.encodeToByteArray(Backup.serializer(), original)
+
+        val zipBytes = ByteArrayOutputStream().use { byteOut ->
+            java.util.zip.ZipOutputStream(byteOut).use { zip ->
+                zip.putNextEntry(java.util.zip.ZipEntry("backup.proto"))
+                zip.write(protoBytes)
+                zip.closeEntry()
+            }
+            byteOut.toByteArray()
+        }
+
+        val decoder = BackupDecoder(
+            context = ApplicationProvider.getApplicationContext(),
+            protoBuf = protoBuf,
+        )
+        val restored = decoder.decode(ByteArrayInputStream(zipBytes))
+
+        assertEquals(1, restored.backupManga.size)
+        assertEquals("Berserk", restored.backupManga.single().title)
+    }
 }

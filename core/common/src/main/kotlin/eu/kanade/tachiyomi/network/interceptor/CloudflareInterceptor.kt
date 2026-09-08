@@ -31,15 +31,28 @@ class CloudflareInterceptor(
 
     override fun shouldIntercept(response: Response): Boolean {
         // Check if Cloudflare anti-bot is on
-        return if (response.code in ERROR_CODES && response.header("Server") in SERVER_CHECK) {
+        val isCloudflareResponse = response.code in ERROR_CODES && (
+            response.header("Server") in SERVER_CHECK ||
+                response.header("cf-ray") != null ||
+                response.header("cf-cache-status") != null ||
+                response.header("cf-mitigated") == "challenge"
+            )
+        return if (isCloudflareResponse) {
+            val body = response.peekBody(Long.MAX_VALUE).string()
             val document = Jsoup.parse(
-                response.peekBody(Long.MAX_VALUE).string(),
+                body,
                 response.request.url.toString(),
             )
 
-            // solve with webview only on captcha, not on geo block
+            // solve with webview on captcha / Turnstile challenges, not on permanent geo block
             document.getElementById("challenge-error-title") != null ||
-                document.getElementById("challenge-error-text") != null
+                document.getElementById("challenge-error-text") != null ||
+                document.getElementById("challenge-stage") != null ||
+                document.getElementById("turnstile-wrapper") != null ||
+                document.getElementById("cf-turnstile") != null ||
+                "window._cf_chl_opt" in body ||
+                "cf-turnstile" in body ||
+                "cf-challenge" in body
         } else {
             false
         }
@@ -62,9 +75,10 @@ class CloudflareInterceptor(
         // Because OkHttp's enqueue only handles IOExceptions, wrap the exception so that
         // we don't crash the entire app
         catch (e: CloudflareBypassException) {
-            throw IOException(
-                context.stringResource(ephyra.app.core.common.R.string.information_cloudflare_bypass_failure),
-                e,
+            throw CloudflareChallengeException(
+                url = request.url.toString(),
+                message = context.stringResource(ephyra.app.core.common.R.string.information_cloudflare_challenge),
+                cause = e,
             )
         } catch (e: Exception) {
             throw IOException(e)
@@ -153,8 +167,18 @@ class CloudflareInterceptor(
     }
 }
 
+private val COOKIE_NAMES = listOf("cf_clearance")
 private val ERROR_CODES = listOf(403, 503)
 private val SERVER_CHECK = arrayOf("cloudflare-nginx", "cloudflare")
-private val COOKIE_NAMES = listOf("cf_clearance")
 
 private class CloudflareBypassException : Exception()
+
+/**
+ * Thrown when a request is blocked by Cloudflare anti-bot verification (Turnstile / Managed Challenge).
+ * Carries the challenge [url] to allow presentation layers to offer a direct WebView verification action.
+ */
+class CloudflareChallengeException(
+    val url: String,
+    message: String,
+    cause: Throwable? = null,
+) : IOException(message, cause)

@@ -1530,8 +1530,11 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideWorkScheduler(@ApplicationContext context: Context): ephyra.app.data.scheduler.WorkSchedulerImpl {
-        return ephyra.app.data.scheduler.WorkSchedulerImpl(context)
+    fun provideWorkScheduler(
+        @ApplicationContext context: Context,
+        libraryPreferences: LibraryPreferences,
+    ): ephyra.app.data.scheduler.WorkSchedulerImpl {
+        return ephyra.app.data.scheduler.WorkSchedulerImpl(context, libraryPreferences)
     }
 
     @Provides

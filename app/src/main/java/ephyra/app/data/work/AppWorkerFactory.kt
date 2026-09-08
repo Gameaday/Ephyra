@@ -74,6 +74,7 @@ interface WorkerFactoryEntryPoint {
     fun libraryPreferences(): LibraryPreferences
     fun getUpdates(): GetUpdates
     fun dynamicScraperUpdater(): DynamicScraperUpdater
+    fun extensionApi(): ephyra.app.extension.api.ExtensionApi
 }
 
 /**
@@ -154,6 +155,11 @@ class AppWorkerFactory : WorkerFactory() {
                 appContext,
                 workerParameters,
                 entryPoint.dynamicScraperUpdater(),
+            )
+            ephyra.app.extension.ExtensionUpdateWorker::class.java.name -> ephyra.app.extension.ExtensionUpdateWorker(
+                appContext,
+                workerParameters,
+                entryPoint.extensionApi(),
             )
             else -> null
         }
