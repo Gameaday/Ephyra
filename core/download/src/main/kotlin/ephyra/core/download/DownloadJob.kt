@@ -2,9 +2,11 @@ package ephyra.core.download
 
 import android.content.Context
 import android.content.pm.ServiceInfo
+import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
 import androidx.work.ForegroundInfo
+import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
@@ -18,12 +20,14 @@ import ephyra.core.common.util.system.notificationBuilder
 import ephyra.core.common.util.system.setForegroundSafely
 import ephyra.data.notification.Notifications
 import ephyra.domain.download.service.DownloadPreferences
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combineTransform
-import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 
 /**
  * This worker is used to manage the downloader. The system can decide to stop the worker, in
@@ -49,31 +53,45 @@ class DownloadJob(
     }
 
     override suspend fun doWork(): Result {
-        var networkCheck = checkNetworkState(
-            context.activeNetworkState(),
-            downloadPreferences.downloadOnlyOverWifi().get(),
-        )
-        var active = networkCheck && downloadManager.downloaderStart()
+        val requireWifi = downloadPreferences.downloadOnlyOverWifi().get()
+        if (!checkNetworkState(context.activeNetworkState(), requireWifi)) {
+            return Result.failure()
+        }
 
-        if (!active) {
+        if (!downloadManager.downloaderStart()) {
             return Result.failure()
         }
 
         setForegroundSafely()
 
-        coroutineScope {
-            combineTransform(
-                context.networkStateFlow(),
-                downloadPreferences.downloadOnlyOverWifi().changes(),
-                transform = { a, b -> emit(checkNetworkState(a, b)) },
-            )
-                .onEach { networkCheck = it }
-                .launchIn(this)
-        }
+        try {
+            coroutineScope {
+                // Monitor network changes and preference changes concurrently
+                launch {
+                    combine(
+                        context.networkStateFlow(),
+                        downloadPreferences.downloadOnlyOverWifi().changes(),
+                    ) { state, wifiOnly ->
+                        checkNetworkState(state, wifiOnly)
+                    }.collect { isAllowed ->
+                        if (!isAllowed) {
+                            this@coroutineScope.cancel()
+                        }
+                    }
+                }
 
-        // Keep the worker running when needed
-        while (active) {
-            active = !isStopped && downloadManager.isRunning && networkCheck
+                // Suspend until downloader finishes processing all items or is stopped
+                launch {
+                    downloadManager.isRunningFlow.first { !it }
+                    this@coroutineScope.cancel()
+                }
+            }
+        } catch (_: CancellationException) {
+            // Cancelled when downloader stopped, network dropped, or WorkManager stopped the job
+        } finally {
+            if (downloadManager.isRunning) {
+                downloadManager.downloaderStop()
+            }
         }
 
         return Result.success()
@@ -99,9 +117,15 @@ class DownloadJob(
     companion object {
         private const val TAG = "Downloader"
 
-        fun start(context: Context) {
+        fun start(context: Context, wifiOnly: Boolean = false) {
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(if (wifiOnly) NetworkType.UNMETERED else NetworkType.CONNECTED)
+                .setRequiresStorageNotLow(true)
+                .build()
+
             val request = OneTimeWorkRequestBuilder<DownloadJob>()
                 .addTag(TAG)
+                .setConstraints(constraints)
                 .build()
             WorkManager.getInstance(context)
                 .enqueueUniqueWork(TAG, ExistingWorkPolicy.REPLACE, request)

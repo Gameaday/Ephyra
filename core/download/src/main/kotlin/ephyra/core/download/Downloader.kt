@@ -30,6 +30,7 @@ import ephyra.domain.manga.model.getComicInfo
 import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.track.interactor.GetTracks
+import eu.kanade.tachiyomi.network.HttpException
 import eu.kanade.tachiyomi.source.UnmeteredSource
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.online.HttpSource
@@ -105,11 +106,14 @@ class Downloader(
     private val scope = CoroutineScope(SupervisorJob() + ioDispatcher)
     private var downloaderJob: Job? = null
 
+    private val _isRunning = MutableStateFlow(false)
+    val isRunningFlow = _isRunning.asStateFlow()
+
     /**
      * Whether the downloader is running.
      */
     val isRunning: Boolean
-        get() = downloaderJob?.isActive ?: false
+        get() = _isRunning.value
 
     /**
      * Whether the downloader is paused
@@ -198,48 +202,53 @@ class Downloader(
     private fun launchDownloaderJob() {
         if (isRunning) return
 
+        _isRunning.value = true
         downloaderJob = scope.launch {
-            val activeDownloadsFlow = combine(
-                queueState,
-                downloadPreferences.parallelSourceLimit().changes(),
-            ) { a, b -> a to b }.transformLatest { (queue, parallelCount) ->
-                while (true) {
-                    val activeDownloads = queue.asSequence()
-                        // Ignore completed downloads, leave them in the queue
-                        .filter { it.status.value <= Download.State.DOWNLOADING.value }
-                        .groupBy { it.source }
-                        .toList()
-                        .take(parallelCount)
-                        .map { (_, downloads) -> downloads.first() }
-                    emit(activeDownloads)
+            try {
+                val activeDownloadsFlow = combine(
+                    queueState,
+                    downloadPreferences.parallelSourceLimit().changes(),
+                ) { a, b -> a to b }.transformLatest { (queue, parallelCount) ->
+                    while (true) {
+                        val activeDownloads = queue.asSequence()
+                            // Ignore completed downloads, leave them in the queue
+                            .filter { it.status.value <= Download.State.DOWNLOADING.value }
+                            .groupBy { it.source }
+                            .toList()
+                            .take(parallelCount)
+                            .map { (_, downloads) -> downloads.first() }
+                        emit(activeDownloads)
 
-                    if (activeDownloads.isEmpty()) break
-                    // Suspend until a download enters the ERROR state
-                    val activeDownloadsErroredFlow =
-                        combine(activeDownloads.map(Download::statusFlow)) { states ->
-                            states.contains(Download.State.ERROR)
-                        }.filter { it }
-                    activeDownloadsErroredFlow.first()
-                }
-            }
-                .distinctUntilChanged()
-
-            // Use supervisorScope to cancel child jobs when the downloader job is cancelled
-            supervisorScope {
-                val downloadJobs = mutableMapOf<Download, Job>()
-
-                activeDownloadsFlow.collectLatest { activeDownloads ->
-                    val downloadJobsToStop = downloadJobs.filter { it.key !in activeDownloads }
-                    downloadJobsToStop.forEach { (download, job) ->
-                        job.cancel()
-                        downloadJobs.remove(download)
-                    }
-
-                    val downloadsToStart = activeDownloads.filter { it !in downloadJobs }
-                    downloadsToStart.forEach { download ->
-                        downloadJobs[download] = launchDownloadJob(download)
+                        if (activeDownloads.isEmpty()) break
+                        // Suspend until a download enters the ERROR state
+                        val activeDownloadsErroredFlow =
+                            combine(activeDownloads.map(Download::statusFlow)) { states ->
+                                states.contains(Download.State.ERROR)
+                            }.filter { it }
+                        activeDownloadsErroredFlow.first()
                     }
                 }
+                    .distinctUntilChanged()
+
+                // Use supervisorScope to cancel child jobs when the downloader job is cancelled
+                supervisorScope {
+                    val downloadJobs = mutableMapOf<Download, Job>()
+
+                    activeDownloadsFlow.collectLatest { activeDownloads ->
+                        val downloadJobsToStop = downloadJobs.filter { it.key !in activeDownloads }
+                        downloadJobsToStop.forEach { (download, job) ->
+                            job.cancel()
+                            downloadJobs.remove(download)
+                        }
+
+                        val downloadsToStart = activeDownloads.filter { it !in downloadJobs }
+                        downloadsToStart.forEach { download ->
+                            downloadJobs[download] = launchDownloadJob(download)
+                        }
+                    }
+                }
+            } finally {
+                _isRunning.value = false
             }
         }
     }
@@ -269,6 +278,7 @@ class Downloader(
     private fun cancelDownloaderJob() {
         downloaderJob?.cancel()
         downloaderJob = null
+        _isRunning.value = false
     }
 
     /**
@@ -312,7 +322,7 @@ class Downloader(
                 ) {
                     // Skip warning for now or use an interface if needed
                 }
-                DownloadJob.start(context)
+                DownloadJob.start(context, downloadPreferences.downloadOnlyOverWifi().getSync())
             }
         }
     }
@@ -332,12 +342,9 @@ class Downloader(
 
         val availSpace = DiskUtil.getAvailableStorageSpace(mangaDir)
         if (availSpace != -1L && availSpace < MIN_DISK_SPACE) {
-            download.status = Download.State.ERROR
+            pause()
             notifier.onError(
                 context.stringResource(ephyra.app.core.common.R.string.download_insufficient_space),
-                download.chapter.name,
-                download.manga.title,
-                download.manga.id,
             )
             return
         }
@@ -536,9 +543,15 @@ class Downloader(
             }
             emit(file)
         }
-            // Retry 3 times, waiting 2, 4 and 8 seconds between attempts.
-            .retryWhen { _, attempt ->
-                if (attempt < 3) {
+            // Retry transient network errors up to 3 times, waiting 2, 4 and 8 seconds between attempts.
+            .retryWhen { cause, attempt ->
+                if (cause is CancellationException) return@retryWhen false
+                val isTransient = when (cause) {
+                    is IOException -> true
+                    is HttpException -> cause.code == 429 || cause.code >= 500
+                    else -> false
+                }
+                if (isTransient && attempt < 3) {
                     delay((2L shl attempt.toInt()) * 1000)
                     true
                 } else {

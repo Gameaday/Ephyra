@@ -68,6 +68,9 @@ class DownloadManager(
     override val isDownloaderRunning
         get() = DownloadJob.isRunningFlow(context)
 
+    val isRunningFlow: Flow<Boolean>
+        get() = downloader.isRunningFlow
+
     /**
      * Tells the downloader to begin downloads.
      */
@@ -77,7 +80,7 @@ class DownloadManager(
         if (DownloadJob.isRunning(context)) {
             downloader.start()
         } else {
-            DownloadJob.start(context)
+            DownloadJob.start(context, downloadPreferences.downloadOnlyOverWifi().getSync())
         }
     }
 

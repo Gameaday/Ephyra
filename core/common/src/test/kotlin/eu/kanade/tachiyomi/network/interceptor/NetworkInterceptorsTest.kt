@@ -227,4 +227,96 @@ class NetworkInterceptorsTest {
             "CloudflareInterceptor must not intercept non-Cloudflare 403 responses"
         }
     }
+
+    // ── RateLimitBackoffInterceptor Tests ────────────────────────────────────
+
+    @Test
+    fun `RateLimitBackoffInterceptor proceeds normally on 200 OK`() {
+        val interceptor = RateLimitBackoffInterceptor()
+        val mockChain = mockk<Interceptor.Chain>()
+        val request = Request.Builder().url("https://api.source.com/manga").build()
+        val response = Response.Builder()
+            .request(request)
+            .protocol(okhttp3.Protocol.HTTP_1_1)
+            .code(200)
+            .message("OK")
+            .body("{}".toResponseBody("application/json".toMediaType()))
+            .build()
+
+        every { mockChain.request() } returns request
+        every { mockChain.proceed(request) } returns response
+
+        val result = interceptor.intercept(mockChain)
+        assertEquals(200, result.code)
+    }
+
+    @Test
+    fun `RateLimitBackoffInterceptor records 429 and blocks immediate subsequent requests`() {
+        val interceptor = RateLimitBackoffInterceptor()
+        val mockChain = mockk<Interceptor.Chain>()
+        val request = Request.Builder().url("https://rate-limited.com/chapter").build()
+        val response429 = Response.Builder()
+            .request(request)
+            .protocol(okhttp3.Protocol.HTTP_1_1)
+            .code(429)
+            .message("Too Many Requests")
+            .header("Retry-After", "30")
+            .body("{}".toResponseBody("application/json".toMediaType()))
+            .build()
+
+        every { mockChain.request() } returns request
+        every { mockChain.proceed(request) } returns response429
+
+        // First request receives 429
+        val result = interceptor.intercept(mockChain)
+        assertEquals(429, result.code)
+
+        // Second request to same host within 30s backoff should fail fast
+        val ex = assertThrows(IOException::class.java) {
+            interceptor.intercept(mockChain)
+        }
+        assertTrue(ex.message!!.contains("rate-limit active for rate-limited.com")) {
+            "Should throw IOException indicating active rate-limit backoff"
+        }
+    }
+
+    @Test
+    fun `RateLimitBackoffInterceptor backoff is scoped per host`() {
+        val interceptor = RateLimitBackoffInterceptor()
+        val chainHostA = mockk<Interceptor.Chain>()
+        val chainHostB = mockk<Interceptor.Chain>()
+
+        val requestA = Request.Builder().url("https://host-a.com/page").build()
+        val requestB = Request.Builder().url("https://host-b.com/page").build()
+
+        val response429 = Response.Builder()
+            .request(requestA)
+            .protocol(okhttp3.Protocol.HTTP_1_1)
+            .code(429)
+            .message("Too Many Requests")
+            .header("Retry-After", "60")
+            .body("{}".toResponseBody("application/json".toMediaType()))
+            .build()
+
+        val response200 = Response.Builder()
+            .request(requestB)
+            .protocol(okhttp3.Protocol.HTTP_1_1)
+            .code(200)
+            .message("OK")
+            .body("{}".toResponseBody("application/json".toMediaType()))
+            .build()
+
+        every { chainHostA.request() } returns requestA
+        every { chainHostA.proceed(requestA) } returns response429
+
+        every { chainHostB.request() } returns requestB
+        every { chainHostB.proceed(requestB) } returns response200
+
+        // Host A gets 429
+        interceptor.intercept(chainHostA)
+
+        // Host B should NOT be blocked
+        val resultB = interceptor.intercept(chainHostB)
+        assertEquals(200, resultB.code)
+    }
 }

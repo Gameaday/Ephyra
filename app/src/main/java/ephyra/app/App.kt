@@ -18,6 +18,7 @@ import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
+import coil3.disk.DiskCache
 import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.allowRgb565
@@ -70,6 +71,8 @@ import kotlinx.coroutines.flow.onEach
 import logcat.AndroidLogcatLogger
 import logcat.LogPriority
 import logcat.LogcatLogger
+import okio.Path.Companion.toOkioPath
+import java.io.File
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -339,6 +342,19 @@ class App :
                     .maxSizePercent(context)
                     .build(),
             )
+
+            diskCache {
+                DiskCache.Builder()
+                    .directory(File(cacheDir, "image_cache").toOkioPath())
+                    .maxSizeBytes(
+                        when (DeviceUtil.performanceTier(this@App)) {
+                            DeviceUtil.PerformanceTier.LOW -> 50L * 1024 * 1024 // 50 MiB
+                            DeviceUtil.PerformanceTier.MEDIUM -> 150L * 1024 * 1024 // 150 MiB
+                            DeviceUtil.PerformanceTier.HIGH -> 300L * 1024 * 1024 // 300 MiB
+                        },
+                    )
+                    .build()
+            }
 
             crossfade((300 * this@App.animatorDurationScale).toInt())
             val lowRam = DeviceUtil.isLowRamDevice(this@App)
