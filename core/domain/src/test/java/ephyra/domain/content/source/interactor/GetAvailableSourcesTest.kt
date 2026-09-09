@@ -30,15 +30,15 @@ import org.junit.jupiter.api.Test
 
 class GetAvailableSourcesTest {
 
-    private val sourceManager: SourceManager = mockk()
-    private val extensionManager: ExtensionManager = mockk()
-    private val orchestrator: ContentSourceOrchestrator = mockk()
-    private val profileCache: SourceProfileCache = mockk()
-    private val preferenceStore: PreferenceStore = mockk()
-    private val sourcePreferences: SourcePreferences = mockk()
+    private val sourceManager: SourceManager = mockk(relaxed = true)
+    private val extensionManager: ExtensionManager = mockk(relaxed = true)
+    private val orchestrator: ContentSourceOrchestrator = mockk(relaxed = true)
+    private val profileCache: SourceProfileCache = mockk(relaxed = true)
+    private val preferenceStore: PreferenceStore = mockk(relaxed = true)
+    private val sourcePreferences: SourcePreferences = mockk(relaxed = true)
 
-    private val disabledSourcesPref: Preference<Set<String>> = mockk()
-    private val profiledDomainsPref: Preference<Set<String>> = mockk()
+    private val disabledSourcesPref: Preference<Set<String>> = mockk(relaxed = true)
+    private val profiledDomainsPref: Preference<Set<String>> = mockk(relaxed = true)
 
     private val catalogueSourcesFlow = MutableStateFlow<List<CatalogueSource>>(emptyList())
     private val installedExtensionsFlow = MutableStateFlow<List<Extension.Installed>>(emptyList())
