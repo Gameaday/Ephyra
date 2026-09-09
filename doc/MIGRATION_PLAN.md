@@ -293,3 +293,30 @@ Replace SQLDelight with Room and resolve widget render loops:
    `Migration` objects before any production schema change.
 2. **SQLDelight backup retirement** — backup restorer/creator classes still depend on
    `DatabaseHandler`. Requires domain interactor coverage first.
+
+## Phase 12: UDF Completion Audit 🔍
+
+Full-VM inventory sweep (49 ViewModels) verifying Event → `onEvent()`, Effect collection in
+`LaunchedEffect`, and state collection via `collectAsStateWithLifecycle()`.
+
+### Audit results (September 2026)
+
+| ViewModel | UDF | Notes |
+|---|---|---|
+| All feature ViewModels (manga, reader, library, browse, history, updates, category, download, stats, upcoming, migration, more, webview, player) | ✅ | Extend `BaseUdfViewModel`, events and effects fully wired. |
+| `GlobalSearchViewModel` | ✅ | Extends UDF `SearchViewModel` (inherits `onEvent`); adds suggestions flow. |
+| `SearchViewModel` | ✅ | UDF base, manually constructed (not `@HiltViewModel`) — intentional, it is instantiated by `GlobalSearchViewModel` / migration screens. |
+| `MigrateSearchViewModel` | ❌ | Plain `@HiltViewModel` — candidate for UDF conversion. |
+| `ReaderSettingsViewModel` | ❌ | Activity-scoped settings helper, not a screen ViewModel — exempt by design. |
+| 10 `Settings*ViewModel`s | ⚠️ | Plain `@HiltViewModel` with preference bindings; acceptable for settings screens, revisit if dialogs need effects. |
+
+### Follow-up items
+
+- [ ] Convert `MigrateSearchViewModel` to `BaseUdfViewModel`.
+- [ ] Resolve `TODO`s in `MangaScreen.performSearch` / `performGenreSearch` — tag/genre taps
+  currently always route to `GlobalSearch`; they should route to the source-scoped search when
+  `fromSource` is set.
+- [ ] Regression guard: keep the `okhttp-zstd` dependency pinned to `okhttp_version` (added in
+  `core:common`) — extension APKs resolve `okhttp3.zstd.*` against the host classpath.
+- [ ] Measure global-search latency after the zstd fix before tuning `SearchViewModel`
+  parallelism (`Dispatchers.IO.limitedParallelism(5)`) or the 45s `ExtensionCallBoundary` timeout.

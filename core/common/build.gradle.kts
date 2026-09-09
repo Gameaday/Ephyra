@@ -30,6 +30,10 @@ dependencies {
     api(libs.okhttp.logging)
     api(libs.okhttp.brotli)
     api(libs.okhttp.dnsoverhttps)
+    // Provides okhttp3.zstd.* classes that dynamically loaded extension APKs are compiled
+    // against. Without this, any source call touching zstd decompression fails with
+    // NoClassDefFoundError: Lokhttp3/zstd/Zstd; (wrapped by ExtensionCallBoundary).
+    api(libs.okhttp.zstd)
     api(libs.okio)
 
     implementation(libs.image.decoder)

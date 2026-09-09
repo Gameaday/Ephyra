@@ -2,6 +2,7 @@ package ephyra.feature.manga.interactor
 
 import ephyra.core.common.extension.runExtensionCall
 import ephyra.core.common.preference.TriState
+import ephyra.core.common.util.system.logcat
 import ephyra.domain.chapter.interactor.FilterChaptersForDownload
 import ephyra.domain.chapter.interactor.SetMangaDefaultChapterFlags
 import ephyra.domain.chapter.interactor.SetReadStatus
@@ -17,6 +18,7 @@ import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.toSManga
 import eu.kanade.tachiyomi.source.Source
+import logcat.LogPriority
 import javax.inject.Inject
 
 class MangaChapterInteractor @Inject constructor(
@@ -103,12 +105,23 @@ class MangaChapterInteractor @Inject constructor(
                 source.getMangaDetails(sManga)
             }
             updateManga.awaitUpdateFromSource(manga, networkManga, manualFetch = manualFetch)
+        }.onFailure { e ->
+            // Never silent: a failed details fetch used to leave the screen showing stale
+            // metadata with zero feedback (e.g. when the extension's network call fails).
+            logcat(LogPriority.ERROR, e) { "Failed to fetch manga details from source '${source.name}'" }
+            if (manualFetch) throw e
         }
         val sourceChapters = runCatching {
             runExtensionCall(sourceName = source.name) {
                 source.getChapterList(sManga)
             }
-        }.getOrElse { chapters.map { it.toSChapter() } }
+        }.getOrElse { e ->
+            logcat(LogPriority.ERROR, e) { "Failed to fetch chapter list from source '${source.name}'" }
+            if (manualFetch) throw e
+            // Background refresh: fall back to the currently known local chapters so an
+            // offline/broken source never wipes the chapter list.
+            chapters.map { it.toSChapter() }
+        }
         return syncChaptersWithSource.await(
             sourceChapters,
             manga,

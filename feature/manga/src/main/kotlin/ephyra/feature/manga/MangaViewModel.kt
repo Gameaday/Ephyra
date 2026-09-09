@@ -206,6 +206,13 @@ class MangaViewModel @Inject constructor(
                 )
             }.onFailure { e ->
                 logcat(LogPriority.ERROR, e) { "Failed to fetch chapters from source" }
+                if (manualFetch) {
+                    emitEffect(
+                        MangaScreenEffect.ShowToast(
+                            e.message ?: "Failed to fetch chapters from source '${source.name}'",
+                        ),
+                    )
+                }
             }
         }
     }
