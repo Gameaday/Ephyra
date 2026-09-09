@@ -23,3 +23,20 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
     }
 }
 
+// Test configuration for faster CI builds
+tasks.withType<Test>().configureEach {
+    // Speed up test execution with parallel execution
+    maxParallelForks = if (System.getenv("CI") != null) 2 else Runtime.getRuntime().availableProcessors()
+    // Enable test result caching
+    outputs.upToDateWhen { true }
+    // Set test timeout to prevent hanging tests
+    timeout.set(java.time.Duration.ofMinutes(10))
+    // Show test progress
+    testLogging {
+        events("passed", "skipped", "failed")
+        showExceptions = true
+        showCauses = true
+        showStackTraces = true
+    }
+}
+

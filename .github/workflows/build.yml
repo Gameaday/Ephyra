@@ -42,13 +42,18 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        with:
+          # Enable build cache for faster builds
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+          # Enable Gradle build cache
+          gradle-home-cache-cleanup: true
 
       - name: Restore google-services.json
         if: ${{ env.GOOGLE_SERVICES_JSON != '' }}
         run: echo "$GOOGLE_SERVICES_JSON" | base64 --decode > app/google-services.json
 
       - name: Check code format
-        run: ./gradlew spotlessCheck
+        run: ./gradlew spotlessCheck --build-cache --parallel
 
       - name: Architecture fitness – no android.* imports in domain modules
         run: |

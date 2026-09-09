@@ -4,8 +4,6 @@ import ephyra.domain.chapter.model.Chapter
 import io.kotest.matchers.shouldBe
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.parallel.Execution
-import org.junit.jupiter.api.parallel.ExecutionMode
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import kotlin.time.Duration
@@ -15,12 +13,11 @@ import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 import kotlin.time.toJavaDuration
 
-@Execution(ExecutionMode.CONCURRENT)
 class FetchIntervalTest {
 
     private val testTime = ZonedDateTime.parse("2020-01-01T00:00:00Z")
     private val testZoneId = ZoneOffset.UTC
-    private var chapter = Chapter.create().copy(
+    private val chapter = Chapter.create().copy(
         dateFetch = testTime.toEpochSecond() * 1000,
         dateUpload = testTime.toEpochSecond() * 1000,
     )
