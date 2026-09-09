@@ -23,11 +23,13 @@ import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.service.getChapterSort
 import ephyra.domain.download.model.Download
 import ephyra.domain.download.service.DownloadManager
+import ephyra.domain.jellyfin.interactor.SyncJellyfin
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.interactor.GetDuplicateLibraryManga
 import ephyra.domain.manga.interactor.GetExcludedScanlators
 import ephyra.domain.manga.interactor.GetMangaWithChapters
 import ephyra.domain.manga.model.Manga
+import ephyra.domain.manga.model.MangaUpdate
 import ephyra.domain.manga.model.MangaWithChapterCount
 import ephyra.domain.manga.model.applyFilter
 import ephyra.domain.manga.model.chaptersFiltered
@@ -179,15 +181,48 @@ class MangaViewModel @Inject constructor(
         }
     }
 
-    fun toggleFavorite() {
+    fun toggleFavorite() = toggleFavoriteInternal(checkDuplicate = true)
+
+    /**
+     * Toggles the favorite state. When adding to the library, optionally checks for
+     * duplicates first and shows the duplicate-manga dialog instead of silently adding.
+     */
+    private fun toggleFavoriteInternal(checkDuplicate: Boolean) {
         val manga = manga ?: return
         viewModelScope.launchIO {
-            val favorite = !manga.favorite
-            if (mangaInfoInteractor.updateFavorite(manga.id, favorite)) {
-                mangaInfoInteractor.markJellyfinFavoriteIfLinked(manga, favorite)
-                if (favorite) {
-                    mangaInfoInteractor.syncLibraryAdditionToTrackers(manga)
+            if (checkDuplicate && !manga.favorite) {
+                val duplicates = getDuplicateLibraryManga(manga)
+                if (duplicates.isNotEmpty()) {
+                    updateState { state ->
+                        val success = state as? State.Success ?: return@updateState state
+                        success.copy(dialog = Dialog.DuplicateManga(duplicates))
+                    }
+                    return@launchIO
                 }
+            }
+            setFavorite(manga, !manga.favorite)
+        }
+    }
+
+    private suspend fun setFavorite(manga: Manga, favorite: Boolean) {
+        if (mangaInfoInteractor.updateFavorite(manga.id, favorite)) {
+            mangaInfoInteractor.markJellyfinFavoriteIfLinked(manga, favorite)
+            if (favorite) {
+                mangaInfoInteractor.syncLibraryAdditionToTrackers(manga)
+            }
+        }
+    }
+
+    /** Adds the manga to the selected categories (creating a library entry when needed). */
+    private fun moveMangaToCategoriesAndAddToLibrary(target: Manga, categories: List<Long>) {
+        viewModelScope.launchIO {
+            mangaInfoInteractor.setMangaCategories(target.id, categories)
+            if (!target.favorite) {
+                setFavorite(target, true)
+            }
+            updateState { state ->
+                val success = state as? State.Success ?: return@updateState state
+                success.copy(dialog = null)
             }
         }
     }
@@ -213,6 +248,65 @@ class MangaViewModel @Inject constructor(
                         ),
                     )
                 }
+            }
+        }
+    }
+
+    /** Runs [block] with the current success-state manga on the IO dispatcher, if available. */
+    private fun withSuccessManga(block: suspend (Manga) -> Unit) {
+        val success = successState ?: return
+        viewModelScope.launchIO {
+            block(success.manga)
+        }
+    }
+
+    /** Applies a metadata edit and mirrors it to Jellyfin when linked. */
+    private fun editManga(update: (Manga) -> MangaUpdate) {
+        val manga = manga ?: return
+        viewModelScope.launchIO {
+            mangaInfoInteractor.updateManga(update(manga))
+            mangaInfoInteractor.pushMetadataToJellyfinIfLinked(manga)
+        }
+    }
+
+    private fun onChapterSwipe(
+        item: ChapterList.Item,
+        swipeAction: LibraryPreferences.ChapterSwipeAction,
+    ) {
+        val success = successState ?: return
+        viewModelScope.launchIO {
+            when (swipeAction) {
+                LibraryPreferences.ChapterSwipeAction.ToggleRead -> {
+                    mangaChapterInteractor.markChaptersRead(
+                        chapters = listOf(item.chapter),
+                        read = !item.chapter.read,
+                    )
+                }
+                LibraryPreferences.ChapterSwipeAction.ToggleBookmark -> {
+                    mangaChapterInteractor.bookmarkChapters(
+                        chapters = listOf(item.chapter),
+                        bookmarked = !item.chapter.bookmark,
+                    )
+                }
+                LibraryPreferences.ChapterSwipeAction.Download -> {
+                    when (item.downloadState) {
+                        Download.State.DOWNLOADED -> {
+                            mangaChapterInteractor.deleteChapters(
+                                chapters = listOf(item.chapter),
+                                manga = success.manga,
+                                source = success.source,
+                            )
+                        }
+                        Download.State.NOT_DOWNLOADED, Download.State.ERROR -> {
+                            mangaChapterInteractor.downloadChapters(
+                                chapters = listOf(item.chapter),
+                                manga = success.manga,
+                            )
+                        }
+                        Download.State.QUEUE, Download.State.DOWNLOADING -> {}
+                    }
+                }
+                LibraryPreferences.ChapterSwipeAction.Disabled -> {}
             }
         }
     }
@@ -304,6 +398,19 @@ class MangaViewModel @Inject constructor(
                     success.copy(dialog = Dialog.SetFetchInterval(success.manga))
                 }
             }
+            is MangaScreenEvent.SetFetchInterval -> {
+                viewModelScope.launchIO {
+                    val updatedManga = event.manga.copy(fetchInterval = -event.interval)
+                    mangaInfoInteractor.updateFetchInterval(updatedManga)
+                    updateState { state ->
+                        val success = state as? State.Success ?: return@updateState state
+                        success.copy(
+                            manga = updatedManga,
+                            dialog = null,
+                        )
+                    }
+                }
+            }
             MangaScreenEvent.ShowShareRecommendationDialog -> {
                 viewModelScope.launch {
                     val success = state.value as? State.Success ?: return@launch
@@ -334,7 +441,218 @@ class MangaViewModel @Inject constructor(
             is MangaScreenEvent.FetchAllFromSource -> {
                 fetchAllFromSource(event.manualFetch)
             }
-            else -> {}
+            is MangaScreenEvent.ToggleFavorite -> {
+                toggleFavoriteInternal(event.checkDuplicate)
+            }
+            is MangaScreenEvent.MoveMangaToCategoriesAndAddToLibrary -> {
+                moveMangaToCategoriesAndAddToLibrary(event.manga, event.categories)
+            }
+            is MangaScreenEvent.ChapterSwipe -> {
+                onChapterSwipe(event.chapterItem, event.swipeAction)
+            }
+            is MangaScreenEvent.RunChapterDownloadActions -> {
+                runChapterDownloadActions(event.items, event.action)
+            }
+            is MangaScreenEvent.RunDownloadAction -> {
+                runDownloadAction(event.action)
+            }
+            is MangaScreenEvent.MarkPreviousChapterRead -> {
+                markPreviousChapterRead(event.pointer)
+            }
+            is MangaScreenEvent.MarkChaptersRead -> {
+                viewModelScope.launchIO {
+                    mangaChapterInteractor.markChaptersRead(event.chapters, event.read)
+                }
+            }
+            is MangaScreenEvent.BookmarkChapters -> {
+                viewModelScope.launchIO {
+                    mangaChapterInteractor.bookmarkChapters(event.chapters, event.bookmarked)
+                }
+            }
+            is MangaScreenEvent.DeleteChapters -> {
+                deleteChapters(event.chapters)
+            }
+            is MangaScreenEvent.SetUnreadFilter -> {
+                withSuccessManga { mangaChapterInteractor.setUnreadFilter(it, event.state) }
+            }
+            is MangaScreenEvent.SetDownloadedFilter -> {
+                withSuccessManga { mangaChapterInteractor.setDownloadedFilter(it, event.state) }
+            }
+            is MangaScreenEvent.SetBookmarkedFilter -> {
+                withSuccessManga { mangaChapterInteractor.setBookmarkedFilter(it, event.state) }
+            }
+            is MangaScreenEvent.SetDisplayMode -> {
+                withSuccessManga { mangaChapterInteractor.setDisplayMode(it, event.mode) }
+            }
+            is MangaScreenEvent.SetSorting -> {
+                withSuccessManga { mangaChapterInteractor.setSorting(it, event.sort) }
+            }
+            is MangaScreenEvent.SetCurrentSettingsAsDefault -> {
+                withSuccessManga { mangaChapterInteractor.setCurrentSettingsAsDefault(it, event.applyToExisting) }
+            }
+            MangaScreenEvent.ResetToDefaultSettings -> {
+                withSuccessManga { mangaChapterInteractor.resetToDefaultSettings(it) }
+            }
+            is MangaScreenEvent.EditTitle -> {
+                editManga { MangaUpdate(id = it.id, title = event.value) }
+            }
+            is MangaScreenEvent.EditAuthor -> {
+                editManga { MangaUpdate(id = it.id, author = event.value) }
+            }
+            is MangaScreenEvent.EditArtist -> {
+                editManga { MangaUpdate(id = it.id, artist = event.value) }
+            }
+            is MangaScreenEvent.EditDescription -> {
+                editManga { MangaUpdate(id = it.id, description = event.value) }
+            }
+            is MangaScreenEvent.EditStatus -> {
+                editManga { MangaUpdate(id = it.id, status = event.value) }
+            }
+            is MangaScreenEvent.EditGenres -> {
+                editManga { MangaUpdate(id = it.id, genre = event.value) }
+            }
+            is MangaScreenEvent.ToggleLockedField -> {
+                editManga { MangaUpdate(id = it.id, lockedFields = it.lockedFields xor event.field) }
+            }
+            is MangaScreenEvent.SetLockedFields -> {
+                editManga { MangaUpdate(id = it.id, lockedFields = event.mask) }
+            }
+            is MangaScreenEvent.SetMetadataSource -> {
+                editManga { MangaUpdate(id = it.id, metadataSource = event.sourceId, metadataUrl = event.mangaUrl) }
+            }
+            is MangaScreenEvent.SetExcludedScanlators -> {
+                setExcludedScanlators(event.excludedScanlators)
+            }
+            MangaScreenEvent.RefreshFromAuthority -> {
+                withSuccessManga { mangaInfoInteractor.refreshFromAuthority(it) }
+            }
+            MangaScreenEvent.UnlinkAuthority -> {
+                withSuccessManga { mangaInfoInteractor.unlinkAuthority(it) }
+            }
+            MangaScreenEvent.ResolveCanonicalId -> {
+                // Full-library canonical matching is an explicit library action; resolving a
+                // single manga is deferred until MatchUnlinkedManga exposes a per-manga API.
+            }
+        }
+    }
+
+    private fun runChapterDownloadActions(
+        items: List<ChapterList.Item>,
+        action: ChapterDownloadAction,
+    ) {
+        if (items.isEmpty()) return
+        val success = successState ?: return
+        val chapters = items.map { it.chapter }
+        when (action) {
+            ChapterDownloadAction.START -> {
+                mangaChapterInteractor.downloadChapters(chapters, success.manga)
+            }
+            ChapterDownloadAction.START_NOW -> {
+                viewModelScope.launchIO {
+                    mangaChapterInteractor.downloadChapters(chapters, success.manga)
+                    downloadManager.startDownloadNow(chapters.first().id)
+                }
+            }
+            ChapterDownloadAction.CANCEL -> {
+                viewModelScope.launchIO {
+                    val queued = chapters.mapNotNull { downloadManager.getQueuedDownloadOrNull(it.id) }
+                    downloadManager.cancelQueuedDownloads(queued)
+                }
+            }
+            ChapterDownloadAction.DELETE -> {
+                deleteChapters(chapters)
+            }
+        }
+    }
+
+    private fun runDownloadAction(action: DownloadAction) {
+        val success = successState ?: return
+        viewModelScope.launchIO {
+            val items = success.chapterListItems.filterIsInstance<ChapterList.Item>()
+            when (action) {
+                DownloadAction.NEXT_1_CHAPTER -> downloadNextChapters(items, success.manga, 1)
+                DownloadAction.NEXT_5_CHAPTERS -> downloadNextChapters(items, success.manga, 5)
+                DownloadAction.NEXT_10_CHAPTERS -> downloadNextChapters(items, success.manga, 10)
+                DownloadAction.NEXT_25_CHAPTERS -> downloadNextChapters(items, success.manga, 25)
+                DownloadAction.UNREAD_CHAPTERS -> downloadNextChapters(items, success.manga, null)
+                DownloadAction.BOOKMARKED_CHAPTERS -> {
+                    val chapters = items
+                        .filter { it.chapter.bookmark && it.downloadState == Download.State.NOT_DOWNLOADED }
+                        .map { it.chapter }
+                    mangaChapterInteractor.downloadChapters(chapters, success.manga)
+                }
+                DownloadAction.SYNC_TO_JELLYFIN, DownloadAction.SYNC_ALL_TO_JELLYFIN -> {
+                    syncChaptersToJellyfin(
+                        success.manga,
+                        items.map { it.chapter },
+                        SyncJellyfin.SyncAction.SYNC_ALL_TO_JELLYFIN,
+                    )
+                }
+                DownloadAction.SYNC_READ_TO_JELLYFIN -> {
+                    syncChaptersToJellyfin(
+                        success.manga,
+                        items.map { it.chapter }.filter { it.read },
+                        SyncJellyfin.SyncAction.SYNC_READ_TO_JELLYFIN,
+                    )
+                }
+            }
+        }
+    }
+
+    private suspend fun downloadNextChapters(
+        items: List<ChapterList.Item>,
+        manga: Manga,
+        count: Int?,
+    ) {
+        val chapters = items
+            .filter { !it.chapter.read && it.downloadState == Download.State.NOT_DOWNLOADED }
+            .let { if (count == null) it else it.take(count) }
+            .map { it.chapter }
+        mangaChapterInteractor.downloadChapters(chapters, manga)
+    }
+
+    private suspend fun syncChaptersToJellyfin(
+        manga: Manga,
+        chapters: List<Chapter>,
+        syncAction: SyncJellyfin.SyncAction,
+    ) {
+        val downloadStates = chapters.associate { chapter ->
+            chapter.id to downloadManager.isChapterDownloaded(
+                chapterName = chapter.name,
+                chapterScanlator = chapter.scanlator,
+                chapterUrl = chapter.url,
+                mangaTitle = manga.title,
+                sourceId = manga.source,
+            )
+        }
+        syncJellyfin.syncToJellyfin(manga, chapters, downloadStates, syncAction)
+    }
+
+    /** Marks every chapter displayed above [pointer] (in the current sort order) as read. */
+    private fun markPreviousChapterRead(pointer: Chapter) {
+        val success = successState ?: return
+        val items = success.chapterListItems.filterIsInstance<ChapterList.Item>()
+        val index = items.indexOfFirst { it.chapter.id == pointer.id }
+        if (index <= 0) return
+        val chapters = items.take(index).map { it.chapter }
+        viewModelScope.launchIO {
+            mangaChapterInteractor.markChaptersRead(chapters, true)
+        }
+    }
+
+    private fun deleteChapters(chapters: List<Chapter>) {
+        val success = successState ?: return
+        mangaChapterInteractor.deleteChapters(chapters, success.manga, success.source)
+    }
+
+    private fun setExcludedScanlators(excludedScanlators: Set<String>) {
+        viewModelScope.launchIO {
+            val success = successState ?: return@launchIO
+            mangaInfoInteractor.setExcludedScanlators(success.manga.id, excludedScanlators)
+            updateState { state ->
+                val current = state as? State.Success ?: return@updateState state
+                current.copy(excludedScanlators = excludedScanlators)
+            }
         }
     }
 
