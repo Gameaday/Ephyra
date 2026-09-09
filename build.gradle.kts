@@ -25,7 +25,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 
 // Test configuration for faster CI builds and flaky test resilience
 tasks.withType<Test>().configureEach {
-    // Speed up test execution with parallel execution
+    // Reduce parallelism in CI to avoid resource contention causing flaky failures
     maxParallelForks = if (System.getenv("CI") != null) 2 else Runtime.getRuntime().availableProcessors()
     // Enable test result caching
     outputs.upToDateWhen { true }
