@@ -20,8 +20,102 @@ permissions:
   contents: read
 
 jobs:
+  # Fast feedback: lint + architecture checks (runs in ~2 min)
+  quality:
+    name: Quality Checks
+    runs-on: 'ubuntu-24.04'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up JDK
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.1
+        with:
+          java-version: 21
+          distribution: temurin
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        with:
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+          gradle-home-cache-cleanup: true
+
+      - name: Check code format
+        run: ./gradlew spotlessCheck --build-cache --parallel --no-daemon
+
+      - name: Architecture fitness – no android.* imports in domain modules
+        run: |
+          VIOLATIONS=$(grep -rn --include="*.kt" "^\s*import android\." \
+            core/domain/src domain/src 2>/dev/null || true)
+          if [ -n "$VIOLATIONS" ]; then
+            echo "::error::android.* imports found in domain modules (architectural violation):"
+            echo "$VIOLATIONS"
+            exit 1
+          fi
+
+      - name: Architecture fitness – no Injekt.get()
+        run: |
+          VIOLATIONS=$(grep -rHn --include="*.kt" --exclude-dir="uy" "Injekt\.get(" . || true)
+          if [ -n "$VIOLATIONS" ]; then
+            echo "::error::Injekt.get() found in codebase (use Hilt constructor injection instead):"
+            echo "$VIOLATIONS"
+            exit 1
+          fi
+
+      - name: Architecture fitness – no ephyra.data.* imports in core domain module
+        run: |
+          VIOLATIONS=$(grep -rn --include="*.kt" "^\s*import ephyra\.data\." \
+            core/domain/src 2>/dev/null || true)
+          if [ -n "$VIOLATIONS" ]; then
+            echo "::error::ephyra.data.* imports found in :core:domain (architectural violation):"
+            echo "$VIOLATIONS"
+            exit 1
+          fi
+
+      - name: Architecture fitness – feature module data.* import baseline
+        run: |
+          BASELINE=0
+          VIOLATION_COUNT=$(grep -rn --include="*.kt" "^\s*import ephyra\.data\." feature/*/src 2>/dev/null | wc -l | tr -d ' ')
+          echo "ephyra.data.* imports in feature modules: ${VIOLATION_COUNT} (baseline: ${BASELINE})"
+          if [ "${VIOLATION_COUNT}" -gt "${BASELINE}" ]; then
+            echo "::error::ephyra.data.* import count (${VIOLATION_COUNT}) exceeds baseline (${BASELINE})."
+            echo "::error::Fix the new violations before merging, then lower BASELINE in build.yml."
+            grep -rn --include="*.kt" "^\s*import ephyra\.data\." feature/*/src 2>/dev/null || true
+            exit 1
+          fi
+
+      - name: Architecture fitness – all HomeScreen tabs must call signalReady()
+        run: |
+          TABS=(
+            "feature/library/src/main/kotlin/ephyra/feature/library/LibraryScreen.kt"
+            "feature/updates/src/main/kotlin/ephyra/feature/updates/UpdatesScreen.kt"
+            "feature/history/src/main/kotlin/ephyra/feature/history/HistoryScreen.kt"
+            "feature/browse/src/main/kotlin/ephyra/feature/browse/BrowseScreen.kt"
+            "feature/more/src/main/kotlin/ephyra/feature/more/MoreScreen.kt"
+          )
+          MISSING=()
+          for tab in "${TABS[@]}"; do
+            if [ ! -f "$tab" ]; then
+              MISSING+=("MISSING FILE: $tab")
+            elif ! grep -q "AppReadySignal" "$tab"; then
+              MISSING+=("$tab")
+            fi
+          done
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "::error::The following HomeScreen tabs do not reference AppReadySignal / signalReady():"
+            for f in "${MISSING[@]}"; do
+              echo "::error::  $f"
+            done
+            echo "::error::Add a LaunchedEffect that calls (context as? AppReadySignal)?.signalReady()"
+            echo "::error::when the tab's content has finished loading."
+            exit 1
+          fi
+          echo "All ${#TABS[@]} HomeScreen tabs correctly reference AppReadySignal."
+
+  # Build and test (runs after quality checks pass)
   build:
     name: Build & Test App
+    needs: quality
     runs-on: 'ubuntu-24.04'
     env:
       GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
