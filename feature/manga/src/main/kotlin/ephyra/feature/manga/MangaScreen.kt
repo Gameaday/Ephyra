@@ -193,6 +193,7 @@ fun MangaDetailsScreen(
             scope.launch {
                 performGenreSearch(
                     navController,
+                    successState.source,
                     it,
                 )
             }
@@ -212,6 +213,7 @@ fun MangaDetailsScreen(
             scope.launch {
                 performSearch(
                     navController,
+                    successState.source,
                     query,
                     global,
                 )
@@ -574,6 +576,7 @@ private fun shareManga(context: Context, manga: Manga?, source: Source?) {
 
 private fun performSearch(
     navController: NavController,
+    source: Source,
     query: String,
     global: Boolean,
 ) {
@@ -581,17 +584,24 @@ private fun performSearch(
         navController.navigate(Screen.GlobalSearch(query))
         return
     }
-    // TODO: implement logic to pass search query back if needed, or just navigate to search
-    navController.navigate(Screen.GlobalSearch(query))
+    // Source-scoped search: route through the source's own catalogue so search filters
+    // and language preferences for that source are respected. Local/stub sources have
+    // no catalogue to search.
+    if (!source.isLocalOrStub()) {
+        navController.navigate(Screen.BrowseSource(source.id, query))
+    } else {
+        navController.navigate(Screen.GlobalSearch(query))
+    }
 }
 
 private fun performGenreSearch(
     navController: NavController,
+    source: Source,
     genreName: String,
 ) {
-    // TODO: implement logic to pass genre search query back if needed
     performSearch(
         navController,
+        source,
         genreName,
         global = false,
     )

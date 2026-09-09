@@ -1,4 +1,4 @@
-name: Build & Test
+﻿name: Build & Test
 on:
   pull_request:
     paths:
@@ -43,7 +43,7 @@ jobs:
       - name: Check code format
         run: ./gradlew spotlessCheck --build-cache --parallel --no-daemon
 
-      - name: Architecture fitness – no android.* imports in domain modules
+      - name: Architecture fitness â€“ no android.* imports in domain modules
         run: |
           VIOLATIONS=$(grep -rn --include="*.kt" "^\s*import android\." \
             core/domain/src domain/src 2>/dev/null || true)
@@ -53,7 +53,7 @@ jobs:
             exit 1
           fi
 
-      - name: Architecture fitness – no Injekt.get()
+      - name: Architecture fitness â€“ no Injekt.get()
         run: |
           VIOLATIONS=$(grep -rHn --include="*.kt" --exclude-dir="uy" "Injekt\.get(" . || true)
           if [ -n "$VIOLATIONS" ]; then
@@ -62,7 +62,7 @@ jobs:
             exit 1
           fi
 
-      - name: Architecture fitness – no ephyra.data.* imports in core domain module
+      - name: Architecture fitness â€“ no ephyra.data.* imports in core domain module
         run: |
           VIOLATIONS=$(grep -rn --include="*.kt" "^\s*import ephyra\.data\." \
             core/domain/src 2>/dev/null || true)
@@ -72,7 +72,7 @@ jobs:
             exit 1
           fi
 
-      - name: Architecture fitness – feature module data.* import baseline
+      - name: Architecture fitness â€“ feature module data.* import baseline
         run: |
           BASELINE=0
           VIOLATION_COUNT=$(grep -rn --include="*.kt" "^\s*import ephyra\.data\." feature/*/src 2>/dev/null | wc -l | tr -d ' ')
@@ -84,7 +84,7 @@ jobs:
             exit 1
           fi
 
-      - name: Architecture fitness – all HomeScreen tabs must call signalReady()
+      - name: Architecture fitness â€“ all HomeScreen tabs must call signalReady()
         run: |
           TABS=(
             "feature/library/src/main/kotlin/ephyra/feature/library/LibraryScreen.kt"
@@ -146,105 +146,7 @@ jobs:
         if: ${{ env.GOOGLE_SERVICES_JSON != '' }}
         run: echo "$GOOGLE_SERVICES_JSON" | base64 --decode > app/google-services.json
 
-      - name: Check code format
-        run: ./gradlew spotlessCheck --build-cache --parallel
-
-      - name: Architecture fitness – no android.* imports in domain modules
-        run: |
-          # The :core:domain and :domain modules must remain pure Kotlin with zero
-          # Android imports so that business logic can be tested on the JVM without
-          # an Android runtime. Any android.* import in those source trees is an
-          # architectural violation that must be resolved before merging.
-          VIOLATIONS=$(grep -rn --include="*.kt" "^\s*import android\." \
-            core/domain/src domain/src 2>/dev/null || true)
-          if [ -n "$VIOLATIONS" ]; then
-            echo "::error::android.* imports found in domain modules (architectural violation):"
-            echo "$VIOLATIONS"
-            exit 1
-          fi
-
-      - name: Architecture fitness – no Injekt.get()
-        run: |
-          # The service locator pattern shim (Injekt) has been removed from application code.
-          # Any usage of Injekt.get() in app or feature code is a regression and must be replaced with Hilt constructor injection.
-          # The uy.kohesive.injekt package is strictly a runtime compatibility bridge for external legacy extension APKs.
-          VIOLATIONS=$(grep -rHn --include="*.kt" --exclude-dir="uy" "Injekt\.get(" . || true)
-          if [ -n "$VIOLATIONS" ]; then
-            echo "::error::Injekt.get() found in codebase (use Hilt constructor injection instead):"
-            echo "$VIOLATIONS"
-            exit 1
-          fi
-
-      - name: Architecture fitness – no ephyra.data.* imports in core domain module
-        run: |
-          # The :core:domain module contains domain interactors and must not import
-          # concrete :data implementations.  Interactors must depend only on repository
-          # interfaces defined in :domain.  Any ephyra.data.* import in core/domain/src
-          # is a Dependency Rule violation (domain must not know about the data layer).
-          VIOLATIONS=$(grep -rn --include="*.kt" "^\s*import ephyra\.data\." \
-            core/domain/src 2>/dev/null || true)
-          if [ -n "$VIOLATIONS" ]; then
-            echo "::error::ephyra.data.* imports found in core/domain (architectural violation):"
-            echo "$VIOLATIONS"
-            exit 1
-          fi
-
-      - name: Architecture fitness – data-boundary ratchet (feature modules must not import ephyra.data.*)
-        run: |
-          # Feature modules must not import concrete :data implementations directly.
-          # They should reference only domain interfaces and types.
-          #
-          # All 38 previously-tracked violations have been resolved (data-layer types are now
-          # accessed exclusively through domain interfaces injected by Hilt).  BASELINE is set
-          # to 0 so that any new direct data import in a feature module fails CI immediately.
-          BASELINE=0
-          VIOLATION_COUNT=$(grep -rn --include="*.kt" "^\s*import ephyra\.data\." \
-            feature/*/src 2>/dev/null | wc -l || echo 0)
-          echo "ephyra.data.* imports in feature modules: ${VIOLATION_COUNT} (baseline: ${BASELINE})"
-          if [ "${VIOLATION_COUNT}" -gt "${BASELINE}" ]; then
-            echo "::error::ephyra.data.* import count (${VIOLATION_COUNT}) exceeds baseline (${BASELINE})."
-            echo "::error::Fix the new violations before merging, then lower BASELINE in build.yml."
-            grep -rn --include="*.kt" "^\s*import ephyra\.data\." feature/*/src 2>/dev/null || true
-            exit 1
-          fi
-
-      - name: Architecture fitness – all HomeScreen tabs must call signalReady()
-        run: |
-          # Every composable file that backs a tab in HomeScreen.TABS must call
-          # (context as? AppReadySignal)?.signalReady() so that the splash screen is
-          # dismissed as soon as that tab's content has loaded.  Without this call the
-          # splash stays visible until SPLASH_MAX_DURATION (3 s) elapses and then
-          # dismisses to a blank or still-loading screen — the primary symptom of the
-          # "app silently unresponsive on start" bug class.
-          #
-          # If a tab is added to HomeScreen.TABS without the signalReady() call this
-          # check will fail CI immediately, preventing the regression from reaching users.
-          TABS=(
-            "feature/library/src/main/kotlin/ephyra/feature/library/LibraryScreen.kt"
-            "feature/updates/src/main/kotlin/ephyra/feature/updates/UpdatesScreen.kt"
-            "feature/history/src/main/kotlin/ephyra/feature/history/HistoryScreen.kt"
-            "feature/browse/src/main/kotlin/ephyra/feature/browse/BrowseScreen.kt"
-            "feature/more/src/main/kotlin/ephyra/feature/more/MoreScreen.kt"
-          )
-          MISSING=()
-          for tab in "${TABS[@]}"; do
-            if [ ! -f "$tab" ]; then
-              MISSING+=("MISSING FILE: $tab")
-            elif ! grep -q "AppReadySignal" "$tab"; then
-              MISSING+=("$tab")
-            fi
-          done
-          if [ ${#MISSING[@]} -gt 0 ]; then
-            echo "::error::The following HomeScreen tabs do not reference AppReadySignal / signalReady():"
-            for f in "${MISSING[@]}"; do
-              echo "::error::  $f"
-            done
-            echo "::error::Add a LaunchedEffect that calls (context as? AppReadySignal)?.signalReady()"
-            echo "::error::when the tab's content has finished loading."
-            exit 1
-          fi
-          echo "All ${#TABS[@]} HomeScreen tabs correctly reference AppReadySignal."
-
+      # Quality checks (spotless + architecture fitness) run in the `quality` job
       - name: Build app
         run: |
           FLAGS="-Penable-updater"
