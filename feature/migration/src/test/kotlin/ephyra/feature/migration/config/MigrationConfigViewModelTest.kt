@@ -78,8 +78,7 @@ class MigrationConfigViewModelTest {
         ) = throw UnsupportedOperationException()
         override fun searchMangaParse(response: Response): MangasPage = throw UnsupportedOperationException()
         override fun mangaDetailsParse(response: Response): SManga = throw UnsupportedOperationException()
-        override fun chapterListParse(response: Response) = throw UnsupportedOperationException()
-        override fun chapterPageParse(response: Response): SChapter = throw UnsupportedOperationException()
+        override fun chapterListParse(response: Response): List<SChapter> = throw UnsupportedOperationException()
         override fun pageListParse(response: Response) = throw UnsupportedOperationException()
         override fun imageUrlParse(response: Response) = throw UnsupportedOperationException()
     }

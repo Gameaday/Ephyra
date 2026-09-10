@@ -276,6 +276,12 @@ object AppModule {
             name = "tachiyomi.db",
         )
             .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
+            // Boot-safety: while the Room schema is still evolving, wipe on identity-hash
+            // mismatch instead of hard-crashing on open. This MUST be replaced by
+            // `addMigrations()` + explicit `Migration` scripts (plus a legacy SQLDelight →
+            // Room migration) before the first production release — see
+            // doc/MIGRATION_PLAN.md, Phase 6 "versioned migration strategy".
+            .fallbackToDestructiveMigration(dropAllTables = true)
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onOpen(db: SupportSQLiteDatabase) {
                     super.onOpen(db)

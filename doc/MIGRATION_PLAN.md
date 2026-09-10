@@ -160,14 +160,21 @@ Replace the legacy SQL-first engine with Entity-DAO Room paradigm.
 - [x] Implement `MangaRepositoryImpl` backed by Room DAO.
 - [x] Implement `ChapterRepositoryImpl` backed by Room DAO.
 - [x] Implement `HistoryRepositoryImpl` backed by Room DAO.
-- [ ] Implement `TrackRepositoryImpl` backed by Room DAO.
-- [ ] Implement `CategoryRepositoryImpl` backed by Room DAO.
-- [x] Boot-safety: `fallbackToDestructiveMigration(dropAllTables = true)` added while schema
-  is actively evolving — prevents hard crash on Room identity-hash mismatch. This **must** be
-  replaced with proper `addMigrations()` + `Migration` scripts before first production release.
+- [x] Implement `TrackRepositoryImpl` backed by Room DAO. — verified: `core/data/.../track/TrackRepositoryImpl.kt`
+  depends only on the Room `TrackDao`, is bound in `RepositoryBindingsModule.kt`, and has unit tests.
+- [x] Implement `CategoryRepositoryImpl` backed by Room DAO. — verified: same pattern
+  (`core/data/.../category/CategoryRepositoryImpl.kt`), unit tests present.
+- [x] Boot-safety: `fallbackToDestructiveMigration(dropAllTables = true)` re-added in `AppModule`
+  while schema is actively evolving — prevents hard crash on Room identity-hash mismatch.
+  **Correction (Sep 2026): the builder had silently lost this call** while the doc still claimed
+  it was present, leaving no fallback *and* no `addMigrations()`. It has been restored, and it
+  **must** still be replaced with proper `addMigrations()` + `Migration` scripts before first
+  production release.
 - [ ] Implement robust versioned migration strategy (SQLite legacy schema → Room v1+).
 - [ ] Add Room migration unit tests.
-- [ ] Retire `AndroidDatabaseHandler` and remove SQLDelight dependency once all paths ported.
+- [x] Retire `AndroidDatabaseHandler` and remove SQLDelight dependency once all paths ported. —
+  verified: zero `sqldelight` references in build scripts / `libs.versions.toml`, zero
+  `DatabaseHandler` / `*Queries` usage in code; backup creators/restorers are Room-backed.
 
 ## Phase 7: Host-Extension API Verification ✅
 
@@ -228,13 +235,12 @@ formally accepted and documented) before this PR is considered merge-ready:
   `withContext(Dispatchers.Main)`.  `withUIContext` imports removed; `Dispatchers` /
   `withContext` imports added where missing.
 - [x] **`KoinJavaComponent.get()` in `BaseActivity`** — accepted pattern, documented.
-- [ ] **`AndroidDatabaseHandler` / SQLDelight retirement** — four backup
-  restorer/creator classes (`MangaBackupCreator`, `MangaRestorer`, `CategoriesRestorer`,
-  `ExtensionRepoRestorer`) still call `handler.awaitList { categoriesQueries.* }`,
-  `chaptersQueries.*`, etc. directly via the SQLDelight handler.  These need Room-based
-  domain interactors for the missing query paths (e.g. `GetChaptersByMangaId` with
-  `applyScanlatorFilter`, excluded-scanlators, `GetMangaSourceAndUrl`, backup track mapper)
-  before the handler can be removed.  Blocking dependency for full SQLDelight retirement.
+- [x] **`AndroidDatabaseHandler` / SQLDelight retirement** — **already complete**: SQLDelight
+  drivers, plugins, and the handler were fully purged from the build (verified: zero references
+  in `*.kts` / `libs.versions.toml`, zero `DatabaseHandler` / `*Queries` usage in code);
+  `MangaBackupCreator`, `MangaRestorer`, `CategoriesRestorer`, and `ExtensionRepoRestorer` are
+  backed by Room via domain interactors and mappers (`MangaRestorerTest` runs against an
+  in-memory `EphyraDatabase`).  This item was stale and is closed.
 
 ---
 
@@ -320,3 +326,45 @@ Full-VM inventory sweep (49 ViewModels) verifying Event → `onEvent()`, Effect 
   `core:common`) — extension APKs resolve `okhttp3.zstd.*` against the host classpath.
 - [ ] Measure global-search latency after the zstd fix before tuning `SearchViewModel`
   parallelism (`Dispatchers.IO.limitedParallelism(5)`) or the 45s `ExtensionCallBoundary` timeout.
+
+## Phase 13: Runtime Regression Fixes (September 2026) ✅
+
+Green builds shipped two user-visible runtime regressions; both are root-caused and fixed here.
+They double as the rationale for Phase 14 (extension-API parity + runtime smoke sweep).
+
+- [x] **`Source 'X' encountered an error: No interface method setMemo`** — extensions compiled
+  against the upstream **tachiyomix 1.6** source-api call `getMemo()`/`setMemo()` on `SManga`
+  and `SChapter` instances. Ephyra's ported `SManga` / `SChapter` / `SMangaImpl` / `SChapterImpl`
+  predated that API addition and lacked the member entirely → `IncompatibleClassChangeError`
+  inside `ExtensionCallBoundary` for every modern Mihon/Keiyoushi extension (Mangabat et al).
+  **Fix**: added `var memo: JsonObject` to both interfaces (default `JsonObject(emptyMap())` in
+  the impls, copied in `copy()` / `copyFrom()`), mirroring upstream. `source-api` already exposes
+  `kotlinx.serialization.json` as an `api` dependency, so no build change was needed.
+- [x] **Reader stuck on a loading wheel** — the Phase 5 UDF refactor of `ReaderActivity` dropped
+  the viewer-creation half of `updateViewer()`: `ReaderEvent.ViewerLoaded` had **no emitter**,
+  so `State.viewer` was permanently `null`, `updateViewer()` always early-returned, and no Android
+  view was ever attached to `binding.viewerContainer` (the Compose spinner kept spinning because
+  `currentPage == -1 && currentChapter != null`). **Fix**: `updateViewer()` now *creates* the
+  viewer (`L2R/R2L/VerticalPagerViewer` / `WebtoonViewer` per resolved `ReadingMode`), emits
+  `ViewerLoaded`, and attaches the view; the `State.viewerChapters` flow now drives
+  `setChapters()` (which lazily creates the viewer); viewer recreation only happens on reading
+  mode *type* change — colour/theme preference changes just re-apply the colour layer paint;
+  `Viewer.destroy()` runs in `onDestroy()` before the ViewModelStore is cleared.
+- [x] **`fallbackToDestructiveMigration` silently regressed out of `AppModule`** — the builder
+  had *neither* the destructive fallback *nor* `addMigrations()`, so any Room identity-hash
+  mismatch (schema drift, legacy SQLDelight DBs without `room_master_table`) crashed the app at
+  database open. The call is restored with a `// TODO` pointing at the versioned-migration work.
+
+## Phase 14: Extension-API Parity & Runtime Validation 📋 (planned)
+
+- [ ] Diff `source-api` against upstream tachiyomix 1.6 (`SManga`, `SChapter`, `Page`, `Filter*`,
+  `CatalogueSource`, `HttpSource`/`ConfigurableSource`, Injekt shim) and close all member gaps in
+  one pass — the `memo` crash is unlikely to be the only drift.
+- [ ] Add a JVM contract test asserting the required source-api members exist (reflection over
+  `SManga`/`SChapter` — mirrors what extension classloaders link against).
+- [ ] On-device validation with a real Mangabat/MangaDex extension: details → chapter list →
+  reader render on all five reading modes; verify no `IncompatibleClassChangeError` in logcat.
+- [ ] Room versioned migrations + legacy SQLDelight → Room v1 migration + `MigrationTestHelper`
+  unit tests (replaces the restored destructive fallback before production).
+- [ ] Runtime smoke sweep (browse → search → library → reader → downloads → backup/restore)
+  recorded in `doc/VALIDATION_CRITERIA.md` — compile gates do not catch these.

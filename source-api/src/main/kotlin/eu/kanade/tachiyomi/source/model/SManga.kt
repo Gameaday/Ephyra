@@ -2,6 +2,7 @@
 
 package eu.kanade.tachiyomi.source.model
 
+import kotlinx.serialization.json.JsonObject
 import java.io.Serializable
 
 interface SManga : Serializable {
@@ -26,6 +27,19 @@ interface SManga : Serializable {
 
     var initialized: Boolean
 
+    /**
+     * Extra metadata associated with the manga.
+     *
+     * The JSON object is not visible to users and is intended for internal or source-specific
+     * purposes. Apps may define their own namespaced keys (e.g., `"ephyra.*"`) for sources to
+     * populate. This mirrors the upstream `tachiyomix` 1.6 `SManga` API — extensions compiled
+     * against it call `getMemo()`/`setMemo()` on instances, so this member must exist or the
+     * extension crashes at runtime with an `IncompatibleClassChangeError`.
+     *
+     * @since tachiyomix 1.6
+     */
+    var memo: JsonObject
+
     fun getGenres(): List<String>? {
         if (genre.isNullOrBlank()) return null
         return genre?.split(", ")?.map { it.trim() }?.filterNot { it.isBlank() }?.distinct()
@@ -42,6 +56,7 @@ interface SManga : Serializable {
         it.thumbnail_url = thumbnail_url
         it.update_strategy = update_strategy
         it.initialized = initialized
+        it.memo = memo
     }
 
     companion object {

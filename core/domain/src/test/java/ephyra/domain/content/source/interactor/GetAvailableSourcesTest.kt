@@ -9,18 +9,23 @@ import ephyra.domain.content.source.SourceProfileCache
 import ephyra.domain.content.source.SourceType
 import ephyra.domain.extension.model.Extension
 import ephyra.domain.extension.service.ExtensionManager
+import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.source.service.SourcePreferences
 import eu.kanade.tachiyomi.source.CatalogueSource
+import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.source.model.MangasPage
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.model.SChapter
 import eu.kanade.tachiyomi.source.model.SManga
+import eu.kanade.tachiyomi.source.online.HttpSource
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -30,7 +35,18 @@ import org.junit.jupiter.api.Test
 
 class GetAvailableSourcesTest {
 
-    private val sourceManager: SourceManager = mockk(relaxed = true)
+    private val catalogueSourcesFlow = MutableStateFlow<List<CatalogueSource>>(emptyList())
+    private val installedExtensionsFlow = MutableStateFlow<List<Extension.Installed>>(emptyList())
+    private val profiledDomainsFlow = MutableStateFlow<Set<String>>(emptySet())
+
+    // A hand-written fake instead of mockk: `SourceManager` exposes both a
+    // `catalogueSources: Flow<List<CatalogueSource>>` property and a
+    // `getCatalogueSources(): List<CatalogueSource>` overload, and mockk's call recorder
+    // resolves the property getter to the `List`-returning overload — throwing a
+    // "Class cast exception happened / use `hint`" MockKException while recording the
+    // `every { ... }` block (intermittent under its auto-hinter). A fake sidesteps the
+    // recorder entirely.
+    private val sourceManager: SourceManager = FakeSourceManager(catalogueSourcesFlow)
     private val extensionManager: ExtensionManager = mockk(relaxed = true)
     private val orchestrator: ContentSourceOrchestrator = mockk(relaxed = true)
     private val profileCache: SourceProfileCache = mockk(relaxed = true)
@@ -39,10 +55,6 @@ class GetAvailableSourcesTest {
 
     private val disabledSourcesPref: Preference<Set<String>> = mockk(relaxed = true)
     private val profiledDomainsPref: Preference<Set<String>> = mockk(relaxed = true)
-
-    private val catalogueSourcesFlow = MutableStateFlow<List<CatalogueSource>>(emptyList())
-    private val installedExtensionsFlow = MutableStateFlow<List<Extension.Installed>>(emptyList())
-    private val profiledDomainsFlow = MutableStateFlow<Set<String>>(emptySet())
 
     private lateinit var getAvailableSources: GetAvailableSources
 
@@ -64,7 +76,6 @@ class GetAvailableSourcesTest {
 
     @BeforeEach
     fun setUp() {
-        every { sourceManager.catalogueSources } returns catalogueSourcesFlow
         every { extensionManager.installedExtensionsFlow } returns installedExtensionsFlow
         every { preferenceStore.getStringSet("profiled_domains_list", emptySet()) } returns profiledDomainsPref
         every { profiledDomainsPref.changes() } returns profiledDomainsFlow
@@ -199,5 +210,22 @@ class GetAvailableSourcesTest {
         val names = result.map { it.name }
         assertTrue(names.contains("Single Extension"))
         assertTrue(names.contains("Heuristic Source"))
+    }
+
+    /**
+     * Minimal deterministic [SourceManager] — see the note on [sourceManager] for why this
+     * is a hand-written fake rather than a `mockk(relaxed = true)`.
+     */
+    private class FakeSourceManager(
+        private val catalogueSourcesFlow: MutableStateFlow<List<CatalogueSource>>,
+    ) : SourceManager {
+        override val isInitialized: StateFlow<Boolean> = MutableStateFlow(true)
+        override val catalogueSources: Flow<List<CatalogueSource>> = catalogueSourcesFlow
+
+        override fun get(sourceKey: Long): Source? = null
+        override fun getOrStub(sourceKey: Long): Source = StubSource(sourceKey, "", "")
+        override fun getOnlineSources(): List<HttpSource> = emptyList()
+        override fun getCatalogueSources(): List<CatalogueSource> = catalogueSourcesFlow.value
+        override fun getStubSources(): List<StubSource> = emptyList()
     }
 }

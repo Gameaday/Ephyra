@@ -50,9 +50,11 @@ import ephyra.core.common.notification.NotificationManager
 import ephyra.core.common.util.lang.launchNonCancellable
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.base.BasePreferences
+import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.reader.model.ReaderOrientation
 import ephyra.domain.reader.model.ReadingMode
 import ephyra.domain.reader.service.ReaderPreferences
+import ephyra.domain.ui.UiPreferences
 import ephyra.feature.reader.R
 import ephyra.feature.reader.ReaderViewModel.SetAsCoverResult.AddToLibraryFirst
 import ephyra.feature.reader.ReaderViewModel.SetAsCoverResult.Error
@@ -64,6 +66,11 @@ import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.model.ViewerChapters
 import ephyra.feature.reader.setting.ReaderSettingsViewModel
 import ephyra.feature.reader.viewer.ReaderProgressIndicator
+import ephyra.feature.reader.viewer.Viewer
+import ephyra.feature.reader.viewer.pager.L2RPagerViewer
+import ephyra.feature.reader.viewer.pager.R2LPagerViewer
+import ephyra.feature.reader.viewer.pager.VerticalPagerViewer
+import ephyra.feature.reader.viewer.webtoon.WebtoonViewer
 import ephyra.presentation.core.data.coil.TachiyomiImageDecoder
 import ephyra.presentation.core.ui.activity.BaseActivity
 import ephyra.presentation.core.util.AppNavigator
@@ -122,6 +129,10 @@ class ReaderActivity : BaseActivity() {
 
     @Inject lateinit var notificationManager: NotificationManager
 
+    @Inject lateinit var downloadManager: DownloadManager
+
+    @Inject lateinit var uiPreferences: UiPreferences
+
     lateinit var binding: ReaderActivityBinding
 
     val viewModel: ReaderViewModel by viewModels()
@@ -144,6 +155,12 @@ class ReaderActivity : BaseActivity() {
     }
 
     private var loadingIndicator: ReaderProgressIndicator? = null
+
+    /**
+     * Reading mode the current [ReaderViewModel.State.viewer] was created for. Used to detect
+     * when the viewer must be recreated because the reading mode type changed.
+     */
+    private var viewerType: ReadingMode? = null
 
     internal var isScrollingThroughPages = false
 
@@ -182,17 +199,21 @@ class ReaderActivity : BaseActivity() {
 
         config = ReaderConfig()
 
+        // Push chapters into the viewer whenever the chapter list changes. The first emission
+        // (after `init` loads the initial chapter) is what creates the viewer — see
+        // [updateViewer]. Viewer creation only mutates `State.viewer`, not `viewerChapters`,
+        // so `distinctUntilChanged` guarantees this flow cannot re-trigger itself.
         viewModel.state
-            .map { it.viewer }
+            .map { it.viewerChapters }
             .filterNotNull()
             .distinctUntilChanged()
-            .onEach { updateViewer() }
+            .onEach { setChapters(it) }
             .launchIn(lifecycleScope)
 
         viewModel.eventFlow
             .onEach { event ->
                 when (event) {
-                    is ReaderViewModel.Event.ReloadViewerChapters -> updateViewer()
+                    is ReaderViewModel.Event.ReloadViewerChapters -> reloadViewerChapters()
                     is ReaderViewModel.Event.PageChanged -> displayRefreshHost.flash()
                     is ReaderViewModel.Event.SetOrientation -> setOrientation(event.orientation)
                     is ReaderViewModel.Event.SetCoverResult -> onSetAsCoverResult(event.result)
@@ -209,7 +230,7 @@ class ReaderActivity : BaseActivity() {
             .launchIn(lifecycleScope)
 
         readerPreferences.trueColor().changes()
-            .onEach { updateViewer() }
+            .onEach { applyColorLayerPaint() }
             .launchIn(lifecycleScope)
 
         if (savedInstanceState != null) {
@@ -309,6 +330,9 @@ class ReaderActivity : BaseActivity() {
     }
 
     override fun onDestroy() {
+        // Destroy the viewer before `super.onDestroy()` — the ViewModelStore may already be
+        // cleared afterwards, and `by viewModels()` would lazily re-create a fresh ViewModel.
+        viewModel.state.value.viewer?.destroy()
         super.onDestroy()
         config = null
         menuToggleToast?.cancel()
@@ -478,12 +502,95 @@ class ReaderActivity : BaseActivity() {
         }
     }
 
+    private fun setChapters(chapters: ViewerChapters) {
+        updateViewer()
+        viewModel.state.value.viewer?.setChapters(chapters)
+    }
+
+    /**
+     * Re-delivers the currently active chapters to the viewer (adapter rebuild). Emitted when
+     * the underlying chapter page list changed (page filtering, adjacent-chapter preloads) or
+     * after the reading mode / orientation flags were updated.
+     */
+    private fun reloadViewerChapters() {
+        val chapters = viewModel.state.value.viewerChapters ?: return
+        setChapters(chapters)
+    }
+
+    /**
+     * Ensures the Android [Viewer] instance exists and matches the current reading mode, then
+     * attaches it to the view hierarchy.
+     *
+     * The viewer is created on demand — the first [setChapters] call after `init` loads the
+     * chapter — and only recreated when the reading mode type changes, so cheap preference
+     * changes (theme, colour filters) don't tear the viewer down. Callers that only need the
+     * colour layer refreshed should use [applyColorLayerPaint] instead.
+     */
     private fun updateViewer() {
-        val viewer = viewModel.state.value.viewer ?: return
-        val view = viewer.getView()
+        val state = viewModel.state.value
+        if (state.manga == null) return
+
+        val newType = ReadingMode.fromPreference(viewModel.getMangaReadingMode())
+        val currentViewer = state.viewer
+        if (currentViewer != null && viewerType == newType) {
+            // Viewer is already the right type — nothing to (re)create.
+            return
+        }
+
+        val newViewer = createViewer(newType)
+        currentViewer?.destroy()
+        viewModel.onEvent(ReaderEvent.ViewerLoaded(newViewer))
+        viewerType = newType
+
         binding.viewerContainer.removeAllViews()
-        binding.viewerContainer.addView(view)
+        binding.viewerContainer.addView(newViewer.getView())
         updateViewerInset(true, true)
+    }
+
+    private fun createViewer(readingMode: ReadingMode): Viewer {
+        return when (readingMode) {
+            ReadingMode.LEFT_TO_RIGHT -> L2RPagerViewer(this, downloadManager, readerPreferences, uiPreferences)
+            ReadingMode.RIGHT_TO_LEFT -> R2LPagerViewer(this, downloadManager, readerPreferences, uiPreferences)
+            ReadingMode.VERTICAL -> VerticalPagerViewer(this, downloadManager, readerPreferences, uiPreferences)
+            ReadingMode.WEBTOON -> WebtoonViewer(
+                this,
+                downloadManager = downloadManager,
+                readerPreferences = readerPreferences,
+                uiPreferences = uiPreferences,
+                basePreferences = preferences,
+            )
+            ReadingMode.CONTINUOUS_VERTICAL -> WebtoonViewer(
+                this,
+                downloadManager = downloadManager,
+                readerPreferences = readerPreferences,
+                uiPreferences = uiPreferences,
+                basePreferences = preferences,
+                isContinuous = false,
+            )
+            // `getMangaReadingMode()` resolves DEFAULT against the default preference and
+            // webtoon auto-detection, so this should be unreachable; guard against malformed
+            // flags anyway instead of crashing.
+            ReadingMode.DEFAULT -> {
+                logcat(LogPriority.WARN) { "Reading mode DEFAULT while creating viewer; falling back to Webtoon" }
+                WebtoonViewer(
+                    this,
+                    downloadManager = downloadManager,
+                    readerPreferences = readerPreferences,
+                    uiPreferences = uiPreferences,
+                    basePreferences = preferences,
+                )
+            }
+        }
+    }
+
+    /**
+     * Re-applies the colour layer paint on the current viewer. Colour-related preference
+     * changes used to call [updateViewer], which needlessly recreated the viewer.
+     */
+    private fun applyColorLayerPaint() {
+        val viewer = viewModel.state.value.viewer ?: return
+        val paint = config?.getCombinedPaint(isNightMode(), readerPreferences.trueColor().getSync())
+        viewer.getView().setLayerType(LAYER_TYPE_HARDWARE, paint)
     }
 
     private fun openMangaScreen() {
@@ -510,10 +617,6 @@ class ReaderActivity : BaseActivity() {
     private fun showToast(stringRes: Int) {
         readingModeToast?.cancel()
         readingModeToast = toast(stringRes)
-    }
-
-    private fun setChapters(chapters: ViewerChapters) {
-        viewModel.state.value.viewer?.setChapters(chapters)
     }
 
     private fun setInitialChapterError(error: Throwable) {
@@ -667,7 +770,7 @@ class ReaderActivity : BaseActivity() {
                 .launchIn(lifecycleScope)
 
             readerPreferences.trueColor().changes()
-                .onEach { updateViewer() }
+                .onEach { applyColorLayerPaint() }
                 .launchIn(lifecycleScope)
 
             readerPreferences.fullscreen().changes()
@@ -693,15 +796,15 @@ class ReaderActivity : BaseActivity() {
                 .launchIn(lifecycleScope)
 
             readerPreferences.colorFilter().changes()
-                .onEach { updateViewer() }
+                .onEach { applyColorLayerPaint() }
                 .launchIn(lifecycleScope)
 
             readerPreferences.colorFilterValue().changes()
-                .onEach { updateViewer() }
+                .onEach { applyColorLayerPaint() }
                 .launchIn(lifecycleScope)
 
             readerPreferences.colorFilterMode().changes()
-                .onEach { updateViewer() }
+                .onEach { applyColorLayerPaint() }
                 .launchIn(lifecycleScope)
         }
 
