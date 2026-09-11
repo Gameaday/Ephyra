@@ -355,15 +355,23 @@ They double as the rationale for Phase 14 (extension-API parity + runtime smoke 
   mismatch (schema drift, legacy SQLDelight DBs without `room_master_table`) crashed the app at
   database open. The call is restored with a `// TODO` pointing at the versioned-migration work.
 
-## Phase 14: Extension-API Parity & Runtime Validation 📋 (planned)
+## Phase 14: Extension-API Parity & Runtime Validation 🔧
 
-- [ ] Diff `source-api` against upstream tachiyomix 1.6 (`SManga`, `SChapter`, `Page`, `Filter*`,
+- [x] Diff `source-api` against upstream tachiyomix 1.6 (`SManga`, `SChapter`, `Page`, `Filter*`,
   `CatalogueSource`, `HttpSource`/`ConfigurableSource`, Injekt shim) and close all member gaps in
-  one pass — the `memo` crash is unlikely to be the only drift.
-- [ ] Add a JVM contract test asserting the required source-api members exist (reflection over
-  `SManga`/`SChapter` — mirrors what extension classloaders link against).
+  one pass — **complete 2026-09-10**: the `memo` members (fixed in Phase A) were the **only** ABI
+  gap; every other file is identical or an ABI-compatible superset. Full evidence table:
+  `doc/PHASE_B_SOURCE_API_PARITY.md`. Injekt shim registration of `NetworkHelper`/`Context`/
+  `SharedPreferences`/`OkHttpClient` verified against `CoreContainerInitializer`.
+- [x] Add a JVM contract test asserting the required source-api members exist (reflection over
+  `SManga`/`SChapter` — mirrors what extension classloaders link against). — **expanded**:
+  `SourceModelContractTest` (memo) + `SourceApiContractTest` (8 tests: `Source` suspend surface,
+  `HttpSource` full surface incl. `setUrlWithoutDomain` receiver extensions, `MangasPage`
+  destructuring, `Page.State`/`Filter.TriState`/`UpdateStrategy`/`UriType` entries,
+  `ConfigurableSource` + Jsoup helper facades).
 - [ ] On-device validation with a real Mangabat/MangaDex extension: details → chapter list →
   reader render on all five reading modes; verify no `IncompatibleClassChangeError` in logcat.
+  *(blocked on device/emulator availability)*
 - [ ] Room versioned migrations + legacy SQLDelight → Room v1 migration + `MigrationTestHelper`
   unit tests (replaces the restored destructive fallback before production).
 - [ ] Runtime smoke sweep (browse → search → library → reader → downloads → backup/restore)
