@@ -1,34 +1,32 @@
 package ephyra.feature.reader.viewer.pager
 
-import android.graphics.PointF
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
-import android.view.ViewGroup.LayoutParams
-import androidx.core.view.children
-import androidx.core.view.isGone
-import androidx.core.view.isVisible
-import androidx.viewpager.widget.ViewPager
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.ImageUtil
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.domain.ui.UiPreferences
-import ephyra.feature.reader.R
 import ephyra.feature.reader.ReaderActivity
 import ephyra.feature.reader.model.ChapterTransition
 import ephyra.feature.reader.model.InsertPage
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.model.ViewerChapters
 import ephyra.feature.reader.viewer.Viewer
-import ephyra.feature.reader.viewer.ViewerNavigation.NavigationRegion
+import ephyra.feature.reader.viewer.calculateChapterGap
 import eu.kanade.tachiyomi.source.model.Page
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import logcat.LogPriority
@@ -36,7 +34,9 @@ import okio.Buffer
 import kotlin.math.min
 
 /**
- * Implementation of a [Viewer] to display pages with a [ViewPager].
+ * Modern Jetpack Compose-backed viewer implementation for paginated reading modes
+ * (L2R, R2L, and Vertical). Manages chapter page lists, transitions, navigation events,
+ * and smart combine pre-scanning, with zero dependency on DirectionalViewPager.
  */
 @Suppress("LeakingThis")
 abstract class PagerViewer(
@@ -48,117 +48,35 @@ abstract class PagerViewer(
 
     private val scope = MainScope()
 
-    /**
-     * Background job that proactively scans all pages in the current chapter for stub patterns
-     * and merges them before they are ever displayed. Cancelled and replaced each time
-     * [setChaptersInternal] is called so that stale work from a previous chapter is abandoned.
-     */
-    private var preScanJob: Job? = null
+    private val _chaptersState = MutableStateFlow<ViewerChapters?>(null)
+    val chaptersState = _chaptersState.asStateFlow()
+
+    private val _itemsState = MutableStateFlow<List<Any>>(emptyList())
+    val itemsState = _itemsState.asStateFlow()
+
+    private val _targetPageRequest = MutableSharedFlow<Int>(extraBufferCapacity = 1)
+    val targetPageRequest = _targetPageRequest.asSharedFlow()
 
     /**
-     * View pager used by this viewer. It's abstract to implement L2R, R2L and vertical pagers on
-     * top of this class.
-     */
-    val pager = createPager()
-
-    /**
-     * Configuration used by the pager, like allow taps, scale mode on images, page transitions...
+     * Configuration used by the pager, including navigation mode, scale mode, and gestures.
      */
     val config = PagerConfig(this, scope, readerPreferences)
 
     /**
-     * Adapter of the pager.
+     * Currently active item (either [ReaderPage] or [ChapterTransition]).
      */
-    private val adapter = PagerViewerAdapter(this)
+    var currentPage: Any? = null
+        private set
 
     /**
-     * Currently active item. It can be a chapter page or a chapter transition.
+     * Background job that proactively scans all pages in the current chapter for stub patterns
+     * and merges them before they are displayed.
      */
-    private var currentPage: Any? = null
+    private var preScanJob: Job? = null
 
-    /**
-     * Viewer chapters to set when the pager enters idle mode. Otherwise, if the view was settling
-     * or dragging, there'd be a noticeable and annoying jump.
-     */
-    private var awaitingIdleViewerChapters: ViewerChapters? = null
-
-    /**
-     * Whether the view pager is currently in idle mode. It sets the awaiting chapters if setting
-     * this field to true.
-     */
-    private var isIdle = true
-        set(value) {
-            field = value
-            if (value) {
-                awaitingIdleViewerChapters?.let { viewerChapters ->
-                    setChaptersInternal(viewerChapters)
-                    awaitingIdleViewerChapters = null
-                    if (viewerChapters.currChapter.pages?.size == 1) {
-                        adapter.nextTransition?.to?.let(activity::requestPreloadChapter)
-                    }
-                }
-            }
-        }
-
-    private val pagerListener = object : ViewPager.SimpleOnPageChangeListener() {
-        override fun onPageSelected(position: Int) {
-            if (!activity.isScrollingThroughPages) {
-                activity.hideMenu()
-            }
-            onPageChange(position)
-        }
-
-        override fun onPageScrollStateChanged(state: Int) {
-            isIdle = state == ViewPager.SCROLL_STATE_IDLE
-        }
-    }
+    private val fallbackView by lazy { View(activity) }
 
     init {
-        pager.isVisible = false // Don't layout the pager yet
-        pager.layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
-        pager.isFocusable = false
-        pager.offscreenPageLimit = 1
-        pager.id = R.id.reader_pager
-        pager.adapter = adapter
-        pager.addOnPageChangeListener(pagerListener)
-        pager.tapListener = { event ->
-            val viewPosition = IntArray(2)
-            pager.getLocationOnScreen(viewPosition)
-            val viewPositionRelativeToWindow = IntArray(2)
-            pager.getLocationInWindow(viewPositionRelativeToWindow)
-            val pos = PointF(
-                (event.rawX - viewPosition[0] + viewPositionRelativeToWindow[0]) / pager.width,
-                (event.rawY - viewPosition[1] + viewPositionRelativeToWindow[1]) / pager.height,
-            )
-            when (config.navigator.getAction(pos)) {
-                NavigationRegion.MENU -> activity.toggleMenu()
-                NavigationRegion.NEXT -> moveToNext()
-                NavigationRegion.PREV -> moveToPrevious()
-                NavigationRegion.RIGHT -> moveRight()
-                NavigationRegion.LEFT -> moveLeft()
-            }
-        }
-        pager.longTapListener = f@{
-            if (activity.viewModel.state.value.menuVisible || config.longTapEnabled) {
-                val item = adapter.items.getOrNull(pager.currentItem)
-                if (item is ReaderPage) {
-                    activity.onPageLongTap(item)
-                    return@f true
-                }
-            }
-            false
-        }
-
-        config.dualPageSplitChangedListener = { enabled ->
-            if (!enabled) {
-                cleanupPageSplit()
-            }
-        }
-
-        config.imagePropertyChangedListener = {
-            refreshAdapter()
-        }
-
         config.navigationModeChangedListener = {
             val showOnStart = config.navigationOverlayOnStart || config.forceNavigationOverlay
             activity.showNavigationOverlay(config.navigator, showOnStart)
@@ -167,198 +85,151 @@ abstract class PagerViewer(
 
     override fun destroy() {
         super.destroy()
+        preScanJob?.cancel()
         scope.cancel()
     }
 
     /**
-     * Creates a new ViewPager.
+     * Fallback view reference to fulfill [Viewer] interface contract.
+     * The actual rendering is handled natively in Compose via [ComposePagerReader].
      */
-    abstract fun createPager(): Pager
+    override fun getView(): View = fallbackView
 
     /**
-     * Returns the view this viewer uses.
-     */
-    override fun getView(): View {
-        return pager
-    }
-
-    /**
-     * Returns the PagerPageHolder for the provided page
-     */
-    private fun getPageHolder(page: ReaderPage): PagerPageHolder? =
-        pager.children
-            .filterIsInstance(PagerPageHolder::class.java)
-            .firstOrNull { it.item == page }
-
-    /**
-     * Called when a new page (either a [ReaderPage] or [ChapterTransition]) is marked as active
-     */
-    private fun onPageChange(position: Int) {
-        val page = adapter.items.getOrNull(position)
-        if (page != null && currentPage != page) {
-            val allowPreload = checkAllowPreload(page as? ReaderPage)
-            val forward = when {
-                currentPage is ReaderPage && page is ReaderPage -> {
-                    // if both pages have the same number, it's a split page with an InsertPage
-                    if (page.number == (currentPage as ReaderPage).number) {
-                        // the InsertPage is always the second in the reading direction
-                        page is InsertPage
-                    } else {
-                        page.number > (currentPage as ReaderPage).number
-                    }
-                }
-
-                currentPage is ChapterTransition.Prev && page is ReaderPage ->
-                    false
-
-                else -> true
-            }
-            currentPage = page
-            when (page) {
-                is ReaderPage -> onReaderPageSelected(page, allowPreload, forward)
-                is ChapterTransition -> onTransitionSelected(page)
-            }
-        }
-    }
-
-    private fun checkAllowPreload(page: ReaderPage?): Boolean {
-        // Page is transition page - preload allowed
-        page ?: return true
-
-        // Initial opening - preload allowed
-        currentPage ?: return true
-
-        // Allow preload for
-        // 1. Going to next chapter from chapter transition
-        // 2. Going between pages of same chapter
-        // 3. Next chapter page
-        return when (page.chapter) {
-            (currentPage as? ChapterTransition.Next)?.to -> true
-            (currentPage as? ReaderPage)?.chapter -> true
-            adapter.nextTransition?.to -> true
-            else -> false
-        }
-    }
-
-    /**
-     * Called when a [ReaderPage] is marked as active. It notifies the
-     * activity of the change and requests the preload of the next chapter if this is the last page.
-     */
-    private fun onReaderPageSelected(page: ReaderPage, allowPreload: Boolean, forward: Boolean) {
-        val pages = page.chapter.pages ?: return
-        logcat { "onReaderPageSelected: ${page.number}/${pages.size}" }
-        activity.onPageSelected(page)
-
-        // Notify holder of page change
-        getPageHolder(page)?.onPageSelected(forward)
-
-        // Skip preload on inserts it causes unwanted page jumping
-        if (page is InsertPage) {
-            return
-        }
-
-        // Preload next chapter once we're within the last 5 pages of the current chapter
-        val inPreloadRange = pages.size - page.number < 5
-        if (inPreloadRange && allowPreload && page.chapter == adapter.currentChapter) {
-            logcat { "Request preload next chapter because we're at page ${page.number} of ${pages.size}" }
-            adapter.nextTransition?.to?.let(activity::requestPreloadChapter)
-        }
-    }
-
-    /**
-     * Called when a [ChapterTransition] is marked as active. It request the
-     * preload of the destination chapter of the transition.
-     */
-    private fun onTransitionSelected(transition: ChapterTransition) {
-        logcat { "onTransitionSelected: $transition" }
-        val toChapter = transition.to
-        if (toChapter != null) {
-            logcat { "Request preload destination chapter because we're on the transition" }
-            activity.requestPreloadChapter(toChapter)
-        } else if (transition is ChapterTransition.Next) {
-            // No more chapters, show menu because the user is probably going to close the reader
-            activity.showMenu()
-        }
-    }
-
-    /**
-     * Tells this viewer to set the given [chapters] as active. If the pager is currently idle,
-     * it sets the chapters immediately, otherwise they are saved and set when it becomes idle.
+     * Tells this viewer to set the given [chapters] as active.
      */
     override fun setChapters(chapters: ViewerChapters) {
-        if (isIdle) {
-            setChaptersInternal(chapters)
-        } else {
-            awaitingIdleViewerChapters = chapters
-        }
-    }
+        _chaptersState.value = chapters
+        rebuildItems(chapters)
 
-    /**
-     * Sets the active [chapters] on this pager.
-     */
-    private fun setChaptersInternal(chapters: ViewerChapters) {
-        // Remove listener so the change in item doesn't trigger it
-        pager.removeOnPageChangeListener(pagerListener)
-
-        val forceTransition = config.alwaysShowChapterTransition ||
-            adapter.items.getOrNull(pager.currentItem) is ChapterTransition
-        adapter.setChapters(chapters, forceTransition)
-
-        // Layout the pager once a chapter is being set
-        if (pager.isGone) {
-            logcat { "Pager first layout" }
-            val pages = chapters.currChapter.pages ?: return
-            moveToPage(pages[min(chapters.currChapter.requestedPage, pages.lastIndex)])
-            pager.isVisible = true
-        }
-
-        pager.addOnPageChangeListener(pagerListener)
-        // Manually call onPageChange to update the UI
-        onPageChange(pager.currentItem)
-
-        // Register a callback so that when the page pre-processor marks a page as blocked
-        // (after its image loads), the adapter is refreshed to exclude it.
+        // Register callback so when the page pre-processor marks a page as blocked,
+        // the items list refreshes to exclude it.
         chapters.currChapter.pageLoader?.onPageFiltered = {
             activity.runOnUiThread {
-                adapter.setChapters(chapters, false)
+                rebuildItems(chapters)
             }
         }
 
-        // Proactively merge any pages that are already loaded so that stubs are absorbed
-        // before the user scrolls to them. This makes the merge invisible in the common case
-        // (e.g., downloaded chapters where all pages are ready immediately).
         launchSmartCombinePreScan(chapters.currChapter.pages)
+
+        val pages = chapters.currChapter.pages ?: return
+        val targetPage = pages.getOrNull(min(chapters.currChapter.requestedPage, pages.lastIndex))
+        if (targetPage != null) {
+            moveToPage(targetPage)
+        }
+    }
+
+    private fun rebuildItems(chapters: ViewerChapters) {
+        val newItems = mutableListOf<Any>()
+        val prevHasMissingChapters = calculateChapterGap(chapters.currChapter, chapters.prevChapter) > 0
+        val nextHasMissingChapters = calculateChapterGap(chapters.nextChapter, chapters.currChapter) > 0
+
+        // Previous chapter transition
+        if (
+            prevHasMissingChapters ||
+            config.alwaysShowChapterTransition ||
+            chapters.prevChapter?.state !is ephyra.feature.reader.model.ReaderChapter.State.Loaded
+        ) {
+            newItems.add(ChapterTransition.Prev(chapters.currChapter, chapters.prevChapter))
+        }
+
+        // Current chapter visible pages
+        chapters.currChapter.pages?.filter { !it.isHidden }?.let(newItems::addAll)
+
+        // Next chapter transition
+        val nextTransition = ChapterTransition.Next(chapters.currChapter, chapters.nextChapter)
+        if (
+            nextHasMissingChapters ||
+            config.alwaysShowChapterTransition ||
+            chapters.nextChapter?.state !is ephyra.feature.reader.model.ReaderChapter.State.Loaded
+        ) {
+            newItems.add(nextTransition)
+        }
+
+        _itemsState.value = newItems
     }
 
     /**
-     * Launches a background job that scans [pages] for stub patterns and pre-merges them so
-     * they are never seen as separate pages.  The job is cancelled and replaced each time
-     * [setChaptersInternal] is called so that stale work from a previous chapter is abandoned.
-     *
-     * Each pair (page N, page N+1) is processed independently.  If a page is not yet
-     * downloaded when the scan reaches it, the job suspends until the page finishes (or
-     * errors out), ensuring that every page is eventually evaluated — even for online chapters
-     * where images arrive incrementally.  [preloadAllPages] in [ReaderViewModel.loadChapter]
-     * queues every page at the lowest background priority so the scan is never stuck waiting
-     * for a page that has not been scheduled for download.
-     *
-     * Processing is intentionally sequential (one merge at a time) to avoid simultaneous
-     * bitmap decodes that would spike memory usage on low-RAM devices.
+     * Tells this viewer to move to the given [page].
      */
+    override fun moveToPage(page: ReaderPage) {
+        val items = _itemsState.value
+        val position = items.indexOf(page)
+        if (position != -1) {
+            _targetPageRequest.tryEmit(position)
+            currentPage = page
+        } else {
+            logcat { "Page $page not found in items list" }
+        }
+    }
+
+    override fun moveToNext() {
+        moveRight()
+    }
+
+    override fun moveToPrevious() {
+        moveLeft()
+    }
+
+    fun moveRight() {
+        val current = currentItemIndex()
+        val count = _itemsState.value.size
+        if (current < count - 1) {
+            _targetPageRequest.tryEmit(current + 1)
+        }
+    }
+
+    fun moveLeft() {
+        val current = currentItemIndex()
+        if (current > 0) {
+            _targetPageRequest.tryEmit(current - 1)
+        }
+    }
+
+    fun moveUp() {
+        moveToPrevious()
+    }
+
+    fun moveDown() {
+        moveToNext()
+    }
+
+    private fun currentItemIndex(): Int {
+        val cur = currentPage ?: return 0
+        return _itemsState.value.indexOf(cur).coerceAtLeast(0)
+    }
+
+    fun onPageSelected(page: ReaderPage) {
+        currentPage = page
+        activity.onPageSelected(page)
+    }
+
+    fun onPageAbsorb(page: ReaderPage) {
+        _itemsState.update { current -> current.filter { it != page } }
+    }
+
+    fun onPageSplit(currentPage: ReaderPage, newPage: InsertPage) {
+        _itemsState.update { current ->
+            val list = current.toMutableList()
+            val index = list.indexOf(currentPage)
+            if (index != -1) {
+                list.add(index + 1, newPage)
+            }
+            list
+        }
+    }
+
     private fun launchSmartCombinePreScan(pages: List<ReaderPage>?) {
         preScanJob?.cancel()
         if (!config.smartCombine || pages == null) return
         preScanJob = scope.launch {
             withIOContext {
                 for (index in pages.indices) {
-                    // Cooperatively cancel between iterations so a chapter switch
-                    // stops the scan immediately without waiting for the next merge.
                     if (!isActive) break
 
                     val page = pages[index]
                     if (page is InsertPage || page.mergedBitmap != null || page.isHidden) continue
 
-                    // Suspend until this page finishes downloading; skip on error.
                     if (page.status != Page.State.Ready) {
                         val arrived = page.statusFlow.firstOrNull { it == Page.State.Ready || it is Page.State.Error }
                         if (arrived != Page.State.Ready) continue
@@ -367,7 +238,6 @@ abstract class PagerViewer(
                     val nextPage = pages.getOrNull(index + 1) ?: continue
                     if (nextPage.isHidden) continue
 
-                    // Suspend until the next page finishes downloading; skip on error.
                     if (nextPage.status != Page.State.Ready) {
                         val arrived = nextPage.statusFlow.firstOrNull {
                             it == Page.State.Ready || it is Page.State.Error
@@ -379,35 +249,18 @@ abstract class PagerViewer(
                     val nextStreamFn = nextPage.stream ?: continue
                     try {
                         val currentSource = streamFn().use { Buffer().readFrom(it) }
-                        // Reject animated pages before opening the next-page stream at all,
-                        // since animated images cannot be merged.
                         if (ImageUtil.isAnimatedAndSupported(currentSource)) continue
-                        // Lightweight header-only stub check: BitmapFactory reads only the
-                        // image header from [nextStreamFn] (via inJustDecodeBounds) without
-                        // decoding pixel data. This avoids buffering a full-resolution image
-                        // into memory for the common case where the next page is not a stub
-                        // (e.g., all 39 non-stub pages in a 40-page chapter that ends with a
-                        // single watermark strip).
                         val isStub = nextStreamFn().use { ImageUtil.isSmallPage(it, currentSource) }
                         if (!isStub) continue
-                        // Stub confirmed. Buffer the full next-page stream now for decoding.
-                        // Opening the stream a second time is the deliberate trade-off: it
-                        // avoids a full buffer in the ~99 % non-stub case.
+
                         val nextSource = nextStreamFn().use { Buffer().readFrom(it) }
                         val mergedBitmap = ImageUtil.mergePages(currentSource, nextSource)
-                        // Guard against a concurrent merge (per-holder retry path) that may
-                        // have completed while this iteration was running.
                         if (page.mergedBitmap == null) {
-                            // Mark the stub absorbed BEFORE committing mergedBitmap so that any
-                            // concurrent check that sees mergedBitmap != null also sees
-                            // isAbsorbed == true — preventing the stub from reappearing in the
-                            // adapter when setChapters rebuilds items (e.g. after a chapter switch).
                             nextPage.isAbsorbed = true
                             page.mergedBitmap = mergedBitmap
-                            // onPageAbsorb uses activity.runOnUiThread internally, so it is NOT
-                            // affected by coroutine cancellation and will always post the adapter
-                            // update to the main thread even if preScanJob is cancelled right here.
-                            onPageAbsorb(nextPage)
+                            activity.runOnUiThread {
+                                onPageAbsorb(nextPage)
+                            }
                         }
                     } catch (e: Exception) {
                         logcat(LogPriority.WARN, e) { "Smart combine pre-scan failed for page ${page.index}" }
@@ -417,95 +270,6 @@ abstract class PagerViewer(
         }
     }
 
-    /**
-     * Tells this viewer to move to the given [page].
-     */
-    override fun moveToPage(page: ReaderPage) {
-        val position = adapter.items.indexOf(page)
-        if (position != -1) {
-            val currentPosition = pager.currentItem
-            val smooth = config.sliderNavMode == ReaderPreferences.SLIDER_NAV_SMOOTH
-            pager.setCurrentItem(position, smooth)
-            // manually call onPageChange since ViewPager listener is not triggered in this case
-            if (currentPosition == position) {
-                onPageChange(position)
-            }
-        } else {
-            logcat { "Page $page not found in adapter" }
-        }
-    }
-
-    /**
-     * Moves to the next page.
-     */
-    override fun moveToNext() {
-        moveRight()
-    }
-
-    /**
-     * Moves to the previous page.
-     */
-    override fun moveToPrevious() {
-        moveLeft()
-    }
-
-    /**
-     * Moves to the page at the right.
-     */
-    protected open fun moveRight() {
-        if (pager.currentItem != adapter.count - 1) {
-            val holder = (currentPage as? ReaderPage)?.let(::getPageHolder)
-            if (holder != null && config.navigateToPan && holder.canPanRight()) {
-                holder.panRight()
-            } else {
-                pager.setCurrentItem(pager.currentItem + 1, config.usePageTransitions)
-            }
-        }
-    }
-
-    /**
-     * Moves to the page at the left.
-     */
-    protected open fun moveLeft() {
-        if (pager.currentItem != 0) {
-            val holder = (currentPage as? ReaderPage)?.let(::getPageHolder)
-            if (holder != null && config.navigateToPan && holder.canPanLeft()) {
-                holder.panLeft()
-            } else {
-                pager.setCurrentItem(pager.currentItem - 1, config.usePageTransitions)
-            }
-        }
-    }
-
-    /**
-     * Moves to the page at the top (or previous).
-     */
-    protected open fun moveUp() {
-        moveToPrevious()
-    }
-
-    /**
-     * Moves to the page at the bottom (or next).
-     */
-    protected open fun moveDown() {
-        moveToNext()
-    }
-
-    /**
-     * Resets the adapter in order to recreate all the views. Used when a image configuration is
-     * changed.
-     */
-    private fun refreshAdapter() {
-        val currentItem = pager.currentItem
-        adapter.refresh()
-        pager.adapter = adapter
-        pager.setCurrentItem(currentItem, false)
-    }
-
-    /**
-     * Called from the containing activity when a key [event] is received. It should return true
-     * if the event was handled, false otherwise.
-     */
     override fun handleKeyEvent(event: KeyEvent): Boolean {
         val isUp = event.action == KeyEvent.ACTION_UP
         val ctrlPressed = event.metaState.and(KeyEvent.META_CTRL_ON) > 0
@@ -549,10 +313,6 @@ abstract class PagerViewer(
         return true
     }
 
-    /**
-     * Called from the containing activity when a generic motion [event] is received. It should
-     * return true if the event was handled, false otherwise.
-     */
     override fun handleGenericMotionEvent(event: MotionEvent): Boolean {
         if (event.source and InputDevice.SOURCE_CLASS_POINTER != 0) {
             when (event.action) {
@@ -567,22 +327,5 @@ abstract class PagerViewer(
             }
         }
         return false
-    }
-
-    fun onPageSplit(currentPage: ReaderPage, newPage: InsertPage) {
-        activity.runOnUiThread {
-            // Need to insert on UI thread else images will go blank
-            adapter.onPageSplit(currentPage, newPage)
-        }
-    }
-
-    fun onPageAbsorb(page: ReaderPage) {
-        activity.runOnUiThread {
-            adapter.onPageAbsorb(page)
-        }
-    }
-
-    private fun cleanupPageSplit() {
-        adapter.cleanupPageSplit()
     }
 }

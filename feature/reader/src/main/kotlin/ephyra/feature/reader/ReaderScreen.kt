@@ -43,6 +43,8 @@ import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.feature.reader.setting.ReaderSettingsViewModel
 import ephyra.feature.reader.viewer.Viewer
 import ephyra.feature.reader.viewer.ViewerNavigation
+import ephyra.feature.reader.viewer.pager.ComposePagerReader
+import ephyra.feature.reader.viewer.pager.PagerViewer
 import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.reader.DisplayRefreshHost
 import ephyra.presentation.reader.ReaderContentOverlay
@@ -86,7 +88,20 @@ fun ReaderScreen(
     Box(modifier = modifier.fillMaxSize()) {
         // 1. Viewer Surface
         key(currentViewer) {
-            if (currentViewer != null) {
+            val context = LocalContext.current
+            val activity = context as? ReaderActivity
+            if (currentViewer is PagerViewer && activity != null) {
+                ComposePagerReader(
+                    viewer = currentViewer,
+                    onPageSelected = activity::onPageSelected,
+                    onPageLongTap = activity::onPageLongTap,
+                    onToggleMenu = activity::toggleMenu,
+                    onRequestPreload = activity::requestPreloadChapter,
+                    onNextChapter = onNextChapter,
+                    onPreviousChapter = onPreviousChapter,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            } else if (currentViewer != null) {
                 AndroidView(
                     modifier = Modifier.fillMaxSize(),
                     factory = {

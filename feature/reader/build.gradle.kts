@@ -22,7 +22,6 @@ dependencies {
 
     implementation(libs.subsamplingscaleimageview)
     implementation(libs.image.decoder)
-    implementation(libs.directionalviewpager)
 
     // Hilt
     implementation(libs.hilt.android)

@@ -13,14 +13,7 @@ class L2RPagerViewer(
     downloadManager: DownloadManager,
     readerPreferences: ReaderPreferences,
     uiPreferences: UiPreferences,
-) : PagerViewer(activity, downloadManager, readerPreferences, uiPreferences) {
-    /**
-     * Creates a new left to right pager.
-     */
-    override fun createPager(): Pager {
-        return Pager(activity)
-    }
-}
+) : PagerViewer(activity, downloadManager, readerPreferences, uiPreferences)
 
 /**
  * Implementation of a right to left PagerViewer.
@@ -31,12 +24,6 @@ class R2LPagerViewer(
     readerPreferences: ReaderPreferences,
     uiPreferences: UiPreferences,
 ) : PagerViewer(activity, downloadManager, readerPreferences, uiPreferences) {
-    /**
-     * Creates a new right to left pager.
-     */
-    override fun createPager(): Pager {
-        return Pager(activity)
-    }
 
     /**
      * Moves to the next page. On a R2L pager the next page is the one at the left.
@@ -61,11 +48,4 @@ class VerticalPagerViewer(
     downloadManager: DownloadManager,
     readerPreferences: ReaderPreferences,
     uiPreferences: UiPreferences,
-) : PagerViewer(activity, downloadManager, readerPreferences, uiPreferences) {
-    /**
-     * Creates a new vertical pager.
-     */
-    override fun createPager(): Pager {
-        return Pager(activity, isHorizontal = false)
-    }
-}
+) : PagerViewer(activity, downloadManager, readerPreferences, uiPreferences)

@@ -20,10 +20,6 @@ class ReaderButton @JvmOverloads constructor(
     var viewer: PagerViewer? = null
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        viewer?.pager?.setGestureDetectorEnabled(false)
-        if (event.actionMasked == MotionEvent.ACTION_UP) {
-            viewer?.pager?.setGestureDetectorEnabled(true)
-        }
         return super.onTouchEvent(event)
     }
 
