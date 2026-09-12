@@ -8,6 +8,15 @@ import java.io.File
 import java.io.InputStream
 
 /**
+ * Represents an individual chapter extracted from an EPUB document.
+ */
+data class EpubChapter(
+    val id: String,
+    val title: String,
+    val bodyText: String,
+)
+
+/**
  * Wrapper over ArchiveReader to load files in epub format.
  */
 class EpubReader(private val reader: ArchiveReader) : Closeable by reader {
@@ -69,21 +78,40 @@ class EpubReader(private val reader: ArchiveReader) : Closeable by reader {
     }
 
     /**
-     * Returns the text content for each chapter/page listed in the epub spine.
+     * Returns structured chapters with titles and text content from the epub spine.
      */
-    fun getTextPages(): List<String> {
+    fun getChapters(): List<EpubChapter> {
         val ref = getPackageHref()
         val doc = getPackageDocument(ref)
         val pages = getPagesFromDocument(doc)
         val basePath = getParentDirectory(ref)
+        var chapterIndex = 1
         return pages.mapNotNull { page ->
             val entryPath = resolveZipPath(basePath, page)
             getInputStream(entryPath)?.use { stream ->
                 val document = Jsoup.parse(stream, null, "")
-                document.body().text().takeIf { it.isNotBlank() }
+                val text = document.body().text()
+                if (text.isNotBlank()) {
+                    val title = document.selectFirst("h1, h2, h3, title")?.text()
+                        ?.takeIf { it.isNotBlank() }
+                        ?: "Chapter $chapterIndex"
+                    chapterIndex++
+                    EpubChapter(
+                        id = page,
+                        title = title,
+                        bodyText = text,
+                    )
+                } else {
+                    null
+                }
             }
         }
     }
+
+    /**
+     * Returns the text content for each chapter/page listed in the epub spine.
+     */
+    fun getTextPages(): List<String> = getChapters().map { it.bodyText }
 
     /**
      * Returns all the images contained in every page from the epub.
@@ -122,31 +150,40 @@ class EpubReader(private val reader: ArchiveReader) : Closeable by reader {
     }
 
     /**
-     * Resolves a zip path from base and relative components and a path separator.
+     * Resolves an internal zip entry path from a base directory and relative path.
      */
     private fun resolveZipPath(basePath: String, relativePath: String): String {
-        if (relativePath.startsWith(pathSeparator)) {
-            // Path is absolute, so return as-is.
-            return relativePath
+        val sep = pathSeparator
+        val normalizedRelative = relativePath.replace('\\', '/')
+        if (normalizedRelative.startsWith('/')) {
+            return normalizedRelative.trimStart('/')
+        }
+        if (basePath.isBlank()) {
+            return normalizedRelative.trimStart('/')
         }
 
-        var fixedBasePath = basePath.replace(pathSeparator, File.separator)
-        if (!fixedBasePath.startsWith(File.separator)) {
-            fixedBasePath = "${File.separator}$fixedBasePath"
+        val normalizedBase = basePath.replace('\\', '/').trim('/')
+        val combined = "$normalizedBase/$normalizedRelative"
+        val parts = combined.split('/').filter { it.isNotEmpty() && it != "." }
+        val resolved = mutableListOf<String>()
+        for (part in parts) {
+            if (part == "..") {
+                if (resolved.isNotEmpty()) resolved.removeAt(resolved.size - 1)
+            } else {
+                resolved.add(part)
+            }
         }
-
-        val fixedRelativePath = relativePath.replace(pathSeparator, File.separator)
-        val resolvedPath = File(fixedBasePath, fixedRelativePath).canonicalPath
-        return resolvedPath.replace(File.separator, pathSeparator).substring(1)
+        return resolved.joinToString(sep)
     }
 
     /**
      * Gets the parent directory of a path.
      */
     private fun getParentDirectory(path: String): String {
-        val separatorIndex = path.lastIndexOf(pathSeparator)
+        val normalized = path.replace('\\', '/')
+        val separatorIndex = normalized.lastIndexOf('/')
         return if (separatorIndex >= 0) {
-            path.substring(0, separatorIndex)
+            normalized.substring(0, separatorIndex).replace('/', pathSeparator[0])
         } else {
             ""
         }

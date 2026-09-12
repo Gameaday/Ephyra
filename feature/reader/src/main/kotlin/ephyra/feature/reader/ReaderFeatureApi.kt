@@ -21,7 +21,8 @@ class ReaderFeatureApi @Inject constructor() : FeatureApi {
             val route = backStackEntry.toRoute<Screen.BookReader>()
             BookReaderScreen(
                 title = route.title,
-                content = route.content,
+                bookUrl = route.bookUrl,
+                initialChapterIndex = route.initialChapterIndex,
                 onNavigateBack = { navController.popBackStack() },
             )
         }

@@ -425,6 +425,7 @@ class LibraryUpdateJob(
             return Constraints.Builder()
                 .setRequiredNetworkType(networkType)
                 .setRequiresBatteryNotLow(true)
+                .setRequiresStorageNotLow(true)
                 .apply {
                     if (LibraryPreferences.DEVICE_CHARGING in restrictions) {
                         setRequiresCharging(true)

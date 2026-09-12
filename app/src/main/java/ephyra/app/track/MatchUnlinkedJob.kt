@@ -67,8 +67,14 @@ class MatchUnlinkedJob(
         }
 
         fun start(context: Context) {
+            val constraints = androidx.work.Constraints.Builder()
+                .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
+                .setRequiresBatteryNotLow(true)
+                .build()
+
             val request = OneTimeWorkRequestBuilder<MatchUnlinkedJob>()
                 .addTag(TAG)
+                .setConstraints(constraints)
                 .build()
             context.workManager.enqueueUniqueWork(TAG, ExistingWorkPolicy.KEEP, request)
         }

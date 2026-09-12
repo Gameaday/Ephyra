@@ -155,7 +155,11 @@ sealed interface Screen {
 
     @kotlinx.serialization.Serializable data class VideoPlayer(val title: String, val url: String) : Screen
 
-    @kotlinx.serialization.Serializable data class BookReader(val title: String, val content: String) : Screen
+    @kotlinx.serialization.Serializable data class BookReader(
+        val title: String,
+        val bookUrl: String,
+        val initialChapterIndex: Int = 0,
+    ) : Screen
 
     @kotlinx.serialization.Serializable data class WebView(
         val url: String,
