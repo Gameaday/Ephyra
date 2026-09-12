@@ -4,7 +4,7 @@
 > Phase 14). Update as work proceeds; check off items with evidence. If this session is
 > interrupted, resume from the **Next steps** section at the bottom.
 
-**Status: ✅ COMPLETE (2026-09-10), pending commit/push.**
+**Status: ✅ COMPLETE (2026-09-10), commited.**
 
 ## Goal
 
@@ -77,10 +77,10 @@ path explicit and test-covered.
 
 ## Next steps (resume here)
 
-1. ☐ Commit + push Phase C (per user requirement: every phase pushed at the end).
-2. ☐ Update `doc/MIGRATION_PLAN.md` Phase 6 + Phase 14 checkboxes (Room versioned migrations ✅,
+1. ☐ Update `doc/MIGRATION_PLAN.md` Phase 6 + Phase 14 checkboxes (Room versioned migrations ✅,
    migration unit tests ✅, legacy SQLDelight → Room v1+ ✅; only "remove destructive fallback
    at schema freeze" remains open).
-3. ☐ Phase D (larger sweep): Phase 4 ScreenModel→Interactor audit, Glance pre-caching worker,
+2. ☐ Phase D (larger sweep): Phase 4 ScreenModel→Interactor audit, Glance pre-caching worker,
    okhttp-zstd CI pin guard, global-search latency measurement, cross-doc reconciliation.
+3. ☐ Commit + push Phase C (per user requirement: every phase pushed at the end).
 4. ☐ Device testing (user: blocked until these phases are pushed to git).
