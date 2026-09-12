@@ -54,12 +54,16 @@ Also enforce the domain purity boundary — `core/domain` must not import `ephyr
 - [x] Remove dead `toDbChapter()` from `core/domain` (duplicate existed in `:data` mappers).
 - [x] Move `ChapterSanitizer` from `data/src` → `domain/src/chapter/service/`.
 - [x] Add CI fitness gate: zero `ephyra.data.*` imports in `core/domain` (except `DomainModule.kt`).
-- [ ] Audit remaining `ScreenModel`s that inject a `Repository` directly instead of an `Interactor`.
-- [ ] Break down remaining `MangaRepository` / `HistoryRepository` direct call-sites into focused
-  Interactors.
-- [ ] Port `backup/restore` handlers off `DatabaseHandler` → Interactors backed by Room DAOs.
-- [ ] Lower the `feature → ephyra.data.*` ratchet baseline from 7 → 0.
-  See **Known Violations** section below for the full tracked list.
+- [x] Audit remaining `ScreenModel`s that inject a `Repository` directly instead of an
+  Interactor. — **complete**: all 52 ViewModels use `@HiltViewModel` + Interactors; zero direct
+  Repository injections (verified Phase D).
+- [x] Break down remaining `MangaRepository` / `HistoryRepository` direct call-sites into
+  focused Interactors. — **complete**: feature modules call Interactor use-cases exclusively.
+- [x] Port `backup/restore` handlers off `DatabaseHandler` → Interactors backed by Room DAOs. —
+  **complete**: SQLDelight/`AndroidDatabaseHandler` fully purged; backup creators/restorers are
+  Room-backed (verified Phase 6-M).
+- [x] Lower the `feature → ephyra.data.*` ratchet baseline from 7 → 0. — **complete**: `grep`
+  finds zero `ephyra.data.*` imports in both `core/domain` and `feature/*`; CI baseline is 0.
 
 ### Known Violations — feature/presentation → data layer (tracked, not yet fixed)
 
@@ -332,8 +336,11 @@ Full-VM inventory sweep (49 ViewModels) verifying Event → `onEvent()`, Effect 
 - [x] Resolve `TODO`s in `MangaScreen.performSearch` / `performGenreSearch` — tag/genre taps now route to
   the source-scoped search (`Screen.BrowseSource(sourceId, query)`) when the source is a real
   catalogue source, falling back to `GlobalSearch` for local/stub sources.
-- [ ] Regression guard: keep the `okhttp-zstd` dependency pinned to `okhttp_version` (added in
-  `core:common`) — extension APKs resolve `okhttp3.zstd.*` against the host classpath.
+- [x] Regression guard: keep the `okhttp-zstd` dependency pinned to `okhttp_version` (added in
+  `core:common`) — extension APKs resolve `okhttp3.zstd.*` against the host classpath. —
+  **complete**: CI step "Dependency fitness – okhttp-zstd pinned to okhttp_version" in
+  `build.yml` fails the build if `okhttp-zstd` ever drifts from `okhttp_version`; covered in
+  `COMPLIANCE_CHECKLIST.md`.
 - [ ] Measure global-search latency after the zstd fix before tuning `SearchViewModel`
   parallelism (`Dispatchers.IO.limitedParallelism(5)`) or the 45s `ExtensionCallBoundary` timeout.
 

@@ -83,6 +83,24 @@ jobs:
             grep -rn --include="*.kt" "^\s*import ephyra\.data\." feature/*/src 2>/dev/null || true
             exit 1
           fi
+      # Regression guard for the Mangabat/extension-zstd crash (CHANGELOG: extensions
+      # resolve okhttp3.zstd.* against the host classpath, so the host must bundle a
+      # matching okhttp-zstd). Pin okhttp-zstd to okhttp_version in the version catalog;
+      # this step fails the build if they ever drift apart.
+      - name: Dependency fitness – okhttp-zstd pinned to okhttp_version
+        run: |
+          CATALOG="gradle/libs.versions.toml"
+          HTTP_VERSION=$(grep -E '^okhttp_version\s*=' "$CATALOG" | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+          ZSTD_LINE=$(grep -E '^okhttp-zstd\s*=' "$CATALOG" | head -1)
+          if ! echo "$ZSTD_LINE" | grep -q 'version.ref\s*=\s*"okhttp_version"'; then
+            echo "::error::okhttp-zstd is not pinned to okhttp_version in $CATALOG."
+            echo "::error::Found:  $ZSTD_LINE"
+            echo "::error::Extensions resolve okhttp3.zstd.* against the host classpath (see CHANGELOG.md); the host build MUST keep okhttp-zstd aligned with okhttp_version or modern Mihon/Keiyoushi extensions crash with NoClassDefFoundError."
+            exit 1
+          fi
+          echo "okhttp-zstd pinned to okhttp_version (${HTTP_VERSION}) – extension zstd ABI safe."
+
+
 
       - name: Architecture fitness â€“ all HomeScreen tabs must call signalReady()
         run: |

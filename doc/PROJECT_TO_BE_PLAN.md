@@ -58,7 +58,10 @@ The migration plan is structured in sequential builds:
 
 ### 🟦 Build 3: Database & Widget Performance [ACTIVE]
 - [x] Convert all legacy SQLDelight `.sq` queries into reactive Room Entity and DAO layers.
-- [ ] Optimize Glance Widgets (`BaseUpdatesGridGlanceWidget`) by introducing background pre-caching workers.
+- [x] Optimize Glance Widgets (`BaseUpdatesGridGlanceWidget`) — background pre-caching worker
+  (`WidgetUpdatesJob`) pre-caches cover bitmaps via WorkManager and refreshes the widgets
+  reflectively; `BaseUpdatesGridGlanceWidget` resolves its dependencies through a Hilt
+  `@EntryPoint` (`WidgetEntryPoint`) instead of `CoreContainer`.
 - [x] Decommission `AndroidDatabaseHandler` and completely remove the SQLDelight framework.
 
 ### ⬜ Build 4: Domain Refinement & Clean Arch

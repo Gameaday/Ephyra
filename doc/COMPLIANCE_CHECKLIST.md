@@ -223,7 +223,8 @@ Dependencies that must become interfaces before unit-testing is possible:
 |--------|-------|-------------|
 | ✅ | No `android.*` import in `:core:domain` or `:domain` source | `build.yml` — "Architecture fitness – no android.* imports" step |
 | ✅ | No `Injekt.get()` outside legacy shim | `build.yml` — "Architecture fitness – no Injekt.get()" step |
-| ✅ | `ephyra.data.*` import count in `feature/` must not exceed baseline of 41 | `build.yml` — "Architecture fitness – data-boundary ratchet" step; reduces to a build error if new violations are added |
+| ✅ | `ephyra.data.*` import count in `feature/` is zero (CI baseline = 0) | `build.yml` — "Architecture fitness – data-boundary ratchet" step; fails the build on any new violation |
+| ✅ | `okhttp-zstd` pinned to `okhttp_version` in the version catalog (prevents the extension zstd ABI crash) | `build.yml` — "Dependency fitness – okhttp-zstd pinned to okhttp_version" step |
 
 ---
 
