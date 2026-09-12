@@ -16,7 +16,7 @@ import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.view.isVisible
 import com.google.android.material.progressindicator.CircularProgressIndicator
-import dagger.hilt.EntryPointAccessors
+import dagger.hilt.android.EntryPointAccessors
 import ephyra.presentation.core.components.CombinedCircularProgressIndicator
 import ephyra.presentation.core.util.LocalPrivacyPreferences
 import ephyra.presentation.core.util.LocalUiPreferences
