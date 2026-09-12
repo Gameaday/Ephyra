@@ -34,6 +34,7 @@ sealed interface ReaderEvent {
     data object OpenOrientationModeSelectDialog : ReaderEvent
     data class OpenPageDialog(val page: ReaderPage) : ReaderEvent
     data object OpenSettingsDialog : ReaderEvent
+    data class OpenSettingsDialogWithPage(val initialPage: Int) : ReaderEvent
     data object CloseDialog : ReaderEvent
     data class SetBrightnessOverlayValue(val value: Int) : ReaderEvent
     data object SaveImage : ReaderEvent

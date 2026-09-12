@@ -1,22 +1,7 @@
 package ephyra.presentation.reader.settings
 
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.window.DialogWindowProvider
 import ephyra.feature.reader.setting.ReaderSettingsViewModel
-import ephyra.presentation.core.components.TabbedDialog
-import ephyra.presentation.core.components.TabbedDialogPaddings
-import ephyra.presentation.core.i18n.stringResource
-import kotlinx.collections.immutable.persistentListOf
 
 @Composable
 fun ReaderSettingsDialog(
@@ -24,47 +9,13 @@ fun ReaderSettingsDialog(
     onShowMenus: () -> Unit,
     onHideMenus: () -> Unit,
     ViewModel: ReaderSettingsViewModel,
+    initialPage: Int = 0,
 ) {
-    val tabTitles = persistentListOf(
-        stringResource(ephyra.app.core.common.R.string.pref_category_reading_mode),
-        stringResource(ephyra.app.core.common.R.string.pref_category_general),
-        stringResource(ephyra.app.core.common.R.string.custom_filter),
+    ReaderSettingsSheet(
+        onDismissRequest = onDismissRequest,
+        onShowMenus = onShowMenus,
+        onHideMenus = onHideMenus,
+        viewModel = ViewModel,
+        initialPage = initialPage,
     )
-    val pagerState = rememberPagerState { tabTitles.size }
-
-    BoxWithConstraints {
-        TabbedDialog(
-            modifier = Modifier.heightIn(max = maxHeight * 0.75f),
-            onDismissRequest = {
-                onDismissRequest()
-                onShowMenus()
-            },
-            tabTitles = tabTitles,
-            pagerState = pagerState,
-        ) { page ->
-            val window = (LocalView.current.parent as? DialogWindowProvider)?.window
-
-            LaunchedEffect(pagerState.currentPage) {
-                if (pagerState.currentPage == 2) {
-                    window?.setDimAmount(0f)
-                    onHideMenus()
-                } else {
-                    window?.setDimAmount(0.5f)
-                    onShowMenus()
-                }
-            }
-
-            Column(
-                modifier = Modifier
-                    .padding(vertical = TabbedDialogPaddings.Vertical)
-                    .verticalScroll(rememberScrollState()),
-            ) {
-                when (page) {
-                    0 -> ReadingModePage(ViewModel)
-                    1 -> GeneralPage(ViewModel)
-                    2 -> ColorFilterPage(ViewModel)
-                }
-            }
-        }
-    }
 }

@@ -312,7 +312,8 @@ class ReaderViewModel @Inject constructor(
             is ReaderEvent.OpenReadingModeSelectDialog -> openReadingModeSelectDialog()
             is ReaderEvent.OpenOrientationModeSelectDialog -> openOrientationModeSelectDialog()
             is ReaderEvent.OpenPageDialog -> openPageDialog(event.page)
-            is ReaderEvent.OpenSettingsDialog -> openSettingsDialog()
+            is ReaderEvent.OpenSettingsDialog -> openSettingsDialog(0)
+            is ReaderEvent.OpenSettingsDialogWithPage -> openSettingsDialog(event.initialPage)
             is ReaderEvent.CloseDialog -> closeDialog()
             is ReaderEvent.SetBrightnessOverlayValue -> setBrightnessOverlayValue(event.value)
             is ReaderEvent.SaveImage -> saveImage()
@@ -992,19 +993,19 @@ class ReaderViewModel @Inject constructor(
     }
 
     private fun openReadingModeSelectDialog() {
-        updateState { it.copy(dialog = Dialog.ReadingModeSelect) }
+        openSettingsDialog(0)
     }
 
     private fun openOrientationModeSelectDialog() {
-        updateState { it.copy(dialog = Dialog.OrientationModeSelect) }
+        openSettingsDialog(0)
     }
 
     private fun openPageDialog(page: ReaderPage) {
         updateState { it.copy(dialog = Dialog.PageActions(page)) }
     }
 
-    private fun openSettingsDialog() {
-        updateState { it.copy(dialog = Dialog.Settings) }
+    private fun openSettingsDialog(initialPage: Int = 0) {
+        updateState { it.copy(dialog = Dialog.Settings(initialPage)) }
     }
 
     private fun closeDialog() {
@@ -1296,9 +1297,7 @@ class ReaderViewModel @Inject constructor(
 
     sealed interface Dialog {
         data object Loading : Dialog
-        data object Settings : Dialog
-        data object ReadingModeSelect : Dialog
-        data object OrientationModeSelect : Dialog
+        data class Settings(val initialPage: Int = 0) : Dialog
         data class PageActions(val page: ReaderPage) : Dialog
     }
 

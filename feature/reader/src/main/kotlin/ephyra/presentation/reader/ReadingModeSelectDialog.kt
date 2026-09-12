@@ -1,96 +1,20 @@
 package ephyra.presentation.reader
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.tooling.preview.PreviewLightDark
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import ephyra.domain.manga.model.readingMode
-import ephyra.domain.reader.model.ReadingMode
 import ephyra.feature.reader.setting.ReaderSettingsViewModel
-import ephyra.feature.reader.setting.iconRes
-import ephyra.presentation.core.components.AdaptiveSheet
-import ephyra.presentation.core.components.SettingsIconGrid
-import ephyra.presentation.core.components.material.IconToggleButton
-import ephyra.presentation.core.i18n.stringResource
-import ephyra.presentation.reader.components.ModeSelectionDialog
-import ephyra.presentation.theme.TachiyomiPreviewTheme
-
-private val ReadingModesWithoutDefault = ReadingMode.entries - ReadingMode.DEFAULT
+import ephyra.presentation.reader.settings.ReaderSettingsSheet
 
 @Composable
 fun ReadingModeSelectDialog(
     onDismissRequest: () -> Unit,
     ViewModel: ReaderSettingsViewModel,
-    onChange: (Int) -> Unit,
+    onChange: (Int) -> Unit = {},
 ) {
-    val manga by ViewModel.mangaFlow.collectAsStateWithLifecycle()
-    val readingMode = remember(manga) { ReadingMode.fromPreference(manga?.readingMode?.toInt()) }
-
-    AdaptiveSheet(onDismissRequest = onDismissRequest) {
-        DialogContent(
-            readingMode = readingMode,
-            onChangeReadingMode = {
-                ViewModel.onChangeReadingMode(it)
-                onChange(it.stringRes)
-                onDismissRequest()
-            },
-        )
-    }
-}
-
-@Composable
-private fun DialogContent(
-    readingMode: ReadingMode,
-    onChangeReadingMode: (ReadingMode) -> Unit,
-) {
-    var selected by remember { mutableStateOf(readingMode) }
-
-    ModeSelectionDialog(
-        onUseDefault = { onChangeReadingMode(ReadingMode.DEFAULT) }.takeIf { readingMode != ReadingMode.DEFAULT },
-        onApply = { onChangeReadingMode(selected) },
-    ) {
-        SettingsIconGrid(ephyra.app.core.common.R.string.pref_category_reading_mode) {
-            items(ReadingModesWithoutDefault) { mode ->
-                IconToggleButton(
-                    checked = mode == selected,
-                    onCheckedChange = {
-                        selected = mode
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    imageVector = ImageVector.vectorResource(mode.iconRes),
-                    title = stringResource(mode.stringRes),
-                )
-            }
-        }
-    }
-}
-
-@PreviewLightDark
-@Composable
-private fun DialogContentPreview() {
-    TachiyomiPreviewTheme {
-        Surface {
-            Column {
-                DialogContent(
-                    readingMode = ReadingMode.DEFAULT,
-                    onChangeReadingMode = {},
-                )
-
-                DialogContent(
-                    readingMode = ReadingMode.LEFT_TO_RIGHT,
-                    onChangeReadingMode = {},
-                )
-            }
-        }
-    }
+    ReaderSettingsSheet(
+        onDismissRequest = onDismissRequest,
+        onShowMenus = {},
+        onHideMenus = {},
+        viewModel = ViewModel,
+        initialPage = 0,
+    )
 }

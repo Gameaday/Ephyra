@@ -1,12 +1,17 @@
 package ephyra.presentation.reader.settings
 
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ephyra.domain.manga.model.readerOrientation
 import ephyra.domain.manga.model.readingMode
@@ -14,6 +19,8 @@ import ephyra.domain.reader.model.ReaderOrientation
 import ephyra.domain.reader.model.ReadingMode
 import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.feature.reader.setting.ReaderSettingsViewModel
+import ephyra.feature.reader.setting.icon
+import ephyra.feature.reader.setting.iconRes
 import ephyra.feature.reader.viewer.webtoon.WebtoonViewer
 import ephyra.presentation.core.components.CheckboxItem
 import ephyra.presentation.core.components.HeadingItem
@@ -34,6 +41,13 @@ internal fun ColumnScope.ReadingModePage(ViewModel: ReaderSettingsViewModel) {
             FilterChip(
                 selected = it == readingMode,
                 onClick = { ViewModel.onChangeReadingMode(it) },
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(it.iconRes),
+                        contentDescription = null,
+                        modifier = Modifier.size(FilterChipDefaults.IconSize),
+                    )
+                },
                 label = { Text(stringResource(it.stringRes)) },
             )
         }
@@ -45,6 +59,13 @@ internal fun ColumnScope.ReadingModePage(ViewModel: ReaderSettingsViewModel) {
             FilterChip(
                 selected = it == orientation,
                 onClick = { ViewModel.onChangeOrientation(it) },
+                leadingIcon = {
+                    Icon(
+                        imageVector = it.icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(FilterChipDefaults.IconSize),
+                    )
+                },
                 label = { Text(stringResource(it.stringRes)) },
             )
         }

@@ -45,13 +45,11 @@ import ephyra.feature.reader.viewer.Viewer
 import ephyra.feature.reader.viewer.ViewerNavigation
 import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.reader.DisplayRefreshHost
-import ephyra.presentation.reader.OrientationSelectDialog
 import ephyra.presentation.reader.ReaderContentOverlay
-import ephyra.presentation.reader.ReaderPageActionsDialog
+import ephyra.presentation.reader.ReaderPageActionsSheet
 import ephyra.presentation.reader.ReaderPageIndicator
-import ephyra.presentation.reader.ReadingModeSelectDialog
 import ephyra.presentation.reader.appbars.ReaderAppBars
-import ephyra.presentation.reader.settings.ReaderSettingsDialog
+import ephyra.presentation.reader.settings.ReaderSettingsSheet
 import eu.kanade.tachiyomi.source.online.HttpSource
 
 /**
@@ -156,53 +154,28 @@ fun ReaderScreen(
             }
         }
 
-        // 7. Dialogs
+        // 7. Dialogs & Sheets
         val dialog = state.dialog
         if (dialog != null) {
             when (dialog) {
                 is ReaderViewModel.Dialog.Loading -> { /* Handled by successState logic */ }
                 is ReaderViewModel.Dialog.Settings -> {
-                    ReaderSettingsDialog(
+                    ReaderSettingsSheet(
+                        initialPage = dialog.initialPage,
                         onDismissRequest = { viewModel.onEvent(ReaderEvent.CloseDialog) },
                         onShowMenus = { viewModel.onEvent(ReaderEvent.ShowMenus(true)) },
                         onHideMenus = { viewModel.onEvent(ReaderEvent.ShowMenus(false)) },
-                        ViewModel = ReaderSettingsViewModel(
+                        viewModel = ReaderSettingsViewModel(
                             scope = scope,
                             readerState = viewModel.state,
                             onChangeReadingMode = { viewModel.onEvent(ReaderEvent.SetMangaReadingMode(it)) },
                             onChangeOrientation = { viewModel.onEvent(ReaderEvent.SetMangaOrientationType(it)) },
                             preferences = readerPreferences,
                         ),
-                    )
-                }
-                is ReaderViewModel.Dialog.ReadingModeSelect -> {
-                    ReadingModeSelectDialog(
-                        onDismissRequest = { viewModel.onEvent(ReaderEvent.CloseDialog) },
-                        ViewModel = ReaderSettingsViewModel(
-                            scope = scope,
-                            readerState = viewModel.state,
-                            onChangeReadingMode = { viewModel.onEvent(ReaderEvent.SetMangaReadingMode(it)) },
-                            onChangeOrientation = { viewModel.onEvent(ReaderEvent.SetMangaOrientationType(it)) },
-                            preferences = readerPreferences,
-                        ),
-                        onChange = { showToast(it) },
-                    )
-                }
-                is ReaderViewModel.Dialog.OrientationModeSelect -> {
-                    OrientationSelectDialog(
-                        onDismissRequest = { viewModel.onEvent(ReaderEvent.CloseDialog) },
-                        ViewModel = ReaderSettingsViewModel(
-                            scope = scope,
-                            readerState = viewModel.state,
-                            onChangeReadingMode = { viewModel.onEvent(ReaderEvent.SetMangaReadingMode(it)) },
-                            onChangeOrientation = { viewModel.onEvent(ReaderEvent.SetMangaOrientationType(it)) },
-                            preferences = readerPreferences,
-                        ),
-                        onChange = { showToast(it) },
                     )
                 }
                 is ReaderViewModel.Dialog.PageActions -> {
-                    ReaderPageActionsDialog(
+                    ReaderPageActionsSheet(
                         onDismissRequest = { viewModel.onEvent(ReaderEvent.CloseDialog) },
                         onSetAsCover = { viewModel.onEvent(ReaderEvent.SetAsCover) },
                         onShare = { viewModel.onEvent(ReaderEvent.ShareImage(it)) },

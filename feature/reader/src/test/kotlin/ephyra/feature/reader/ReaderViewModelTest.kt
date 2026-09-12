@@ -158,13 +158,22 @@ class ReaderViewModelTest {
             assertEquals(ReaderViewModel.Dialog.Loading, awaitItem().dialog)
 
             viewModel.onEvent(ReaderEvent.OpenReadingModeSelectDialog)
-            assertEquals(ReaderViewModel.Dialog.ReadingModeSelect, awaitItem().dialog)
+            assertEquals(ReaderViewModel.Dialog.Settings(0), awaitItem().dialog)
+
+            viewModel.onEvent(ReaderEvent.CloseDialog)
+            assertNull(awaitItem().dialog)
 
             viewModel.onEvent(ReaderEvent.OpenOrientationModeSelectDialog)
-            assertEquals(ReaderViewModel.Dialog.OrientationModeSelect, awaitItem().dialog)
+            assertEquals(ReaderViewModel.Dialog.Settings(0), awaitItem().dialog)
+
+            viewModel.onEvent(ReaderEvent.CloseDialog)
+            assertNull(awaitItem().dialog)
 
             viewModel.onEvent(ReaderEvent.OpenSettingsDialog)
-            assertEquals(ReaderViewModel.Dialog.Settings, awaitItem().dialog)
+            assertEquals(ReaderViewModel.Dialog.Settings(0), awaitItem().dialog)
+
+            viewModel.onEvent(ReaderEvent.OpenSettingsDialogWithPage(2))
+            assertEquals(ReaderViewModel.Dialog.Settings(2), awaitItem().dialog)
 
             viewModel.onEvent(ReaderEvent.CloseDialog)
             assertNull(awaitItem().dialog)
