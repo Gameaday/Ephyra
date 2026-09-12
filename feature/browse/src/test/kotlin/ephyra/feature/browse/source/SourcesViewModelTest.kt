@@ -1,6 +1,9 @@
 package ephyra.feature.browse.source
 
 import app.cash.turbine.test
+import ephyra.core.common.util.Result
+import ephyra.domain.content.source.SourceProfile
+import ephyra.domain.content.source.interactor.AddCustomSource
 import ephyra.domain.source.interactor.GetEnabledSources
 import ephyra.domain.source.interactor.ToggleSource
 import ephyra.domain.source.interactor.ToggleSourcePin
@@ -36,6 +39,7 @@ class SourcesViewModelTest {
     private val getEnabledSources: GetEnabledSources = mockk()
     private val toggleSource: ToggleSource = mockk(relaxed = true)
     private val toggleSourcePin: ToggleSourcePin = mockk(relaxed = true)
+    private val addCustomSource: AddCustomSource = mockk(relaxed = true)
 
     private val sourcesFlow = MutableSharedFlow<List<Source>>(replay = 1)
     private val testDispatcher = UnconfinedTestDispatcher()
@@ -73,6 +77,7 @@ class SourcesViewModelTest {
             getEnabledSources = getEnabledSources,
             toggleSource = toggleSource,
             toggleSourcePin = toggleSourcePin,
+            addCustomSource = addCustomSource,
         )
     }
 
@@ -178,6 +183,26 @@ class SourcesViewModelTest {
             advanceUntilIdle()
             val effect = awaitItem()
             assertEquals(SourcesViewModel.Effect.FailedFetchingSources, effect)
+        }
+    }
+
+    @Test
+    fun `addWebSource emits WebSourceAdded effect on success`() = runTest {
+        val testProfile = SourceProfile(
+            baseUrl = "https://mangadex.org",
+            contentType = ephyra.domain.content.model.ContentType.MANGA,
+            displayName = "MangaDex",
+        )
+        coEvery { addCustomSource.addHeuristicProfile("https://mangadex.org", any()) } returns
+            Result.Success(testProfile)
+
+        val viewModel = createViewModel()
+        viewModel.effects.test {
+            viewModel.onEvent(SourcesScreenEvent.AddWebSource("https://mangadex.org", "MangaDex"))
+            advanceUntilIdle()
+            val effect = awaitItem()
+            assertTrue(effect is SourcesViewModel.Effect.WebSourceAdded)
+            assertEquals("MangaDex", (effect as SourcesViewModel.Effect.WebSourceAdded).name)
         }
     }
 }

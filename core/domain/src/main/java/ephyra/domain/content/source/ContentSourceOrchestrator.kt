@@ -5,6 +5,12 @@ import ephyra.core.common.util.Result
 import ephyra.core.common.util.getOrThrow
 import ephyra.domain.content.model.ContentItem
 import ephyra.domain.content.model.ContentUnit
+import ephyra.domain.content.model.toManga
+import ephyra.domain.manga.interactor.TitleNormalizer
+import ephyra.domain.manga.model.Manga
+import ephyra.domain.migration.models.MigrationCandidate
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 /**
  * Central orchestrator for resolving content from URLs, implementing [RemoteSource].
@@ -271,6 +277,37 @@ class ContentSourceOrchestrator(
      */
     suspend fun invalidateProfile(baseUrl: String) {
         profileCache.invalidate(baseUrl)
+    }
+
+    /**
+     * Recommends migration candidates for a manga from healthy sources.
+     * Searches active, healthy profiles (failureCount < 3) and scores matches
+     * using [TitleNormalizer].
+     */
+    fun suggestMigration(manga: Manga): Flow<MigrationCandidate> = flow {
+        val profiles = profileCache.getAll().filter { it.enabled && it.failureCount < 3 }
+        for (profile in profiles) {
+            // Avoid querying the source if it matches the current manga's source URL
+            if (manga.url.contains(normalizeUrl(profile.baseUrl))) continue
+
+            val searchResult = search(profile.baseUrl, manga.title, page = 1)
+            if (searchResult is Result.Success) {
+                for (item in searchResult.data) {
+                    val sim = TitleNormalizer.similarity(manga.title, item.title)
+                    if (sim >= 0.65) {
+                        emit(
+                            MigrationCandidate(
+                                manga = item.toManga(),
+                                sourceProfile = profile,
+                                sourceName = profile.displayName,
+                                sourceId = item.sourceId,
+                                confidence = sim,
+                            ),
+                        )
+                    }
+                }
+            }
+        }
     }
 
     // ── Private helpers ──────────────────────────────────────────

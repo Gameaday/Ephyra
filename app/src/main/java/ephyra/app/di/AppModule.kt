@@ -1171,6 +1171,7 @@ object AppModule {
         getTracks: GetTracks,
         insertTrack: InsertTrack,
         coverCache: ephyra.domain.manga.service.CoverCache,
+        orchestrator: ephyra.domain.content.source.ContentSourceOrchestrator,
     ) = MigrateMangaUseCase(
         sourcePreferences,
         trackerManager,
@@ -1185,6 +1186,7 @@ object AppModule {
         getTracks,
         insertTrack,
         coverCache,
+        orchestrator,
     )
 
     @Provides

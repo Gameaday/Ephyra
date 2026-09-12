@@ -27,6 +27,34 @@ fun Manga.toContentItem(): ContentItem = ContentItem(
 )
 
 /**
+ * Maps a generic [ContentItem] to a [Manga] domain model.
+ */
+fun ContentItem.toManga(): Manga = Manga.create().copy(
+    id = id,
+    source = sourceId,
+    url = url,
+    title = title,
+    artist = artist,
+    author = author,
+    description = description,
+    genre = genres,
+    status = when (status) {
+        ContentStatus.Ongoing -> 1L
+        ContentStatus.Completed -> 2L
+        ContentStatus.Licensed -> 4L
+        ContentStatus.Cancelled -> 5L
+        ContentStatus.Hiatus -> 6L
+        else -> 0L
+    },
+    thumbnailUrl = thumbnailUrl,
+    favorite = favorite,
+    dateAdded = dateAdded,
+    lastUpdate = lastUpdate,
+    initialized = initialized,
+    contentType = contentType,
+)
+
+/**
  * Maps a generic [ContentItem] to a [MangaUpdate] for database updates.
  */
 fun ContentItem.toMangaUpdate(): MangaUpdate = MangaUpdate(

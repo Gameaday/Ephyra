@@ -6,9 +6,11 @@ import ephyra.domain.content.model.ContentItem
 import ephyra.domain.content.model.ContentStatus
 import ephyra.domain.content.model.ContentType
 import ephyra.domain.content.model.ContentUnit
+import ephyra.domain.manga.model.Manga
 import ephyra.testutil.FakePreferenceStore
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -280,5 +282,33 @@ class ContentSourceOrchestratorTest {
 
         val disabled = orchestrator.setSourceEnabled("https://mangadex.org", false).getOrThrow()
         disabled.enabled shouldBe false
+    }
+
+    @Test
+    fun `suggestMigration suggests candidate from healthy source with fuzzy matching`() = runTest {
+        heuristic.discoverHandler = { baseUrl -> profile(baseUrl) }
+        orchestrator.discover("https://mangadex.org")
+        orchestrator.discover("https://failing-source.com")
+
+        // Make failing-source fail >= 3 times
+        heuristic.searchHandler = { query ->
+            if (query == "fail") throw RuntimeException("dead")
+            listOf(item("One Piece"))
+        }
+        repeat(3) {
+            orchestrator.search("https://failing-source.com", "fail", 1)
+        }
+
+        val mangaToMigrate = Manga.create().copy(
+            title = "One Piece",
+            url = "https://failing-source.com/manga/op",
+        )
+
+        val candidates = orchestrator.suggestMigration(mangaToMigrate).toList()
+
+        assertEquals(1, candidates.size)
+        assertEquals("One Piece", candidates.first().manga.title)
+        assertEquals("https://mangadex.org", candidates.first().sourceProfile?.baseUrl)
+        assertTrue(candidates.first().confidence >= 0.9)
     }
 }

@@ -45,6 +45,8 @@ import ephyra.feature.reader.viewer.Viewer
 import ephyra.feature.reader.viewer.ViewerNavigation
 import ephyra.feature.reader.viewer.pager.ComposePagerReader
 import ephyra.feature.reader.viewer.pager.PagerViewer
+import ephyra.feature.reader.viewer.webtoon.ComposeWebtoonReader
+import ephyra.feature.reader.viewer.webtoon.WebtoonViewer
 import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.reader.DisplayRefreshHost
 import ephyra.presentation.reader.ReaderContentOverlay
@@ -92,6 +94,17 @@ fun ReaderScreen(
             val activity = context as? ReaderActivity
             if (currentViewer is PagerViewer && activity != null) {
                 ComposePagerReader(
+                    viewer = currentViewer,
+                    onPageSelected = activity::onPageSelected,
+                    onPageLongTap = activity::onPageLongTap,
+                    onToggleMenu = activity::toggleMenu,
+                    onRequestPreload = activity::requestPreloadChapter,
+                    onNextChapter = onNextChapter,
+                    onPreviousChapter = onPreviousChapter,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            } else if (currentViewer is WebtoonViewer && activity != null) {
+                ComposeWebtoonReader(
                     viewer = currentViewer,
                     onPageSelected = activity::onPageSelected,
                     onPageLongTap = activity::onPageLongTap,

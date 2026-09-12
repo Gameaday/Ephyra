@@ -25,6 +25,12 @@ import ephyra.feature.reader.viewer.Viewer
 import ephyra.feature.reader.viewer.ViewerNavigation.NavigationRegion
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlin.math.max
 import kotlin.math.min
 
@@ -41,6 +47,15 @@ class WebtoonViewer(
 ) : Viewer {
 
     private val scope = MainScope()
+
+    private val _chaptersState = MutableStateFlow<ViewerChapters?>(null)
+    val chaptersState: StateFlow<ViewerChapters?> = _chaptersState.asStateFlow()
+
+    private val _itemsState = MutableStateFlow<List<Any>>(emptyList())
+    val itemsState: StateFlow<List<Any>> = _itemsState.asStateFlow()
+
+    private val _scrollToIndexRequest = MutableSharedFlow<Int>(extraBufferCapacity = 1)
+    val scrollToIndexRequest: SharedFlow<Int> = _scrollToIndexRequest.asSharedFlow()
 
     /**
      * Recycler view used by this viewer.
@@ -216,7 +231,7 @@ class WebtoonViewer(
      * Called from the RecyclerView listener when a [page] is marked as active. It notifies the
      * activity of the change and requests the preload of the next chapter if this is the last page.
      */
-    private fun onPageSelected(page: ReaderPage, allowPreload: Boolean) {
+    fun onPageSelected(page: ReaderPage, allowPreload: Boolean = true) {
         val pages = page.chapter.pages ?: return
         logcat { "onPageSelected: ${page.number}/${pages.size}" }
         activity.onPageSelected(page)
@@ -238,7 +253,7 @@ class WebtoonViewer(
      * Called from the RecyclerView listener when a [transition] is marked as active. It request the
      * preload of the destination chapter of the transition.
      */
-    private fun onTransitionSelected(transition: ChapterTransition) {
+    fun onTransitionSelected(transition: ChapterTransition) {
         logcat { "onTransitionSelected: $transition" }
         val toChapter = transition.to
         if (toChapter != null) {
@@ -251,14 +266,17 @@ class WebtoonViewer(
      * Tells this viewer to set the given [chapters] as active.
      */
     override fun setChapters(chapters: ViewerChapters) {
+        _chaptersState.value = chapters
         val forceTransition = config.alwaysShowChapterTransition || currentPage is ChapterTransition
         adapter.setChapters(chapters, forceTransition)
+        _itemsState.value = adapter.items.toList()
 
         // Register a callback so that when the page pre-processor marks a page as blocked
         // (after its image loads), the adapter is refreshed to exclude it.
         chapters.currChapter.pageLoader?.onPageFiltered = {
             activity.runOnUiThread {
                 adapter.setChapters(chapters, false)
+                _itemsState.value = adapter.items.toList()
             }
         }
 
@@ -276,6 +294,7 @@ class WebtoonViewer(
     override fun moveToPage(page: ReaderPage) {
         val position = adapter.items.indexOf(page)
         if (position != -1) {
+            _scrollToIndexRequest.tryEmit(position)
             if (config.sliderNavMode == ReaderPreferences.SLIDER_NAV_SMOOTH) {
                 // Use a custom smooth scroller that always snaps to START so the
                 // target page aligns to the top, regardless of scroll direction.
