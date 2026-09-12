@@ -2,6 +2,7 @@ package ephyra.feature.manga
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.util.fastAny
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -58,6 +59,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -70,6 +72,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MangaViewModel @Inject constructor(
+    val savedStateHandle: SavedStateHandle = SavedStateHandle(),
     private val getManga: ephyra.domain.manga.interactor.GetManga,
     private val downloadManager: DownloadManager,
     private val downloadCache: DownloadCache,
@@ -105,9 +108,22 @@ class MangaViewModel @Inject constructor(
 
     private var isInitialized = false
 
+    init {
+        val navMangaId: Long? = savedStateHandle.get<Long>("mangaId")
+            ?: savedStateHandle.get<String>("mangaId")?.toLongOrNull()
+        val navFromSource: Boolean = savedStateHandle.get<Boolean>("fromSource")
+            ?: savedStateHandle.get<String>("fromSource")?.toBooleanStrictOrNull()
+            ?: false
+        if (navMangaId != null && navMangaId > 0L) {
+            init(navMangaId, navFromSource)
+        }
+    }
+
     fun init(mangaId: Long, isFromSource: Boolean) {
         if (isInitialized) return
         isInitialized = true
+        savedStateHandle["mangaId"] = mangaId
+        savedStateHandle["fromSource"] = isFromSource
 
         viewModelScope.launch {
             getManga.subscribe(mangaId)
@@ -128,8 +144,17 @@ class MangaViewModel @Inject constructor(
                 }
         }
 
+        viewModelScope.launch {
+            sourceManager.isInitialized.first { it }
+            updateState { state ->
+                val success = state as? State.Success ?: return@updateState state
+                success.copy(source = sourceManager.getOrStub(success.manga.source))
+            }
+        }
+
         if (isFromSource) {
             viewModelScope.launchIO {
+                sourceManager.isInitialized.first { it }
                 val manga = getManga.await(mangaId) ?: return@launchIO
                 val src = sourceManager.getOrStub(manga.source)
                 runCatching {
@@ -229,9 +254,10 @@ class MangaViewModel @Inject constructor(
 
     fun fetchAllFromSource(manualFetch: Boolean = true) {
         viewModelScope.launchIO {
+            sourceManager.isInitialized.first { it }
             val success = successState ?: return@launchIO
-            val source = success.source ?: return@launchIO
             val manga = success.manga
+            val source = sourceManager.getOrStub(manga.source)
             runCatching {
                 mangaChapterInteractor.syncChaptersWithSource(
                     chapters = success.chapters,

@@ -73,7 +73,7 @@ class RateLimitBackoffInterceptor(
 
     companion object {
         private const val DEFAULT_BACKOFF_MS = 5_000L
-        private const val MAX_SYNC_WAIT_MS = 5_000L
+        private const val MAX_SYNC_WAIT_MS = 500L
         private const val MAX_BACKOFF_MS = 300_000L // 5 minutes
     }
 }

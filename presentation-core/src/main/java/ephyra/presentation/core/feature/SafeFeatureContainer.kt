@@ -36,13 +36,15 @@ fun <VM : ViewModel> SafeFeatureContainer(
     val context = LocalContext.current
 
     val factory = remember(owner, context) {
-        val activity = context.findActivity()
-        if (activity is HasDefaultViewModelProviderFactory) {
-            activity.defaultViewModelProviderFactory
-        } else if (owner is HasDefaultViewModelProviderFactory) {
+        if (owner is HasDefaultViewModelProviderFactory) {
             owner.defaultViewModelProviderFactory
         } else {
-            null
+            val activity = context.findActivity()
+            if (activity is HasDefaultViewModelProviderFactory) {
+                activity.defaultViewModelProviderFactory
+            } else {
+                null
+            }
         }
     }
 

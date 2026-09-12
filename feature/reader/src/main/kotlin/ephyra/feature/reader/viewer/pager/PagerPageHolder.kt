@@ -5,16 +5,15 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
-import android.view.LayoutInflater
 import androidx.core.view.isVisible
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.ImageUtil
 import ephyra.core.common.util.system.logcat
-import ephyra.feature.reader.databinding.ReaderErrorBinding
 import ephyra.feature.reader.model.InsertPage
 import ephyra.feature.reader.model.ReaderPage
+import ephyra.feature.reader.viewer.ReaderErrorLayout
 import ephyra.feature.reader.viewer.ReaderPageImageView
 import ephyra.feature.reader.viewer.ReaderProgressIndicator
 import ephyra.feature.reader.widget.ViewPagerAdapter
@@ -71,7 +70,7 @@ class PagerPageHolder(
     /**
      * Error layout to show when the image fails to load.
      */
-    private var errorLayout: ReaderErrorBinding? = null
+    private var errorLayout: ReaderErrorLayout? = null
 
     private val scope = MainScope()
 
@@ -436,12 +435,14 @@ class PagerPageHolder(
         viewer.activity.hideMenu()
     }
 
-    private fun showErrorLayout(error: Throwable?): ReaderErrorBinding {
+    private fun showErrorLayout(error: Throwable?): ReaderErrorLayout {
         if (errorLayout == null) {
-            errorLayout = ReaderErrorBinding.inflate(LayoutInflater.from(context), this, true)
-            errorLayout?.actionRetry?.viewer = viewer
-            errorLayout?.actionRetry?.setOnClickListener {
-                page.chapter.pageLoader?.retryPage(page)
+            errorLayout = ReaderErrorLayout(context).also { layout ->
+                addView(layout)
+                layout.actionRetry.viewer = viewer
+                layout.actionRetry.setOnClickListener {
+                    page.chapter.pageLoader?.retryPage(page)
+                }
             }
         }
 
@@ -462,7 +463,7 @@ class PagerPageHolder(
         errorLayout?.errorMessage?.text = with(context) { error?.formattedMessage }
             ?: context.stringResource(ephyra.app.core.common.R.string.decode_image_error)
 
-        errorLayout?.root?.isVisible = true
+        errorLayout?.isVisible = true
         return errorLayout!!
     }
 
@@ -470,7 +471,7 @@ class PagerPageHolder(
      * Removes the decode error layout from the holder, if found.
      */
     private fun removeErrorLayout() {
-        errorLayout?.root?.isVisible = false
+        errorLayout?.isVisible = false
         errorLayout = null
     }
 }

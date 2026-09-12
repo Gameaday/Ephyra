@@ -1,11 +1,15 @@
 package ephyra.feature.reader
 
+import android.os.ParcelFileDescriptor
 import androidx.navigation.NavController
+import ephyra.core.archive.ArchiveReader
+import ephyra.core.archive.EpubReader
 import ephyra.domain.content.model.ContentItem
 import ephyra.domain.content.model.ContentType
 import ephyra.domain.content.model.ContentUnit
 import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.viewer.MediaViewerLauncher
+import java.io.File
 import javax.inject.Inject
 
 /**
@@ -18,17 +22,21 @@ class BookViewerLauncher @Inject constructor() : MediaViewerLauncher {
     }
 
     override fun launch(navController: NavController, item: ContentItem, unit: ContentUnit) {
-        val sampleContent = "Chapter 1: The Adventure Begins...\n\n" +
-            "This is a premium, content-agnostic reflowable text reader " +
-            "built using dynamic modern typography and interactive reading modes. " +
-            "It is designed to give you a fluid, customizable reading experience " +
-            "for all Books, Novels, and written media types.\n\n" +
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit. " +
-            "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. " +
-            "Ut enim ad minim veniam, quis nostrud exercitation ullamco " +
-            "laboris nisi ut aliquip ex ea commodo consequat. " +
-            "Duis aute irure dolor in reprehenderit in voluptate velit " +
-            "esse cillum dolore eu fugiat nulla pariatur."
-        navController.navigate(Screen.BookReader(item.title, sampleContent))
+        val file = File(unit.url)
+        val content = if (file.exists() && file.isFile && file.extension.equals("epub", ignoreCase = true)) {
+            runCatching {
+                val pfd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+                ArchiveReader(pfd).use { archive ->
+                    EpubReader(archive).getTextPages().joinToString("\n\n")
+                }
+            }.getOrNull()?.takeIf { it.isNotBlank() }
+        } else {
+            null
+        }
+
+        val displayText = content ?: "${unit.title.ifBlank { item.title }}\n\n" +
+            "No text content could be extracted from '${unit.url}'. " +
+            "Ensure the local EPUB or novel file is accessible and contains valid text chapters."
+        navController.navigate(Screen.BookReader(item.title, displayText))
     }
 }

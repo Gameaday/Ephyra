@@ -1,5 +1,6 @@
 package ephyra.feature.browse.source.globalsearch
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.domain.extension.service.ExtensionManager
@@ -14,12 +15,15 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class GlobalSearchViewModel @Inject constructor(
+    val savedStateHandle: SavedStateHandle = SavedStateHandle(),
     sourcePreferences: SourcePreferences,
     sourceManager: SourceManager,
     extensionManager: ExtensionManager,
@@ -69,8 +73,22 @@ class GlobalSearchViewModel @Inject constructor(
         initialValue = emptyList(),
     )
 
+    init {
+        val navQuery: String? = savedStateHandle.get<String>("query")
+        if (!navQuery.isNullOrBlank()) {
+            init(navQuery)
+        }
+    }
+
     override fun search() {
         state.value.searchQuery?.let { recentSearches.record(it) }
+        if (!sourceManager.isInitialized.value) {
+            viewModelScope.launch {
+                sourceManager.isInitialized.first { it }
+                super.search()
+            }
+            return
+        }
         super.search()
     }
 
@@ -79,6 +97,7 @@ class GlobalSearchViewModel @Inject constructor(
     fun init(initialQuery: String = "", initialExtensionFilter: String? = null) {
         if (isInitialized) return
         isInitialized = true
+        savedStateHandle["query"] = initialQuery
 
         updateSearchQuery(initialQuery)
         extensionFilter = initialExtensionFilter

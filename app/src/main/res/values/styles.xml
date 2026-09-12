@@ -6,13 +6,6 @@
     <!--===========-->
     <style name="PreferenceThemeOverlay.Tachiyomi">
         <item name="preferenceCategoryTitleTextAppearance">?attr/textAppearanceBodyMedium</item>
-        <item name="switchPreferenceCompatStyle">
-            @style/PreferenceThemeOverlay.Tachiyomi.SwitchPreferenceCompat
-        </item>
-    </style>
-
-    <style name="PreferenceThemeOverlay.Tachiyomi.SwitchPreferenceCompat" parent="Preference.SwitchPreferenceCompat.Material">
-        <item name="android:widgetLayout">@layout/pref_widget_switch_material</item>
     </style>
 
 </resources>

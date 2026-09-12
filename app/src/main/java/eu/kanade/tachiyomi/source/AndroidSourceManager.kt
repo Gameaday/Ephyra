@@ -144,6 +144,7 @@ internal class AndroidSourceManager(
                 }
 
                 sourcesMapFlow.value = mutableMap
+                stubSourcesMap.keys.removeAll(mutableMap.keys)
                 _isInitialized.value = true
             }.collectLatest {}
         }
@@ -178,7 +179,9 @@ internal class AndroidSourceManager(
         }
 
         val fallback = StubSource(id = sourceKey, lang = "", name = "")
-        stubSourcesMap[sourceKey] = fallback
+        if (_isInitialized.value) {
+            stubSourcesMap[sourceKey] = fallback
+        }
         scope.launch {
             val actualStub = createStubSource(sourceKey)
             if (actualStub != fallback) {

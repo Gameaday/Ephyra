@@ -7,10 +7,6 @@ plugins {
 
 android {
     namespace = "ephyra.feature.reader"
-
-    buildFeatures {
-        viewBinding = true
-    }
 }
 
 dependencies {

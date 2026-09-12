@@ -69,6 +69,23 @@ class EpubReader(private val reader: ArchiveReader) : Closeable by reader {
     }
 
     /**
+     * Returns the text content for each chapter/page listed in the epub spine.
+     */
+    fun getTextPages(): List<String> {
+        val ref = getPackageHref()
+        val doc = getPackageDocument(ref)
+        val pages = getPagesFromDocument(doc)
+        val basePath = getParentDirectory(ref)
+        return pages.mapNotNull { page ->
+            val entryPath = resolveZipPath(basePath, page)
+            getInputStream(entryPath)?.use { stream ->
+                val document = Jsoup.parse(stream, null, "")
+                document.body().text().takeIf { it.isNotBlank() }
+            }
+        }
+    }
+
+    /**
      * Returns all the images contained in every page from the epub.
      */
     private fun getImagesFromPages(pages: List<String>, packageHref: String): List<String> {
@@ -76,7 +93,8 @@ class EpubReader(private val reader: ArchiveReader) : Closeable by reader {
         val basePath = getParentDirectory(packageHref)
         pages.forEach { page ->
             val entryPath = resolveZipPath(basePath, page)
-            val document = getInputStream(entryPath)!!.use { Jsoup.parse(it, null, "") }
+            val stream = getInputStream(entryPath) ?: return@forEach
+            val document = stream.use { Jsoup.parse(it, null, "") }
             val imageBasePath = getParentDirectory(entryPath)
 
             document.allElements.forEach {

@@ -17,6 +17,10 @@ interface SourceUtilEntryPoint {
     fun domainExtensionManager(): ExtensionManager
 }
 
+@Deprecated(
+    message = "Composable service-locator anti-pattern. Observe source readiness reactively in ViewModels instead.",
+    level = DeprecationLevel.WARNING,
+)
 @Composable
 fun ifSourcesLoaded(): Boolean {
     val context = LocalContext.current

@@ -1,5 +1,6 @@
 package ephyra.feature.manga
 
+import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import ephyra.core.download.DownloadCache
 import ephyra.domain.base.BasePreferences
@@ -94,6 +95,7 @@ class MangaViewModelTest {
         Dispatchers.setMain(testDispatcher)
 
         coEvery { getManga.subscribe(1L) } returns flowOf(testManga)
+        every { sourceManager.isInitialized } returns MutableStateFlow(true)
         every { sourceManager.getOrStub(100L) } returns testSource
         coEvery { getMangaAndChapters.subscribe(1L) } returns flowOf(testManga to listOf(chapter1, chapter2))
         every { mangaTrackInteractor.loggedInTrackersFlow() } returns flowOf(emptyList())
@@ -138,6 +140,38 @@ class MangaViewModelTest {
             assertEquals(testManga, success.manga)
             assertEquals(testSource, success.source)
             assertFalse(success.isAnySelected)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `SavedStateHandle with mangaId auto-initializes state to Success`() = runTest {
+        val vm = MangaViewModel(
+            savedStateHandle = SavedStateHandle(mapOf("mangaId" to 1L, "fromSource" to false)),
+            getManga = getManga,
+            downloadManager = downloadManager,
+            downloadCache = downloadCache,
+            getMangaAndChapters = getMangaAndChapters,
+            getDuplicateLibraryManga = getDuplicateLibraryManga,
+            getAvailableScanlators = getAvailableScanlators,
+            getExcludedScanlators = getExcludedScanlators,
+            getCategories = getCategories,
+            sourceManager = sourceManager,
+            mangaInfoInteractor = mangaInfoInteractor,
+            mangaChapterInteractor = mangaChapterInteractor,
+            mangaTrackInteractor = mangaTrackInteractor,
+            syncJellyfin = syncJellyfin,
+            libraryPreferences = libraryPreferences,
+            readerPreferences = readerPreferences,
+            basePreferences = basePreferences,
+            coverCache = coverCache,
+            appInfo = appInfo,
+        )
+
+        vm.state.test {
+            val success = awaitItem() as MangaViewModel.State.Success
+            assertEquals(testManga, success.manga)
+            assertEquals(testSource, success.source)
             cancelAndIgnoreRemainingEvents()
         }
     }

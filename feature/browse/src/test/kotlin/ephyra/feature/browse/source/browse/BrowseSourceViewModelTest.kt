@@ -1,5 +1,6 @@
 package ephyra.feature.browse.source.browse
 
+import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import ephyra.core.common.preference.Preference
 import ephyra.domain.category.interactor.GetCategories
@@ -23,6 +24,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -76,6 +78,7 @@ class BrowseSourceViewModelTest {
 
         every { catalogueSource.id } returns 100L
         every { catalogueSource.getFilterList() } returns FilterList()
+        every { sourceManager.isInitialized } returns MutableStateFlow(true)
         every { sourceManager.getOrStub(100L) } returns catalogueSource
         every { getIncognitoState.await(100L) } returns false
     }
@@ -125,6 +128,34 @@ class BrowseSourceViewModelTest {
             assertTrue(state.listing is BrowseSourceViewModel.Listing.Popular)
             assertEquals(100L, viewModel.sourceId)
             assertEquals(catalogueSource, viewModel.source)
+            assertEquals(100L, state.sourceId)
+            assertEquals(catalogueSource, state.source)
+        }
+    }
+
+    @Test
+    fun `SavedStateHandle auto-initializes sourceId and query`() = runTest {
+        val savedState = SavedStateHandle(mapOf("sourceId" to 100L, "query" to GetRemoteManga.QUERY_POPULAR))
+        val vm = BrowseSourceViewModel(
+            savedStateHandle = savedState,
+            sourceManager = sourceManager,
+            sourcePreferences = sourcePreferences,
+            libraryPreferences = libraryPreferences,
+            coverCache = coverCache,
+            getRemoteManga = getRemoteManga,
+            getDuplicateLibraryManga = getDuplicateLibraryManga,
+            getCategories = getCategories,
+            setMangaCategories = setMangaCategories,
+            setMangaDefaultChapterFlags = setMangaDefaultChapterFlags,
+            getManga = getManga,
+            updateManga = updateManga,
+            addTracks = addTracks,
+            getIncognitoState = getIncognitoState,
+        )
+        advanceUntilIdle()
+
+        vm.state.test {
+            val state = awaitItem()
             assertEquals(100L, state.sourceId)
             assertEquals(catalogueSource, state.source)
         }

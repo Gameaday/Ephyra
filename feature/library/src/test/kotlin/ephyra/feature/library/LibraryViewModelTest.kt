@@ -7,15 +7,18 @@ import ephyra.core.download.DownloadCache
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.category.interactor.SetMangaCategories
+import ephyra.domain.category.model.Category
 import ephyra.domain.chapter.interactor.GetBookmarkedChaptersByMangaId
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
 import ephyra.domain.chapter.interactor.SetReadStatus
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.history.interactor.GetNextChapters
+import ephyra.domain.library.model.LibraryManga
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.library.service.LibraryUpdateScheduler
 import ephyra.domain.manga.interactor.GetLibraryManga
 import ephyra.domain.manga.interactor.UpdateManga
+import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.service.CoverCache
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.track.interactor.GetTracksPerManga
@@ -36,6 +39,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -79,7 +83,8 @@ class LibraryViewModelTest {
         every { getLibraryManga.subscribe() } returns flowOf(emptyList())
         every { getTracksPerManga.subscribe() } returns flowOf(emptyMap())
         every { trackerManager.loggedInTrackersFlow() } returns flowOf(emptyList())
-        every { downloadCache.changes } returns kotlinx.coroutines.flow.MutableSharedFlow()
+        every { downloadCache.changes } returns
+            kotlinx.coroutines.flow.MutableSharedFlow<Unit>(replay = 1).apply { tryEmit(Unit) }
 
         // Badge & restriction preferences
         every { libraryPreferences.downloadBadge().changes() } returns flowOf(false)
@@ -197,6 +202,43 @@ class LibraryViewModelTest {
             viewModel.onEvent(LibraryScreenEvent.CloseDialog)
             val closedState = awaitItem()
             assertNull(closedState.dialog)
+        }
+    }
+
+    @Test
+    fun `Uncategorized manga with category 0 is grouped into system category`() = runTest {
+        val testManga: Manga = mockk(relaxed = true) {
+            every { id } returns 42L
+            every { source } returns 100L
+            every { favorite } returns true
+        }
+        val libraryManga = LibraryManga(
+            manga = testManga,
+            categories = listOf(0L),
+            totalChapters = 10,
+            readCount = 0,
+            bookmarkCount = 0,
+            latestUpload = 0,
+            chapterFetchedAt = 0,
+            lastRead = 0,
+        )
+        every { getLibraryManga.subscribe() } returns flowOf(listOf(libraryManga))
+        every { getCategories.subscribe() } returns flowOf(emptyList())
+
+        val viewModel = createViewModel()
+
+        viewModel.state.test {
+            var current = awaitItem()
+            while (!current.libraryData.isInitialized || current.displayedCategories.isEmpty()) {
+                current = awaitItem()
+            }
+
+            assertTrue(current.libraryData.showSystemCategory)
+            assertEquals(1, current.displayedCategories.size)
+            assertEquals(Category.UNCATEGORIZED_ID, current.displayedCategories.first().id)
+            val itemsInSystemCategory = current.getItemsForCategory(current.displayedCategories.first())
+            assertEquals(1, itemsInSystemCategory.size)
+            assertEquals(42L, itemsInSystemCategory.first().id)
         }
     }
 }

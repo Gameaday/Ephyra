@@ -137,10 +137,12 @@ class DownloadJob(
         }
 
         fun isRunning(context: Context): Boolean {
-            return WorkManager.getInstance(context)
-                .getWorkInfosForUniqueWork(TAG)
-                .get()
-                .let { list -> list.count { it.state == WorkInfo.State.RUNNING } == 1 }
+            return runCatching {
+                WorkManager.getInstance(context)
+                    .getWorkInfosForUniqueWork(TAG)
+                    .get(1000, java.util.concurrent.TimeUnit.MILLISECONDS)
+                    .count { it.state == WorkInfo.State.RUNNING } == 1
+            }.getOrDefault(false)
         }
 
         fun isRunningFlow(context: Context): Flow<Boolean> {

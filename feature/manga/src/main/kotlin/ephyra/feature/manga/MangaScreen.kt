@@ -47,7 +47,6 @@ import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.ui.viewer.MediaViewerRegistry
-import ephyra.presentation.core.util.ifSourcesLoaded
 import ephyra.presentation.core.util.isTabletUi
 import ephyra.presentation.core.util.system.copyToClipboard
 import ephyra.presentation.core.util.system.toShareIntent
@@ -96,11 +95,6 @@ fun MangaDetailsScreen(
     navigateUp: () -> Unit = { navController.popBackStack() },
     onAssistUrlComputed: (String?) -> Unit = {},
 ) {
-    if (!ifSourcesLoaded()) {
-        LoadingScreen()
-        return
-    }
-
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()

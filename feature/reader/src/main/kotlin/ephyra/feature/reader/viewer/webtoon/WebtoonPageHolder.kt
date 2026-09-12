@@ -2,7 +2,7 @@ package ephyra.feature.reader.viewer.webtoon
 
 import android.content.res.Resources
 import android.graphics.Bitmap
-import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
@@ -17,17 +17,19 @@ import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.ImageUtil
 import ephyra.core.common.util.system.dpToPx
 import ephyra.core.common.util.system.logcat
-import ephyra.feature.reader.databinding.ReaderErrorBinding
 import ephyra.feature.reader.model.ReaderPage
+import ephyra.feature.reader.viewer.ReaderErrorLayout
 import ephyra.feature.reader.viewer.ReaderPageImageView
 import ephyra.feature.reader.viewer.ReaderProgressIndicator
 import ephyra.feature.webview.WebViewActivity
 import ephyra.presentation.core.util.formattedMessage
 import eu.kanade.tachiyomi.source.model.Page
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
@@ -62,7 +64,7 @@ class WebtoonPageHolder(
     /**
      * Error layout to show when the image fails to load.
      */
-    private var errorLayout: ReaderErrorBinding? = null
+    private var errorLayout: ReaderErrorLayout? = null
 
     /**
      * Getter to retrieve the height of the recycler view.
@@ -75,7 +77,7 @@ class WebtoonPageHolder(
      */
     private var page: ReaderPage? = null
 
-    private val scope = MainScope()
+    private var scope: CoroutineScope? = null
 
     /**
      * Job for loading the page.
@@ -88,6 +90,18 @@ class WebtoonPageHolder(
         frame.onImageLoaded = { onImageDecoded() }
         frame.onImageLoadError = { error -> setError(error) }
         frame.onScaleChanged = { viewer.activity.hideMenu() }
+
+        itemView.addOnAttachStateChangeListener(
+            object : View.OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(v: View) {}
+                override fun onViewDetachedFromWindow(v: View) {
+                    loadJob?.cancel()
+                    loadJob = null
+                    scope?.cancel()
+                    scope = null
+                }
+            },
+        )
     }
 
     /**
@@ -96,7 +110,10 @@ class WebtoonPageHolder(
     fun bind(page: ReaderPage) {
         this.page = page
         loadJob?.cancel()
-        loadJob = scope.launch { loadPageAndProcessStatus() }
+        scope?.cancel()
+        val boundScope = MainScope()
+        scope = boundScope
+        loadJob = boundScope.launch { loadPageAndProcessStatus() }
         refreshLayoutParams()
     }
 
@@ -118,6 +135,8 @@ class WebtoonPageHolder(
     override fun recycle() {
         loadJob?.cancel()
         loadJob = null
+        scope?.cancel()
+        scope = null
 
         removeErrorLayout()
         frame.recycle()
@@ -290,12 +309,14 @@ class WebtoonPageHolder(
     /**
      * Initializes a button to retry pages.
      */
-    private fun initErrorLayout(error: Throwable?): ReaderErrorBinding {
+    private fun initErrorLayout(error: Throwable?): ReaderErrorLayout {
         if (errorLayout == null) {
-            errorLayout = ReaderErrorBinding.inflate(LayoutInflater.from(context), frame, true)
-            errorLayout?.root?.layoutParams = FrameLayout.LayoutParams(MATCH_PARENT, (parentHeight * 0.8).toInt())
-            errorLayout?.actionRetry?.setOnClickListener {
-                page?.let { it.chapter.pageLoader?.retryPage(it) }
+            errorLayout = ReaderErrorLayout(context).also { layout ->
+                layout.layoutParams = FrameLayout.LayoutParams(MATCH_PARENT, (parentHeight * 0.8).toInt())
+                frame.addView(layout)
+                layout.actionRetry.setOnClickListener {
+                    page?.let { it.chapter.pageLoader?.retryPage(it) }
+                }
             }
         }
 
@@ -323,7 +344,7 @@ class WebtoonPageHolder(
      */
     private fun removeErrorLayout() {
         errorLayout?.let {
-            frame.removeView(it.root)
+            frame.removeView(it)
             errorLayout = null
         }
     }

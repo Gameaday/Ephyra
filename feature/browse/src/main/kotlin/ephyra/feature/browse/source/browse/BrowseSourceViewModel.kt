@@ -4,6 +4,7 @@ import android.content.res.Configuration
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
@@ -45,6 +46,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -56,6 +58,7 @@ import eu.kanade.tachiyomi.source.model.Filter as SourceModelFilter
 
 @HiltViewModel
 class BrowseSourceViewModel @Inject constructor(
+    val savedStateHandle: SavedStateHandle = SavedStateHandle(),
     private val sourceManager: SourceManager,
     private val sourcePreferences: SourcePreferences,
     private val libraryPreferences: LibraryPreferences,
@@ -88,9 +91,20 @@ class BrowseSourceViewModel @Inject constructor(
     // Lazy-init to avoid runBlocking on main thread during ViewModel creation
     private var hideInLibraryItems: Boolean = false
 
+    init {
+        val navSourceId: Long? = savedStateHandle.get<Long>("sourceId")
+            ?: savedStateHandle.get<String>("sourceId")?.toLongOrNull()
+        val navListingQuery: String? = savedStateHandle.get<String>("query")
+        if (navSourceId != null && navSourceId > 0L) {
+            init(navSourceId, navListingQuery)
+        }
+    }
+
     fun init(sourceId: Long, listingQuery: String?) {
         if (isInitialized) return
         isInitialized = true
+        savedStateHandle["sourceId"] = sourceId
+        savedStateHandle["query"] = listingQuery
         this.sourceId = sourceId
         val src = sourceManager.getOrStub(sourceId)
         this.source = src
@@ -121,6 +135,19 @@ class BrowseSourceViewModel @Inject constructor(
         // Read async preference after init to avoid blocking main thread
         viewModelScope.launch {
             hideInLibraryItems = sourcePreferences.hideInLibraryItems().get()
+        }
+
+        viewModelScope.launch {
+            sourceManager.isInitialized.first { it }
+            val realSrc = sourceManager.getOrStub(sourceId)
+            source = realSrc
+            val filters = (realSrc as? CatalogueSource)?.getFilterList() ?: FilterList()
+            updateState { current ->
+                current.copy(
+                    source = realSrc,
+                    filters = if (current.filters.isEmpty()) filters else current.filters,
+                )
+            }
         }
     }
 

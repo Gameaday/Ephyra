@@ -13,7 +13,6 @@ import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
-import ephyra.presentation.core.util.ifSourcesLoaded
 
 @Composable
 fun GlobalSearchScreen(
@@ -21,11 +20,6 @@ fun GlobalSearchScreen(
     extensionFilter: String? = null,
     navController: NavController = LocalNavController.current,
 ) {
-    if (!ifSourcesLoaded()) {
-        LoadingScreen()
-        return
-    }
-
     val viewModel = hiltViewModel<GlobalSearchViewModel>()
     LaunchedEffect(searchQuery, extensionFilter) {
         viewModel.init(searchQuery, extensionFilter)

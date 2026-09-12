@@ -12,6 +12,7 @@ import android.graphics.Rect
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import androidx.annotation.ColorInt
 import androidx.core.graphics.alpha
 import androidx.core.graphics.applyCanvas
@@ -311,7 +312,56 @@ object ImageUtil {
      * with the [upperSide] half on top.
      */
     fun splitAndMerge(imageSource: BufferedSource, upperSide: Side): Bitmap {
-        val imageBitmap = BitmapFactory.decodeStream(imageSource.inputStream())
+        val bytes = imageSource.readByteArray()
+        val decoder = runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                BitmapRegionDecoder.newInstance(bytes, 0, bytes.size)
+            } else {
+                @Suppress("DEPRECATION")
+                BitmapRegionDecoder.newInstance(bytes, 0, bytes.size, false)
+            }
+        }.getOrNull()
+
+        if (decoder != null) {
+            try {
+                val width = decoder.width
+                val height = decoder.height
+                val halfWidth = width / 2
+
+                val rightPart = Rect(width - halfWidth, 0, width, height)
+                val leftPart = Rect(0, 0, halfWidth, height)
+
+                val (firstPart, secondPart) = when (upperSide) {
+                    Side.RIGHT -> rightPart to leftPart
+                    Side.LEFT -> leftPart to rightPart
+                }
+
+                val options = BitmapFactory.Options().apply {
+                    inPreferredConfig = Bitmap.Config.ARGB_8888
+                }
+
+                val upperBitmap = decoder.decodeRegion(firstPart, options)
+                val lowerBitmap = decoder.decodeRegion(secondPart, options)
+
+                val result = createBitmap(halfWidth, height * 2)
+                result.applyCanvas {
+                    if (upperBitmap != null) {
+                        drawBitmap(upperBitmap, 0f, 0f, null)
+                        upperBitmap.recycle()
+                    }
+                    if (lowerBitmap != null) {
+                        drawBitmap(lowerBitmap, 0f, height.toFloat(), null)
+                        lowerBitmap.recycle()
+                    }
+                }
+                return result
+            } finally {
+                decoder.recycle()
+            }
+        }
+
+        // Fallback for formats not supported by BitmapRegionDecoder
+        val imageBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
         val height = imageBitmap.height
         val width = imageBitmap.width
 

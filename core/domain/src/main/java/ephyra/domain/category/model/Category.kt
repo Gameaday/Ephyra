@@ -13,5 +13,8 @@ data class Category(
 
     companion object {
         const val UNCATEGORIZED_ID = 0L
+
+        fun createSystemCategory(name: String = "Default"): Category =
+            Category(id = UNCATEGORIZED_ID, name = name, order = -1, flags = 0)
     }
 }

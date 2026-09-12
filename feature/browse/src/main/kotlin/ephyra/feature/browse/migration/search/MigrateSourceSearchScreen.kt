@@ -35,7 +35,6 @@ import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.collectAsLazyPagingItems
-import ephyra.presentation.core.util.ifSourcesLoaded
 import ephyra.source.local.LocalSource
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.launch
@@ -47,11 +46,6 @@ fun MigrateSourceSearchScreen(
     query: String?,
     navController: NavController = LocalNavController.current,
 ) {
-    if (!ifSourcesLoaded()) {
-        LoadingScreen()
-        return
-    }
-
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
     val scope = rememberCoroutineScope()

@@ -11,15 +11,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.AbstractComposeView
-import dagger.hilt.android.EntryPointAccessors
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.manga.model.Manga
 import ephyra.feature.reader.model.ChapterTransition
-import ephyra.presentation.core.util.LocalPrivacyPreferences
-import ephyra.presentation.core.util.LocalUiPreferences
-import ephyra.presentation.core.util.view.ViewExtensionsEntryPoint
 import ephyra.presentation.reader.ChapterTransition
-import ephyra.presentation.theme.TachiyomiTheme
 import ephyra.source.local.isLocal
 
 class ReaderTransitionView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) :
@@ -55,27 +50,16 @@ class ReaderTransitionView @JvmOverloads constructor(context: Context, attrs: At
     @Composable
     override fun Content() {
         data?.let {
-            val entryPoint = EntryPointAccessors.fromApplication(
-                context.applicationContext,
-                ViewExtensionsEntryPoint::class.java,
-            )
-            val uiPreferences = entryPoint.uiPreferences()
-            val privacyPreferences = entryPoint.privacyPreferences()
-            CompositionLocalProvider(
-                LocalUiPreferences provides uiPreferences,
-                LocalPrivacyPreferences provides privacyPreferences,
-            ) {
-                TachiyomiTheme {
-                    CompositionLocalProvider(
-                        LocalTextStyle provides MaterialTheme.typography.bodySmall,
-                        LocalContentColor provides MaterialTheme.colorScheme.onBackground,
-                    ) {
-                        ChapterTransition(
-                            transition = it.transition,
-                            currChapterDownloaded = it.currChapterDownloaded,
-                            goingToChapterDownloaded = it.goingToChapterDownloaded,
-                        )
-                    }
+            MaterialTheme {
+                CompositionLocalProvider(
+                    LocalTextStyle provides MaterialTheme.typography.bodySmall,
+                    LocalContentColor provides MaterialTheme.colorScheme.onBackground,
+                ) {
+                    ChapterTransition(
+                        transition = it.transition,
+                        currChapterDownloaded = it.currChapterDownloaded,
+                        goingToChapterDownloaded = it.goingToChapterDownloaded,
+                    )
                 }
             }
         }

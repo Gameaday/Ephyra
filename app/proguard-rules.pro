@@ -124,8 +124,6 @@
 -keep interface ephyra.app.widget.PreferencesEntryPoint { *; }
 -keep class * implements ephyra.app.widget.PreferencesEntryPoint { *; }
 
--keep interface ephyra.core.util.SourceUtilEntryPoint { *; }
--keep class * implements ephyra.core.util.SourceUtilEntryPoint { *; }
 
 -keep interface ephyra.presentation.core.ui.activity.BaseActivityEntryPoint { *; }
 -keep class * implements ephyra.presentation.core.ui.activity.BaseActivityEntryPoint { *; }

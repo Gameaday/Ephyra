@@ -58,7 +58,6 @@ import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.collectAsLazyPagingItems
-import ephyra.presentation.core.util.ifSourcesLoaded
 import ephyra.source.local.LocalSource
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.online.HttpSource
@@ -72,11 +71,6 @@ fun BrowseSourceScreen(
     listingQuery: String?,
     navController: NavController = LocalNavController.current,
 ) {
-    if (!ifSourcesLoaded()) {
-        LoadingScreen()
-        return
-    }
-
     val viewModel = hiltViewModel<BrowseSourceViewModel>()
     LaunchedEffect(sourceId, listingQuery) {
         viewModel.init(sourceId, listingQuery)

@@ -198,7 +198,7 @@ object MangaMapper {
             contentType,
             lockedFields,
         ),
-        categories = categories.split(",").map { it.toLong() },
+        categories = categories.split(",").mapNotNull { it.trim().toLongOrNull() },
         totalChapters = totalCount,
         readCount = readCount.toLong(),
         bookmarkCount = bookmarkCount.toLong(),

@@ -6,22 +6,15 @@ import android.view.Gravity
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.FrameLayout
 import androidx.annotation.IntRange
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.view.isVisible
-import com.google.android.material.progressindicator.CircularProgressIndicator
-import dagger.hilt.android.EntryPointAccessors
 import ephyra.presentation.core.components.CombinedCircularProgressIndicator
-import ephyra.presentation.core.util.LocalPrivacyPreferences
-import ephyra.presentation.core.util.LocalUiPreferences
-import ephyra.presentation.core.util.view.ViewExtensionsEntryPoint
-import ephyra.presentation.theme.TachiyomiTheme
 
 /**
  * A wrapper for [CircularProgressIndicator] that always rotates.
@@ -43,19 +36,8 @@ class ReaderProgressIndicator @JvmOverloads constructor(
 
     @Composable
     override fun Content() {
-        val entryPoint = EntryPointAccessors.fromApplication(
-            context.applicationContext,
-            ViewExtensionsEntryPoint::class.java,
-        )
-        val uiPreferences = entryPoint.uiPreferences()
-        val privacyPreferences = entryPoint.privacyPreferences()
-        CompositionLocalProvider(
-            LocalUiPreferences provides uiPreferences,
-            LocalPrivacyPreferences provides privacyPreferences,
-        ) {
-            TachiyomiTheme {
-                CombinedCircularProgressIndicator(progress = { progress })
-            }
+        MaterialTheme {
+            CombinedCircularProgressIndicator(progress = { progress })
         }
     }
 

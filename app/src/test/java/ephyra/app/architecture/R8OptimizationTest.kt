@@ -64,7 +64,6 @@ class R8OptimizationTest {
             "ephyra.app.di.MigrationEntryPoint",
             "ephyra.app.di.CoreEntryPoint",
             "ephyra.app.widget.PreferencesEntryPoint",
-            "ephyra.core.util.SourceUtilEntryPoint",
             "ephyra.presentation.core.ui.activity.BaseActivityEntryPoint",
             "ephyra.presentation.core.util.SourceUtilEntryPoint",
             "ephyra.presentation.core.util.view.ViewExtensionsEntryPoint",

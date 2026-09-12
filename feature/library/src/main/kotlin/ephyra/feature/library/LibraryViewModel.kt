@@ -366,8 +366,14 @@ class LibraryViewModel @Inject constructor(
                 groupCache.getOrPut(categoryId) { mutableListOf() }.add(item.id)
             }
         }
-        return categories.filter { showSystemCategory || !it.isSystemCategory }
-            .associateWith { groupCache[it.id] ?: emptyList() }
+        val targetCategories = if (showSystemCategory) {
+            val systemCat = categories.find { it.isSystemCategory }
+                ?: Category.createSystemCategory()
+            listOf(systemCat) + categories.filterNot { it.isSystemCategory }
+        } else {
+            categories.filterNot { it.isSystemCategory }
+        }
+        return targetCategories.associateWith { groupCache[it.id] ?: emptyList() }
     }
 
     private fun Map<Category, List</* LibraryItem */ Long>>.applySort(
