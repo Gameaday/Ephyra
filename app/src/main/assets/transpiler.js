@@ -104,8 +104,8 @@ function transpile(ktSource, defaultName) {
             .replace(/\.date_upload\s*=\s*/g, '.dateUpload = ')
             .replace(/\.chapter_number\s*=\s*/g, '.number = ')
             .replace(/\.scanlator\s*=\s*/g, '.scanlator = ')
-            .replace(/return\s+manga/g, 'return { url: manga.url, title: manga.title, thumbnailUrl: manga.thumbnailUrl }')
-            .replace(/return\s+chapter/g, 'return { url: chapter.url, title: chapter.title, number: chapter.number || 0.0, dateUpload: chapter.dateUpload || 0, scanlator: chapter.scanlator }')
+            .replace(/return\s+manga/g, 'return { url: manga.url, title: manga.title, thumbnailUrl: manga.thumbnailUrl, author: manga.author, artist: manga.artist, description: manga.description, genres: manga.genres, status: manga.status }')
+            .replace(/return\s+chapter/g, 'return { url: chapter.url, title: chapter.title || chapter.name, number: chapter.number || 0.0, dateUpload: chapter.dateUpload || 0, scanlator: chapter.scanlator }')
             .replace(/absUrl\(([^)]+)\)/g, 'attr("abs:" + $1)')
             .replace(/\.text\(\)/g, '.text()')
             .replace(/\.attr\(([^)]+)\)/g, '.attr($1)')
@@ -187,7 +187,10 @@ function transpile(ktSource, defaultName) {
         "    return JSON.stringify({\n" +
         "        url: url,\n" +
         "        title: details.title || document.select(\"h1\").text(),\n" +
+        "        author: details.author || \"\",\n" +
+        "        artist: details.artist || \"\",\n" +
         "        description: details.description || \"\",\n" +
+        "        genres: details.genres || [],\n" +
         "        thumbnailUrl: details.thumbnailUrl || \"\",\n" +
         "        status: details.status || \"Unknown\",\n" +
         "        contentType: \"MANGA\"\n" +
@@ -198,7 +201,10 @@ function transpile(ktSource, defaultName) {
         "    return JSON.stringify({\n" +
         "        url: url,\n" +
         "        title: title,\n" +
+        "        author: \"\",\n" +
+        "        artist: \"\",\n" +
         "        description: description,\n" +
+        "        genres: [],\n" +
         "        thumbnailUrl: resolveUrl(cover, baseUrl),\n" +
         "        status: \"Unknown\",\n" +
         "        contentType: \"MANGA\"\n" +
@@ -370,7 +376,8 @@ function getMiniDomTemplate(baseUrl) {
         "        }\n" +
         "        return this.attributes[name.toLowerCase()] || \"\";\n" +
         "    };\n" +
-        "    n.text = function() { return this.text; };\n" +
+        "    var rawText = n.text || \"\";\n" +
+        "    n.text = function() { return rawText; };\n" +
         "    n.select = function(sel) {\n" +
         "        var list = querySelectorAll(this, sel);\n" +
         "        for (var i = 0; i < list.length; i++) wrapNode(list[i]);\n" +
@@ -392,7 +399,7 @@ function getMiniDomTemplate(baseUrl) {
         "        return wrapList(results);\n" +
         "    };\n" +
         "    arr.attr = function(name) { return this[0] ? this[0].attr(name) : \"\"; };\n" +
-        "    arr.text = function() { return this[0] ? this[0].text() : \"\"; };\n" +
+        "    arr.text = function() { return this[0] ? (typeof this[0].text === \"function\" ? this[0].text() : this[0].text) : \"\"; };\n" +
         "    return arr;\n" +
         "}\n" +
         "function parseHTML(html) {\n" +
@@ -446,6 +453,5 @@ function getMiniDomTemplate(baseUrl) {
         "    }\n" +
         "    wrapNode(current);\n" +
         "    return current;\n" +
-        "}\n" +
-        "return parseHTML;\n";
+        "}\n";
 }

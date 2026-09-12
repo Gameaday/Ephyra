@@ -27,6 +27,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.ByteArrayInputStream
+import java.io.File
 
 class LegacyExtensionTranspilerTest {
 
@@ -357,5 +358,40 @@ class LegacyExtensionTranspilerTest {
         val pages = sourceEngine.getPages(profile, "https://testextension.com/chapter1")
         assertEquals(2, pages.size)
         assertEquals("https://testextension.com/page1.jpg", pages[0])
+    }
+
+    @Test
+    fun `testTranspilerAssetContractAndIntegrity`() {
+        var currentDir: File? = File(".").canonicalFile
+        var transpilerFile: File? = null
+        while (currentDir != null) {
+            val candidate = File(currentDir, "app/src/main/assets/transpiler.js")
+            if (candidate.exists()) {
+                transpilerFile = candidate
+                break
+            }
+            currentDir = currentDir.parentFile
+        }
+
+        assertNotNull("transpiler.js asset file must be located in app/src/main/assets", transpilerFile)
+        val jsContent = transpilerFile!!.readText()
+        assertTrue("transpiler.js must contain transpile function", jsContent.contains("function transpile("))
+        assertTrue(
+            "transpiler.js must not contain illegal top-level return parseHTML",
+            !jsContent.contains("return parseHTML;\n\""),
+        )
+        assertTrue(
+            "transpiler.js must preserve manga author in cleanKotlinToJs",
+            jsContent.contains("author: manga.author"),
+        )
+        assertTrue(
+            "transpiler.js must preserve manga description in cleanKotlinToJs",
+            jsContent.contains("description: manga.description"),
+        )
+        assertTrue(
+            "transpiler.js must preserve chapter title in cleanKotlinToJs",
+            jsContent.contains("title: chapter.title || chapter.name"),
+        )
+        assertTrue("transpiler.js must preserve textContent in wrapNode", jsContent.contains("var rawText = n.text"))
     }
 }
