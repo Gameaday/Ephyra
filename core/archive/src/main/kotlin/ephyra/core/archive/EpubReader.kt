@@ -14,6 +14,7 @@ data class EpubChapter(
     val id: String,
     val title: String,
     val bodyText: String,
+    val paragraphs: List<String> = emptyList(),
 )
 
 /**
@@ -90,8 +91,15 @@ class EpubReader(private val reader: ArchiveReader) : Closeable by reader {
             val entryPath = resolveZipPath(basePath, page)
             getInputStream(entryPath)?.use { stream ->
                 val document = Jsoup.parse(stream, null, "")
-                val text = document.body().text()
-                if (text.isNotBlank()) {
+                val body = document.body()
+                val paragraphs = extractParagraphs(body)
+                val bodyText = if (paragraphs.isNotEmpty()) {
+                    paragraphs.joinToString("\n\n")
+                } else {
+                    body.text()
+                }
+
+                if (bodyText.isNotBlank()) {
                     val title = document.selectFirst("h1, h2, h3, title")?.text()
                         ?.takeIf { it.isNotBlank() }
                         ?: "Chapter $chapterIndex"
@@ -99,13 +107,35 @@ class EpubReader(private val reader: ArchiveReader) : Closeable by reader {
                     EpubChapter(
                         id = page,
                         title = title,
-                        bodyText = text,
+                        bodyText = bodyText,
+                        paragraphs = if (paragraphs.isNotEmpty()) paragraphs else listOf(bodyText),
                     )
                 } else {
                     null
                 }
             }
         }
+    }
+
+    private fun extractParagraphs(body: org.jsoup.nodes.Element): List<String> {
+        body.select("br").append("\n")
+        val blockElements = body.select("p, h1, h2, h3, h4, h5, h6, blockquote, hr, li")
+        if (blockElements.isNotEmpty()) {
+            val list = mutableListOf<String>()
+            for (element in blockElements) {
+                if (element.tagName() == "hr") {
+                    list.add("* * *")
+                    continue
+                }
+                val text = element.text().trim()
+                if (text.isNotEmpty()) {
+                    list.add(text)
+                }
+            }
+            if (list.isNotEmpty()) return list
+        }
+        val raw = body.text().trim()
+        return if (raw.isNotEmpty()) listOf(raw) else emptyList()
     }
 
     /**

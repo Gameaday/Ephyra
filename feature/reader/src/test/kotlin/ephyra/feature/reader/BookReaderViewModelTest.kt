@@ -2,6 +2,12 @@ package ephyra.feature.reader
 
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
+import ephyra.core.common.preference.Preference
+import ephyra.domain.reader.service.ReaderPreferences
+import io.mockk.coEvery
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -20,10 +26,34 @@ import java.io.File
 class BookReaderViewModelTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
+    private val readerPreferences: ReaderPreferences = mockk(relaxed = true)
+
+    private val chapterPref: Preference<Int> = mockk(relaxed = true)
+    private val scrollPref: Preference<Int> = mockk(relaxed = true)
+    private val fontPref: Preference<Float> = mockk(relaxed = true)
+    private val serifPref: Preference<Boolean> = mockk(relaxed = true)
+    private val paginatedPref: Preference<Boolean> = mockk(relaxed = true)
 
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
+
+        coEvery { fontPref.get() } returns 18f
+        every { fontPref.getSync() } returns 18f
+        coEvery { serifPref.get() } returns true
+        every { serifPref.getSync() } returns true
+        coEvery { paginatedPref.get() } returns false
+        every { paginatedPref.getSync() } returns false
+        coEvery { chapterPref.get() } returns 0
+        every { chapterPref.getSync() } returns 0
+        coEvery { scrollPref.get() } returns 0
+        every { scrollPref.getSync() } returns 0
+
+        every { readerPreferences.bookReaderFontSize() } returns fontPref
+        every { readerPreferences.bookReaderIsSerif() } returns serifPref
+        every { readerPreferences.bookReaderIsPaginated() } returns paginatedPref
+        every { readerPreferences.bookReaderLastChapter(any()) } returns chapterPref
+        every { readerPreferences.bookReaderLastScroll(any()) } returns scrollPref
     }
 
     @AfterEach
@@ -33,13 +63,13 @@ class BookReaderViewModelTest {
 
     @Test
     fun `initial state is Loading when no saved state exists`() {
-        val viewModel = BookReaderViewModel(SavedStateHandle(), testDispatcher)
+        val viewModel = BookReaderViewModel(SavedStateHandle(), readerPreferences, testDispatcher)
         assertTrue(viewModel.state.value is BookReaderState.Loading)
     }
 
     @Test
     fun `loadBook with nonexistent file sets Error state`() = runTest {
-        val viewModel = BookReaderViewModel(SavedStateHandle(), testDispatcher)
+        val viewModel = BookReaderViewModel(SavedStateHandle(), readerPreferences, testDispatcher)
 
         viewModel.state.test {
             assertEquals(BookReaderState.Loading, awaitItem())
@@ -59,7 +89,7 @@ class BookReaderViewModelTest {
             deleteOnExit()
         }
 
-        val viewModel = BookReaderViewModel(SavedStateHandle(), testDispatcher)
+        val viewModel = BookReaderViewModel(SavedStateHandle(), readerPreferences, testDispatcher)
 
         viewModel.state.test {
             assertEquals(BookReaderState.Loading, awaitItem())
@@ -91,6 +121,7 @@ class BookReaderViewModelTest {
                     "bookUrl" to tempFile.absolutePath,
                 ),
             ),
+            readerPreferences,
             testDispatcher,
         )
 
@@ -103,14 +134,20 @@ class BookReaderViewModelTest {
             viewModel.onEvent(BookReaderEvent.SetFontSize(24f))
             val fontState = awaitItem() as BookReaderState.Success
             assertEquals(24f, fontState.fontSize)
+            verify { fontPref.set(24f) }
 
             viewModel.onEvent(BookReaderEvent.SetSerif(false))
             val serifState = awaitItem() as BookReaderState.Success
             assertFalse(serifState.isSerif)
+            verify { serifPref.set(false) }
 
             viewModel.onEvent(BookReaderEvent.SetPaginated(true))
             val paginatedState = awaitItem() as BookReaderState.Success
             assertTrue(paginatedState.isPaginated)
+            verify { paginatedPref.set(true) }
+
+            viewModel.onEvent(BookReaderEvent.SaveScrollOffset(420))
+            verify { scrollPref.set(420) }
 
             viewModel.onEvent(BookReaderEvent.ToggleToc(true))
             val tocState = awaitItem() as BookReaderState.Success
@@ -120,6 +157,29 @@ class BookReaderViewModelTest {
             val settingsState = awaitItem() as BookReaderState.Success
             assertTrue(settingsState.showSettings)
 
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `loadBook restores saved chapter and scroll offset from preferences`() = runTest {
+        val tempFile = File.createTempFile("saved_progress_book", ".txt").apply {
+            writeText("Some text")
+            deleteOnExit()
+        }
+
+        coEvery { chapterPref.get() } returns 0
+        coEvery { scrollPref.get() } returns 150
+
+        val viewModel = BookReaderViewModel(SavedStateHandle(), readerPreferences, testDispatcher)
+
+        viewModel.state.test {
+            assertEquals(BookReaderState.Loading, awaitItem())
+            viewModel.loadBook("Saved Book", tempFile.absolutePath, initialIndex = 0)
+
+            val state = awaitItem() as BookReaderState.Success
+            assertEquals(0, state.currentChapterIndex)
+            assertEquals(150, state.initialScrollOffset)
             cancelAndIgnoreRemainingEvents()
         }
     }

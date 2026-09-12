@@ -9,6 +9,7 @@ import ephyra.core.archive.ArchiveReader
 import ephyra.core.archive.EpubChapter
 import ephyra.core.archive.EpubReader
 import ephyra.core.common.di.IoDispatcher
+import ephyra.domain.reader.service.ReaderPreferences
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,6 +28,7 @@ sealed interface BookReaderState {
         val title: String,
         val chapters: List<EpubChapter>,
         val currentChapterIndex: Int = 0,
+        val initialScrollOffset: Int = 0,
         val fontSize: Float = 18f,
         val isSerif: Boolean = true,
         val isPaginated: Boolean = false,
@@ -52,6 +54,7 @@ sealed interface BookReaderEvent {
     data class SetFontSize(val size: Float) : BookReaderEvent
     data class SetSerif(val isSerif: Boolean) : BookReaderEvent
     data class SetPaginated(val isPaginated: Boolean) : BookReaderEvent
+    data class SaveScrollOffset(val offset: Int) : BookReaderEvent
     data class ToggleToc(val show: Boolean) : BookReaderEvent
     data class ToggleSettings(val show: Boolean) : BookReaderEvent
 }
@@ -59,6 +62,7 @@ sealed interface BookReaderEvent {
 @HiltViewModel
 class BookReaderViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
+    private val readerPreferences: ReaderPreferences,
     @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
 
@@ -85,6 +89,7 @@ class BookReaderViewModel @Inject constructor(
             is BookReaderEvent.SetFontSize -> setFontSize(event.size)
             is BookReaderEvent.SetSerif -> setSerif(event.isSerif)
             is BookReaderEvent.SetPaginated -> setPaginated(event.isPaginated)
+            is BookReaderEvent.SaveScrollOffset -> saveScrollOffset(event.offset)
             is BookReaderEvent.ToggleToc -> toggleToc(event.show)
             is BookReaderEvent.ToggleSettings -> toggleSettings(event.show)
         }
@@ -104,11 +109,27 @@ class BookReaderViewModel @Inject constructor(
             }
 
             if (chapters.isNotEmpty()) {
-                val clampedIndex = initialIndex.coerceIn(0, chapters.size - 1)
+                val savedChapter = readerPreferences.bookReaderLastChapter(bookUrl).get()
+                val targetIndex = if (initialIndex == 0 && savedChapter in chapters.indices) {
+                    savedChapter
+                } else {
+                    initialIndex
+                }
+                val clampedIndex = targetIndex.coerceIn(0, chapters.size - 1)
+                val savedScroll = if (clampedIndex == savedChapter) {
+                    readerPreferences.bookReaderLastScroll(bookUrl).get()
+                } else {
+                    0
+                }
+
                 _state.value = BookReaderState.Success(
                     title = title,
                     chapters = chapters,
                     currentChapterIndex = clampedIndex,
+                    initialScrollOffset = savedScroll,
+                    fontSize = readerPreferences.bookReaderFontSize().get(),
+                    isSerif = readerPreferences.bookReaderIsSerif().get(),
+                    isPaginated = readerPreferences.bookReaderIsPaginated().get(),
                 )
             } else {
                 _state.value = BookReaderState.Error(
@@ -158,7 +179,11 @@ class BookReaderViewModel @Inject constructor(
             val success = current as? BookReaderState.Success ?: return@update current
             if (index in success.chapters.indices) {
                 savedStateHandle["initialChapterIndex"] = index
-                success.copy(currentChapterIndex = index, showToc = false)
+                loadedUrl?.let { url ->
+                    readerPreferences.bookReaderLastChapter(url).set(index)
+                    readerPreferences.bookReaderLastScroll(url).set(0)
+                }
+                success.copy(currentChapterIndex = index, initialScrollOffset = 0, showToc = false)
             } else {
                 success
             }
@@ -171,7 +196,11 @@ class BookReaderViewModel @Inject constructor(
             if (success.hasNext) {
                 val next = success.currentChapterIndex + 1
                 savedStateHandle["initialChapterIndex"] = next
-                success.copy(currentChapterIndex = next)
+                loadedUrl?.let { url ->
+                    readerPreferences.bookReaderLastChapter(url).set(next)
+                    readerPreferences.bookReaderLastScroll(url).set(0)
+                }
+                success.copy(currentChapterIndex = next, initialScrollOffset = 0)
             } else {
                 success
             }
@@ -184,21 +213,34 @@ class BookReaderViewModel @Inject constructor(
             if (success.hasPrevious) {
                 val prev = success.currentChapterIndex - 1
                 savedStateHandle["initialChapterIndex"] = prev
-                success.copy(currentChapterIndex = prev)
+                loadedUrl?.let { url ->
+                    readerPreferences.bookReaderLastChapter(url).set(prev)
+                    readerPreferences.bookReaderLastScroll(url).set(0)
+                }
+                success.copy(currentChapterIndex = prev, initialScrollOffset = 0)
             } else {
                 success
             }
         }
     }
 
+    private fun saveScrollOffset(offset: Int) {
+        loadedUrl?.let { url ->
+            readerPreferences.bookReaderLastScroll(url).set(offset)
+        }
+    }
+
     private fun setFontSize(size: Float) {
+        val clamped = size.coerceIn(12f, 36f)
+        readerPreferences.bookReaderFontSize().set(clamped)
         _state.update { current ->
             val success = current as? BookReaderState.Success ?: return@update current
-            success.copy(fontSize = size.coerceIn(12f, 36f))
+            success.copy(fontSize = clamped)
         }
     }
 
     private fun setSerif(isSerif: Boolean) {
+        readerPreferences.bookReaderIsSerif().set(isSerif)
         _state.update { current ->
             val success = current as? BookReaderState.Success ?: return@update current
             success.copy(isSerif = isSerif)
@@ -206,6 +248,7 @@ class BookReaderViewModel @Inject constructor(
     }
 
     private fun setPaginated(isPaginated: Boolean) {
+        readerPreferences.bookReaderIsPaginated().set(isPaginated)
         _state.update { current ->
             val success = current as? BookReaderState.Success ?: return@update current
             success.copy(isPaginated = isPaginated)

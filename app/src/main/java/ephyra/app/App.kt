@@ -389,21 +389,30 @@ class App :
 
     /**
      * Called by the system when it determines that memory is running low. Applies progressive
-     * trimming of the Coil image memory cache so the system can reclaim RAM:
-     * - `TRIM_MEMORY_RUNNING_LOW` (foreground, system low): trim to 50% capacity
+     * multi-tiered trimming of the Coil image memory cache to satisfy modern Android memory
+     * requirements and prevent Low-Memory Killer Daemon (LMKD) kills:
      * - `TRIM_MEMORY_UI_HIDDEN` and above (app backgrounded or critical): clear entirely
-     *
-     * The gradual approach keeps the cache warm during normal reading while still shedding
-     * weight in long sessions where memory pressure builds up.
+     * - `TRIM_MEMORY_RUNNING_CRITICAL` (severe foreground memory pressure): trim to 0 immediately
+     * - `TRIM_MEMORY_RUNNING_LOW` (foreground, system low): trim to 50% capacity
+     * - `TRIM_MEMORY_RUNNING_MODERATE` (system moderate pressure): trim to 75% capacity
      */
     @Suppress("DEPRECATION")
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
         val cache = SingletonImageLoader.get(this).memoryCache ?: return
-        if (level >= TRIM_MEMORY_UI_HIDDEN) {
-            cache.clear()
-        } else if (level >= TRIM_MEMORY_RUNNING_LOW) {
-            cache.trimToSize(cache.maxSize / 2)
+        when {
+            level >= TRIM_MEMORY_UI_HIDDEN -> {
+                cache.clear()
+            }
+            level >= TRIM_MEMORY_RUNNING_CRITICAL -> {
+                cache.trimToSize(0)
+            }
+            level >= TRIM_MEMORY_RUNNING_LOW -> {
+                cache.trimToSize(cache.maxSize / 2)
+            }
+            level >= TRIM_MEMORY_RUNNING_MODERATE -> {
+                cache.trimToSize((cache.maxSize * 3) / 4)
+            }
         }
     }
 

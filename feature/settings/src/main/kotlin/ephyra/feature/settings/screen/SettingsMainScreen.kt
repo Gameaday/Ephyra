@@ -91,10 +91,8 @@ fun SettingsMainScreen(
                             subtitle = item.formatSubtitle(),
                             icon = item.icon,
                             onPreferenceClick = {
-                                if (twoPane) {
-                                    // TODO: handle twoPane navigation
-                                } else {
-                                    navController.navigate(item.route)
+                                navController.navigate(item.route) {
+                                    launchSingleTop = true
                                 }
                             },
                         )

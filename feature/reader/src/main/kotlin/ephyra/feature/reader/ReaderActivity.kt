@@ -2,6 +2,7 @@ package ephyra.feature.reader
 
 import android.app.Activity
 import android.app.assist.AssistContent
+import android.content.ComponentCallbacks2
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -253,6 +254,18 @@ class ReaderActivity : BaseActivity() {
     override fun onPause() {
         viewModel.onEvent(ReaderEvent.ActivityFinish)
         super.onPause()
+    }
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
+            currentViewer?.let { viewer ->
+                val view = viewer.getView()
+                if (view is androidx.recyclerview.widget.RecyclerView) {
+                    view.recycledViewPool.clear()
+                }
+            }
+        }
     }
 
     override fun onResume() {

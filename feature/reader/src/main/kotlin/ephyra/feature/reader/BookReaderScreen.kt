@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import ephyra.core.archive.EpubChapter
 
 /**
  * Modern Compose-based text reader for Novels and Books.
@@ -180,6 +181,7 @@ private fun BookReaderContent(
                     state = state,
                     onNext = { onEvent(BookReaderEvent.NextChapter) },
                     onPrevious = { onEvent(BookReaderEvent.PreviousChapter) },
+                    onScrollChanged = { onEvent(BookReaderEvent.SaveScrollOffset(it)) },
                 )
             }
 
@@ -207,15 +209,61 @@ private fun BookReaderContent(
 }
 
 @Composable
+private fun ChapterBodyContent(
+    chapter: EpubChapter,
+    state: BookReaderState.Success,
+) {
+    if (chapter.paragraphs.isNotEmpty()) {
+        for (paragraph in chapter.paragraphs) {
+            if (paragraph == "* * *") {
+                Text(
+                    text = "* * *",
+                    style = MaterialTheme.typography.titleMedium,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                )
+            } else {
+                Text(
+                    text = paragraph,
+                    fontSize = state.fontSize.sp,
+                    fontFamily = if (state.isSerif) FontFamily.Serif else FontFamily.SansSerif,
+                    lineHeight = (state.fontSize * 1.6f).sp,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(modifier = Modifier.height(14.dp))
+            }
+        }
+    } else {
+        Text(
+            text = chapter.bodyText,
+            fontSize = state.fontSize.sp,
+            fontFamily = if (state.isSerif) FontFamily.Serif else FontFamily.SansSerif,
+            lineHeight = (state.fontSize * 1.6f).sp,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
 private fun ScrollChapterReader(
     state: BookReaderState.Success,
     onNext: () -> Unit,
     onPrevious: () -> Unit,
+    onScrollChanged: (Int) -> Unit = {},
 ) {
-    val scrollState = rememberScrollState()
+    val scrollState = rememberScrollState(initial = state.initialScrollOffset)
 
     LaunchedEffect(state.currentChapterIndex) {
-        scrollState.scrollTo(0)
+        scrollState.scrollTo(state.initialScrollOffset)
+    }
+
+    LaunchedEffect(scrollState.value) {
+        onScrollChanged(scrollState.value)
     }
 
     Column(
@@ -233,14 +281,7 @@ private fun ScrollChapterReader(
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = chapter.bodyText,
-                fontSize = state.fontSize.sp,
-                fontFamily = if (state.isSerif) FontFamily.Serif else FontFamily.SansSerif,
-                lineHeight = (state.fontSize * 1.6f).sp,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            ChapterBodyContent(chapter = chapter, state = state)
             Spacer(modifier = Modifier.height(32.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -308,14 +349,7 @@ private fun PaginatedChapterReader(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = chapter.bodyText,
-                    fontSize = state.fontSize.sp,
-                    fontFamily = if (state.isSerif) FontFamily.Serif else FontFamily.SansSerif,
-                    lineHeight = (state.fontSize * 1.6f).sp,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                ChapterBodyContent(chapter = chapter, state = state)
             }
             Spacer(modifier = Modifier.height(48.dp))
         }

@@ -52,8 +52,7 @@ class AddTracks(
 
             var currentTrack = item
 
-            // TODO: merge into [SyncChapterProgressWithTrack]?
-            // Update chapter progress if newer chapters marked read locally
+            // Synchronize initial read progress and start date before delegating to SyncChapterProgressWithTrack
             if (hasReadChapters) {
                 val latestLocalReadChapterNumber = allChapters
                     .sortedBy { it.chapterNumber }

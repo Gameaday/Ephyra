@@ -72,8 +72,10 @@ class EpubReaderTest {
 
         assertEquals(2, chapters.size)
         assertEquals("Chapter 1: The Beginning", chapters[0].title)
-        assertEquals("The Beginning It was a dark and stormy night.", chapters[0].bodyText)
+        assertEquals("The Beginning\n\nIt was a dark and stormy night.", chapters[0].bodyText)
+        assertEquals(listOf("The Beginning", "It was a dark and stormy night."), chapters[0].paragraphs)
         assertEquals("Chapter 2: The Journey", chapters[1].title)
-        assertEquals("The Journey They traveled across the plains.", chapters[1].bodyText)
+        assertEquals("The Journey\n\nThey traveled across the plains.", chapters[1].bodyText)
+        assertEquals(listOf("The Journey", "They traveled across the plains."), chapters[1].paragraphs)
     }
 }

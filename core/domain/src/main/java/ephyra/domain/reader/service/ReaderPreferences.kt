@@ -143,6 +143,26 @@ class ReaderPreferences(
 
     // endregion
 
+    // region E-Book / Novel Reader
+
+    fun bookReaderLastChapter(bookUrl: String) = preferenceStore.getInt(
+        "book_last_chapter_${bookUrl.hashCode()}",
+        0,
+    )
+
+    fun bookReaderLastScroll(bookUrl: String) = preferenceStore.getInt(
+        "book_last_scroll_${bookUrl.hashCode()}",
+        0,
+    )
+
+    fun bookReaderFontSize() = preferenceStore.getFloat("book_reader_font_size", 18f)
+
+    fun bookReaderIsSerif() = preferenceStore.getBoolean("book_reader_is_serif", true)
+
+    fun bookReaderIsPaginated() = preferenceStore.getBoolean("book_reader_is_paginated", false)
+
+    // endregion
+
     enum class FlashColor {
         BLACK,
         WHITE,
