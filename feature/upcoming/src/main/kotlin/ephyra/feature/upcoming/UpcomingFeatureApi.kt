@@ -1,10 +1,10 @@
 package ephyra.feature.upcoming
 
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import ephyra.presentation.core.feature.FeatureApi
-import ephyra.presentation.core.feature.SafeFeatureContainer
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import javax.inject.Inject
 
@@ -14,13 +14,8 @@ class UpcomingFeatureApi @Inject constructor() : FeatureApi {
         navController: NavHostController,
     ) {
         navGraphBuilder.composable(ScreenRoutes.Upcoming.route) {
-            SafeFeatureContainer(
-                featureName = "Upcoming",
-                viewModelClass = UpcomingViewModel::class.java,
-                onBack = { navController.popBackStack() },
-            ) { viewModel ->
-                UpcomingScreen(viewModel, navController)
-            }
+            val viewModel = hiltViewModel<UpcomingViewModel>()
+            UpcomingScreen(viewModel, navController)
         }
     }
 }

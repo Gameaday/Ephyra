@@ -32,7 +32,6 @@ import ephyra.feature.library.presentation.components.LibraryToolbar
 import ephyra.presentation.core.components.ChangeCategoryDialog
 import ephyra.presentation.core.components.LibraryBottomActionMenu
 import ephyra.presentation.core.components.material.Scaffold
-import ephyra.presentation.core.feature.SafeFeatureContainer
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.EmptyScreenAction
@@ -54,20 +53,15 @@ import kotlinx.coroutines.launch
 fun LibraryScreen(
     navController: NavController = LocalNavController.current,
     searchQuery: String? = null,
+    viewModel: LibraryViewModel = hiltViewModel(),
+    settingsViewModel: LibrarySettingsViewModel = hiltViewModel(),
 ) {
-    SafeFeatureContainer(
-        featureName = "Library",
-        viewModelClass = LibraryViewModel::class.java,
-        onBack = { navController.popBackStack() },
-    ) { ViewModel ->
-        val settingsViewModel = hiltViewModel<LibrarySettingsViewModel>()
-        LibraryScreen(
-            ViewModel = ViewModel,
-            settingsViewModel = settingsViewModel,
-            navController = navController,
-            searchQuery = searchQuery,
-        )
-    }
+    LibraryScreen(
+        ViewModel = viewModel,
+        settingsViewModel = settingsViewModel,
+        navController = navController,
+        searchQuery = searchQuery,
+    )
 }
 
 @Composable

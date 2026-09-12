@@ -364,12 +364,12 @@ class App :
             }
 
             crossfade((300 * this@App.animatorDurationScale).toInt())
+            allowRgb565(false)
             val lowRam = DeviceUtil.isLowRamDevice(this@App)
-            allowRgb565(lowRam)
             // On capable devices, request GPU-resident hardware bitmaps as the global default.
             // This eliminates the CPU→GPU upload on every render frame for covers and browse
-            // images. getBitmapOrNull() handles the soft-copy needed for compress/notifications.
-            if (!lowRam) bitmapConfig(Bitmap.Config.HARDWARE)
+            // images. On low-RAM devices, fallback to ARGB_8888 for full 32-bit color fidelity.
+            bitmapConfig(if (!lowRam) Bitmap.Config.HARDWARE else Bitmap.Config.ARGB_8888)
             if (verboseLoggingEnabled) logger(DebugLogger())
 
             // Coil spawns a new thread for every image load by default

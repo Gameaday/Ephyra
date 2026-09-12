@@ -106,10 +106,9 @@ class MangaChapterInteractor @Inject constructor(
             }
             updateManga.awaitUpdateFromSource(manga, networkManga, manualFetch = manualFetch)
         }.onFailure { e ->
-            // Never silent: a failed details fetch used to leave the screen showing stale
-            // metadata with zero feedback (e.g. when the extension's network call fails).
-            logcat(LogPriority.ERROR, e) { "Failed to fetch manga details from source '${source.name}'" }
-            if (manualFetch) throw e
+            logcat(LogPriority.WARN, e) {
+                "Failed to fetch manga details from source '${source.name}'; proceeding with chapter list"
+            }
         }
         val sourceChapters = runCatching {
             runExtensionCall(sourceName = source.name) {

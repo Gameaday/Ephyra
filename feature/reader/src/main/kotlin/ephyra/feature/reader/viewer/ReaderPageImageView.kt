@@ -25,7 +25,9 @@ import coil3.imageLoader
 import coil3.request.CachePolicy
 import coil3.request.Disposable
 import coil3.request.ImageRequest
+import coil3.request.allowRgb565
 import coil3.request.crossfade
+import coil3.size.Precision
 import coil3.size.Size
 import com.davemorrissey.labs.subscaleview.ImageSource
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
@@ -200,6 +202,36 @@ open class ReaderPageImageView @JvmOverloads constructor(
     fun canPanRight(): Boolean = canPan { it.right }
 
     /**
+     * Check if the image can be panned up
+     */
+    fun canPanUp(): Boolean = canPan { it.top }
+
+    /**
+     * Check if the image can be panned down
+     */
+    fun canPanDown(): Boolean = canPan { it.bottom }
+
+    override fun canScrollHorizontally(direction: Int): Boolean {
+        if (pageView is SubsamplingScaleImageView) {
+            val view = pageView as SubsamplingScaleImageView
+            if (view.isReady) {
+                return if (direction > 0) canPanRight() else canPanLeft()
+            }
+        }
+        return super.canScrollHorizontally(direction)
+    }
+
+    override fun canScrollVertically(direction: Int): Boolean {
+        if (pageView is SubsamplingScaleImageView) {
+            val view = pageView as SubsamplingScaleImageView
+            if (view.isReady) {
+                return if (direction > 0) canPanDown() else canPanUp()
+            }
+        }
+        return super.canScrollVertically(direction)
+    }
+
+    /**
      * Check whether the image can be panned.
      * @param fn a function that returns the direction to check for
      */
@@ -255,7 +287,7 @@ open class ReaderPageImageView @JvmOverloads constructor(
             setMaxTileSize(ImageUtil.hardwareBitmapThreshold)
             setDoubleTapZoomStyle(SubsamplingScaleImageView.ZOOM_FOCUS_CENTER)
             setPanLimit(SubsamplingScaleImageView.PAN_LIMIT_INSIDE)
-            setMinimumTileDpi(context.resources.displayMetrics.densityDpi)
+            setMinimumTileDpi(-1)
             setOnStateChangedListener(
                 object : SubsamplingScaleImageView.OnStateChangedListener {
                     override fun onScaleChanged(newScale: Float, origin: Int) {
@@ -326,6 +358,8 @@ open class ReaderPageImageView @JvmOverloads constructor(
                     .data(data)
                     .memoryCachePolicy(CachePolicy.DISABLED)
                     .diskCachePolicy(CachePolicy.DISABLED)
+                    .precision(Precision.EXACT)
+                    .allowRgb565(false)
                     .target(
                         onSuccess = { result ->
                             val image = result as BitmapImage

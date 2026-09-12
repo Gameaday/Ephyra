@@ -41,7 +41,6 @@ import ephyra.feature.manga.presentation.components.SetIntervalDialog
 import ephyra.feature.migration.dialog.MigrateMangaDialog
 import ephyra.feature.reader.ReaderActivity
 import ephyra.presentation.core.components.ChangeCategoryDialog
-import ephyra.presentation.core.feature.SafeFeatureContainer
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.Screen
@@ -67,22 +66,17 @@ fun MangaDetailsScreen(
     navigateUp: () -> Unit = { navController.popBackStack() },
     mediaViewerRegistry: MediaViewerRegistry,
     onAssistUrlComputed: (String?) -> Unit = {},
+    viewModel: MangaViewModel = hiltViewModel(),
 ) {
-    SafeFeatureContainer(
-        featureName = "MangaDetails",
-        viewModelClass = MangaViewModel::class.java,
-        onBack = navigateUp,
-    ) { ViewModel ->
-        MangaDetailsScreen(
-            mangaId = mangaId,
-            fromSource = fromSource,
-            ViewModel = ViewModel,
-            navController = navController,
-            navigateUp = navigateUp,
-            mediaViewerRegistry = mediaViewerRegistry,
-            onAssistUrlComputed = onAssistUrlComputed,
-        )
-    }
+    MangaDetailsScreen(
+        mangaId = mangaId,
+        fromSource = fromSource,
+        ViewModel = viewModel,
+        navController = navController,
+        navigateUp = navigateUp,
+        mediaViewerRegistry = mediaViewerRegistry,
+        onAssistUrlComputed = onAssistUrlComputed,
+    )
 }
 
 @Composable

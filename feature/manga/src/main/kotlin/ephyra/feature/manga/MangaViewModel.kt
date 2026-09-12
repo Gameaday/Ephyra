@@ -46,6 +46,7 @@ import ephyra.presentation.core.util.manga.DownloadAction
 import ephyra.presentation.core.util.manga.removeCovers
 import ephyra.presentation.core.util.system.toast
 import ephyra.source.local.isLocal
+import ephyra.source.local.isLocalOrStub
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.collections.immutable.ImmutableList
@@ -56,6 +57,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
@@ -106,7 +108,7 @@ class MangaViewModel @Inject constructor(
     private val skipFiltered by readerPreferences.skipFiltered().asState(viewModelScope)
     private val skipDupe by readerPreferences.skipDupe().asState(viewModelScope)
 
-    private var isInitialized = false
+    private var initializedMangaId: Long? = null
 
     init {
         val navMangaId: Long? = savedStateHandle.get<Long>("mangaId")
@@ -120,13 +122,16 @@ class MangaViewModel @Inject constructor(
     }
 
     fun init(mangaId: Long, isFromSource: Boolean) {
-        if (isInitialized) return
-        isInitialized = true
+        if (initializedMangaId == mangaId) return
+        initializedMangaId = mangaId
         savedStateHandle["mangaId"] = mangaId
         savedStateHandle["fromSource"] = isFromSource
 
         viewModelScope.launch {
             getManga.subscribe(mangaId)
+                .catch { e ->
+                    logcat(LogPriority.ERROR, e) { "Failed to subscribe to manga $mangaId" }
+                }
                 .distinctUntilChanged()
                 .collect { manga ->
                     updateState { state ->
@@ -258,6 +263,9 @@ class MangaViewModel @Inject constructor(
             val success = successState ?: return@launchIO
             val manga = success.manga
             val source = sourceManager.getOrStub(manga.source)
+            if (source.isLocalOrStub()) {
+                return@launchIO
+            }
             runCatching {
                 mangaChapterInteractor.syncChaptersWithSource(
                     chapters = success.chapters,
