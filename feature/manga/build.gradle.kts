@@ -9,6 +9,14 @@ android {
     namespace = "ephyra.feature.manga"
 }
 
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.addAll(
+            "-opt-in=androidx.compose.animation.ExperimentalSharedTransitionApi",
+        )
+    }
+}
+
 dependencies {
     api(projects.core.common)
     api(projects.core.domain)

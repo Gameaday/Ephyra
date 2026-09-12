@@ -7,7 +7,14 @@ import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
+import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
@@ -20,6 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -66,10 +74,13 @@ import ephyra.presentation.core.components.IncognitoModeBannerBackgroundColor
 import ephyra.presentation.core.components.IndexingBannerBackgroundColor
 import ephyra.presentation.core.feature.FeatureApi
 import ephyra.presentation.core.i18n.stringResource
+import ephyra.presentation.core.theme.MotionTokens
 import ephyra.presentation.core.ui.AppInfo
 import ephyra.presentation.core.ui.AppReadySignal
 import ephyra.presentation.core.ui.activity.BaseActivity
+import ephyra.presentation.core.ui.navigation.LocalNavAnimatedVisibilityScope
 import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.LocalSharedTransitionScope
 import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.AppNavigator
@@ -197,43 +208,113 @@ class MainActivity : BaseActivity(), AppReadySignal {
                             WindowInsets.navigationBars.only(WindowInsetsSides.Horizontal),
                         ),
                     ) {
-                        NavHost(
-                            navController = navController,
-                            startDestination = ScreenRoutes.Home.route,
-                        ) {
-                            composable(ScreenRoutes.Home.route) { HomeScreen(navController) }
-
-                            composable(ScreenRoutes.DownloadQueue.route) {
-                                ephyra.feature.download.DownloadQueueScreen(navController)
-                            }
-                            composable(ScreenRoutes.MigrationConfig.route) { backStackEntry ->
-                                val mangaIdsStr = backStackEntry.arguments?.getString("mangaIds") ?: return@composable
-                                val mangaIds = mangaIdsStr.split(",").mapNotNull { it.toLongOrNull() }
-                                ephyra.feature.migration.config.MigrationConfigScreen(mangaIds, navController)
-                            }
-
-                            composable(
-                                route = ScreenRoutes.MigrationList.route,
-                                arguments = listOf(
-                                    androidx.navigation.navArgument("mangaIds") {
-                                        type =
-                                            androidx.navigation.NavType.StringType
+                        SharedTransitionLayout {
+                            CompositionLocalProvider(
+                                LocalSharedTransitionScope provides this,
+                            ) {
+                                NavHost(
+                                    navController = navController,
+                                    startDestination = ScreenRoutes.Home.route,
+                                    enterTransition = {
+                                        slideIntoContainer(
+                                            AnimatedContentTransitionScope.SlideDirection.Start,
+                                            animationSpec = tween(
+                                                durationMillis = MotionTokens.DURATION_MEDIUM,
+                                                easing = MotionTokens.EasingDecelerate,
+                                            ),
+                                        ) + fadeIn(
+                                            animationSpec = tween(
+                                                durationMillis = MotionTokens.DURATION_MEDIUM,
+                                            ),
+                                        )
                                     },
-                                    androidx.navigation.navArgument("query") { nullable = true },
-                                ),
-                            ) { backStackEntry ->
-                                val mangaIdsStr = backStackEntry.arguments?.getString("mangaIds") ?: return@composable
-                                val mangaIds = mangaIdsStr.split(",").mapNotNull { it.toLongOrNull() }
-                                val query = backStackEntry.arguments?.getString("query")
-                                ephyra.feature.migration.list.MigrationListScreen(mangaIds, query, navController)
-                            }
+                                    exitTransition = {
+                                        slideOutOfContainer(
+                                            AnimatedContentTransitionScope.SlideDirection.Start,
+                                            animationSpec = tween(
+                                                durationMillis = MotionTokens.DURATION_MEDIUM,
+                                                easing = MotionTokens.EasingAccelerate,
+                                            ),
+                                        ) + fadeOut(
+                                            animationSpec = tween(
+                                                durationMillis = MotionTokens.DURATION_SHORT,
+                                            ),
+                                        )
+                                    },
+                                    popEnterTransition = {
+                                        slideIntoContainer(
+                                            AnimatedContentTransitionScope.SlideDirection.End,
+                                            animationSpec = tween(
+                                                durationMillis = MotionTokens.DURATION_MEDIUM,
+                                                easing = MotionTokens.EasingDecelerate,
+                                            ),
+                                        ) + fadeIn(
+                                            animationSpec = tween(
+                                                durationMillis = MotionTokens.DURATION_MEDIUM,
+                                            ),
+                                        )
+                                    },
+                                    popExitTransition = {
+                                        slideOutOfContainer(
+                                            AnimatedContentTransitionScope.SlideDirection.End,
+                                            animationSpec = tween(
+                                                durationMillis = MotionTokens.DURATION_MEDIUM,
+                                                easing = MotionTokens.EasingAccelerate,
+                                            ),
+                                        ) + fadeOut(
+                                            animationSpec = tween(
+                                                durationMillis = MotionTokens.DURATION_SHORT,
+                                            ),
+                                        )
+                                    },
+                                ) {
+                                    composable(ScreenRoutes.Home.route) {
+                                        CompositionLocalProvider(
+                                            LocalNavAnimatedVisibilityScope provides this@composable,
+                                        ) {
+                                            HomeScreen(navController)
+                                        }
+                                    }
 
-                            featureApis.forEach { featureApi ->
-                                try {
-                                    featureApi.register(this, navController)
-                                } catch (e: Exception) {
-                                    logcat(LogPriority.ERROR, e) {
-                                        "Failed to register feature: ${featureApi.javaClass.simpleName}"
+                                    composable(ScreenRoutes.DownloadQueue.route) {
+                                        ephyra.feature.download.DownloadQueueScreen(navController)
+                                    }
+                                    composable(ScreenRoutes.MigrationConfig.route) { backStackEntry ->
+                                        val mangaIdsStr =
+                                            backStackEntry.arguments?.getString("mangaIds") ?: return@composable
+                                        val mangaIds = mangaIdsStr.split(",").mapNotNull { it.toLongOrNull() }
+                                        ephyra.feature.migration.config.MigrationConfigScreen(mangaIds, navController)
+                                    }
+
+                                    composable(
+                                        route = ScreenRoutes.MigrationList.route,
+                                        arguments = listOf(
+                                            androidx.navigation.navArgument("mangaIds") {
+                                                type =
+                                                    androidx.navigation.NavType.StringType
+                                            },
+                                            androidx.navigation.navArgument("query") { nullable = true },
+                                        ),
+                                    ) { backStackEntry ->
+                                        val mangaIdsStr =
+                                            backStackEntry.arguments?.getString("mangaIds") ?: return@composable
+                                        val mangaIds = mangaIdsStr.split(",").mapNotNull { it.toLongOrNull() }
+                                        val query = backStackEntry.arguments?.getString("query")
+                                        ephyra.feature.migration.list.MigrationListScreen(
+                                            mangaIds,
+                                            query,
+                                            navController,
+                                        )
+                                    }
+
+                                    featureApis.forEach { featureApi ->
+                                        try {
+                                            featureApi.register(this, navController)
+                                        } catch (e: Exception) {
+                                            logcat(LogPriority.ERROR, e) {
+                                                "Failed to register feature: ${featureApi.javaClass.simpleName}"
+                                            }
+                                        }
                                     }
                                 }
                             }

@@ -1,5 +1,8 @@
 package ephyra.presentation.core.ui.navigation
 
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -11,6 +14,11 @@ import kotlinx.coroutines.flow.asStateFlow
 val LocalNavController = staticCompositionLocalOf<NavHostController> {
     error("No NavController provided")
 }
+
+@OptIn(ExperimentalSharedTransitionApi::class)
+val LocalSharedTransitionScope = staticCompositionLocalOf<SharedTransitionScope?> { null }
+
+val LocalNavAnimatedVisibilityScope = staticCompositionLocalOf<AnimatedVisibilityScope?> { null }
 
 /**
  * Provides a way for child screens to communicate bottom navigation bar visibility

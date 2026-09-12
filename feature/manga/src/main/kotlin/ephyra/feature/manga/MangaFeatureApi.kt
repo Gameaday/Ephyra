@@ -18,13 +18,17 @@ class MangaFeatureApi @Inject constructor(
     ) {
         navGraphBuilder.composable<ephyra.presentation.core.ui.navigation.Screen.MangaDetails> { backStackEntry ->
             val route = backStackEntry.toRoute<ephyra.presentation.core.ui.navigation.Screen.MangaDetails>()
-            MangaDetailsScreen(
-                mangaId = route.mangaId,
-                fromSource = route.fromSource,
-                navController = navController,
-                navigateUp = { navController.popBackStack() },
-                mediaViewerRegistry = mediaViewerRegistry,
-            )
+            androidx.compose.runtime.CompositionLocalProvider(
+                ephyra.presentation.core.ui.navigation.LocalNavAnimatedVisibilityScope provides this@composable,
+            ) {
+                MangaDetailsScreen(
+                    mangaId = route.mangaId,
+                    fromSource = route.fromSource,
+                    navController = navController,
+                    navigateUp = { navController.popBackStack() },
+                    mediaViewerRegistry = mediaViewerRegistry,
+                )
+            }
         }
 
         navGraphBuilder.composable(

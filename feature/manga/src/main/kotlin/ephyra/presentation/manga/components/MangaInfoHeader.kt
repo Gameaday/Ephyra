@@ -411,6 +411,7 @@ private fun MangaAndSourceTitlesLarge(
                 .precision(Precision.EXACT)
                 .build(),
             contentDescription = stringResource(ephyra.app.core.common.R.string.manga_cover),
+            mangaId = manga.id,
             onClick = onCoverClick,
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -461,6 +462,7 @@ private fun MangaAndSourceTitlesSmall(
                 .precision(Precision.EXACT)
                 .build(),
             contentDescription = stringResource(ephyra.app.core.common.R.string.manga_cover),
+            mangaId = manga.id,
             onClick = onCoverClick,
         )
         Column(

@@ -1,5 +1,6 @@
 package ephyra.presentation.core.components
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.material3.MaterialTheme
@@ -18,6 +19,8 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.size.Precision
 import ephyra.presentation.core.R
+import ephyra.presentation.core.ui.navigation.LocalNavAnimatedVisibilityScope
+import ephyra.presentation.core.ui.navigation.LocalSharedTransitionScope
 import ephyra.presentation.core.util.rememberResourceBitmapPainter
 
 enum class MangaCover(val ratio: Float) {
@@ -25,12 +28,14 @@ enum class MangaCover(val ratio: Float) {
     Book(2f / 3f),
     ;
 
+    @OptIn(ExperimentalSharedTransitionApi::class)
     @Composable
     operator fun invoke(
         data: Any?,
         modifier: Modifier = Modifier,
         contentDescription: String = "",
         shape: Shape = MaterialTheme.shapes.extraSmall,
+        mangaId: Long? = null,
         onClick: (() -> Unit)? = null,
     ) {
         val context = LocalContext.current
@@ -43,12 +48,29 @@ enum class MangaCover(val ratio: Float) {
                 .precision(Precision.EXACT)
                 .build()
         }
+
+        val sharedTransitionScope = LocalSharedTransitionScope.current
+        val animatedVisibilityScope = LocalNavAnimatedVisibilityScope.current
+        val sharedElementModifier = if (mangaId != null && sharedTransitionScope != null &&
+            animatedVisibilityScope != null
+        ) {
+            with(sharedTransitionScope) {
+                Modifier.sharedElement(
+                    rememberSharedContentState(key = "manga_cover_$mangaId"),
+                    animatedVisibilityScope = animatedVisibilityScope,
+                )
+            }
+        } else {
+            Modifier
+        }
+
         AsyncImage(
             model = model,
             placeholder = ColorPainter(CoverPlaceholderColor),
             error = rememberResourceBitmapPainter(id = R.drawable.cover_error),
             contentDescription = contentDescription,
             modifier = modifier
+                .then(sharedElementModifier)
                 .aspectRatio(ratio)
                 .clip(shape)
                 .then(
