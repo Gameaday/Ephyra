@@ -126,4 +126,49 @@ class EphyraDatabaseMigrationTest {
 
         db.close()
     }
+
+    /**
+     * A database created by the *Room* v1 engine (existing nightly installs with
+     * `room_master_table`) must migrate to v2 without data loss: [Migrations.MIGRATION_1_2]
+     * is idempotent for already-canonical databases.
+     */
+    @Test
+    @Throws(IOException::class)
+    fun testMigrateRoomV1ToV2() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val dbPath = context.getDatabasePath("migration-test-room-v1-to-v2").absolutePath
+
+        helper.createDatabase(dbPath, 1).use { db ->
+            val values = ContentValues().apply {
+                put("source", 1L)
+                put("url", "/manga/v1")
+                put("title", "Room V1 Manga")
+                put("status", 1)
+                put("favorite", 1)
+                put("initialized", 1)
+                put("viewer", 0)
+                put("chapter_flags", 0)
+                put("cover_last_modified", 0L)
+                put("date_added", 1000L)
+                put("update_strategy", 0)
+                put("calculate_interval", 0)
+                put("last_modified_at", 1000L)
+                put("version", 1)
+                put("is_syncing", 0)
+                put("notes", "")
+                put("source_status", 0)
+                put("content_type", 0)
+                put("locked_fields", 0)
+            }
+            assertTrue(db.insert("mangas", SQLiteDatabase.CONFLICT_REPLACE, values) > 0)
+        }
+
+        val db = helper.runMigrationsAndValidate(dbPath, Migrations.DB_VERSION, true, *Migrations.ALL)
+
+        db.query("SELECT title FROM mangas WHERE url = '/manga/v1'").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("Room V1 Manga", c.getString(0))
+        }
+        db.close()
+    }
 }

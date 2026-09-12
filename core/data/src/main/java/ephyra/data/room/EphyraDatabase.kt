@@ -32,7 +32,11 @@ import ephyra.data.room.views.*
         HistoryView::class,
         UpdatesView::class,
     ],
-    version = 1, // Start with 1, but it will pick up legacy schema
+    // v2: adopts legacy SQLDelight-era databases and normalizes indices/keys/views/triggers
+    // to the canonical Room shapes — see `Migrations.MIGRATION_1_2` and
+    // `doc/PHASE_C_ROOM_MIGRATIONS.md`. Bump again on every entity change and add a step to
+    // `Migrations.ALL` (enforced by `MigrationCoverageTest`).
+    version = 2,
     exportSchema = true,
 )
 @TypeConverters(RoomTypeConverters::class)

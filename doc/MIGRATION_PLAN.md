@@ -164,14 +164,24 @@ Replace the legacy SQL-first engine with Entity-DAO Room paradigm.
   depends only on the Room `TrackDao`, is bound in `RepositoryBindingsModule.kt`, and has unit tests.
 - [x] Implement `CategoryRepositoryImpl` backed by Room DAO. — verified: same pattern
   (`core/data/.../category/CategoryRepositoryImpl.kt`), unit tests present.
-- [x] Boot-safety: `fallbackToDestructiveMigration(dropAllTables = true)` re-added in `AppModule`
-  while schema is actively evolving — prevents hard crash on Room identity-hash mismatch.
-  **Correction (Sep 2026): the builder had silently lost this call** while the doc still claimed
-  it was present, leaving no fallback *and* no `addMigrations()`. It has been restored, and it
-  **must** still be replaced with proper `addMigrations()` + `Migration` scripts before first
+- [x] Boot-safety: `fallbackToDestructiveMigration(dropAllTables = true)` in `AppModule` —
+  **restored in the Phase 6-M session after discovering the builder had silently lost the
+  call** (doc claimed it was present while it wasn't). Now INERT for all known upgrade paths:
+  `addMigrations(*Migrations.ALL)` runs first; the fallback only fires when a *missing*
+  migration exists (a schema-change mistake). Remove it at schema freeze before first
   production release.
-- [ ] Implement robust versioned migration strategy (SQLite legacy schema → Room v1+).
-- [ ] Add Room migration unit tests.
+- [x] Implement robust versioned migration strategy (SQLite legacy schema → Room v1+). —
+  **complete (Phase 6-M)**: `EphyraDatabase` bumped to `version = 2`;
+  `Migrations.MIGRATION_1_2` upgrades legacy SQLDelight-era `tachiyomi.db` files
+  (`user_version = 1`, no `room_master_table`) and normalizes index names, primary keys,
+  legacy UNIQUE constraints, views, and triggers to the canonical Room shapes. Registered
+  via `.addMigrations(*Migrations.ALL)`. Evidence + legacy-schema archaeology:
+  `doc/PHASE_C_ROOM_MIGRATIONS.md`.
+- [x] Add Room migration unit tests. — **complete (Phase 6-M)**:
+  `LegacySqlDelightAdoptionTest` (real legacy DB from git history → migrated → validated),
+  `EphyraDatabaseMigrationTest.testMigrateRoomV1ToV2` (idempotence for existing Room-v1
+  installs), `MigrationCoverageTest` (build gate: exported schema version must match
+  `Migrations.DB_VERSION` and `Migrations.ALL` must cover every step 1..N).
 - [x] Retire `AndroidDatabaseHandler` and remove SQLDelight dependency once all paths ported. —
   verified: zero `sqldelight` references in build scripts / `libs.versions.toml`, zero
   `DatabaseHandler` / `*Queries` usage in code; backup creators/restorers are Room-backed.
@@ -371,8 +381,11 @@ They double as the rationale for Phase 14 (extension-API parity + runtime smoke 
   `ConfigurableSource` + Jsoup helper facades).
 - [ ] On-device validation with a real Mangabat/MangaDex extension: details → chapter list →
   reader render on all five reading modes; verify no `IncompatibleClassChangeError` in logcat.
-  *(blocked on device/emulator availability)*
-- [ ] Room versioned migrations + legacy SQLDelight → Room v1 migration + `MigrationTestHelper`
-  unit tests (replaces the restored destructive fallback before production).
+  *(deferred by user until the phases are pushed to git)*
+- [x] Room versioned migrations + legacy SQLDelight → Room v1 migration + `MigrationTestHelper`
+  unit tests — **complete (Phase 6-M)**: `Migrations.MIGRATION_1_2` covers both legacy
+  SQLDelight databases and existing Room-v1 installs; `doc/PHASE_C_ROOM_MIGRATIONS.md` has the
+  full upgrade-path matrix. The destructive fallback remains registered as a documented
+  last resort (inert for known paths) until schema freeze.
 - [ ] Runtime smoke sweep (browse → search → library → reader → downloads → backup/restore)
   recorded in `doc/VALIDATION_CRITERIA.md` — compile gates do not catch these.
