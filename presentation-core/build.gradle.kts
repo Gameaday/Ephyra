@@ -80,4 +80,7 @@ dependencies {
     // Utilities
     api(libs.shizuku.api)
     api(androidx.biometricktx)
+
+    testImplementation(libs.bundles.test)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }

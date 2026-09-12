@@ -8,12 +8,11 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.dp
+import ephyra.presentation.core.components.adaptive.ListDetailPaneScaffold
 
 @Composable
 fun TwoPanelBox(
@@ -26,21 +25,25 @@ fun TwoPanelBox(
     val padding = contentWindowInsets.asPaddingValues()
     val startPadding = padding.calculateStartPadding(direction)
     val endPadding = padding.calculateEndPadding(direction)
-    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
-        val width = maxWidth - startPadding - endPadding
-        val firstWidth = (width / 2).coerceAtMost(450.dp)
-        val secondWidth = width - firstWidth
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .width(firstWidth + startPadding),
-            content = startContent,
-        )
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .width(secondWidth + endPadding),
-            content = endContent,
-        )
-    }
+    ListDetailPaneScaffold(
+        modifier = modifier.fillMaxSize(),
+        isDualPane = true,
+        showDivider = false,
+        listPane = {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(start = startPadding),
+                content = startContent,
+            )
+        },
+        detailPane = {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(end = endPadding),
+                content = endContent,
+            )
+        },
+    )
 }
