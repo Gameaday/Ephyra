@@ -25,6 +25,7 @@ class MigrateSearchViewModel @Inject constructor(
     extensionManager: ExtensionManager,
     networkToLocalManga: NetworkToLocalManga,
     searchCache: GlobalSearchCache,
+    unifiedSearchEngine: ephyra.domain.manga.interactor.UnifiedSearchEngine,
 ) : SearchViewModel(
     sourcePreferences = sourcePreferences,
     sourceManager = sourceManager,
@@ -32,6 +33,7 @@ class MigrateSearchViewModel @Inject constructor(
     networkToLocalManga = networkToLocalManga,
     getManga = getManga,
     searchCache = searchCache,
+    unifiedSearchEngine = unifiedSearchEngine,
 ) {
 
     private val migrationSources by lazy { sourcePreferences.migrationSources().getSync() }
@@ -66,22 +68,12 @@ class MigrateSearchViewModel @Inject constructor(
         if (standardResults.isNotEmpty()) return standardResults
 
         val fromManga = state.value.from ?: return emptyList()
-        return try {
-            val smartEngine = SmartSourceSearchEngine(extraSearchParams = null)
-            val match = smartEngine.multiTitleSearch(
-                source = source,
-                primaryTitle = fromManga.title,
-                alternativeTitles = fromManga.alternativeTitles,
-                deepSearchFallback = true,
-            )
-            if (match != null) {
-                networkToLocalManga(listOf(match.first))
-            } else {
-                emptyList()
-            }
-        } catch (_: Exception) {
-            emptyList()
-        }
+        val match = unifiedSearchEngine.matchSource(
+            targetSource = source,
+            manga = fromManga,
+            deepSearchMode = true,
+        )
+        return if (match != null) listOf(match.manga) else emptyList()
     }
 
     override fun getEnabledSources(): List<CatalogueSource> {

@@ -168,6 +168,7 @@ import ephyra.domain.manga.interactor.ResetViewerFlags
 import ephyra.domain.manga.interactor.SetExcludedScanlators
 import ephyra.domain.manga.interactor.SetMangaChapterFlags
 import ephyra.domain.manga.interactor.SetMangaViewerFlags
+import ephyra.domain.manga.interactor.UnifiedSearchEngine
 import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.interactor.UpdateMangaNotes
 import ephyra.domain.manga.repository.ExcludedScanlatorRepository
@@ -1114,6 +1115,13 @@ object AppModule {
 
     @Provides
     fun provideNetworkToLocalManga(mangaRepository: MangaRepository) = NetworkToLocalManga(mangaRepository)
+
+    @Provides
+    @Singleton
+    fun provideUnifiedSearchEngine(
+        networkToLocalManga: NetworkToLocalManga,
+        getFavoritesByCanonicalId: GetFavoritesByCanonicalId,
+    ) = UnifiedSearchEngine(networkToLocalManga, getFavoritesByCanonicalId)
 
     @Provides
     fun provideUpdateManga(

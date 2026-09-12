@@ -7,10 +7,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
 import ephyra.domain.chapter.interactor.SyncChaptersWithSource
-import ephyra.domain.manga.interactor.GetFavoritesByCanonicalId
 import ephyra.domain.manga.interactor.GetManga
-import ephyra.domain.manga.interactor.NetworkToLocalManga
-import ephyra.domain.manga.interactor.SmartSourceSearchEngine
+import ephyra.domain.manga.interactor.UnifiedSearchEngine
 import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.toSManga
@@ -44,15 +42,14 @@ class MigrationListViewModel @Inject constructor(
     private val preferences: SourcePreferences,
     private val sourceManager: SourceManager,
     private val getManga: GetManga,
-    private val networkToLocalManga: NetworkToLocalManga,
     private val updateManga: UpdateManga,
     private val syncChaptersWithSource: SyncChaptersWithSource,
     private val getChaptersByMangaId: GetChaptersByMangaId,
     private val migrateManga: MigrateMangaUseCase,
-    private val getFavoritesByCanonicalId: GetFavoritesByCanonicalId,
+    private val unifiedSearchEngine: UnifiedSearchEngine,
 ) : BaseUdfViewModel<MigrationListViewModel.State, MigrationListScreenEvent, MigrationListViewModel.Effect>(State()) {
 
-    private lateinit var smartSearchEngine: SmartSourceSearchEngine
+    private var extraSearchQuery: String? = null
 
     val items
         get() = currentState.items
@@ -70,7 +67,7 @@ class MigrationListViewModel @Inject constructor(
         if (isInitialized) return
         isInitialized = true
 
-        smartSearchEngine = SmartSourceSearchEngine(extraSearchQuery)
+        this.extraSearchQuery = extraSearchQuery
 
         viewModelScope.launch {
             val manga = mangaIds
@@ -192,66 +189,25 @@ class MigrationListViewModel @Inject constructor(
         deepSearchMode: Boolean,
     ): SourceSearchResult? {
         return try {
-            // Tiered search strategy — each tier is tried only if the previous returned null.
-            // Tier 1: Canonical ID (FREE — local DB lookup, 0 API calls)
-            // Tier 2: Primary title search (1 API call)
-            // Tier 3: Alternative titles search (1 API call per alt title)
-            // Tier 3b: Best near-match from tiers 2–3 (0 additional API calls)
-            // Tier 4: Deep search with cleaned/split title (multiple API calls, only if enabled)
-            val canonicalMatch = findByCanonicalId(manga, source.id)
-            val searchResult: Manga?
-            val matchConfidence: Double
-            if (canonicalMatch != null) {
-                logcat(LogPriority.DEBUG) { "Tier 1 (canonical ID) matched ${manga.title} on source ${source.id}" }
-                searchResult = canonicalMatch
-                matchConfidence = 1.0 // Canonical ID is an exact identity match
-            } else {
-                val titleResult = smartSearchEngine.multiTitleSearch(
-                    source = source,
-                    primaryTitle = manga.title,
-                    alternativeTitles = manga.alternativeTitles,
-                    deepSearchFallback = deepSearchMode,
-                )
-                if (titleResult != null) {
-                    logcat(LogPriority.DEBUG) { "Title search matched ${manga.title} on source ${source.id}" }
-                    searchResult = titleResult.first
-                    matchConfidence = titleResult.second
-                } else {
-                    searchResult = null
-                    matchConfidence = 0.0
-                }
-            }
+            val match = unifiedSearchEngine.matchSource(
+                targetSource = source,
+                manga = manga,
+                deepSearchMode = deepSearchMode,
+                extraSearchParams = extraSearchQuery,
+            ) ?: return null
 
-            if (searchResult == null || (searchResult.url == manga.url && source.id == manga.source)) return null
-
-            val localManga = networkToLocalManga(searchResult)
+            val localManga = match.manga
             try {
                 val chapters = source.getChapterList(localManga.toSManga())
                 syncChaptersWithSource.await(chapters, localManga, source)
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e)
             }
-            SourceSearchResult(localManga, getChapterInfo(localManga.id), matchConfidence)
+            SourceSearchResult(localManga, getChapterInfo(localManga.id), match.matchConfidence)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             logcat(LogPriority.WARN, e) { "Source search failed for '${manga.title}' on source ${source.id}; skipping" }
-            null
-        }
-    }
-
-    /**
-     * Attempts to find a library manga on the target source that shares the same canonical identity.
-     * This is a zero-API-call lookup — it checks the local database only.
-     * Returns null if no canonical ID is set or no match found on the target source.
-     */
-    private suspend fun findByCanonicalId(manga: Manga, targetSourceId: Long): Manga? {
-        val canonicalId = manga.canonicalId ?: return null
-        return try {
-            getFavoritesByCanonicalId.await(canonicalId, manga.id)
-                .firstOrNull { it.source == targetSourceId }
-        } catch (e: Exception) {
-            logcat(LogPriority.WARN, e) { "Canonical ID lookup failed for manga id=${manga.id}" }
             null
         }
     }

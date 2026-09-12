@@ -42,6 +42,7 @@ class GlobalSearchViewModelTest {
     private val searchCache: GlobalSearchCache = mockk(relaxed = true)
     private val recentSearches: RecentSearches = mockk(relaxed = true)
     private val getLibraryManga: GetLibraryManga = mockk(relaxed = true)
+    private val unifiedSearchEngine: ephyra.domain.manga.interactor.UnifiedSearchEngine = mockk(relaxed = true)
 
     private val testDispatcher = UnconfinedTestDispatcher()
 
@@ -80,6 +81,7 @@ class GlobalSearchViewModelTest {
             searchCache = searchCache,
             recentSearches = recentSearches,
             getLibraryManga = getLibraryManga,
+            unifiedSearchEngine = unifiedSearchEngine,
         )
     }
 

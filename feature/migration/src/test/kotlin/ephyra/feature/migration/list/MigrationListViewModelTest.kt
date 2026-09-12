@@ -5,9 +5,7 @@ import ephyra.core.common.preference.Preference
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
 import ephyra.domain.chapter.interactor.SyncChaptersWithSource
 import ephyra.domain.chapter.model.Chapter
-import ephyra.domain.manga.interactor.GetFavoritesByCanonicalId
 import ephyra.domain.manga.interactor.GetManga
-import ephyra.domain.manga.interactor.NetworkToLocalManga
 import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.migration.usecases.MigrateMangaUseCase
@@ -38,12 +36,11 @@ class MigrationListViewModelTest {
     private val preferences: SourcePreferences = mockk(relaxed = true)
     private val sourceManager: SourceManager = mockk(relaxed = true)
     private val getManga: GetManga = mockk(relaxed = true)
-    private val networkToLocalManga: NetworkToLocalManga = mockk(relaxed = true)
     private val updateManga: UpdateManga = mockk(relaxed = true)
     private val syncChaptersWithSource: SyncChaptersWithSource = mockk(relaxed = true)
     private val getChaptersByMangaId: GetChaptersByMangaId = mockk(relaxed = true)
     private val migrateManga: MigrateMangaUseCase = mockk(relaxed = true)
-    private val getFavoritesByCanonicalId: GetFavoritesByCanonicalId = mockk(relaxed = true)
+    private val unifiedSearchEngine: ephyra.domain.manga.interactor.UnifiedSearchEngine = mockk(relaxed = true)
 
     private val hideUnmatchedPref: Preference<Boolean> = mockk(relaxed = true)
     private val hideWithoutUpdatesPref: Preference<Boolean> = mockk(relaxed = true)
@@ -94,12 +91,11 @@ class MigrationListViewModelTest {
         preferences = preferences,
         sourceManager = sourceManager,
         getManga = getManga,
-        networkToLocalManga = networkToLocalManga,
         updateManga = updateManga,
         syncChaptersWithSource = syncChaptersWithSource,
         getChaptersByMangaId = getChaptersByMangaId,
         migrateManga = migrateManga,
-        getFavoritesByCanonicalId = getFavoritesByCanonicalId,
+        unifiedSearchEngine = unifiedSearchEngine,
     )
 
     @Test

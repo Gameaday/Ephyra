@@ -41,6 +41,7 @@ class MigrateSearchViewModelTest {
     private val extensionManager: ExtensionManager = mockk(relaxed = true)
     private val networkToLocalManga: NetworkToLocalManga = mockk(relaxed = true)
     private val searchCache: GlobalSearchCache = mockk(relaxed = true)
+    private val unifiedSearchEngine: ephyra.domain.manga.interactor.UnifiedSearchEngine = mockk(relaxed = true)
 
     private val testDispatcher = UnconfinedTestDispatcher()
 
@@ -85,6 +86,7 @@ class MigrateSearchViewModelTest {
             extensionManager = extensionManager,
             networkToLocalManga = networkToLocalManga,
             searchCache = searchCache,
+            unifiedSearchEngine = unifiedSearchEngine,
         )
     }
 

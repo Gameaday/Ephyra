@@ -32,6 +32,7 @@ class GlobalSearchViewModel @Inject constructor(
     searchCache: GlobalSearchCache,
     private val recentSearches: RecentSearches,
     private val getLibraryManga: GetLibraryManga,
+    unifiedSearchEngine: ephyra.domain.manga.interactor.UnifiedSearchEngine,
 ) : SearchViewModel(
     sourcePreferences = sourcePreferences,
     sourceManager = sourceManager,
@@ -39,6 +40,7 @@ class GlobalSearchViewModel @Inject constructor(
     networkToLocalManga = networkToLocalManga,
     getManga = getManga,
     searchCache = searchCache,
+    unifiedSearchEngine = unifiedSearchEngine,
 ) {
 
     /**
