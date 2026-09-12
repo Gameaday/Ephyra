@@ -114,6 +114,74 @@ class ContentSourceOrchestratorTest {
         assertTrue(result is Result.Error)
     }
 
+    @Test
+    fun `search falls back to heuristic engine when script engine throws exception`() = runTest {
+        orchestrator.discover("https://mangadex.org")
+        orchestrator.setSourceType("https://mangadex.org", SourceType.JS_SCRAPER, "broken_scraper.js")
+        script.searchHandler = { throw IllegalStateException("Script error") }
+        heuristic.searchHandler = { listOf(item("Recovered:Heuristic")) }
+
+        val result = orchestrator.search("https://mangadex.org", "One Piece", 1)
+
+        assertTrue(result is Result.Success)
+        assertEquals(listOf("Recovered:Heuristic"), result.getOrThrow().map { it.title })
+        assertEquals(1, script.searchCalls)
+        assertEquals(1, heuristic.searchCalls)
+    }
+
+    @Test
+    fun `search falls back to heuristic engine when script engine returns empty list`() = runTest {
+        orchestrator.discover("https://mangadex.org")
+        orchestrator.setSourceType("https://mangadex.org", SourceType.JS_SCRAPER, "outdated_scraper.js")
+        script.searchHandler = { emptyList() }
+        heuristic.searchHandler = { listOf(item("Recovered:Heuristic")) }
+
+        val result = orchestrator.search("https://mangadex.org", "One Piece", 1)
+
+        assertTrue(result is Result.Success)
+        assertEquals(listOf("Recovered:Heuristic"), result.getOrThrow().map { it.title })
+        assertEquals(1, script.searchCalls)
+        assertEquals(1, heuristic.searchCalls)
+    }
+
+    @Test
+    fun `getItem falls back to heuristic engine when script engine fails`() = runTest {
+        orchestrator.discover("https://mangadex.org")
+        orchestrator.setSourceType("https://mangadex.org", SourceType.JS_SCRAPER, "broken_scraper.js")
+        script.getItemHandler = { throw IllegalStateException("Scraper failed") }
+        heuristic.getItemHandler = { item("Recovered Detail") }
+
+        val result = orchestrator.getItem("https://mangadex.org", "/manga/1")
+
+        assertTrue(result is Result.Success)
+        assertEquals("Recovered Detail", result.getOrThrow().title)
+    }
+
+    @Test
+    fun `getChapters falls back to heuristic engine when script engine returns empty`() = runTest {
+        orchestrator.discover("https://mangadex.org")
+        orchestrator.setSourceType("https://mangadex.org", SourceType.JS_SCRAPER, "outdated_scraper.js")
+        script.chaptersHandler = { emptyList() }
+        val chapter = ContentUnit(
+            id = -1L,
+            contentItemId = 1L,
+            url = "/ch/1",
+            title = "Recovered Ch 1",
+            number = 1.0,
+            dateUpload = 0L,
+            progress = 0L,
+            totalLength = 0L,
+            lastRead = 0L,
+            read = false,
+        )
+        heuristic.chaptersHandler = { listOf(chapter) }
+
+        val result = orchestrator.getChapters("https://mangadex.org", "/manga/1")
+
+        assertTrue(result is Result.Success)
+        assertEquals(listOf("Recovered Ch 1"), result.getOrThrow().map { it.title })
+    }
+
     // ── getItem / getChapters / getPages ─────────────────────────────────
 
     @Test

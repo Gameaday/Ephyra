@@ -52,8 +52,21 @@ class ContentSourceOrchestrator(
             if (!profile.enabled) {
                 return Result.Error(IllegalStateException("Source is disabled: $baseUrl"))
             }
-            val engine = resolveEngineForProfile(profile)
-            val items = engine.search(profile, query, page)
+            val primaryEngine = resolveEngineForProfile(profile)
+            val items = try {
+                val result = primaryEngine.search(profile, query, page)
+                if (result.isEmpty() && primaryEngine !== heuristicEngine) {
+                    heuristicEngine.search(profile, query, page).ifEmpty { result }
+                } else {
+                    result
+                }
+            } catch (primaryEx: Exception) {
+                if (primaryEngine !== heuristicEngine) {
+                    heuristicEngine.search(profile, query, page)
+                } else {
+                    throw primaryEx
+                }
+            }
             updateProfileHealth(profile, success = true)
             Result.Success(items)
         } catch (e: Exception) {
@@ -68,8 +81,16 @@ class ContentSourceOrchestrator(
             if (!profile.enabled) {
                 return Result.Error(IllegalStateException("Source is disabled: $baseUrl"))
             }
-            val engine = resolveEngineForProfile(profile)
-            val item = engine.getItem(profile, itemUrl)
+            val primaryEngine = resolveEngineForProfile(profile)
+            val item = try {
+                primaryEngine.getItem(profile, itemUrl)
+            } catch (primaryEx: Exception) {
+                if (primaryEngine !== heuristicEngine) {
+                    heuristicEngine.getItem(profile, itemUrl)
+                } else {
+                    throw primaryEx
+                }
+            }
             updateProfileHealth(profile, success = true)
             Result.Success(item)
         } catch (e: Exception) {
@@ -84,8 +105,21 @@ class ContentSourceOrchestrator(
             if (!profile.enabled) {
                 return Result.Error(IllegalStateException("Source is disabled: $baseUrl"))
             }
-            val engine = resolveEngineForProfile(profile)
-            val items = engine.getPopular(profile, page)
+            val primaryEngine = resolveEngineForProfile(profile)
+            val items = try {
+                val result = primaryEngine.getPopular(profile, page)
+                if (result.isEmpty() && primaryEngine !== heuristicEngine) {
+                    heuristicEngine.getPopular(profile, page).ifEmpty { result }
+                } else {
+                    result
+                }
+            } catch (primaryEx: Exception) {
+                if (primaryEngine !== heuristicEngine) {
+                    heuristicEngine.getPopular(profile, page)
+                } else {
+                    throw primaryEx
+                }
+            }
             updateProfileHealth(profile, success = true)
             Result.Success(items)
         } catch (e: Exception) {
@@ -100,8 +134,21 @@ class ContentSourceOrchestrator(
             if (!profile.enabled) {
                 return Result.Error(IllegalStateException("Source is disabled: $baseUrl"))
             }
-            val engine = resolveEngineForProfile(profile)
-            val items = engine.getLatest(profile, page)
+            val primaryEngine = resolveEngineForProfile(profile)
+            val items = try {
+                val result = primaryEngine.getLatest(profile, page)
+                if (result.isEmpty() && primaryEngine !== heuristicEngine) {
+                    heuristicEngine.getLatest(profile, page).ifEmpty { result }
+                } else {
+                    result
+                }
+            } catch (primaryEx: Exception) {
+                if (primaryEngine !== heuristicEngine) {
+                    heuristicEngine.getLatest(profile, page)
+                } else {
+                    throw primaryEx
+                }
+            }
             updateProfileHealth(profile, success = true)
             Result.Success(items)
         } catch (e: Exception) {
@@ -116,8 +163,21 @@ class ContentSourceOrchestrator(
             if (!profile.enabled) {
                 return Result.Error(IllegalStateException("Source is disabled: $baseUrl"))
             }
-            val engine = resolveEngineForProfile(profile)
-            val chapters = engine.getChapters(profile, itemUrl)
+            val primaryEngine = resolveEngineForProfile(profile)
+            val chapters = try {
+                val result = primaryEngine.getChapters(profile, itemUrl)
+                if (result.isEmpty() && primaryEngine !== heuristicEngine) {
+                    heuristicEngine.getChapters(profile, itemUrl).ifEmpty { result }
+                } else {
+                    result
+                }
+            } catch (primaryEx: Exception) {
+                if (primaryEngine !== heuristicEngine) {
+                    heuristicEngine.getChapters(profile, itemUrl)
+                } else {
+                    throw primaryEx
+                }
+            }
             updateProfileHealth(profile, success = true)
             Result.Success(chapters)
         } catch (e: Exception) {
@@ -132,8 +192,21 @@ class ContentSourceOrchestrator(
             if (!profile.enabled) {
                 return Result.Error(IllegalStateException("Source is disabled: $baseUrl"))
             }
-            val engine = resolveEngineForProfile(profile)
-            val pages = engine.getPages(profile, unitUrl)
+            val primaryEngine = resolveEngineForProfile(profile)
+            val pages = try {
+                val result = primaryEngine.getPages(profile, unitUrl)
+                if (result.isEmpty() && primaryEngine !== heuristicEngine) {
+                    heuristicEngine.getPages(profile, unitUrl).ifEmpty { result }
+                } else {
+                    result
+                }
+            } catch (primaryEx: Exception) {
+                if (primaryEngine !== heuristicEngine) {
+                    heuristicEngine.getPages(profile, unitUrl)
+                } else {
+                    throw primaryEx
+                }
+            }
             updateProfileHealth(profile, success = true)
             Result.Success(pages)
         } catch (e: Exception) {

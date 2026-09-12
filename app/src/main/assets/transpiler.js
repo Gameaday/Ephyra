@@ -1,12 +1,23 @@
 function transpile(ktSource, defaultName) {
-    // 1. Extract metadata
+    // 1. Detect theme superclasses (e.g. MangaThemesia, Madara, FoolSlide, WordPress)
+    var themeType = null;
+    var themeMatch = ktSource.match(/:\s*(MangaThemesia|Madara|FoolSlide|WordPress)\s*\(([\s\S]*?)\)/);
+    var themeArgs = [];
+    if (themeMatch) {
+        themeType = themeMatch[1];
+        var argMatches = themeMatch[2].match(/"([^"]+)"/g);
+        if (argMatches) {
+            themeArgs = argMatches.map(function(s) { return s.replace(/^"|"$/g, ''); });
+        }
+    }
+
     var nameMatch = ktSource.match(/val\s+name\s*=\s*"([^"]+)"/) || ktSource.match(/override\s+val\s+name\s*=\s*"([^"]+)"/);
     var baseUrlMatch = ktSource.match(/val\s+baseUrl\s*=\s*"([^"]+)"/) || ktSource.match(/override\s+val\s+baseUrl\s*=\s*"([^"]+)"/);
 
-    var extensionName = nameMatch ? nameMatch[1] : defaultName;
-    var baseUrl = baseUrlMatch ? baseUrlMatch[1] : 'https://example.com';
+    var extensionName = nameMatch ? nameMatch[1] : (themeArgs.length > 0 ? themeArgs[0] : defaultName);
+    var baseUrl = baseUrlMatch ? baseUrlMatch[1] : (themeArgs.length > 1 ? themeArgs[1] : 'https://example.com');
 
-    // 2. Extract Selector strings
+    // 2. Extract Selector strings or apply Theme defaults
     function extractSelector(name) {
         var reg = new RegExp("override\\s+fun\\s+" + name + "\\s*\\(\\s*\\)\\s*(?::\\s*String\\s*)?=\\s*\"([^\"]+)\"");
         var match = ktSource.match(reg);
@@ -17,11 +28,31 @@ function transpile(ktSource, defaultName) {
         return matchBlock ? matchBlock[1] : "";
     }
 
-    var popularSelector = extractSelector('popularMangaSelector') || 'div.item';
-    var popularNextPage = extractSelector('popularMangaNextPageSelector') || 'a.next-page';
-    var searchSelector = extractSelector('searchMangaSelector') || popularSelector || 'div.item';
-    var searchNextPage = extractSelector('searchMangaNextPageSelector') || popularNextPage || 'a.next-page';
-    var chapterSelector = extractSelector('chapterListSelector') || 'div.chapter';
+    var popularSelector = extractSelector('popularMangaSelector');
+    var popularNextPage = extractSelector('popularMangaNextPageSelector');
+    var searchSelector = extractSelector('searchMangaSelector');
+    var searchNextPage = extractSelector('searchMangaNextPageSelector');
+    var chapterSelector = extractSelector('chapterListSelector');
+
+    if (themeType === 'MangaThemesia') {
+        popularSelector = popularSelector || '.bsx, div.animepost';
+        popularNextPage = popularNextPage || 'a.next, .pagination .next';
+        searchSelector = searchSelector || '.bsx, div.animepost';
+        searchNextPage = searchNextPage || popularNextPage;
+        chapterSelector = chapterSelector || '.eph-num, li[data-num]';
+    } else if (themeType === 'Madara') {
+        popularSelector = popularSelector || 'div.page-item-detail, div.manga';
+        popularNextPage = popularNextPage || 'a.nextpostslink';
+        searchSelector = searchSelector || 'div.c-tabs-item__content, div.page-item-detail, div.manga';
+        searchNextPage = searchNextPage || popularNextPage;
+        chapterSelector = chapterSelector || 'li.wp-manga-chapter, div.chapter-item';
+    } else {
+        popularSelector = popularSelector || 'div.item';
+        popularNextPage = popularNextPage || 'a.next-page';
+        searchSelector = searchSelector || popularSelector || 'div.item';
+        searchNextPage = searchNextPage || popularNextPage || 'a.next-page';
+        chapterSelector = chapterSelector || 'div.chapter';
+    }
 
     // Helper to handle balanced parentheses for setUrlWithoutDomain
     function replaceSetUrlWithoutDomain(body) {
@@ -159,20 +190,26 @@ function transpile(ktSource, defaultName) {
         "    var query = payload.query;\n" +
         "    var page = payload.page;\n\n" +
         "    var url = baseUrl + \"/?s=\" + encodeURIComponent(query) + \"&page=\" + page;\n" +
+        (themeType === 'Madara' ? 
+        "    url = baseUrl + \"/?s=\" + encodeURIComponent(query) + \"&post_type=wp-manga&paged=\" + page;\n" : "") +
         "    if (!query || query.trim() === \"\") {\n" +
-        "        url = baseUrl + \"/popular?page=\" + page;\n" +
+        (themeType === 'MangaThemesia' ? 
+        "        url = baseUrl + \"/manga/?page=\" + page + \"&order=popular\";\n" :
+        (themeType === 'Madara' ? 
+        "        url = baseUrl + \"/manga/?m_orderby=views&paged=\" + page;\n" :
+        "        url = baseUrl + \"/popular?page=\" + page;\n")) +
         "    }\n\n" +
         "    var responseStr = http.get(url, JSON.stringify({ \"User-Agent\": \"Ephyra/1.0\" }));\n" +
         "    var document = parseHTML(responseStr);\n\n" +
-        "    var items = document.select(\"" + popularSelector + "\");\n" +
+        "    var items = document.select(query ? \"" + searchSelector + "\" : \"" + popularSelector + "\");\n" +
         "    var results = [];\n\n" +
         "    for (var i = 0; i < items.length; i++) {\n" +
         "        var element = items[i];\n" +
         "        var item = (function(element) {\n" +
         (popularFromElementBody ? popularFromElementBody : 
         "            var url = element.select(\"a\").first().attr(\"href\");\n" +
-        "            var title = element.select(\".title\").text() || element.text();\n" +
-        "            var thumbnailUrl = element.select(\"img\").first().attr(\"src\");\n" +
+        "            var title = element.select(\".title, .tt, .post-title, h3\").text() || element.text();\n" +
+        "            var thumbnailUrl = element.select(\"img\").first().attr(\"src\") || element.select(\"img\").first().attr(\"data-src\");\n" +
         "            return { url: resolveUrl(url, baseUrl), title: title, thumbnailUrl: resolveUrl(thumbnailUrl, baseUrl) };\n") +
         "        })(element);\n" +
         "        results.push(item);\n" +
@@ -240,7 +277,11 @@ function transpile(ktSource, defaultName) {
         "            results.push(pages[i].url || pages[i]);\n" +
         "        }\n" +
         "    }\n" :
-        "    var imgs = document.select(\"div.page-break img, .reader img, img.manga-page\");\n" +
+        (themeType === 'MangaThemesia' ? 
+        "    var imgs = document.select(\"#readerarea img, div.page-break img, .reader img, img.manga-page\");\n" :
+        (themeType === 'Madara' ? 
+        "    var imgs = document.select(\".reading-content img, div.page-break img, .reader img, img.manga-page\");\n" :
+        "    var imgs = document.select(\"div.page-break img, .reader img, img.manga-page\");\n")) +
         "    for (var i = 0; i < imgs.length; i++) {\n" +
         "        var src = imgs[i].attr(\"data-src\") || imgs[i].attr(\"src\");\n" +
         "        if (src) {\n" +
