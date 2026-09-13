@@ -1,6 +1,5 @@
 package ephyra.feature.reader.viewer
 
-import android.graphics.Color
 import android.graphics.PointF
 import android.graphics.RectF
 import ephyra.domain.reader.service.ReaderPreferences
@@ -11,23 +10,23 @@ abstract class ViewerNavigation {
     sealed class NavigationRegion(val nameRes: Int, val color: Int) {
         data object MENU : NavigationRegion(
             ephyra.app.core.common.R.string.action_menu,
-            Color.argb(0xCC, 0x95, 0x81, 0x8D),
+            0xCC95818D.toInt(),
         )
         data object PREV : NavigationRegion(
             ephyra.app.core.common.R.string.nav_zone_prev,
-            Color.argb(0xCC, 0xFF, 0x77, 0x33),
+            0xCCFF7733.toInt(),
         )
         data object NEXT : NavigationRegion(
             ephyra.app.core.common.R.string.nav_zone_next,
-            Color.argb(0xCC, 0x84, 0xE2, 0x96),
+            0xCC84E296.toInt(),
         )
         data object LEFT : NavigationRegion(
             ephyra.app.core.common.R.string.nav_zone_left,
-            Color.argb(0xCC, 0x7D, 0x11, 0x28),
+            0xCC7D1128.toInt(),
         )
         data object RIGHT : NavigationRegion(
             ephyra.app.core.common.R.string.nav_zone_right,
-            Color.argb(0xCC, 0xA6, 0xCF, 0xD5),
+            0xCCA6CFD5.toInt(),
         )
     }
 

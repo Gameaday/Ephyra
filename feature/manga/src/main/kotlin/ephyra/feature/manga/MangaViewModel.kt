@@ -743,7 +743,12 @@ class MangaViewModel @Inject constructor(
                 if (beforeNum > 0 && afterNum > 0) {
                     val diff = (beforeNum - afterNum).toInt() - 1
                     if (diff > 0) {
-                        ChapterList.MissingCount(id = -1L, count = diff)
+                        val uniqueId = -(
+                            (before.chapter.id * 31L + after.chapter.id).let {
+                                if (it == Long.MIN_VALUE) 1L else kotlin.math.abs(it)
+                            }.coerceAtLeast(1L)
+                            )
+                        ChapterList.MissingCount(id = uniqueId, count = diff)
                     } else {
                         null
                     }
@@ -756,15 +761,28 @@ class MangaViewModel @Inject constructor(
         }
     }
 
-    // Skeleton implementations for missing methods to fix build
     fun getNextUnreadChapter(): Chapter? {
         val success = successState ?: return null
         return success.chapterListItems.filterIsInstance<ChapterList.Item>().getNextUnread(success.manga)
     }
 
     private fun List<ChapterList.Item>.getNextUnread(manga: Manga): Chapter? {
-        // Simple implementation for now
-        return find { !it.chapter.read }?.chapter
+        // 1. Prioritize chapter currently in-progress (started reading but not finished)
+        val inProgress = if (manga.sortDescending()) {
+            findLast { !it.chapter.read && it.chapter.lastPageRead > 0 }
+        } else {
+            find { !it.chapter.read && it.chapter.lastPageRead > 0 }
+        }
+        if (inProgress != null) {
+            return inProgress.chapter
+        }
+
+        // 2. Otherwise start from the oldest unread chapter in reading order
+        return if (manga.sortDescending()) {
+            findLast { !it.chapter.read }
+        } else {
+            find { !it.chapter.read }
+        }?.chapter
     }
 
     @Immutable

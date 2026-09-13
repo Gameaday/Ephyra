@@ -6,8 +6,13 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.calculateCentroid
+import androidx.compose.foundation.gestures.calculateCentroidSize
+import androidx.compose.foundation.gestures.calculatePan
+import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -39,10 +44,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastAny
+import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
@@ -210,26 +218,29 @@ fun ZoomableMangaPage(
                         )
                     }
                     .pointerInput(page) {
-                        detectTransformGestures { _, pan, zoom, _ ->
-                            val currentScale = scaleAnim.value
-                            val newScale = (currentScale * zoom).coerceIn(1f, 5f)
-                            val maxPanX = ((containerWidth * newScale) - containerWidth).coerceAtLeast(0f) / 2f
-                            val maxPanY = ((containerHeight * newScale) - containerHeight).coerceAtLeast(0f) / 2f
+                        detectMangaTransformGestures(
+                            canPan = { scaleAnim.value > 1.05f },
+                            onGesture = { _, pan, zoom ->
+                                val currentScale = scaleAnim.value
+                                val newScale = (currentScale * zoom).coerceIn(1f, 5f)
+                                val maxPanX = ((containerWidth * newScale) - containerWidth).coerceAtLeast(0f) / 2f
+                                val maxPanY = ((containerHeight * newScale) - containerHeight).coerceAtLeast(0f) / 2f
 
-                            val newOffset = if (newScale > 1f) {
-                                Offset(
-                                    x = (offsetAnim.value.x + pan.x).coerceIn(-maxPanX, maxPanX),
-                                    y = (offsetAnim.value.y + pan.y).coerceIn(-maxPanY, maxPanY),
-                                )
-                            } else {
-                                Offset.Zero
-                            }
+                                val newOffset = if (newScale > 1f) {
+                                    Offset(
+                                        x = (offsetAnim.value.x + pan.x).coerceIn(-maxPanX, maxPanX),
+                                        y = (offsetAnim.value.y + pan.y).coerceIn(-maxPanY, maxPanY),
+                                    )
+                                } else {
+                                    Offset.Zero
+                                }
 
-                            scope.launch {
-                                scaleAnim.snapTo(newScale)
-                                offsetAnim.snapTo(newOffset)
-                            }
-                        }
+                                scope.launch {
+                                    scaleAnim.snapTo(newScale)
+                                    offsetAnim.snapTo(newOffset)
+                                }
+                            },
+                        )
                     }
                     .graphicsLayer {
                         scaleX = scaleAnim.value
@@ -270,5 +281,59 @@ fun ZoomableMangaPage(
                 }
             }
         }
+    }
+}
+
+private suspend fun PointerInputScope.detectMangaTransformGestures(
+    canPan: () -> Boolean,
+    onGesture: (centroid: Offset, pan: Offset, zoom: Float) -> Unit,
+) {
+    awaitEachGesture {
+        var zoom = 1f
+        var pan = Offset.Zero
+        var pastTouchSlop = false
+        val touchSlop = viewConfiguration.touchSlop
+
+        awaitFirstDown(requireUnconsumed = false)
+        do {
+            val event = awaitPointerEvent()
+            val canceled = event.changes.fastAny { it.isConsumed }
+            if (!canceled) {
+                val pointerCount = event.changes.count { it.pressed }
+                val isMultiTouch = pointerCount >= 2
+                val zoomChange = event.calculateZoom()
+                val panChange = event.calculatePan()
+
+                // If single pointer and unzoomed, do not consume pan so parent HorizontalPager swipes cleanly!
+                if (!isMultiTouch && !canPan()) {
+                    continue
+                }
+
+                if (!pastTouchSlop) {
+                    zoom *= zoomChange
+                    pan += panChange
+
+                    val centroidSize = event.calculateCentroidSize(useCurrent = false)
+                    val zoomMotion = kotlin.math.abs(1f - zoom) * centroidSize
+                    val panMotion = pan.getDistance()
+
+                    if ((isMultiTouch && zoomMotion > touchSlop) || (canPan() && panMotion > touchSlop)) {
+                        pastTouchSlop = true
+                    }
+                }
+
+                if (pastTouchSlop) {
+                    val centroid = event.calculateCentroid(useCurrent = false)
+                    if (zoomChange != 1f || (canPan() && panChange != Offset.Zero)) {
+                        onGesture(centroid, if (canPan()) panChange else Offset.Zero, zoomChange)
+                        event.changes.fastForEach {
+                            if (it.position != it.previousPosition) {
+                                it.consume()
+                            }
+                        }
+                    }
+                }
+            }
+        } while (!canceled && event.changes.fastAny { it.pressed })
     }
 }

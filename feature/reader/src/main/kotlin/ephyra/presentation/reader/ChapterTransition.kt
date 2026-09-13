@@ -1,5 +1,6 @@
 package ephyra.presentation.reader
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material3.Button
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -48,9 +50,12 @@ fun ChapterTransition(
     transition: ChapterTransition,
     currChapterDownloaded: Boolean,
     goingToChapterDownloaded: Boolean,
+    onTransitionClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
 ) {
     val currChapter = transition.from.chapter
     val goingToChapter = transition.to?.chapter
+    val hasDestination = transition.to != null
 
     ProvideTextStyle(MaterialTheme.typography.bodyMedium) {
         when (transition) {
@@ -64,6 +69,9 @@ fun ChapterTransition(
                     bottomChapterDownloaded = currChapterDownloaded,
                     fallbackLabel = stringResource(ephyra.app.core.common.R.string.transition_no_previous),
                     chapterGap = calculateChapterGap(currChapter, goingToChapter),
+                    onTransitionClick = onTransitionClick.takeIf { hasDestination },
+                    actionLabel = stringResource(ephyra.app.core.common.R.string.action_previous_chapter),
+                    modifier = modifier,
                 )
             }
 
@@ -77,6 +85,9 @@ fun ChapterTransition(
                     bottomChapterDownloaded = goingToChapterDownloaded,
                     fallbackLabel = stringResource(ephyra.app.core.common.R.string.transition_no_next),
                     chapterGap = calculateChapterGap(goingToChapter, currChapter),
+                    onTransitionClick = onTransitionClick.takeIf { hasDestination },
+                    actionLabel = stringResource(ephyra.app.core.common.R.string.action_next_chapter),
+                    modifier = modifier,
                 )
             }
         }
@@ -93,11 +104,21 @@ private fun TransitionText(
     bottomChapterDownloaded: Boolean,
     fallbackLabel: String,
     chapterGap: Int,
+    onTransitionClick: (() -> Unit)? = null,
+    actionLabel: String? = null,
+    modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .widthIn(max = 460.dp)
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .then(
+                if (onTransitionClick != null) {
+                    Modifier.clickable(onClick = onTransitionClick)
+                } else {
+                    Modifier
+                },
+            ),
     ) {
         if (topChapter != null) {
             ChapterText(
@@ -136,6 +157,16 @@ private fun TransitionText(
                 text = fallbackLabel,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
             )
+        }
+
+        if (onTransitionClick != null && actionLabel != null) {
+            Spacer(Modifier.height(VerticalSpacerSize))
+            Button(
+                onClick = onTransitionClick,
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+            ) {
+                Text(text = actionLabel)
+            }
         }
     }
 }

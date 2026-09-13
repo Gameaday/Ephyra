@@ -26,17 +26,17 @@ class R2LPagerViewer(
 ) : PagerViewer(activity, downloadManager, readerPreferences, uiPreferences) {
 
     /**
-     * Moves to the next page. On a R2L pager the next page is the one at the left.
+     * In RTL manga, the physical left direction advances forward in the reading order.
      */
-    override fun moveToNext() {
-        moveLeft()
+    override fun moveLeft() {
+        moveToNext()
     }
 
     /**
-     * Moves to the previous page. On a R2L pager the previous page is the one at the right.
+     * In RTL manga, the physical right direction moves backward in the reading order.
      */
-    override fun moveToPrevious() {
-        moveRight()
+    override fun moveRight() {
+        moveToPrevious()
     }
 }
 

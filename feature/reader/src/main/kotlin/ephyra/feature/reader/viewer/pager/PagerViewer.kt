@@ -21,6 +21,7 @@ import eu.kanade.tachiyomi.source.model.Page
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -34,9 +35,7 @@ import okio.Buffer
 import kotlin.math.min
 
 /**
- * Modern Jetpack Compose-backed viewer implementation for paginated reading modes
- * (L2R, R2L, and Vertical). Manages chapter page lists, transitions, navigation events,
- * and smart combine pre-scanning, with zero dependency on DirectionalViewPager.
+ * 100% Pure Jetpack Compose-first implementation of [PagerViewer].
  */
 @Suppress("LeakingThis")
 abstract class PagerViewer(
@@ -54,7 +53,10 @@ abstract class PagerViewer(
     private val _itemsState = MutableStateFlow<List<Any>>(emptyList())
     val itemsState = _itemsState.asStateFlow()
 
-    private val _targetPageRequest = MutableSharedFlow<Int>(extraBufferCapacity = 1)
+    private val _targetPageRequest = MutableSharedFlow<Int>(
+        extraBufferCapacity = 64,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
     val targetPageRequest = _targetPageRequest.asSharedFlow()
 
     /**
@@ -66,7 +68,15 @@ abstract class PagerViewer(
      * Currently active item (either [ReaderPage] or [ChapterTransition]).
      */
     var currentPage: Any? = null
-        private set
+        internal set
+
+    /**
+     * Callbacks invoked when reaching chapter boundaries.
+     */
+    var onNextChapter: (() -> Unit)? = null
+    var onPreviousChapter: (() -> Unit)? = null
+
+    private var activeChapterId: Long? = null
 
     /**
      * Background job that proactively scans all pages in the current chapter for stub patterns
@@ -112,10 +122,15 @@ abstract class PagerViewer(
 
         launchSmartCombinePreScan(chapters.currChapter.pages)
 
-        val pages = chapters.currChapter.pages ?: return
-        val targetPage = pages.getOrNull(min(chapters.currChapter.requestedPage, pages.lastIndex))
-        if (targetPage != null) {
-            moveToPage(targetPage)
+        val isNewChapter = activeChapterId != chapters.currChapter.chapter.id
+        activeChapterId = chapters.currChapter.chapter.id
+
+        if (isNewChapter) {
+            val pages = chapters.currChapter.pages ?: return
+            val targetPage = pages.getOrNull(min(chapters.currChapter.requestedPage, pages.lastIndex))
+            if (targetPage != null) {
+                moveToPage(targetPage)
+            }
         }
     }
 
@@ -164,26 +179,30 @@ abstract class PagerViewer(
     }
 
     override fun moveToNext() {
-        moveRight()
-    }
-
-    override fun moveToPrevious() {
-        moveLeft()
-    }
-
-    fun moveRight() {
         val current = currentItemIndex()
         val count = _itemsState.value.size
         if (current < count - 1) {
             _targetPageRequest.tryEmit(current + 1)
+        } else if (count > 0 && current >= count - 1) {
+            onNextChapter?.invoke()
         }
     }
 
-    fun moveLeft() {
+    override fun moveToPrevious() {
         val current = currentItemIndex()
         if (current > 0) {
             _targetPageRequest.tryEmit(current - 1)
+        } else if (current <= 0) {
+            onPreviousChapter?.invoke()
         }
+    }
+
+    open fun moveRight() {
+        moveToNext()
+    }
+
+    open fun moveLeft() {
+        moveToPrevious()
     }
 
     fun moveUp() {

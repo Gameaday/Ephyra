@@ -17,6 +17,7 @@ import ephyra.feature.reader.viewer.Viewer
 import ephyra.feature.reader.viewer.calculateChapterGap
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -48,10 +49,16 @@ class WebtoonViewer(
     private val _itemsState = MutableStateFlow<List<Any>>(emptyList())
     val itemsState: StateFlow<List<Any>> = _itemsState.asStateFlow()
 
-    private val _scrollToIndexRequest = MutableSharedFlow<Int>(extraBufferCapacity = 1)
+    private val _scrollToIndexRequest = MutableSharedFlow<Int>(
+        extraBufferCapacity = 64,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
     val scrollToIndexRequest: SharedFlow<Int> = _scrollToIndexRequest.asSharedFlow()
 
-    private val _scrollByRequest = MutableSharedFlow<Float>(extraBufferCapacity = 1)
+    private val _scrollByRequest = MutableSharedFlow<Float>(
+        extraBufferCapacity = 64,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
     val scrollByRequest: SharedFlow<Float> = _scrollByRequest.asSharedFlow()
 
     /**
@@ -64,6 +71,14 @@ class WebtoonViewer(
      */
     var currentPage: Any? = null
         private set
+
+    /**
+     * Callbacks invoked when reaching chapter boundaries.
+     */
+    var onNextChapter: (() -> Unit)? = null
+    var onPreviousChapter: (() -> Unit)? = null
+
+    private var activeChapterId: Long? = null
 
     private val fallbackView by lazy { View(activity) }
 
@@ -176,10 +191,21 @@ class WebtoonViewer(
             }
         }
 
-        val pages = chapters.currChapter.pages ?: return
-        val targetPage = pages.getOrNull(min(chapters.currChapter.requestedPage, pages.lastIndex))
-        if (targetPage != null) {
-            moveToPage(targetPage)
+        val previousChapterId = activeChapterId
+        val isFirstLoad = previousChapterId == null
+        val isNewChapter = previousChapterId != chapters.currChapter.chapter.id
+        activeChapterId = chapters.currChapter.chapter.id
+
+        // Only scroll to requestedPage on initial load, or if changing chapters externally
+        // (i.e. not already viewing a page of the new chapter from smooth continuous scrolling)
+        val isAlreadyViewingCurrentChapter =
+            (currentPage as? ReaderPage)?.chapter?.chapter?.id == chapters.currChapter.chapter.id
+        if (isFirstLoad || (isNewChapter && !isAlreadyViewingCurrentChapter)) {
+            val pages = chapters.currChapter.pages ?: return
+            val targetPage = pages.getOrNull(min(chapters.currChapter.requestedPage, pages.lastIndex))
+            if (targetPage != null) {
+                moveToPage(targetPage)
+            }
         }
     }
 

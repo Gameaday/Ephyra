@@ -2,6 +2,7 @@ package ephyra.feature.manga
 
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
+import ephyra.core.common.preference.Preference
 import ephyra.core.download.DownloadCache
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.category.interactor.GetCategories
@@ -73,6 +74,7 @@ class MangaViewModelTest {
         every { id } returns 1L
         every { source } returns 100L
         every { favorite } returns false
+        every { sortDescending() } returns true
     }
 
     private val testSource: Source = mockk(relaxed = true) {
@@ -99,8 +101,17 @@ class MangaViewModelTest {
         every { sourceManager.getOrStub(100L) } returns testSource
         coEvery { getMangaAndChapters.subscribe(1L) } returns flowOf(testManga to listOf(chapter1, chapter2))
         every { mangaTrackInteractor.loggedInTrackersFlow() } returns flowOf(emptyList())
-        every { downloadCache.changes } returns MutableSharedFlow<Unit>()
+        every { downloadCache.changes } returns MutableSharedFlow<Unit>(replay = 1).apply { tryEmit(Unit) }
         every { downloadManager.queueState } returns MutableStateFlow<List<Download>>(emptyList())
+
+        val startPref: Preference<LibraryPreferences.ChapterSwipeAction> = mockk(relaxed = true) {
+            every { changes() } returns flowOf(LibraryPreferences.ChapterSwipeAction.ToggleRead)
+        }
+        val endPref: Preference<LibraryPreferences.ChapterSwipeAction> = mockk(relaxed = true) {
+            every { changes() } returns flowOf(LibraryPreferences.ChapterSwipeAction.ToggleBookmark)
+        }
+        every { libraryPreferences.swipeToStartAction() } returns startPref
+        every { libraryPreferences.swipeToEndAction() } returns endPref
 
         viewModel = MangaViewModel(
             getManga = getManga,
@@ -261,6 +272,74 @@ class MangaViewModelTest {
                 source = any(),
                 manualFetch = true,
             )
+        }
+    }
+
+    @Test
+    fun `getNextUnreadChapter returns oldest unread chapter when nothing in progress`() = runTest {
+        val ch1 = Chapter.create().copy(id = 10L, mangaId = 1L, chapterNumber = 1.0, read = false, lastPageRead = 0)
+        val ch2 = Chapter.create().copy(id = 20L, mangaId = 1L, chapterNumber = 2.0, read = false, lastPageRead = 0)
+        coEvery { getMangaAndChapters.subscribe(1L) } returns flowOf(testManga to listOf(ch2, ch1))
+
+        viewModel.state.test {
+            assertEquals(MangaViewModel.State.Loading, awaitItem())
+            viewModel.init(1L, false)
+            var success: MangaViewModel.State.Success? = null
+            while (success == null || success.chapterListItems.isEmpty()) {
+                val item = awaitItem()
+                if (item is MangaViewModel.State.Success) {
+                    success = item
+                }
+            }
+            assertEquals(ch1.id, viewModel.getNextUnreadChapter()?.id)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `getNextUnreadChapter prioritizes chapter currently in progress`() = runTest {
+        val ch1 = Chapter.create().copy(id = 10L, mangaId = 1L, chapterNumber = 1.0, read = true, lastPageRead = 10)
+        val ch2 = Chapter.create().copy(id = 20L, mangaId = 1L, chapterNumber = 2.0, read = false, lastPageRead = 5)
+        val ch3 = Chapter.create().copy(id = 30L, mangaId = 1L, chapterNumber = 3.0, read = false, lastPageRead = 0)
+        coEvery { getMangaAndChapters.subscribe(1L) } returns flowOf(testManga to listOf(ch3, ch2, ch1))
+
+        viewModel.state.test {
+            assertEquals(MangaViewModel.State.Loading, awaitItem())
+            viewModel.init(1L, false)
+            var success: MangaViewModel.State.Success? = null
+            while (success == null || success.chapterListItems.isEmpty()) {
+                val item = awaitItem()
+                if (item is MangaViewModel.State.Success) {
+                    success = item
+                }
+            }
+            assertEquals(ch2.id, viewModel.getNextUnreadChapter()?.id)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `chapter gap creates MissingCount items with unique negative IDs`() = runTest {
+        val ch1 = Chapter.create().copy(id = 10L, mangaId = 1L, chapterNumber = 1.0)
+        val ch5 = Chapter.create().copy(id = 50L, mangaId = 1L, chapterNumber = 5.0)
+        val ch10 = Chapter.create().copy(id = 100L, mangaId = 1L, chapterNumber = 10.0)
+        coEvery { getMangaAndChapters.subscribe(1L) } returns flowOf(testManga to listOf(ch10, ch5, ch1))
+
+        viewModel.state.test {
+            assertEquals(MangaViewModel.State.Loading, awaitItem())
+            viewModel.init(1L, false)
+            var success: MangaViewModel.State.Success? = null
+            while (success == null || success.chapterListItems.isEmpty()) {
+                val item = awaitItem()
+                if (item is MangaViewModel.State.Success) {
+                    success = item
+                }
+            }
+            val missingCountItems = success.chapterListItems.filterIsInstance<ChapterList.MissingCount>()
+            assertEquals(2, missingCountItems.size)
+            assertTrue(missingCountItems.all { it.id < 0 })
+            assertEquals(missingCountItems.map { it.id }.toSet().size, missingCountItems.size)
+            cancelAndIgnoreRemainingEvents()
         }
     }
 }

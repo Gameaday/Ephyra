@@ -48,12 +48,19 @@ fun ComposePagerReader(
     val chapters by viewer.chaptersState.collectAsStateWithLifecycle()
     var isPagerScrollEnabled by remember { mutableStateOf(true) }
 
+    val currentChapterId = chapters?.currChapter?.chapter?.id
+
+    LaunchedEffect(viewer, onNextChapter, onPreviousChapter) {
+        viewer.onNextChapter = onNextChapter
+        viewer.onPreviousChapter = onPreviousChapter
+    }
+
     if (items.isEmpty()) {
         Box(modifier = modifier.fillMaxSize())
         return
     }
 
-    val initialIndex = remember(items) {
+    val initialIndex = remember(currentChapterId) {
         val requested = chapters?.currChapter?.requestedPage ?: 0
         val targetPage = chapters?.currChapter?.pages?.getOrNull(requested)
         if (targetPage != null) {
@@ -64,157 +71,163 @@ fun ComposePagerReader(
         }
     }
 
-    val pagerState = rememberPagerState(
-        initialPage = initialIndex.coerceIn(0, (items.size - 1).coerceAtLeast(0)),
-        pageCount = { items.size },
-    )
+    androidx.compose.runtime.key(currentChapterId) {
+        val pagerState = rememberPagerState(
+            initialPage = initialIndex.coerceIn(0, (items.size - 1).coerceAtLeast(0)),
+            pageCount = { items.size },
+        )
 
-    // Handle external page navigation requests (slider scrubbing, d-pad, volume keys)
-    LaunchedEffect(viewer, pagerState) {
-        viewer.targetPageRequest.collect { targetIndex ->
-            if (targetIndex in 0 until pagerState.pageCount) {
-                if (viewer.config.usePageTransitions) {
-                    pagerState.animateScrollToPage(targetIndex)
-                } else {
-                    pagerState.scrollToPage(targetIndex)
+        // Handle external page navigation requests (slider scrubbing, d-pad, volume keys)
+        LaunchedEffect(viewer, pagerState) {
+            viewer.targetPageRequest.collect { targetIndex ->
+                if (targetIndex in 0 until pagerState.pageCount) {
+                    if (viewer.config.usePageTransitions) {
+                        pagerState.animateScrollToPage(targetIndex)
+                    } else {
+                        pagerState.scrollToPage(targetIndex)
+                    }
                 }
             }
         }
-    }
 
-    // Handle user swiping / page settlement
-    LaunchedEffect(pagerState, items) {
-        snapshotFlow { pagerState.currentPage }
-            .distinctUntilChanged()
-            .collect { position ->
-                val item = items.getOrNull(position) ?: return@collect
-                when (item) {
-                    is ReaderPage -> {
-                        viewer.onPageSelected(item)
-                        onPageSelected(item)
-                        val currPages = chapters?.currChapter?.pages
-                        if (currPages != null && (currPages.size - item.number) < 5) {
-                            chapters?.nextChapter?.let(onRequestPreload)
+        // Handle user swiping / page settlement
+        LaunchedEffect(pagerState, items) {
+            snapshotFlow { pagerState.currentPage }
+                .distinctUntilChanged()
+                .collect { position ->
+                    val item = items.getOrNull(position) ?: return@collect
+                    when (item) {
+                        is ReaderPage -> {
+                            viewer.onPageSelected(item)
+                            onPageSelected(item)
+                            val currPages = chapters?.currChapter?.pages
+                            if (currPages != null && (currPages.size - item.number) < 5) {
+                                chapters?.nextChapter?.let(onRequestPreload)
+                            }
+                        }
+                        is ChapterTransition.Prev -> {
+                            viewer.currentPage = item
+                            item.to?.let(onRequestPreload)
+                        }
+                        is ChapterTransition.Next -> {
+                            viewer.currentPage = item
+                            item.to?.let(onRequestPreload)
                         }
                     }
-                    is ChapterTransition.Prev -> {
-                        item.to?.let(onRequestPreload)
-                    }
-                    is ChapterTransition.Next -> {
-                        item.to?.let(onRequestPreload)
+                }
+        }
+
+        fun handleTap(tapOffset: Offset, containerSize: Size) {
+            val normX = if (containerSize.width > 0) tapOffset.x / containerSize.width else 0.5f
+            val normY = if (containerSize.height > 0) tapOffset.y / containerSize.height else 0.5f
+            when (viewer.config.navigator.getAction(PointF(normX, normY))) {
+                ViewerNavigation.NavigationRegion.MENU -> onToggleMenu()
+                ViewerNavigation.NavigationRegion.NEXT -> viewer.moveToNext()
+                ViewerNavigation.NavigationRegion.PREV -> viewer.moveToPrevious()
+                ViewerNavigation.NavigationRegion.RIGHT -> viewer.moveRight()
+                ViewerNavigation.NavigationRegion.LEFT -> viewer.moveLeft()
+            }
+        }
+
+        val isCurrentChapterDownloaded = remember(chapters) {
+            chapters?.currChapter?.state is ReaderChapter.State.Loaded
+        }
+        val isPreviousChapterDownloaded = remember(chapters) {
+            chapters?.prevChapter?.state is ReaderChapter.State.Loaded
+        }
+        val isNextChapterDownloaded = remember(chapters) {
+            chapters?.nextChapter?.state is ReaderChapter.State.Loaded
+        }
+
+        val pageContent: @Composable (Int) -> Unit = { position ->
+            when (val item = items.getOrNull(position)) {
+                is ChapterTransition.Prev -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        ChapterTransition(
+                            transition = item,
+                            currChapterDownloaded = isCurrentChapterDownloaded,
+                            goingToChapterDownloaded = isPreviousChapterDownloaded,
+                            onTransitionClick = onPreviousChapter,
+                        )
                     }
                 }
-            }
-    }
 
-    fun handleTap(tapOffset: Offset, containerSize: Size) {
-        val normX = if (containerSize.width > 0) tapOffset.x / containerSize.width else 0.5f
-        val normY = if (containerSize.height > 0) tapOffset.y / containerSize.height else 0.5f
-        when (viewer.config.navigator.getAction(PointF(normX, normY))) {
-            ViewerNavigation.NavigationRegion.MENU -> onToggleMenu()
-            ViewerNavigation.NavigationRegion.NEXT -> viewer.moveToNext()
-            ViewerNavigation.NavigationRegion.PREV -> viewer.moveToPrevious()
-            ViewerNavigation.NavigationRegion.RIGHT -> viewer.moveRight()
-            ViewerNavigation.NavigationRegion.LEFT -> viewer.moveLeft()
-        }
-    }
+                is ChapterTransition.Next -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        ChapterTransition(
+                            transition = item,
+                            currChapterDownloaded = isCurrentChapterDownloaded,
+                            goingToChapterDownloaded = isNextChapterDownloaded,
+                            onTransitionClick = onNextChapter,
+                        )
+                    }
+                }
 
-    val isCurrentChapterDownloaded = remember(chapters) {
-        chapters?.currChapter?.state is ReaderChapter.State.Loaded
-    }
-    val isPreviousChapterDownloaded = remember(chapters) {
-        chapters?.prevChapter?.state is ReaderChapter.State.Loaded
-    }
-    val isNextChapterDownloaded = remember(chapters) {
-        chapters?.nextChapter?.state is ReaderChapter.State.Loaded
-    }
-
-    val pageContent: @Composable (Int) -> Unit = { position ->
-        when (val item = items.getOrNull(position)) {
-            is ChapterTransition.Prev -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    ChapterTransition(
-                        transition = item,
-                        currChapterDownloaded = isCurrentChapterDownloaded,
-                        goingToChapterDownloaded = isPreviousChapterDownloaded,
+                is ReaderPage -> {
+                    ZoomableMangaPage(
+                        page = item,
+                        cropBorders = viewer.config.imageCropBorders,
+                        onTap = ::handleTap,
+                        onLongTap = { onPageLongTap(item) },
+                        onScaleChanged = { scale ->
+                            // Only disable swiping between pages when zoomed in (> 1.05x)
+                            isPagerScrollEnabled = scale <= 1.05f
+                        },
+                        modifier = Modifier.fillMaxSize(),
                     )
                 }
-            }
 
-            is ChapterTransition.Next -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    ChapterTransition(
-                        transition = item,
-                        currChapterDownloaded = isCurrentChapterDownloaded,
-                        goingToChapterDownloaded = isNextChapterDownloaded,
-                    )
-                }
+                null -> Unit
             }
-
-            is ReaderPage -> {
-                ZoomableMangaPage(
-                    page = item,
-                    cropBorders = viewer.config.imageCropBorders,
-                    onTap = ::handleTap,
-                    onLongTap = { onPageLongTap(item) },
-                    onScaleChanged = { scale ->
-                        // Only disable swiping between pages when zoomed in (> 1.05x)
-                        isPagerScrollEnabled = scale <= 1.05f
-                    },
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
-
-            null -> Unit
         }
-    }
 
-    when (viewer) {
-        is R2LPagerViewer -> {
-            // Natural Japanese / Manga Right-to-Left paging:
-            // RTL LayoutDirection ensures page 0 starts on the right, swiping left advances forward
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-                HorizontalPager(
-                    state = pagerState,
-                    beyondViewportPageCount = 1,
-                    userScrollEnabled = isPagerScrollEnabled,
-                    modifier = modifier.fillMaxSize(),
-                ) { position ->
-                    // Re-nest into LTR so text / transitions inside the page aren't mirrored
-                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                        pageContent(position)
+        when (viewer) {
+            is R2LPagerViewer -> {
+                // Natural Japanese / Manga Right-to-Left paging:
+                // RTL LayoutDirection ensures page 0 starts on the right, swiping left advances forward
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    HorizontalPager(
+                        state = pagerState,
+                        beyondViewportPageCount = 1,
+                        userScrollEnabled = isPagerScrollEnabled,
+                        modifier = modifier.fillMaxSize(),
+                    ) { position ->
+                        // Re-nest into LTR so text / transitions inside the page aren't mirrored
+                        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                            pageContent(position)
+                        }
                     }
                 }
             }
-        }
 
-        is VerticalPagerViewer -> {
-            VerticalPager(
-                state = pagerState,
-                beyondViewportPageCount = 1,
-                userScrollEnabled = isPagerScrollEnabled,
-                modifier = modifier.fillMaxSize(),
-            ) { position ->
-                pageContent(position)
-            }
-        }
-
-        else -> {
-            // Left-to-Right (Western Comic / Manhwa)
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                HorizontalPager(
+            is VerticalPagerViewer -> {
+                VerticalPager(
                     state = pagerState,
                     beyondViewportPageCount = 1,
                     userScrollEnabled = isPagerScrollEnabled,
                     modifier = modifier.fillMaxSize(),
                 ) { position ->
                     pageContent(position)
+                }
+            }
+
+            else -> {
+                // Left-to-Right (Western Comic / Manhwa)
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    HorizontalPager(
+                        state = pagerState,
+                        beyondViewportPageCount = 1,
+                        userScrollEnabled = isPagerScrollEnabled,
+                        modifier = modifier.fillMaxSize(),
+                    ) { position ->
+                        pageContent(position)
+                    }
                 }
             }
         }

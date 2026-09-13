@@ -81,6 +81,11 @@ fun ComposeWebtoonReader(
     val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
     val scrollDistance = screenHeightPx * 0.75f
 
+    LaunchedEffect(viewer, onNextChapter, onPreviousChapter) {
+        viewer.onNextChapter = onNextChapter
+        viewer.onPreviousChapter = onPreviousChapter
+    }
+
     if (items.isEmpty()) {
         Box(modifier = modifier.fillMaxSize())
         return
@@ -182,6 +187,7 @@ fun ComposeWebtoonReader(
                             transition = item,
                             currChapterDownloaded = isCurrentChapterDownloaded,
                             goingToChapterDownloaded = isPreviousChapterDownloaded,
+                            onTransitionClick = onPreviousChapter,
                         )
                     }
                     is ChapterTransition.Next -> {
@@ -189,6 +195,7 @@ fun ComposeWebtoonReader(
                             transition = item,
                             currChapterDownloaded = isCurrentChapterDownloaded,
                             goingToChapterDownloaded = isNextChapterDownloaded,
+                            onTransitionClick = onNextChapter,
                         )
                     }
                 }
