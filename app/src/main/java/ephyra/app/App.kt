@@ -30,8 +30,6 @@ import ephyra.app.crash.CrashActivity
 import ephyra.app.crash.GlobalExceptionHandler
 import ephyra.app.di.initializeCoreContainer
 import ephyra.app.startup.StartupGuard
-import ephyra.app.util.system.cancelNotification
-import ephyra.app.util.system.notify
 import ephyra.core.common.core.security.PrivacyPreferences
 import ephyra.core.common.core.security.SecurityPreferences
 import ephyra.core.common.di.CoreContainer
@@ -42,7 +40,9 @@ import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.GLUtil
 import ephyra.core.common.util.system.ImageUtil
 import ephyra.core.common.util.system.WebViewUtil
+import ephyra.core.common.util.system.cancelNotification
 import ephyra.core.common.util.system.logcat
+import ephyra.core.common.util.system.notify
 import ephyra.core.migration.Migrator
 import ephyra.core.migration.migrations.migrations
 import ephyra.data.cache.CoverCache

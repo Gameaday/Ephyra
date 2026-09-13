@@ -11,8 +11,8 @@ import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import ephyra.core.common.util.system.openInBrowser
 import ephyra.presentation.core.ui.navigation.LocalNavController
-import ephyra.presentation.core.util.system.openInBrowser
 import ephyra.presentation.core.util.system.toShareIntent
 import ephyra.presentation.core.util.system.toast
 

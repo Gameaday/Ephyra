@@ -2,7 +2,6 @@ package ephyra.core.download
 
 import android.content.Context
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.SharedPreferencesMigration
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -25,14 +24,12 @@ class DownloadPendingDeleter(
 ) {
 
     /**
-     * DataStore used to store the list of chapters to delete. Migrates from legacy
-     * SharedPreferences named "chapters_to_delete" to avoid data loss.
+     * DataStore used to store the list of chapters to delete.
      */
     private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private val dataStore: DataStore<Preferences> = PreferenceDataStoreFactory.create(
         scope = ioScope,
-        migrations = listOf(SharedPreferencesMigration(context, "chapters_to_delete")),
         produceFile = { context.preferencesDataStoreFile("chapters_to_delete.preferences_pb") },
     )
 

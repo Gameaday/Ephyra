@@ -51,6 +51,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.system.logcat
+import ephyra.core.common.util.system.openInBrowser
 import ephyra.domain.track.interactor.AddTracks
 import ephyra.domain.track.model.AutoTrackState
 import ephyra.domain.track.service.EnhancedTracker
@@ -60,7 +61,6 @@ import ephyra.feature.settings.Preference
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.MatchUnlinkedJobRunner
-import ephyra.presentation.core.util.system.openInBrowser
 import ephyra.presentation.core.util.system.toast
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList

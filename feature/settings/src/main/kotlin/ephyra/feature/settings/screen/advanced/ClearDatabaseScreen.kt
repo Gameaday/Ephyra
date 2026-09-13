@@ -35,7 +35,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.util.lang.launchIO
-import ephyra.core.common.util.lang.toLong
 import ephyra.core.common.util.lang.withNonCancellableContext
 import ephyra.domain.history.interactor.RemoveResettedHistory
 import ephyra.domain.manga.interactor.DeleteNonLibraryManga
@@ -270,7 +269,7 @@ class ClearDatabaseViewModel @Inject constructor(
 
     suspend fun removeMangaBySourceId(keepReadManga: Boolean) = withNonCancellableContext {
         val ready = currentState as? State.Ready ?: return@withNonCancellableContext
-        deleteNonLibraryManga.await(ready.selection, keepReadManga.toLong())
+        deleteNonLibraryManga.await(ready.selection, if (keepReadManga) 1L else 0L)
         removeResettedHistory.await()
     }
 

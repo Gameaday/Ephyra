@@ -33,6 +33,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import ephyra.core.common.notification.NotificationManager
 import ephyra.core.common.util.lang.launchNonCancellable
 import ephyra.core.common.util.system.logcat
+import ephyra.core.common.util.system.openInBrowser
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.reader.model.ReaderOrientation
@@ -57,7 +58,6 @@ import ephyra.presentation.core.ui.activity.BaseActivity
 import ephyra.presentation.core.util.AppNavigator
 import ephyra.presentation.core.util.system.copyToClipboard
 import ephyra.presentation.core.util.system.isNightMode
-import ephyra.presentation.core.util.system.openInBrowser
 import ephyra.presentation.core.util.system.toShareIntent
 import ephyra.presentation.core.util.system.toast
 import ephyra.presentation.core.util.view.applyHighRefreshRate

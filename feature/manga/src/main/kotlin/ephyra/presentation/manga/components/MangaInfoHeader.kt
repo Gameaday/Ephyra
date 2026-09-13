@@ -91,6 +91,7 @@ import coil3.size.Precision
 import com.mikepenz.markdown.model.markdownAnnotator
 import com.mikepenz.markdown.model.markdownAnnotatorConfig
 import com.mikepenz.markdown.utils.getUnescapedTextInNode
+import ephyra.core.common.util.system.openInBrowser
 import ephyra.domain.manga.model.CanonicalId
 import ephyra.domain.manga.model.LockedField
 import ephyra.domain.manga.model.Manga
@@ -106,7 +107,6 @@ import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.clickableNoIndication
 import ephyra.presentation.core.util.secondaryItemAlpha
 import ephyra.presentation.core.util.system.copyToClipboard
-import ephyra.presentation.core.util.system.openInBrowser
 import eu.kanade.tachiyomi.source.model.SManga
 import org.intellij.markdown.MarkdownElementTypes
 import org.intellij.markdown.MarkdownTokenTypes

@@ -3,10 +3,10 @@ package ephyra.data.backup
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import ephyra.data.backup.models.BackupManga
-import ephyra.data.backup.models.BackupTracking
 import ephyra.data.backup.restore.restorers.MangaRestorer
 import ephyra.data.room.EphyraDatabase
+import ephyra.domain.backup.model.BackupManga
+import ephyra.domain.backup.model.BackupTracking
 import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
 import ephyra.domain.chapter.repository.ChapterRepository

@@ -10,10 +10,10 @@ import androidx.core.net.toUri
 import dagger.hilt.android.AndroidEntryPoint
 import ephyra.core.common.util.system.WebViewUtil
 import ephyra.core.common.util.system.logcat
+import ephyra.core.common.util.system.openInBrowser
 import ephyra.domain.source.service.SourceManager
 import ephyra.presentation.core.R
 import ephyra.presentation.core.ui.activity.BaseActivity
-import ephyra.presentation.core.util.system.openInBrowser
 import ephyra.presentation.core.util.system.toShareIntent
 import ephyra.presentation.core.util.system.toast
 import ephyra.presentation.core.util.view.overrideTransitionCompat

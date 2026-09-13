@@ -163,14 +163,6 @@ data class Manga(
     }
 }
 
-@Deprecated("Use Manga.readingMode property directly", ReplaceWith("readingMode"))
-val Manga.readingMode: Long
-    get() = readingMode
-
-@Deprecated("Use Manga.readerOrientation property directly", ReplaceWith("readerOrientation"))
-val Manga.readerOrientation: Long
-    get() = readerOrientation
-
 fun Manga.downloadedFilter(basePreferences: BasePreferences): TriState {
     if (basePreferences.downloadedOnly().getSync()) return TriState.ENABLED_IS
     return when (downloadedFilterRaw) {

@@ -27,6 +27,7 @@ import androidx.navigation.NavController
 import ephyra.core.common.util.lang.launchNonCancellable
 import ephyra.core.common.util.system.GLUtil
 import ephyra.core.common.util.system.logcat
+import ephyra.core.common.util.system.powerManager
 import ephyra.core.common.util.system.setDefaultSettings
 import ephyra.core.download.DownloadCache
 import ephyra.domain.base.BasePreferences
@@ -43,7 +44,6 @@ import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.CrashLogUtil
 import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.core.util.system.isShizukuInstalled
-import ephyra.presentation.core.util.system.powerManager
 import ephyra.presentation.core.util.system.toast
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.NetworkPreferences

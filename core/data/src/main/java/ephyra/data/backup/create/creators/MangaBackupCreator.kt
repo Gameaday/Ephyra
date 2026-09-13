@@ -1,9 +1,9 @@
 package ephyra.data.backup.create.creators
 
 import ephyra.data.backup.create.BackupOptions
-import ephyra.data.backup.models.BackupChapter
-import ephyra.data.backup.models.BackupHistory
-import ephyra.data.backup.models.BackupManga
+import ephyra.domain.backup.model.BackupChapter
+import ephyra.domain.backup.model.BackupHistory
+import ephyra.domain.backup.model.BackupManga
 import ephyra.domain.backup.model.toBackupChapter
 import ephyra.domain.backup.model.toBackupTracking
 import ephyra.domain.category.interactor.GetCategories

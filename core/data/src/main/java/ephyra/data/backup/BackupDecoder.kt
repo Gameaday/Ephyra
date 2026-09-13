@@ -2,7 +2,7 @@ package ephyra.data.backup
 
 import android.content.Context
 import android.net.Uri
-import ephyra.data.backup.models.Backup
+import ephyra.domain.backup.model.Backup
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.protobuf.ProtoBuf
 import java.io.IOException

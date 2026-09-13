@@ -43,8 +43,6 @@ import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.interactor.SetMangaViewerFlags
 import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.Manga
-import ephyra.domain.manga.model.readerOrientation
-import ephyra.domain.manga.model.readingMode
 import ephyra.domain.manga.service.CoverCache
 import ephyra.domain.reader.model.ReaderOrientation
 import ephyra.domain.reader.model.ReadingMode

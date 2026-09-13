@@ -1,12 +1,12 @@
 package ephyra.data.backup.restore.restorers
 
 import androidx.room.withTransaction
-import ephyra.data.backup.models.BackupCategory
-import ephyra.data.backup.models.BackupChapter
-import ephyra.data.backup.models.BackupHistory
-import ephyra.data.backup.models.BackupManga
-import ephyra.data.backup.models.BackupTracking
 import ephyra.data.room.EphyraDatabase
+import ephyra.domain.backup.model.BackupCategory
+import ephyra.domain.backup.model.BackupChapter
+import ephyra.domain.backup.model.BackupHistory
+import ephyra.domain.backup.model.BackupManga
+import ephyra.domain.backup.model.BackupTracking
 import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
 import ephyra.domain.chapter.model.Chapter

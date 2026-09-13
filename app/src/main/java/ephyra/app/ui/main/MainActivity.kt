@@ -61,6 +61,7 @@ import ephyra.app.util.system.updaterEnabled
 import ephyra.core.common.Constants
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.system.logcat
+import ephyra.core.common.util.system.openInBrowser
 import ephyra.core.download.DownloadCache
 import ephyra.core.migration.Migrator
 import ephyra.data.cache.ChapterCache
@@ -86,7 +87,6 @@ import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.AppNavigator
 import ephyra.presentation.core.util.LocalAppNavigator
 import ephyra.presentation.core.util.collectAsState
-import ephyra.presentation.core.util.system.openInBrowser
 import ephyra.presentation.core.util.view.setComposeContent
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.awaitClose

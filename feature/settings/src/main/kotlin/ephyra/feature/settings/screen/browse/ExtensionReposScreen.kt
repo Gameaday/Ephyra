@@ -7,6 +7,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import ephyra.core.common.util.system.openInBrowser
 import ephyra.feature.settings.screen.browse.components.ExtensionRepoConfirmDialog
 import ephyra.feature.settings.screen.browse.components.ExtensionRepoConflictDialog
 import ephyra.feature.settings.screen.browse.components.ExtensionRepoCreateDialog
@@ -14,7 +15,6 @@ import ephyra.feature.settings.screen.browse.components.ExtensionRepoDeleteDialo
 import ephyra.feature.settings.screen.browse.components.ExtensionReposScreen
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.ui.navigation.LocalNavController
-import ephyra.presentation.core.util.system.openInBrowser
 import ephyra.presentation.core.util.system.toast
 import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.coroutines.flow.collectLatest

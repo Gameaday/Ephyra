@@ -5,8 +5,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
+import ephyra.core.common.util.system.openInBrowser
 import ephyra.presentation.core.ui.navigation.LocalNavController
-import ephyra.presentation.core.util.system.openInBrowser
 
 @Composable
 fun NewUpdateScreen(

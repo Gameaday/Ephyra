@@ -13,8 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import ephyra.domain.manga.model.readerOrientation
-import ephyra.domain.manga.model.readingMode
+import ephyra.domain.manga.model.Manga
 import ephyra.domain.reader.model.ReaderOrientation
 import ephyra.domain.reader.model.ReadingMode
 import ephyra.domain.reader.service.ReaderPreferences

@@ -2,7 +2,6 @@ package ephyra.app.track
 
 import android.content.Context
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.SharedPreferencesMigration
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -22,7 +21,6 @@ class DelayedTrackingStore(context: Context) : TrackingQueueStore {
 
     private val dataStore: DataStore<Preferences> = PreferenceDataStoreFactory.create(
         scope = ioScope,
-        migrations = listOf(SharedPreferencesMigration(context, "tracking_queue")),
         produceFile = { context.preferencesDataStoreFile("tracking_queue.preferences_pb") },
     )
 

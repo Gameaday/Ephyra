@@ -1,5 +1,6 @@
 package ephyra.core.common.util.lang
 
+import androidx.core.text.HtmlCompat
 import java.nio.charset.StandardCharsets
 import kotlin.math.floor
 
@@ -95,34 +96,8 @@ fun String.takeBytes(n: Int): String {
 }
 
 /**
- * HTML-decode the string using a simple pure-Kotlin replacement.
- * Replaces common HTML entities with their unicode equivalents.
- * For full HTML parsing, the data layer should use Jsoup.
+ * HTML-decode the string using AndroidX HtmlCompat.
  */
 fun String.htmlDecode(): String {
-    // NB: HTML entities must use unicode escapes to survive auto-formatting
-    val amp = '\u0026'
-    val lt = '\u003C'
-    val gt = '\u003E'
-    val quot = '\u0022'
-    val apos = '\u0027'
-    val nbsp = '\u00A0'
-
-    return this
-        .replace("${amp}amp;", "$amp")
-        .replace("${amp}lt;", "$lt")
-        .replace("${amp}gt;", "$gt")
-        .replace("${amp}quot;", "$quot")
-        .replace("$amp#39;", "$apos")
-        .replace("$amp#039;", "$apos")
-        .replace("${amp}nbsp;", "$nbsp")
-        .replace("$amp#160;", "$nbsp")
-        .replace(Regex("$amp#(\\d+);")) { match ->
-            val code = match.groupValues[1].toIntOrNull()
-            if (code != null) code.toChar().toString() else match.value
-        }
-        .replace(Regex("$amp[a-zA-Z]+;")) { match ->
-            // Fallback: strip unknown entities rather than crashing
-            match.value.ifBlank { "" }
-        }
+    return HtmlCompat.fromHtml(this, HtmlCompat.FROM_HTML_MODE_LEGACY).toString()
 }

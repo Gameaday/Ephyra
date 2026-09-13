@@ -45,6 +45,7 @@ import ephyra.core.common.util.lang.launchNonCancellable
 import ephyra.core.common.util.lang.toLocalDate
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.logcat
+import ephyra.core.common.util.system.openInBrowser
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.service.SourceManager
@@ -66,7 +67,6 @@ import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.presentation.core.util.system.copyToClipboard
-import ephyra.presentation.core.util.system.openInBrowser
 import ephyra.presentation.core.util.system.toast
 import ephyra.presentation.manga.track.TrackChapterSelector
 import ephyra.presentation.manga.track.TrackDateSelector

@@ -69,6 +69,7 @@ import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
+import ephyra.core.common.util.system.openInBrowser
 import ephyra.domain.track.model.TrackSearch
 import ephyra.presentation.core.components.DropdownMenu
 import ephyra.presentation.core.components.MangaCover
@@ -81,7 +82,6 @@ import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.util.plus
 import ephyra.presentation.core.util.runOnEnterKeyPressed
 import ephyra.presentation.core.util.secondaryItemAlpha
-import ephyra.presentation.core.util.system.openInBrowser
 import ephyra.presentation.theme.TachiyomiPreviewTheme
 import kotlinx.coroutines.launch
 

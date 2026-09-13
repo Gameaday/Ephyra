@@ -70,7 +70,6 @@ import ephyra.data.manga.MangaRepositoryImpl
 import ephyra.data.release.ReleaseServiceImpl
 import ephyra.data.repository.ExtensionRepoRepositoryImpl
 import ephyra.data.room.EphyraDatabase
-import ephyra.data.room.Migrations
 import ephyra.data.room.daos.CategoryDao
 import ephyra.data.room.daos.ChapterDao
 import ephyra.data.room.daos.ExcludedScanlatorDao
@@ -277,18 +276,9 @@ object AppModule {
         return Room.databaseBuilder(
             context = context,
             klass = EphyraDatabase::class.java,
-            name = "tachiyomi.db",
+            name = "ephyra.db",
         )
             .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
-            // Versioned migrations (doc/MIGRATION_PLAN.md Phase 6 / doc/PHASE_C_ROOM_MIGRATIONS.md).
-            // Every schema change must bump `EphyraDatabase`'s version and register a step in
-            // `Migrations.ALL`; `MigrationCoverageTest` fails the build when coverage is missing.
-            .addMigrations(*Migrations.ALL)
-            // Last-resort boot-safety, INERT for all known upgrade paths now that
-            // `MIGRATION_1_2` covers 1 → 2 (including legacy SQLDelight-era `tachiyomi.db`
-            // files): it only fires when a migration is missing — a schema-change mistake.
-            // Remove at schema freeze before the first production release; tracked in
-            // doc/MIGRATION_PLAN.md, Phase 6.
             .fallbackToDestructiveMigration(dropAllTables = true)
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onOpen(db: SupportSQLiteDatabase) {
@@ -431,10 +421,9 @@ object AppModule {
     @Singleton
     fun provideSourceProfileCache(
         sourceProfileDao: SourceProfileDao,
-        preferenceStore: PreferenceStore,
         json: Json,
     ): SourceProfileCache =
-        SourceProfileCache(RoomSourceProfileStore(sourceProfileDao, json, preferenceStore))
+        SourceProfileCache(RoomSourceProfileStore(sourceProfileDao, json))
 
     @Provides
     @Singleton

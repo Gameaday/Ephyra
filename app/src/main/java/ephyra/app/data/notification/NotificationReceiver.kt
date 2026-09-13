@@ -11,10 +11,10 @@ import ephyra.app.data.backup.restore.BackupRestoreJob
 import ephyra.app.data.library.LibraryUpdateJob
 import ephyra.app.data.updater.AppUpdateDownloadJob
 import ephyra.app.ui.main.MainActivity
-import ephyra.app.util.system.notificationManager
 import ephyra.core.common.Constants
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.system.cancelNotification
+import ephyra.core.common.util.system.notificationManager
 import ephyra.domain.chapter.interactor.GetChapter
 import ephyra.domain.chapter.interactor.UpdateChapter
 import ephyra.domain.chapter.model.Chapter

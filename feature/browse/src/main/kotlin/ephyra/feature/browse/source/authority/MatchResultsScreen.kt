@@ -43,6 +43,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
+import ephyra.core.common.util.system.openInBrowser
 import ephyra.domain.content.model.ContentType
 import ephyra.domain.manga.model.Manga
 import ephyra.presentation.core.components.AppBar
@@ -54,7 +55,6 @@ import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
-import ephyra.presentation.core.util.system.openInBrowser
 
 /**
  * Screen showing the results of authority matching.

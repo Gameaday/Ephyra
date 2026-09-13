@@ -2,7 +2,6 @@ package ephyra.core.download
 
 import android.content.Context
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.SharedPreferencesMigration
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -37,14 +36,12 @@ class DownloadStore(
     private val sourceManager get() = sourceManagerProvider.get()
 
     /**
-     * DataStore backing file for active downloads. Migrates from legacy SharedPreferences
-     * named "active_downloads" using SharedPreferencesMigration to ensure zero data loss.
+     * DataStore backing file for active downloads.
      */
     private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private val dataStore: DataStore<Preferences> = PreferenceDataStoreFactory.create(
         scope = ioScope,
-        migrations = listOf(SharedPreferencesMigration(context, "active_downloads")),
         produceFile = { context.preferencesDataStoreFile("active_downloads.preferences_pb") },
     )
 

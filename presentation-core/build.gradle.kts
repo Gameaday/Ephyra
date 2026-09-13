@@ -34,7 +34,6 @@ dependencies {
     // Internal Layers
     api(projects.core.common)
     api(projects.core.domain)
-    api(projects.core.domain)
     api(projects.core.data)
     api(projects.core.archive)
     api(projects.core.download)

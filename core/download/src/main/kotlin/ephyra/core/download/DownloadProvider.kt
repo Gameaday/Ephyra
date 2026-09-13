@@ -215,49 +215,6 @@ class DownloadProvider(
     }
 
     /**
-     * Returns list of names that might have been previously used as
-     * the directory name for a chapter.
-     * Add to this list if naming pattern ever changes.
-     *
-     * @param chapterName the name of the chapter to query.
-     * @param chapterScanlator scanlator of the chapter to query.
-     * @param chapterUrl url of the chapter to query.
-     */
-    private fun getLegacyChapterDirNames(
-        chapterName: String,
-        chapterScanlator: String?,
-        chapterUrl: String,
-    ): List<String> {
-        val sanitizedChapterName = sanitizeChapterName(chapterName)
-        val chapterNameV1 = DiskUtil.buildValidFilename(
-            when {
-                !chapterScanlator.isNullOrBlank() -> "${chapterScanlator}_$sanitizedChapterName"
-                else -> sanitizedChapterName
-            },
-        )
-
-        // Get the filename that would be generated if the user were
-        // using the other value for the disallow non-ASCII
-        // filenames setting. This ensures that chapters downloaded
-        // before the user changed the setting can still be found.
-        @Suppress("DEPRECATION")
-        val otherChapterDirName =
-            getChapterDirName(
-                chapterName,
-                chapterScanlator,
-                chapterUrl,
-                !libraryPreferences.disallowNonAsciiFilenames().getSync(),
-            )
-
-        return buildList(2) {
-            // Chapter name without hash (unable to handle duplicate
-            // chapter names)
-            add(chapterNameV1)
-            add(otherChapterDirName)
-        }
-    }
-
-    /**
      * Return the new name for the chapter (in case it's empty or blank)
      *
      * @param chapterName the name of the chapter
@@ -288,19 +245,10 @@ class DownloadProvider(
         @Suppress("DEPRECATION")
         val disallowNonAscii = libraryPreferences.disallowNonAsciiFilenames().getSync()
         val chapterDirName = getChapterDirName(chapterName, chapterScanlator, chapterUrl, disallowNonAscii)
-        val legacyChapterDirNames = getLegacyChapterDirNames(chapterName, chapterScanlator, chapterUrl)
 
-        return buildList {
-            // Folder of images
-            add(chapterDirName)
-            // Archived chapters
-            add("$chapterDirName.cbz")
-
-            // any legacy names
-            legacyChapterDirNames.forEach {
-                add(it)
-                add("$it.cbz")
-            }
-        }
+        return listOf(
+            chapterDirName,
+            "$chapterDirName.cbz",
+        )
     }
 }
