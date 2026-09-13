@@ -52,20 +52,20 @@ fun OnboardingScreen(
     }
 
     val chooseBackup = rememberLauncherForActivityResult(
-        object : ActivityResultContracts.GetContent() {
-            override fun createIntent(context: Context, input: String): Intent {
-                val intent = super.createIntent(context, input)
-                return Intent.createChooser(
-                    intent,
-                    context.getString(ephyra.app.core.common.R.string.file_select_backup),
-                )
-            }
-        },
+        contract = ActivityResultContracts.OpenDocument(),
     ) { uri ->
         if (uri == null) {
             context.toast(ephyra.app.core.common.R.string.file_null_uri_error)
             return@rememberLauncherForActivityResult
         }
+
+        val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+        try {
+            context.contentResolver.takePersistableUriPermission(uri, flags)
+        } catch (e: Exception) {
+            android.util.Log.w("Onboarding", "Failed to take persistable URI permission for backup file", e)
+        }
+
         finishOnboarding()
         navController.navigate(ScreenRoutes.RestoreBackup.createRoute(uri.toString()))
     }
@@ -79,7 +79,7 @@ fun OnboardingScreen(
         telemetryIncluded = state.telemetryIncluded,
         onComplete = finishOnboarding,
         onRestoreBackup = {
-            chooseBackup.launch("*/*")
+            chooseBackup.launch(arrayOf("*/*"))
         },
     )
 }

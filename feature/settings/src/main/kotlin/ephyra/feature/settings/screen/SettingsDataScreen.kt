@@ -200,22 +200,21 @@ object SettingsDataScreen : SearchableSettings {
         val lastAutoBackup by backupPreferences.lastAutoBackupTimestamp().collectAsState()
 
         val chooseBackup = rememberLauncherForActivityResult(
-            object : ActivityResultContracts.GetContent() {
-                override fun createIntent(context: Context, input: String): Intent {
-                    val intent = super.createIntent(context, input)
-                    return Intent.createChooser(
-                        intent,
-                        context.stringResource(ephyra.app.core.common.R.string.file_select_backup),
-                    )
-                }
-            },
-        ) {
-            if (it == null) {
+            contract = ActivityResultContracts.OpenDocument(),
+        ) { uri ->
+            if (uri == null) {
                 context.toast(ephyra.app.core.common.R.string.file_null_uri_error)
                 return@rememberLauncherForActivityResult
             }
 
-            navController.navigate(ScreenRoutes.RestoreBackup.createRoute(it.toString()))
+            val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+            try {
+                context.contentResolver.takePersistableUriPermission(uri, flags)
+            } catch (e: Exception) {
+                logcat(LogPriority.WARN, e) { "Failed to take persistable URI permission for backup file" }
+            }
+
+            navController.navigate(ScreenRoutes.RestoreBackup.createRoute(uri.toString()))
         }
 
         return Preference.PreferenceGroup(
@@ -250,8 +249,7 @@ object SettingsDataScreen : SearchableSettings {
                                                 context.toast(ephyra.app.core.common.R.string.restore_miui_warning)
                                             }
 
-                                            // no need to catch because it's wrapped with a chooser
-                                            chooseBackup.launch("*/*")
+                                            chooseBackup.launch(arrayOf("*/*"))
                                         } else {
                                             context.toast(ephyra.app.core.common.R.string.restore_in_progress)
                                         }

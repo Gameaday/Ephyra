@@ -202,4 +202,38 @@ class BackupFormatRoundTripTest {
         assertEquals(1, restored.backupManga.size)
         assertEquals("Berserk", restored.backupManga.single().title)
     }
+
+    @Test
+    fun `tachiyomiSY simulated backup with unknown proto fields decodes properly`() {
+        val original = sampleBackup()
+        val protoBytes = protoBuf.encodeToByteArray(Backup.serializer(), original)
+
+        // Append a raw unknown proto field (tag 999 with wire type 2: (999 shl 3) or 2 = 7994)
+        // Varint for 7994 is 0xEA, 0x3E
+        val payload = "TachiyomiSY Custom Metadata".toByteArray()
+        val unknownFieldBytes = byteArrayOf(0xEA.toByte(), 0x3E.toByte(), payload.size.toByte()) + payload
+
+        val combinedBytes = protoBytes + unknownFieldBytes
+
+        val zipBytes = ByteArrayOutputStream().use { byteOut ->
+            java.util.zip.ZipOutputStream(byteOut).use { zip ->
+                zip.putNextEntry(java.util.zip.ZipEntry("backup.proto.gz"))
+                val gzipOut = ByteArrayOutputStream()
+                GZIPOutputStream(gzipOut).use { it.write(combinedBytes) }
+                zip.write(gzipOut.toByteArray())
+                zip.closeEntry()
+            }
+            byteOut.toByteArray()
+        }
+
+        val decoder = BackupDecoder(
+            context = ApplicationProvider.getApplicationContext(),
+            protoBuf = protoBuf,
+        )
+        val restored = decoder.decode(ByteArrayInputStream(zipBytes))
+
+        assertEquals(1, restored.backupManga.size)
+        assertEquals("Berserk", restored.backupManga.single().title)
+        assertEquals("Reading", restored.backupCategories.single().name)
+    }
 }
