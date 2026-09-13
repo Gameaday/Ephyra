@@ -20,6 +20,6 @@ abstract class SourcingBindingsModule {
     @Binds
     @Singleton
     abstract fun bindExtensionTranspiler(
-        impl: ephyra.data.sourcing.LegacyExtensionTranspiler,
+        impl: ephyra.data.sourcing.RemoteExtensionTranspiler,
     ): ephyra.domain.extension.service.ExtensionTranspiler
 }

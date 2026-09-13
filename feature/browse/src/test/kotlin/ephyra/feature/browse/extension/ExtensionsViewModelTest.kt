@@ -180,7 +180,7 @@ class ExtensionsViewModelTest {
             id = 123L,
             name = "Remote Source",
             baseUrl = "https://remote.example.com",
-            sourceType = SourceType.LEGACY_EXTENSION,
+            sourceType = SourceType.REMOTE_EXTENSION,
             enabled = true,
             extensionId = "com.remote.ext",
             lastHealthCheck = 0L,

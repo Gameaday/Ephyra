@@ -150,11 +150,7 @@ data class SourceProfileEntity(
             } catch (e: Exception) {
                 ContentType.UNKNOWN
             },
-            sourceType = try {
-                SourceType.valueOf(sourceType)
-            } catch (e: Exception) {
-                SourceType.HEURISTIC
-            },
+            sourceType = SourceType.fromString(sourceType),
             enabled = enabled,
             endpoints = decodedEndpoints,
             responseType = try {

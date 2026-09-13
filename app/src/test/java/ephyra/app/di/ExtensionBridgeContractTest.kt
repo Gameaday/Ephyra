@@ -6,7 +6,6 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ephyra.app.App
 import ephyra.app.startup.ShadowAnimatedVectorResources
-import ephyra.core.common.di.CoreContainer
 import eu.kanade.tachiyomi.network.NetworkHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -21,6 +20,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.get
 import java.util.concurrent.Executors
 
 @RunWith(AndroidJUnit4::class)
@@ -29,21 +30,23 @@ import java.util.concurrent.Executors
     application = App::class,
     shadows = [ShadowAnimatedVectorResources::class],
 )
-class CoreContainerContractTest {
+class ExtensionBridgeContractTest {
 
     @Test
-    fun verifyCoreContainerIsInitialized() {
+    fun verifyExtensionBridgeIsInitialized() {
         val app = ApplicationProvider.getApplicationContext<Application>()
         assertNotNull("Application context should be constructed", app)
-        assertTrue("CoreContainer should be marked initialized", CoreContainer.isInitialized)
-        assertEquals("CoreContainer applicationContext must match", app, CoreContainer.applicationContext)
+        val context = Injekt.get<Context>()
+        assertEquals("Injekt Context must match application", app, context)
+        val application = Injekt.get<Application>()
+        assertEquals("Injekt Application must match application", app, application)
     }
 
     @Test
-    fun verifyEssentialDependenciesAreResolvable() {
+    fun verifyEssentialExtensionDependenciesAreResolvable() {
         // Network stack
-        val networkHelper = CoreContainer.get<NetworkHelper>()
-        assertNotNull("NetworkHelper must be resolvable from CoreContainer", networkHelper)
+        val networkHelper = Injekt.get<NetworkHelper>()
+        assertNotNull("NetworkHelper must be resolvable from Injekt", networkHelper)
         assertTrue(
             "IgnoreGzipInterceptor must not be present in default client (extension ABI requirement)",
             networkHelper.client.networkInterceptors.none {
@@ -51,29 +54,22 @@ class CoreContainerContractTest {
             },
         )
 
-        val okHttpClient = CoreContainer.get<OkHttpClient>()
-        assertNotNull("OkHttpClient must be resolvable from CoreContainer", okHttpClient)
+        val okHttpClient = Injekt.get<OkHttpClient>()
+        assertNotNull("OkHttpClient must be resolvable from Injekt", okHttpClient)
 
         // Context / Application
-        val context = CoreContainer.get<Context>()
-        assertNotNull("Context must be resolvable from CoreContainer", context)
+        val context = Injekt.get<Context>()
+        assertNotNull("Context must be resolvable from Injekt", context)
 
-        val application = CoreContainer.get<Application>()
-        assertNotNull("Application must be resolvable from CoreContainer", application)
+        val application = Injekt.get<Application>()
+        assertNotNull("Application must be resolvable from Injekt", application)
 
         // Serialization
-        val json = CoreContainer.get<Json>()
-        assertNotNull("Json serializer must be resolvable from CoreContainer", json)
+        val json = Injekt.get<Json>()
+        assertNotNull("Json serializer must be resolvable from Injekt", json)
 
-        val xml = CoreContainer.get<XML>()
-        assertNotNull("XML serializer must be resolvable from CoreContainer", xml)
-    }
-
-    @Test
-    fun verifyDynamicFallbackResolvesScreenEntryPointDependencies() {
-        // Clear any direct entry for a dependency and ensure fallback resolves it
-        val networkHelper = CoreContainer.get(NetworkHelper::class.java)
-        assertNotNull("Dynamic fallback must satisfy NetworkHelper resolution", networkHelper)
+        val xml = Injekt.get<XML>()
+        assertNotNull("XML serializer must be resolvable from Injekt", xml)
     }
 
     @Test
@@ -81,9 +77,9 @@ class CoreContainerContractTest {
         val threadPool = Executors.newFixedThreadPool(8)
         val deferreds = (1..50).map {
             async(Dispatchers.IO) {
-                val helper = CoreContainer.get<NetworkHelper>()
-                val client = CoreContainer.get<OkHttpClient>()
-                val ctx = CoreContainer.get<Context>()
+                val helper = Injekt.get<NetworkHelper>()
+                val client = Injekt.get<OkHttpClient>()
+                val ctx = Injekt.get<Context>()
                 helper != null && client != null && ctx != null
             }
         }

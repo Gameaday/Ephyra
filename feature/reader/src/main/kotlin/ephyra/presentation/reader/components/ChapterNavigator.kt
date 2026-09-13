@@ -61,7 +61,7 @@ fun ChapterNavigator(
     // Match with toolbar background color set in ReaderActivity
     val backgroundColor = MaterialTheme.colorScheme
         .surfaceColorAtElevation(3.dp)
-        .copy(alpha = if (isSystemInDarkTheme()) 0.9f else 0.95f)
+        .copy(alpha = if (isSystemInDarkTheme()) 0.96f else 0.98f)
     val buttonColor = IconButtonDefaults.filledIconButtonColors(
         containerColor = backgroundColor,
         disabledContainerColor = backgroundColor,

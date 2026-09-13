@@ -372,7 +372,7 @@ private fun SourceManagementLayout(
         // Sources grouped by type
         val grouped = sources.groupBy { it.sourceType }
         val typeOrder = listOf(
-            SourceType.LEGACY_EXTENSION,
+            SourceType.REMOTE_EXTENSION,
             SourceType.JS_SCRAPER,
             SourceType.HEURISTIC,
             SourceType.REPOSITORY,
@@ -488,7 +488,7 @@ private fun SourceTypeSection(
     onRemoveSource: (UnifiedSource) -> Unit,
 ) {
     val (icon, color) = when (sourceType) {
-        SourceType.LEGACY_EXTENSION -> Icons.Outlined.Security to MaterialTheme.colorScheme.primary
+        SourceType.REMOTE_EXTENSION -> Icons.Outlined.Security to MaterialTheme.colorScheme.primary
         SourceType.JS_SCRAPER -> Icons.Outlined.Code to MaterialTheme.colorScheme.secondary
         SourceType.HEURISTIC -> Icons.Outlined.Autorenew to MaterialTheme.colorScheme.tertiary
         SourceType.REPOSITORY -> Icons.Outlined.Storage to MaterialTheme.colorScheme.outline
@@ -592,7 +592,7 @@ private fun SourceRow(
             containerColor = if (source.enabled) {
                 MaterialTheme.colorScheme.surface
             } else {
-                MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+                MaterialTheme.colorScheme.surfaceContainerLowest
             },
         ),
     ) {
@@ -738,7 +738,7 @@ private fun SourceRow(
                         tint = MaterialTheme.colorScheme.outline,
                     )
                 }
-                if (source.sourceType != SourceType.LEGACY_EXTENSION) {
+                if (source.sourceType != SourceType.REMOTE_EXTENSION) {
                     IconButton(onClick = onRemoveSource) {
                         Icon(
                             imageVector = Icons.Outlined.DeleteOutline,
@@ -1012,7 +1012,7 @@ private fun LinkScraperDialog(
 // Extensions
 private val SourceType.displayName: String
     get() = when (this) {
-        SourceType.LEGACY_EXTENSION -> "Remote Extensions"
+        SourceType.REMOTE_EXTENSION -> "Remote Extensions"
         SourceType.JS_SCRAPER -> "JS Scrapers"
         SourceType.HEURISTIC -> "Heuristic Profiles"
         SourceType.REPOSITORY -> "Repositories"
@@ -1021,7 +1021,7 @@ private val SourceType.displayName: String
 private val SourceType.color: Color
     @Composable
     get() = when (this) {
-        SourceType.LEGACY_EXTENSION -> MaterialTheme.colorScheme.primary
+        SourceType.REMOTE_EXTENSION -> MaterialTheme.colorScheme.primary
         SourceType.JS_SCRAPER -> MaterialTheme.colorScheme.secondary
         SourceType.HEURISTIC -> MaterialTheme.colorScheme.tertiary
         SourceType.REPOSITORY -> MaterialTheme.colorScheme.outline

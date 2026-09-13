@@ -197,6 +197,7 @@ private fun BookReaderContent(
                 ModalBottomSheet(
                     onDismissRequest = { onEvent(BookReaderEvent.ToggleToc(false)) },
                     sheetState = sheetState,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.98f),
                 ) {
                     TableOfContentsSheet(
                         state = state,
@@ -385,7 +386,7 @@ private fun TableOfContentsSheet(
                         .clickable { onSelectChapter(index) }
                         .background(
                             if (isSelected) {
-                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f)
                             } else {
                                 MaterialTheme.colorScheme.surface
                             },

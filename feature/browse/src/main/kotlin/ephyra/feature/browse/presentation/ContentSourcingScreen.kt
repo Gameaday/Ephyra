@@ -248,7 +248,7 @@ private fun ScrapersTabContent(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f),
                 ),
             ) {
                 Column(
@@ -330,7 +330,7 @@ private fun ScrapersTabContent(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f),
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.85f),
                 ),
             ) {
                 Column(
@@ -403,7 +403,7 @@ private fun ScrapersTabContent(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
                     ),
                 ) {
                     Row(
@@ -517,7 +517,7 @@ private fun ScraperRow(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
         ),
     ) {
         Row(
@@ -593,7 +593,7 @@ private fun RepositoriesTabContent(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.85f),
                 ),
             ) {
                 Column(
@@ -743,7 +743,7 @@ private fun RepositoryRow(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
         ),
     ) {
         Row(
@@ -821,7 +821,7 @@ private fun HeuristicsTabContent(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f),
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.85f),
                 ),
             ) {
                 Row(
@@ -858,7 +858,7 @@ private fun HeuristicsTabContent(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
                 ),
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -1033,7 +1033,7 @@ private fun ProfileRow(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
         ),
     ) {
         Column(

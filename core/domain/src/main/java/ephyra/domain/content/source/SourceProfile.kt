@@ -72,8 +72,8 @@ data class SourceProfile(
  * The type of content source.
  */
 enum class SourceType {
-    /** Legacy APK-based extension source. */
-    LEGACY_EXTENSION,
+    /** Remote community extension source running in sandboxed DEX runner. */
+    REMOTE_EXTENSION,
 
     /** JavaScript scraper running in QuickJS sandbox. */
     JS_SCRAPER,
@@ -83,6 +83,21 @@ enum class SourceType {
 
     /** Local/network media repository (Jellyfin-style). */
     REPOSITORY,
+
+    ;
+
+    companion object {
+        @Deprecated("Use REMOTE_EXTENSION instead", ReplaceWith("SourceType.REMOTE_EXTENSION"))
+        val LEGACY_EXTENSION: SourceType get() = REMOTE_EXTENSION
+
+        fun fromString(value: String?): SourceType = when (value?.trim()?.uppercase()) {
+            "REMOTE_EXTENSION", "LEGACY_EXTENSION" -> REMOTE_EXTENSION
+            "JS_SCRAPER" -> JS_SCRAPER
+            "HEURISTIC" -> HEURISTIC
+            "REPOSITORY" -> REPOSITORY
+            else -> HEURISTIC
+        }
+    }
 }
 
 /** Known endpoint types for a content source. */

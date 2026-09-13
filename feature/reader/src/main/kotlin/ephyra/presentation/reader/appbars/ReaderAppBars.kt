@@ -68,7 +68,7 @@ fun ReaderAppBars(
     val isRtl = viewer is R2LPagerViewer
     val backgroundColor = MaterialTheme.colorScheme
         .surfaceColorAtElevation(3.dp)
-        .copy(alpha = if (isSystemInDarkTheme()) 0.9f else 0.95f)
+        .copy(alpha = if (isSystemInDarkTheme()) 0.96f else 0.98f)
 
     Column(modifier = Modifier.fillMaxHeight()) {
         AnimatedVisibility(

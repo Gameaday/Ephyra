@@ -18,7 +18,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class LegacyExtensionTranspiler @Inject constructor(
+class RemoteExtensionTranspiler @Inject constructor(
     private val context: Application,
     private val jsEngine: JavaScriptEngine,
     private val networkHelper: NetworkHelper,
@@ -148,3 +148,6 @@ class LegacyExtensionTranspiler @Inject constructor(
             .replace("\r", "\\r")
     }
 }
+
+@Deprecated("Use RemoteExtensionTranspiler instead", ReplaceWith("RemoteExtensionTranspiler"))
+typealias LegacyExtensionTranspiler = RemoteExtensionTranspiler

@@ -9,7 +9,6 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import dev.mihon.injekt.patchInjekt
-import ephyra.core.common.di.CoreContainer
 import ephyra.core.common.preference.PreferenceStore
 import ephyra.data.cache.CoverCache
 import ephyra.domain.base.BasePreferences
@@ -41,55 +40,21 @@ interface ExtensionBridgeEntryPoint {
 typealias ScreenEntryPoint = ExtensionBridgeEntryPoint
 
 @Deprecated("Use standard Hilt injection or Hilt EntryPoints instead. Retained strictly for legacy extension bridge.")
-fun initializeCoreContainer(context: Context) {
-    CoreContainer.init(context)
+fun initializeExtensionBridge(context: Context) {
+    val appContext = context.applicationContext
     val entryPoint = EntryPointAccessors.fromApplication(
-        context.applicationContext,
+        appContext,
         ExtensionBridgeEntryPoint::class.java,
     )
-
-    // Direct type-safe fallback provider for legacy extension bridge (no reflection)
-    CoreContainer.setFallbackProvider { requestedClass ->
-        when (requestedClass) {
-            NetworkHelper::class.java -> entryPoint.networkHelper()
-            OkHttpClient::class.java -> entryPoint.networkHelper().client
-            PreferenceStore::class.java -> entryPoint.preferenceStore()
-            BasePreferences::class.java -> entryPoint.basePreferences()
-            CoverCache::class.java -> entryPoint.coverCache()
-            SourceManager::class.java -> entryPoint.sourceManager()
-            Json::class.java -> entryPoint.json()
-            XML::class.java -> entryPoint.xml()
-            SharedPreferences::class.java ->
-                PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
-            else -> null
-        }
-    }
 
     // Initialize canonical Injekt
     patchInjekt()
 
-    // Singletons & Legacy Extension Bridge
-    CoreContainer.register(Context::class.java) { CoreContainer.applicationContext }
-    CoreContainer.register(Application::class.java) {
-        CoreContainer.applicationContext as Application
-    }
-    CoreContainer.register(SharedPreferences::class.java) {
-        PreferenceManager.getDefaultSharedPreferences(CoreContainer.applicationContext)
-    }
-    CoreContainer.register(NetworkHelper::class.java) { entryPoint.networkHelper() }
-    CoreContainer.register(OkHttpClient::class.java) { entryPoint.networkHelper().client }
-    CoreContainer.register(PreferenceStore::class.java) { entryPoint.preferenceStore() }
-    CoreContainer.register(BasePreferences::class.java) { entryPoint.basePreferences() }
-    CoreContainer.register(CoverCache::class.java) { entryPoint.coverCache() }
-    CoreContainer.register(SourceManager::class.java) { entryPoint.sourceManager() }
-    CoreContainer.register(Json::class.java) { entryPoint.json() }
-    CoreContainer.register(XML::class.java) { entryPoint.xml() }
-
-    // Register with official Injekt
-    Injekt.addSingleton<Context>(CoreContainer.applicationContext)
-    Injekt.addSingleton<Application>(CoreContainer.applicationContext as Application)
+    // Register with official Injekt for dynamic extensions
+    Injekt.addSingleton<Context>(appContext)
+    Injekt.addSingleton<Application>(appContext as Application)
     Injekt.addSingletonFactory<SharedPreferences> {
-        PreferenceManager.getDefaultSharedPreferences(CoreContainer.applicationContext)
+        PreferenceManager.getDefaultSharedPreferences(appContext)
     }
     Injekt.addSingletonFactory<NetworkHelper> { entryPoint.networkHelper() }
     Injekt.addSingletonFactory<OkHttpClient> { entryPoint.networkHelper().client }
@@ -99,4 +64,9 @@ fun initializeCoreContainer(context: Context) {
     Injekt.addSingletonFactory<SourceManager> { entryPoint.sourceManager() }
     Injekt.addSingletonFactory<Json> { entryPoint.json() }
     Injekt.addSingletonFactory<XML> { entryPoint.xml() }
+}
+
+@Deprecated("Use initializeExtensionBridge instead.", ReplaceWith("initializeExtensionBridge(context)"))
+fun initializeCoreContainer(context: Context) {
+    initializeExtensionBridge(context)
 }

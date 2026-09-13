@@ -145,7 +145,7 @@ button or sync symbol). Represents a "Central Hub."
 ## Token Wiring
 
 The following tokens are **automatically applied** by the theme engine
-(in `TachiyomiTheme.kt`) — component authors don't need to read them manually:
+(in `EphyraTheme.kt`) — component authors don't need to read them manually:
 
 | Token            | Wired Into                                     | Effect                            |
 |------------------|------------------------------------------------|-----------------------------------|

@@ -118,8 +118,8 @@ val LocalBrandedTheme = staticCompositionLocalOf { BrandedThemeConfig() }
  *
  * Key traits:
  * - Large, rounded shapes (20dp cards, 32dp sheets)
- * - Translucent surfaces (0.85 alpha) for glassmorphic depth
- * - No elevation, no borders — depth through transparency
+ * - Translucent surfaces (0.96 surface alpha, 0.94 container alpha) for subtle glassmorphic depth
+ * - No elevation, no borders — depth through subtle transparency
  * - Generous spacing for a spacious, breathable layout
  * - SemiBold headings for modern clarity through glass
  */
@@ -134,8 +134,8 @@ val EphyraThemeConfig = BrandedThemeConfig(
     cardBorderWidth = 0.dp,
     gridHorizontalSpacing = 10.dp,
     gridVerticalSpacing = 10.dp,
-    surfaceAlpha = 0.85f,
-    containerAlpha = 0.78f,
+    surfaceAlpha = 0.96f,
+    containerAlpha = 0.94f,
     headingWeight = FontWeight.SemiBold,
     bodyWeight = FontWeight.Normal,
     cardContentPadding = 10.dp,

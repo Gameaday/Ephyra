@@ -124,7 +124,7 @@ class GetAvailableSourcesTest {
         assertEquals(1, result.size)
         val unified = result.first()
         assertEquals("MangaDex", unified.name)
-        assertEquals(SourceType.LEGACY_EXTENSION, unified.sourceType)
+        assertEquals(SourceType.REMOTE_EXTENSION, unified.sourceType)
         assertEquals("eu.kanade.tachiyomi.extension.all.mangadex", unified.extensionId)
         assertTrue(unified.enabled)
     }
@@ -162,7 +162,7 @@ class GetAvailableSourcesTest {
         assertEquals(1, result.size)
         val unified = result.first()
         assertEquals("MangaDex", unified.name)
-        assertEquals(SourceType.LEGACY_EXTENSION, unified.sourceType)
+        assertEquals(SourceType.REMOTE_EXTENSION, unified.sourceType)
         assertEquals("eu.kanade.tachiyomi.extension.all.mangadex", unified.extensionId)
         assertTrue(unified.enabled)
     }

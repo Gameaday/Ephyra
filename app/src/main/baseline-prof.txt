@@ -40,7 +40,7 @@ Landroidx/compose/foundation/lazy/LazyColumnKt;
 Lephyra/app/App;
 Lephyra/app/ui/home/HomeScreenKt;
 Lephyra/app/ui/home/HomeViewModel;
-Lephyra/app/theme/TachiyomiThemeKt;
+Lephyra/presentation/theme/EphyraThemeKt;
 
 # Navigation runtime
 Landroidx/navigation/NavHostController;

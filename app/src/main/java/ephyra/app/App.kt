@@ -28,11 +28,10 @@ import coil3.util.DebugLogger
 import dagger.hilt.android.HiltAndroidApp
 import ephyra.app.crash.CrashActivity
 import ephyra.app.crash.GlobalExceptionHandler
-import ephyra.app.di.initializeCoreContainer
+import ephyra.app.di.initializeExtensionBridge
 import ephyra.app.startup.StartupGuard
 import ephyra.core.common.core.security.PrivacyPreferences
 import ephyra.core.common.core.security.SecurityPreferences
-import ephyra.core.common.di.CoreContainer
 import ephyra.core.common.preference.Preference
 import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.common.util.lang.launchIO
@@ -148,21 +147,14 @@ class App :
             android.util.Log.e("Ephyra", "Failed to initialize crash handler", e)
         }
         StartupGuard.completePhase("crash_handler")
-
-        // Early CoreContainer context initialization
-        try {
-            CoreContainer.init(base)
-        } catch (e: Throwable) {
-            android.util.Log.e("Ephyra", "Failed early CoreContainer init", e)
-        }
     }
 
     @SuppressLint("LaunchActivityFromNotification")
     override fun onCreate() {
-        // Phase 3: DI container initialization — must happen BEFORE super.onCreate()
-        // so CoreContainer is primed before Hilt injects members or starts background tasks
+        // Phase 3: Extension bridge initialization — must happen BEFORE super.onCreate()
+        // so Injekt is primed before Hilt injects members or starts background tasks
         try {
-            initializeCoreContainer(this)
+            initializeExtensionBridge(this)
             StartupGuard.completePhase("di_container")
         } catch (e: Throwable) {
             ephyra.app.startup.StartupTracker.recordError(ephyra.app.startup.StartupTracker.Phase.APP_CREATED, e)

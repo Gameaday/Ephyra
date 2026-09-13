@@ -63,6 +63,7 @@ fun ReaderSettingsSheet(
             onShowMenus()
         },
         sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.98f),
         scrimColor = if (pagerState.currentPage == 2) Color.Transparent else BottomSheetDefaults.ScrimColor,
         dragHandle = { BottomSheetDefaults.DragHandle() },
     ) {
@@ -73,7 +74,7 @@ fun ReaderSettingsSheet(
         ) {
             PrimaryTabRow(
                 selectedTabIndex = pagerState.currentPage,
-                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.98f),
                 divider = { HorizontalDivider() },
             ) {
                 tabTitles.fastForEachIndexed { index, title ->

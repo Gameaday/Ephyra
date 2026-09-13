@@ -328,7 +328,7 @@ class ContentSourceOrchestrator(
     private fun resolveEngineForProfile(profile: SourceProfile): ContentSourceEngine {
         return when (profile.sourceType) {
             SourceType.JS_SCRAPER -> scriptEngine
-            SourceType.LEGACY_EXTENSION -> scriptEngine // Legacy extensions use script engine via mapping
+            SourceType.REMOTE_EXTENSION -> scriptEngine // Remote extensions use script engine via mapping
             SourceType.REPOSITORY -> heuristicEngine // Repositories use heuristic for now
             SourceType.HEURISTIC -> heuristicEngine
         }

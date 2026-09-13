@@ -29,7 +29,7 @@ import org.junit.Test
 import java.io.ByteArrayInputStream
 import java.io.File
 
-class LegacyExtensionTranspilerTest {
+class RemoteExtensionTranspilerTest {
 
     private val context = mockk<Application>()
     private val jsEngine = mockk<JavaScriptEngine>()
@@ -39,7 +39,7 @@ class LegacyExtensionTranspilerTest {
     private val removeCustomSource = mockk<RemoveCustomSource>()
     private val preferenceStore = mockk<PreferenceStore>()
 
-    private val transpiler = LegacyExtensionTranspiler(
+    private val transpiler = RemoteExtensionTranspiler(
         context = context,
         jsEngine = jsEngine,
         networkHelper = networkHelper,
@@ -275,7 +275,7 @@ class LegacyExtensionTranspilerTest {
         coEvery { addCustomSource.linkScraperToUrl(any(), any()) } returns mockk()
 
         // Construct transpiler with mock preference store
-        val transpilerWithPrefs = LegacyExtensionTranspiler(
+        val transpilerWithPrefs = RemoteExtensionTranspiler(
             context = context,
             jsEngine = jsEngine,
             networkHelper = networkHelper,

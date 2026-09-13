@@ -29,7 +29,7 @@ import org.robolectric.annotation.Config
 class StartupRaceConditionTest {
 
     @Test
-    fun verifyDynamicHttpSourceInstantiationIsFreeOfCoreContainerRace() = runBlocking {
+    fun verifyDynamicHttpSourceInstantiationIsFreeOfRaceCondition() = runBlocking {
         val app = ApplicationProvider.getApplicationContext<Application>()
         assertNotNull("Application must be created", app)
 

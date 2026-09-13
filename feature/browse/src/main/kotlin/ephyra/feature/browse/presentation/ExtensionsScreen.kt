@@ -568,7 +568,7 @@ private fun EmptyRepositoriesCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f),
         ),
     ) {
         Column(
@@ -632,7 +632,7 @@ private fun DeveloperToolsSection(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
         ),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -729,7 +729,7 @@ private fun InstalledExtensionsSection(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.05f),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         ),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -835,7 +835,7 @@ private fun UntrustedExtensionsSection(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.05f),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         ),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -902,7 +902,7 @@ private fun FailedExtensionsSection(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.05f),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         ),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -983,7 +983,7 @@ private fun RepositoriesSection(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         ),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -1087,7 +1087,7 @@ private fun AvailableExtensionsSection(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.05f),
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         ),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -1335,7 +1335,7 @@ private fun SourceTypeSection(
     onRemoveSource: (UnifiedSource) -> Unit,
 ) {
     val (icon, color) = when (sourceType) {
-        SourceType.LEGACY_EXTENSION -> Icons.Outlined.Security to MaterialTheme.colorScheme.primary
+        SourceType.REMOTE_EXTENSION -> Icons.Outlined.Security to MaterialTheme.colorScheme.primary
         SourceType.JS_SCRAPER -> Icons.Outlined.Code to MaterialTheme.colorScheme.secondary
         SourceType.HEURISTIC -> Icons.Outlined.Autorenew to MaterialTheme.colorScheme.tertiary
         SourceType.REPOSITORY -> Icons.Outlined.Storage to MaterialTheme.colorScheme.outline
@@ -1435,7 +1435,7 @@ private fun SourceRow(
             containerColor = if (source.enabled) {
                 MaterialTheme.colorScheme.surface
             } else {
-                MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+                MaterialTheme.colorScheme.surfaceContainerLowest
             },
         ),
     ) {
@@ -1847,7 +1847,7 @@ private fun LinkScraperDialog(
 
 private val SourceType.displayName: String
     get() = when (this) {
-        SourceType.LEGACY_EXTENSION -> "Remote Extensions"
+        SourceType.REMOTE_EXTENSION -> "Remote Extensions"
         SourceType.JS_SCRAPER -> "JS Scrapers"
         SourceType.HEURISTIC -> "Heuristic Profiles"
         SourceType.REPOSITORY -> "Repositories"
@@ -1856,7 +1856,7 @@ private val SourceType.displayName: String
 private val SourceType.color: Color
     @Composable
     get() = when (this) {
-        SourceType.LEGACY_EXTENSION -> MaterialTheme.colorScheme.primary
+        SourceType.REMOTE_EXTENSION -> MaterialTheme.colorScheme.primary
         SourceType.JS_SCRAPER -> MaterialTheme.colorScheme.secondary
         SourceType.HEURISTIC -> MaterialTheme.colorScheme.tertiary
         SourceType.REPOSITORY -> MaterialTheme.colorScheme.outline

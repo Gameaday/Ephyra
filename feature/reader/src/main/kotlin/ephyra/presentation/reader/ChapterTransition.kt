@@ -302,7 +302,7 @@ private fun ChapterText(
 private val CardColor: CardColors
     @Composable
     get() = CardDefaults.outlinedCardColors(
-        containerColor = Color.Transparent,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.95f),
         contentColor = MaterialTheme.colorScheme.onSurface,
     )
 

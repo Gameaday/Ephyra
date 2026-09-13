@@ -355,7 +355,7 @@ class ExtensionsViewModel @Inject constructor(
         viewModelScope.launch {
             updateState { it.copy(isLoading = true) }
             val matchingSource = state.value.sources.firstOrNull { it.baseUrl == baseUrl }
-            if (matchingSource?.sourceType == SourceType.LEGACY_EXTENSION) {
+            if (matchingSource?.sourceType == SourceType.REMOTE_EXTENSION) {
                 matchingSource.extensionId?.let { pkgName ->
                     extensionManager.uninstallExtensionByPkgName(pkgName)
                 }

@@ -5,7 +5,10 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import ephyra.domain.ui.UiPreferences
@@ -21,6 +24,7 @@ import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.theme.colorscheme.AtollaColorScheme
 import ephyra.presentation.theme.colorscheme.BaseColorScheme
 import ephyra.presentation.theme.colorscheme.CatppuccinColorScheme
+import ephyra.presentation.theme.colorscheme.DefaultColorScheme
 import ephyra.presentation.theme.colorscheme.EphyraColorScheme
 import ephyra.presentation.theme.colorscheme.GreenAppleColorScheme
 import ephyra.presentation.theme.colorscheme.LavenderColorScheme
@@ -30,7 +34,6 @@ import ephyra.presentation.theme.colorscheme.MonochromeColorScheme
 import ephyra.presentation.theme.colorscheme.NagareColorScheme
 import ephyra.presentation.theme.colorscheme.NordColorScheme
 import ephyra.presentation.theme.colorscheme.StrawberryColorScheme
-import ephyra.presentation.theme.colorscheme.TachiyomiColorScheme
 import ephyra.presentation.theme.colorscheme.TakoColorScheme
 import ephyra.presentation.theme.colorscheme.TealTurqoiseColorScheme
 import ephyra.presentation.theme.colorscheme.TidalWaveColorScheme
@@ -59,28 +62,6 @@ fun EphyraPreviewTheme(
     isAmoled: Boolean = false,
     content: @Composable () -> Unit,
 ) = BaseEphyraTheme(appTheme, isAmoled, content)
-
-@Deprecated(
-    message = "Use EphyraTheme instead",
-    replaceWith = ReplaceWith("EphyraTheme(appTheme, amoled, content)"),
-)
-@Composable
-fun TachiyomiTheme(
-    appTheme: AppTheme? = null,
-    amoled: Boolean? = null,
-    content: @Composable () -> Unit,
-) = EphyraTheme(appTheme, amoled, content)
-
-@Deprecated(
-    message = "Use EphyraPreviewTheme instead",
-    replaceWith = ReplaceWith("EphyraPreviewTheme(appTheme, isAmoled, content)"),
-)
-@Composable
-fun TachiyomiPreviewTheme(
-    appTheme: AppTheme = AppTheme.DEFAULT,
-    isAmoled: Boolean = false,
-    content: @Composable () -> Unit,
-) = EphyraPreviewTheme(appTheme, isAmoled, content)
 
 @Composable
 private fun BaseEphyraTheme(
@@ -119,7 +100,7 @@ private fun getThemeColorScheme(
     val colorScheme = if (appTheme == AppTheme.MONET) {
         MonetColorScheme(context)
     } else {
-        colorSchemes.getOrDefault(appTheme, TachiyomiColorScheme)
+        colorSchemes.getOrDefault(appTheme, DefaultColorScheme)
     }
     return colorScheme.getColorScheme(
         isDark = isDark,
@@ -201,7 +182,7 @@ private fun getBrandedThemeConfig(appTheme: AppTheme): BrandedThemeConfig = when
 }
 
 private val colorSchemes: Map<AppTheme, BaseColorScheme> = mapOf(
-    AppTheme.DEFAULT to TachiyomiColorScheme,
+    AppTheme.DEFAULT to DefaultColorScheme,
     AppTheme.CATPPUCCIN to CatppuccinColorScheme,
     AppTheme.GREEN_APPLE to GreenAppleColorScheme,
     AppTheme.LAVENDER to LavenderColorScheme,

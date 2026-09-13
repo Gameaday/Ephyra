@@ -18,6 +18,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
@@ -36,6 +37,7 @@ fun DropdownMenu(
     offset: DpOffset = DpOffset(8.dp, (-56).dp),
     scrollState: ScrollState = rememberScrollState(),
     properties: PopupProperties = PopupProperties(focusable = true),
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.98f),
     content: @Composable ColumnScope.() -> Unit,
 ) {
     ComposeDropdownMenu(
@@ -45,6 +47,7 @@ fun DropdownMenu(
         offset = offset,
         scrollState = scrollState,
         properties = properties,
+        containerColor = containerColor,
         content = content,
     )
 }
