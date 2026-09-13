@@ -43,8 +43,44 @@ interface CatalogueSource : Source {
         fetchDetails: Boolean,
         fetchChapters: Boolean,
     ): SMangaUpdate = supervisorScope {
-        val asyncManga = if (fetchDetails) async { fetchMangaDetails(manga).awaitSingle() } else null
-        val asyncChapters = if (fetchChapters) async { fetchChapterList(manga).awaitSingle() } else null
+        val asyncManga = if (fetchDetails) {
+            async {
+                try {
+                    fetchMangaDetails(manga).awaitSingle()
+                } catch (_: Exception) {
+                    manga
+                }
+            }
+        } else {
+            null
+        }
+        val asyncChapters = if (fetchChapters) {
+            async {
+                try {
+                    fetchChapterList(manga).awaitSingle()
+                } catch (e: UnsupportedOperationException) {
+                    try {
+                        val method = this@CatalogueSource.javaClass.getMethod(
+                            "getChapterList",
+                            SManga::class.java,
+                            kotlin.coroutines.Continuation::class.java,
+                        )
+                        if (method.declaringClass != CatalogueSource::class.java &&
+                            method.declaringClass.name != "eu.kanade.tachiyomi.source.online.HttpSource" &&
+                            method.declaringClass != Source::class.java
+                        ) {
+                            getChapterList(manga)
+                        } else {
+                            throw e
+                        }
+                    } catch (_: NoSuchMethodException) {
+                        throw e
+                    }
+                }
+            }
+        } else {
+            null
+        }
         SMangaUpdate(asyncManga?.await() ?: manga, asyncChapters?.await() ?: chapters)
     }
 

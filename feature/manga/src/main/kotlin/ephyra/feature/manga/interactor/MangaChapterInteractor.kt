@@ -18,6 +18,7 @@ import ephyra.domain.manga.interactor.UpdateManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.toSManga
 import eu.kanade.tachiyomi.source.Source
+import eu.kanade.tachiyomi.source.model.SMangaUpdate
 import logcat.LogPriority
 import javax.inject.Inject
 
@@ -100,29 +101,33 @@ class MangaChapterInteractor @Inject constructor(
         manualFetch: Boolean,
     ): List<Chapter> {
         val sManga = manga.toSManga()
-        runCatching {
-            val networkManga = runExtensionCall(sourceName = source.name) {
-                source.getMangaDetails(sManga)
-            }
-            updateManga.awaitUpdateFromSource(manga, networkManga, manualFetch = manualFetch)
-        }.onFailure { e ->
-            logcat(LogPriority.WARN, e) {
-                "Failed to fetch manga details from source '${source.name}'; proceeding with chapter list"
-            }
-        }
-        val sourceChapters = runCatching {
+        val sChapters = chapters.map { it.toSChapter() }
+        val update = runCatching {
             runExtensionCall(sourceName = source.name) {
-                source.getChapterList(sManga)
+                source.getMangaUpdate(
+                    manga = sManga,
+                    chapters = sChapters,
+                    fetchDetails = true,
+                    fetchChapters = true,
+                )
+            }
+        }.onSuccess { updateResult ->
+            runCatching {
+                updateManga.awaitUpdateFromSource(manga, updateResult.manga, manualFetch = manualFetch)
+            }.onFailure { e ->
+                logcat(LogPriority.WARN, e) {
+                    "Failed to update manga details from source '${source.name}'"
+                }
             }
         }.getOrElse { e ->
-            logcat(LogPriority.ERROR, e) { "Failed to fetch chapter list from source '${source.name}'" }
+            logcat(LogPriority.ERROR, e) { "Failed to fetch chapter update from source '${source.name}'" }
             if (manualFetch) throw e
             // Background refresh: fall back to the currently known local chapters so an
             // offline/broken source never wipes the chapter list.
-            chapters.map { it.toSChapter() }
+            SMangaUpdate(sManga, sChapters)
         }
         return syncChaptersWithSource.await(
-            sourceChapters,
+            update.chapters,
             manga,
             source,
             manualFetch,

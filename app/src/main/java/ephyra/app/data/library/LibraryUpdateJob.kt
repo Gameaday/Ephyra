@@ -333,16 +333,26 @@ class LibraryUpdateJob(
         val source = sourceManager.getOrStub(manga.source)
         val sManga = manga.toSManga()
 
-        if (autoUpdateMetadata) {
-            try {
-                val networkManga = source.getMangaDetails(sManga)
-                updateManga.awaitUpdateFromSource(manga, networkManga, manualFetch = false)
-            } catch (e: Exception) {
-                logcat(LogPriority.WARN, e) { "Metadata update failed for '${manga.title}'" }
+        val chapters = try {
+            val update = source.getMangaUpdate(
+                manga = sManga,
+                chapters = emptyList(),
+                fetchDetails = autoUpdateMetadata,
+                fetchChapters = true,
+            )
+            if (autoUpdateMetadata) {
+                try {
+                    updateManga.awaitUpdateFromSource(manga, update.manga, manualFetch = false)
+                } catch (e: Exception) {
+                    logcat(LogPriority.WARN, e) { "Metadata update failed for '${manga.title}'" }
+                }
             }
+            update.chapters
+        } catch (e: Exception) {
+            logcat(LogPriority.WARN, e) { "Update failed for '${manga.title}'" }
+            emptyList()
         }
 
-        val chapters = source.getChapterList(sManga)
         val dbManga = getManga.await(manga.id)?.takeIf { it.favorite } ?: return emptyList()
 
         return syncChaptersWithSource.await(chapters, dbManga, source, false, fetchWindow)

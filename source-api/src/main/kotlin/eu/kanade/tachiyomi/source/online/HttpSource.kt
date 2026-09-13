@@ -257,7 +257,8 @@ abstract class HttpSource : CatalogueSource {
      * @since extensions-lib 1.5
      */
     @Suppress("DEPRECATION")
-    override suspend fun getMangaDetails(manga: SManga): SManga = fetchMangaDetails(manga).awaitSingle()
+    override suspend fun getMangaDetails(manga: SManga): SManga =
+        getMangaUpdate(manga, emptyList(), fetchDetails = true, fetchChapters = false).manga
 
     /**
      * Returns the request for the details of a manga. Override only if it's needed to change the
@@ -305,7 +306,8 @@ abstract class HttpSource : CatalogueSource {
      * @since extensions-lib 1.5
      */
     @Suppress("DEPRECATION")
-    override suspend fun getChapterList(manga: SManga): List<SChapter> = fetchChapterList(manga).awaitSingle()
+    override suspend fun getChapterList(manga: SManga): List<SChapter> =
+        getMangaUpdate(manga, emptyList(), fetchDetails = false, fetchChapters = true).chapters
 
     /**
      * Returns the request for updating the chapter list. Override only if it's needed to override

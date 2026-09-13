@@ -1,3 +1,3 @@
 package ephyra.domain.chapter.model
 
-class NoChaptersException : Exception()
+class NoChaptersException(message: String = "No chapters found") : Exception(message)
