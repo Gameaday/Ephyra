@@ -21,7 +21,7 @@ import ephyra.core.common.core.security.PrivacyPreferences
 import ephyra.domain.ui.UiPreferences
 import ephyra.presentation.core.util.LocalPrivacyPreferences
 import ephyra.presentation.core.util.LocalUiPreferences
-import ephyra.presentation.theme.TachiyomiTheme
+import ephyra.presentation.theme.EphyraTheme
 
 @EntryPoint
 @InstallIn(SingletonComponent::class)
@@ -44,7 +44,7 @@ inline fun ComponentActivity.setComposeContent(
             LocalUiPreferences provides uiPreferences,
             LocalPrivacyPreferences provides privacyPreferences,
         ) {
-            TachiyomiTheme {
+            EphyraTheme {
                 CompositionLocalProvider(
                     LocalTextStyle provides MaterialTheme.typography.bodySmall,
                     LocalContentColor provides MaterialTheme.colorScheme.onBackground,

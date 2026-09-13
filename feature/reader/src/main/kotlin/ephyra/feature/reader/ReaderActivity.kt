@@ -64,7 +64,7 @@ import ephyra.presentation.core.util.view.applyHighRefreshRate
 import ephyra.presentation.core.util.view.overrideTransitionCompat
 import ephyra.presentation.core.util.view.setComposeContent
 import ephyra.presentation.reader.DisplayRefreshHost
-import ephyra.presentation.theme.TachiyomiTheme
+import ephyra.presentation.theme.EphyraTheme
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -145,7 +145,7 @@ class ReaderActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
 
         setComposeContent {
-            TachiyomiTheme {
+            EphyraTheme {
                 ReaderScreen(
                     viewModel = viewModel,
                     currentViewer = currentViewer,

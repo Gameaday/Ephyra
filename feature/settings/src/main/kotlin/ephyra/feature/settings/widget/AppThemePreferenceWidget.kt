@@ -52,7 +52,7 @@ import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.LocalUiPreferences
 import ephyra.presentation.core.util.secondaryItemAlpha
-import ephyra.presentation.theme.TachiyomiTheme
+import ephyra.presentation.theme.EphyraTheme
 
 @Composable
 fun AppThemePreferenceWidget(
@@ -95,7 +95,7 @@ private fun AppThemesList(
                     .width(114.dp)
                     .padding(top = 8.dp),
             ) {
-                TachiyomiTheme(
+                EphyraTheme(
                     appTheme = appTheme,
                     amoled = amoled,
                 ) {
@@ -261,7 +261,7 @@ private fun AppThemesListPreview() {
     var appTheme by remember { mutableStateOf(AppTheme.DEFAULT) }
     val uiPreferences = UiPreferences(InMemoryPreferenceStore())
     CompositionLocalProvider(LocalUiPreferences provides uiPreferences) {
-        TachiyomiTheme(appTheme = appTheme) {
+        EphyraTheme(appTheme = appTheme) {
             Surface {
                 AppThemesList(
                     currentTheme = appTheme,

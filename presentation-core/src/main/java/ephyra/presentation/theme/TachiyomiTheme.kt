@@ -38,7 +38,7 @@ import ephyra.presentation.theme.colorscheme.YinYangColorScheme
 import ephyra.presentation.theme.colorscheme.YotsubaColorScheme
 
 @Composable
-fun TachiyomiTheme(
+fun EphyraTheme(
     appTheme: AppTheme? = null,
     amoled: Boolean? = null,
     content: @Composable () -> Unit,
@@ -46,7 +46,7 @@ fun TachiyomiTheme(
     val uiPreferences = LocalUiPreferences.current
     val currentAppTheme by uiPreferences.appTheme().collectAsState()
     val currentAmoled by uiPreferences.themeDarkAmoled().collectAsState()
-    BaseTachiyomiTheme(
+    BaseEphyraTheme(
         appTheme = appTheme ?: currentAppTheme,
         isAmoled = amoled ?: currentAmoled,
         content = content,
@@ -54,14 +54,36 @@ fun TachiyomiTheme(
 }
 
 @Composable
+fun EphyraPreviewTheme(
+    appTheme: AppTheme = AppTheme.DEFAULT,
+    isAmoled: Boolean = false,
+    content: @Composable () -> Unit,
+) = BaseEphyraTheme(appTheme, isAmoled, content)
+
+@Deprecated(
+    message = "Use EphyraTheme instead",
+    replaceWith = ReplaceWith("EphyraTheme(appTheme, amoled, content)"),
+)
+@Composable
+fun TachiyomiTheme(
+    appTheme: AppTheme? = null,
+    amoled: Boolean? = null,
+    content: @Composable () -> Unit,
+) = EphyraTheme(appTheme, amoled, content)
+
+@Deprecated(
+    message = "Use EphyraPreviewTheme instead",
+    replaceWith = ReplaceWith("EphyraPreviewTheme(appTheme, isAmoled, content)"),
+)
+@Composable
 fun TachiyomiPreviewTheme(
     appTheme: AppTheme = AppTheme.DEFAULT,
     isAmoled: Boolean = false,
     content: @Composable () -> Unit,
-) = BaseTachiyomiTheme(appTheme, isAmoled, content)
+) = EphyraPreviewTheme(appTheme, isAmoled, content)
 
 @Composable
-private fun BaseTachiyomiTheme(
+private fun BaseEphyraTheme(
     appTheme: AppTheme,
     isAmoled: Boolean,
     content: @Composable () -> Unit,
