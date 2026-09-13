@@ -228,7 +228,7 @@ fun MangaDetailsScreen(
         },
         onMigrateClicked = if (successState.manga.favorite) {
             {
-                navController.navigate(ScreenRoutes.MigrateManga.createRoute(successState.manga.id))
+                navController.navigate(ScreenRoutes.MigrateSearch.createRoute(successState.manga.id))
             }
         } else {
             null

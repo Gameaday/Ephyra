@@ -59,36 +59,8 @@ internal class AndroidSourceManager(
         val heuristicProfilesFlow = preferenceStore.getStringSet("profiled_domains_list", emptySet())
             .changes()
             .map { domains ->
-                val actualDomains = if (domains.isEmpty()) {
-                    setOf(
-                        "https://mangadex.org",
-                        "https://manganato.com",
-                        "https://asuratoons.com",
-                    )
-                } else {
-                    domains
-                }
-                actualDomains.map { domain ->
-                    profileCache.get(domain) ?: run {
-                        val displayName = domain.substringAfter("://").removeSuffix("/")
-                            .replace("mangadex.org", "MangaDex")
-                            .replace("manganato.com", "Manganato")
-                            .replace("asuratoons.com", "AsuraToons")
-                        val sourceType = ephyra.domain.content.source.SourceType.HEURISTIC
-                        val scraperFilename: String? = null
-                        val profile = ephyra.domain.content.source.SourceProfile(
-                            baseUrl = domain,
-                            contentType = ephyra.domain.content.model.ContentType.MANGA,
-                            displayName = displayName,
-                            verified = true,
-                            enabled = true,
-                            sourceType = sourceType,
-                            scraperFilename = scraperFilename,
-                            lastUpdated = System.currentTimeMillis(),
-                        )
-                        profileCache.save(profile)
-                        profile
-                    }
+                domains.mapNotNull { domain ->
+                    profileCache.get(domain)
                 }
             }
 
