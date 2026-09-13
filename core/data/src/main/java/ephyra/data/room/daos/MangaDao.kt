@@ -120,10 +120,88 @@ interface MangaDao {
 
     @Transaction
     suspend fun upsert(manga: MangaEntity): Long {
-        val id = getMangaByUrlAndSource(manga.url, manga.source)?.id
-        return if (id != null) {
-            update(manga.copy(id = id))
-            id
+        val existing = getMangaByUrlAndSource(manga.url, manga.source)
+        return if (existing != null) {
+            val merged = existing.copy(
+                title = if (existing.favorite &&
+                    ephyra.domain.manga.model.LockedField.isLocked(
+                        existing.lockedFields,
+                        ephyra.domain.manga.model.LockedField.TITLE,
+                    )
+                ) {
+                    existing.title
+                } else {
+                    manga.title.takeIf { it.isNotBlank() } ?: existing.title
+                },
+                thumbnailUrl = if (existing.favorite &&
+                    ephyra.domain.manga.model.LockedField.isLocked(
+                        existing.lockedFields,
+                        ephyra.domain.manga.model.LockedField.COVER,
+                    )
+                ) {
+                    existing.thumbnailUrl
+                } else {
+                    manga.thumbnailUrl ?: existing.thumbnailUrl
+                },
+                artist = if (existing.favorite &&
+                    ephyra.domain.manga.model.LockedField.isLocked(
+                        existing.lockedFields,
+                        ephyra.domain.manga.model.LockedField.ARTIST,
+                    )
+                ) {
+                    existing.artist
+                } else {
+                    manga.artist ?: existing.artist
+                },
+                author = if (existing.favorite &&
+                    ephyra.domain.manga.model.LockedField.isLocked(
+                        existing.lockedFields,
+                        ephyra.domain.manga.model.LockedField.AUTHOR,
+                    )
+                ) {
+                    existing.author
+                } else {
+                    manga.author ?: existing.author
+                },
+                description = if (existing.favorite &&
+                    ephyra.domain.manga.model.LockedField.isLocked(
+                        existing.lockedFields,
+                        ephyra.domain.manga.model.LockedField.DESCRIPTION,
+                    )
+                ) {
+                    existing.description
+                } else {
+                    manga.description ?: existing.description
+                },
+                genre = if (existing.favorite &&
+                    ephyra.domain.manga.model.LockedField.isLocked(
+                        existing.lockedFields,
+                        ephyra.domain.manga.model.LockedField.GENRE,
+                    )
+                ) {
+                    existing.genre
+                } else {
+                    manga.genre ?: existing.genre
+                },
+                status = if (existing.favorite &&
+                    ephyra.domain.manga.model.LockedField.isLocked(
+                        existing.lockedFields,
+                        ephyra.domain.manga.model.LockedField.STATUS,
+                    )
+                ) {
+                    existing.status
+                } else {
+                    if (manga.status != 0L) manga.status else existing.status
+                },
+                updateStrategy = if (manga.updateStrategy != 0) manga.updateStrategy else existing.updateStrategy,
+                initialized = existing.initialized || manga.initialized,
+                favorite = existing.favorite || manga.favorite,
+                dateAdded = if (existing.dateAdded != 0L) existing.dateAdded else manga.dateAdded,
+            )
+            if (merged != existing) {
+                update(merged)
+            }
+            existing.id
         } else {
             insert(manga)
         }
@@ -132,5 +210,95 @@ interface MangaDao {
     @Transaction
     suspend fun upsertAll(mangas: List<MangaEntity>): List<Long> {
         return mangas.map { upsert(it) }
+    }
+
+    @Transaction
+    suspend fun insertNetworkManga(entities: List<MangaEntity>): List<MangaEntity> {
+        return entities.map { manga ->
+            val existing = getMangaByUrlAndSource(manga.url, manga.source)
+            if (existing != null) {
+                val merged = existing.copy(
+                    title = if (existing.favorite &&
+                        ephyra.domain.manga.model.LockedField.isLocked(
+                            existing.lockedFields,
+                            ephyra.domain.manga.model.LockedField.TITLE,
+                        )
+                    ) {
+                        existing.title
+                    } else {
+                        manga.title.takeIf { it.isNotBlank() } ?: existing.title
+                    },
+                    thumbnailUrl = if (existing.favorite &&
+                        ephyra.domain.manga.model.LockedField.isLocked(
+                            existing.lockedFields,
+                            ephyra.domain.manga.model.LockedField.COVER,
+                        )
+                    ) {
+                        existing.thumbnailUrl
+                    } else {
+                        manga.thumbnailUrl ?: existing.thumbnailUrl
+                    },
+                    author = if (existing.favorite &&
+                        ephyra.domain.manga.model.LockedField.isLocked(
+                            existing.lockedFields,
+                            ephyra.domain.manga.model.LockedField.AUTHOR,
+                        )
+                    ) {
+                        existing.author
+                    } else {
+                        manga.author ?: existing.author
+                    },
+                    artist = if (existing.favorite &&
+                        ephyra.domain.manga.model.LockedField.isLocked(
+                            existing.lockedFields,
+                            ephyra.domain.manga.model.LockedField.ARTIST,
+                        )
+                    ) {
+                        existing.artist
+                    } else {
+                        manga.artist ?: existing.artist
+                    },
+                    description = if (existing.favorite &&
+                        ephyra.domain.manga.model.LockedField.isLocked(
+                            existing.lockedFields,
+                            ephyra.domain.manga.model.LockedField.DESCRIPTION,
+                        )
+                    ) {
+                        existing.description
+                    } else {
+                        manga.description ?: existing.description
+                    },
+                    genre = if (existing.favorite &&
+                        ephyra.domain.manga.model.LockedField.isLocked(
+                            existing.lockedFields,
+                            ephyra.domain.manga.model.LockedField.GENRE,
+                        )
+                    ) {
+                        existing.genre
+                    } else {
+                        manga.genre ?: existing.genre
+                    },
+                    status = if (existing.favorite &&
+                        ephyra.domain.manga.model.LockedField.isLocked(
+                            existing.lockedFields,
+                            ephyra.domain.manga.model.LockedField.STATUS,
+                        )
+                    ) {
+                        existing.status
+                    } else {
+                        if (manga.status != 0L) manga.status else existing.status
+                    },
+                    updateStrategy = if (manga.updateStrategy != 0) manga.updateStrategy else existing.updateStrategy,
+                    initialized = existing.initialized || manga.initialized,
+                )
+                if (merged != existing) {
+                    update(merged)
+                }
+                merged
+            } else {
+                val newId = insert(manga)
+                manga.copy(id = newId)
+            }
+        }
     }
 }

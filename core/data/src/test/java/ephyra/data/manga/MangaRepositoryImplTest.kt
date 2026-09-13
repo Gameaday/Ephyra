@@ -86,17 +86,22 @@ class MangaRepositoryImplTest {
     }
 
     @Test
-    fun `insertNetworkManga uses batch upsertAll`() = runTest(testDispatcher) {
+    fun `insertNetworkManga delegates to dao and preserves entity state`() = runTest(testDispatcher) {
         val manga1 = Manga.create().copy(source = 1L, url = "/manga/1", title = "Manga 1")
         val manga2 = Manga.create().copy(source = 1L, url = "/manga/2", title = "Manga 2")
-        coEvery { mangaDao.upsertAll(any()) } returns listOf(101L, 102L)
+        val entity1 = createMangaEntity(101L, "Manga 1").copy(favorite = true, dateAdded = 5555L)
+        val entity2 = createMangaEntity(102L, "Manga 2").copy(favorite = false, dateAdded = 0L)
+        coEvery { mangaDao.insertNetworkManga(any()) } returns listOf(entity1, entity2)
 
         val result = repo.insertNetworkManga(listOf(manga1, manga2))
 
         assertEquals(2, result.size)
         assertEquals(101L, result[0].id)
+        assertTrue(result[0].favorite)
+        assertEquals(5555L, result[0].dateAdded)
         assertEquals(102L, result[1].id)
-        coVerify(exactly = 1) { mangaDao.upsertAll(any()) }
+        assertEquals(false, result[1].favorite)
+        coVerify(exactly = 1) { mangaDao.insertNetworkManga(any()) }
     }
 
     @Test

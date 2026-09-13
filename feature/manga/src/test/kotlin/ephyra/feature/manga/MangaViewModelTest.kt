@@ -110,8 +110,12 @@ class MangaViewModelTest {
         val endPref: Preference<LibraryPreferences.ChapterSwipeAction> = mockk(relaxed = true) {
             every { changes() } returns flowOf(LibraryPreferences.ChapterSwipeAction.ToggleBookmark)
         }
+        val defaultCategoryPref: Preference<Int> = mockk(relaxed = true) {
+            coEvery { get() } returns 0
+        }
         every { libraryPreferences.swipeToStartAction() } returns startPref
         every { libraryPreferences.swipeToEndAction() } returns endPref
+        every { libraryPreferences.defaultCategory() } returns defaultCategoryPref
 
         viewModel = MangaViewModel(
             getManga = getManga,
@@ -258,6 +262,40 @@ class MangaViewModelTest {
         viewModel.toggleFavorite()
 
         coVerify { mangaInfoInteractor.updateFavorite(1L, true) }
+        coVerify { mangaChapterInteractor.resetToDefaultSettings(testManga) }
+    }
+
+    @Test
+    fun `toggleFavorite with explicit default category moves manga to that category`() = runTest {
+        val cat1 = ephyra.domain.category.model.Category(id = 5L, name = "Reading", order = 1L, flags = 0L)
+        coEvery { getCategories.await() } returns listOf(cat1)
+        val defaultPref: Preference<Int> = mockk(relaxed = true) {
+            coEvery { get() } returns 5
+        }
+        every { libraryPreferences.defaultCategory() } returns defaultPref
+        coEvery { mangaInfoInteractor.updateFavorite(1L, true) } returns true
+
+        viewModel.init(1L, false)
+        viewModel.toggleFavorite()
+
+        coVerify { mangaInfoInteractor.setMangaCategories(1L, listOf(5L)) }
+        coVerify { mangaInfoInteractor.updateFavorite(1L, true) }
+    }
+
+    @Test
+    fun `toggleFavorite with custom categories and no default category shows ChangeCategory dialog`() = runTest {
+        val cat1 = ephyra.domain.category.model.Category(id = 5L, name = "Reading", order = 1L, flags = 0L)
+        coEvery { getCategories.await() } returns listOf(cat1)
+        val defaultPref: Preference<Int> = mockk(relaxed = true) {
+            coEvery { get() } returns -1
+        }
+        every { libraryPreferences.defaultCategory() } returns defaultPref
+
+        viewModel.init(1L, false)
+        viewModel.toggleFavorite()
+
+        val dialog = (viewModel.state.value as? MangaViewModel.State.Success)?.dialog
+        assertTrue(dialog is MangaViewModel.Dialog.ChangeCategory)
     }
 
     @Test

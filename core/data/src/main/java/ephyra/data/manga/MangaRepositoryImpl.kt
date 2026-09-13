@@ -118,6 +118,7 @@ class MangaRepositoryImpl @Inject constructor(
     }
 
     override suspend fun update(update: MangaUpdate): Boolean = withContext(ioDispatcher) {
+        if (update.id <= 0L) return@withContext false
         try {
             partialUpdate(update)
             true
@@ -159,51 +160,20 @@ class MangaRepositoryImpl @Inject constructor(
 
     override suspend fun insertNetworkManga(manga: List<Manga>): List<Manga> = withContext(ioDispatcher) {
         if (manga.isEmpty()) return@withContext emptyList()
-        val entities = manga.map {
-            MangaEntity(
-                id = 0,
-                source = it.source,
-                url = it.url,
-                artist = it.artist,
-                author = it.author,
-                description = it.description,
-                genre = it.genre,
-                title = it.title,
-                status = it.status,
-                thumbnailUrl = it.thumbnailUrl,
-                favorite = it.favorite,
-                lastUpdate = it.lastUpdate,
-                nextUpdate = it.nextUpdate,
-                initialized = it.initialized,
-                viewerFlags = it.viewerFlags,
-                chapterFlags = it.chapterFlags,
-                coverLastModified = it.coverLastModified,
-                dateAdded = it.dateAdded,
-                updateStrategy = it.updateStrategy.ordinal,
-                calculateInterval = it.fetchInterval,
-                lastModifiedAt = it.lastModifiedAt,
-                favoriteModifiedAt = it.favoriteModifiedAt,
-                version = it.version,
-                isSyncing = false,
-                notes = it.notes,
-                metadataSource = it.metadataSource,
-                metadataUrl = it.metadataUrl,
-                canonicalId = it.canonicalId,
-                sourceStatus = it.sourceStatus,
-                alternativeTitles = MangaMapper.serializeAlternativeTitles(it.alternativeTitles),
-                deadSince = it.deadSince,
-                contentType = it.contentType.value,
-                lockedFields = it.lockedFields,
-            )
-        }
-        val ids = mangaDao.upsertAll(entities)
-        manga.zip(ids) { item, id -> item.copy(id = id) }
+        val entities = manga.map { MangaMapper.mapToEntity(it).copy(id = 0) }
+        val inserted = mangaDao.insertNetworkManga(entities)
+        inserted.map(MangaMapper::mapManga)
     }
 
     private suspend fun partialUpdate(vararg mangaUpdates: MangaUpdate) = withContext(ioDispatcher) {
         if (mangaUpdates.isEmpty()) return@withContext
-        val ids = mangaUpdates.map { it.id }
+        val ids = mangaUpdates.mapNotNull { it.id.takeIf { id -> id > 0L } }
+        if (ids.isEmpty()) return@withContext
         val existingMap = mangaDao.getMangaByIds(ids).associateBy { it.id }
+        val missing = ids.filter { it !in existingMap }
+        if (missing.isNotEmpty()) {
+            logcat(LogPriority.WARN) { "partialUpdate: Manga IDs not found in database: $missing" }
+        }
         val updatedList = mangaUpdates.mapNotNull { value ->
             val existing = existingMap[value.id] ?: return@mapNotNull null
             existing.copy(

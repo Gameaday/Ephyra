@@ -219,7 +219,7 @@ class MangaViewModel @Inject constructor(
      */
     private fun toggleFavoriteInternal(checkDuplicate: Boolean) {
         val manga = manga ?: return
-        viewModelScope.launchIO {
+        viewModelScope.launch {
             if (checkDuplicate && !manga.favorite) {
                 val duplicates = getDuplicateLibraryManga(manga)
                 if (duplicates.isNotEmpty()) {
@@ -227,10 +227,38 @@ class MangaViewModel @Inject constructor(
                         val success = state as? State.Success ?: return@updateState state
                         success.copy(dialog = Dialog.DuplicateManga(duplicates))
                     }
-                    return@launchIO
+                    return@launch
                 }
             }
-            setFavorite(manga, !manga.favorite)
+            if (!manga.favorite) {
+                val categories = getCategories.await().filterNot { it.isSystemCategory }
+                val defaultCategoryId = libraryPreferences.defaultCategory().get()
+                val defaultCategory = categories.find { it.id == defaultCategoryId.toLong() }
+                when {
+                    defaultCategory != null -> {
+                        mangaInfoInteractor.setMangaCategories(manga.id, listOf(defaultCategory.id))
+                        setFavorite(manga, true)
+                    }
+                    defaultCategoryId == 0 || categories.isEmpty() -> {
+                        mangaInfoInteractor.setMangaCategories(manga.id, emptyList())
+                        setFavorite(manga, true)
+                    }
+                    else -> {
+                        val preselectedIds = getCategories.await(manga.id).mapTo(HashSet()) { it.id }
+                        updateState { state ->
+                            val success = state as? State.Success ?: return@updateState state
+                            success.copy(
+                                dialog = Dialog.ChangeCategory(
+                                    manga,
+                                    categories.mapAsCheckboxState { it.id in preselectedIds },
+                                ),
+                            )
+                        }
+                    }
+                }
+            } else {
+                setFavorite(manga, false)
+            }
         }
     }
 
@@ -238,14 +266,18 @@ class MangaViewModel @Inject constructor(
         if (mangaInfoInteractor.updateFavorite(manga.id, favorite)) {
             mangaInfoInteractor.markJellyfinFavoriteIfLinked(manga, favorite)
             if (favorite) {
+                mangaChapterInteractor.resetToDefaultSettings(manga)
+                source?.let { src -> mangaTrackInteractor.bindEnhancedTrackers(manga, src) }
                 mangaInfoInteractor.syncLibraryAdditionToTrackers(manga)
+            } else {
+                coverCache.deleteFromCache(manga, false)
             }
         }
     }
 
     /** Adds the manga to the selected categories (creating a library entry when needed). */
     private fun moveMangaToCategoriesAndAddToLibrary(target: Manga, categories: List<Long>) {
-        viewModelScope.launchIO {
+        viewModelScope.launch {
             mangaInfoInteractor.setMangaCategories(target.id, categories)
             if (!target.favorite) {
                 setFavorite(target, true)
