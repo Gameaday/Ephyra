@@ -45,6 +45,7 @@ import ephyra.core.download.DownloadStore
 import ephyra.core.download.Downloader
 import ephyra.data.backup.BackupDecoder
 import ephyra.data.backup.BackupFileValidatorImpl
+import ephyra.data.backup.BackupSchemaProviderImpl
 import ephyra.data.backup.create.BackupCreator
 import ephyra.data.backup.create.creators.CategoriesBackupCreator
 import ephyra.data.backup.create.creators.ExtensionRepoBackupCreator
@@ -93,6 +94,7 @@ import ephyra.data.updater.AppUpdateChecker
 import ephyra.data.updates.UpdatesRepositoryImpl
 import ephyra.domain.backup.service.BackupFileValidator
 import ephyra.domain.backup.service.BackupPreferences
+import ephyra.domain.backup.service.BackupSchemaProvider
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.base.InstallerCapabilityProvider
 import ephyra.domain.category.interactor.CreateCategoryWithName
@@ -791,6 +793,12 @@ object AppModule {
         trackerManager: TrackerManager,
         sourceManager: SourceManager,
     ): BackupFileValidator = BackupFileValidatorImpl(context, trackerManager, sourceManager)
+
+    @Provides
+    @Singleton
+    fun provideBackupSchemaProvider(
+        impl: BackupSchemaProviderImpl,
+    ): BackupSchemaProvider = impl
 
     @Provides
     @Singleton

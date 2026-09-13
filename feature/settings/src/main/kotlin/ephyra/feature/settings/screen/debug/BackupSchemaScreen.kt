@@ -7,35 +7,44 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
-import ephyra.data.backup.models.Backup
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.AppBarActions
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.util.system.copyToClipboard
+import ephyra.presentation.theme.EphyraPreviewTheme
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.serialization.protobuf.schema.ProtoBufSchemaGenerator
 
-@OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
 @Composable
 fun BackupSchemaScreen(
     navController: NavController = LocalNavController.current,
+    viewModel: BackupSchemaViewModel = hiltViewModel(),
+) {
+    BackupSchemaScreenContent(
+        schema = viewModel.schema,
+        onNavigateUp = { navController.popBackStack() },
+    )
+}
+
+@Composable
+fun BackupSchemaScreenContent(
+    schema: String,
+    onNavigateUp: () -> Unit,
 ) {
     val context = LocalContext.current
-    val schema = remember { ProtoBufSchemaGenerator.generateSchemaText(Backup.serializer().descriptor) }
-
     Scaffold(
         topBar = {
             AppBar(
                 title = BackupSchemaScreen.TITLE,
-                navigateUp = { navController.popBackStack() },
+                navigateUp = onNavigateUp,
                 actions = {
                     AppBarActions(
                         persistentListOf(
@@ -66,4 +75,15 @@ fun BackupSchemaScreen(
 
 object BackupSchemaScreen {
     const val TITLE = "Backup file schema"
+}
+
+@PreviewLightDark
+@Composable
+private fun BackupSchemaScreenPreview() {
+    EphyraPreviewTheme {
+        BackupSchemaScreenContent(
+            schema = "syntax = \"proto3\";\n\nmessage Backup {\n  repeated BackupManga backupManga = 1;\n}",
+            onNavigateUp = {},
+        )
+    }
 }
