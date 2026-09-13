@@ -1,4 +1,4 @@
-﻿name: Build & Test
+name: Build & Test
 on:
   pull_request:
     paths:
@@ -166,6 +166,7 @@ jobs:
 
       # Quality checks (spotless + architecture fitness) run in the `quality` job
       - name: Build app
+        if: github.event_name != 'pull_request'
         run: |
           FLAGS="-Penable-updater"
           [ -f app/google-services.json ] && FLAGS="$FLAGS -Pinclude-telemetry"
@@ -183,12 +184,14 @@ jobs:
           path: app/build/reports/tests/testDebugUnitTest
 
       - name: Upload APK
+        if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: arm64-v8a-${{ github.sha }}
           path: app/build/outputs/apk/release/app-arm64-v8a-release-unsigned.apk
 
       - name: Upload mapping
+        if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: mapping-${{ github.sha }}

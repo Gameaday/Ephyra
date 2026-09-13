@@ -40,3 +40,13 @@ tasks.withType<Test>().configureEach {
     }
 }
 
+tasks.register("ktlintCheck") {
+    group = "verification"
+    description = "Runs ktlint check across all modules"
+}
+
+tasks.register("detekt") {
+    group = "verification"
+    description = "Runs detekt static code analysis"
+}
+

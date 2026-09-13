@@ -18,11 +18,11 @@ kotlin {
 dependencies {
     api(projects.core.common)
     api(projects.core.domain)
-    api(projects.core.data)
-    api(projects.core.archive)
-    api(projects.coreMetadata)
-    api(projects.sourceApi)
-    api(projects.sourceLocal)
+    implementation(projects.core.data)
+    implementation(projects.core.archive)
+    implementation(projects.coreMetadata)
+    implementation(projects.sourceApi)
+    implementation(projects.sourceLocal)
 
     implementation(androidx.workmanager)
     implementation(libs.logcat)

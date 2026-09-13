@@ -18,17 +18,17 @@ kotlin {
 }
 
 dependencies {
-    api(projects.core.common)
-    api(projects.core.domain)
-    api(projects.core.data)
-    api(projects.sourceApi)
-    api(projects.sourceLocal)
-    api(projects.presentationCore)
+    implementation(projects.core.common)
+    implementation(projects.core.domain)
+    implementation(projects.core.data)
+    implementation(projects.sourceApi)
+    implementation(projects.sourceLocal)
+    implementation(projects.presentationCore)
     implementation(projects.feature.reader)
     implementation(projects.feature.webview)
     implementation(projects.feature.category)
     implementation(projects.feature.settings)
-    api(projects.feature.migration)
+    implementation(projects.feature.migration)
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

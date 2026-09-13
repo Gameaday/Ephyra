@@ -12,11 +12,11 @@ android {
 
 dependencies {
     // Internal project dependencies
-    api(projects.core.common)
-    api(projects.core.domain)
-    api(projects.core.data)
-    api(projects.sourceApi)
-    api(projects.presentationCore)
+    implementation(projects.core.common)
+    implementation(projects.core.domain)
+    implementation(projects.core.data)
+    implementation(projects.sourceApi)
+    implementation(projects.presentationCore)
     implementation(projects.feature.manga)
 
     // Jetpack Compose

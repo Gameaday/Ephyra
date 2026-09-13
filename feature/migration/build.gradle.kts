@@ -10,10 +10,10 @@ android {
 }
 
 dependencies {
-    api(projects.presentationCore)
-    api(projects.core.domain)
-    api(projects.core.common)
-    api(projects.sourceApi)
+    implementation(projects.presentationCore)
+    implementation(projects.core.domain)
+    implementation(projects.core.common)
+    implementation(projects.sourceApi)
     implementation(projects.core.data)
     implementation(projects.core.download)
 

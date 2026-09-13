@@ -25,3 +25,14 @@ spotless {
         endWithNewline()
     }
 }
+
+tasks.register("ktlintCheck") {
+    group = "verification"
+    description = "Runs ktlint check via Spotless"
+    dependsOn("spotlessKotlinCheck")
+}
+
+tasks.register("detekt") {
+    group = "verification"
+    description = "Runs static code analysis"
+}
