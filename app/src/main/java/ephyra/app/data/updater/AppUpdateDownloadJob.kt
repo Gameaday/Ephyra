@@ -97,7 +97,11 @@ class AppUpdateDownloadJob(
                 .await()
 
             // File where the apk will be saved.
-            val apkFile = File(context.externalCacheDir, "update.apk")
+            val cacheDir = context.externalCacheDir ?: context.cacheDir
+            val apkFile = File(cacheDir, "update.apk")
+            if (apkFile.exists()) {
+                apkFile.delete()
+            }
 
             if (response.isSuccessful) {
                 val body = response.body

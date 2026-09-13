@@ -8,6 +8,7 @@ import androidx.core.net.toUri
 import ephyra.app.extension.util.ExtensionInstaller
 import ephyra.app.ui.main.MainActivity
 import ephyra.core.common.Constants
+import ephyra.data.notification.Notifications
 
 /**
  * Class that manages [PendingIntent] of activity's
@@ -61,7 +62,12 @@ object NotificationHandler {
             setDataAndType(uri, ExtensionInstaller.APK_MIME)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
         }
-        return PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
+        return PendingIntent.getActivity(
+            context,
+            Notifications.ID_APP_UPDATE_PROMPT,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
     }
 
     fun openUrl(context: Context, url: String): PendingIntent {
