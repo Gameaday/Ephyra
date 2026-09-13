@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -847,6 +848,150 @@ private fun HeuristicsTabContent(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onTertiaryContainer,
                         )
+                    }
+                }
+            }
+        }
+
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                ),
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Live Layout Inspector",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Probe any website URL to dynamically discover layout selectors, test endpoints, " +
+                            "and inspect compatibility before adding to your library.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = state.inspectUrl,
+                        onValueChange = { onEvent(ContentSourcingViewModel.Event.UpdateInspectUrl(it)) },
+                        label = { Text("Website Base URL") },
+                        placeholder = { Text("https://example.com") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        isError = state.inspectError != null,
+                    )
+
+                    state.inspectError?.let { err ->
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = err,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                    ) {
+                        Button(
+                            onClick = { onEvent(ContentSourcingViewModel.Event.InspectSource(state.inspectUrl)) },
+                            enabled = !state.isInspecting && state.inspectUrl.isNotBlank(),
+                        ) {
+                            if (state.isInspecting) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    strokeWidth = 2.dp,
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Probing Layout...")
+                            } else {
+                                Text("Inspect Source")
+                            }
+                        }
+                    }
+
+                    state.inspectedProfile?.let { profile ->
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surface,
+                            ),
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = profile.displayName,
+                                            style = MaterialTheme.typography.titleMedium,
+                                        )
+                                        Text(
+                                            text = profile.baseUrl,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .background(
+                                                MaterialTheme.colorScheme.primaryContainer,
+                                                shape = RoundedCornerShape(4.dp),
+                                            )
+                                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                                    ) {
+                                        Text(
+                                            text = profile.contentType.name,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+                                val endpointNames = profile.endpoints.keys.joinToString { it.name }
+                                Text(
+                                    text = "Endpoints detected: ${profile.endpoints.size} ($endpointNames)",
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                                profile.selectors?.let { sel ->
+                                    Text(
+                                        text = "Selectors extracted: ${sel.size} DOM elements mapped",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.secondary,
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    OutlinedButton(
+                                        onClick = { onEvent(ContentSourcingViewModel.Event.ClearInspection) },
+                                        modifier = Modifier.weight(1f),
+                                    ) {
+                                        Text("Dismiss")
+                                    }
+                                    Button(
+                                        onClick = { onEvent(ContentSourcingViewModel.Event.SaveInspectedProfile) },
+                                        modifier = Modifier.weight(1f),
+                                    ) {
+                                        Text("Save Source")
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

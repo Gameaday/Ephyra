@@ -1,17 +1,8 @@
 package ephyra.feature.reader.viewer.webtoon
 
-import android.graphics.PointF
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
-import android.view.ViewGroup
-import android.view.ViewGroup.LayoutParams.MATCH_PARENT
-import androidx.core.app.ActivityCompat
-import androidx.core.view.isGone
-import androidx.core.view.isVisible
-import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.WebtoonLayoutManager
-import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.download.service.DownloadManager
@@ -19,10 +10,11 @@ import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.domain.ui.UiPreferences
 import ephyra.feature.reader.ReaderActivity
 import ephyra.feature.reader.model.ChapterTransition
+import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.model.ViewerChapters
 import ephyra.feature.reader.viewer.Viewer
-import ephyra.feature.reader.viewer.ViewerNavigation.NavigationRegion
+import ephyra.feature.reader.viewer.calculateChapterGap
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -31,11 +23,13 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlin.math.max
 import kotlin.math.min
 
 /**
- * Implementation of a [Viewer] to display pages with a [RecyclerView].
+ * Modern Jetpack Compose-backed implementation of [Viewer] for continuous vertical reading modes
+ * (Webtoon and Continuous Vertical).
+ * Manages chapter state, items, page transitions, navigation events, and scroll flows,
+ * with zero dependency on RecyclerView or legacy View hierarchy.
  */
 class WebtoonViewer(
     val activity: ReaderActivity,
@@ -57,25 +51,8 @@ class WebtoonViewer(
     private val _scrollToIndexRequest = MutableSharedFlow<Int>(extraBufferCapacity = 1)
     val scrollToIndexRequest: SharedFlow<Int> = _scrollToIndexRequest.asSharedFlow()
 
-    /**
-     * Recycler view used by this viewer.
-     */
-    val recycler = WebtoonRecyclerView(activity)
-
-    /**
-     * Frame containing the recycler view.
-     */
-    private val frame = WebtoonFrame(activity)
-
-    /**
-     * Distance to scroll when the user taps on one side of the recycler view.
-     */
-    private val scrollDistance = activity.resources.displayMetrics.heightPixels * 3 / 4
-
-    /**
-     * Layout manager of the recycler view.
-     */
-    private val layoutManager = WebtoonLayoutManager(activity, scrollDistance)
+    private val _scrollByRequest = MutableSharedFlow<Float>(extraBufferCapacity = 1)
+    val scrollByRequest: SharedFlow<Float> = _scrollByRequest.asSharedFlow()
 
     /**
      * Configuration used by this viewer, like allow taps, or crop image borders.
@@ -83,141 +60,25 @@ class WebtoonViewer(
     val config = WebtoonConfig(scope, readerPreferences)
 
     /**
-     * Adapter of the recycler view.
-     */
-    private val adapter = WebtoonAdapter(this)
-
-    /**
      * Currently active item. It can be a chapter page or a chapter transition.
      */
-    private var currentPage: Any? = null
+    var currentPage: Any? = null
+        private set
 
-    private val threshold: Int =
-        readerPreferences
-            .readerHideThreshold()
-            .getSync()
-            .threshold
+    private val fallbackView by lazy { View(activity) }
 
     init {
-        recycler.setItemViewCacheSize(
-            when (DeviceUtil.performanceTier(activity)) {
-                DeviceUtil.PerformanceTier.LOW -> 2
-                DeviceUtil.PerformanceTier.MEDIUM -> 4
-                DeviceUtil.PerformanceTier.HIGH -> 8
-            },
-        )
-        recycler.isVisible = false // Don't let the recycler layout yet
-        recycler.layoutParams = ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT)
-        recycler.isFocusable = false
-        recycler.itemAnimator = null
-        recycler.layoutManager = layoutManager
-        recycler.adapter = adapter
-        recycler.addOnScrollListener(
-            object : RecyclerView.OnScrollListener() {
-                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                    onScrolled()
-
-                    if ((dy > threshold || dy < -threshold) && activity.viewModel.state.value.menuVisible) {
-                        activity.hideMenu()
-                    }
-
-                    if (dy < 0) {
-                        val firstIndex = layoutManager.findFirstVisibleItemPosition()
-                        val firstItem = adapter.items.getOrNull(firstIndex)
-                        if (firstItem is ChapterTransition.Prev && firstItem.to != null) {
-                            activity.requestPreloadChapter(firstItem.to)
-                        }
-                    }
-
-                    val lastIndex = layoutManager.findLastEndVisibleItemPosition()
-                    val lastItem = adapter.items.getOrNull(lastIndex)
-                    if (lastItem is ChapterTransition.Next && lastItem.to == null) {
-                        activity.showMenu()
-                    }
-                }
-            },
-        )
-        recycler.tapListener = { event ->
-            val viewPosition = IntArray(2)
-            recycler.getLocationOnScreen(viewPosition)
-            val viewPositionRelativeToWindow = IntArray(2)
-            recycler.getLocationInWindow(viewPositionRelativeToWindow)
-            val pos = PointF(
-                (event.rawX - viewPosition[0] + viewPositionRelativeToWindow[0]) / recycler.width,
-                (event.rawY - viewPosition[1] + viewPositionRelativeToWindow[1]) / recycler.originalHeight,
-            )
-            when (config.navigator.getAction(pos)) {
-                NavigationRegion.MENU -> activity.toggleMenu()
-                NavigationRegion.NEXT, NavigationRegion.RIGHT -> scrollDown()
-                NavigationRegion.PREV, NavigationRegion.LEFT -> scrollUp()
-            }
-        }
-        recycler.longTapListener = f@{ event ->
-            if (activity.viewModel.state.value.menuVisible || config.longTapEnabled) {
-                val child = recycler.findChildViewUnder(event.x, event.y)
-                if (child != null) {
-                    val position = recycler.getChildAdapterPosition(child)
-                    val item = adapter.items.getOrNull(position)
-                    if (item is ReaderPage) {
-                        activity.onPageLongTap(item)
-                        return@f true
-                    }
-                }
-            }
-            false
-        }
-
-        config.imagePropertyChangedListener = {
-            refreshAdapter()
-        }
-
-        config.themeChangedListener = {
-            ActivityCompat.recreate(activity)
-        }
-
-        config.doubleTapZoomChangedListener = {
-            frame.doubleTapZoom = it
-        }
-
-        config.zoomPropertyChangedListener = {
-            frame.zoomOutDisabled = it
-        }
-
         config.navigationModeChangedListener = {
             val showOnStart = config.navigationOverlayOnStart || config.forceNavigationOverlay
             activity.showNavigationOverlay(config.navigator, showOnStart)
         }
-
-        frame.layoutParams = ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT)
-        frame.addView(recycler)
-    }
-
-    private fun checkAllowPreload(page: ReaderPage?): Boolean {
-        // Page is transition page - preload allowed
-        page ?: return true
-
-        // Initial opening - preload allowed
-        currentPage ?: return true
-
-        val nextItem = adapter.items.getOrNull(adapter.items.size - 1)
-        val nextChapter = (nextItem as? ChapterTransition.Next)?.to ?: (nextItem as? ReaderPage)?.chapter
-
-        // Allow preload for
-        // 1. Going between pages of same chapter
-        // 2. Next chapter page
-        return when (page.chapter) {
-            (currentPage as? ReaderPage)?.chapter -> true
-            nextChapter -> true
-            else -> false
-        }
     }
 
     /**
-     * Returns the view this viewer uses.
+     * Fallback view reference to fulfill [Viewer] interface contract.
+     * Actual rendering is handled natively in Compose via [ComposeWebtoonReader].
      */
-    override fun getView(): View {
-        return frame
-    }
+    override fun getView(): View = fallbackView
 
     /**
      * Destroys this viewer. Called when leaving the reader or swapping viewers.
@@ -228,32 +89,69 @@ class WebtoonViewer(
     }
 
     /**
-     * Called from the RecyclerView listener when a [page] is marked as active. It notifies the
-     * activity of the change and requests the preload of the next chapter if this is the last page.
+     * Rebuilds the unified items list including previous chapter pages, chapter transitions,
+     * current chapter pages, and next chapter pages for seamless continuous scrolling.
+     */
+    private fun rebuildItems(chapters: ViewerChapters, forceTransition: Boolean = false) {
+        val newItems = mutableListOf<Any>()
+
+        val prevHasMissingChapters = calculateChapterGap(chapters.currChapter, chapters.prevChapter) > 0
+        val nextHasMissingChapters = calculateChapterGap(chapters.nextChapter, chapters.currChapter) > 0
+
+        // Previous chapter pages
+        chapters.prevChapter?.pages?.filter { !it.isHidden }?.let(newItems::addAll)
+
+        // Previous chapter transition
+        if (
+            prevHasMissingChapters ||
+            forceTransition ||
+            chapters.prevChapter?.state !is ReaderChapter.State.Loaded
+        ) {
+            newItems.add(ChapterTransition.Prev(chapters.currChapter, chapters.prevChapter))
+        }
+
+        // Current chapter pages
+        chapters.currChapter.pages?.filter { !it.isHidden }?.let(newItems::addAll)
+
+        // Next chapter transition
+        if (
+            nextHasMissingChapters ||
+            forceTransition ||
+            chapters.nextChapter?.state !is ReaderChapter.State.Loaded
+        ) {
+            newItems.add(ChapterTransition.Next(chapters.currChapter, chapters.nextChapter))
+        }
+
+        // Next chapter pages
+        chapters.nextChapter?.pages?.filter { !it.isHidden }?.let(newItems::addAll)
+
+        _itemsState.value = newItems
+    }
+
+    /**
+     * Called when a [page] is marked as active. Notifies the activity and preloads next chapter if near the end.
      */
     fun onPageSelected(page: ReaderPage, allowPreload: Boolean = true) {
+        currentPage = page
         val pages = page.chapter.pages ?: return
         logcat { "onPageSelected: ${page.number}/${pages.size}" }
         activity.onPageSelected(page)
 
-        // Preload next chapter once we're within the last 5 pages of the current chapter
         val inPreloadRange = pages.size - page.number < 5
-        if (inPreloadRange && allowPreload && page.chapter == adapter.currentChapter) {
-            logcat { "Request preload next chapter because we're at page ${page.number} of ${pages.size}" }
-            val nextItem = adapter.items.getOrNull(adapter.items.size - 1)
-            val transitionChapter = (nextItem as? ChapterTransition.Next)?.to ?: (nextItem as? ReaderPage)?.chapter
-            if (transitionChapter != null) {
-                logcat { "Requesting to preload chapter ${transitionChapter.chapter.chapterNumber}" }
-                activity.requestPreloadChapter(transitionChapter)
+        if (inPreloadRange && allowPreload && page.chapter == _chaptersState.value?.currChapter) {
+            val nextChapter = _chaptersState.value?.nextChapter
+            if (nextChapter != null) {
+                logcat { "Requesting to preload chapter ${nextChapter.chapter.chapterNumber}" }
+                activity.requestPreloadChapter(nextChapter)
             }
         }
     }
 
     /**
-     * Called from the RecyclerView listener when a [transition] is marked as active. It request the
-     * preload of the destination chapter of the transition.
+     * Called when a [transition] is marked as active. Preloads the destination chapter.
      */
     fun onTransitionSelected(transition: ChapterTransition) {
+        currentPage = transition
         logcat { "onTransitionSelected: $transition" }
         val toChapter = transition.to
         if (toChapter != null) {
@@ -268,23 +166,20 @@ class WebtoonViewer(
     override fun setChapters(chapters: ViewerChapters) {
         _chaptersState.value = chapters
         val forceTransition = config.alwaysShowChapterTransition || currentPage is ChapterTransition
-        adapter.setChapters(chapters, forceTransition)
-        _itemsState.value = adapter.items.toList()
+        rebuildItems(chapters, forceTransition)
 
-        // Register a callback so that when the page pre-processor marks a page as blocked
-        // (after its image loads), the adapter is refreshed to exclude it.
+        // Register callback so when the page pre-processor marks a page as blocked,
+        // items refresh to exclude it.
         chapters.currChapter.pageLoader?.onPageFiltered = {
             activity.runOnUiThread {
-                adapter.setChapters(chapters, false)
-                _itemsState.value = adapter.items.toList()
+                rebuildItems(chapters, false)
             }
         }
 
-        if (recycler.isGone) {
-            logcat { "Recycler first layout" }
-            val pages = chapters.currChapter.pages ?: return
-            moveToPage(pages[min(chapters.currChapter.requestedPage, pages.lastIndex)])
-            recycler.isVisible = true
+        val pages = chapters.currChapter.pages ?: return
+        val targetPage = pages.getOrNull(min(chapters.currChapter.requestedPage, pages.lastIndex))
+        if (targetPage != null) {
+            moveToPage(targetPage)
         }
     }
 
@@ -292,38 +187,12 @@ class WebtoonViewer(
      * Tells this viewer to move to the given [page].
      */
     override fun moveToPage(page: ReaderPage) {
-        val position = adapter.items.indexOf(page)
+        val position = _itemsState.value.indexOf(page)
         if (position != -1) {
             _scrollToIndexRequest.tryEmit(position)
-            if (config.sliderNavMode == ReaderPreferences.SLIDER_NAV_SMOOTH) {
-                // Use a custom smooth scroller that always snaps to START so the
-                // target page aligns to the top, regardless of scroll direction.
-                val snapToStartScroller = object : androidx.recyclerview.widget.LinearSmoothScroller(recycler.context) {
-                    override fun getVerticalSnapPreference(): Int = SNAP_TO_START
-                }
-                snapToStartScroller.targetPosition = position
-                layoutManager.startSmoothScroll(snapToStartScroller)
-            } else {
-                layoutManager.scrollToPositionWithOffset(position, 0)
-            }
-            if (layoutManager.findLastEndVisibleItemPosition() == -1) {
-                onScrolled(pos = position)
-            }
+            currentPage = page
         } else {
-            logcat { "Page $page not found in adapter" }
-        }
-    }
-
-    fun onScrolled(pos: Int? = null) {
-        val position = pos ?: layoutManager.findLastEndVisibleItemPosition()
-        val item = adapter.items.getOrNull(position)
-        val allowPreload = checkAllowPreload(item as? ReaderPage)
-        if (item != null && currentPage != item) {
-            currentPage = item
-            when (item) {
-                is ReaderPage -> onPageSelected(item, allowPreload)
-                is ChapterTransition -> onTransitionSelected(item)
-            }
+            logcat { "Page $page not found in items" }
         }
     }
 
@@ -336,30 +205,21 @@ class WebtoonViewer(
     }
 
     /**
-     * Scrolls up by [scrollDistance].
+     * Requests scrolling up by one viewport distance.
      */
-    private fun scrollUp() {
-        if (config.usePageTransitions) {
-            recycler.smoothScrollBy(0, -scrollDistance)
-        } else {
-            recycler.scrollBy(0, -scrollDistance)
-        }
+    fun scrollUp() {
+        _scrollByRequest.tryEmit(-1f)
     }
 
     /**
-     * Scrolls down by [scrollDistance].
+     * Requests scrolling down by one viewport distance.
      */
-    private fun scrollDown() {
-        if (config.usePageTransitions) {
-            recycler.smoothScrollBy(0, scrollDistance)
-        } else {
-            recycler.scrollBy(0, scrollDistance)
-        }
+    fun scrollDown() {
+        _scrollByRequest.tryEmit(1f)
     }
 
     /**
-     * Called from the containing activity when a key [event] is received. It should return true
-     * if the event was handled, false otherwise.
+     * Handles hardware key events (Volume keys, D-pad, Page Up/Down, Menu).
      */
     override fun handleKeyEvent(event: KeyEvent): Boolean {
         val isUp = event.action == KeyEvent.ACTION_UP
@@ -398,24 +258,7 @@ class WebtoonViewer(
         return true
     }
 
-    /**
-     * Called from the containing activity when a generic motion [event] is received. It should
-     * return true if the event was handled, false otherwise.
-     */
     override fun handleGenericMotionEvent(event: MotionEvent): Boolean {
         return false
-    }
-
-    /**
-     * Notifies adapter of changes around the current page to trigger a relayout in the recycler.
-     * Used when an image configuration is changed.
-     */
-    private fun refreshAdapter() {
-        val position = layoutManager.findLastEndVisibleItemPosition()
-        adapter.refresh()
-        adapter.notifyItemRangeChanged(
-            max(0, position - 3),
-            min(position + 3, adapter.itemCount - 1),
-        )
     }
 }

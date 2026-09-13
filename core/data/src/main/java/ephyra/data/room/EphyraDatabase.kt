@@ -10,6 +10,7 @@ import ephyra.data.room.daos.ExtensionRepoDao
 import ephyra.data.room.daos.HistoryDao
 import ephyra.data.room.daos.MangaDao
 import ephyra.data.room.daos.SourceDao
+import ephyra.data.room.daos.SourceProfileDao
 import ephyra.data.room.daos.TrackDao
 import ephyra.data.room.daos.UpdateDao
 import ephyra.data.room.entities.*
@@ -26,17 +27,15 @@ import ephyra.data.room.views.*
         ExtensionRepoEntity::class,
         ExcludedScanlatorEntity::class,
         SourceEntity::class,
+        SourceProfileEntity::class,
     ],
     views = [
         LibraryView::class,
         HistoryView::class,
         UpdatesView::class,
     ],
-    // v2: adopts legacy SQLDelight-era databases and normalizes indices/keys/views/triggers
-    // to the canonical Room shapes — see `Migrations.MIGRATION_1_2` and
-    // `doc/PHASE_C_ROOM_MIGRATIONS.md`. Bump again on every entity change and add a step to
-    // `Migrations.ALL` (enforced by `MigrationCoverageTest`).
-    version = 2,
+    // v3: introduces canonical Room-backed source_profiles table for multi-method sourcing
+    version = 3,
     exportSchema = true,
 )
 @TypeConverters(RoomTypeConverters::class)
@@ -50,4 +49,5 @@ abstract class EphyraDatabase : RoomDatabase() {
     abstract fun extensionRepoDao(): ExtensionRepoDao
     abstract fun sourceDao(): SourceDao
     abstract fun excludedScanlatorDao(): ExcludedScanlatorDao
+    abstract fun sourceProfileDao(): SourceProfileDao
 }

@@ -1,6 +1,7 @@
 package ephyra.feature.reader.viewer.webtoon
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
@@ -91,6 +92,13 @@ fun ComposeWebtoonReader(
             if (targetIndex in items.indices) {
                 lazyListState.scrollToItem(targetIndex)
             }
+        }
+    }
+
+    // Listen to external scroll-by requests (e.g. from volume keys or D-pad)
+    LaunchedEffect(viewer, lazyListState, scrollDistance) {
+        viewer.scrollByRequest.collect { factor ->
+            lazyListState.animateScrollBy(factor * scrollDistance)
         }
     }
 

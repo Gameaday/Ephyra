@@ -78,12 +78,14 @@ import ephyra.data.room.daos.ExtensionRepoDao
 import ephyra.data.room.daos.HistoryDao
 import ephyra.data.room.daos.MangaDao
 import ephyra.data.room.daos.SourceDao
+import ephyra.data.room.daos.SourceProfileDao
 import ephyra.data.room.daos.TrackDao
 import ephyra.data.room.daos.UpdateDao
 import ephyra.data.saver.ImageSaverImpl
 import ephyra.data.source.SourceRepositoryImpl
 import ephyra.data.source.StubSourceRepositoryImpl
 import ephyra.data.sourcing.DynamicScraperUpdater
+import ephyra.data.sourcing.RoomSourceProfileStore
 import ephyra.data.sourcing.ScriptableContentSourceEngine
 import ephyra.data.track.TrackRepositoryImpl
 import ephyra.data.track.TrackerManagerImpl
@@ -334,6 +336,10 @@ object AppModule {
     @Singleton
     fun provideExcludedScanlatorDao(database: EphyraDatabase) = database.excludedScanlatorDao()
 
+    @Provides
+    @Singleton
+    fun provideSourceProfileDao(database: EphyraDatabase) = database.sourceProfileDao()
+
     // 3. Shared Preferences Providers
     @Provides
     @Singleton
@@ -423,8 +429,12 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideSourceProfileCache(preferenceStore: PreferenceStore, json: Json): SourceProfileCache =
-        SourceProfileCache(preferenceStore, json)
+    fun provideSourceProfileCache(
+        sourceProfileDao: SourceProfileDao,
+        preferenceStore: PreferenceStore,
+        json: Json,
+    ): SourceProfileCache =
+        SourceProfileCache(RoomSourceProfileStore(sourceProfileDao, json, preferenceStore))
 
     @Provides
     @Singleton

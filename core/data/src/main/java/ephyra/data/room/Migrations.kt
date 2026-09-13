@@ -28,7 +28,7 @@ object Migrations {
      * The schema version this registry is aligned with. Must equal the `version` of
      * [EphyraDatabase]'s `@Database` annotation (asserted in `MigrationCoverageTest`).
      */
-    const val DB_VERSION = 2
+    const val DB_VERSION = 3
 
     /**
      * 1 → 2: upgrades legacy SQLDelight-era databases and normalizes Room-v1 databases.
@@ -67,7 +67,41 @@ object Migrations {
         }
     }
 
-    val ALL = arrayOf<Migration>(MIGRATION_1_2)
+    /**
+     * 2 → 3: introduces canonical Room-backed source_profiles table.
+     */
+    internal val MIGRATION_2_3 = object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `source_profiles` (
+                    `base_url` TEXT NOT NULL,
+                    `display_name` TEXT NOT NULL,
+                    `content_type` TEXT NOT NULL,
+                    `source_type` TEXT NOT NULL,
+                    `enabled` INTEGER NOT NULL,
+                    `response_type` TEXT NOT NULL,
+                    `pagination` TEXT NOT NULL,
+                    `failure_count` INTEGER NOT NULL,
+                    `verified` INTEGER NOT NULL,
+                    `last_health_check` INTEGER NOT NULL,
+                    `last_updated` INTEGER NOT NULL,
+                    `scraper_filename` TEXT,
+                    `repository_id` TEXT,
+                    `endpoints_json` TEXT NOT NULL,
+                    `selectors_json` TEXT,
+                    `json_path_json` TEXT,
+                    `headers_json` TEXT NOT NULL,
+                    `auth_type` TEXT NOT NULL,
+                    `rate_limit_ms` INTEGER NOT NULL,
+                    PRIMARY KEY(`base_url`)
+                )
+                """.trimIndent(),
+            )
+        }
+    }
+
+    val ALL = arrayOf<Migration>(MIGRATION_1_2, MIGRATION_2_3)
 
     /**
      * Drops the SQLDelight-named indices and recreates the Room-expected ones. The partial

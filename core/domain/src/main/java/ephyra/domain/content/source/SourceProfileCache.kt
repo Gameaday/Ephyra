@@ -14,9 +14,26 @@ import kotlinx.serialization.json.Json
  * fail (e.g., the source changed its API).
  */
 class SourceProfileCache(
+    private val store: SourceProfileStore,
+) : SourceProfileStore by store {
+
+    /**
+     * Legacy constructor providing [PreferenceStore] backed persistence.
+     */
+    constructor(
+        preferenceStore: PreferenceStore,
+        json: Json = Json { ignoreUnknownKeys = true },
+    ) : this(PreferenceSourceProfileStore(preferenceStore, json))
+}
+
+/**
+ * Default [PreferenceStore]-backed implementation of [SourceProfileStore] used for
+ * JVM unit testing in domain modules and fallback environments.
+ */
+class PreferenceSourceProfileStore(
     private val preferenceStore: PreferenceStore,
     private val json: Json = Json { ignoreUnknownKeys = true },
-) {
+) : SourceProfileStore {
     private companion object {
         const val PREFIX = "source_profile_"
     }
@@ -25,7 +42,7 @@ class SourceProfileCache(
      * Retrieve a cached profile for a source URL.
      * @return The cached [SourceProfile], or null if not found.
      */
-    suspend fun get(baseUrl: String): SourceProfile? {
+    override suspend fun get(baseUrl: String): SourceProfile? {
         val key = cacheKey(baseUrl)
         val encoded = preferenceStore.getString(key, "").get()
         if (encoded.isBlank()) return null
@@ -39,7 +56,7 @@ class SourceProfileCache(
     /**
      * Store a discovered [SourceProfile] for future use.
      */
-    suspend fun save(profile: SourceProfile) {
+    override suspend fun save(profile: SourceProfile) {
         val key = cacheKey(profile.baseUrl)
         preferenceStore.getString(key, "").set(
             json.encodeToString(SerializableProfile.fromDomain(profile)),
@@ -53,7 +70,7 @@ class SourceProfileCache(
     /**
      * Remove a cached profile (e.g., after a failure suggesting the API changed).
      */
-    suspend fun invalidate(baseUrl: String) {
+    override suspend fun invalidate(baseUrl: String) {
         val key = cacheKey(baseUrl)
         preferenceStore.getString(key, "").delete()
 
@@ -65,7 +82,7 @@ class SourceProfileCache(
     /**
      * Retrieve all profiled domains dynamically, falling back to a pre-populated default set.
      */
-    suspend fun getAllProfiledDomains(): Set<String> {
+    override suspend fun getAllProfiledDomains(): Set<String> {
         val customList = preferenceStore.getStringSet("profiled_domains_list", emptySet()).get()
         if (customList.isEmpty()) {
             return setOf(
@@ -78,7 +95,7 @@ class SourceProfileCache(
     }
 
     /** Check if a profile exists in cache. */
-    suspend fun exists(baseUrl: String): Boolean {
+    override suspend fun exists(baseUrl: String): Boolean {
         val key = cacheKey(baseUrl)
         return preferenceStore.getString(key, "").isSet()
     }
@@ -86,7 +103,7 @@ class SourceProfileCache(
     /**
      * Get all cached source profiles.
      */
-    suspend fun getAll(): List<SourceProfile> {
+    override suspend fun getAll(): List<SourceProfile> {
         val domains = getAllProfiledDomains()
         return domains.mapNotNull { get(it) }
     }

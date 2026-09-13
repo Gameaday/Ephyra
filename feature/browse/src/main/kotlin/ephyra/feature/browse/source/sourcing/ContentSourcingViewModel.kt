@@ -126,6 +126,18 @@ class ContentSourcingViewModel @Inject constructor(
             is Event.UpdateMapScraperName -> updateState { it.copy(mapScraperName = event.name) }
             is Event.LinkBaseUrlToScraper -> linkBaseUrlToScraper(event.baseUrl, event.scraperName)
             is Event.RemoveScraperMapping -> removeScraperMapping(event.baseUrl)
+
+            is Event.UpdateInspectUrl -> updateState { it.copy(inspectUrl = event.url, inspectError = null) }
+            is Event.InspectSource -> inspectSource(event.url)
+            Event.SaveInspectedProfile -> saveInspectedProfile()
+            Event.ClearInspection -> updateState {
+                it.copy(
+                    inspectUrl = "",
+                    inspectedProfile = null,
+                    inspectError = null,
+                    isInspecting = false,
+                )
+            }
         }
     }
 
@@ -297,6 +309,71 @@ class ContentSourcingViewModel @Inject constructor(
         }
     }
 
+    private fun inspectSource(url: String) {
+        val trimmed = url.trim()
+        if (trimmed.isBlank() || (!trimmed.startsWith("http://") && !trimmed.startsWith("https://"))) {
+            updateState { it.copy(inspectError = "Please enter a valid URL starting with http:// or https://") }
+            return
+        }
+
+        viewModelScope.launchIO {
+            try {
+                updateState { it.copy(isInspecting = true, inspectError = null, inspectedProfile = null) }
+                when (val result = orchestrator.discover(trimmed)) {
+                    is ephyra.core.common.util.Result.Success -> {
+                        updateState {
+                            it.copy(
+                                isInspecting = false,
+                                inspectedProfile = result.data,
+                                inspectError = null,
+                            )
+                        }
+                    }
+                    is ephyra.core.common.util.Result.Error -> {
+                        updateState {
+                            it.copy(
+                                isInspecting = false,
+                                inspectedProfile = null,
+                                inspectError = result.exception.message ?: "Failed to inspect source layout",
+                            )
+                        }
+                    }
+                    else -> {
+                        updateState { it.copy(isInspecting = false) }
+                    }
+                }
+            } catch (e: Exception) {
+                updateState {
+                    it.copy(
+                        isInspecting = false,
+                        inspectedProfile = null,
+                        inspectError = e.message ?: "An unexpected error occurred during inspection",
+                    )
+                }
+            }
+        }
+    }
+
+    private fun saveInspectedProfile() {
+        val profile = state.value.inspectedProfile ?: return
+        viewModelScope.launchIO {
+            try {
+                profileCache.save(profile)
+                emitEffect(Effect.ShowSnackbar("Source '${profile.displayName}' saved to library sources"))
+                loadData()
+                updateState {
+                    it.copy(
+                        inspectedProfile = null,
+                        inspectUrl = "",
+                        inspectError = null,
+                    )
+                }
+            } catch (e: Exception) {
+                emitEffect(Effect.ShowSnackbar("Failed to save profile: ${e.message}"))
+            }
+        }
+    }
+
     private fun normalizeUrl(url: String): String {
         return url
             .removePrefix("https://")
@@ -334,6 +411,11 @@ class ContentSourcingViewModel @Inject constructor(
         data class UpdateMapScraperName(val name: String) : Event
         data class LinkBaseUrlToScraper(val baseUrl: String, val scraperName: String) : Event
         data class RemoveScraperMapping(val baseUrl: String) : Event
+
+        data class UpdateInspectUrl(val url: String) : Event
+        data class InspectSource(val url: String) : Event
+        data object SaveInspectedProfile : Event
+        data object ClearInspection : Event
     }
 
     sealed interface Effect {
@@ -366,6 +448,10 @@ class ContentSourcingViewModel @Inject constructor(
         val mapBaseUrl: String = "",
         val mapScraperName: String = "",
         val scraperMappings: ImmutableList<ScraperMappingItem> = persistentListOf(),
+        val inspectUrl: String = "",
+        val isInspecting: Boolean = false,
+        val inspectedProfile: SourceProfile? = null,
+        val inspectError: String? = null,
     )
 }
 
