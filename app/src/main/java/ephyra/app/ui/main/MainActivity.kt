@@ -51,7 +51,6 @@ import dagger.hilt.android.AndroidEntryPoint
 import ephyra.app.BuildConfig
 import ephyra.app.data.notification.NotificationReceiver
 import ephyra.app.extension.api.ExtensionApi
-import ephyra.app.startup.StartupDiagnosticOverlay
 import ephyra.app.startup.StartupTracker
 import ephyra.app.ui.home.HomeScreen
 import ephyra.app.util.system.isDebugBuildType
@@ -158,8 +157,12 @@ class MainActivity : BaseActivity(), AppReadySignal {
             }
             val navController = rememberNavController()
             LaunchedEffect(navController, didMigration) {
-                if (isLaunch && didMigration != null) {
-                    handleIntentAction(intent, navController)
+                if (didMigration != null) {
+                    ready = true
+                    StartupTracker.complete(StartupTracker.Phase.HOME_SCREEN_LOADED)
+                    if (isLaunch) {
+                        handleIntentAction(intent, navController)
+                    }
                 }
             }
             androidx.compose.runtime.CompositionLocalProvider(
@@ -356,10 +359,6 @@ class MainActivity : BaseActivity(), AppReadySignal {
                         )
                     }
                 }
-
-                StartupDiagnosticOverlay(
-                    isReleaseBuild = !(isDebugBuildType || isNightlyBuildType || isPreviewBuildType),
-                )
             }
         }
 

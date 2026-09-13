@@ -7,21 +7,17 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * Thread-safe singleton that records each startup phase with a wall-clock timestamp.
  *
- * Phases are reported as [logcat] messages and stored so that the on-screen
- * [StartupDiagnosticOverlay] can display them when the app appears stuck.
+ * Phases are reported as [logcat] messages and stored for bug reporting and diagnostics.
  */
 object StartupTracker {
 
     /**
      * Well-known phases of the startup sequence, in expected completion order.
      *
-     * Each phase must be completed exactly once via [complete].  Any phase that is still
-     * absent from [completedPhases] after the diagnostic timeout is highlighted as pending
-     * (or blocked) in the overlay.
+     * Each phase must be completed exactly once via [complete].
      *
-     * [timeoutMs] is the maximum time (measured from process start) within which this phase
-     * should complete.  Phases still pending past their budget are shown as OVERDUE in
-     * [StartupDiagnosticOverlay] with an amber warning icon.
+     * [timeoutMs] is the expected maximum duration (measured from process start) within
+     * which this phase should complete under normal conditions.
      */
     enum class Phase(val displayName: String, val timeoutMs: Long) {
         APP_CREATED("Application created", 2_000L),
