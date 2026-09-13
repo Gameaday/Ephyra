@@ -24,10 +24,13 @@ class BackupDecoder(
      * @return the decoded backup.
      */
     fun decode(uri: Uri): Backup {
-        return (
-            context.contentResolver.openInputStream(uri)
-                ?: throw IOException("Unable to open input stream")
-            ).use {
+        val inputStream = when {
+            uri.scheme == "file" && uri.path != null -> java.io.File(uri.path!!).inputStream()
+            uri.scheme == null && uri.path != null -> java.io.File(uri.path!!).inputStream()
+            else -> context.contentResolver.openInputStream(uri)
+        } ?: throw IOException("Unable to open input stream for $uri")
+
+        return inputStream.use {
             decode(it)
         }
     }

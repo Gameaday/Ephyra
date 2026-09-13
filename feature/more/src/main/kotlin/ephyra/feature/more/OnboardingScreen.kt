@@ -9,10 +9,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import ephyra.core.common.util.storage.BackupStaging
 import ephyra.feature.more.onboarding.OnboardingEvent
 import ephyra.feature.more.onboarding.OnboardingViewModel
 import ephyra.feature.settings.screen.SettingsDataScreen
@@ -21,6 +23,9 @@ import ephyra.presentation.core.ui.AppReadySignal
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.system.toast
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import ephyra.feature.more.onboarding.OnboardingScreen as OnboardingContent
 
 @Composable
@@ -51,6 +56,7 @@ fun OnboardingScreen(
         }
     }
 
+    val scope = rememberCoroutineScope()
     val chooseBackup = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
     ) { uri ->
@@ -66,8 +72,20 @@ fun OnboardingScreen(
             android.util.Log.w("Onboarding", "Failed to take persistable URI permission for backup file", e)
         }
 
-        finishOnboarding()
-        navController.navigate(ScreenRoutes.RestoreBackup.createRoute(uri.toString()))
+        scope.launch(Dispatchers.IO) {
+            try {
+                val stagedUri = BackupStaging.stageBackupFile(context, uri)
+                withContext(Dispatchers.Main) {
+                    finishOnboarding()
+                    navController.navigate(ScreenRoutes.RestoreBackup.createRoute(stagedUri.toString()))
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("Onboarding", "Failed to stage backup file: $uri", e)
+                withContext(Dispatchers.Main) {
+                    context.toast(ephyra.app.core.common.R.string.invalid_backup_file_error)
+                }
+            }
+        }
     }
 
     BackHandler(enabled = !state.shownOnboarding) {

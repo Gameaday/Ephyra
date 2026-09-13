@@ -1,5 +1,6 @@
 package ephyra.data.backup
 
+import androidx.core.net.toUri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ephyra.data.backup.models.Backup
@@ -235,5 +236,32 @@ class BackupFormatRoundTripTest {
         assertEquals(1, restored.backupManga.size)
         assertEquals("Berserk", restored.backupManga.single().title)
         assertEquals("Reading", restored.backupCategories.single().name)
+    }
+
+    @Test
+    fun `staged local backup file decodes via file Uri directly`() {
+        val original = sampleBackup()
+        val protoBytes = protoBuf.encodeToByteArray(Backup.serializer(), original)
+
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val tempFile = java.io.File(context.cacheDir, "test_staged_backup.tachibk")
+        java.io.FileOutputStream(tempFile).use { fileOut ->
+            GZIPOutputStream(fileOut).use { gzip ->
+                gzip.write(protoBytes)
+            }
+        }
+
+        try {
+            val decoder = BackupDecoder(
+                context = context,
+                protoBuf = protoBuf,
+            )
+            val restored = decoder.decode(tempFile.toUri())
+
+            assertEquals(1, restored.backupManga.size)
+            assertEquals("Berserk", restored.backupManga.single().title)
+        } finally {
+            tempFile.delete()
+        }
     }
 }

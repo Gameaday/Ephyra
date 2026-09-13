@@ -8,6 +8,7 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkerParameters
 import ephyra.app.data.backup.BackupNotifier
+import ephyra.core.common.util.storage.BackupStaging
 import ephyra.core.common.util.system.isRunning
 import ephyra.core.common.util.system.logcat
 import ephyra.core.common.util.system.setForegroundSafely
@@ -42,6 +43,8 @@ class BackupRestoreJob(
             logcat(LogPriority.ERROR, e)
             notifier.showRestoreError(e.message)
             Result.failure()
+        } finally {
+            BackupStaging.clearStagedBackup(context)
         }
     }
 

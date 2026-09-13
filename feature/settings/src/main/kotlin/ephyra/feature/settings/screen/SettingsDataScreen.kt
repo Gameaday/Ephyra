@@ -45,6 +45,7 @@ import com.hippo.unifile.UniFile
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.storage.displayablePath
 import ephyra.core.common.util.lang.launchNonCancellable
+import ephyra.core.common.util.storage.BackupStaging
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.backup.service.BackupPreferences
@@ -199,6 +200,8 @@ object SettingsDataScreen : SearchableSettings {
 
         val lastAutoBackup by backupPreferences.lastAutoBackupTimestamp().collectAsState()
 
+        val scope = rememberCoroutineScope()
+
         val chooseBackup = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.OpenDocument(),
         ) { uri ->
@@ -214,7 +217,19 @@ object SettingsDataScreen : SearchableSettings {
                 logcat(LogPriority.WARN, e) { "Failed to take persistable URI permission for backup file" }
             }
 
-            navController.navigate(ScreenRoutes.RestoreBackup.createRoute(uri.toString()))
+            scope.launch(Dispatchers.IO) {
+                try {
+                    val stagedUri = BackupStaging.stageBackupFile(context, uri)
+                    withContext(Dispatchers.Main) {
+                        navController.navigate(ScreenRoutes.RestoreBackup.createRoute(stagedUri.toString()))
+                    }
+                } catch (e: Exception) {
+                    logcat(LogPriority.ERROR, e) { "Failed to stage backup file: $uri" }
+                    withContext(Dispatchers.Main) {
+                        context.toast(ephyra.app.core.common.R.string.invalid_backup_file_error)
+                    }
+                }
+            }
         }
 
         return Preference.PreferenceGroup(

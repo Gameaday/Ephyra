@@ -60,6 +60,7 @@ import ephyra.app.util.system.isPreviewBuildType
 import ephyra.app.util.system.updaterEnabled
 import ephyra.core.common.Constants
 import ephyra.core.common.util.lang.launchIO
+import ephyra.core.common.util.storage.BackupStaging
 import ephyra.core.common.util.system.logcat
 import ephyra.core.common.util.system.openInBrowser
 import ephyra.core.download.DownloadCache
@@ -89,10 +90,12 @@ import ephyra.presentation.core.util.LocalAppNavigator
 import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.core.util.view.setComposeContent
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import logcat.LogPriority
 import javax.inject.Inject
@@ -465,6 +468,22 @@ class MainActivity : BaseActivity(), AppReadySignal {
                     if (!repoUrl.isNullOrEmpty()) {
                         navController.popBackStack(navController.graph.findStartDestination().id, inclusive = false)
                         navController.navigate(ScreenRoutes.ExtensionRepos.createRoute(repoUrl))
+                    }
+                } else if (data != null) {
+                    val isBackup = data.path?.endsWith(".tachibk", ignoreCase = true) == true ||
+                        data.path?.endsWith(".proto.gz", ignoreCase = true) == true ||
+                        intent.type?.contains("tachibk", ignoreCase = true) == true
+                    if (isBackup) {
+                        lifecycleScope.launch(Dispatchers.IO) {
+                            try {
+                                val stagedUri = BackupStaging.stageBackupFile(this@MainActivity, data)
+                                withContext(Dispatchers.Main) {
+                                    navController.navigate(ScreenRoutes.RestoreBackup.createRoute(stagedUri.toString()))
+                                }
+                            } catch (e: Exception) {
+                                logcat(LogPriority.ERROR, e) { "Failed to stage backup from external intent: $data" }
+                            }
+                        }
                     }
                 }
                 null
