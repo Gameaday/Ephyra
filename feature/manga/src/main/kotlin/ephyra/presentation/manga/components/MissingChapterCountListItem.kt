@@ -14,7 +14,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.util.secondaryItemAlpha
-import ephyra.presentation.theme.TachiyomiPreviewTheme
+import ephyra.presentation.theme.EphyraPreviewTheme
 
 @Composable
 fun MissingChapterCountListItem(
@@ -43,7 +43,7 @@ fun MissingChapterCountListItem(
 @PreviewLightDark
 @Composable
 private fun Preview() {
-    TachiyomiPreviewTheme {
+    EphyraPreviewTheme {
         Surface {
             MissingChapterCountListItem(count = 42)
         }

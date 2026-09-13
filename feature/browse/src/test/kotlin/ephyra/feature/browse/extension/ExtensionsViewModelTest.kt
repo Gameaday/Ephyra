@@ -16,6 +16,7 @@ import ephyra.domain.extension.interactor.GetExtensionsByType
 import ephyra.domain.extension.interactor.TrustExtension
 import ephyra.domain.extension.model.Extension
 import ephyra.domain.extension.model.Extensions
+import ephyra.domain.extension.model.InstallStep
 import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.extension.service.ExtensionTranspiler
 import ephyra.domain.extensionrepo.interactor.CreateExtensionRepo
@@ -58,7 +59,7 @@ class ExtensionsViewModelTest {
     private val deleteExtensionRepo: DeleteExtensionRepo = mockk(relaxed = true)
     private val updateExtensionRepo: UpdateExtensionRepo = mockk(relaxed = true)
     private val getExtensionsByType: GetExtensionsByType = mockk(relaxed = true)
-    private val legacyExtensionTranspiler: ExtensionTranspiler = mockk(relaxed = true)
+    private val extensionTranspiler: ExtensionTranspiler = mockk(relaxed = true)
     private val scraperUpdater: ScraperScriptUpdater = mockk(relaxed = true)
     private val preferenceStore: PreferenceStore = mockk(relaxed = true)
     private val sourcePreferences: SourcePreferences = mockk(relaxed = true)
@@ -98,7 +99,7 @@ class ExtensionsViewModelTest {
         deleteExtensionRepo,
         updateExtensionRepo,
         getExtensionsByType,
-        legacyExtensionTranspiler,
+        extensionTranspiler,
         scraperUpdater,
         preferenceStore,
         sourcePreferences,
@@ -174,23 +175,23 @@ class ExtensionsViewModelTest {
     }
 
     @Test
-    fun `RemoveSource event uninstalls extension if source is legacy extension`() = runTest {
-        val legacySource = UnifiedSource(
+    fun `RemoveSource event uninstalls extension if source is remote extension`() = runTest {
+        val remoteSource = UnifiedSource(
             id = 123L,
-            name = "Legacy Source",
-            baseUrl = "https://legacy.example.com",
+            name = "Remote Source",
+            baseUrl = "https://remote.example.com",
             sourceType = SourceType.LEGACY_EXTENSION,
             enabled = true,
-            extensionId = "com.legacy.ext",
+            extensionId = "com.remote.ext",
             lastHealthCheck = 0L,
             failureCount = 0,
         )
-        every { getAvailableSources() } returns flowOf(listOf(legacySource))
+        every { getAvailableSources() } returns flowOf(listOf(remoteSource))
         val viewModel = createViewModel()
 
-        viewModel.onEvent(ExtensionsScreenEvent.RemoveSource("https://legacy.example.com"))
+        viewModel.onEvent(ExtensionsScreenEvent.RemoveSource("https://remote.example.com"))
 
-        verify { extensionManager.uninstallExtensionByPkgName("com.legacy.ext") }
+        verify { extensionManager.uninstallExtensionByPkgName("com.remote.ext") }
         verify { disabledSourcesPref.set(setOf("123")) }
     }
 
@@ -221,5 +222,54 @@ class ExtensionsViewModelTest {
 
         viewModel.onEvent(ExtensionsScreenEvent.ClearError)
         assertNull(viewModel.state.value.error)
+    }
+
+    @Test
+    fun `InstallExtension event calls extensionManager installExtension`() = runTest {
+        val availableExt = Extension.Available(
+            name = "Test Ext",
+            pkgName = "com.test.ext",
+            versionName = "1.0.0",
+            versionCode = 100L,
+            libVersion = 1.6,
+            lang = "en",
+            isNsfw = false,
+            sources = emptyList(),
+            apkName = "test.apk",
+            iconUrl = "https://example.com/icon.png",
+            repoUrl = "https://example.com/repo",
+        )
+        every { extensionManager.installExtension(availableExt) } returns flowOf(InstallStep.Installed)
+        val viewModel = createViewModel()
+
+        viewModel.onEvent(ExtensionsScreenEvent.InstallExtension(availableExt))
+
+        verify { extensionManager.installExtension(availableExt) }
+        verify { extensionManager.reloadExtensions() }
+    }
+
+    @Test
+    fun `UninstallInstalledExtension event calls extensionManager uninstallExtension`() = runTest {
+        val installedExt = Extension.Installed(
+            name = "Test Ext",
+            pkgName = "com.test.ext",
+            versionName = "1.0.0",
+            versionCode = 100L,
+            libVersion = 1.6,
+            lang = "en",
+            isNsfw = false,
+            pkgFactory = null,
+            sources = emptyList(),
+            icon = null,
+            hasUpdate = false,
+            isObsolete = false,
+            isShared = false,
+        )
+        val viewModel = createViewModel()
+
+        viewModel.onEvent(ExtensionsScreenEvent.UninstallInstalledExtension(installedExt))
+
+        verify { extensionManager.uninstallExtension(installedExt) }
+        verify { extensionManager.reloadExtensions() }
     }
 }

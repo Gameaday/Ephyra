@@ -56,7 +56,7 @@ import ephyra.presentation.core.components.DropdownMenu
 import ephyra.presentation.core.components.TrackLogoIcon
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.system.copyToClipboard
-import ephyra.presentation.theme.TachiyomiPreviewTheme
+import ephyra.presentation.theme.EphyraPreviewTheme
 import java.time.format.DateTimeFormatter
 import kotlin.collections.sortedWith
 
@@ -463,7 +463,7 @@ private fun TrackInfoDialogHomePreviews(
     @PreviewParameter(TrackInfoDialogHomePreviewProvider::class)
     content: @Composable () -> Unit,
 ) {
-    TachiyomiPreviewTheme {
+    EphyraPreviewTheme {
         Surface {
             content()
         }

@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Autorenew
+import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.Code
@@ -36,6 +37,7 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Security
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material3.AlertDialog
@@ -52,6 +54,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -73,9 +76,10 @@ import ephyra.domain.content.source.SourceType
 import ephyra.domain.content.source.interactor.UnifiedSource
 import ephyra.domain.extension.model.Extension
 import ephyra.domain.extension.model.LoadFailureReason
-import ephyra.domain.extensionrepo.interactor.CreateExtensionRepo
 import ephyra.domain.extensionrepo.model.ExtensionRepo
 import ephyra.feature.browse.extension.ExtensionsViewModel
+import ephyra.feature.browse.presentation.components.UniversalAddSourceDialog
+import ephyra.presentation.core.components.ExtensionIcon
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
@@ -99,6 +103,8 @@ fun ExtensionScreen(
     onUninstallExtension: (Extension.Available) -> Unit,
     onTrustExtension: (Extension.Untrusted) -> Unit = {},
     onUninstallByPkgName: (String) -> Unit = {},
+    onUpdateExtension: (Extension.Installed) -> Unit = {},
+    onUninstallInstalledExtension: (Extension.Installed) -> Unit = {},
     navController: NavController = LocalNavController.current,
 ) {
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
@@ -108,7 +114,6 @@ fun ExtensionScreen(
     var showLinkScraperDialog by remember { mutableStateOf(false) }
     var showRemoveConfirmDialog by remember { mutableStateOf(false) }
     var showAddRepoDialog by remember { mutableStateOf(false) }
-    var showExtensionSourcesDialog by remember { mutableStateOf<Extension.Available?>(null) }
     var selectedSourceToRemove by remember { mutableStateOf<UnifiedSource?>(null) }
     var selectedSourceForLink by remember { mutableStateOf<UnifiedSource?>(null) }
 
@@ -120,7 +125,6 @@ fun ExtensionScreen(
     var heuristicName by remember { mutableStateOf("") }
     var linkBaseUrl by remember { mutableStateOf("") }
     var linkScraperName by remember { mutableStateOf("") }
-    var repoUrlInput by remember { mutableStateOf("") }
 
     LaunchedEffect(state.error) {
         if (state.error != null) {
@@ -149,12 +153,41 @@ fun ExtensionScreen(
             }
         }
 
+        val filteredAvailableExtensions = remember(state.availableExtensions, searchQuery) {
+            if (searchQuery.isNullOrBlank()) {
+                state.availableExtensions
+            } else {
+                state.availableExtensions.filter { ext ->
+                    ext.name.contains(searchQuery, ignoreCase = true) ||
+                        ext.pkgName.contains(searchQuery, ignoreCase = true) ||
+                        ext.lang.contains(searchQuery, ignoreCase = true) ||
+                        ext.sources.any {
+                            it.name.contains(searchQuery, ignoreCase = true) ||
+                                it.baseUrl.contains(searchQuery, ignoreCase = true)
+                        }
+                }
+            }
+        }
+
+        val filteredInstalledExtensions = remember(state.installedExtensions, searchQuery) {
+            if (searchQuery.isNullOrBlank()) {
+                state.installedExtensions
+            } else {
+                state.installedExtensions.filter { ext ->
+                    ext.name.contains(searchQuery, ignoreCase = true) ||
+                        ext.pkgName.contains(searchQuery, ignoreCase = true) ||
+                        ext.lang.contains(searchQuery, ignoreCase = true) ||
+                        ext.sources.any { it.name.contains(searchQuery, ignoreCase = true) }
+                }
+            }
+        }
+
         ExtensionScraperManagementLayout(
             contentPadding = contentPadding,
             sources = filteredSources,
             repos = state.repos,
-            availableExtensions = state.availableExtensions,
-            installedExtensions = state.installedExtensions,
+            availableExtensions = filteredAvailableExtensions,
+            installedExtensions = filteredInstalledExtensions,
             untrustedExtensions = state.untrustedExtensions,
             failedExtensions = state.failedExtensions,
             onAddJsScraperClick = { showAddJsScraperDialog = true },
@@ -162,8 +195,10 @@ fun ExtensionScreen(
             onAddHeuristicClick = { showAddHeuristicDialog = true },
             onAddRepoClick = { showAddRepoDialog = true },
             onDeleteRepoClick = onDeleteRepository,
-            onInstallExtensionClick = { ext -> showExtensionSourcesDialog = ext },
+            onInstallExtensionClick = { ext -> onInstallExtension(ext, null) },
             onUninstallExtensionClick = onUninstallExtension,
+            onUpdateExtension = onUpdateExtension,
+            onUninstallInstalledExtension = onUninstallInstalledExtension,
             onTrustExtensionClick = onTrustExtension,
             onUninstallByPkgName = onUninstallByPkgName,
             onClickExtension = { pkgName -> navController.navigate(Screen.ExtensionDetails(pkgName)) },
@@ -198,72 +233,22 @@ fun ExtensionScreen(
                 selectedSourceToRemove = source
                 showRemoveConfirmDialog = true
             },
+            navController = navController,
+            searchQuery = searchQuery,
         )
     }
 
-    showExtensionSourcesDialog?.let { ext ->
-        ExtensionSourcesDialog(
-            extension = ext,
-            installedSources = state.sources,
-            onDismiss = { showExtensionSourcesDialog = null },
-            onConfirm = { selectedUrls ->
-                onInstallExtension(ext, selectedUrls)
-            },
-        )
-    }
-
-    // Add Repository Dialog
+    // Universal Add Repository & Source Dialog
     if (showAddRepoDialog) {
-        AlertDialog(
-            onDismissRequest = {
+        UniversalAddSourceDialog(
+            onDismissRequest = { showAddRepoDialog = false },
+            onAddRepo = { repoUrl ->
+                onAddRepository(repoUrl)
                 showAddRepoDialog = false
-                repoUrlInput = ""
             },
-            title = { Text("Add Repository") },
-            text = {
-                Column {
-                    OutlinedTextField(
-                        value = repoUrlInput,
-                        onValueChange = { repoUrlInput = it },
-                        label = { Text("Repository URL") },
-                        placeholder = { Text("https://example.com/repo.json") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
-                    )
-                    // Hard-coded catalog shortcuts (e.g. the official Mihon repo)
-                    // are a piracy liability in shipped builds; only dev builds
-                    // built with -Pinclude-catalog-shortcuts expose them.
-                    if (state.catalogShortcutsEnabled) {
-                        TextButton(
-                            onClick = { repoUrlInput = CreateExtensionRepo.OFFICIAL_MIHON_REPO_URL },
-                        ) {
-                            Text("Use official Mihon repo")
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        if (repoUrlInput.isNotBlank()) {
-                            onAddRepository(repoUrlInput)
-                        }
-                        showAddRepoDialog = false
-                        repoUrlInput = ""
-                    },
-                ) {
-                    Text("Add")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        showAddRepoDialog = false
-                        repoUrlInput = ""
-                    },
-                ) {
-                    Text("Cancel")
-                }
+            onAddWebSource = { url, name ->
+                onAddHeuristic(url, name)
+                showAddRepoDialog = false
             },
         )
     }
@@ -428,6 +413,8 @@ private fun ExtensionScraperManagementLayout(
     onDeleteRepoClick: (String) -> Unit,
     onInstallExtensionClick: (Extension.Available) -> Unit,
     onUninstallExtensionClick: (Extension.Available) -> Unit,
+    onUpdateExtension: (Extension.Installed) -> Unit,
+    onUninstallInstalledExtension: (Extension.Installed) -> Unit,
     onTrustExtensionClick: (Extension.Untrusted) -> Unit,
     onUninstallByPkgName: (String) -> Unit,
     onClickExtension: (String) -> Unit,
@@ -437,159 +424,291 @@ private fun ExtensionScraperManagementLayout(
     onCheckUpdates: (UnifiedSource) -> Unit,
     onForceRediscover: (UnifiedSource) -> Unit,
     onRemoveSource: (UnifiedSource) -> Unit,
+    navController: NavController,
+    searchQuery: String? = null,
 ) {
-    Column(
+    var showDevTools by remember { mutableStateOf(false) }
+
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .padding(contentPadding),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // Quick Actions Row
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            QuickActionButton(
-                icon = Icons.Outlined.Code,
-                label = "Add JS Scraper",
-                color = MaterialTheme.colorScheme.primary,
-                onClick = onAddJsScraperClick,
-            )
-            QuickActionButton(
-                icon = Icons.Outlined.UploadFile,
-                label = "Import Script",
-                color = MaterialTheme.colorScheme.secondary,
-                onClick = onImportJsScraperClick,
-            )
-            QuickActionButton(
-                icon = Icons.Outlined.Autorenew,
-                label = "Add Heuristic",
-                color = MaterialTheme.colorScheme.tertiary,
-                onClick = onAddHeuristicClick,
-            )
-            QuickActionButton(
-                icon = Icons.Outlined.Storage,
-                label = "Add Repo",
-                color = MaterialTheme.colorScheme.outline,
-                onClick = onAddRepoClick,
+        // Empty State Card or Active Repositories Section
+        if (repos.isEmpty()) {
+            item {
+                EmptyRepositoriesCard(
+                    onAddRepo = onAddRepoClick,
+                )
+            }
+        } else {
+            item {
+                RepositoriesSection(
+                    repos = repos,
+                    onAddRepo = onAddRepoClick,
+                    onManageRepos = { navController.navigate(ScreenRoutes.ExtensionRepos.route) },
+                    onDeleteRepo = onDeleteRepoClick,
+                )
+            }
+        }
+
+        // Installed Extensions (Sandboxed DEX)
+        if (installedExtensions.isNotEmpty()) {
+            item {
+                InstalledExtensionsSection(
+                    installedExtensions = installedExtensions,
+                    onUninstall = onUninstallInstalledExtension,
+                    onUpdate = onUpdateExtension,
+                    onClickExtension = onClickExtension,
+                )
+            }
+        }
+
+        // Untrusted extensions
+        if (untrustedExtensions.isNotEmpty()) {
+            item {
+                UntrustedExtensionsSection(
+                    untrustedExtensions = untrustedExtensions,
+                    onTrust = onTrustExtensionClick,
+                    onUninstall = onUninstallByPkgName,
+                )
+            }
+        }
+
+        // Failed extensions
+        if (failedExtensions.isNotEmpty()) {
+            item {
+                FailedExtensionsSection(
+                    failedExtensions = failedExtensions,
+                    onUninstall = onUninstallByPkgName,
+                )
+            }
+        }
+
+        // Available Extensions (from connected repos)
+        if (repos.isNotEmpty()) {
+            item {
+                AvailableExtensionsSection(
+                    availableExtensions = availableExtensions,
+                    installedExtensions = installedExtensions,
+                    onInstall = onInstallExtensionClick,
+                    onUninstallInstalled = onUninstallInstalledExtension,
+                    onUpdate = onUpdateExtension,
+                    onClickExtension = onClickExtension,
+                    onRefresh = onRefresh,
+                    searchQuery = searchQuery,
+                )
+            }
+        }
+
+        // Developer & Custom Script Tools (Collapsible)
+        item {
+            DeveloperToolsSection(
+                isExpanded = showDevTools,
+                onToggleExpand = { showDevTools = !showDevTools },
+                onAddJsScraperClick = onAddJsScraperClick,
+                onImportJsScraperClick = onImportJsScraperClick,
+                onAddHeuristicClick = onAddHeuristicClick,
+                sources = sources,
+                onSourceClick = onSourceClick,
+                onLinkScraper = onLinkScraperClick,
+                onCheckUpdates = onCheckUpdates,
+                onForceRediscover = onForceRediscover,
+                onRemoveSource = onRemoveSource,
             )
         }
 
-        // Sources grouped by type
-        val grouped = sources.groupBy { it.sourceType }
-        val typeOrder = listOf(
-            SourceType.LEGACY_EXTENSION,
-            SourceType.JS_SCRAPER,
-            SourceType.HEURISTIC,
-            SourceType.REPOSITORY,
-        ).filter { (grouped[it] ?: emptyList()).isNotEmpty() }
-
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+        // Empty state when absolutely nothing is configured
+        if (sources.isEmpty() && repos.isEmpty() && availableExtensions.isEmpty() &&
+            installedExtensions.isEmpty() && untrustedExtensions.isEmpty() && failedExtensions.isEmpty()
         ) {
-            // Repositories section
-            if (repos.isNotEmpty()) {
-                item {
-                    RepositoriesSection(
-                        repos = repos,
-                        onDeleteRepo = onDeleteRepoClick,
-                    )
-                }
-            }
-
-            // Installed sources
-            items(typeOrder) { sourceType ->
-                val typeSources = grouped[sourceType] ?: emptyList()
-                if (typeSources.isNotEmpty()) {
-                    SourceTypeSection(
-                        sourceType = sourceType,
-                        sources = typeSources,
-                        onSourceClick = onSourceClick,
-                        onLinkScraper = onLinkScraperClick,
-                        onCheckUpdates = onCheckUpdates,
-                        onForceRediscover = onForceRediscover,
-                        onRemoveSource = onRemoveSource,
-                    )
-                }
-            }
-
-            // Installed extension APKs (trusted & loaded)
-            if (installedExtensions.isNotEmpty()) {
-                item {
-                    InstalledExtensionsSection(
-                        installedExtensions = installedExtensions,
-                        onUninstall = onUninstallByPkgName,
-                        onClickExtension = onClickExtension,
-                    )
-                }
-            }
-
-            // Untrusted extension APKs — visible with a trust action, never hidden
-            if (untrustedExtensions.isNotEmpty()) {
-                item {
-                    UntrustedExtensionsSection(
-                        untrustedExtensions = untrustedExtensions,
-                        onTrust = onTrustExtensionClick,
-                        onUninstall = onUninstallByPkgName,
-                    )
-                }
-            }
-
-            // Recognized extensions that failed to load — visible with the reason
-            if (failedExtensions.isNotEmpty()) {
-                item {
-                    FailedExtensionsSection(
-                        failedExtensions = failedExtensions,
-                        onUninstall = onUninstallByPkgName,
-                    )
-                }
-            }
-
-            // Available extensions
-            if (repos.isNotEmpty()) {
-                item {
-                    AvailableExtensionsSection(
-                        availableExtensions = availableExtensions,
-                        installedSources = sources,
-                        onInstall = onInstallExtensionClick,
-                        onUninstall = onUninstallExtensionClick,
-                    )
-                }
-            }
-
-            if (sources.isEmpty() && repos.isEmpty() && availableExtensions.isEmpty() &&
-                installedExtensions.isEmpty() && untrustedExtensions.isEmpty() && failedExtensions.isEmpty()
-            ) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 32.dp),
-                        contentAlignment = Alignment.Center,
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 32.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Security,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(48.dp),
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = "No sources configured",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "Add a repository URL, JS scraper, or heuristic profile to get started",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                textAlign = TextAlign.Center,
+                        Icon(
+                            imageVector = Icons.Outlined.Security,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(48.dp),
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "No sources configured",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Add an extension repository or custom source to get started",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyRepositoriesCard(
+    onAddRepo: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Storage,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp),
+                )
+                Text(
+                    text = "No Extension Repositories",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+            Text(
+                text = "Add a community extension repository URL or deep link to discover and " +
+                    "install content extensions in a sandboxed runner.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Button(
+                onClick = onAddRepo,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Link,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Add Repository")
+            }
+        }
+    }
+}
+
+@Composable
+private fun DeveloperToolsSection(
+    isExpanded: Boolean,
+    onToggleExpand: () -> Unit,
+    onAddJsScraperClick: () -> Unit,
+    onImportJsScraperClick: () -> Unit,
+    onAddHeuristicClick: () -> Unit,
+    sources: List<UnifiedSource>,
+    onSourceClick: (UnifiedSource) -> Unit,
+    onLinkScraper: (UnifiedSource) -> Unit,
+    onCheckUpdates: (UnifiedSource) -> Unit,
+    onForceRediscover: (UnifiedSource) -> Unit,
+    onRemoveSource: (UnifiedSource) -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+        ),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onToggleExpand),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Code,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp),
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "Developer & Custom Script Tools",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Icon(
+                    imageVector = if (isExpanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                    contentDescription = if (isExpanded) "Collapse" else "Expand",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            if (isExpanded) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    QuickActionButton(
+                        icon = Icons.Outlined.Code,
+                        label = "Add JS",
+                        color = MaterialTheme.colorScheme.primary,
+                        onClick = onAddJsScraperClick,
+                    )
+                    QuickActionButton(
+                        icon = Icons.Outlined.UploadFile,
+                        label = "Import",
+                        color = MaterialTheme.colorScheme.secondary,
+                        onClick = onImportJsScraperClick,
+                    )
+                    QuickActionButton(
+                        icon = Icons.Outlined.Autorenew,
+                        label = "Heuristic",
+                        color = MaterialTheme.colorScheme.tertiary,
+                        onClick = onAddHeuristicClick,
+                    )
+                }
+
+                val devSources = sources.filter {
+                    it.sourceType == SourceType.JS_SCRAPER || it.sourceType == SourceType.HEURISTIC
+                }
+                if (devSources.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Custom Scrapers & Profiles (${devSources.size})",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        devSources.forEach { source ->
+                            SourceRow(
+                                source = source,
+                                onClick = { onSourceClick(source) },
+                                onLinkScraper = { onLinkScraper(source) },
+                                onCheckUpdates = { onCheckUpdates(source) },
+                                onForceRediscover = { onForceRediscover(source) },
+                                onRemoveSource = { onRemoveSource(source) },
                             )
                         }
                     }
@@ -602,7 +721,8 @@ private fun ExtensionScraperManagementLayout(
 @Composable
 private fun InstalledExtensionsSection(
     installedExtensions: List<Extension.Installed>,
-    onUninstall: (String) -> Unit,
+    onUninstall: (Extension.Installed) -> Unit,
+    onUpdate: (Extension.Installed) -> Unit,
     onClickExtension: (String) -> Unit,
 ) {
     Card(
@@ -634,35 +754,69 @@ private fun InstalledExtensionsSection(
             Spacer(modifier = Modifier.height(12.dp))
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 installedExtensions.forEach { ext ->
-                    Row(
+                    Card(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { onClickExtension(ext.pkgName) },
-                        verticalAlignment = Alignment.CenterVertically,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                        ),
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = ext.name,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold,
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            ExtensionIcon(
+                                extension = ext,
+                                modifier = Modifier.size(44.dp),
                             )
-                            Text(
-                                text = buildString {
-                                    append("v${ext.versionName}")
-                                    append(" · ${ext.sources.size} source(s)")
-                                    if (ext.lang.isNotBlank()) append(" · ${ext.lang}")
-                                    if (ext.hasUpdate) append(" · update available")
-                                },
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        IconButton(onClick = { onUninstall(ext.pkgName) }) {
-                            Icon(
-                                imageVector = Icons.Outlined.Delete,
-                                contentDescription = "Uninstall",
-                                tint = MaterialTheme.colorScheme.error,
-                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = ext.name,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = buildString {
+                                        append("v${ext.versionName}")
+                                        append(" · ${ext.sources.size} source(s)")
+                                        if (ext.lang.isNotBlank()) append(" · ${ext.lang.uppercase()}")
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            if (ext.hasUpdate) {
+                                Button(
+                                    onClick = { onUpdate(ext) },
+                                    shape = RoundedCornerShape(8.dp),
+                                    contentPadding = PaddingValues(horizontal = 12.dp),
+                                ) {
+                                    Text("Update", style = MaterialTheme.typography.labelMedium)
+                                }
+                            }
+                            IconButton(onClick = { onClickExtension(ext.pkgName) }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Settings,
+                                    contentDescription = "Settings",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            IconButton(onClick = { onUninstall(ext) }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.DeleteOutline,
+                                    contentDescription = "Uninstall",
+                                    tint = MaterialTheme.colorScheme.error,
+                                )
+                            }
                         }
                     }
                 }
@@ -821,6 +975,8 @@ private fun Extension.Failed.displayText(): String = when (reason) {
 @Composable
 private fun RepositoriesSection(
     repos: List<ExtensionRepo>,
+    onAddRepo: () -> Unit,
+    onManageRepos: () -> Unit,
     onDeleteRepo: (String) -> Unit,
 ) {
     Card(
@@ -843,13 +999,26 @@ private fun RepositoriesSection(
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = "Extension Repositories",
+                    text = "Repositories (${repos.size})",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
                 )
+                Spacer(modifier = Modifier.weight(1f))
+                TextButton(onClick = onAddRepo) {
+                    Icon(
+                        imageVector = Icons.Outlined.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Add")
+                }
+                TextButton(onClick = onManageRepos) {
+                    Text("Manage")
+                }
             }
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 repos.forEach { repo ->
                     RepoRow(repo = repo, onDelete = { onDeleteRepo(repo.baseUrl) })
@@ -906,9 +1075,13 @@ private fun RepoRow(
 @Composable
 private fun AvailableExtensionsSection(
     availableExtensions: List<Extension.Available>,
-    installedSources: List<UnifiedSource>,
+    installedExtensions: List<Extension.Installed>,
     onInstall: (Extension.Available) -> Unit,
-    onUninstall: (Extension.Available) -> Unit,
+    onUninstallInstalled: (Extension.Installed) -> Unit,
+    onUpdate: (Extension.Installed) -> Unit,
+    onClickExtension: (String) -> Unit,
+    onRefresh: () -> Unit,
+    searchQuery: String? = null,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -930,7 +1103,7 @@ private fun AvailableExtensionsSection(
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = "Available Repository Extensions",
+                    text = "Available Extensions",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.secondary,
@@ -951,25 +1124,47 @@ private fun AvailableExtensionsSection(
             }
             Spacer(modifier = Modifier.height(12.dp))
             if (availableExtensions.isEmpty()) {
-                Text(
-                    text = "No extensions found in registered repos. Click 'Refresh All' to search.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(vertical = 8.dp),
-                )
+                val message = if (!searchQuery.isNullOrBlank()) {
+                    "No extensions match \"$searchQuery\""
+                } else {
+                    "No extensions found in registered repos. Click 'Refresh Repositories' to update."
+                }
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                    )
+                    if (searchQuery.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedButton(onClick = onRefresh) {
+                            Icon(
+                                imageVector = Icons.Outlined.Refresh,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Refresh Repositories")
+                        }
+                    }
+                }
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     availableExtensions.forEach { ext ->
-                        val isInstalled = installedSources.any { unified ->
-                            unified.sourceType == SourceType.JS_SCRAPER &&
-                                ext.sources.any { it.baseUrl == unified.baseUrl }
-                        }
+                        val installedExt = installedExtensions.firstOrNull { it.pkgName == ext.pkgName }
                         ExtensionItemRow(
                             extension = ext,
-                            isInstalled = isInstalled,
+                            installedExtension = installedExt,
                             onInstall = { onInstall(ext) },
-                            onUninstall = { onUninstall(ext) },
-                            onManageSources = { onInstall(ext) },
+                            onUninstall = { installedExt?.let(onUninstallInstalled) },
+                            onUpdate = { installedExt?.let(onUpdate) },
+                            onClickExtension = { onClickExtension(ext.pkgName) },
                         )
                     }
                 }
@@ -981,13 +1176,22 @@ private fun AvailableExtensionsSection(
 @Composable
 private fun ExtensionItemRow(
     extension: Extension.Available,
-    isInstalled: Boolean,
+    installedExtension: Extension.Installed?,
     onInstall: () -> Unit,
     onUninstall: () -> Unit,
-    onManageSources: () -> Unit,
+    onUpdate: () -> Unit,
+    onClickExtension: () -> Unit,
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (installedExtension != null) {
+                    Modifier.clickable(onClick = onClickExtension)
+                } else {
+                    Modifier
+                },
+            ),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface,
@@ -999,19 +1203,10 @@ private fun ExtensionItemRow(
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), RoundedCornerShape(8.dp)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = extension.name.take(2).uppercase(),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
+            ExtensionIcon(
+                extension = extension,
+                modifier = Modifier.size(44.dp),
+            )
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1041,46 +1236,47 @@ private fun ExtensionItemRow(
                 }
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "v" + extension.versionName,
+                    text = "v${extension.versionName} · ${extension.sources.size} source(s)",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             Spacer(modifier = Modifier.width(8.dp))
-            if (isInstalled) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(
-                        onClick = onManageSources,
+            if (installedExtension != null) {
+                if (installedExtension.hasUpdate) {
+                    Button(
+                        onClick = onUpdate,
                         shape = RoundedCornerShape(8.dp),
-                        colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.primary,
-                        ),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
                         contentPadding = PaddingValues(horizontal = 12.dp),
                     ) {
-                        Text("Sources", style = MaterialTheme.typography.labelMedium)
+                        Text("Update", style = MaterialTheme.typography.labelMedium)
                     }
-                    OutlinedButton(
-                        onClick = onUninstall,
-                        shape = RoundedCornerShape(8.dp),
-                        colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error,
-                        ),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
-                        contentPadding = PaddingValues(horizontal = 12.dp),
+                } else {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("Uninstall", style = MaterialTheme.typography.labelMedium)
+                        OutlinedButton(
+                            onClick = onClickExtension,
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp),
+                        ) {
+                            Text("Installed", style = MaterialTheme.typography.labelMedium)
+                        }
+                        IconButton(onClick = onUninstall) {
+                            Icon(
+                                imageVector = Icons.Outlined.DeleteOutline,
+                                contentDescription = "Uninstall",
+                                tint = MaterialTheme.colorScheme.error,
+                            )
+                        }
                     }
                 }
             } else {
-                OutlinedButton(
+                Button(
                     onClick = onInstall,
                     shape = RoundedCornerShape(8.dp),
-                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.primary,
-                    ),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
-                    contentPadding = PaddingValues(horizontal = 12.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp),
                 ) {
                     Text("Install", style = MaterialTheme.typography.labelMedium)
                 }
@@ -1651,7 +1847,7 @@ private fun LinkScraperDialog(
 
 private val SourceType.displayName: String
     get() = when (this) {
-        SourceType.LEGACY_EXTENSION -> "Legacy Extensions"
+        SourceType.LEGACY_EXTENSION -> "Remote Extensions"
         SourceType.JS_SCRAPER -> "JS Scrapers"
         SourceType.HEURISTIC -> "Heuristic Profiles"
         SourceType.REPOSITORY -> "Repositories"

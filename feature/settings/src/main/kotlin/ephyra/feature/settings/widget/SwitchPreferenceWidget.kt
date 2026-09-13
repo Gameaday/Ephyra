@@ -10,7 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.PreviewLightDark
-import ephyra.presentation.theme.TachiyomiPreviewTheme
+import ephyra.presentation.theme.EphyraPreviewTheme
 
 @Composable
 fun SwitchPreferenceWidget(
@@ -40,7 +40,7 @@ fun SwitchPreferenceWidget(
 @PreviewLightDark
 @Composable
 private fun SwitchPreferenceWidgetPreview() {
-    TachiyomiPreviewTheme {
+    EphyraPreviewTheme {
         Surface {
             Column {
                 SwitchPreferenceWidget(

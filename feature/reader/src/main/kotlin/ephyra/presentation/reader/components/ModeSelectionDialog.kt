@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import ephyra.presentation.core.components.SettingsItemsPaddings
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
-import ephyra.presentation.theme.TachiyomiPreviewTheme
+import ephyra.presentation.theme.EphyraPreviewTheme
 
 @Composable
 fun ModeSelectionDialog(
@@ -69,7 +69,7 @@ fun ModeSelectionDialog(
 @PreviewLightDark
 @Composable
 private fun Preview() {
-    TachiyomiPreviewTheme {
+    EphyraPreviewTheme {
         Surface {
             Column {
                 ModeSelectionDialog(

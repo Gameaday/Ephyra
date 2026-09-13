@@ -9,11 +9,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import ephyra.domain.manga.model.SourceStatus
 import ephyra.presentation.core.components.Badge
-import ephyra.presentation.core.i18n.stringResource
-import ephyra.presentation.theme.TachiyomiPreviewTheme
+import ephyra.presentation.theme.EphyraPreviewTheme
 
 @Composable
 internal fun DownloadsBadge(count: Long) {
@@ -126,7 +126,7 @@ private val AUTHORITY_GRADIENT_COLORS = mapOf(
 @PreviewLightDark
 @Composable
 private fun BadgePreview() {
-    TachiyomiPreviewTheme {
+    EphyraPreviewTheme {
         Column {
             DownloadsBadge(count = 10)
             UnreadBadge(count = 10)

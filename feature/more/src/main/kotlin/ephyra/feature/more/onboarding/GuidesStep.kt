@@ -15,7 +15,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
-import ephyra.presentation.theme.TachiyomiPreviewTheme
+import ephyra.presentation.theme.EphyraPreviewTheme
 
 internal class GuidesStep(
     private val onRestoreBackup: () -> Unit,
@@ -70,7 +70,7 @@ const val GETTING_STARTED_URL = "https://ephyra.app/docs/guides/getting-started"
 @PreviewLightDark
 @Composable
 private fun GuidesStepPreview() {
-    TachiyomiPreviewTheme {
+    EphyraPreviewTheme {
         GuidesStep(
             onRestoreBackup = {},
         ).Content()

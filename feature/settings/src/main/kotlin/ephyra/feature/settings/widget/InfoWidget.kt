@@ -15,7 +15,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.secondaryItemAlpha
-import ephyra.presentation.theme.TachiyomiPreviewTheme
+import ephyra.presentation.theme.EphyraPreviewTheme
 
 @Composable
 internal fun InfoWidget(text: String) {
@@ -42,7 +42,7 @@ internal fun InfoWidget(text: String) {
 @PreviewLightDark
 @Composable
 private fun InfoWidgetPreview() {
-    TachiyomiPreviewTheme {
+    EphyraPreviewTheme {
         Surface {
             InfoWidget(text = stringResource(ephyra.app.core.common.R.string.download_ahead_info))
         }

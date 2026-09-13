@@ -29,8 +29,8 @@ android {
     defaultConfig {
         applicationId = "app.ephyra"
 
-        versionCode = 20
-        versionName = "0.20.0"
+        versionCode = 21
+        versionName = "0.21.0"
 
         buildConfigField("String", "COMMIT_COUNT", "\"${getCommitCount()}\"")
         buildConfigField("String", "COMMIT_SHA", "\"${getGitSha()}\"")

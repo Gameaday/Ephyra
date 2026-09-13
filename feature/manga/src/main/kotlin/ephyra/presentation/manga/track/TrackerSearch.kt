@@ -82,7 +82,7 @@ import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.util.plus
 import ephyra.presentation.core.util.runOnEnterKeyPressed
 import ephyra.presentation.core.util.secondaryItemAlpha
-import ephyra.presentation.theme.TachiyomiPreviewTheme
+import ephyra.presentation.theme.EphyraPreviewTheme
 import kotlinx.coroutines.launch
 
 @Composable
@@ -408,5 +408,5 @@ private fun TrackerSearchPreviews(
     @PreviewParameter(TrackerSearchPreviewProvider::class)
     content: @Composable () -> Unit,
 ) {
-    TachiyomiPreviewTheme { content() }
+    EphyraPreviewTheme { content() }
 }

@@ -27,6 +27,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import ephyra.feature.browse.presentation.SourceOptionsDialog
 import ephyra.feature.browse.presentation.SourcesScreen
+import ephyra.feature.browse.presentation.components.UniversalAddSourceDialog
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.TabContent
 import ephyra.presentation.core.i18n.stringResource
@@ -43,16 +44,16 @@ fun sourcesTab(
     navController: NavController = LocalNavController.current,
 ): TabContent {
     val state by ViewModel.state.collectAsStateWithLifecycle()
-    var showAddWebSourceDialog by remember { mutableStateOf(false) }
+    var showAddSourceDialog by remember { mutableStateOf(false) }
 
     return TabContent(
         titleRes = ephyra.app.core.common.R.string.label_content_sources,
         searchEnabled = true,
         actions = persistentListOf(
             AppBar.Action(
-                title = "Add Web Source",
+                title = "Add Source or Repo",
                 icon = Icons.Outlined.AddLink,
-                onClick = { showAddWebSourceDialog = true },
+                onClick = { showAddSourceDialog = true },
             ),
             AppBar.Action(
                 title = stringResource(ephyra.app.core.common.R.string.action_global_search),
@@ -104,67 +105,14 @@ fun sourcesTab(
                 )
             }
 
-            if (showAddWebSourceDialog) {
-                AlertDialog(
-                    onDismissRequest = {
-                        showAddWebSourceDialog = false
-                        webSourceUrl = ""
-                        webSourceName = ""
+            if (showAddSourceDialog) {
+                UniversalAddSourceDialog(
+                    onDismissRequest = { showAddSourceDialog = false },
+                    onAddRepo = { repoUrl ->
+                        navController.navigate(ScreenRoutes.ExtensionRepos.createRoute(repoUrl))
                     },
-                    title = { Text("Add Web Source") },
-                    text = {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(
-                                text = "Enter any website URL to automatically discover " +
-                                    "and extract manga content using the adaptive heuristic engine.",
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                            OutlinedTextField(
-                                value = webSourceUrl,
-                                onValueChange = { webSourceUrl = it },
-                                label = { Text("Base URL (e.g. https://mangadex.org)") },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                            )
-                            OutlinedTextField(
-                                value = webSourceName,
-                                onValueChange = { webSourceName = it },
-                                label = { Text("Display Name (optional)") },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                            )
-                        }
-                    },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                if (webSourceUrl.isNotBlank()) {
-                                    ViewModel.onEvent(
-                                        SourcesScreenEvent.AddWebSource(
-                                            url = webSourceUrl.trim(),
-                                            name = webSourceName.trim().ifBlank { null },
-                                        ),
-                                    )
-                                    showAddWebSourceDialog = false
-                                    webSourceUrl = ""
-                                    webSourceName = ""
-                                }
-                            },
-                            enabled = webSourceUrl.isNotBlank(),
-                        ) {
-                            Text("Add Source")
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(
-                            onClick = {
-                                showAddWebSourceDialog = false
-                                webSourceUrl = ""
-                                webSourceName = ""
-                            },
-                        ) {
-                            Text("Cancel")
-                        }
+                    onAddWebSource = { url, name ->
+                        ViewModel.onEvent(SourcesScreenEvent.AddWebSource(url, name))
                     },
                 )
             }

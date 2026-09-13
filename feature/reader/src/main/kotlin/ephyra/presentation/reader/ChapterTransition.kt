@@ -42,7 +42,7 @@ import ephyra.feature.reader.model.ReaderChapter
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.secondaryItemAlpha
-import ephyra.presentation.theme.TachiyomiPreviewTheme
+import ephyra.presentation.theme.EphyraPreviewTheme
 import kotlinx.collections.immutable.persistentMapOf
 
 @Composable
@@ -341,7 +341,7 @@ private val FakeChapterLongTitle = previewChapter(
 @PreviewLightDark
 @Composable
 private fun TransitionTextPreview() {
-    TachiyomiPreviewTheme {
+    EphyraPreviewTheme {
         Surface(modifier = Modifier.padding(48.dp)) {
             ChapterTransition(
                 transition = ChapterTransition.Next(ReaderChapter(FakeChapter), ReaderChapter(FakeChapter)),
@@ -355,7 +355,7 @@ private fun TransitionTextPreview() {
 @PreviewLightDark
 @Composable
 private fun TransitionTextLongTitlePreview() {
-    TachiyomiPreviewTheme {
+    EphyraPreviewTheme {
         Surface(modifier = Modifier.padding(48.dp)) {
             ChapterTransition(
                 transition = ChapterTransition.Next(ReaderChapter(FakeChapterLongTitle), ReaderChapter(FakeChapter)),
@@ -369,7 +369,7 @@ private fun TransitionTextLongTitlePreview() {
 @PreviewLightDark
 @Composable
 private fun TransitionTextWithGapPreview() {
-    TachiyomiPreviewTheme {
+    EphyraPreviewTheme {
         Surface(modifier = Modifier.padding(48.dp)) {
             ChapterTransition(
                 transition = ChapterTransition.Next(ReaderChapter(FakeChapter), ReaderChapter(FakeGapChapter)),
@@ -383,7 +383,7 @@ private fun TransitionTextWithGapPreview() {
 @PreviewLightDark
 @Composable
 private fun TransitionTextNoNextPreview() {
-    TachiyomiPreviewTheme {
+    EphyraPreviewTheme {
         Surface(modifier = Modifier.padding(48.dp)) {
             ChapterTransition(
                 transition = ChapterTransition.Next(ReaderChapter(FakeChapter), null),
@@ -397,7 +397,7 @@ private fun TransitionTextNoNextPreview() {
 @PreviewLightDark
 @Composable
 private fun TransitionTextNoPreviousPreview() {
-    TachiyomiPreviewTheme {
+    EphyraPreviewTheme {
         Surface(modifier = Modifier.padding(48.dp)) {
             ChapterTransition(
                 transition = ChapterTransition.Prev(ReaderChapter(FakeChapter), null),

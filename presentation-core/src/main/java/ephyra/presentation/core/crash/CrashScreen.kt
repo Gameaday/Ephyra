@@ -21,7 +21,7 @@ import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.InfoScreen
 import ephyra.presentation.core.util.CrashLogUtil
 import ephyra.presentation.core.util.SourceUtilEntryPoint
-import ephyra.presentation.theme.TachiyomiPreviewTheme
+import ephyra.presentation.theme.EphyraPreviewTheme
 import kotlinx.coroutines.launch
 
 @Composable
@@ -74,7 +74,7 @@ fun CrashScreen(
 @PreviewLightDark
 @Composable
 private fun CrashScreenPreview() {
-    TachiyomiPreviewTheme {
+    EphyraPreviewTheme {
         CrashScreen(exception = RuntimeException("Dummy")) {}
     }
 }

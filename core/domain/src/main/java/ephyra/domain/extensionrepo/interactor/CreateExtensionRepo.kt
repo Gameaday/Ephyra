@@ -13,18 +13,6 @@ class CreateExtensionRepo(
     private val service: ExtensionRepoService,
 ) {
 
-    companion object {
-        /**
-         * The official Mihon extension repository, hosted by Keiyoushi (the
-         * designated maintainer of the Mihon extension catalog). Users migrating
-         * from Mihon can add this with one tap (see the Add Repository dialog)
-         * to bridge their existing extension-based sources over; installed
-         * extensions load through the same sandboxed loader and merge into
-         * Ephyra's Smart Merge library pipeline.
-         */
-        const val OFFICIAL_MIHON_REPO_URL = "https://raw.githubusercontent.com/keiyoushi/extensions/repo"
-    }
-
     private val supportedIndexFiles = setOf(
         "index.min.json",
         "index.json",
@@ -36,42 +24,61 @@ class CreateExtensionRepo(
         val baseUrl = parseBaseUrl(indexUrl)
             ?: return Result.InvalidUrl
 
-        val normalizedBaseUrl = normalizeKnownRepoUrl(baseUrl)
-        return service.fetchRepoDetails(normalizedBaseUrl)?.let { insert(it) } ?: Result.InvalidUrl
+        return service.fetchRepoDetails(baseUrl)?.let { insert(it) } ?: Result.InvalidUrl
     }
 
     private fun parseBaseUrl(input: String): String? {
-        val formattedInput = input.toHttpUrlOrNull()
-            ?.newBuilder()
-            ?.query(null)
-            ?.fragment(null)
-            ?.build()
-            ?.toString()
-            ?.removeSuffix("/")
-            ?: return null
-
-        val suffix = supportedIndexFiles.firstOrNull { formattedInput.endsWith("/$it") }
-        if (suffix != null) {
-            return formattedInput.removeSuffix("/$suffix")
+        var rawInput = input.trim()
+        val schemes = listOf(
+            "tachiyomi://add-repo?url=",
+            "mihon://add-repo?url=",
+            "ephyra://add-repo?url=",
+            "tachiyomi://",
+            "mihon://",
+            "ephyra://",
+        )
+        for (scheme in schemes) {
+            if (rawInput.startsWith(scheme, ignoreCase = true)) {
+                val param = rawInput.substring(scheme.length)
+                val urlParam = if (scheme.contains("url=")) {
+                    param.substringBefore('&')
+                } else if (rawInput.contains("url=")) {
+                    rawInput.substringAfter("url=").substringBefore('&')
+                } else {
+                    param
+                }
+                rawInput = try {
+                    java.net.URLDecoder.decode(urlParam, java.nio.charset.StandardCharsets.UTF_8.name())
+                } catch (_: Exception) {
+                    urlParam
+                }
+                break
+            }
         }
 
-        val lastSegment = formattedInput.substringAfterLast('/', "")
-        if (lastSegment.contains('.')) {
+        if (!rawInput.startsWith("http://", ignoreCase = true) && !rawInput.startsWith("https://", ignoreCase = true)) {
+            rawInput = "https://$rawInput"
+        }
+
+        val httpUrl = rawInput.toHttpUrlOrNull() ?: return null
+        val cleanUrl = httpUrl.newBuilder()
+            .query(null)
+            .fragment(null)
+            .build()
+
+        val cleanUrlString = cleanUrl.toString().removeSuffix("/")
+
+        val suffix = supportedIndexFiles.firstOrNull { cleanUrlString.endsWith("/$it") }
+        if (suffix != null) {
+            return cleanUrlString.removeSuffix("/$suffix")
+        }
+
+        val lastPathSegment = cleanUrl.pathSegments.lastOrNull().orEmpty()
+        if (lastPathSegment.isNotEmpty() && lastPathSegment.contains('.')) {
             return null
         }
 
-        return formattedInput
-    }
-
-    private fun normalizeKnownRepoUrl(baseUrl: String): String {
-        val host = baseUrl.toHttpUrlOrNull()?.host.orEmpty()
-        if (host == "keiyoushi.github.io") {
-            return "https://raw.githubusercontent.com/keiyoushi/extensions/repo"
-        }
-        if (host == "mihonapp.github.io") {
-            return OFFICIAL_MIHON_REPO_URL
-        }
-        return baseUrl
+        return cleanUrlString
     }
 
     private suspend fun insert(repo: ExtensionRepo): Result {

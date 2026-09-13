@@ -14,7 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import ephyra.presentation.core.util.secondaryItemAlpha
-import ephyra.presentation.theme.TachiyomiPreviewTheme
+import ephyra.presentation.theme.EphyraPreviewTheme
 
 @Composable
 fun TextPreferenceWidget(
@@ -62,7 +62,7 @@ fun TextPreferenceWidget(
 @PreviewLightDark
 @Composable
 private fun TextPreferenceWidgetPreview() {
-    TachiyomiPreviewTheme {
+    EphyraPreviewTheme {
         Surface {
             Column {
                 TextPreferenceWidget(

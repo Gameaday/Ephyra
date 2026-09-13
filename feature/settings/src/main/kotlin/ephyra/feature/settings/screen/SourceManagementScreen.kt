@@ -1012,7 +1012,7 @@ private fun LinkScraperDialog(
 // Extensions
 private val SourceType.displayName: String
     get() = when (this) {
-        SourceType.LEGACY_EXTENSION -> "Legacy Extensions"
+        SourceType.LEGACY_EXTENSION -> "Remote Extensions"
         SourceType.JS_SCRAPER -> "JS Scrapers"
         SourceType.HEURISTIC -> "Heuristic Profiles"
         SourceType.REPOSITORY -> "Repositories"

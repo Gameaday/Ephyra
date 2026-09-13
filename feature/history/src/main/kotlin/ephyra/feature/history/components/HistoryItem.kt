@@ -29,7 +29,7 @@ import ephyra.presentation.core.components.MangaCover
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.formatChapterNumber
-import ephyra.presentation.theme.TachiyomiPreviewTheme
+import ephyra.presentation.theme.EphyraPreviewTheme
 
 private val HistoryItemHeight = 96.dp
 
@@ -109,7 +109,7 @@ private fun HistoryItemPreviews(
     @PreviewParameter(HistoryWithRelationsProvider::class)
     historyWithRelations: HistoryWithRelations,
 ) {
-    TachiyomiPreviewTheme {
+    EphyraPreviewTheme {
         Surface {
             HistoryItem(
                 history = historyWithRelations,

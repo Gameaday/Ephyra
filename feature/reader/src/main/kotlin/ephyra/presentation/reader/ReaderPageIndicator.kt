@@ -13,7 +13,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.sp
-import ephyra.presentation.theme.TachiyomiPreviewTheme
+import ephyra.presentation.theme.EphyraPreviewTheme
 
 @Composable
 fun ReaderPageIndicator(
@@ -54,7 +54,7 @@ fun ReaderPageIndicator(
 @PreviewLightDark
 @Composable
 private fun ReaderPageIndicatorPreview() {
-    TachiyomiPreviewTheme {
+    EphyraPreviewTheme {
         Surface {
             ReaderPageIndicator(currentPage = 10, totalPages = 69)
         }

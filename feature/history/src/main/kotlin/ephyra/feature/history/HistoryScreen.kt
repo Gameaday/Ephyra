@@ -42,7 +42,7 @@ import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.NavigationEvents
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.animateItemFastScroll
-import ephyra.presentation.theme.TachiyomiPreviewTheme
+import ephyra.presentation.theme.EphyraPreviewTheme
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filter
@@ -311,7 +311,7 @@ internal fun HistoryScreenPreviews(
     @PreviewParameter(HistoryViewModelStateProvider::class)
     historyState: HistoryViewModel.State,
 ) {
-    TachiyomiPreviewTheme {
+    EphyraPreviewTheme {
         HistoryScreen(
             state = historyState,
             snackbarHostState = SnackbarHostState(),

@@ -15,7 +15,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import ephyra.presentation.core.components.LabeledCheckbox
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
-import ephyra.presentation.theme.TachiyomiPreviewTheme
+import ephyra.presentation.theme.EphyraPreviewTheme
 
 @Composable
 fun HistoryDeleteDialog(
@@ -90,7 +90,7 @@ fun HistoryDeleteAllDialog(
 @PreviewLightDark
 @Composable
 private fun HistoryDeleteDialogPreview() {
-    TachiyomiPreviewTheme {
+    EphyraPreviewTheme {
         HistoryDeleteDialog(
             onDismissRequest = {},
             onDelete = {},

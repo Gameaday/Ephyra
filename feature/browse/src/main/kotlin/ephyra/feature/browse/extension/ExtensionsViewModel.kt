@@ -17,6 +17,7 @@ import ephyra.domain.content.source.interactor.UnifiedSource
 import ephyra.domain.content.source.interactor.UpdateCustomSource
 import ephyra.domain.extension.interactor.GetExtensionsByType
 import ephyra.domain.extension.model.Extension
+import ephyra.domain.extension.model.InstallStep
 import ephyra.domain.extension.service.ExtensionTranspiler
 import ephyra.domain.extensionrepo.interactor.CreateExtensionRepo
 import ephyra.domain.extensionrepo.interactor.DeleteExtensionRepo
@@ -43,7 +44,7 @@ class ExtensionsViewModel @Inject constructor(
     private val deleteExtensionRepo: DeleteExtensionRepo,
     private val updateExtensionRepo: UpdateExtensionRepo,
     private val getExtensionsByType: GetExtensionsByType,
-    private val legacyExtensionTranspiler: ExtensionTranspiler,
+    private val extensionTranspiler: ExtensionTranspiler,
     private val scraperUpdater: ScraperScriptUpdater,
     private val preferenceStore: PreferenceStore,
     private val sourcePreferences: SourcePreferences,
@@ -114,10 +115,10 @@ class ExtensionsViewModel @Inject constructor(
                     }.map { it.baseUrl }.toSet()
 
                     // Automatically update/re-transpile in the background!
-                    logcat(LogPriority.INFO) { "Updating legacy extension ${ext.name} to v${ext.versionName}" }
-                    val success = legacyExtensionTranspiler.transpileAndInstall(ext, previouslySelectedUrls)
+                    logcat(LogPriority.INFO) { "Updating extension ${ext.name} to v${ext.versionName}" }
+                    val success = extensionTranspiler.transpileAndInstall(ext, previouslySelectedUrls)
                     if (success) {
-                        updateState { it.copy(error = "Legacy source ${ext.name} updated to v${ext.versionName}") }
+                        updateState { it.copy(error = "Source ${ext.name} updated to v${ext.versionName}") }
                         loadSources()
                     }
                 }
@@ -169,12 +170,23 @@ class ExtensionsViewModel @Inject constructor(
     fun installExtension(extension: Extension.Available, selectedUrls: Set<String>? = null) {
         viewModelScope.launch {
             updateState { it.copy(isLoading = true) }
-            val success = legacyExtensionTranspiler.transpileAndInstall(extension, selectedUrls)
-            updateState { it.copy(isLoading = false) }
-            if (success) {
-                loadSources()
-            } else {
-                updateState { it.copy(error = "Failed to transpile and install extension") }
+            extensionManager.installExtension(extension).collect { step ->
+                when (step) {
+                    InstallStep.Pending, InstallStep.Downloading, InstallStep.Installing -> {
+                        updateState { it.copy(isLoading = true) }
+                    }
+                    InstallStep.Installed -> {
+                        updateState { it.copy(isLoading = false) }
+                        extensionManager.reloadExtensions()
+                        loadSources()
+                    }
+                    InstallStep.Error -> {
+                        updateState { it.copy(isLoading = false, error = "Failed to install ${extension.name}") }
+                    }
+                    InstallStep.Idle -> {
+                        updateState { it.copy(isLoading = false) }
+                    }
+                }
             }
         }
     }
@@ -191,13 +203,48 @@ class ExtensionsViewModel @Inject constructor(
             }
 
             // Clean up version tracking
-            legacyExtensionTranspiler.clearExtensionMetadata(extension.pkgName)
+            extensionTranspiler.clearExtensionMetadata(extension.pkgName)
 
-            // Ensure APK is also uninstalled if it was an installed APK
+            // Ensure APK is uninstalled from sandboxed private storage
             extensionManager.uninstallExtensionByPkgName(extension.pkgName)
+            extensionManager.reloadExtensions()
 
             updateState { it.copy(isLoading = false) }
             loadSources()
+        }
+    }
+
+    fun uninstallInstalledExtension(extension: Extension.Installed) {
+        viewModelScope.launch {
+            updateState { it.copy(isLoading = true) }
+            extensionManager.uninstallExtension(extension)
+            extensionManager.reloadExtensions()
+            updateState { it.copy(isLoading = false) }
+            loadSources()
+        }
+    }
+
+    fun updateExtension(extension: Extension.Installed) {
+        viewModelScope.launch {
+            updateState { it.copy(isLoading = true) }
+            extensionManager.updateExtension(extension).collect { step ->
+                when (step) {
+                    InstallStep.Pending, InstallStep.Downloading, InstallStep.Installing -> {
+                        updateState { it.copy(isLoading = true) }
+                    }
+                    InstallStep.Installed -> {
+                        updateState { it.copy(isLoading = false) }
+                        extensionManager.reloadExtensions()
+                        loadSources()
+                    }
+                    InstallStep.Error -> {
+                        updateState { it.copy(isLoading = false, error = "Failed to update ${extension.name}") }
+                    }
+                    InstallStep.Idle -> {
+                        updateState { it.copy(isLoading = false) }
+                    }
+                }
+            }
         }
     }
 
@@ -382,7 +429,15 @@ class ExtensionsViewModel @Inject constructor(
             is ExtensionsScreenEvent.RemoveSource -> removeSource(event.baseUrl)
             is ExtensionsScreenEvent.Search -> search(event.query)
             is ExtensionsScreenEvent.TrustExtension -> trustExtension(event.extension)
-            is ExtensionsScreenEvent.UninstallFailedExtension -> uninstallFailedExtension(event.pkgName)
+            is ExtensionsScreenEvent.UninstallFailedExtension -> {
+                viewModelScope.launch {
+                    extensionManager.uninstallExtensionByPkgName(event.pkgName)
+                    extensionManager.reloadExtensions()
+                    loadSources()
+                }
+            }
+            is ExtensionsScreenEvent.UpdateExtension -> updateExtension(event.extension)
+            is ExtensionsScreenEvent.UninstallInstalledExtension -> uninstallInstalledExtension(event.extension)
             ExtensionsScreenEvent.ClearError -> clearError()
         }
     }
@@ -421,6 +476,8 @@ sealed interface ExtensionsScreenEvent {
     data class Search(val query: String?) : ExtensionsScreenEvent
     data class TrustExtension(val extension: Extension.Untrusted) : ExtensionsScreenEvent
     data class UninstallFailedExtension(val pkgName: String) : ExtensionsScreenEvent
+    data class UpdateExtension(val extension: Extension.Installed) : ExtensionsScreenEvent
+    data class UninstallInstalledExtension(val extension: Extension.Installed) : ExtensionsScreenEvent
     data object ClearError : ExtensionsScreenEvent
 }
 

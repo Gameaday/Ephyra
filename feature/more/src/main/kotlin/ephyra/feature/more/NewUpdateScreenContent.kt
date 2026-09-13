@@ -19,7 +19,7 @@ import ephyra.feature.manga.presentation.components.MarkdownRender
 import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.screens.InfoScreen
-import ephyra.presentation.theme.TachiyomiPreviewTheme
+import ephyra.presentation.theme.EphyraPreviewTheme
 import org.intellij.markdown.flavours.gfm.GFMFlavourDescriptor
 
 @Composable
@@ -64,7 +64,7 @@ fun NewUpdateScreen(
 @PreviewLightDark
 @Composable
 private fun NewUpdateScreenPreview() {
-    TachiyomiPreviewTheme {
+    EphyraPreviewTheme {
         NewUpdateScreen(
             versionName = "v0.99.9",
             changelogInfo = """

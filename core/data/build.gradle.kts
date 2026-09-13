@@ -16,7 +16,7 @@ android {
         buildConfigField("String", "COMMIT_SHA", "\"${getGitSha()}\"")
         buildConfigField("String", "BUILD_TIME", "\"${getBuildTime(useLastCommitTime = false)}\"")
         buildConfigField("String", "APPLICATION_ID", "\"app.ephyra\"")
-        buildConfigField("String", "VERSION_NAME", "\"0.20.0\"")
+        buildConfigField("String", "VERSION_NAME", "\"0.21.0\"")
     }
 
     buildFeatures {

@@ -8,13 +8,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.EmptyScreenAction
-import ephyra.presentation.theme.TachiyomiPreviewTheme
+import ephyra.presentation.theme.EphyraPreviewTheme
 import kotlinx.collections.immutable.persistentListOf
 
 @PreviewLightDark
 @Composable
 private fun NoActionPreview() {
-    TachiyomiPreviewTheme {
+    EphyraPreviewTheme {
         Surface {
             EmptyScreen(
                 stringRes = ephyra.app.core.common.R.string.empty_screen,
@@ -26,7 +26,7 @@ private fun NoActionPreview() {
 @PreviewLightDark
 @Composable
 private fun WithActionPreview() {
-    TachiyomiPreviewTheme {
+    EphyraPreviewTheme {
         Surface {
             EmptyScreen(
                 stringRes = ephyra.app.core.common.R.string.empty_screen,
