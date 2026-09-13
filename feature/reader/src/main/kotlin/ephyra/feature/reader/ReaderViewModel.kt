@@ -36,8 +36,8 @@ import ephyra.domain.download.model.Download
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.download.service.DownloadPreferences
 import ephyra.domain.history.interactor.GetNextChapters
-import ephyra.domain.history.interactor.UpsertHistory
 import ephyra.domain.history.model.HistoryUpdate
+import ephyra.domain.history.repository.HistoryRepository
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.interactor.SetMangaViewerFlags
@@ -97,7 +97,7 @@ class ReaderViewModel @Inject constructor(
     private val getManga: GetManga,
     private val getChaptersByMangaId: GetChaptersByMangaId,
     private val getNextChapters: GetNextChapters,
-    private val upsertHistory: UpsertHistory,
+    private val historyRepository: HistoryRepository,
     private val updateChapter: UpdateChapter,
     private val setMangaViewerFlags: SetMangaViewerFlags,
     private val getIncognitoState: GetIncognitoState,
@@ -794,7 +794,7 @@ class ReaderViewModel @Inject constructor(
             val endTime = Date()
             val sessionReadDuration = chapterReadStartTime?.let { endTime.time - it } ?: 0
 
-            upsertHistory.await(HistoryUpdate(chapterId, endTime, sessionReadDuration))
+            historyRepository.upsertHistory(HistoryUpdate(chapterId, endTime, sessionReadDuration))
             chapterReadStartTime = null
         }
     }

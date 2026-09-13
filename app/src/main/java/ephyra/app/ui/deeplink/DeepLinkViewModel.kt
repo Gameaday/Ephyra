@@ -4,9 +4,9 @@ import androidx.compose.runtime.Immutable
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.util.lang.launchIO
-import ephyra.domain.chapter.interactor.GetChapterByUrlAndMangaId
 import ephyra.domain.chapter.interactor.SyncChaptersWithSource
 import ephyra.domain.chapter.model.Chapter
+import ephyra.domain.chapter.repository.ChapterRepository
 import ephyra.domain.manga.interactor.NetworkToLocalManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.toDomainManga
@@ -23,7 +23,7 @@ import javax.inject.Inject
 class DeepLinkViewModel @Inject constructor(
     private val sourceManager: SourceManager,
     private val networkToLocalManga: NetworkToLocalManga,
-    private val getChapterByUrlAndMangaId: GetChapterByUrlAndMangaId,
+    private val chapterRepository: ChapterRepository,
     private val syncChaptersWithSource: SyncChaptersWithSource,
 ) : BaseUdfViewModel<DeepLinkViewModel.State, DeepLinkViewModel.Event, DeepLinkViewModel.Effect>(State.Loading) {
 
@@ -70,7 +70,9 @@ class DeepLinkViewModel @Inject constructor(
     }
 
     private suspend fun getChapterFromSChapter(sChapter: SChapter, manga: Manga, source: Source): Chapter? {
-        val localChapter = getChapterByUrlAndMangaId.await(sChapter.url, manga.id)
+        val localChapter = runCatching {
+            chapterRepository.getChapterByUrlAndMangaId(sChapter.url, manga.id)
+        }.getOrNull()
 
         return if (localChapter == null) {
             val sourceChapters = source.getChapterList(manga.toSManga())

@@ -4,10 +4,10 @@ import app.cash.turbine.test
 import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.category.interactor.SetMangaCategories
 import ephyra.domain.chapter.model.Chapter
-import ephyra.domain.history.interactor.GetHistory
 import ephyra.domain.history.interactor.GetNextChapters
 import ephyra.domain.history.interactor.RemoveHistory
 import ephyra.domain.history.model.HistoryWithRelations
+import ephyra.domain.history.repository.HistoryRepository
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.interactor.GetDuplicateLibraryManga
 import ephyra.domain.manga.interactor.GetManga
@@ -36,7 +36,7 @@ class HistoryViewModelTest {
     private val addTracks: AddTracks = mockk(relaxed = true)
     private val getCategories: GetCategories = mockk(relaxed = true)
     private val getDuplicateLibraryManga: GetDuplicateLibraryManga = mockk(relaxed = true)
-    private val getHistory: GetHistory = mockk(relaxed = true)
+    private val historyRepository: HistoryRepository = mockk(relaxed = true)
     private val getManga: GetManga = mockk(relaxed = true)
     private val getNextChapters: GetNextChapters = mockk(relaxed = true)
     private val libraryPreferences: LibraryPreferences = mockk(relaxed = true)
@@ -51,7 +51,7 @@ class HistoryViewModelTest {
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        every { getHistory.subscribe(any()) } returns historyFlow
+        every { historyRepository.getHistory(any()) } returns historyFlow
     }
 
     @AfterEach
@@ -64,7 +64,7 @@ class HistoryViewModelTest {
             addTracks = addTracks,
             getCategories = getCategories,
             getDuplicateLibraryManga = getDuplicateLibraryManga,
-            getHistory = getHistory,
+            historyRepository = historyRepository,
             getManga = getManga,
             getNextChapters = getNextChapters,
             libraryPreferences = libraryPreferences,

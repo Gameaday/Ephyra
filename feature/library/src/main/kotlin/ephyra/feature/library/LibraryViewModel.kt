@@ -18,10 +18,9 @@ import ephyra.domain.base.BasePreferences
 import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.category.interactor.SetMangaCategories
 import ephyra.domain.category.model.Category
-import ephyra.domain.chapter.interactor.GetBookmarkedChaptersByMangaId
-import ephyra.domain.chapter.interactor.GetChaptersByMangaId
 import ephyra.domain.chapter.interactor.SetReadStatus
 import ephyra.domain.chapter.model.Chapter
+import ephyra.domain.chapter.repository.ChapterRepository
 import ephyra.domain.content.model.ContentType
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.history.interactor.GetNextChapters
@@ -103,8 +102,7 @@ class LibraryViewModel @Inject constructor(
     private val getCategories: GetCategories,
     private val getTracksPerManga: GetTracksPerManga,
     private val getNextChapters: GetNextChapters,
-    private val getChaptersByMangaId: GetChaptersByMangaId,
-    private val getBookmarkedChaptersByMangaId: GetBookmarkedChaptersByMangaId,
+    private val chapterRepository: ChapterRepository,
     private val setReadStatus: SetReadStatus,
     private val updateManga: UpdateManga,
     private val setMangaCategories: SetMangaCategories,
@@ -587,7 +585,7 @@ class LibraryViewModel @Inject constructor(
     }
 
     suspend fun getNextUnreadChapter(manga: Manga): Chapter? {
-        return getChaptersByMangaId.await(
+        return chapterRepository.getChapterByMangaId(
             manga.id,
             applyScanlatorFilter = true,
         ).getNextUnread(manga, downloadManager, preferences)
@@ -683,7 +681,7 @@ class LibraryViewModel @Inject constructor(
             // that a chapter already on disk is never mistakenly re-downloaded on a cold start.
             downloadManager.awaitCacheReady()
             mangas.forEach { manga ->
-                val chapters = getBookmarkedChaptersByMangaId.await(manga.id)
+                val chapters = chapterRepository.getBookmarkedChaptersByMangaId(manga.id)
                     .filterNot { chapter ->
                         downloadManager.getQueuedDownloadOrNull(chapter.id) != null ||
                             downloadManager.isChapterDownloaded(

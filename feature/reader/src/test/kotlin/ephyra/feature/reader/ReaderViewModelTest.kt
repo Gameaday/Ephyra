@@ -13,7 +13,7 @@ import ephyra.domain.chapter.service.ChapterCache
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.download.service.DownloadPreferences
 import ephyra.domain.history.interactor.GetNextChapters
-import ephyra.domain.history.interactor.UpsertHistory
+import ephyra.domain.history.repository.HistoryRepository
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.interactor.SetMangaViewerFlags
@@ -59,7 +59,7 @@ class ReaderViewModelTest {
     private val getManga: GetManga = mockk(relaxed = true)
     private val getChaptersByMangaId: GetChaptersByMangaId = mockk(relaxed = true)
     private val getNextChapters: GetNextChapters = mockk(relaxed = true)
-    private val upsertHistory: UpsertHistory = mockk(relaxed = true)
+    private val historyRepository: HistoryRepository = mockk(relaxed = true)
     private val updateChapter: UpdateChapter = mockk(relaxed = true)
     private val setMangaViewerFlags: SetMangaViewerFlags = mockk(relaxed = true)
     private val getIncognitoState: GetIncognitoState = mockk(relaxed = true)
@@ -106,7 +106,7 @@ class ReaderViewModelTest {
             getManga = getManga,
             getChaptersByMangaId = getChaptersByMangaId,
             getNextChapters = getNextChapters,
-            upsertHistory = upsertHistory,
+            historyRepository = historyRepository,
             updateChapter = updateChapter,
             setMangaViewerFlags = setMangaViewerFlags,
             getIncognitoState = getIncognitoState,

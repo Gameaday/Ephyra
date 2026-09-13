@@ -2,11 +2,11 @@ package ephyra.data.backup
 
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import ephyra.domain.backup.model.Backup
-import ephyra.domain.backup.model.BackupCategory
-import ephyra.domain.backup.model.BackupChapter
-import ephyra.domain.backup.model.BackupManga
-import ephyra.domain.backup.model.BackupSource
+import ephyra.data.backup.models.Backup
+import ephyra.data.backup.models.BackupCategory
+import ephyra.data.backup.models.BackupChapter
+import ephyra.data.backup.models.BackupManga
+import ephyra.data.backup.models.BackupSource
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.protobuf.ProtoBuf
 import org.junit.Assert.assertEquals

@@ -1,18 +1,17 @@
 package ephyra.data.backup.restore.restorers
 
 import androidx.room.withTransaction
+import ephyra.data.backup.models.BackupCategory
+import ephyra.data.backup.models.BackupChapter
+import ephyra.data.backup.models.BackupHistory
+import ephyra.data.backup.models.BackupManga
+import ephyra.data.backup.models.BackupTracking
 import ephyra.data.room.EphyraDatabase
-import ephyra.domain.backup.model.BackupCategory
-import ephyra.domain.backup.model.BackupChapter
-import ephyra.domain.backup.model.BackupHistory
-import ephyra.domain.backup.model.BackupManga
-import ephyra.domain.backup.model.BackupTracking
 import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.model.toChapterUpdate
 import ephyra.domain.chapter.repository.ChapterRepository
-import ephyra.domain.history.interactor.UpsertHistory
 import ephyra.domain.history.model.HistoryUpdate
 import ephyra.domain.history.repository.HistoryRepository
 import ephyra.domain.manga.interactor.FetchInterval
@@ -37,7 +36,6 @@ class MangaRestorer(
     private val mangaRepository: MangaRepository,
     private val chapterRepository: ChapterRepository,
     private val historyRepository: HistoryRepository,
-    private val upsertHistory: UpsertHistory,
     private val getCategories: GetCategories,
     private val getMangaByUrlAndSourceId: GetMangaByUrlAndSourceId,
     private val getChaptersByMangaId: GetChaptersByMangaId,
@@ -248,7 +246,7 @@ class MangaRestorer(
         }
 
         updates.forEach { entry ->
-            upsertHistory.await(
+            historyRepository.upsertHistory(
                 HistoryUpdate(
                     chapterId = entry.chapterId,
                     readAt = entry.readAt ?: Date(0),

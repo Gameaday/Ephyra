@@ -1,6 +1,6 @@
 package ephyra.data.backup.restore.restorers
 
-import ephyra.domain.backup.model.BackupExtensionRepos
+import ephyra.data.backup.models.BackupExtensionRepos
 import ephyra.domain.extensionrepo.interactor.GetExtensionRepo
 import ephyra.domain.extensionrepo.repository.ExtensionRepoRepository
 

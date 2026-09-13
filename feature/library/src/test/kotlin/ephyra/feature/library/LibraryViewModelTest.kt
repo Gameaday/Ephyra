@@ -8,9 +8,8 @@ import ephyra.domain.base.BasePreferences
 import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.category.interactor.SetMangaCategories
 import ephyra.domain.category.model.Category
-import ephyra.domain.chapter.interactor.GetBookmarkedChaptersByMangaId
-import ephyra.domain.chapter.interactor.GetChaptersByMangaId
 import ephyra.domain.chapter.interactor.SetReadStatus
+import ephyra.domain.chapter.repository.ChapterRepository
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.history.interactor.GetNextChapters
 import ephyra.domain.library.model.LibraryManga
@@ -50,8 +49,7 @@ class LibraryViewModelTest {
     private val getCategories: GetCategories = mockk(relaxed = true)
     private val getTracksPerManga: GetTracksPerManga = mockk(relaxed = true)
     private val getNextChapters: GetNextChapters = mockk(relaxed = true)
-    private val getChaptersByMangaId: GetChaptersByMangaId = mockk(relaxed = true)
-    private val getBookmarkedChaptersByMangaId: GetBookmarkedChaptersByMangaId = mockk(relaxed = true)
+    private val chapterRepository: ChapterRepository = mockk(relaxed = true)
     private val setReadStatus: SetReadStatus = mockk(relaxed = true)
     private val updateManga: UpdateManga = mockk(relaxed = true)
     private val setMangaCategories: SetMangaCategories = mockk(relaxed = true)
@@ -135,8 +133,7 @@ class LibraryViewModelTest {
             getCategories = getCategories,
             getTracksPerManga = getTracksPerManga,
             getNextChapters = getNextChapters,
-            getChaptersByMangaId = getChaptersByMangaId,
-            getBookmarkedChaptersByMangaId = getBookmarkedChaptersByMangaId,
+            chapterRepository = chapterRepository,
             setReadStatus = setReadStatus,
             updateManga = updateManga,
             setMangaCategories = setMangaCategories,

@@ -109,9 +109,7 @@ import ephyra.domain.category.repository.CategoryRepository
 import ephyra.domain.chapter.interactor.FilterChaptersForDownload
 import ephyra.domain.chapter.interactor.GenerateAuthorityChapters
 import ephyra.domain.chapter.interactor.GetAvailableScanlators
-import ephyra.domain.chapter.interactor.GetBookmarkedChaptersByMangaId
 import ephyra.domain.chapter.interactor.GetChapter
-import ephyra.domain.chapter.interactor.GetChapterByUrlAndMangaId
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
 import ephyra.domain.chapter.interactor.SetMangaDefaultChapterFlags
 import ephyra.domain.chapter.interactor.SetReadStatus
@@ -143,12 +141,10 @@ import ephyra.domain.extensionrepo.interactor.ReplaceExtensionRepo
 import ephyra.domain.extensionrepo.interactor.UpdateExtensionRepo
 import ephyra.domain.extensionrepo.repository.ExtensionRepoRepository
 import ephyra.domain.extensionrepo.service.ExtensionRepoService
-import ephyra.domain.history.interactor.GetHistory
 import ephyra.domain.history.interactor.GetNextChapters
 import ephyra.domain.history.interactor.GetTotalReadDuration
 import ephyra.domain.history.interactor.RemoveHistory
 import ephyra.domain.history.interactor.RemoveResettedHistory
-import ephyra.domain.history.interactor.UpsertHistory
 import ephyra.domain.history.repository.HistoryRepository
 import ephyra.domain.jellyfin.interactor.SyncJellyfin
 import ephyra.domain.library.service.LibraryPreferences
@@ -805,11 +801,11 @@ object AppModule {
     @Singleton
     fun provideMangaBackupCreator(
         getCategories: GetCategories,
-        getHistory: GetHistory,
+        historyRepository: HistoryRepository,
         getChaptersByMangaId: GetChaptersByMangaId,
         getTracks: GetTracks,
         getExcludedScanlators: GetExcludedScanlators,
-    ) = MangaBackupCreator(getCategories, getHistory, getChaptersByMangaId, getTracks, getExcludedScanlators)
+    ) = MangaBackupCreator(getCategories, historyRepository, getChaptersByMangaId, getTracks, getExcludedScanlators)
 
     @Provides
     @Singleton
@@ -896,7 +892,6 @@ object AppModule {
         mangaRepository: MangaRepository,
         chapterRepository: ChapterRepository,
         historyRepository: HistoryRepository,
-        upsertHistory: UpsertHistory,
         getCategories: GetCategories,
         getMangaByUrlAndSourceId: GetMangaByUrlAndSourceId,
         getChaptersByMangaId: GetChaptersByMangaId,
@@ -911,7 +906,6 @@ object AppModule {
         mangaRepository = mangaRepository,
         chapterRepository = chapterRepository,
         historyRepository = historyRepository,
-        upsertHistory = upsertHistory,
         getCategories = getCategories,
         getMangaByUrlAndSourceId = getMangaByUrlAndSourceId,
         getChaptersByMangaId = getChaptersByMangaId,
@@ -1206,14 +1200,14 @@ object AppModule {
         insertTrack: InsertTrack,
         syncChapterProgressWithTrack: SyncChapterProgressWithTrack,
         getChaptersByMangaId: GetChaptersByMangaId,
-        getHistory: GetHistory,
+        historyRepository: HistoryRepository,
         trackerManagerProvider: javax.inject.Provider<TrackerManager>,
         mangaRepository: MangaRepository,
     ) = AddTracks(
         insertTrack = insertTrack,
         syncChapterProgressWithTrack = syncChapterProgressWithTrack,
         getChaptersByMangaId = getChaptersByMangaId,
-        getHistory = getHistory,
+        historyRepository = historyRepository,
         trackerManagerProvider = { trackerManagerProvider.get() },
         mangaRepository = mangaRepository,
     )
@@ -1280,14 +1274,6 @@ object AppModule {
     fun provideGetChaptersByMangaId(chapterRepository: ChapterRepository) = GetChaptersByMangaId(chapterRepository)
 
     @Provides
-    fun provideGetBookmarkedChaptersByMangaId(chapterRepository: ChapterRepository) =
-        GetBookmarkedChaptersByMangaId(chapterRepository)
-
-    @Provides
-    fun provideGetChapterByUrlAndMangaId(chapterRepository: ChapterRepository) =
-        GetChapterByUrlAndMangaId(chapterRepository)
-
-    @Provides
     fun provideUpdateChapter(chapterRepository: ChapterRepository) = UpdateChapter(chapterRepository)
 
     @Provides
@@ -1340,12 +1326,6 @@ object AppModule {
     @Provides
     fun provideGenerateAuthorityChapters(chapterRepository: ChapterRepository) =
         GenerateAuthorityChapters(chapterRepository)
-
-    @Provides
-    fun provideGetHistory(historyRepository: HistoryRepository) = GetHistory(historyRepository)
-
-    @Provides
-    fun provideUpsertHistory(historyRepository: HistoryRepository) = UpsertHistory(historyRepository)
 
     @Provides
     fun provideRemoveHistory(historyRepository: HistoryRepository) = RemoveHistory(historyRepository)

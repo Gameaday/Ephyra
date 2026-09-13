@@ -7,7 +7,5 @@ val migrations: List<Migration>
         SetupBackupCreateMigration(),
         SetupLibraryUpdateMigration(),
         SetupDefaultStorageMigration(),
-        TrustExtensionRepositoryMigration(),
-        CategoryPreferencesCleanupMigration(),
         CleanupContaminatedLanguagesMigration(),
     )

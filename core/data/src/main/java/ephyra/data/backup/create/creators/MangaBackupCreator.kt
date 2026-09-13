@@ -1,14 +1,14 @@
 package ephyra.data.backup.create.creators
 
 import ephyra.data.backup.create.BackupOptions
-import ephyra.domain.backup.model.BackupChapter
-import ephyra.domain.backup.model.BackupHistory
-import ephyra.domain.backup.model.BackupManga
-import ephyra.domain.backup.model.toBackupChapter
-import ephyra.domain.backup.model.toBackupTracking
+import ephyra.data.backup.models.BackupChapter
+import ephyra.data.backup.models.BackupHistory
+import ephyra.data.backup.models.BackupManga
+import ephyra.data.backup.models.toBackupChapter
+import ephyra.data.backup.models.toBackupTracking
 import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
-import ephyra.domain.history.interactor.GetHistory
+import ephyra.domain.history.repository.HistoryRepository
 import ephyra.domain.manga.interactor.GetExcludedScanlators
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.reader.model.ReadingMode
@@ -16,7 +16,7 @@ import ephyra.domain.track.interactor.GetTracks
 
 class MangaBackupCreator(
     private val getCategories: GetCategories,
-    private val getHistory: GetHistory,
+    private val historyRepository: HistoryRepository,
     private val getChaptersByMangaId: GetChaptersByMangaId,
     private val getTracks: GetTracks,
     private val getExcludedScanlators: GetExcludedScanlators,
@@ -55,7 +55,7 @@ class MangaBackupCreator(
         }
 
         if (options.history) {
-            val historyByMangaId = getHistory.await(manga.id)
+            val historyByMangaId = historyRepository.getHistoryByMangaId(manga.id)
             if (historyByMangaId.isNotEmpty()) {
                 val chaptersById = getChaptersByMangaId.await(manga.id, applyScanlatorFilter = false)
                     .associateBy { it.id }

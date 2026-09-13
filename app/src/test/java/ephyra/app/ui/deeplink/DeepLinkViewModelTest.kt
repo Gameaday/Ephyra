@@ -1,9 +1,9 @@
 package ephyra.app.ui.deeplink
 
 import app.cash.turbine.test
-import ephyra.domain.chapter.interactor.GetChapterByUrlAndMangaId
 import ephyra.domain.chapter.interactor.SyncChaptersWithSource
 import ephyra.domain.chapter.model.Chapter
+import ephyra.domain.chapter.repository.ChapterRepository
 import ephyra.domain.manga.interactor.NetworkToLocalManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.model.StubSource
@@ -50,7 +50,7 @@ class DeepLinkViewModelTest {
     }
 
     private val networkToLocalManga: NetworkToLocalManga = mockk(relaxed = true)
-    private val getChapterByUrlAndMangaId: GetChapterByUrlAndMangaId = mockk(relaxed = true)
+    private val chapterRepository: ChapterRepository = mockk(relaxed = true)
     private val syncChaptersWithSource: SyncChaptersWithSource = mockk(relaxed = true)
 
     private val testDispatcher = UnconfinedTestDispatcher()
@@ -69,7 +69,7 @@ class DeepLinkViewModelTest {
     private fun createViewModel() = DeepLinkViewModel(
         sourceManager = fakeSourceManager,
         networkToLocalManga = networkToLocalManga,
-        getChapterByUrlAndMangaId = getChapterByUrlAndMangaId,
+        chapterRepository = chapterRepository,
         syncChaptersWithSource = syncChaptersWithSource,
     )
 
@@ -142,7 +142,7 @@ class DeepLinkViewModelTest {
         coEvery { mockSource.getManga("https://source.com/chapter/100") } returns mockSManga
         coEvery { mockSource.getChapter("https://source.com/chapter/100") } returns mockSChapter
         coEvery { networkToLocalManga.invoke(any<Manga>()) } returns mockManga
-        coEvery { getChapterByUrlAndMangaId.await("/chapter/100", 42L) } returns mockChapter
+        coEvery { chapterRepository.getChapterByUrlAndMangaId("/chapter/100", 42L) } returns mockChapter
         testCatalogueSources = listOf(mockSource)
 
         val viewModel = createViewModel()

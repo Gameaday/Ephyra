@@ -3,14 +3,13 @@ package ephyra.data.backup
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import ephyra.data.backup.models.BackupManga
+import ephyra.data.backup.models.BackupTracking
 import ephyra.data.backup.restore.restorers.MangaRestorer
 import ephyra.data.room.EphyraDatabase
-import ephyra.domain.backup.model.BackupManga
-import ephyra.domain.backup.model.BackupTracking
 import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
 import ephyra.domain.chapter.repository.ChapterRepository
-import ephyra.domain.history.interactor.UpsertHistory
 import ephyra.domain.history.repository.HistoryRepository
 import ephyra.domain.manga.interactor.FetchInterval
 import ephyra.domain.manga.interactor.GetExcludedScanlators
@@ -40,7 +39,6 @@ class MangaRestorerTest {
     private val mangaRepository = mockk<MangaRepository>(relaxed = true)
     private val chapterRepository = mockk<ChapterRepository>(relaxed = true)
     private val historyRepository = mockk<HistoryRepository>(relaxed = true)
-    private val upsertHistory = mockk<UpsertHistory>(relaxed = true)
     private val getCategories = mockk<GetCategories>(relaxed = true)
     private val getMangaByUrlAndSourceId = mockk<GetMangaByUrlAndSourceId>(relaxed = true)
     private val getChaptersByMangaId = mockk<GetChaptersByMangaId>(relaxed = true)
@@ -65,7 +63,6 @@ class MangaRestorerTest {
             mangaRepository = mangaRepository,
             chapterRepository = chapterRepository,
             historyRepository = historyRepository,
-            upsertHistory = upsertHistory,
             getCategories = getCategories,
             getMangaByUrlAndSourceId = getMangaByUrlAndSourceId,
             getChaptersByMangaId = getChaptersByMangaId,

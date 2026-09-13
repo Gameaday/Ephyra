@@ -44,7 +44,7 @@ class AddTracksTest {
             insertTrack = mockk<InsertTrack>(),
             syncChapterProgressWithTrack = mockk<SyncChapterProgressWithTrack>(),
             getChaptersByMangaId = mockk<GetChaptersByMangaId>(),
-            getHistory = mockk(relaxed = true),
+            historyRepository = mockk(relaxed = true),
             trackerManagerProvider = { mockk(relaxed = true) },
             mangaRepository = mangaRepository,
         )

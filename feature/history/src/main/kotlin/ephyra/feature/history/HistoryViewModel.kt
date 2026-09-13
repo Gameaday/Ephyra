@@ -14,10 +14,10 @@ import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.category.interactor.SetMangaCategories
 import ephyra.domain.category.model.Category
 import ephyra.domain.chapter.model.Chapter
-import ephyra.domain.history.interactor.GetHistory
 import ephyra.domain.history.interactor.GetNextChapters
 import ephyra.domain.history.interactor.RemoveHistory
 import ephyra.domain.history.model.HistoryWithRelations
+import ephyra.domain.history.repository.HistoryRepository
 import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.interactor.GetDuplicateLibraryManga
 import ephyra.domain.manga.interactor.GetManga
@@ -44,7 +44,7 @@ class HistoryViewModel @Inject constructor(
     private val addTracks: AddTracks,
     private val getCategories: GetCategories,
     private val getDuplicateLibraryManga: GetDuplicateLibraryManga,
-    private val getHistory: GetHistory,
+    private val historyRepository: HistoryRepository,
     private val getManga: GetManga,
     private val getNextChapters: GetNextChapters,
     private val libraryPreferences: LibraryPreferences,
@@ -60,7 +60,7 @@ class HistoryViewModel @Inject constructor(
         viewModelScope.launch {
             state.map { it.searchQuery }
                 .searchResults(debounce = 0L) { query ->
-                    getHistory.subscribe(query)
+                    historyRepository.getHistory(query)
                         .distinctUntilChanged()
                         .catch { error ->
                             logcat(LogPriority.ERROR, error)

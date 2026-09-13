@@ -6,7 +6,7 @@ import ephyra.core.common.util.lang.withNonCancellableContext
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
 import ephyra.domain.content.model.ContentType
-import ephyra.domain.history.interactor.GetHistory
+import ephyra.domain.history.repository.HistoryRepository
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaUpdate
 import ephyra.domain.manga.model.mergedAlternativeTitles
@@ -24,7 +24,7 @@ class AddTracks(
     private val insertTrack: InsertTrack,
     private val syncChapterProgressWithTrack: SyncChapterProgressWithTrack,
     private val getChaptersByMangaId: GetChaptersByMangaId,
-    private val getHistory: GetHistory,
+    private val historyRepository: HistoryRepository,
     private val trackerManagerProvider: () -> TrackerManager,
     private val mangaRepository: MangaRepository,
 ) {
@@ -68,7 +68,7 @@ class AddTracks(
                 }
 
                 if (currentTrack.startDate <= 0) {
-                    val firstReadChapterDate = getHistory.await(mangaId)
+                    val firstReadChapterDate = historyRepository.getHistoryByMangaId(mangaId)
                         .sortedBy { it.readAt }
                         .firstOrNull()
                         ?.readAt
