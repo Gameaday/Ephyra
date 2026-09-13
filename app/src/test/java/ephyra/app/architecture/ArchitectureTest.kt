@@ -4,6 +4,8 @@ import com.tngtech.archunit.core.domain.JavaModifier
 import com.tngtech.archunit.core.importer.ClassFileImporter
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noFields
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noMethods
 import org.junit.jupiter.api.Test
 
 class ArchitectureTest {
@@ -139,5 +141,35 @@ class ArchitectureTest {
             )
 
         rule.check(classes)
+    }
+
+    /**
+     * Immutable UI State Rule:
+     * ViewModels must only expose read-only state (StateFlow, SharedFlow),
+     * never mutable types (MutableStateFlow, MutableSharedFlow) publicly.
+     */
+    @Test
+    fun `viewmodels must not expose mutable state publicly`() {
+        val classes = ClassFileImporter().importPackages(
+            "ephyra.app",
+            "ephyra.feature",
+            "ephyra.presentation",
+        )
+
+        val methodsRule = noMethods()
+            .that().areDeclaredInClassesThat().areAssignableTo("androidx.lifecycle.ViewModel")
+            .and().haveModifier(JavaModifier.PUBLIC)
+            .and().doNotHaveModifier(JavaModifier.SYNTHETIC)
+            .should().haveRawReturnType("kotlinx.coroutines.flow.MutableStateFlow")
+            .orShould().haveRawReturnType("kotlinx.coroutines.flow.MutableSharedFlow")
+
+        val fieldsRule = noFields()
+            .that().areDeclaredInClassesThat().areAssignableTo("androidx.lifecycle.ViewModel")
+            .and().haveModifier(JavaModifier.PUBLIC)
+            .should().haveRawType("kotlinx.coroutines.flow.MutableStateFlow")
+            .orShould().haveRawType("kotlinx.coroutines.flow.MutableSharedFlow")
+
+        methodsRule.check(classes)
+        fieldsRule.check(classes)
     }
 }
