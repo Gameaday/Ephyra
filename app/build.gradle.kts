@@ -2,7 +2,6 @@ import ephyra.buildlogic.Config
 import ephyra.buildlogic.getBuildTime
 import ephyra.buildlogic.getCommitCount
 import ephyra.buildlogic.getGitSha
-import ephyra.buildlogic.tasks.LocalesConfigTask
 
 plugins {
     id("ephyra.android.application")
@@ -59,12 +58,12 @@ android {
     }
 
     buildTypes {
-        val debug by getting {
+        val debug = getByName("debug") {
             applicationIdSuffix = ".dev"
             versionNameSuffix = "-${getCommitCount()}"
             isPseudoLocalesEnabled = true
         }
-        val release by getting {
+        val release = getByName("release") {
             isMinifyEnabled = Config.enableCodeShrink
             isShrinkResources = Config.enableCodeShrink
 
@@ -265,8 +264,6 @@ dependencies {
     implementation(androidx.biometricktx)
     implementation(androidx.corektx)
     implementation(androidx.splashscreen)
-    implementation(androidx.recyclerview)
-    implementation(androidx.viewpager)
     implementation(androidx.profileinstaller)
 
     implementation(androidx.bundles.lifecycle)
@@ -293,16 +290,9 @@ dependencies {
     // Image loading
     implementation(platform(libs.coil.bom))
     implementation(libs.bundles.coil)
-    implementation(libs.subsamplingscaleimageview) {
-        exclude(module = "image-decoder")
-    }
-    implementation(libs.image.decoder)
 
     // UI libraries
     implementation(libs.material)
-    implementation(libs.directionalviewpager) {
-        exclude(group = "androidx.viewpager", module = "viewpager")
-    }
 
     implementation(libs.aboutLibraries.compose)
     implementation(libs.compose.materialmotion)

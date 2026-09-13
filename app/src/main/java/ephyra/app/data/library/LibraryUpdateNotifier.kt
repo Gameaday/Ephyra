@@ -17,7 +17,6 @@ import ephyra.app.R
 import ephyra.app.data.notification.NotificationHandler
 import ephyra.app.data.notification.NotificationReceiver
 import ephyra.app.ui.main.MainActivity
-import ephyra.app.util.system.getBitmapOrNull
 import ephyra.core.common.Constants
 import ephyra.core.common.core.security.SecurityPreferences
 import ephyra.core.common.i18n.pluralStringResource
@@ -33,6 +32,7 @@ import ephyra.domain.library.model.LibraryManga
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.service.SourceManager
 import ephyra.presentation.core.util.formatChapterNumber
+import ephyra.presentation.core.util.system.getBitmapOrNull
 import eu.kanade.tachiyomi.source.UnmeteredSource
 import java.math.RoundingMode
 import java.text.NumberFormat

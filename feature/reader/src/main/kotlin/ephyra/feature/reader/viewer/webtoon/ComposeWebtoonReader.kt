@@ -1,13 +1,18 @@
 package ephyra.feature.reader.viewer.webtoon
 
+import android.graphics.PointF
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -35,6 +40,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -50,6 +56,7 @@ import ephyra.core.common.util.lang.withIOContext
 import ephyra.feature.reader.model.ChapterTransition
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
+import ephyra.feature.reader.viewer.ViewerNavigation
 import ephyra.presentation.core.data.coil.cropBorders
 import ephyra.presentation.reader.ChapterTransition
 import eu.kanade.tachiyomi.source.model.Page
@@ -123,9 +130,11 @@ fun ComposeWebtoonReader(
                         }
                     }
                     is ChapterTransition.Prev -> {
+                        viewer.onTransitionSelected(item)
                         item.to?.let(onRequestPreload)
                     }
                     is ChapterTransition.Next -> {
+                        viewer.onTransitionSelected(item)
                         item.to?.let(onRequestPreload)
                     }
                 }
@@ -145,18 +154,24 @@ fun ComposeWebtoonReader(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onTap = { offset ->
-                        val height = size.height
-                        val yRatio = offset.y / height
-                        when {
-                            yRatio in 0.33f..0.66f -> onToggleMenu()
-                            yRatio > 0.66f -> scope.launch { lazyListState.scrollBy(scrollDistance) }
-                            else -> scope.launch { lazyListState.scrollBy(-scrollDistance) }
+            .pointerInput(viewer) {
+                awaitEachGesture {
+                    val down = awaitFirstDown(pass = PointerEventPass.Initial, requireUnconsumed = false)
+                    val up = waitForUpOrCancellation(pass = PointerEventPass.Initial)
+                    if (up != null && (up.position - down.position).getDistance() < viewConfiguration.touchSlop) {
+                        val normX = if (size.width > 0) up.position.x / size.width else 0.5f
+                        val normY = if (size.height > 0) up.position.y / size.height else 0.5f
+                        when (viewer.config.navigator.getAction(PointF(normX, normY))) {
+                            ViewerNavigation.NavigationRegion.MENU -> onToggleMenu()
+                            ViewerNavigation.NavigationRegion.NEXT, ViewerNavigation.NavigationRegion.RIGHT -> {
+                                scope.launch { lazyListState.animateScrollBy(scrollDistance) }
+                            }
+                            ViewerNavigation.NavigationRegion.PREV, ViewerNavigation.NavigationRegion.LEFT -> {
+                                scope.launch { lazyListState.animateScrollBy(-scrollDistance) }
+                            }
                         }
-                    },
-                )
+                    }
+                }
             },
     ) {
         LazyColumn(
@@ -220,10 +235,18 @@ private fun WebtoonPageItem(
         }
     }
 
-    Box(
-        modifier = modifier
+    val itemModifier = if (page.aspectRatio != null) {
+        modifier
             .fillMaxWidth()
-            .wrapContentHeight(),
+            .aspectRatio(page.aspectRatio!!)
+    } else {
+        modifier
+            .fillMaxWidth()
+            .wrapContentHeight()
+    }
+
+    Box(
+        modifier = itemModifier,
         contentAlignment = Alignment.Center,
     ) {
         when (val currentStatus = status) {
@@ -289,12 +312,24 @@ private fun WebtoonPageItem(
             }
 
             Page.State.Ready -> {
-                val imageModel by produceState<Any?>(initialValue = page.mergedBitmap, page, page.mergedBitmap) {
-                    value = page.mergedBitmap ?: withIOContext {
-                        try {
-                            page.stream?.invoke()?.use { it.readBytes() }
-                        } catch (e: Exception) {
-                            null
+                val imageModel by produceState<Any?>(
+                    initialValue = page.mergedBitmap ?: page.cachedBytes,
+                    page,
+                    page.mergedBitmap,
+                ) {
+                    if (page.mergedBitmap != null) {
+                        value = page.mergedBitmap
+                    } else if (page.cachedBytes != null) {
+                        value = page.cachedBytes
+                    } else {
+                        value = withIOContext {
+                            try {
+                                page.stream?.invoke()?.use { it.readBytes() }?.also {
+                                    page.cachedBytes = it
+                                }
+                            } catch (e: Exception) {
+                                null
+                            }
                         }
                     }
                 }
@@ -314,14 +349,24 @@ private fun WebtoonPageItem(
                 } else if (imageModel != null) {
                     val context = LocalContext.current
                     AsyncImage(
-                        model = ImageRequest.Builder(context)
-                            .data(imageModel)
-                            .crossfade(true)
-                            .precision(Precision.EXACT)
-                            .cropBorders(cropBorders)
-                            .build(),
+                        model = remember(imageModel, cropBorders) {
+                            ImageRequest.Builder(context)
+                                .data(imageModel)
+                                .memoryCacheKey("page_${page.chapter.chapter.id}_${page.index}")
+                                .crossfade(false)
+                                .precision(Precision.EXACT)
+                                .cropBorders(cropBorders)
+                                .build()
+                        },
                         contentDescription = "Page ${page.number}",
                         contentScale = ContentScale.FillWidth,
+                        onSuccess = { result ->
+                            val img = result.result.image
+                            if (img.width > 0 && img.height > 0) {
+                                page.width = img.width
+                                page.height = img.height
+                            }
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .wrapContentHeight()

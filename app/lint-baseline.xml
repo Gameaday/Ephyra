@@ -2235,48 +2235,4 @@
             column="21"/>
     </issue>
 
-    <issue
-        id="ClickableViewAccessibility"
-        message="Custom view `Pager` overrides `onTouchEvent` but not `performClick`"
-        errorLine1="    override fun onTouchEvent(ev: MotionEvent): Boolean {"
-        errorLine2="                 ~~~~~~~~~~~~">
-        <location
-            file="src/main/kotlin/ephyra/feature/reader/viewer/pager/Pager.kt"
-            line="88"
-            column="18"/>
-    </issue>
-
-    <issue
-        id="ClickableViewAccessibility"
-        message="`ReaderButton#onTouchEvent` should call `ReaderButton#performClick` when a click is detected"
-        errorLine1="    override fun onTouchEvent(event: MotionEvent): Boolean {"
-        errorLine2="                 ~~~~~~~~~~~~">
-        <location
-            file="src/main/kotlin/ephyra/feature/reader/viewer/ReaderButton.kt"
-            line="22"
-            column="18"/>
-    </issue>
-
-    <issue
-        id="ClickableViewAccessibility"
-        message="`WebtoonRecyclerView#onTouchEvent` should call `WebtoonRecyclerView#performClick` when a click is detected"
-        errorLine1="    override fun onTouchEvent(e: MotionEvent): Boolean {"
-        errorLine2="                 ~~~~~~~~~~~~">
-        <location
-            file="src/main/kotlin/ephyra/feature/reader/viewer/webtoon/WebtoonRecyclerView.kt"
-            line="68"
-            column="18"/>
-    </issue>
-
-    <issue
-        id="ClickableViewAccessibility"
-        message="Custom view `WebtoonSubsamplingImageView` overrides `onTouchEvent` but not `performClick`"
-        errorLine1="    override fun onTouchEvent(event: MotionEvent): Boolean {"
-        errorLine2="                 ~~~~~~~~~~~~">
-        <location
-            file="src/main/kotlin/ephyra/feature/reader/viewer/webtoon/WebtoonSubsamplingImageView.kt"
-            line="17"
-            column="18"/>
-    </issue>
-
 </issues>

@@ -113,14 +113,12 @@ class WebtoonViewer(
         val prevHasMissingChapters = calculateChapterGap(chapters.currChapter, chapters.prevChapter) > 0
         val nextHasMissingChapters = calculateChapterGap(chapters.nextChapter, chapters.currChapter) > 0
 
-        // Previous chapter pages
-        chapters.prevChapter?.pages?.filter { !it.isHidden }?.let(newItems::addAll)
-
-        // Previous chapter transition
+        // Previous chapter transition (persistent whenever a previous chapter exists, a gap is present, or configured)
         if (
             prevHasMissingChapters ||
             forceTransition ||
-            chapters.prevChapter?.state !is ReaderChapter.State.Loaded
+            config.alwaysShowChapterTransition ||
+            chapters.prevChapter != null
         ) {
             newItems.add(ChapterTransition.Prev(chapters.currChapter, chapters.prevChapter))
         }
@@ -128,17 +126,15 @@ class WebtoonViewer(
         // Current chapter pages
         chapters.currChapter.pages?.filter { !it.isHidden }?.let(newItems::addAll)
 
-        // Next chapter transition
+        // Next chapter transition (persistent whenever a next chapter exists, a gap is present, or configured)
         if (
             nextHasMissingChapters ||
             forceTransition ||
-            chapters.nextChapter?.state !is ReaderChapter.State.Loaded
+            config.alwaysShowChapterTransition ||
+            chapters.nextChapter != null
         ) {
             newItems.add(ChapterTransition.Next(chapters.currChapter, chapters.nextChapter))
         }
-
-        // Next chapter pages
-        chapters.nextChapter?.pages?.filter { !it.isHidden }?.let(newItems::addAll)
 
         _itemsState.value = newItems
     }
@@ -223,11 +219,19 @@ class WebtoonViewer(
     }
 
     override fun moveToNext() {
-        scrollDown()
+        if (currentPage is ChapterTransition.Next) {
+            onNextChapter?.invoke()
+        } else {
+            scrollDown()
+        }
     }
 
     override fun moveToPrevious() {
-        scrollUp()
+        if (currentPage is ChapterTransition.Prev) {
+            onPreviousChapter?.invoke()
+        } else {
+            scrollUp()
+        }
     }
 
     /**

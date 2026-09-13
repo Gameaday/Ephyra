@@ -13,6 +13,7 @@ import androidx.compose.foundation.gestures.calculateCentroidSize
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -44,6 +45,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -60,7 +62,9 @@ import ephyra.core.common.util.lang.withIOContext
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.presentation.core.data.coil.cropBorders
 import eu.kanade.tachiyomi.source.model.Page
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 
 /**
  * 100% Jetpack Compose zoomable image viewer for manga pages.
@@ -68,9 +72,9 @@ import kotlinx.coroutines.launch
  * - Fluid pinch-to-zoom (1.0x to 5.0x scale)
  * - Double-tap to toggle zoom (centered at tap point)
  * - Pan and drag when zoomed in with boundary snapping
- * - Single-tap gesture forwarding for reader navigation zones
+ * - Instant single-tap gesture forwarding for reader navigation zones
  * - Long-tap gesture forwarding for page action sheets
- * - Coil 3 hardware bitmap decoding and caching
+ * - Coil 3 hardware bitmap decoding and memory caching
  * - Download and load progress indicators
  */
 @Composable
@@ -81,6 +85,7 @@ fun ZoomableMangaPage(
     onLongTap: () -> Unit,
     onScaleChanged: (Float) -> Unit,
     modifier: Modifier = Modifier,
+    isNavigationTap: ((Offset, Size) -> Boolean)? = null,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -107,6 +112,9 @@ fun ZoomableMangaPage(
         val scaleAnim = remember { Animatable(1f) }
         val offsetAnim = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
 
+        var lastTapTime by remember { mutableStateOf(0L) }
+        var lastTapOffset by remember { mutableStateOf(Offset.Zero) }
+
         // Keep parent informed of zoom scale (so pager can enable/disable swiping)
         LaunchedEffect(scaleAnim.value) {
             onScaleChanged(scaleAnim.value)
@@ -118,165 +126,222 @@ fun ZoomableMangaPage(
             offsetAnim.snapTo(Offset.Zero)
         }
 
-        when (val currentStatus = status) {
-            is Page.State.Queue, is Page.State.LoadPage -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(modifier = Modifier.size(48.dp))
+        val gestureModifier = Modifier
+            .fillMaxSize()
+            .pointerInput(page, containerSize) {
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    val downPos = down.position
+
+                    val upEvent = try {
+                        withTimeout(viewConfiguration.longPressTimeoutMillis) {
+                            val up = waitForUpOrCancellation()
+                            if (up != null && !up.isConsumed) up else null
+                        }
+                    } catch (_: TimeoutCancellationException) {
+                        if (scaleAnim.value <= 1.05f) {
+                            onLongTap()
+                        }
+                        null
+                    }
+
+                    if (upEvent != null) {
+                        val tapOffset = upEvent.position
+                        val distance = (tapOffset - downPos).getDistance()
+                        if (distance < viewConfiguration.touchSlop) {
+                            val currentTime = System.currentTimeMillis()
+                            val timeSinceLast = currentTime - lastTapTime
+                            val distanceFromLast = (tapOffset - lastTapOffset).getDistance()
+                            val isDoubleTap = timeSinceLast < 350L && distanceFromLast < viewConfiguration.touchSlop * 3
+
+                            val isNav = isNavigationTap?.invoke(tapOffset, containerSize) ?: false
+
+                            if (scaleAnim.value > 1.05f) {
+                                // Double-tap resets zoom back to 1.0x
+                                if (isDoubleTap) {
+                                    scope.launch {
+                                        launch { scaleAnim.animateTo(1f, tween(300)) }
+                                        launch { offsetAnim.animateTo(Offset.Zero, tween(300)) }
+                                    }
+                                    lastTapTime = 0L
+                                } else {
+                                    lastTapTime = currentTime
+                                    lastTapOffset = tapOffset
+                                    if (isNav) {
+                                        onTap(tapOffset, containerSize)
+                                    }
+                                }
+                            } else if (isNav) {
+                                // Instant navigation tap: execute immediately, no double-tap wait!
+                                onTap(tapOffset, containerSize)
+                                lastTapTime = 0L
+                            } else {
+                                // Center/menu area: double tap toggles zoom
+                                if (isDoubleTap) {
+                                    val targetScale = 2.5f
+                                    val targetOffsetX = (containerWidth / 2f - tapOffset.x) * (targetScale - 1f)
+                                    val targetOffsetY = (containerHeight / 2f - tapOffset.y) * (targetScale - 1f)
+                                    val maxPanX = (containerWidth * targetScale - containerWidth) / 2f
+                                    val maxPanY = (containerHeight * targetScale - containerHeight) / 2f
+                                    val clampedOffset = Offset(
+                                        x = targetOffsetX.coerceIn(-maxPanX, maxPanX),
+                                        y = targetOffsetY.coerceIn(-maxPanY, maxPanY),
+                                    )
+                                    scope.launch {
+                                        launch { scaleAnim.animateTo(targetScale, tween(300)) }
+                                        launch { offsetAnim.animateTo(clampedOffset, tween(300)) }
+                                    }
+                                    lastTapTime = 0L
+                                } else {
+                                    lastTapTime = currentTime
+                                    lastTapOffset = tapOffset
+                                    onTap(tapOffset, containerSize)
+                                }
+                            }
+                        }
+                    }
                 }
             }
+            .pointerInput(page, containerSize) {
+                detectMangaTransformGestures(
+                    canPan = { scaleAnim.value > 1.05f },
+                    onGesture = { _, pan, zoom ->
+                        val currentScale = scaleAnim.value
+                        val newScale = (currentScale * zoom).coerceIn(1f, 5f)
+                        val maxPanX = ((containerWidth * newScale) - containerWidth).coerceAtLeast(0f) / 2f
+                        val maxPanY = ((containerHeight * newScale) - containerHeight).coerceAtLeast(0f) / 2f
 
-            is Page.State.DownloadImage -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    if (progress > 0) {
-                        CircularProgressIndicator(
-                            progress = { progress / 100f },
-                            modifier = Modifier.size(48.dp),
-                        )
-                    } else {
+                        val newOffset = if (newScale > 1f) {
+                            Offset(
+                                x = (offsetAnim.value.x + pan.x).coerceIn(-maxPanX, maxPanX),
+                                y = (offsetAnim.value.y + pan.y).coerceIn(-maxPanY, maxPanY),
+                            )
+                        } else {
+                            Offset.Zero
+                        }
+
+                        scope.launch {
+                            scaleAnim.snapTo(newScale)
+                            offsetAnim.snapTo(newOffset)
+                        }
+                    },
+                )
+            }
+
+        Box(
+            modifier = gestureModifier,
+            contentAlignment = Alignment.Center,
+        ) {
+            when (val currentStatus = status) {
+                is Page.State.Queue, is Page.State.LoadPage -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(modifier = Modifier.size(48.dp))
                     }
                 }
-            }
 
-            is Page.State.Error -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Warning,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(48.dp),
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = currentStatus.error.message ?: "Failed to load page ${page.number}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    OutlinedButton(
-                        onClick = {
-                            page.chapter.pageLoader?.retryPage(page)
-                        },
-                    ) {
-                        Icon(imageVector = Icons.Outlined.Refresh, contentDescription = null)
-                        Spacer(modifier = Modifier.size(8.dp))
-                        Text(text = "Retry")
-                    }
-                }
-            }
-
-            Page.State.Ready -> {
-                // Buffer the image bytes for Coil or obtain cached merged bitmap
-                val imageModel by produceState<Any?>(initialValue = page.mergedBitmap, page, page.mergedBitmap) {
-                    value = page.mergedBitmap ?: withIOContext {
-                        try {
-                            page.stream?.invoke()?.use { it.readBytes() }
-                        } catch (e: Exception) {
-                            null
+                is Page.State.DownloadImage -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        if (progress > 0) {
+                            CircularProgressIndicator(
+                                progress = { progress / 100f },
+                                modifier = Modifier.size(48.dp),
+                            )
+                        } else {
+                            CircularProgressIndicator(modifier = Modifier.size(48.dp))
                         }
                     }
                 }
 
-                val gestureModifier = Modifier
-                    .fillMaxSize()
-                    .pointerInput(page) {
-                        detectTapGestures(
-                            onTap = { tapOffset ->
-                                onTap(tapOffset, containerSize)
-                            },
-                            onLongPress = {
-                                onLongTap()
-                            },
-                            onDoubleTap = { tapOffset ->
-                                scope.launch {
-                                    if (scaleAnim.value > 1.1f) {
-                                        // Reset zoom to 1.0x
-                                        launch { scaleAnim.animateTo(1f, tween(300)) }
-                                        launch { offsetAnim.animateTo(Offset.Zero, tween(300)) }
-                                    } else {
-                                        // Zoom in 2.5x centered on tap point
-                                        val targetScale = 2.5f
-                                        val targetOffsetX = (containerWidth / 2f - tapOffset.x) * (targetScale - 1f)
-                                        val targetOffsetY = (containerHeight / 2f - tapOffset.y) * (targetScale - 1f)
-                                        val maxPanX = (containerWidth * targetScale - containerWidth) / 2f
-                                        val maxPanY = (containerHeight * targetScale - containerHeight) / 2f
-                                        val clampedOffset = Offset(
-                                            x = targetOffsetX.coerceIn(-maxPanX, maxPanX),
-                                            y = targetOffsetY.coerceIn(-maxPanY, maxPanY),
-                                        )
-                                        launch { scaleAnim.animateTo(targetScale, tween(300)) }
-                                        launch { offsetAnim.animateTo(clampedOffset, tween(300)) }
-                                    }
-                                }
-                            },
+                is Page.State.Error -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Warning,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(48.dp),
                         )
-                    }
-                    .pointerInput(page) {
-                        detectMangaTransformGestures(
-                            canPan = { scaleAnim.value > 1.05f },
-                            onGesture = { _, pan, zoom ->
-                                val currentScale = scaleAnim.value
-                                val newScale = (currentScale * zoom).coerceIn(1f, 5f)
-                                val maxPanX = ((containerWidth * newScale) - containerWidth).coerceAtLeast(0f) / 2f
-                                val maxPanY = ((containerHeight * newScale) - containerHeight).coerceAtLeast(0f) / 2f
-
-                                val newOffset = if (newScale > 1f) {
-                                    Offset(
-                                        x = (offsetAnim.value.x + pan.x).coerceIn(-maxPanX, maxPanX),
-                                        y = (offsetAnim.value.y + pan.y).coerceIn(-maxPanY, maxPanY),
-                                    )
-                                } else {
-                                    Offset.Zero
-                                }
-
-                                scope.launch {
-                                    scaleAnim.snapTo(newScale)
-                                    offsetAnim.snapTo(newOffset)
-                                }
-                            },
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = currentStatus.error.message ?: "Failed to load page ${page.number}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        OutlinedButton(
+                            onClick = {
+                                page.chapter.pageLoader?.retryPage(page)
+                            },
+                        ) {
+                            Icon(imageVector = Icons.Outlined.Refresh, contentDescription = null)
+                            Spacer(modifier = Modifier.size(8.dp))
+                            Text(text = "Retry")
+                        }
                     }
-                    .graphicsLayer {
-                        scaleX = scaleAnim.value
-                        scaleY = scaleAnim.value
-                        translationX = offsetAnim.value.x
-                        translationY = offsetAnim.value.y
+                }
+
+                Page.State.Ready -> {
+                    // Buffer the image bytes for Coil or obtain cached merged bitmap
+                    val imageModel by produceState<Any?>(
+                        initialValue = page.mergedBitmap ?: page.cachedBytes,
+                        page,
+                        page.mergedBitmap,
+                    ) {
+                        value = page.mergedBitmap ?: page.cachedBytes ?: withIOContext {
+                            try {
+                                val bytes = page.stream?.invoke()?.use { it.readBytes() }
+                                if (bytes != null) {
+                                    page.cachedBytes = bytes
+                                }
+                                bytes
+                            } catch (e: Exception) {
+                                null
+                            }
+                        }
                     }
 
-                Box(
-                    modifier = gestureModifier,
-                    contentAlignment = Alignment.Center,
-                ) {
-                    val merged = page.mergedBitmap
-                    if (merged != null && !merged.isRecycled) {
-                        Image(
-                            bitmap = merged.asImageBitmap(),
-                            contentDescription = "Page ${page.number}",
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier.fillMaxSize(),
-                        )
-                    } else if (imageModel != null) {
-                        AsyncImage(
-                            model = remember(imageModel, cropBorders) {
-                                ImageRequest.Builder(context)
-                                    .data(imageModel)
-                                    .cropBorders(cropBorders)
-                                    .precision(Precision.EXACT)
-                                    .crossfade(false)
-                                    .build()
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                scaleX = scaleAnim.value
+                                scaleY = scaleAnim.value
+                                translationX = offsetAnim.value.x
+                                translationY = offsetAnim.value.y
                             },
-                            contentDescription = "Page ${page.number}",
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier.fillMaxSize(),
-                        )
-                    } else {
-                        CircularProgressIndicator(modifier = Modifier.size(48.dp))
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        val merged = page.mergedBitmap
+                        if (merged != null && !merged.isRecycled) {
+                            Image(
+                                bitmap = merged.asImageBitmap(),
+                                contentDescription = "Page ${page.number}",
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                        } else if (imageModel != null) {
+                            AsyncImage(
+                                model = remember(imageModel, cropBorders) {
+                                    ImageRequest.Builder(context)
+                                        .data(imageModel)
+                                        .memoryCacheKey("page_${page.chapter.chapter.id}_${page.index}")
+                                        .cropBorders(cropBorders)
+                                        .precision(Precision.EXACT)
+                                        .crossfade(false)
+                                        .build()
+                                },
+                                contentDescription = "Page ${page.number}",
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                        } else {
+                            CircularProgressIndicator(modifier = Modifier.size(48.dp))
+                        }
                     }
                 }
             }

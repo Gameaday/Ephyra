@@ -12,7 +12,6 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.getByType
-import org.gradle.kotlin.dsl.provideDelegate
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.compose.compiler.gradle.ComposeCompilerGradlePluginExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -40,7 +39,6 @@ internal fun Project.configureAndroid(commonExtension: CommonExtension) {
             commonExtension.compileOptions {
                 sourceCompatibility = AndroidConfig.JavaVersion
                 targetCompatibility = AndroidConfig.JavaVersion
-                isCoreLibraryDesugaringEnabled = true
             }
             commonExtension.lint {
                 abortOnError = false
@@ -58,7 +56,6 @@ internal fun Project.configureAndroid(commonExtension: CommonExtension) {
             commonExtension.compileOptions {
                 sourceCompatibility = AndroidConfig.JavaVersion
                 targetCompatibility = AndroidConfig.JavaVersion
-                isCoreLibraryDesugaringEnabled = true
             }
             commonExtension.lint {
                 abortOnError = false
@@ -76,7 +73,6 @@ internal fun Project.configureAndroid(commonExtension: CommonExtension) {
             commonExtension.compileOptions {
                 sourceCompatibility = AndroidConfig.JavaVersion
                 targetCompatibility = AndroidConfig.JavaVersion
-                isCoreLibraryDesugaringEnabled = true
             }
             commonExtension.lint {
                 abortOnError = false
@@ -100,13 +96,9 @@ internal fun Project.configureAndroid(commonExtension: CommonExtension) {
                 "-opt-in=kotlin.ExperimentalStdlibApi",
             )
 
-            val warningsAsErrors: String? by project
-            allWarningsAsErrors.set(warningsAsErrors.toBoolean())
+            val warningsAsErrors = project.providers.gradleProperty("warningsAsErrors").map { it.toBoolean() }.orElse(false)
+            allWarningsAsErrors.set(warningsAsErrors)
         }
-    }
-
-    dependencies {
-        "coreLibraryDesugaring"(libsCatalog.getLib("desugar"))
     }
 
     val kotlinVersion = libsCatalog.findVersion("kotlin").get().requiredVersion

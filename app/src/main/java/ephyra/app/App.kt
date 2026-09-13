@@ -30,7 +30,6 @@ import ephyra.app.crash.CrashActivity
 import ephyra.app.crash.GlobalExceptionHandler
 import ephyra.app.di.initializeCoreContainer
 import ephyra.app.startup.StartupGuard
-import ephyra.app.util.system.animatorDurationScale
 import ephyra.app.util.system.cancelNotification
 import ephyra.app.util.system.notify
 import ephyra.core.common.core.security.PrivacyPreferences
@@ -59,6 +58,7 @@ import ephyra.domain.updates.interactor.GetUpdates
 import ephyra.presentation.core.data.coil.TachiyomiImageDecoder
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.delegate.SecureActivityDelegateState
+import ephyra.presentation.core.util.system.animatorDurationScale
 import ephyra.presentation.core.util.system.setAppCompatDelegateThemeMode
 import ephyra.presentation.widget.WidgetManager
 import ephyra.telemetry.TelemetryConfig

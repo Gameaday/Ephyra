@@ -1,7 +1,6 @@
 package ephyra.feature.reader.viewer.pager
 
 import ephyra.domain.reader.service.ReaderPreferences
-import ephyra.feature.reader.viewer.ReaderPageImageView
 import ephyra.feature.reader.viewer.ViewerConfig
 import ephyra.feature.reader.viewer.ViewerNavigation
 import ephyra.feature.reader.viewer.navigation.DisabledNavigation
@@ -23,6 +22,12 @@ class PagerConfig(
     readerPreferences: ReaderPreferences,
 ) : ViewerConfig(readerPreferences, scope) {
 
+    enum class ZoomStartPosition {
+        LEFT,
+        CENTER,
+        RIGHT,
+    }
+
     var theme = readerPreferences.readerTheme().getSync()
         private set
 
@@ -34,7 +39,7 @@ class PagerConfig(
     var imageScaleType = 1
         private set
 
-    var imageZoomType = ReaderPageImageView.ZoomStartPosition.LEFT
+    var imageZoomType = ZoomStartPosition.LEFT
         private set
 
     var imageCropBorders = false
@@ -116,16 +121,16 @@ class PagerConfig(
         imageZoomType = when (value) {
             // Auto
             1 -> when (viewer) {
-                is L2RPagerViewer -> ReaderPageImageView.ZoomStartPosition.LEFT
-                is R2LPagerViewer -> ReaderPageImageView.ZoomStartPosition.RIGHT
-                else -> ReaderPageImageView.ZoomStartPosition.CENTER
+                is L2RPagerViewer -> ZoomStartPosition.LEFT
+                is R2LPagerViewer -> ZoomStartPosition.RIGHT
+                else -> ZoomStartPosition.CENTER
             }
             // Left
-            2 -> ReaderPageImageView.ZoomStartPosition.LEFT
+            2 -> ZoomStartPosition.LEFT
             // Right
-            3 -> ReaderPageImageView.ZoomStartPosition.RIGHT
+            3 -> ZoomStartPosition.RIGHT
             // Center
-            else -> ReaderPageImageView.ZoomStartPosition.CENTER
+            else -> ZoomStartPosition.CENTER
         }
     }
 

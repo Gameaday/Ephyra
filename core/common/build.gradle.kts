@@ -36,8 +36,6 @@ dependencies {
     api(libs.okhttp.zstd)
     api(libs.okio)
 
-    implementation(libs.image.decoder)
-
     implementation(libs.unifile)
     implementation(libs.libarchive)
 

@@ -7,18 +7,6 @@ plugins {
 val catalogs = project.extensions.getByType<VersionCatalogsExtension>()
 val libs = catalogs.named("libs")
 
-val xmlFormatExclude = buildList(2) {
-    add("**/build/**/*.xml")
-
-    projectDir
-        .resolve("src/commonMain/moko-resources")
-        .takeIf { it.isDirectory }
-        ?.let(::fileTree)
-        ?.matching { exclude("/base/**") }
-        ?.let(::add)
-}
-    .toTypedArray()
-
 spotless {
     kotlin {
         target("**/*.kt", "**/*.kts")
@@ -32,7 +20,7 @@ spotless {
     }
     format("xml") {
         target("**/*.xml")
-        targetExclude(*xmlFormatExclude)
+        targetExclude("**/build/**/*.xml")
         trimTrailingWhitespace()
         endWithNewline()
     }

@@ -37,18 +37,24 @@ class RoomSourceProfileStore(
             try {
                 val existingCount = dao.getAll().size
                 if (existingCount == 0) {
-                    val legacyDomains = legacyPreferenceStore.getStringSet("profiled_domains_list", emptySet()).get()
+                    val legacyDomainsPref = legacyPreferenceStore.getStringSet("profiled_domains_list", emptySet())
+                    val legacyDomains = legacyDomainsPref.get()
                     for (domain in legacyDomains) {
                         val key = cacheKey(domain)
-                        val encoded = legacyPreferenceStore.getString(key, "").get()
+                        val pref = legacyPreferenceStore.getString(key, "")
+                        val encoded = pref.get()
                         if (encoded.isNotBlank()) {
                             try {
                                 val entity = json.decodeFromString<SourceProfileEntity>(encoded)
                                 dao.upsert(entity)
+                                pref.delete()
                             } catch (e: Exception) {
                                 // Skip corrupted legacy entries
                             }
                         }
+                    }
+                    if (legacyDomains.isNotEmpty()) {
+                        legacyDomainsPref.delete()
                     }
                 }
             } catch (e: Exception) {

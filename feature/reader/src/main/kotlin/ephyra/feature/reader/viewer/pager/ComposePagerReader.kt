@@ -79,12 +79,12 @@ fun ComposePagerReader(
 
         // Handle external page navigation requests (slider scrubbing, d-pad, volume keys)
         LaunchedEffect(viewer, pagerState) {
-            viewer.targetPageRequest.collect { targetIndex ->
-                if (targetIndex in 0 until pagerState.pageCount) {
-                    if (viewer.config.usePageTransitions) {
-                        pagerState.animateScrollToPage(targetIndex)
+            viewer.targetPageRequest.collect { request ->
+                if (request.index in 0 until pagerState.pageCount) {
+                    if (request.animate) {
+                        pagerState.animateScrollToPage(request.index)
                     } else {
-                        pagerState.scrollToPage(targetIndex)
+                        pagerState.scrollToPage(request.index)
                     }
                 }
             }
@@ -178,6 +178,12 @@ fun ComposePagerReader(
                         onScaleChanged = { scale ->
                             // Only disable swiping between pages when zoomed in (> 1.05x)
                             isPagerScrollEnabled = scale <= 1.05f
+                        },
+                        isNavigationTap = { tapOffset, containerSize ->
+                            val normX = if (containerSize.width > 0) tapOffset.x / containerSize.width else 0.5f
+                            val normY = if (containerSize.height > 0) tapOffset.y / containerSize.height else 0.5f
+                            viewer.config.navigator.getAction(PointF(normX, normY)) !=
+                                ViewerNavigation.NavigationRegion.MENU
                         },
                         modifier = Modifier.fillMaxSize(),
                     )

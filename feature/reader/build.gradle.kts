@@ -20,9 +20,6 @@ dependencies {
 
     implementation(libs.logcat)
 
-    implementation(libs.subsamplingscaleimageview)
-    implementation(libs.image.decoder)
-
     // Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

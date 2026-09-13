@@ -19,7 +19,9 @@ class SourceProfileCache(
 
     /**
      * Legacy constructor providing [PreferenceStore] backed persistence.
+     * Reserved for test fixtures. Production uses RoomSourceProfileStore.
      */
+    @Deprecated("Use RoomSourceProfileStore for production persistence", ReplaceWith("SourceProfileCache(store)"))
     constructor(
         preferenceStore: PreferenceStore,
         json: Json = Json { ignoreUnknownKeys = true },

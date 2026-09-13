@@ -28,7 +28,6 @@ injekt = "1.16.1"
 
 
 [libraries]
-desugar = "com.android.tools:desugar_jdk_libs:2.1.5"
 okhttp-core = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp_version" }
 okhttp-logging = { module = "com.squareup.okhttp3:logging-interceptor", version.ref = "okhttp_version" }
 okhttp-brotli = { module = "com.squareup.okhttp3:okhttp-brotli", version.ref = "okhttp_version" }
@@ -58,11 +57,9 @@ coil-gif = { module = "io.coil-kt.coil3:coil-gif" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose" }
 coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp" }
 
-subsamplingscaleimageview = "com.github.tachiyomiorg:subsampling-scale-image-view:66e0db195d"
 image-decoder = "com.github.tachiyomiorg:image-decoder:41c059e540"
 
 material = "com.google.android.material:material:1.14.0"
-directionalviewpager = "com.github.tachiyomiorg:DirectionalViewPager:1.0.0"
 compose-materialmotion = "io.github.fornewid:material-motion-compose-core:2.0.1"
 compose-webview = "io.github.kevinnzou:compose-webview:0.33.6"
 compose-grid = "io.woong.compose.grid:grid:1.2.2"

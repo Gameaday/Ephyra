@@ -256,18 +256,6 @@ class ReaderActivity : BaseActivity() {
         super.onPause()
     }
 
-    override fun onTrimMemory(level: Int) {
-        super.onTrimMemory(level)
-        if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
-            currentViewer?.let { viewer ->
-                val view = viewer.getView()
-                if (view is androidx.recyclerview.widget.RecyclerView) {
-                    view.recycledViewPool.clear()
-                }
-            }
-        }
-    }
-
     override fun onResume() {
         super.onResume()
     }
@@ -303,44 +291,6 @@ class ReaderActivity : BaseActivity() {
     override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
         val handled = currentViewer?.handleGenericMotionEvent(event) ?: false
         return handled || super.dispatchGenericMotionEvent(event)
-    }
-
-    private val bottomFlickDetector by lazy {
-        android.view.GestureDetector(
-            this,
-            object : android.view.GestureDetector.SimpleOnGestureListener() {
-                override fun onFling(
-                    e1: MotionEvent?,
-                    e2: MotionEvent,
-                    velocityX: Float,
-                    velocityY: Float,
-                ): Boolean {
-                    if (e1 == null) return false
-                    val deltaY = e2.y - e1.y
-                    val deltaX = e2.x - e1.x
-
-                    // Only detect flicks starting in the bottom 25% of the screen
-                    val screenHeight = resources.displayMetrics.heightPixels
-                    val bottomZoneStart = screenHeight * 0.75f
-
-                    if (e1.y >= bottomZoneStart) {
-                        // Swift bottom-up flick (velocityY < -1000f, deltaY < -80dp)
-                        if (velocityY < -1000f && kotlin.math.abs(deltaY) > 80f &&
-                            kotlin.math.abs(deltaY) > kotlin.math.abs(deltaX)
-                        ) {
-                            currentViewer?.moveToNext()
-                            return true
-                        }
-                    }
-                    return false
-                }
-            },
-        )
-    }
-
-    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
-        bottomFlickDetector.onTouchEvent(ev)
-        return super.dispatchTouchEvent(ev)
     }
 
     private fun setMenuVisibility(visible: Boolean) {

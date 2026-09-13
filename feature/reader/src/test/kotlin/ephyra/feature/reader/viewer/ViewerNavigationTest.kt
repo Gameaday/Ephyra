@@ -7,6 +7,7 @@ import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.domain.ui.UiPreferences
 import ephyra.feature.reader.ReaderActivity
+import ephyra.feature.reader.model.ChapterTransition
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.model.ViewerChapters
@@ -52,7 +53,13 @@ class ViewerNavigationTest {
         Dispatchers.resetMain()
     }
 
-    private fun createViewerChapters(chapterId: Long, pageCount: Int, requestedPage: Int = 0): ViewerChapters {
+    private fun createViewerChapters(
+        chapterId: Long,
+        pageCount: Int,
+        requestedPage: Int = 0,
+        prevChapterId: Long? = null,
+        nextChapterId: Long? = null,
+    ): ViewerChapters {
         val chapter = Chapter.create().copy(
             id = chapterId,
             mangaId = 1L,
@@ -67,7 +74,28 @@ class ViewerNavigationTest {
             }
         }
         readerChapter.state = ReaderChapter.State.Loaded(pagesList)
-        return ViewerChapters(readerChapter, null, null)
+
+        val prev = prevChapterId?.let { id ->
+            val prevChap = Chapter.create().copy(
+                id = id,
+                mangaId = 1L,
+                name = "Chapter $id",
+                chapterNumber = id.toDouble(),
+            )
+            ReaderChapter(prevChap).apply { state = ReaderChapter.State.Wait }
+        }
+
+        val next = nextChapterId?.let { id ->
+            val nextChap = Chapter.create().copy(
+                id = id,
+                mangaId = 1L,
+                name = "Chapter $id",
+                chapterNumber = id.toDouble(),
+            )
+            ReaderChapter(nextChap).apply { state = ReaderChapter.State.Wait }
+        }
+
+        return ViewerChapters(readerChapter, prev, next)
     }
 
     @Test
@@ -81,7 +109,7 @@ class ViewerNavigationTest {
 
         val emittedPages = mutableListOf<Int>()
         backgroundScope.launch {
-            viewer.targetPageRequest.collect { emittedPages.add(it) }
+            viewer.targetPageRequest.collect { emittedPages.add(it.index) }
         }
 
         // In RTL manga, moving left moves forward in reading order (next page)
@@ -109,7 +137,7 @@ class ViewerNavigationTest {
 
         val emittedPages = mutableListOf<Int>()
         backgroundScope.launch {
-            viewer.targetPageRequest.collect { emittedPages.add(it) }
+            viewer.targetPageRequest.collect { emittedPages.add(it.index) }
         }
 
         // In LTR, moving right moves forward (next page)
@@ -167,5 +195,85 @@ class ViewerNavigationTest {
         // 2. Subsequent emission for the same chapter (e.g. background download update) must NOT re-emit scroll request
         viewer.setChapters(chapters)
         assertEquals(1, scrollRequests.size, "Same chapter emission must not re-trigger scrollToIndexRequest")
+    }
+
+    @Test
+    fun `WebtoonViewer items list remains stable when adjacent chapters load`() = runTest(testDispatcher) {
+        val viewer = WebtoonViewer(activity, downloadManager, readerPreferences, uiPreferences, basePreferences)
+        val chapters = createViewerChapters(chapterId = 2L, pageCount = 5, prevChapterId = 1L, nextChapterId = 3L)
+
+        viewer.setChapters(chapters)
+        val initialItems = viewer.itemsState.value
+        // Expected: [ChapterTransition.Prev, Page 0..4, ChapterTransition.Next] = 7 items
+        assertEquals(7, initialItems.size)
+        assertTrue(initialItems.first() is ChapterTransition.Prev)
+        assertTrue(initialItems.last() is ChapterTransition.Next)
+
+        // Simulate background loader finishing loading the previous chapter
+        val prevPages = (0 until 10).map { index ->
+            ReaderPage(index = index, url = "http://prev/$index", imageUrl = "http://prev/$index.jpg").apply {
+                this.chapter = chapters.prevChapter!!
+            }
+        }
+        chapters.prevChapter!!.state = ReaderChapter.State.Loaded(prevPages)
+
+        // Re-emit chapters (as ReaderViewModel does when background preload completes)
+        viewer.setChapters(chapters)
+
+        val updatedItems = viewer.itemsState.value
+        // Items list must remain stable and NOT prepend the 10 pages of prevChapter
+        assertEquals(
+            7,
+            updatedItems.size,
+            "Items count must remain stable; prevChapter pages must not be prepended into active LazyColumn",
+        )
+        assertEquals(initialItems.first(), updatedItems.first())
+        assertEquals(initialItems[1], updatedItems[1], "First page index must remain at index 1")
+    }
+
+    @Test
+    fun `PagerViewer items list remains stable when adjacent chapters load`() = runTest(testDispatcher) {
+        val viewer = L2RPagerViewer(activity, downloadManager, readerPreferences, uiPreferences)
+        val chapters = createViewerChapters(chapterId = 2L, pageCount = 5, prevChapterId = 1L, nextChapterId = 3L)
+
+        viewer.setChapters(chapters)
+        val initialItems = viewer.itemsState.value
+        assertEquals(7, initialItems.size)
+        assertTrue(initialItems.first() is ChapterTransition.Prev)
+        assertTrue(initialItems.last() is ChapterTransition.Next)
+
+        // Simulate background loader finishing loading the previous chapter
+        val prevPages = (0 until 10).map { index ->
+            ReaderPage(index = index, url = "http://prev/$index", imageUrl = "http://prev/$index.jpg").apply {
+                this.chapter = chapters.prevChapter!!
+            }
+        }
+        chapters.prevChapter!!.state = ReaderChapter.State.Loaded(prevPages)
+
+        viewer.setChapters(chapters)
+
+        val updatedItems = viewer.itemsState.value
+        assertEquals(7, updatedItems.size, "Pager items count must remain stable when adjacent chapters finish loading")
+        assertTrue(updatedItems.first() is ChapterTransition.Prev, "Prev transition card must persist")
+    }
+
+    @Test
+    fun `PagerViewer moveToPage sets animate false for instant seeks`() = runTest(testDispatcher) {
+        val viewer = L2RPagerViewer(activity, downloadManager, readerPreferences, uiPreferences)
+        val chapters = createViewerChapters(chapterId = 1L, pageCount = 10)
+        viewer.setChapters(chapters)
+
+        val targetRequests = mutableListOf<ephyra.feature.reader.viewer.pager.PagerViewer.TargetPage>()
+        backgroundScope.launch {
+            viewer.targetPageRequest.collect { targetRequests.add(it) }
+        }
+
+        // Programmatic seek (e.g. slider scrubbing) must NOT animate to ensure instant response
+        val page5 = chapters.currChapter.pages!![5]
+        viewer.moveToPage(page5)
+
+        assertEquals(1, targetRequests.size)
+        assertEquals(viewer.itemsState.value.indexOf(page5), targetRequests.first().index)
+        assertEquals(false, targetRequests.first().animate, "moveToPage should specify animate = false for scrubbing")
     }
 }

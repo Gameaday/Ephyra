@@ -59,4 +59,23 @@ open class ReaderPage(
      * Adapters, page counts, and navigation all use this to determine visible pages.
      */
     val isHidden: Boolean get() = isAbsorbed || isBlockedByFilter
+
+    /**
+     * Intrinsic image dimensions recorded once decoded, enabling LazyColumn
+     * to preserve exact item height during reverse scrolling.
+     */
+    @Volatile
+    var width: Int = 0
+
+    @Volatile
+    var height: Int = 0
+
+    val aspectRatio: Float?
+        get() = if (width > 0 && height > 0) width.toFloat() / height.toFloat() else null
+
+    /**
+     * In-memory cache of the image payload bytes to prevent redundant disk I/O on recomposition.
+     */
+    @Volatile
+    var cachedBytes: ByteArray? = null
 }

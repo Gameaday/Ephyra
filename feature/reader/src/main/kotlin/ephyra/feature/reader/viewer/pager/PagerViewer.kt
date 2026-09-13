@@ -53,7 +53,9 @@ abstract class PagerViewer(
     private val _itemsState = MutableStateFlow<List<Any>>(emptyList())
     val itemsState = _itemsState.asStateFlow()
 
-    private val _targetPageRequest = MutableSharedFlow<Int>(
+    data class TargetPage(val index: Int, val animate: Boolean = false)
+
+    private val _targetPageRequest = MutableSharedFlow<TargetPage>(
         extraBufferCapacity = 64,
         onBufferOverflow = BufferOverflow.DROP_OLDEST,
     )
@@ -139,11 +141,11 @@ abstract class PagerViewer(
         val prevHasMissingChapters = calculateChapterGap(chapters.currChapter, chapters.prevChapter) > 0
         val nextHasMissingChapters = calculateChapterGap(chapters.nextChapter, chapters.currChapter) > 0
 
-        // Previous chapter transition
+        // Previous chapter transition (persistent whenever a previous chapter exists, a gap is present, or configured)
         if (
             prevHasMissingChapters ||
             config.alwaysShowChapterTransition ||
-            chapters.prevChapter?.state !is ephyra.feature.reader.model.ReaderChapter.State.Loaded
+            chapters.prevChapter != null
         ) {
             newItems.add(ChapterTransition.Prev(chapters.currChapter, chapters.prevChapter))
         }
@@ -151,12 +153,12 @@ abstract class PagerViewer(
         // Current chapter visible pages
         chapters.currChapter.pages?.filter { !it.isHidden }?.let(newItems::addAll)
 
-        // Next chapter transition
+        // Next chapter transition (persistent whenever a next chapter exists, a gap is present, or configured)
         val nextTransition = ChapterTransition.Next(chapters.currChapter, chapters.nextChapter)
         if (
             nextHasMissingChapters ||
             config.alwaysShowChapterTransition ||
-            chapters.nextChapter?.state !is ephyra.feature.reader.model.ReaderChapter.State.Loaded
+            chapters.nextChapter != null
         ) {
             newItems.add(nextTransition)
         }
@@ -165,13 +167,14 @@ abstract class PagerViewer(
     }
 
     /**
-     * Tells this viewer to move to the given [page].
+     * Tells this viewer to move to the given [page]. Programmatic seeks (such as slider scrubbing
+     * or chapter initialization) perform an immediate jump without animation.
      */
     override fun moveToPage(page: ReaderPage) {
         val items = _itemsState.value
         val position = items.indexOf(page)
         if (position != -1) {
-            _targetPageRequest.tryEmit(position)
+            _targetPageRequest.tryEmit(TargetPage(position, animate = false))
             currentPage = page
         } else {
             logcat { "Page $page not found in items list" }
@@ -182,7 +185,7 @@ abstract class PagerViewer(
         val current = currentItemIndex()
         val count = _itemsState.value.size
         if (current < count - 1) {
-            _targetPageRequest.tryEmit(current + 1)
+            _targetPageRequest.tryEmit(TargetPage(current + 1, animate = config.usePageTransitions))
         } else if (count > 0 && current >= count - 1) {
             onNextChapter?.invoke()
         }
@@ -191,7 +194,7 @@ abstract class PagerViewer(
     override fun moveToPrevious() {
         val current = currentItemIndex()
         if (current > 0) {
-            _targetPageRequest.tryEmit(current - 1)
+            _targetPageRequest.tryEmit(TargetPage(current - 1, animate = config.usePageTransitions))
         } else if (current <= 0) {
             onPreviousChapter?.invoke()
         }
