@@ -1,15 +1,17 @@
 package ephyra.app.installer
 
 import android.content.Context
-import ephyra.core.common.util.system.hasMiuiPackageInstaller
-import ephyra.core.common.util.system.isShizukuInstalled
 import ephyra.domain.base.BasePreferences.ExtensionInstaller
 import ephyra.domain.base.InstallerCapabilityProvider
 
+/**
+ * Sandboxed in-app installer capability provider.
+ * Disables system-level PackageInstaller and Shizuku in favor of private in-app DEX execution.
+ */
 class AndroidInstallerCapabilityProvider(private val context: Context) : InstallerCapabilityProvider {
     override fun isAvailable(installer: ExtensionInstaller): Boolean = when (installer) {
-        ExtensionInstaller.PACKAGEINSTALLER -> !context.hasMiuiPackageInstaller
-        ExtensionInstaller.SHIZUKU -> context.isShizukuInstalled
-        else -> true
+        ExtensionInstaller.PACKAGEINSTALLER -> false
+        ExtensionInstaller.SHIZUKU -> false
+        ExtensionInstaller.PRIVATE -> true
     }
 }

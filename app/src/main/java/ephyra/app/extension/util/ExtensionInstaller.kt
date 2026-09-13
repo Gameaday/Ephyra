@@ -1,16 +1,10 @@
 package ephyra.app.extension.util
 
 import android.content.Context
-import android.content.Intent
-import androidx.core.content.ContextCompat
-import androidx.core.net.toUri
-import ephyra.app.extension.installer.Installer
-import ephyra.core.common.util.storage.getUriCompat
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.extension.model.Extension
 import ephyra.domain.extension.model.InstallStep
-import ephyra.presentation.core.util.system.isPackageInstalled
 import eu.kanade.tachiyomi.network.NetworkHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -40,7 +34,6 @@ class ExtensionInstaller(
     private val scope = CoroutineScope(Dispatchers.IO)
     private val activeJobs = mutableMapOf<String, Job>()
     private val activeSteps = mutableMapOf<Long, MutableStateFlow<InstallStep>>()
-    private val extensionInstaller = basePreferences.extensionInstaller()
 
     private val httpClient: OkHttpClient = networkHelper.client
 
@@ -102,56 +95,35 @@ class ExtensionInstaller(
      * @param tempFile The file of the extension to install. Delete after use.
      */
     private suspend fun installApk(downloadId: Long, tempFile: File) {
-        when (val installer = extensionInstaller.get()) {
-            BasePreferences.ExtensionInstaller.PRIVATE -> {
-                try {
-                    if (extensionLoader.installPrivateExtensionFile(context, tempFile)) {
-                        updateInstallStep(downloadId, InstallStep.Installed)
-                    } else {
-                        updateInstallStep(downloadId, InstallStep.Error)
-                    }
-                } catch (e: Exception) {
-                    logcat(LogPriority.ERROR, e) { "Failed to read downloaded extension file." }
-                    updateInstallStep(downloadId, InstallStep.Error)
-                }
-
-                tempFile.delete()
+        try {
+            if (extensionLoader.installPrivateExtensionFile(context, tempFile)) {
+                updateInstallStep(downloadId, InstallStep.Installed)
+            } else {
+                updateInstallStep(downloadId, InstallStep.Error)
             }
-            else -> {
-                val intent = ExtensionInstallService.getIntent(
-                    context,
-                    downloadId,
-                    tempFile.getUriCompat(context),
-                    installer,
-                )
-                ContextCompat.startForegroundService(context, intent)
-            }
+        } catch (e: Exception) {
+            logcat(LogPriority.ERROR, e) { "Failed to read downloaded extension file." }
+            updateInstallStep(downloadId, InstallStep.Error)
+        } finally {
+            tempFile.delete()
         }
     }
 
     /**
-     * Cancels extension install and remove from download manager and installer.
+     * Cancels extension install and remove from download manager.
      */
     fun cancelInstall(pkgName: String) {
         activeJobs.remove(pkgName)?.cancel()
-        Installer.cancelInstallQueue(context, pkgName.hashCode().toLong())
     }
 
     /**
-     * Starts an intent to uninstall the extension by the given package name.
+     * Uninstalls the extension by the given package name from sandboxed private storage.
      *
      * @param pkgName The package name of the extension to uninstall
      */
     fun uninstallApk(pkgName: String) {
-        if (context.isPackageInstalled(pkgName)) {
-            @Suppress("DEPRECATION")
-            val intent = Intent(Intent.ACTION_UNINSTALL_PACKAGE, "package:$pkgName".toUri())
-                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(intent)
-        } else {
-            extensionLoader.uninstallPrivateExtension(context, pkgName)
-            ExtensionInstallReceiver.notifyRemoved(context, pkgName)
-        }
+        extensionLoader.uninstallPrivateExtension(context, pkgName)
+        ExtensionInstallReceiver.notifyRemoved(context, pkgName)
     }
 
     /**

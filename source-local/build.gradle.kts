@@ -9,6 +9,10 @@ android {
     defaultConfig {
         consumerProguardFiles("consumer-rules.pro")
     }
+
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 dependencies {
@@ -25,6 +29,10 @@ dependencies {
 
     implementation(libs.bundles.sqlite)
     implementation(kotlinx.bundles.serialization)
+
+    testImplementation(libs.bundles.test)
+    testImplementation(kotlinx.coroutines.test)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
 
 kotlin {
