@@ -60,6 +60,7 @@ import coil3.request.crossfade
 import coil3.size.Precision
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.feature.reader.model.ReaderPage
+import ephyra.feature.reader.viewer.readerPageMemoryCacheKey
 import ephyra.presentation.core.data.coil.cropBorders
 import eu.kanade.tachiyomi.source.model.Page
 import kotlinx.coroutines.TimeoutCancellationException
@@ -329,7 +330,7 @@ fun ZoomableMangaPage(
                                 model = remember(imageModel, cropBorders) {
                                     ImageRequest.Builder(context)
                                         .data(imageModel)
-                                        .memoryCacheKey("page_${page.chapter.chapter.id}_${page.index}")
+                                        .memoryCacheKey(readerPageMemoryCacheKey(page, cropBorders))
                                         .cropBorders(cropBorders)
                                         .precision(Precision.EXACT)
                                         .crossfade(false)

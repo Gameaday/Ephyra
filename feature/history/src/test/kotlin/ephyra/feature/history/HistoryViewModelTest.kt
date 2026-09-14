@@ -12,6 +12,7 @@ import ephyra.domain.library.service.LibraryPreferences
 import ephyra.domain.manga.interactor.GetDuplicateLibraryManga
 import ephyra.domain.manga.interactor.GetManga
 import ephyra.domain.manga.interactor.UpdateManga
+import ephyra.domain.manga.model.MangaCover
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.track.interactor.AddTracks
 import io.mockk.coEvery
@@ -27,8 +28,10 @@ import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.util.Date
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class HistoryViewModelTest {
@@ -75,6 +78,26 @@ class HistoryViewModelTest {
         )
     }
 
+    /**
+     * Minimal valid [HistoryWithRelations] row for asserting list population.
+     */
+    private fun historyEntry(id: Long, readAt: Date) = HistoryWithRelations(
+        id = id,
+        chapterId = 1L,
+        mangaId = 1L,
+        title = "Test Manga",
+        chapterNumber = 1.0,
+        readAt = readAt,
+        readDuration = 0L,
+        coverData = MangaCover(
+            mangaId = 1L,
+            sourceId = 1L,
+            isMangaFavorite = false,
+            url = null,
+            lastModified = 0L,
+        ),
+    )
+
     @Test
     fun `initial state starts with null list and dialog`() = runTest {
         val viewModel = createViewModel()
@@ -98,6 +121,33 @@ class HistoryViewModelTest {
             historyFlow.emit(emptyList())
             val updated = awaitItem()
             assertEquals(emptyList<HistoryUiModel>(), updated.list)
+        }
+    }
+
+    /**
+     * Regression: rows that exist in the database must reach the tab as items.
+     *
+     * History rows are written by `ReaderViewModel` when a chapter is opened. A previous
+     * implementation only wrote them from `loadNewChapter`, so single-chapter sessions
+     * produced no row and the History tab rendered empty. This pins the presentation half
+     * of that contract: a non-empty repository emission must surface items plus the
+     * leading day header.
+     */
+    @Test
+    fun `non-empty history populates items and inserts a date header`() = runTest {
+        val viewModel = createViewModel()
+
+        viewModel.state.test {
+            assertNull(awaitItem().list)
+
+            historyFlow.emit(listOf(historyEntry(id = 7L, readAt = Date(1_700_000_000_000L))))
+
+            val list = requireNotNull(awaitItem().list) { "history must populate the list" }
+            assertEquals(2, list.size)
+            assertTrue(list.first() is HistoryUiModel.Header)
+            val item = list.last()
+            assertTrue(item is HistoryUiModel.Item)
+            assertEquals(7L, (item as HistoryUiModel.Item).item.id)
         }
     }
 

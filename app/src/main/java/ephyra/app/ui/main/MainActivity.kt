@@ -225,7 +225,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                         MotionTokens.m3SharedAxisZEnter() +
                                             slideIntoContainer(
                                                 AnimatedContentTransitionScope.SlideDirection.Start,
-                                                targetOffset = { (it * 0.10f).toInt() },
+                                                initialOffset = { (it * 0.10f).toInt() },
                                                 animationSpec = tween(
                                                     durationMillis = MotionTokens.DURATION_LONG_1,
                                                     easing = MotionTokens.EasingEmphasizedDecelerate,
@@ -247,7 +247,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                         MotionTokens.m3SharedAxisZPopEnter() +
                                             slideIntoContainer(
                                                 AnimatedContentTransitionScope.SlideDirection.End,
-                                                targetOffset = { (it * 0.10f).toInt() },
+                                                initialOffset = { (it * 0.10f).toInt() },
                                                 animationSpec = tween(
                                                     durationMillis = MotionTokens.DURATION_MEDIUM_4,
                                                     easing = MotionTokens.EasingEmphasizedDecelerate,

@@ -39,10 +39,11 @@ class ReaderChapter(var chapter: Chapter) {
             pageLoader = null
             startingAtBeginning = false
             startFromEnd = false
-            // Recycle any merged bitmaps held by pages before dropping the page list,
-            // so large native allocations are freed immediately.
+            // Drop any merged bitmaps held by pages before dropping the page list so the
+            // merged allocations become unreachable for the next GC; ART reclaims the pixel
+            // buffers, so no explicit recycling is required.
             (state as? State.Loaded)?.pages?.forEach { page ->
-                page.recycleMergedBitmap()
+                page.clearMergedBitmap()
             }
             state = State.Wait
         }

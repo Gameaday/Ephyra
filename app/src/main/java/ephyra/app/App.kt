@@ -20,6 +20,7 @@ import coil3.ImageLoader
 import coil3.SingletonImageLoader
 import coil3.disk.DiskCache
 import coil3.memory.MemoryCache
+import coil3.memoryCacheMaxSizePercentWhileInBackground
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.allowRgb565
 import coil3.request.bitmapConfig
@@ -248,6 +249,12 @@ class App :
                 .onEach(TelemetryConfig::setCrashlyticsEnabled)
                 .catch { e -> logcat(LogPriority.ERROR, e) { "Failed to monitor crashlytics" } }
                 .launchIn(scope)
+
+            // Transient bitmap recycling policy. On capable devices (the supported baseline)
+            // ART reclaims intermediate bitmaps, so ImageUtil skips explicit recycle() calls
+            // that could otherwise fault a live Compose snapshot. Low-RAM devices keep eager
+            // recycling to bound native heap pressure on the ARGB_8888 fallback path.
+            ImageUtil.configureRecyclePolicy(DeviceUtil.isLowRamDevice(this@App))
 
             basePreferences.hardwareBitmapThreshold().let { preference ->
                 if (!preference.isSet()) preference.set(GLUtil.DEVICE_TEXTURE_LIMIT)

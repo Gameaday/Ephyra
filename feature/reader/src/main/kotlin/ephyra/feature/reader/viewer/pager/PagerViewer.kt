@@ -120,7 +120,7 @@ abstract class PagerViewer(
                 preScanJob?.cancel()
                 pages?.forEach { page ->
                     page.isAbsorbed = false
-                    page.recycleMergedBitmap()
+                    page.clearMergedBitmap()
                 }
                 chapters?.let { rebuildItems(it) }
             }
@@ -411,14 +411,12 @@ abstract class PagerViewer(
                         val candidateSource = candidateStreamFn().use { Buffer().readFrom(it) }
                         if (ImageUtil.isAnimatedAndSupported(candidateSource)) break
 
-                        val mergedBitmap = if (page.mergedBitmap != null) {
-                            val oldBmp = page.mergedBitmap!!
-                            val merged = ImageUtil.mergePages(oldBmp, candidateSource)
-                            oldBmp.recycle()
-                            merged
-                        } else {
-                            ImageUtil.mergePages(currentSource, candidateSource)
-                        }
+                        val mergedBitmap = page.mergedBitmap?.let { previous ->
+                            // The superseded merge is dropped rather than recycled: ART
+                            // reclaims its pixel buffer, and the pager may still be
+                            // rendering it via a live Compose snapshot.
+                            ImageUtil.mergePages(previous, candidateSource)
+                        } ?: ImageUtil.mergePages(currentSource, candidateSource)
 
                         candidateNext.isAbsorbed = true
                         page.mergedBitmap = mergedBitmap

@@ -63,6 +63,7 @@ import ephyra.feature.reader.model.ChapterTransition
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.viewer.ViewerNavigation
+import ephyra.feature.reader.viewer.readerPageMemoryCacheKey
 import ephyra.presentation.core.data.coil.cropBorders
 import ephyra.presentation.reader.ChapterTransition
 import ephyra.presentation.reader.TransitionDirection
@@ -457,7 +458,7 @@ private fun WebtoonPageItem(
                         model = remember(imageModel, cropBorders) {
                             ImageRequest.Builder(context)
                                 .data(imageModel)
-                                .memoryCacheKey("page_${page.chapter.chapter.id}_${page.index}")
+                                .memoryCacheKey(readerPageMemoryCacheKey(page, cropBorders))
                                 .crossfade(false)
                                 .precision(Precision.EXACT)
                                 .cropBorders(cropBorders)

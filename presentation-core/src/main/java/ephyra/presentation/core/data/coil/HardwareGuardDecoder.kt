@@ -1,11 +1,13 @@
 package ephyra.presentation.core.data.coil
 
 import android.graphics.Bitmap
+import coil3.Extras
 import coil3.ImageLoader
 import coil3.decode.BitmapFactoryDecoder
 import coil3.decode.Decoder
 import coil3.fetch.SourceFetchResult
 import coil3.request.Options
+import coil3.request.bitmapConfig
 import ephyra.core.common.util.system.ImageUtil
 
 /**
@@ -46,11 +48,7 @@ class HardwareGuardDecoder private constructor(
                 !ImageUtil.canUseHardwareBitmap(source)
             } ?: false
 
-            val effectiveOptions = if (oversized) {
-                options.copy(bitmapConfig = Bitmap.Config.ARGB_8888)
-            } else {
-                options
-            }
+            val effectiveOptions = if (oversized) options.toSoftwareDecoding() else options
             return delegate.create(result, effectiveOptions, imageLoader)
                 ?.let(::HardwareGuardDecoder)
         }
@@ -60,3 +58,17 @@ class HardwareGuardDecoder private constructor(
         override fun hashCode() = javaClass.hashCode()
     }
 }
+
+/**
+ * Returns a copy of these [Options] whose preferred [Bitmap.Config] is
+ * [Bitmap.Config.ARGB_8888].
+ *
+ * Coil's [Options] is not a data class and `bitmapConfig` is an [Extras]-backed accessor rather
+ * than a constructor parameter, so the override is applied to the extras map instead of via a
+ * hypothetical `copy(bitmapConfig = ...)` argument.
+ */
+private fun Options.toSoftwareDecoding(): Options = copy(
+    extras = extras.newBuilder()
+        .set(Extras.Key.bitmapConfig, Bitmap.Config.ARGB_8888)
+        .build(),
+)

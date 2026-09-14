@@ -256,8 +256,9 @@ object ImageUtil {
     /**
      * Lossless encoder used only for **persistent** disk operations (download tall-image splits).
      *
-     * Reader transforms (split, rotate, merge) return [Bitmap] directly — no encoding is
-     * needed since [SubsamplingScaleImageView] accepts bitmaps via [ImageSource.bitmap].
+     * Reader transforms (split, rotate, merge) return [Bitmap] directly and are handed to the
+     * Compose render tree via `androidx.compose.ui.graphics.asImageBitmap`, so no encoding step
+     * is involved.
      *
      * Callers that persist to disk should supply their own encoder via
      * [ImageFormat.encoder()][tachiyomi.domain.library.service.LibraryPreferences.ImageFormat].
@@ -293,7 +294,7 @@ object ImageUtil {
     fun rotateImage(imageSource: BufferedSource, degrees: Float): Bitmap {
         val imageBitmap = BitmapFactory.decodeStream(imageSource.inputStream())
         val rotated = rotateBitMap(imageBitmap, degrees)
-        imageBitmap.recycle()
+        recycleIfLowRam(imageBitmap)
         return rotated
     }
 
@@ -349,11 +350,11 @@ object ImageUtil {
                 result.applyCanvas {
                     if (upperBitmap != null) {
                         drawBitmap(upperBitmap, 0f, 0f, null)
-                        upperBitmap.recycle()
+                        recycleIfLowRam(upperBitmap)
                     }
                     if (lowerBitmap != null) {
                         drawBitmap(lowerBitmap, 0f, height.toFloat(), null)
-                        lowerBitmap.recycle()
+                        recycleIfLowRam(lowerBitmap)
                     }
                 }
                 return result
@@ -384,7 +385,7 @@ object ImageUtil {
             val bottomPart = Rect(0, height, width / 2, height * 2)
             drawBitmap(imageBitmap, leftPart, bottomPart, null)
         }
-        imageBitmap.recycle()
+        recycleIfLowRam(imageBitmap)
         return result
     }
 
@@ -462,7 +463,7 @@ object ImageUtil {
             BitmapFactory.decodeStream(bottomSource.inputStream())
                 ?: throw IllegalArgumentException("Failed to decode bottom image for merge")
         } catch (e: Throwable) {
-            topBitmap.recycle()
+            recycleIfLowRam(topBitmap)
             throw e
         }
 
@@ -511,12 +512,8 @@ object ImageUtil {
             }
             return result
         } finally {
-            if (recycleTop && !topBitmap.isRecycled) {
-                topBitmap.recycle()
-            }
-            if (recycleBottom && !bottomBitmap.isRecycled) {
-                bottomBitmap.recycle()
-            }
+            if (recycleTop) recycleIfLowRam(topBitmap)
+            if (recycleBottom) recycleIfLowRam(bottomBitmap)
         }
     }
 
@@ -581,7 +578,7 @@ object ImageUtil {
                 splitFile.openOutputStream().use { outputStream ->
                     val splitBitmap = bitmapRegionDecoder.decodeRegion(region, options)
                     encoder(splitBitmap, outputStream)
-                    splitBitmap.recycle()
+                    recycleIfLowRam(splitBitmap)
                 }
                 logcat {
                     "Success: Split #${splitData.index + 1} with topOffset=${splitData.topOffset} " +
@@ -672,6 +669,46 @@ object ImageUtil {
     }
 
     /**
+     * Whether transient intermediate bitmaps are eagerly recycled.
+     *
+     * Defaults to `false`. On the supported baseline (API 29+, non-low-RAM hardware) bitmap
+     * pixel buffers are tracked by ART and released at the next GC, so an explicit
+     * [Bitmap.recycle] is unnecessary — and actively unsafe, because it faults any snapshot
+     * that still holds the bitmap (`Canvas: trying to use a recycled bitmap`).
+     *
+     * Low-RAM devices opt back in via [configureRecyclePolicy], which keeps native heap
+     * pressure bounded on the software ([Bitmap.Config.ARGB_8888]) fallback path — the exact
+     * configuration where GPU-resident [Bitmap.Config.HARDWARE] allocations are absent.
+     */
+    @Volatile
+    private var eagerRecycleTransientBitmaps: Boolean = false
+
+    /**
+     * Configures the transient-bitmap recycling policy. Called once from
+     * `Application.onCreate` with [DeviceUtil.isLowRamDevice].
+     */
+    fun configureRecyclePolicy(isLowRamDevice: Boolean) {
+        eagerRecycleTransientBitmaps = isLowRamDevice
+    }
+
+    /**
+     * Retires a transient intermediate [Bitmap] that is never handed to the UI
+     * (rotation/split/merge intermediates, analysis-only decodes, thumbnails).
+     *
+     * On capable devices this is a no-op: the caller's reference is dropped and ART reclaims
+     * the pixel buffer. On low-RAM devices the bitmap is recycled eagerly. See
+     * [eagerRecycleTransientBitmaps].
+     *
+     * Never call this on a bitmap that has been handed to Compose or is retained by a page —
+     * use the reference-drop path instead.
+     */
+    fun recycleIfLowRam(bitmap: Bitmap?) {
+        if (eagerRecycleTransientBitmaps && bitmap != null && !bitmap.isRecycled) {
+            bitmap.recycle()
+        }
+    }
+
+    /**
      * Algorithm for determining what background to accompany a comic/manga page
      */
     fun chooseBackground(context: Context, imageStream: InputStream): Drawable {
@@ -689,7 +726,7 @@ object ImageUtil {
         val whiteColor = Color.WHITE
         if (image == null) return whiteColor.toDrawable()
         if (image.width < 50 || image.height < 50) {
-            image.recycle()
+            recycleIfLowRam(image)
             return whiteColor.toDrawable()
         }
 
@@ -733,7 +770,7 @@ object ImageUtil {
             !color.isWhite() && color.isCloseTo(other)
         }
         if (isNotWhiteAndCloseTo.all { it }) {
-            image.recycle()
+            recycleIfLowRam(image)
             return topLeftPixel.toDrawable()
         }
 
@@ -848,7 +885,7 @@ object ImageUtil {
             darkBG = true
         }
 
-        image.recycle()
+        recycleIfLowRam(image)
 
         val isLandscape = context.resources.configuration?.orientation == Configuration.ORIENTATION_LANDSCAPE
         if (isLandscape) {
@@ -962,7 +999,7 @@ object ImageUtil {
         val decodeOpts = BitmapFactory.Options().apply { inSampleSize = DHASH_SAMPLE_SIZE }
         val coarse = BitmapFactory.decodeStream(imageStream, null, decodeOpts) ?: return null
         val scaled = coarse.scale(DHASH_WIDTH, DHASH_HEIGHT, true)
-        if (scaled !== coarse) coarse.recycle()
+        if (scaled !== coarse) recycleIfLowRam(coarse)
 
         var hash = 0L
         for (y in 0 until DHASH_HEIGHT) {
@@ -974,7 +1011,7 @@ object ImageUtil {
                 }
             }
         }
-        scaled.recycle()
+        recycleIfLowRam(scaled)
         return hash
     }
 

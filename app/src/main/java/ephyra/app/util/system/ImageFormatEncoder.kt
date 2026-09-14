@@ -12,8 +12,7 @@ import java.io.OutputStream
  * PNG uses Android's built-in encoder — universal compatibility.
  *
  * This encoder is **not** used for transient reader buffers. Reader transforms
- * (split, rotate, merge) return [Bitmap] directly since SubsamplingScaleImageView
- * accepts bitmaps via ImageSource.bitmap().
+ * (split, rotate, merge) return [Bitmap] directly and are handed to the Compose render tree.
  */
 fun ImageFormat.encoder(): (Bitmap, OutputStream) -> Unit = when (this) {
     ImageFormat.PNG -> { bitmap, os ->
