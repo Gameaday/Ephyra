@@ -29,6 +29,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Surface
@@ -62,6 +63,7 @@ fun ChapterTransition(
     currChapterDownloaded: Boolean,
     goingToChapterDownloaded: Boolean,
     onTransitionClick: (() -> Unit)? = null,
+    onReturnClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val currChapter = transition.from.chapter
@@ -81,6 +83,7 @@ fun ChapterTransition(
                     fallbackLabel = stringResource(ephyra.app.core.common.R.string.transition_no_previous),
                     chapterGap = calculateChapterGap(currChapter, goingToChapter),
                     onTransitionClick = onTransitionClick.takeIf { hasDestination },
+                    onReturnClick = onReturnClick,
                     actionLabel = stringResource(ephyra.app.core.common.R.string.action_previous_chapter),
                     isNext = false,
                     modifier = modifier,
@@ -98,6 +101,7 @@ fun ChapterTransition(
                     fallbackLabel = stringResource(ephyra.app.core.common.R.string.transition_no_next),
                     chapterGap = calculateChapterGap(goingToChapter, currChapter),
                     onTransitionClick = onTransitionClick.takeIf { hasDestination },
+                    onReturnClick = onReturnClick,
                     actionLabel = stringResource(ephyra.app.core.common.R.string.action_next_chapter),
                     isNext = true,
                     modifier = modifier,
@@ -118,6 +122,7 @@ private fun TransitionCard(
     fallbackLabel: String,
     chapterGap: Int,
     onTransitionClick: (() -> Unit)? = null,
+    onReturnClick: (() -> Unit)? = null,
     actionLabel: String? = null,
     isNext: Boolean = true,
     modifier: Modifier = Modifier,
@@ -243,6 +248,36 @@ private fun TransitionCard(
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     )
+                }
+
+                if (onReturnClick != null) {
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedButton(
+                        onClick = onReturnClick,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(46.dp),
+                        shape = RoundedCornerShape(16.dp),
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Icon(
+                                imageVector = if (isNext) {
+                                    Icons.AutoMirrored.Filled.ArrowBack
+                                } else {
+                                    Icons.AutoMirrored.Filled.ArrowForward
+                                },
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Text(
+                                text = stringResource(ephyra.app.core.common.R.string.transition_return_to_chapter),
+                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Medium),
+                            )
+                        }
+                    }
                 }
             }
         }

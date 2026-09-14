@@ -6,7 +6,6 @@ import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
@@ -34,7 +33,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -42,13 +40,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
@@ -191,6 +194,42 @@ fun ComposeWebtoonReader(
                 }
         }
 
+        val webtoonOverscrollConnection = remember(onNextChapter, onPreviousChapter) {
+            object : NestedScrollConnection {
+                var accumulatedOverscroll = 0f
+
+                override fun onPostScroll(
+                    consumed: Offset,
+                    available: Offset,
+                    source: NestedScrollSource,
+                ): Offset {
+                    if (source == NestedScrollSource.UserInput) {
+                        if (!lazyListState.canScrollForward && available.y < 0) {
+                            accumulatedOverscroll += available.y
+                        } else if (!lazyListState.canScrollBackward && available.y > 0) {
+                            accumulatedOverscroll += available.y
+                        }
+                    }
+                    return Offset.Zero
+                }
+
+                override suspend fun onPreFling(available: Velocity): Velocity {
+                    val threshold = with(density) { 60.dp.toPx() }
+                    if (!lazyListState.canScrollForward &&
+                        (accumulatedOverscroll < -threshold || available.y < -800f)
+                    ) {
+                        onNextChapter()
+                    } else if (!lazyListState.canScrollBackward &&
+                        (accumulatedOverscroll > threshold || available.y > 800f)
+                    ) {
+                        onPreviousChapter()
+                    }
+                    accumulatedOverscroll = 0f
+                    return Velocity.Zero
+                }
+            }
+        }
+
         Box(
             modifier = modifier
                 .fillMaxSize()
@@ -224,7 +263,9 @@ fun ComposeWebtoonReader(
         ) {
             LazyColumn(
                 state = lazyListState,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .nestedScroll(webtoonOverscrollConnection),
             ) {
                 itemsIndexed(
                     items = items,
@@ -246,58 +287,32 @@ fun ComposeWebtoonReader(
                             )
                         }
                         is ChapterTransition.Prev -> {
-                            var totalDrag by remember { mutableFloatStateOf(0f) }
-                            Box(
+                            ChapterTransition(
+                                transition = item,
+                                currChapterDownloaded = isCurrentChapterDownloaded,
+                                goingToChapterDownloaded = isPreviousChapterDownloaded,
+                                onTransitionClick = onPreviousChapter,
+                                onReturnClick = {
+                                    scope.launch { lazyListState.animateScrollBy(scrollDistance) }
+                                },
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .pointerInput(viewer, onPreviousChapter) {
-                                        detectVerticalDragGestures(
-                                            onDragStart = { totalDrag = 0f },
-                                            onDragEnd = {
-                                                if (totalDrag > 80f) {
-                                                    onPreviousChapter()
-                                                }
-                                                totalDrag = 0f
-                                            },
-                                            onVerticalDrag = { _, dragAmount -> totalDrag += dragAmount },
-                                        )
-                                    },
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                ChapterTransition(
-                                    transition = item,
-                                    currChapterDownloaded = isCurrentChapterDownloaded,
-                                    goingToChapterDownloaded = isPreviousChapterDownloaded,
-                                    onTransitionClick = onPreviousChapter,
-                                )
-                            }
+                                    .padding(vertical = 32.dp),
+                            )
                         }
                         is ChapterTransition.Next -> {
-                            var totalDrag by remember { mutableFloatStateOf(0f) }
-                            Box(
+                            ChapterTransition(
+                                transition = item,
+                                currChapterDownloaded = isCurrentChapterDownloaded,
+                                goingToChapterDownloaded = isNextChapterDownloaded,
+                                onTransitionClick = onNextChapter,
+                                onReturnClick = {
+                                    scope.launch { lazyListState.animateScrollBy(-scrollDistance) }
+                                },
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .pointerInput(viewer, onNextChapter) {
-                                        detectVerticalDragGestures(
-                                            onDragStart = { totalDrag = 0f },
-                                            onDragEnd = {
-                                                if (totalDrag < -80f) {
-                                                    onNextChapter()
-                                                }
-                                                totalDrag = 0f
-                                            },
-                                            onVerticalDrag = { _, dragAmount -> totalDrag += dragAmount },
-                                        )
-                                    },
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                ChapterTransition(
-                                    transition = item,
-                                    currChapterDownloaded = isCurrentChapterDownloaded,
-                                    goingToChapterDownloaded = isNextChapterDownloaded,
-                                    onTransitionClick = onNextChapter,
-                                )
-                            }
+                                    .padding(vertical = 32.dp),
+                            )
                         }
                     }
                 }

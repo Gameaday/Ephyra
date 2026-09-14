@@ -1,8 +1,7 @@
 package ephyra.feature.reader.viewer.pager
 
 import android.graphics.PointF
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.HorizontalPager
@@ -12,7 +11,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -21,9 +19,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.Velocity
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toSize
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ephyra.core.common.util.system.logcat
 import ephyra.feature.reader.model.ChapterTransition
@@ -176,47 +181,19 @@ fun ComposePagerReader(
             chapters?.nextChapter?.state is ReaderChapter.State.Loaded
         }
 
+        val density = LocalDensity.current
+
         val pageContent: @Composable (Int) -> Unit = { position ->
             when (val item = items.getOrNull(position)) {
                 is ChapterTransition.Prev -> {
-                    var totalDrag by remember { mutableFloatStateOf(0f) }
-                    val dragModifier = if (viewer is VerticalPagerViewer) {
-                        Modifier.pointerInput(viewer, onPreviousChapter) {
-                            detectVerticalDragGestures(
-                                onDragStart = { totalDrag = 0f },
-                                onDragEnd = {
-                                    if (totalDrag > 80f) {
-                                        onPreviousChapter()
-                                    }
-                                    totalDrag = 0f
-                                },
-                                onVerticalDrag = { _, dragAmount -> totalDrag += dragAmount },
-                            )
-                        }
-                    } else {
-                        Modifier.pointerInput(viewer, onPreviousChapter) {
-                            detectHorizontalDragGestures(
-                                onDragStart = { totalDrag = 0f },
-                                onDragEnd = {
-                                    val shouldTrigger = if (viewer is R2LPagerViewer) {
-                                        totalDrag < -80f
-                                    } else {
-                                        totalDrag >
-                                            80f
-                                    }
-                                    if (shouldTrigger) {
-                                        onPreviousChapter()
-                                    }
-                                    totalDrag = 0f
-                                },
-                                onHorizontalDrag = { _, dragAmount -> totalDrag += dragAmount },
-                            )
-                        }
-                    }
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .then(dragModifier),
+                            .pointerInput(viewer) {
+                                detectTapGestures { offset ->
+                                    handleTap(offset, size.toSize())
+                                }
+                            },
                         contentAlignment = Alignment.Center,
                     ) {
                         ChapterTransition(
@@ -224,49 +201,20 @@ fun ComposePagerReader(
                             currChapterDownloaded = isCurrentChapterDownloaded,
                             goingToChapterDownloaded = isPreviousChapterDownloaded,
                             onTransitionClick = onPreviousChapter,
+                            onReturnClick = { viewer.moveToNext() },
                         )
                     }
                 }
 
                 is ChapterTransition.Next -> {
-                    var totalDrag by remember { mutableFloatStateOf(0f) }
-                    val dragModifier = if (viewer is VerticalPagerViewer) {
-                        Modifier.pointerInput(viewer, onNextChapter) {
-                            detectVerticalDragGestures(
-                                onDragStart = { totalDrag = 0f },
-                                onDragEnd = {
-                                    if (totalDrag < -80f) {
-                                        onNextChapter()
-                                    }
-                                    totalDrag = 0f
-                                },
-                                onVerticalDrag = { _, dragAmount -> totalDrag += dragAmount },
-                            )
-                        }
-                    } else {
-                        Modifier.pointerInput(viewer, onNextChapter) {
-                            detectHorizontalDragGestures(
-                                onDragStart = { totalDrag = 0f },
-                                onDragEnd = {
-                                    val shouldTrigger = if (viewer is R2LPagerViewer) {
-                                        totalDrag > 80f
-                                    } else {
-                                        totalDrag <
-                                            -80f
-                                    }
-                                    if (shouldTrigger) {
-                                        onNextChapter()
-                                    }
-                                    totalDrag = 0f
-                                },
-                                onHorizontalDrag = { _, dragAmount -> totalDrag += dragAmount },
-                            )
-                        }
-                    }
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .then(dragModifier),
+                            .pointerInput(viewer) {
+                                detectTapGestures { offset ->
+                                    handleTap(offset, size.toSize())
+                                }
+                            },
                         contentAlignment = Alignment.Center,
                     ) {
                         ChapterTransition(
@@ -274,6 +222,7 @@ fun ComposePagerReader(
                             currChapterDownloaded = isCurrentChapterDownloaded,
                             goingToChapterDownloaded = isNextChapterDownloaded,
                             onTransitionClick = onNextChapter,
+                            onReturnClick = { viewer.moveToPrevious() },
                         )
                     }
                 }
@@ -302,6 +251,82 @@ fun ComposePagerReader(
             }
         }
 
+        val overscrollConnection = remember(viewer, onNextChapter, onPreviousChapter, items) {
+            object : NestedScrollConnection {
+                var accumulatedOverscroll = 0f
+
+                override fun onPostScroll(
+                    consumed: Offset,
+                    available: Offset,
+                    source: NestedScrollSource,
+                ): Offset {
+                    if (source == NestedScrollSource.UserInput) {
+                        val currPage = pagerState.currentPage
+                        val lastIdx = items.lastIndex
+
+                        if (currPage == lastIdx && items.getOrNull(lastIdx) is ChapterTransition.Next) {
+                            val delta = when (viewer) {
+                                is VerticalPagerViewer -> available.y
+                                is R2LPagerViewer -> available.x
+                                else -> available.x
+                            }
+                            val isForwardOverscroll = when (viewer) {
+                                is VerticalPagerViewer -> delta < 0
+                                is R2LPagerViewer -> delta > 0
+                                else -> delta < 0
+                            }
+                            if (isForwardOverscroll) {
+                                accumulatedOverscroll += delta
+                            }
+                        } else if (currPage == 0 && items.firstOrNull() is ChapterTransition.Prev) {
+                            val delta = when (viewer) {
+                                is VerticalPagerViewer -> available.y
+                                is R2LPagerViewer -> available.x
+                                else -> available.x
+                            }
+                            val isBackwardOverscroll = when (viewer) {
+                                is VerticalPagerViewer -> delta > 0
+                                is R2LPagerViewer -> delta < 0
+                                else -> delta > 0
+                            }
+                            if (isBackwardOverscroll) {
+                                accumulatedOverscroll += delta
+                            }
+                        }
+                    }
+                    return Offset.Zero
+                }
+
+                override suspend fun onPreFling(available: Velocity): Velocity {
+                    val threshold = with(density) { 60.dp.toPx() }
+                    val currPage = pagerState.currentPage
+                    val lastIdx = items.lastIndex
+
+                    if (currPage == lastIdx && items.getOrNull(lastIdx) is ChapterTransition.Next) {
+                        val triggered = when (viewer) {
+                            is VerticalPagerViewer -> accumulatedOverscroll < -threshold || available.y < -800f
+                            is R2LPagerViewer -> accumulatedOverscroll > threshold || available.x > 800f
+                            else -> accumulatedOverscroll < -threshold || available.x < -800f
+                        }
+                        if (triggered) {
+                            onNextChapter()
+                        }
+                    } else if (currPage == 0 && items.firstOrNull() is ChapterTransition.Prev) {
+                        val triggered = when (viewer) {
+                            is VerticalPagerViewer -> accumulatedOverscroll > threshold || available.y > 800f
+                            is R2LPagerViewer -> accumulatedOverscroll < -threshold || available.x < -800f
+                            else -> accumulatedOverscroll > threshold || available.x > 800f
+                        }
+                        if (triggered) {
+                            onPreviousChapter()
+                        }
+                    }
+                    accumulatedOverscroll = 0f
+                    return Velocity.Zero
+                }
+            }
+        }
+
         when (viewer) {
             is R2LPagerViewer -> {
                 // Natural Japanese / Manga Right-to-Left paging:
@@ -311,7 +336,7 @@ fun ComposePagerReader(
                         state = pagerState,
                         beyondViewportPageCount = 1,
                         userScrollEnabled = isPagerScrollEnabled,
-                        modifier = modifier.fillMaxSize(),
+                        modifier = modifier.fillMaxSize().nestedScroll(overscrollConnection),
                     ) { position ->
                         // Re-nest into LTR so text / transitions inside the page aren't mirrored
                         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
@@ -326,7 +351,7 @@ fun ComposePagerReader(
                     state = pagerState,
                     beyondViewportPageCount = 1,
                     userScrollEnabled = isPagerScrollEnabled,
-                    modifier = modifier.fillMaxSize(),
+                    modifier = modifier.fillMaxSize().nestedScroll(overscrollConnection),
                 ) { position ->
                     pageContent(position)
                 }
@@ -339,7 +364,7 @@ fun ComposePagerReader(
                         state = pagerState,
                         beyondViewportPageCount = 1,
                         userScrollEnabled = isPagerScrollEnabled,
-                        modifier = modifier.fillMaxSize(),
+                        modifier = modifier.fillMaxSize().nestedScroll(overscrollConnection),
                     ) { position ->
                         pageContent(position)
                     }
