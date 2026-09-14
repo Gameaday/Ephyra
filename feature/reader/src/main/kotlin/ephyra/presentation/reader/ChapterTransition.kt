@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Warning
@@ -57,6 +58,14 @@ import ephyra.presentation.core.util.secondaryItemAlpha
 import ephyra.presentation.theme.EphyraPreviewTheme
 import kotlinx.collections.immutable.persistentMapOf
 
+/**
+ * The reading flow direction of the active viewer, used to orient chapter-transition
+ * arrows. "Previous chapter" is left in L2R pagers, right in R2L pagers, and up in
+ * vertical/webtoon readers — a hard-coded horizontal arrow points the wrong way in
+ * every mode except L2R.
+ */
+enum class TransitionDirection { LTR, RTL, VERTICAL }
+
 @Composable
 fun ChapterTransition(
     transition: ChapterTransition,
@@ -64,6 +73,7 @@ fun ChapterTransition(
     goingToChapterDownloaded: Boolean,
     onTransitionClick: (() -> Unit)? = null,
     onReturnClick: (() -> Unit)? = null,
+    direction: TransitionDirection = TransitionDirection.LTR,
     modifier: Modifier = Modifier,
 ) {
     val currChapter = transition.from.chapter
@@ -86,6 +96,7 @@ fun ChapterTransition(
                     onReturnClick = onReturnClick,
                     actionLabel = stringResource(ephyra.app.core.common.R.string.action_previous_chapter),
                     isNext = false,
+                    direction = direction,
                     modifier = modifier,
                 )
             }
@@ -104,6 +115,7 @@ fun ChapterTransition(
                     onReturnClick = onReturnClick,
                     actionLabel = stringResource(ephyra.app.core.common.R.string.action_next_chapter),
                     isNext = true,
+                    direction = direction,
                     modifier = modifier,
                 )
             }
@@ -125,8 +137,48 @@ private fun TransitionCard(
     onReturnClick: (() -> Unit)? = null,
     actionLabel: String? = null,
     isNext: Boolean = true,
+    direction: TransitionDirection = TransitionDirection.LTR,
     modifier: Modifier = Modifier,
 ) {
+    // Arrows always point toward the chapter each button navigates to, expressed in the
+    // reader's own reading flow: in an L2R pager the earlier chapter is to the left, in
+    // an R2L pager it is to the right, and in vertical/webtoon readers it is above.
+    // (The card content is composed inside a forced-LTR layout, so the auto-mirrored
+    // icons render in their LTR orientation — direction is resolved explicitly here.)
+    val actionArrow = when (direction) {
+        TransitionDirection.LTR -> if (isNext) {
+            Icons.AutoMirrored.Filled.ArrowForward
+        } else {
+            Icons.AutoMirrored.Filled.ArrowBack
+        }
+        TransitionDirection.RTL -> if (isNext) {
+            Icons.AutoMirrored.Filled.ArrowBack
+        } else {
+            Icons.AutoMirrored.Filled.ArrowForward
+        }
+        TransitionDirection.VERTICAL -> if (isNext) {
+            Icons.Filled.ArrowDownward
+        } else {
+            Icons.Filled.ArrowUpward
+        }
+    }
+    val returnArrow = when (direction) {
+        TransitionDirection.LTR -> if (isNext) {
+            Icons.AutoMirrored.Filled.ArrowBack
+        } else {
+            Icons.AutoMirrored.Filled.ArrowForward
+        }
+        TransitionDirection.RTL -> if (isNext) {
+            Icons.AutoMirrored.Filled.ArrowForward
+        } else {
+            Icons.AutoMirrored.Filled.ArrowBack
+        }
+        TransitionDirection.VERTICAL -> if (isNext) {
+            Icons.Filled.ArrowUpward
+        } else {
+            Icons.Filled.ArrowDownward
+        }
+    }
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -232,11 +284,7 @@ private fun TransitionCard(
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                             )
                             Icon(
-                                imageVector = if (isNext) {
-                                    Icons.AutoMirrored.Filled.ArrowForward
-                                } else {
-                                    Icons.AutoMirrored.Filled.ArrowBack
-                                },
+                                imageVector = actionArrow,
                                 contentDescription = null,
                             )
                         }
@@ -264,11 +312,7 @@ private fun TransitionCard(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             Icon(
-                                imageVector = if (isNext) {
-                                    Icons.AutoMirrored.Filled.ArrowBack
-                                } else {
-                                    Icons.AutoMirrored.Filled.ArrowForward
-                                },
+                                imageVector = returnArrow,
                                 contentDescription = null,
                                 modifier = Modifier.size(18.dp),
                             )

@@ -8,6 +8,7 @@ import android.graphics.BitmapFactory
 import android.graphics.BitmapRegionDecoder
 import android.graphics.Color
 import android.graphics.Matrix
+import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
@@ -37,6 +38,7 @@ import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 object ImageUtil {
 
@@ -448,22 +450,74 @@ object ImageUtil {
 
     /**
      * Combine two images vertically, placing the second image below the first.
+     * Proportionally scales images to match [targetWidth] if their widths slightly differ,
+     * preventing transparent gutters.
      * Returns a [Bitmap]; the caller decides whether to display it directly
      * (reader) or encode it for disk persistence (downloader).
      */
     fun mergePages(topSource: BufferedSource, bottomSource: BufferedSource): Bitmap {
         val topBitmap = BitmapFactory.decodeStream(topSource.inputStream())
-        val bottomBitmap = BitmapFactory.decodeStream(bottomSource.inputStream())
-
-        val width = max(topBitmap.width, bottomBitmap.width)
-        val result = createBitmap(width, topBitmap.height + bottomBitmap.height)
-        result.applyCanvas {
-            drawBitmap(topBitmap, 0f, 0f, null)
-            drawBitmap(bottomBitmap, 0f, topBitmap.height.toFloat(), null)
+            ?: throw IllegalArgumentException("Failed to decode top image for merge")
+        val bottomBitmap = try {
+            BitmapFactory.decodeStream(bottomSource.inputStream())
+                ?: throw IllegalArgumentException("Failed to decode bottom image for merge")
+        } catch (e: Throwable) {
+            topBitmap.recycle()
+            throw e
         }
-        topBitmap.recycle()
-        bottomBitmap.recycle()
-        return result
+
+        return mergeBitmaps(topBitmap, bottomBitmap, recycleTop = true, recycleBottom = true)
+    }
+
+    /**
+     * Combine an already loaded or merged [topBitmap] with a following [bottomSource] vertically.
+     * Useful for chained merges (e.g. consecutive stub pages) without re-decoding the top bitmap.
+     */
+    fun mergePages(topBitmap: Bitmap, bottomSource: BufferedSource): Bitmap {
+        val bottomBitmap = BitmapFactory.decodeStream(bottomSource.inputStream())
+            ?: throw IllegalArgumentException("Failed to decode bottom image for merge")
+        return mergeBitmaps(topBitmap, bottomBitmap, recycleTop = false, recycleBottom = true)
+    }
+
+    private fun mergeBitmaps(
+        topBitmap: Bitmap,
+        bottomBitmap: Bitmap,
+        recycleTop: Boolean,
+        recycleBottom: Boolean,
+    ): Bitmap {
+        try {
+            val targetWidth = max(topBitmap.width, bottomBitmap.width)
+            val topScaledHeight = if (topBitmap.width != targetWidth && topBitmap.width > 0) {
+                (topBitmap.height.toFloat() * targetWidth / topBitmap.width).roundToInt()
+            } else {
+                topBitmap.height
+            }
+            val bottomScaledHeight = if (bottomBitmap.width != targetWidth && bottomBitmap.width > 0) {
+                (bottomBitmap.height.toFloat() * targetWidth / bottomBitmap.width).roundToInt()
+            } else {
+                bottomBitmap.height
+            }
+
+            val totalHeight = topScaledHeight + bottomScaledHeight
+            val result = createBitmap(targetWidth, totalHeight)
+            val paint = Paint(Paint.FILTER_BITMAP_FLAG)
+
+            result.applyCanvas {
+                val topDst = Rect(0, 0, targetWidth, topScaledHeight)
+                drawBitmap(topBitmap, null, topDst, paint)
+
+                val bottomDst = Rect(0, topScaledHeight, targetWidth, totalHeight)
+                drawBitmap(bottomBitmap, null, bottomDst, paint)
+            }
+            return result
+        } finally {
+            if (recycleTop && !topBitmap.isRecycled) {
+                topBitmap.recycle()
+            }
+            if (recycleBottom && !bottomBitmap.isRecycled) {
+                bottomBitmap.recycle()
+            }
+        }
     }
 
     enum class Side {

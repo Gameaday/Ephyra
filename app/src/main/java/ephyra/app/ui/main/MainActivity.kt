@@ -222,56 +222,48 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                     navController = navController,
                                     startDestination = ScreenRoutes.Home.route,
                                     enterTransition = {
-                                        slideIntoContainer(
-                                            AnimatedContentTransitionScope.SlideDirection.Start,
-                                            animationSpec = tween(
-                                                durationMillis = MotionTokens.DURATION_MEDIUM,
-                                                easing = MotionTokens.EasingDecelerate,
-                                            ),
-                                        ) + fadeIn(
-                                            animationSpec = tween(
-                                                durationMillis = MotionTokens.DURATION_MEDIUM,
-                                            ),
-                                        )
+                                        MotionTokens.m3SharedAxisZEnter() +
+                                            slideIntoContainer(
+                                                AnimatedContentTransitionScope.SlideDirection.Start,
+                                                targetOffset = { (it * 0.10f).toInt() },
+                                                animationSpec = tween(
+                                                    durationMillis = MotionTokens.DURATION_LONG_1,
+                                                    easing = MotionTokens.EasingEmphasizedDecelerate,
+                                                ),
+                                            )
                                     },
                                     exitTransition = {
-                                        slideOutOfContainer(
-                                            AnimatedContentTransitionScope.SlideDirection.Start,
-                                            animationSpec = tween(
-                                                durationMillis = MotionTokens.DURATION_MEDIUM,
-                                                easing = MotionTokens.EasingAccelerate,
-                                            ),
-                                        ) + fadeOut(
-                                            animationSpec = tween(
-                                                durationMillis = MotionTokens.DURATION_SHORT,
-                                            ),
-                                        )
+                                        MotionTokens.m3SharedAxisZExit() +
+                                            slideOutOfContainer(
+                                                AnimatedContentTransitionScope.SlideDirection.Start,
+                                                targetOffset = { (it * 0.10f).toInt() },
+                                                animationSpec = tween(
+                                                    durationMillis = MotionTokens.DURATION_MEDIUM_3,
+                                                    easing = MotionTokens.EasingEmphasizedAccelerate,
+                                                ),
+                                            )
                                     },
                                     popEnterTransition = {
-                                        slideIntoContainer(
-                                            AnimatedContentTransitionScope.SlideDirection.End,
-                                            animationSpec = tween(
-                                                durationMillis = MotionTokens.DURATION_MEDIUM,
-                                                easing = MotionTokens.EasingDecelerate,
-                                            ),
-                                        ) + fadeIn(
-                                            animationSpec = tween(
-                                                durationMillis = MotionTokens.DURATION_MEDIUM,
-                                            ),
-                                        )
+                                        MotionTokens.m3SharedAxisZPopEnter() +
+                                            slideIntoContainer(
+                                                AnimatedContentTransitionScope.SlideDirection.End,
+                                                targetOffset = { (it * 0.10f).toInt() },
+                                                animationSpec = tween(
+                                                    durationMillis = MotionTokens.DURATION_MEDIUM_4,
+                                                    easing = MotionTokens.EasingEmphasizedDecelerate,
+                                                ),
+                                            )
                                     },
                                     popExitTransition = {
-                                        slideOutOfContainer(
-                                            AnimatedContentTransitionScope.SlideDirection.End,
-                                            animationSpec = tween(
-                                                durationMillis = MotionTokens.DURATION_MEDIUM,
-                                                easing = MotionTokens.EasingAccelerate,
-                                            ),
-                                        ) + fadeOut(
-                                            animationSpec = tween(
-                                                durationMillis = MotionTokens.DURATION_SHORT,
-                                            ),
-                                        )
+                                        MotionTokens.m3SharedAxisZPopExit() +
+                                            slideOutOfContainer(
+                                                AnimatedContentTransitionScope.SlideDirection.End,
+                                                targetOffset = { (it * 0.10f).toInt() },
+                                                animationSpec = tween(
+                                                    durationMillis = MotionTokens.DURATION_MEDIUM_2,
+                                                    easing = MotionTokens.EasingEmphasizedAccelerate,
+                                                ),
+                                            )
                                     },
                                 ) {
                                     composable(ScreenRoutes.Home.route) {

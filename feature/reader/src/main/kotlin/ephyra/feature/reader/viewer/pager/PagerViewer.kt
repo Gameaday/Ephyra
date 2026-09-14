@@ -4,7 +4,6 @@ import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
-import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.ImageUtil
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.download.service.DownloadManager
@@ -18,6 +17,7 @@ import ephyra.feature.reader.model.ViewerChapters
 import ephyra.feature.reader.viewer.Viewer
 import ephyra.feature.reader.viewer.calculateChapterGap
 import eu.kanade.tachiyomi.source.model.Page
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
@@ -94,10 +94,36 @@ abstract class PagerViewer(
 
     private val fallbackView by lazy { View(activity) }
 
+    private var lastSmartCombine = config.smartCombine
+
     init {
         config.navigationModeChangedListener = {
             val showOnStart = config.navigationOverlayOnStart || config.forceNavigationOverlay
             activity.showNavigationOverlay(config.navigator, showOnStart)
+        }
+        config.imagePropertyChangedListener = {
+            activity.runOnUiThread {
+                handleImagePropertyChanged()
+            }
+        }
+    }
+
+    private fun handleImagePropertyChanged() {
+        val smartCombineNow = config.smartCombine
+        if (smartCombineNow != lastSmartCombine) {
+            lastSmartCombine = smartCombineNow
+            val chapters = _chaptersState.value
+            val pages = chapters?.currChapter?.pages
+            if (smartCombineNow) {
+                launchSmartCombinePreScan(pages)
+            } else {
+                preScanJob?.cancel()
+                pages?.forEach { page ->
+                    page.isAbsorbed = false
+                    page.recycleMergedBitmap()
+                }
+                chapters?.let { rebuildItems(it) }
+            }
         }
     }
 
@@ -252,6 +278,18 @@ abstract class PagerViewer(
         activity.onPageSelected(page)
     }
 
+    fun onPageAbsorb(parentPage: ReaderPage, absorbedPage: ReaderPage) {
+        parentPage.mergedBitmap?.let { bmp ->
+            parentPage.width = bmp.width
+            parentPage.height = bmp.height
+        }
+        if (currentPage == absorbedPage) {
+            currentPage = parentPage
+        }
+        _itemsState.update { current -> current.filter { it != absorbedPage } }
+        activity.viewModel.checkChapterCompletion(parentPage)
+    }
+
     fun onPageAbsorb(page: ReaderPage) {
         _itemsState.update { current -> current.filter { it != page } }
     }
@@ -270,49 +308,138 @@ abstract class PagerViewer(
     private fun launchSmartCombinePreScan(pages: List<ReaderPage>?) {
         preScanJob?.cancel()
         if (!config.smartCombine || pages == null) return
-        preScanJob = scope.launch {
-            withIOContext {
-                for (index in pages.indices) {
-                    if (!isActive) break
+        preScanJob = scope.launch(Dispatchers.IO) {
+            var index = 0
+            while (index < pages.size && isActive) {
+                val page = pages[index]
+                if (page is InsertPage || page.isHidden) {
+                    index++
+                    continue
+                }
 
-                    val page = pages[index]
-                    if (page is InsertPage || page.mergedBitmap != null || page.isHidden) continue
+                if (page.status != Page.State.Ready) {
+                    val arrived = page.statusFlow.firstOrNull { it == Page.State.Ready || it is Page.State.Error }
+                    if (arrived != Page.State.Ready || !isActive) {
+                        index++
+                        continue
+                    }
+                }
 
-                    if (page.status != Page.State.Ready) {
-                        val arrived = page.statusFlow.firstOrNull { it == Page.State.Ready || it is Page.State.Error }
-                        if (arrived != Page.State.Ready) continue
+                var nextIndex = index + 1
+                while (nextIndex < pages.size && pages[nextIndex].isHidden) {
+                    nextIndex++
+                }
+                val nextPage = pages.getOrNull(nextIndex)
+                if (nextPage == null || nextPage is InsertPage) {
+                    index++
+                    continue
+                }
+
+                if (nextPage.status != Page.State.Ready) {
+                    val arrived = nextPage.statusFlow.firstOrNull {
+                        it == Page.State.Ready || it is Page.State.Error
+                    }
+                    if (arrived != Page.State.Ready || !isActive) {
+                        index++
+                        continue
+                    }
+                }
+
+                val streamFn = page.stream
+                val nextStreamFn = nextPage.stream
+                if (streamFn == null || nextStreamFn == null) {
+                    index++
+                    continue
+                }
+
+                try {
+                    val currentSource = streamFn().use { Buffer().readFrom(it) }
+                    if (ImageUtil.isAnimatedAndSupported(currentSource)) {
+                        index++
+                        continue
                     }
 
-                    val nextPage = pages.getOrNull(index + 1) ?: continue
-                    if (nextPage.isHidden) continue
-
-                    if (nextPage.status != Page.State.Ready) {
-                        val arrived = nextPage.statusFlow.firstOrNull {
-                            it == Page.State.Ready || it is Page.State.Error
-                        }
-                        if (arrived != Page.State.Ready) continue
-                    }
-
-                    val streamFn = page.stream ?: continue
-                    val nextStreamFn = nextPage.stream ?: continue
-                    try {
-                        val currentSource = streamFn().use { Buffer().readFrom(it) }
-                        if (ImageUtil.isAnimatedAndSupported(currentSource)) continue
-                        val isStub = nextStreamFn().use { ImageUtil.isSmallPage(it, currentSource) }
-                        if (!isStub) continue
-
-                        val nextSource = nextStreamFn().use { Buffer().readFrom(it) }
-                        val mergedBitmap = ImageUtil.mergePages(currentSource, nextSource)
-                        if (page.mergedBitmap == null) {
-                            nextPage.isAbsorbed = true
-                            page.mergedBitmap = mergedBitmap
-                            activity.runOnUiThread {
-                                onPageAbsorb(nextPage)
+                    // 1. Check if the CURRENT page is a top-banner stub of the NEXT page
+                    if (page.mergedBitmap == null) {
+                        val nextSourceForRef = nextStreamFn().use { Buffer().readFrom(it) }
+                        if (!ImageUtil.isAnimatedAndSupported(nextSourceForRef)) {
+                            val isTopStub = streamFn().use { ImageUtil.isSmallPage(it, nextSourceForRef) }
+                            if (isTopStub) {
+                                val mergedBitmap = ImageUtil.mergePages(currentSource, nextSourceForRef)
+                                page.isAbsorbed = true
+                                nextPage.mergedBitmap = mergedBitmap
+                                nextPage.width = mergedBitmap.width
+                                nextPage.height = mergedBitmap.height
+                                activity.runOnUiThread {
+                                    onPageAbsorb(nextPage, page)
+                                }
+                                index = nextIndex
+                                continue
                             }
                         }
-                    } catch (e: Exception) {
-                        logcat(LogPriority.WARN, e) { "Smart combine pre-scan failed for page ${page.index}" }
                     }
+
+                    // 2. Check if NEXT page (and subsequent chained pages) are bottom stubs of CURRENT page
+                    var candidateIndex = nextIndex
+                    var absorbedAny = false
+                    while (candidateIndex < pages.size && isActive) {
+                        val candidateNext = pages[candidateIndex]
+                        if (candidateNext is InsertPage || candidateNext.isHidden) {
+                            candidateIndex++
+                            continue
+                        }
+                        if (candidateNext.status != Page.State.Ready) {
+                            val arrived = candidateNext.statusFlow.firstOrNull {
+                                it == Page.State.Ready || it is Page.State.Error
+                            }
+                            if (arrived != Page.State.Ready || !isActive) break
+                        }
+                        val candidateStreamFn = candidateNext.stream ?: break
+
+                        val isBottomStub = if (page.mergedBitmap != null) {
+                            candidateStreamFn().use {
+                                ImageUtil.isSmallPage(it, page.mergedBitmap!!.width, page.mergedBitmap!!.height)
+                            }
+                        } else {
+                            candidateStreamFn().use {
+                                ImageUtil.isSmallPage(it, currentSource)
+                            }
+                        }
+
+                        if (!isBottomStub) break
+
+                        val candidateSource = candidateStreamFn().use { Buffer().readFrom(it) }
+                        if (ImageUtil.isAnimatedAndSupported(candidateSource)) break
+
+                        val mergedBitmap = if (page.mergedBitmap != null) {
+                            val oldBmp = page.mergedBitmap!!
+                            val merged = ImageUtil.mergePages(oldBmp, candidateSource)
+                            oldBmp.recycle()
+                            merged
+                        } else {
+                            ImageUtil.mergePages(currentSource, candidateSource)
+                        }
+
+                        candidateNext.isAbsorbed = true
+                        page.mergedBitmap = mergedBitmap
+                        page.width = mergedBitmap.width
+                        page.height = mergedBitmap.height
+                        absorbedAny = true
+
+                        activity.runOnUiThread {
+                            onPageAbsorb(page, candidateNext)
+                        }
+                        candidateIndex++
+                    }
+
+                    if (absorbedAny) {
+                        index = candidateIndex
+                    } else {
+                        index++
+                    }
+                } catch (e: Exception) {
+                    logcat(LogPriority.WARN, e) { "Smart combine pre-scan failed for page ${page.index}" }
+                    index++
                 }
             }
         }

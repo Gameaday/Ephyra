@@ -65,6 +65,7 @@ import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.viewer.ViewerNavigation
 import ephyra.presentation.core.data.coil.cropBorders
 import ephyra.presentation.reader.ChapterTransition
+import ephyra.presentation.reader.TransitionDirection
 import eu.kanade.tachiyomi.source.model.Page
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -295,6 +296,7 @@ fun ComposeWebtoonReader(
                                 onReturnClick = {
                                     scope.launch { lazyListState.animateScrollBy(scrollDistance) }
                                 },
+                                direction = TransitionDirection.VERTICAL,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 32.dp),
@@ -309,6 +311,7 @@ fun ComposeWebtoonReader(
                                 onReturnClick = {
                                     scope.launch { lazyListState.animateScrollBy(-scrollDistance) }
                                 },
+                                direction = TransitionDirection.VERTICAL,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 32.dp),

@@ -9,6 +9,7 @@ import ephyra.core.download.DownloadProvider
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
 import ephyra.domain.chapter.interactor.UpdateChapter
+import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.service.ChapterCache
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.download.service.DownloadPreferences
@@ -24,8 +25,12 @@ import ephyra.domain.source.interactor.GetIncognitoState
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.track.interactor.TrackChapter
 import ephyra.domain.track.service.TrackPreferences
+import ephyra.feature.reader.model.ReaderChapter
+import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.viewer.Viewer
 import ephyra.source.local.image.LocalCoverManager
+import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -84,6 +89,22 @@ class ReaderViewModelTest {
 
         every { defaultOrientationPref.stateIn(any()) } returns MutableStateFlow(0)
         every { readerPreferences.defaultOrientationType() } returns defaultOrientationPref
+
+        val autoUpdateTrackPref: Preference<Boolean> = mockk(relaxed = true) {
+            every { getSync() } returns false
+            coEvery { get() } returns false
+        }
+        every { trackPreferences.autoUpdateTrack() } returns autoUpdateTrackPref
+
+        val removeAfterReadSlotsPref: Preference<Int> = mockk(relaxed = true) {
+            coEvery { get() } returns -1
+        }
+        every { downloadPreferences.removeAfterReadSlots() } returns removeAfterReadSlotsPref
+
+        val markDuplicatePref: Preference<Set<String>> = mockk(relaxed = true) {
+            coEvery { get() } returns emptySet()
+        }
+        every { libraryPreferences.markDuplicateReadChapterAsRead() } returns markDuplicatePref
     }
 
     @AfterEach
@@ -204,5 +225,24 @@ class ReaderViewModelTest {
             val updated = awaitItem()
             assertEquals(mockViewer, updated.viewer)
         }
+    }
+
+    @Test
+    fun `checkChapterCompletion marks chapter read when trailing page is absorbed`() = runTest {
+        val viewModel = createViewModel()
+        val chapter = Chapter.create().copy(id = 50L, mangaId = 1L, name = "Ch 50", read = false)
+        val readerChapter = ReaderChapter(chapter)
+        val page0 = ReaderPage(0, "http://p/0").apply { this.chapter = readerChapter }
+        val page1 = ReaderPage(1, "http://p/1").apply {
+            this.chapter = readerChapter
+            this.isAbsorbed = true
+        }
+        readerChapter.state = ReaderChapter.State.Loaded(listOf(page0, page1))
+
+        val job = viewModel.checkChapterCompletion(page0)
+        job?.join()
+
+        assertTrue(readerChapter.chapter.read, "Chapter must be marked as read when all following pages are absorbed")
+        coVerify { updateChapter.await(match { it.id == 50L && it.read == true }) }
     }
 }

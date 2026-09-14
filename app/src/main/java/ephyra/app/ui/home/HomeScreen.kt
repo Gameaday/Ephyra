@@ -149,16 +149,10 @@ fun HomeScreen(
                     AnimatedVisibility(
                         visible = bottomNavVisible,
                         enter = expandVertically(
-                            animationSpec = tween(
-                                durationMillis = MotionTokens.DURATION_MEDIUM,
-                                easing = MotionTokens.EasingDecelerate,
-                            ),
+                            animationSpec = MotionTokens.tweenEnter(),
                         ),
                         exit = shrinkVertically(
-                            animationSpec = tween(
-                                durationMillis = MotionTokens.DURATION_SHORT,
-                                easing = MotionTokens.EasingAccelerate,
-                            ),
+                            animationSpec = MotionTokens.tweenExit(),
                         ),
                     ) {
                         NavigationBar {
@@ -184,6 +178,10 @@ fun HomeScreen(
                 NavHost(
                     navController = bottomNavController,
                     startDestination = ScreenRoutes.Library.route,
+                    enterTransition = { MotionTokens.m3FadeThroughEnter() },
+                    exitTransition = { MotionTokens.m3FadeThroughExit() },
+                    popEnterTransition = { MotionTokens.m3FadeThroughEnter() },
+                    popExitTransition = { MotionTokens.m3FadeThroughExit() },
                     modifier = Modifier,
                 ) {
                     composable(ScreenRoutes.Library.route) {

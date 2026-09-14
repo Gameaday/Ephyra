@@ -7,10 +7,22 @@ import ephyra.data.backup.models.Backup
 import ephyra.data.backup.models.BackupCategory
 import ephyra.data.backup.models.BackupChapter
 import ephyra.data.backup.models.BackupManga
+import ephyra.data.backup.models.BackupPreference
 import ephyra.data.backup.models.BackupSavedSearch
 import ephyra.data.backup.models.BackupSource
+import ephyra.data.backup.models.BackupSourcePreferences
+import ephyra.data.backup.models.BooleanPreferenceValue
+import ephyra.data.backup.models.FloatPreferenceValue
+import ephyra.data.backup.models.IntPreferenceValue
+import ephyra.data.backup.models.LongPreferenceValue
+import ephyra.data.backup.models.StringPreferenceValue
+import ephyra.data.backup.models.StringSetPreferenceValue
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.protobuf.ProtoBuf
+import kotlinx.serialization.protobuf.ProtoNumber
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -315,4 +327,137 @@ class BackupFormatRoundTripTest {
         assertEquals(1, restored.backupSavedSearches.size)
         assertEquals("Manga Updates", restored.backupSavedSearches.single().name)
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Tachiyomi preference-value cross-compatibility regression tests.
+    //
+    // Protobuf polymorphic serialization discriminates subclasses by fully-qualified
+    // serial name. Tachiyomi/Mihon backups encode preference values under the
+    // `eu.kanade.tachiyomi.data.backup.models.*` package; Ephyra's classes were renamed
+    // to `ephyra.data.backup.models.*`, so [SerialName] pins are required on every
+    // [PreferenceValue] subclass or restore fails with:
+    // "Serializer for subclass 'eu.kanade.tachiyomi...StringPreferenceValue' is not
+    //  found in the polymorphic scope of 'PreferenceValue'".
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    fun `tachiyomi backup with eu-kanade preference value discriminators decodes`() {
+        // Encoded exactly as Tachiyomi would write it — a full Backup message built
+        // with the mirror hierarchy below, which serializes under the
+        // eu.kanade.tachiyomi.data.backup.models package.
+        val tachiyomiPrefs = TachiMirrorSourcePreferences(
+            sourceKey = "eu.kanade.tachiyomi.extension.en.mangadex",
+            prefs = listOf(
+                TachiMirrorPreference("pref_string", TachiStringPref("enabled")),
+                TachiMirrorPreference("pref_int", TachiIntPref(42)),
+                TachiMirrorPreference("pref_long", TachiLongPref(9_000_000_000L)),
+                TachiMirrorPreference("pref_float", TachiFloatPref(0.75f)),
+                TachiMirrorPreference("pref_bool", TachiBoolPref(true)),
+                TachiMirrorPreference("pref_set", TachiStringSetPref(setOf("a", "b"))),
+            ),
+        )
+        val tachiyomiBackup = TachiMirrorBackup(
+            // Non-default values: kotlinx protobuf omits default-valued fields, and
+            // BackupManga's source/url fields are required on decode.
+            backupManga = listOf(TachiMirrorManga(source = 1L, url = "/manga/x", title = "T", favorite = true)),
+            backupSourcePreferences = listOf(tachiyomiPrefs),
+        )
+        val containerBytes = protoBuf.encodeToByteArray(TachiMirrorBackup.serializer(), tachiyomiBackup)
+
+        val decoder = BackupDecoder(
+            context = ApplicationProvider.getApplicationContext(),
+            protoBuf = protoBuf,
+        )
+        val restored = decoder.decode(ByteArrayInputStream(containerBytes))
+
+        assertEquals(1, restored.backupSourcePreferences.size)
+        val prefs = restored.backupSourcePreferences.single().prefs.associateBy { it.key }
+        assertEquals("enabled", (prefs["pref_string"]?.value as StringPreferenceValue).value)
+        assertEquals(42, (prefs["pref_int"]?.value as IntPreferenceValue).value)
+        assertEquals(9_000_000_000L, (prefs["pref_long"]?.value as LongPreferenceValue).value)
+        assertEquals(0.75f, (prefs["pref_float"]?.value as FloatPreferenceValue).value)
+        assertEquals(true, (prefs["pref_bool"]?.value as BooleanPreferenceValue).value)
+        assertEquals(setOf("a", "b"), (prefs["pref_set"]?.value as StringSetPreferenceValue).value)
+    }
+
+    @Test
+    fun `ephyra exported preferences carry tachiyomi-compatible discriminators`() {
+        val ephyraPrefs = BackupSourcePreferences(
+            sourceKey = "ephyra.source.test",
+            prefs = listOf(
+                BackupPreference("pref_string", StringPreferenceValue("value")),
+                BackupPreference("pref_set", StringSetPreferenceValue(setOf("x"))),
+            ),
+        )
+        val bytes = protoBuf.encodeToByteArray(BackupSourcePreferences.serializer(), ephyraPrefs)
+
+        // Decoding with the original Tachiyomi hierarchy must succeed — proving the
+        // exported discriminators use the eu.kanade.tachiyomi serial names.
+        val mirrored = protoBuf.decodeFromByteArray(TachiMirrorSourcePreferences.serializer(), bytes)
+        assertEquals("ephyra.source.test", mirrored.sourceKey)
+        assertEquals(
+            "value",
+            (mirrored.prefs.single { it.key == "pref_string" }.value as TachiStringPref).value,
+        )
+        assertEquals(
+            setOf("x"),
+            (mirrored.prefs.single { it.key == "pref_set" }.value as TachiStringSetPref).value,
+        )
+    }
 }
+
+// Mirror of the original Tachiyomi preference-value hierarchy, pinned to the exact
+// fully-qualified serial names Tachiyomi/Mihon write into `.tachibk` backups.
+@Serializable
+private sealed class TachiPreferenceValue
+
+@Serializable
+@SerialName("eu.kanade.tachiyomi.data.backup.models.IntPreferenceValue")
+private data class TachiIntPref(val value: Int) : TachiPreferenceValue()
+
+@Serializable
+@SerialName("eu.kanade.tachiyomi.data.backup.models.LongPreferenceValue")
+private data class TachiLongPref(val value: Long) : TachiPreferenceValue()
+
+@Serializable
+@SerialName("eu.kanade.tachiyomi.data.backup.models.FloatPreferenceValue")
+private data class TachiFloatPref(val value: Float) : TachiPreferenceValue()
+
+@Serializable
+@SerialName("eu.kanade.tachiyomi.data.backup.models.StringPreferenceValue")
+private data class TachiStringPref(val value: String) : TachiPreferenceValue()
+
+@Serializable
+@SerialName("eu.kanade.tachiyomi.data.backup.models.BooleanPreferenceValue")
+private data class TachiBoolPref(val value: Boolean) : TachiPreferenceValue()
+
+@Serializable
+@SerialName("eu.kanade.tachiyomi.data.backup.models.StringSetPreferenceValue")
+private data class TachiStringSetPref(val value: Set<String>) : TachiPreferenceValue()
+
+@Serializable
+private data class TachiMirrorPreference(
+    @ProtoNumber(1) val key: String,
+    @ProtoNumber(2) val value: TachiPreferenceValue,
+)
+
+@Serializable
+private data class TachiMirrorSourcePreferences(
+    @ProtoNumber(1) val sourceKey: String,
+    @ProtoNumber(2) val prefs: List<TachiMirrorPreference>,
+)
+
+@Serializable
+private data class TachiMirrorManga(
+    @ProtoNumber(1) val source: Long = 0L,
+    @ProtoNumber(2) val url: String = "",
+    @ProtoNumber(3) val title: String = "",
+    @ProtoNumber(100) val favorite: Boolean = false,
+)
+
+@Serializable
+private data class TachiMirrorBackup(
+    @ProtoNumber(1) val backupManga: List<TachiMirrorManga> = emptyList(),
+    @ProtoNumber(104) val backupPreferences: List<TachiMirrorPreference> = emptyList(),
+    @ProtoNumber(105) val backupSourcePreferences: List<TachiMirrorSourcePreferences> = emptyList(),
+)

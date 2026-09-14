@@ -64,8 +64,8 @@ fun CollapsibleBox(
 
         AnimatedVisibility(
             visible = expanded,
-            enter = expandVertically(animationSpec = MotionTokens.tweenMedium()),
-            exit = shrinkVertically(animationSpec = MotionTokens.tweenMedium()),
+            enter = expandVertically(animationSpec = MotionTokens.tweenEnter()),
+            exit = shrinkVertically(animationSpec = MotionTokens.tweenExit()),
         ) {
             content()
         }

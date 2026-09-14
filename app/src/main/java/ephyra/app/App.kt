@@ -54,6 +54,7 @@ import ephyra.domain.base.BasePreferences
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.ui.UiPreferences
 import ephyra.domain.updates.interactor.GetUpdates
+import ephyra.presentation.core.data.coil.HardwareGuardDecoder
 import ephyra.presentation.core.data.coil.TachiyomiImageDecoder
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.delegate.SecureActivityDelegateState
@@ -326,6 +327,10 @@ class App :
                 add(OkHttpNetworkFetcherFactory(callFactoryLazy::value))
                 // Decoder.Factory
                 add(TachiyomiImageDecoder.Factory())
+                // Enforce the GL_MAX_TEXTURE_SIZE limit on the platform decode path:
+                // oversized long-strip pages fall back to software decoding instead of
+                // failing the hardware (AHardwareBuffer) decode.
+                add(HardwareGuardDecoder.Factory())
                 // Fetcher.Factory
                 add(BufferedSourceFetcher.Factory())
                 val sourceMgr = sourceManagerProvider.get()
@@ -341,6 +346,12 @@ class App :
                     .maxSizePercent(context)
                     .build(),
             )
+            // Coil 3 lifecycle-aware background trimming: when the app moves to the
+            // background, the memory cache is automatically evicted down to 25% of its
+            // capacity and restored (grown back) on demand once resumed. This replaces
+            // the old manual onTrimMemory "clear everything on UI hidden" behavior,
+            // which discarded images that had to be re-decoded on return.
+            memoryCacheMaxSizePercentWhileInBackground(0.25)
 
             diskCache {
                 DiskCache.Builder()
@@ -380,31 +391,17 @@ class App :
     }
 
     /**
-     * Called by the system when it determines that memory is running low. Applies progressive
-     * multi-tiered trimming of the Coil image memory cache to satisfy modern Android memory
-     * requirements and prevent Low-Memory Killer Daemon (LMKD) kills:
-     * - `TRIM_MEMORY_UI_HIDDEN` and above (app backgrounded or critical): clear entirely
-     * - `TRIM_MEMORY_RUNNING_CRITICAL` (severe foreground memory pressure): trim to 0 immediately
-     * - `TRIM_MEMORY_RUNNING_LOW` (foreground, system low): trim to 50% capacity
-     * - `TRIM_MEMORY_RUNNING_MODERATE` (system moderate pressure): trim to 75% capacity
+     * Called by the system when it determines that memory is running low. Only foreground
+     * *running-critical* pressure is handled manually here (evict the whole cache to keep
+     * the process alive); background trimming is handled automatically by Coil 3's
+     * lifecycle-aware [memoryCacheMaxSizePercentWhileInBackground] policy configured in
+     * [newImageLoader], so the legacy TRIM_MEMORY_UI_HIDDEN full clear is no longer needed.
      */
     @Suppress("DEPRECATION")
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
-        val cache = SingletonImageLoader.get(this).memoryCache ?: return
-        when {
-            level >= TRIM_MEMORY_UI_HIDDEN -> {
-                cache.clear()
-            }
-            level >= TRIM_MEMORY_RUNNING_CRITICAL -> {
-                cache.trimToSize(0)
-            }
-            level >= TRIM_MEMORY_RUNNING_LOW -> {
-                cache.trimToSize(cache.maxSize / 2)
-            }
-            level >= TRIM_MEMORY_RUNNING_MODERATE -> {
-                cache.trimToSize((cache.maxSize * 3) / 4)
-            }
+        if (level >= TRIM_MEMORY_RUNNING_CRITICAL) {
+            SingletonImageLoader.get(this).memoryCache?.clear()
         }
     }
 

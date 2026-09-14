@@ -29,10 +29,25 @@ import ephyra.domain.reader.model.ReadingMode
 import ephyra.feature.reader.viewer.Viewer
 import ephyra.feature.reader.viewer.pager.R2LPagerViewer
 import ephyra.presentation.core.components.material.padding
+import ephyra.presentation.core.theme.MotionTokens
 import ephyra.presentation.reader.components.ChapterNavigator
 
-private val readerBarsSlideAnimationSpec = tween<IntOffset>(200)
-private val readerBarsFadeAnimationSpec = tween<Float>(150)
+private val readerBarsSlideEnterAnimationSpec = tween<IntOffset>(
+    durationMillis = MotionTokens.DURATION_MEDIUM_2,
+    easing = MotionTokens.EasingEmphasizedDecelerate,
+)
+private val readerBarsSlideExitAnimationSpec = tween<IntOffset>(
+    durationMillis = MotionTokens.DURATION_SHORT_4,
+    easing = MotionTokens.EasingEmphasizedAccelerate,
+)
+private val readerBarsFadeEnterAnimationSpec = tween<Float>(
+    durationMillis = MotionTokens.DURATION_MEDIUM_2,
+    easing = MotionTokens.EasingEmphasizedDecelerate,
+)
+private val readerBarsFadeExitAnimationSpec = tween<Float>(
+    durationMillis = MotionTokens.DURATION_SHORT_4,
+    easing = MotionTokens.EasingEmphasizedAccelerate,
+)
 
 @Composable
 fun ReaderAppBars(
@@ -73,10 +88,10 @@ fun ReaderAppBars(
     Column(modifier = Modifier.fillMaxHeight()) {
         AnimatedVisibility(
             visible = visible,
-            enter = slideInVertically(initialOffsetY = { -it }, animationSpec = readerBarsSlideAnimationSpec) +
-                fadeIn(animationSpec = readerBarsFadeAnimationSpec),
-            exit = slideOutVertically(targetOffsetY = { -it }, animationSpec = readerBarsSlideAnimationSpec) +
-                fadeOut(animationSpec = readerBarsFadeAnimationSpec),
+            enter = slideInVertically(initialOffsetY = { -it }, animationSpec = readerBarsSlideEnterAnimationSpec) +
+                fadeIn(animationSpec = readerBarsFadeEnterAnimationSpec),
+            exit = slideOutVertically(targetOffsetY = { -it }, animationSpec = readerBarsSlideExitAnimationSpec) +
+                fadeOut(animationSpec = readerBarsFadeExitAnimationSpec),
         ) {
             ReaderTopBar(
                 modifier = Modifier
@@ -97,10 +112,10 @@ fun ReaderAppBars(
 
         AnimatedVisibility(
             visible = visible,
-            enter = slideInVertically(initialOffsetY = { it }, animationSpec = readerBarsSlideAnimationSpec) +
-                fadeIn(animationSpec = readerBarsFadeAnimationSpec),
-            exit = slideOutVertically(targetOffsetY = { it }, animationSpec = readerBarsSlideAnimationSpec) +
-                fadeOut(animationSpec = readerBarsFadeAnimationSpec),
+            enter = slideInVertically(initialOffsetY = { it }, animationSpec = readerBarsSlideEnterAnimationSpec) +
+                fadeIn(animationSpec = readerBarsFadeEnterAnimationSpec),
+            exit = slideOutVertically(targetOffsetY = { it }, animationSpec = readerBarsSlideExitAnimationSpec) +
+                fadeOut(animationSpec = readerBarsFadeExitAnimationSpec),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.padding.small)) {
                 ChapterNavigator(

@@ -422,6 +422,25 @@ class ReaderViewModel @Inject constructor(
                 bookmarked = newChapters.currChapter.chapter.bookmark,
             )
         }
+
+        // Record the newly current chapter in reading history. This lives here (the one
+        // path shared by initial open, viewer page transitions, and toolbar prev/next
+        // navigation) rather than only in loadNewChapter, so every chapter the user
+        // actually opens is written to history. Previously the initial chapter and
+        // adjacent-chapter navigation bypassed updateHistory(), leaving the History tab
+        // empty for single-chapter sessions. The row is updated (upsert by chapter id)
+        // with the real read duration when the chapter is closed out by updateHistory().
+        if (!incognitoMode) {
+            historyRepository.upsertHistory(
+                HistoryUpdate(
+                    chapterId = chapter.chapter.id,
+                    readAt = Date(),
+                    sessionReadDuration = 0L,
+                ),
+            )
+        }
+        restartReadTimer()
+
         return newChapters
     }
 
@@ -781,6 +800,42 @@ class ReaderViewModel @Inject constructor(
                 }
             }
         updateChapter.awaitAll(duplicateUnreadChapters)
+    }
+
+    /**
+     * Checks if [page] has become the effective last page of the chapter
+     * (e.g. following pages were absorbed by smart-combine or blocked by filter).
+     * If so, marks the chapter read and updates trackers and DB.
+     */
+    fun checkChapterCompletion(page: ReaderPage): kotlinx.coroutines.Job? {
+        if (page is InsertPage || incognitoMode) return null
+        val readerChapter = page.chapter
+        val chapterPages = readerChapter.pages ?: return null
+        val pageIndex = page.index
+
+        val isEffectivelyLastPage = pageIndex == chapterPages.lastIndex ||
+            chapterPages.drop(pageIndex + 1).all { it.isHidden }
+
+        if (isEffectivelyLastPage) {
+            return viewModelScope.launchNonCancellable {
+                val prevRead = readerChapter.chapter.read
+                val prevLastPageRead = readerChapter.chapter.lastPageRead
+                readerChapter.chapter = readerChapter.chapter.copy(lastPageRead = pageIndex.toLong())
+                updateChapterProgressOnComplete(readerChapter)
+                if (readerChapter.chapter.lastPageRead != prevLastPageRead ||
+                    readerChapter.chapter.read != prevRead
+                ) {
+                    updateChapter.await(
+                        ChapterUpdate(
+                            id = readerChapter.chapter.id,
+                            read = readerChapter.chapter.read,
+                            lastPageRead = readerChapter.chapter.lastPageRead,
+                        ),
+                    )
+                }
+            }
+        }
+        return null
     }
 
     private fun restartReadTimer() {

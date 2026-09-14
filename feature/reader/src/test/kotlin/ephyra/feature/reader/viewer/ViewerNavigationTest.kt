@@ -16,6 +16,7 @@ import ephyra.feature.reader.viewer.pager.R2LPagerViewer
 import ephyra.feature.reader.viewer.webtoon.WebtoonViewer
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -25,6 +26,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -393,5 +395,45 @@ class ViewerNavigationTest {
         assertEquals(1, scrollRequests.size, "Target page must be emitted once pages arrive")
         val firstPage = pages.first()
         assertEquals(viewer.itemsState.value.indexOf(firstPage), scrollRequests.first())
+    }
+
+    @Test
+    fun `onPageAbsorb removes absorbed page and notifies ViewModel for chapter completion`() = runTest(testDispatcher) {
+        val viewer = L2RPagerViewer(activity, downloadManager, readerPreferences, uiPreferences)
+        val chapters = createViewerChapters(chapterId = 20L, pageCount = 3)
+        viewer.setChapters(chapters)
+
+        val pages = chapters.currChapter.pages!!
+        val page0 = pages[0]
+        val page1 = pages[1]
+
+        viewer.currentPage = page1
+        viewer.onPageAbsorb(page0, page1)
+
+        assertFalse(viewer.itemsState.value.contains(page1), "Absorbed page must be removed from items")
+        assertEquals(page0, viewer.currentPage, "Active page must shift to parent page when absorbed")
+        verify { activity.viewModel.checkChapterCompletion(page0) }
+    }
+
+    @Test
+    fun `toggling smartCombine off reverts absorbed pages and restores item list`() = runTest(testDispatcher) {
+        readerPreferences.smartCombinePaged().set(true)
+        val viewer = L2RPagerViewer(activity, downloadManager, readerPreferences, uiPreferences)
+        val chapters = createViewerChapters(chapterId = 21L, pageCount = 4)
+        viewer.setChapters(chapters)
+
+        val pages = chapters.currChapter.pages!!
+        val page1 = pages[1]
+        page1.isAbsorbed = true
+        viewer.onPageAbsorb(pages[0], page1)
+
+        assertFalse(viewer.itemsState.value.contains(page1))
+
+        // Toggle smart combine OFF
+        readerPreferences.smartCombinePaged().set(false)
+
+        assertFalse(page1.isAbsorbed, "Page absorption flag must be cleared on disable")
+        assertTrue(viewer.itemsState.value.contains(page1), "Items list must be rebuilt to include restored page")
+        viewer.destroy()
     }
 }

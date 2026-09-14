@@ -32,10 +32,12 @@ import androidx.compose.ui.unit.toSize
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ephyra.core.common.util.system.logcat
 import ephyra.feature.reader.model.ChapterTransition
+import ephyra.feature.reader.model.InsertPage
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.viewer.ViewerNavigation
 import ephyra.presentation.reader.ChapterTransition
+import ephyra.presentation.reader.TransitionDirection
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -132,6 +134,20 @@ fun ComposePagerReader(
             }
         }
 
+        // Keep pager aligned with active item if items shift (page absorbs, splits, or resets)
+        LaunchedEffect(items) {
+            val cur = viewer.currentPage
+            if (cur != null) {
+                val newIdx = items.indexOf(cur)
+                if (newIdx != -1 && newIdx != pagerState.currentPage) {
+                    try {
+                        pagerState.scrollToPage(newIdx)
+                    } catch (_: Exception) {
+                    }
+                }
+            }
+        }
+
         // Handle user swiping / page settlement
         LaunchedEffect(pagerState, items) {
             snapshotFlow { pagerState.currentPage }
@@ -181,6 +197,15 @@ fun ComposePagerReader(
             chapters?.nextChapter?.state is ReaderChapter.State.Loaded
         }
 
+        // Transition arrows follow the active pager's reading flow: R2L pagers read
+        // right-to-left (the earlier chapter is to the right), vertical pagers read
+        // downward (the earlier chapter is above), everything else is standard L2R.
+        val transitionDirection = when (viewer) {
+            is VerticalPagerViewer -> TransitionDirection.VERTICAL
+            is R2LPagerViewer -> TransitionDirection.RTL
+            else -> TransitionDirection.LTR
+        }
+
         val density = LocalDensity.current
 
         val pageContent: @Composable (Int) -> Unit = { position ->
@@ -202,6 +227,7 @@ fun ComposePagerReader(
                             goingToChapterDownloaded = isPreviousChapterDownloaded,
                             onTransitionClick = onPreviousChapter,
                             onReturnClick = { viewer.moveToNext() },
+                            direction = transitionDirection,
                         )
                     }
                 }
@@ -223,6 +249,7 @@ fun ComposePagerReader(
                             goingToChapterDownloaded = isNextChapterDownloaded,
                             onTransitionClick = onNextChapter,
                             onReturnClick = { viewer.moveToPrevious() },
+                            direction = transitionDirection,
                         )
                     }
                 }
@@ -336,6 +363,7 @@ fun ComposePagerReader(
                         state = pagerState,
                         beyondViewportPageCount = 1,
                         userScrollEnabled = isPagerScrollEnabled,
+                        key = { position -> getPagerItemKey(items.getOrNull(position)) },
                         modifier = modifier.fillMaxSize().nestedScroll(overscrollConnection),
                     ) { position ->
                         // Re-nest into LTR so text / transitions inside the page aren't mirrored
@@ -351,6 +379,7 @@ fun ComposePagerReader(
                     state = pagerState,
                     beyondViewportPageCount = 1,
                     userScrollEnabled = isPagerScrollEnabled,
+                    key = { position -> getPagerItemKey(items.getOrNull(position)) },
                     modifier = modifier.fillMaxSize().nestedScroll(overscrollConnection),
                 ) { position ->
                     pageContent(position)
@@ -364,6 +393,7 @@ fun ComposePagerReader(
                         state = pagerState,
                         beyondViewportPageCount = 1,
                         userScrollEnabled = isPagerScrollEnabled,
+                        key = { position -> getPagerItemKey(items.getOrNull(position)) },
                         modifier = modifier.fillMaxSize().nestedScroll(overscrollConnection),
                     ) { position ->
                         pageContent(position)
@@ -371,5 +401,15 @@ fun ComposePagerReader(
                 }
             }
         }
+    }
+}
+
+private fun getPagerItemKey(item: Any?): Any {
+    return when (item) {
+        is ReaderPage -> "page_${item.chapter.chapter.id}_${item.index}_${item.mergedBitmap != null}"
+        is ChapterTransition.Prev -> "prev_${item.from.chapter.id}"
+        is ChapterTransition.Next -> "next_${item.from.chapter.id}"
+        is InsertPage -> "insert_${item.parent.index}_${item.index}"
+        else -> item?.hashCode() ?: "null"
     }
 }

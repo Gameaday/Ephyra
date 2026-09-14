@@ -720,13 +720,20 @@ class MangaViewModel @Inject constructor(
         syncJellyfin.syncToJellyfin(manga, chapters, downloadStates, syncAction)
     }
 
-    /** Marks every chapter displayed above [pointer] (in the current sort order) as read. */
+    /**
+     * Marks every chapter that precedes [pointer] in **reading order** (by [Chapter.sourceOrder])
+     * as read. This is intentionally independent of the current display sort direction and
+     * active filters: "mark previous as read" must always target the earlier chapters the
+     * user would have read before [pointer], never the chapters that merely happen to be
+     * displayed above it in the (typically newest-first) chapter list.
+     */
     private fun markPreviousChapterRead(pointer: Chapter) {
         val success = successState ?: return
         val items = success.chapterListItems.filterIsInstance<ChapterList.Item>()
-        val index = items.indexOfFirst { it.chapter.id == pointer.id }
-        if (index <= 0) return
-        val chapters = items.take(index).map { it.chapter }
+        val pointerOrder = items.firstOrNull { it.chapter.id == pointer.id }?.chapter?.sourceOrder
+            ?: pointer.sourceOrder
+        val chapters = items.map { it.chapter }.filter { it.sourceOrder < pointerOrder }
+        if (chapters.isEmpty()) return
         viewModelScope.launchIO {
             mangaChapterInteractor.markChaptersRead(chapters, true)
         }
