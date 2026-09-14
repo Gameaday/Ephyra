@@ -276,4 +276,122 @@ class ViewerNavigationTest {
         assertEquals(viewer.itemsState.value.indexOf(page5), targetRequests.first().index)
         assertEquals(false, targetRequests.first().animate, "moveToPage should specify animate = false for scrubbing")
     }
+
+    @Test
+    fun `PagerViewer startingAtBeginning always positions at first page even with previous lastPageRead`() = runTest(
+        testDispatcher,
+    ) {
+        val viewer = L2RPagerViewer(activity, downloadManager, readerPreferences, uiPreferences)
+        val chapters = createViewerChapters(chapterId = 10L, pageCount = 8)
+        // Simulate chapter previously read to page 5
+        chapters.currChapter.chapter = chapters.currChapter.chapter.copy(lastPageRead = 5L)
+        // Explicit forward navigation
+        chapters.currChapter.startingAtBeginning = true
+
+        val targetRequests = mutableListOf<ephyra.feature.reader.viewer.pager.PagerViewer.TargetPage>()
+        backgroundScope.launch {
+            viewer.targetPageRequest.collect { targetRequests.add(it) }
+        }
+
+        viewer.setChapters(chapters)
+
+        assertEquals(1, targetRequests.size)
+        val firstPage = chapters.currChapter.pages!!.first()
+        val firstPageIdx = viewer.itemsState.value.indexOf(firstPage)
+        assertEquals(firstPageIdx, targetRequests.first().index)
+        assertEquals(1, firstPageIdx, "First page must follow ChapterTransition.Prev at index 0")
+    }
+
+    @Test
+    fun `PagerViewer startFromEnd positions at last page`() = runTest(testDispatcher) {
+        val viewer = L2RPagerViewer(activity, downloadManager, readerPreferences, uiPreferences)
+        val chapters = createViewerChapters(chapterId = 11L, pageCount = 8)
+        chapters.currChapter.startFromEnd = true
+
+        val targetRequests = mutableListOf<ephyra.feature.reader.viewer.pager.PagerViewer.TargetPage>()
+        backgroundScope.launch {
+            viewer.targetPageRequest.collect { targetRequests.add(it) }
+        }
+
+        viewer.setChapters(chapters)
+
+        assertEquals(1, targetRequests.size)
+        val lastPage = chapters.currChapter.pages!!.last()
+        val lastPageIdx = viewer.itemsState.value.indexOf(lastPage)
+        assertEquals(lastPageIdx, targetRequests.first().index)
+    }
+
+    @Test
+    fun `PagerViewer asynchronous page loading properly invokes moveToPage once pages arrive`() = runTest(
+        testDispatcher,
+    ) {
+        val viewer = L2RPagerViewer(activity, downloadManager, readerPreferences, uiPreferences)
+        // Start chapter with null pages (loading state)
+        val chapter = Chapter.create().copy(id = 12L, mangaId = 1L, name = "Chapter 12", chapterNumber = 12.0)
+        val readerChapter = ReaderChapter(chapter).apply {
+            state = ReaderChapter.State.Loading
+            startingAtBeginning = true
+        }
+        val chapters = ViewerChapters(readerChapter, null, null)
+
+        val targetRequests = mutableListOf<ephyra.feature.reader.viewer.pager.PagerViewer.TargetPage>()
+        backgroundScope.launch {
+            viewer.targetPageRequest.collect { targetRequests.add(it) }
+        }
+
+        // 1. Initial emission when pages are still loading from network (pages == null)
+        viewer.setChapters(chapters)
+        assertEquals(0, targetRequests.size, "No target page should be emitted while pages are null")
+
+        // 2. Network completes and pages load
+        val pages = (0 until 6).map { index ->
+            ReaderPage(index = index, url = "http://p/$index", imageUrl = "http://p/$index.jpg").apply {
+                this.chapter = readerChapter
+            }
+        }
+        readerChapter.state = ReaderChapter.State.Loaded(pages)
+
+        // Re-deliver chapters as ReaderViewModel does upon loaded state
+        viewer.setChapters(chapters)
+
+        assertEquals(1, targetRequests.size, "Target page must be emitted once pages arrive")
+        val firstPage = pages.first()
+        assertEquals(viewer.itemsState.value.indexOf(firstPage), targetRequests.first().index)
+    }
+
+    @Test
+    fun `WebtoonViewer asynchronous page loading properly invokes moveToPage once pages arrive`() = runTest(
+        testDispatcher,
+    ) {
+        val viewer = WebtoonViewer(activity, downloadManager, readerPreferences, uiPreferences, basePreferences)
+        val chapter = Chapter.create().copy(id = 13L, mangaId = 1L, name = "Chapter 13", chapterNumber = 13.0)
+        val readerChapter = ReaderChapter(chapter).apply {
+            state = ReaderChapter.State.Loading
+            startingAtBeginning = true
+        }
+        val chapters = ViewerChapters(readerChapter, null, null)
+
+        val scrollRequests = mutableListOf<Int>()
+        backgroundScope.launch {
+            viewer.scrollToIndexRequest.collect { scrollRequests.add(it) }
+        }
+
+        // 1. Initial emission while pages are null
+        viewer.setChapters(chapters)
+        assertEquals(0, scrollRequests.size)
+
+        // 2. Network completes and pages load
+        val pages = (0 until 6).map { index ->
+            ReaderPage(index = index, url = "http://p/$index", imageUrl = "http://p/$index.jpg").apply {
+                this.chapter = readerChapter
+            }
+        }
+        readerChapter.state = ReaderChapter.State.Loaded(pages)
+
+        viewer.setChapters(chapters)
+
+        assertEquals(1, scrollRequests.size, "Target page must be emitted once pages arrive")
+        val firstPage = pages.first()
+        assertEquals(viewer.itemsState.value.indexOf(firstPage), scrollRequests.first())
+    }
 }

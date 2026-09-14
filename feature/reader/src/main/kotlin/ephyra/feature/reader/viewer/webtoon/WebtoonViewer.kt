@@ -79,6 +79,7 @@ class WebtoonViewer(
     var onPreviousChapter: (() -> Unit)? = null
 
     private var activeChapterId: Long? = null
+    private var positionedChapterId: Long? = null
 
     private val fallbackView by lazy { View(activity) }
 
@@ -187,21 +188,23 @@ class WebtoonViewer(
             }
         }
 
-        val previousChapterId = activeChapterId
-        val isFirstLoad = previousChapterId == null
-        val isNewChapter = previousChapterId != chapters.currChapter.chapter.id
-        activeChapterId = chapters.currChapter.chapter.id
+        if (activeChapterId != chapters.currChapter.chapter.id) {
+            activeChapterId = chapters.currChapter.chapter.id
+            positionedChapterId = null
+        }
 
-        // Only scroll to requestedPage on initial load, or if changing chapters externally
-        // (i.e. not already viewing a page of the new chapter from smooth continuous scrolling)
+        val curr = chapters.currChapter
+        val pages = curr.pages
         val isAlreadyViewingCurrentChapter =
-            (currentPage as? ReaderPage)?.chapter?.chapter?.id == chapters.currChapter.chapter.id
-        if (isFirstLoad || (isNewChapter && !isAlreadyViewingCurrentChapter)) {
-            val pages = chapters.currChapter.pages ?: return
-            val targetPage = pages.getOrNull(min(chapters.currChapter.requestedPage, pages.lastIndex))
-            if (targetPage != null) {
-                moveToPage(targetPage)
+            (currentPage as? ReaderPage)?.chapter?.chapter?.id == curr.chapter.id
+        if (pages != null && positionedChapterId != curr.chapter.id && !isAlreadyViewingCurrentChapter) {
+            positionedChapterId = curr.chapter.id
+            val targetPage = when {
+                curr.startFromEnd -> pages.lastOrNull { !it.isHidden } ?: pages.last()
+                curr.startingAtBeginning -> pages.firstOrNull { !it.isHidden } ?: pages.first()
+                else -> pages.getOrNull(min(curr.requestedPage, pages.lastIndex)) ?: pages.first()
             }
+            moveToPage(targetPage)
         }
     }
 

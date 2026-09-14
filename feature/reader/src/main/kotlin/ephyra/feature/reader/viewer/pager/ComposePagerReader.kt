@@ -64,32 +64,41 @@ fun ComposePagerReader(
         viewer.onPreviousChapter = onPreviousChapter
     }
 
-    if (items.isEmpty()) {
+    val itemsChapterId = items.firstNotNullOfOrNull {
+        when (it) {
+            is ReaderPage -> it.chapter.chapter.id
+            is ChapterTransition -> it.from.chapter.id
+            else -> null
+        }
+    }
+
+    if (items.isEmpty() || (currentChapterId != null && itemsChapterId != null && itemsChapterId != currentChapterId)) {
         Box(modifier = modifier.fillMaxSize())
         return
     }
 
     val initialIndex = remember(currentChapterId, items) {
         val currChapter = chapters?.currChapter
-        val requested = currChapter?.requestedPage ?: 0
-        val targetPage = currChapter?.pages?.getOrNull(requested)
-        if (targetPage != null) {
-            val idx = items.indexOf(targetPage)
-            if (idx != -1) {
-                idx
-            } else if (currChapter.startingAtBeginning) {
-                if (items.firstOrNull() is ChapterTransition.Prev) 1 else 0
+        if (currChapter?.startFromEnd == true) {
+            val lastPageIdx = items.indexOfLast { it is ReaderPage }
+            if (lastPageIdx != -1) lastPageIdx else (items.size - 1).coerceAtLeast(0)
+        } else if (currChapter?.startingAtBeginning == true) {
+            if (items.firstOrNull() is ChapterTransition.Prev) 1 else 0
+        } else {
+            val requested = currChapter?.requestedPage ?: 0
+            val targetPage = currChapter?.pages?.getOrNull(requested)
+            if (targetPage != null) {
+                val idx = items.indexOf(targetPage)
+                if (idx != -1) {
+                    idx
+                } else if (items.firstOrNull() is ChapterTransition.Prev) {
+                    1
+                } else {
+                    0
+                }
             } else {
                 if (items.firstOrNull() is ChapterTransition.Prev) 1 else 0
             }
-        } else if (currChapter?.startingAtBeginning == true) {
-            if (items.firstOrNull() is ChapterTransition.Prev) 1 else 0
-        } else if (requested > 0) {
-            // End of chapter requested (e.g. from previous chapter navigation)
-            val lastPageIdx = items.indexOfLast { it is ReaderPage }
-            if (lastPageIdx != -1) lastPageIdx else (items.size - 1).coerceAtLeast(0)
-        } else {
-            if (items.firstOrNull() is ChapterTransition.Prev) 1 else 0
         }
     }
 
@@ -189,7 +198,13 @@ fun ComposePagerReader(
                             detectHorizontalDragGestures(
                                 onDragStart = { totalDrag = 0f },
                                 onDragEnd = {
-                                    if (totalDrag > 80f) {
+                                    val shouldTrigger = if (viewer is R2LPagerViewer) {
+                                        totalDrag < -80f
+                                    } else {
+                                        totalDrag >
+                                            80f
+                                    }
+                                    if (shouldTrigger) {
                                         onPreviousChapter()
                                     }
                                     totalDrag = 0f
@@ -233,7 +248,13 @@ fun ComposePagerReader(
                             detectHorizontalDragGestures(
                                 onDragStart = { totalDrag = 0f },
                                 onDragEnd = {
-                                    if (totalDrag < -80f) {
+                                    val shouldTrigger = if (viewer is R2LPagerViewer) {
+                                        totalDrag > 80f
+                                    } else {
+                                        totalDrag <
+                                            -80f
+                                    }
+                                    if (shouldTrigger) {
                                         onNextChapter()
                                     }
                                     totalDrag = 0f

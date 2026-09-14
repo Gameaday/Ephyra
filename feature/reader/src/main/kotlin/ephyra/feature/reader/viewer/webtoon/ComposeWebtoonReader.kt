@@ -6,6 +6,7 @@ import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
@@ -33,9 +34,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -80,9 +83,16 @@ fun ComposeWebtoonReader(
 ) {
     val items by viewer.itemsState.collectAsStateWithLifecycle()
     val chapters by viewer.chaptersState.collectAsStateWithLifecycle()
-    val lazyListState = rememberLazyListState()
-    val scope = rememberCoroutineScope()
+    val currentChapterId = chapters?.currChapter?.chapter?.id
+    val itemsChapterId = items.firstNotNullOfOrNull {
+        when (it) {
+            is ReaderPage -> it.chapter.chapter.id
+            is ChapterTransition -> it.from.chapter.id
+            else -> null
+        }
+    }
 
+    val scope = rememberCoroutineScope()
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
     val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
@@ -93,52 +103,34 @@ fun ComposeWebtoonReader(
         viewer.onPreviousChapter = onPreviousChapter
     }
 
-    if (items.isEmpty()) {
+    if (items.isEmpty() || (currentChapterId != null && itemsChapterId != null && itemsChapterId != currentChapterId)) {
         Box(modifier = modifier.fillMaxSize())
         return
     }
 
-    // Listen to external scroll-to-index requests (e.g. from page slider scrubbing)
-    LaunchedEffect(viewer, lazyListState) {
-        viewer.scrollToIndexRequest.collect { targetIndex ->
-            if (targetIndex in items.indices) {
-                lazyListState.scrollToItem(targetIndex)
-            }
-        }
-    }
-
-    // Listen to external scroll-by requests (e.g. from volume keys or D-pad)
-    LaunchedEffect(viewer, lazyListState, scrollDistance) {
-        viewer.scrollByRequest.collect { factor ->
-            lazyListState.animateScrollBy(factor * scrollDistance)
-        }
-    }
-
-    // Observe scroll settling and report active page / preload triggers
-    LaunchedEffect(lazyListState, items) {
-        snapshotFlow { lazyListState.firstVisibleItemIndex }
-            .distinctUntilChanged()
-            .collect { firstIndex ->
-                val item = items.getOrNull(firstIndex) ?: return@collect
-                when (item) {
-                    is ReaderPage -> {
-                        viewer.onPageSelected(item)
-                        onPageSelected(item)
-                        val currPages = chapters?.currChapter?.pages
-                        if (currPages != null && (currPages.size - item.number) < 5) {
-                            chapters?.nextChapter?.let(onRequestPreload)
-                        }
-                    }
-                    is ChapterTransition.Prev -> {
-                        viewer.onTransitionSelected(item)
-                        item.to?.let(onRequestPreload)
-                    }
-                    is ChapterTransition.Next -> {
-                        viewer.onTransitionSelected(item)
-                        item.to?.let(onRequestPreload)
-                    }
+    val initialIndex = remember(currentChapterId, items) {
+        val currChapter = chapters?.currChapter
+        if (currChapter?.startFromEnd == true) {
+            val lastPageIdx = items.indexOfLast { it is ReaderPage }
+            if (lastPageIdx != -1) lastPageIdx else (items.size - 1).coerceAtLeast(0)
+        } else if (currChapter?.startingAtBeginning == true) {
+            if (items.firstOrNull() is ChapterTransition.Prev) 1 else 0
+        } else {
+            val requested = currChapter?.requestedPage ?: 0
+            val targetPage = currChapter?.pages?.getOrNull(requested)
+            if (targetPage != null) {
+                val idx = items.indexOf(targetPage)
+                if (idx != -1) {
+                    idx
+                } else if (items.firstOrNull() is ChapterTransition.Prev) {
+                    1
+                } else {
+                    0
                 }
+            } else {
+                if (items.firstOrNull() is ChapterTransition.Prev) 1 else 0
             }
+        }
     }
 
     val isCurrentChapterDownloaded = remember(chapters) {
@@ -151,67 +143,162 @@ fun ComposeWebtoonReader(
         chapters?.nextChapter?.state is ReaderChapter.State.Loaded
     }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .pointerInput(viewer) {
-                awaitEachGesture {
-                    val down = awaitFirstDown(pass = PointerEventPass.Initial, requireUnconsumed = false)
-                    val up = waitForUpOrCancellation(pass = PointerEventPass.Initial)
-                    if (up != null && (up.position - down.position).getDistance() < viewConfiguration.touchSlop) {
-                        val normX = if (size.width > 0) up.position.x / size.width else 0.5f
-                        val normY = if (size.height > 0) up.position.y / size.height else 0.5f
-                        when (viewer.config.navigator.getAction(PointF(normX, normY))) {
-                            ViewerNavigation.NavigationRegion.MENU -> onToggleMenu()
-                            ViewerNavigation.NavigationRegion.NEXT, ViewerNavigation.NavigationRegion.RIGHT -> {
-                                scope.launch { lazyListState.animateScrollBy(scrollDistance) }
+    androidx.compose.runtime.key(currentChapterId) {
+        val lazyListState = rememberLazyListState(
+            initialFirstVisibleItemIndex = initialIndex.coerceIn(0, (items.size - 1).coerceAtLeast(0)),
+        )
+
+        // Listen to external scroll-to-index requests (e.g. from page slider scrubbing)
+        LaunchedEffect(viewer, lazyListState) {
+            viewer.scrollToIndexRequest.collect { targetIndex ->
+                if (targetIndex in items.indices) {
+                    lazyListState.scrollToItem(targetIndex)
+                }
+            }
+        }
+
+        // Listen to external scroll-by requests (e.g. from volume keys or D-pad)
+        LaunchedEffect(viewer, lazyListState, scrollDistance) {
+            viewer.scrollByRequest.collect { factor ->
+                lazyListState.animateScrollBy(factor * scrollDistance)
+            }
+        }
+
+        // Observe scroll settling and report active page / preload triggers
+        LaunchedEffect(lazyListState, items) {
+            snapshotFlow { lazyListState.firstVisibleItemIndex }
+                .distinctUntilChanged()
+                .collect { firstIndex ->
+                    val item = items.getOrNull(firstIndex) ?: return@collect
+                    when (item) {
+                        is ReaderPage -> {
+                            viewer.onPageSelected(item)
+                            onPageSelected(item)
+                            val currPages = chapters?.currChapter?.pages
+                            if (currPages != null && (currPages.size - item.number) < 5) {
+                                chapters?.nextChapter?.let(onRequestPreload)
                             }
-                            ViewerNavigation.NavigationRegion.PREV, ViewerNavigation.NavigationRegion.LEFT -> {
-                                scope.launch { lazyListState.animateScrollBy(-scrollDistance) }
-                            }
+                        }
+                        is ChapterTransition.Prev -> {
+                            viewer.onTransitionSelected(item)
+                            item.to?.let(onRequestPreload)
+                        }
+                        is ChapterTransition.Next -> {
+                            viewer.onTransitionSelected(item)
+                            item.to?.let(onRequestPreload)
                         }
                     }
                 }
-            },
-    ) {
-        LazyColumn(
-            state = lazyListState,
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            itemsIndexed(
-                items = items,
-                key = { index, item ->
-                    when (item) {
-                        is ReaderPage -> "page_${item.chapter.chapter.id}_${item.index}"
-                        is ChapterTransition.Prev -> "prev_trans_${item.from.chapter.id}"
-                        is ChapterTransition.Next -> "next_trans_${item.from.chapter.id}"
-                        else -> "webtoon_item_$index"
+        }
+
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .pointerInput(viewer, onNextChapter, onPreviousChapter) {
+                    awaitEachGesture {
+                        val down = awaitFirstDown(pass = PointerEventPass.Initial, requireUnconsumed = false)
+                        val up = waitForUpOrCancellation(pass = PointerEventPass.Initial)
+                        if (up != null && (up.position - down.position).getDistance() < viewConfiguration.touchSlop) {
+                            val normX = if (size.width > 0) up.position.x / size.width else 0.5f
+                            val normY = if (size.height > 0) up.position.y / size.height else 0.5f
+                            when (viewer.config.navigator.getAction(PointF(normX, normY))) {
+                                ViewerNavigation.NavigationRegion.MENU -> onToggleMenu()
+                                ViewerNavigation.NavigationRegion.NEXT, ViewerNavigation.NavigationRegion.RIGHT -> {
+                                    if (!lazyListState.canScrollForward) {
+                                        onNextChapter()
+                                    } else {
+                                        scope.launch { lazyListState.animateScrollBy(scrollDistance) }
+                                    }
+                                }
+                                ViewerNavigation.NavigationRegion.PREV, ViewerNavigation.NavigationRegion.LEFT -> {
+                                    if (!lazyListState.canScrollBackward) {
+                                        onPreviousChapter()
+                                    } else {
+                                        scope.launch { lazyListState.animateScrollBy(-scrollDistance) }
+                                    }
+                                }
+                            }
+                        }
                     }
                 },
-            ) { _, item ->
-                when (item) {
-                    is ReaderPage -> {
-                        WebtoonPageItem(
-                            page = item,
-                            cropBorders = viewer.config.imageCropBorders,
-                            onLongTap = { onPageLongTap(item) },
-                        )
-                    }
-                    is ChapterTransition.Prev -> {
-                        ChapterTransition(
-                            transition = item,
-                            currChapterDownloaded = isCurrentChapterDownloaded,
-                            goingToChapterDownloaded = isPreviousChapterDownloaded,
-                            onTransitionClick = onPreviousChapter,
-                        )
-                    }
-                    is ChapterTransition.Next -> {
-                        ChapterTransition(
-                            transition = item,
-                            currChapterDownloaded = isCurrentChapterDownloaded,
-                            goingToChapterDownloaded = isNextChapterDownloaded,
-                            onTransitionClick = onNextChapter,
-                        )
+        ) {
+            LazyColumn(
+                state = lazyListState,
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                itemsIndexed(
+                    items = items,
+                    key = { index, item ->
+                        when (item) {
+                            is ReaderPage -> "page_${item.chapter.chapter.id}_${item.index}"
+                            is ChapterTransition.Prev -> "prev_trans_${item.from.chapter.id}"
+                            is ChapterTransition.Next -> "next_trans_${item.from.chapter.id}"
+                            else -> "webtoon_item_$index"
+                        }
+                    },
+                ) { _, item ->
+                    when (item) {
+                        is ReaderPage -> {
+                            WebtoonPageItem(
+                                page = item,
+                                cropBorders = viewer.config.imageCropBorders,
+                                onLongTap = { onPageLongTap(item) },
+                            )
+                        }
+                        is ChapterTransition.Prev -> {
+                            var totalDrag by remember { mutableFloatStateOf(0f) }
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .pointerInput(viewer, onPreviousChapter) {
+                                        detectVerticalDragGestures(
+                                            onDragStart = { totalDrag = 0f },
+                                            onDragEnd = {
+                                                if (totalDrag > 80f) {
+                                                    onPreviousChapter()
+                                                }
+                                                totalDrag = 0f
+                                            },
+                                            onVerticalDrag = { _, dragAmount -> totalDrag += dragAmount },
+                                        )
+                                    },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                ChapterTransition(
+                                    transition = item,
+                                    currChapterDownloaded = isCurrentChapterDownloaded,
+                                    goingToChapterDownloaded = isPreviousChapterDownloaded,
+                                    onTransitionClick = onPreviousChapter,
+                                )
+                            }
+                        }
+                        is ChapterTransition.Next -> {
+                            var totalDrag by remember { mutableFloatStateOf(0f) }
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .pointerInput(viewer, onNextChapter) {
+                                        detectVerticalDragGestures(
+                                            onDragStart = { totalDrag = 0f },
+                                            onDragEnd = {
+                                                if (totalDrag < -80f) {
+                                                    onNextChapter()
+                                                }
+                                                totalDrag = 0f
+                                            },
+                                            onVerticalDrag = { _, dragAmount -> totalDrag += dragAmount },
+                                        )
+                                    },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                ChapterTransition(
+                                    transition = item,
+                                    currChapterDownloaded = isCurrentChapterDownloaded,
+                                    goingToChapterDownloaded = isNextChapterDownloaded,
+                                    onTransitionClick = onNextChapter,
+                                )
+                            }
+                        }
                     }
                 }
             }

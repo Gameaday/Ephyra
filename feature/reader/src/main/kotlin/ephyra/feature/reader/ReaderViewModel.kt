@@ -276,8 +276,8 @@ class ReaderViewModel @Inject constructor(
                     // Apply the saved page index only once on restore, then keep the persisted
                     // value in sync with real progress via onPageSelected().
                     hasAppliedSavedPageIndex = true
-                } else if (!currentChapter.startingAtBeginning && !currentChapter.chapter.read &&
-                    currentChapter.chapter.lastPageRead > 0
+                } else if (!currentChapter.startingAtBeginning && !currentChapter.startFromEnd &&
+                    !currentChapter.chapter.read && currentChapter.chapter.lastPageRead > 0
                 ) {
                     currentChapter.requestedPage = currentChapter.chapter.lastPageRead.toInt()
                 }
@@ -465,6 +465,7 @@ class ReaderViewModel @Inject constructor(
         // - Previous chapter should start at the end so readers can quickly refresh context.
         // The activity then snaps to the first/last visible page, excluding hidden pages.
         chapter.startingAtBeginning = !startFromEnd
+        chapter.startFromEnd = startFromEnd
         chapter.requestedPage = if (startFromEnd) {
             // Best effort explicit end target when pages are already known (e.g., preloaded).
             // Otherwise use a large index which is clamped to lastIndex by the viewers.

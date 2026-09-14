@@ -84,6 +84,7 @@ abstract class PagerViewer(
     var onPreviousChapter: (() -> Unit)? = null
 
     private var activeChapterId: Long? = null
+    private var positionedChapterId: Long? = null
 
     /**
      * Background job that proactively scans all pages in the current chapter for stub patterns
@@ -130,15 +131,21 @@ abstract class PagerViewer(
 
         launchSmartCombinePreScan(chapters.currChapter.pages)
 
-        val isNewChapter = activeChapterId != chapters.currChapter.chapter.id
-        activeChapterId = chapters.currChapter.chapter.id
+        if (activeChapterId != chapters.currChapter.chapter.id) {
+            activeChapterId = chapters.currChapter.chapter.id
+            positionedChapterId = null
+        }
 
-        if (isNewChapter) {
-            val pages = chapters.currChapter.pages ?: return
-            val targetPage = pages.getOrNull(min(chapters.currChapter.requestedPage, pages.lastIndex))
-            if (targetPage != null) {
-                moveToPage(targetPage)
+        val curr = chapters.currChapter
+        val pages = curr.pages
+        if (pages != null && positionedChapterId != curr.chapter.id) {
+            positionedChapterId = curr.chapter.id
+            val targetPage = when {
+                curr.startFromEnd -> pages.lastOrNull { !it.isHidden } ?: pages.last()
+                curr.startingAtBeginning -> pages.firstOrNull { !it.isHidden } ?: pages.first()
+                else -> pages.getOrNull(min(curr.requestedPage, pages.lastIndex)) ?: pages.first()
             }
+            moveToPage(targetPage)
         }
     }
 

@@ -87,7 +87,8 @@ class ChapterLoader(
 
                 // If the chapter is partially read and starting page was not explicitly requested,
                 // set the starting page to the last the user read.
-                if (!chapter.startingAtBeginning && !chapter.chapter.read && chapter.requestedPage == 0 &&
+                if (!chapter.startingAtBeginning && !chapter.startFromEnd &&
+                    !chapter.chapter.read && chapter.requestedPage == 0 &&
                     chapter.chapter.lastPageRead > 0
                 ) {
                     chapter.requestedPage = chapter.chapter.lastPageRead.toInt()

@@ -129,6 +129,8 @@ private fun TransitionCard(
         contentAlignment = Alignment.Center,
     ) {
         ElevatedCard(
+            onClick = onTransitionClick ?: {},
+            enabled = onTransitionClick != null,
             modifier = Modifier
                 .widthIn(max = 480.dp)
                 .fillMaxWidth()
