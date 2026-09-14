@@ -75,6 +75,10 @@ class MangaViewModelTest {
         every { source } returns 100L
         every { favorite } returns false
         every { sortDescending() } returns true
+        every { sorting } returns Manga.CHAPTER_SORTING_NUMBER
+        every { unreadFilterRaw } returns 0L
+        every { downloadedFilterRaw } returns 0L
+        every { bookmarkedFilterRaw } returns 0L
     }
 
     private val testSource: Source = mockk(relaxed = true) {
@@ -84,10 +88,12 @@ class MangaViewModelTest {
     private val chapter1: Chapter = mockk(relaxed = true) {
         every { id } returns 10L
         every { mangaId } returns 1L
+        every { chapterNumber } returns 2.0
     }
     private val chapter2: Chapter = mockk(relaxed = true) {
         every { id } returns 20L
         every { mangaId } returns 1L
+        every { chapterNumber } returns 1.0
     }
 
     private lateinit var viewModel: MangaViewModel
@@ -99,7 +105,9 @@ class MangaViewModelTest {
         coEvery { getManga.subscribe(1L) } returns flowOf(testManga)
         every { sourceManager.isInitialized } returns MutableStateFlow(true)
         every { sourceManager.getOrStub(100L) } returns testSource
-        coEvery { getMangaAndChapters.subscribe(1L) } returns flowOf(testManga to listOf(chapter1, chapter2))
+        coEvery { getMangaAndChapters.subscribe(1L, any()) } returns flowOf(testManga to listOf(chapter1, chapter2))
+        every { getAvailableScanlators.subscribe(any()) } returns flowOf(emptySet())
+        every { getExcludedScanlators.subscribe(any()) } returns flowOf(emptySet())
         every { mangaTrackInteractor.loggedInTrackersFlow() } returns flowOf(emptyList())
         every { downloadCache.changes } returns MutableSharedFlow<Unit>(replay = 1).apply { tryEmit(Unit) }
         every { downloadManager.queueState } returns MutableStateFlow<List<Download>>(emptyList())
@@ -113,9 +121,15 @@ class MangaViewModelTest {
         val defaultCategoryPref: Preference<Int> = mockk(relaxed = true) {
             coEvery { get() } returns 0
         }
+        val downloadedOnlyPref: Preference<Boolean> = mockk(relaxed = true) {
+            every { getSync() } returns false
+            coEvery { get() } returns false
+            every { changes() } returns flowOf(false)
+        }
         every { libraryPreferences.swipeToStartAction() } returns startPref
         every { libraryPreferences.swipeToEndAction() } returns endPref
         every { libraryPreferences.defaultCategory() } returns defaultCategoryPref
+        every { basePreferences.downloadedOnly() } returns downloadedOnlyPref
 
         viewModel = MangaViewModel(
             getManga = getManga,
@@ -317,7 +331,7 @@ class MangaViewModelTest {
     fun `getNextUnreadChapter returns oldest unread chapter when nothing in progress`() = runTest {
         val ch1 = Chapter.create().copy(id = 10L, mangaId = 1L, chapterNumber = 1.0, read = false, lastPageRead = 0)
         val ch2 = Chapter.create().copy(id = 20L, mangaId = 1L, chapterNumber = 2.0, read = false, lastPageRead = 0)
-        coEvery { getMangaAndChapters.subscribe(1L) } returns flowOf(testManga to listOf(ch2, ch1))
+        coEvery { getMangaAndChapters.subscribe(1L, any()) } returns flowOf(testManga to listOf(ch2, ch1))
 
         viewModel.state.test {
             assertEquals(MangaViewModel.State.Loading, awaitItem())
@@ -339,7 +353,7 @@ class MangaViewModelTest {
         val ch1 = Chapter.create().copy(id = 10L, mangaId = 1L, chapterNumber = 1.0, read = true, lastPageRead = 10)
         val ch2 = Chapter.create().copy(id = 20L, mangaId = 1L, chapterNumber = 2.0, read = false, lastPageRead = 5)
         val ch3 = Chapter.create().copy(id = 30L, mangaId = 1L, chapterNumber = 3.0, read = false, lastPageRead = 0)
-        coEvery { getMangaAndChapters.subscribe(1L) } returns flowOf(testManga to listOf(ch3, ch2, ch1))
+        coEvery { getMangaAndChapters.subscribe(1L, any()) } returns flowOf(testManga to listOf(ch3, ch2, ch1))
 
         viewModel.state.test {
             assertEquals(MangaViewModel.State.Loading, awaitItem())
@@ -361,7 +375,7 @@ class MangaViewModelTest {
         val ch1 = Chapter.create().copy(id = 10L, mangaId = 1L, chapterNumber = 1.0)
         val ch5 = Chapter.create().copy(id = 50L, mangaId = 1L, chapterNumber = 5.0)
         val ch10 = Chapter.create().copy(id = 100L, mangaId = 1L, chapterNumber = 10.0)
-        coEvery { getMangaAndChapters.subscribe(1L) } returns flowOf(testManga to listOf(ch10, ch5, ch1))
+        coEvery { getMangaAndChapters.subscribe(1L, any()) } returns flowOf(testManga to listOf(ch10, ch5, ch1))
 
         viewModel.state.test {
             assertEquals(MangaViewModel.State.Loading, awaitItem())
@@ -377,6 +391,83 @@ class MangaViewModelTest {
             assertEquals(2, missingCountItems.size)
             assertTrue(missingCountItems.all { it.id < 0 })
             assertEquals(missingCountItems.map { it.id }.toSet().size, missingCountItems.size)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `reading chapters out of order preserves natural chapter sort order on series page`() = runTest {
+        val ch1 = Chapter.create().copy(id = 1L, mangaId = 1L, chapterNumber = 1.0, sourceOrder = 5, read = false)
+        val ch2 = Chapter.create().copy(id = 2L, mangaId = 1L, chapterNumber = 2.0, sourceOrder = 4, read = false)
+        val ch3 = Chapter.create().copy(id = 3L, mangaId = 1L, chapterNumber = 3.0, sourceOrder = 3, read = false)
+        val ch4 = Chapter.create().copy(id = 4L, mangaId = 1L, chapterNumber = 4.0, sourceOrder = 2, read = false)
+        val ch5 = Chapter.create().copy(
+            id = 5L,
+            mangaId = 1L,
+            chapterNumber = 5.0,
+            sourceOrder = 1,
+            read = true,
+            lastPageRead = 20,
+        )
+        val ch6 = Chapter.create().copy(id = 6L, mangaId = 1L, chapterNumber = 6.0, sourceOrder = 0, read = false)
+
+        val mangaDesc = Manga.create().copy(
+            id = 1L,
+            source = 100L,
+            chapterFlags = Manga.CHAPTER_SORT_DESC or Manga.CHAPTER_SORTING_NUMBER,
+        )
+        // Simulate SQLite query returning read chapter partitioned at the end from unread chapters
+        val outOfOrderDbChapters = listOf(ch6, ch4, ch3, ch2, ch1, ch5)
+
+        coEvery { getMangaAndChapters.subscribe(1L, any()) } returns flowOf(mangaDesc to outOfOrderDbChapters)
+
+        viewModel.state.test {
+            assertEquals(MangaViewModel.State.Loading, awaitItem())
+            viewModel.init(1L, false)
+            var success: MangaViewModel.State.Success? = null
+            while (success == null || success.chapterListItems.isEmpty()) {
+                val item = awaitItem()
+                if (item is MangaViewModel.State.Success) {
+                    success = item
+                }
+            }
+            val chapterItems = success.chapterListItems.filterIsInstance<ChapterList.Item>()
+            assertEquals(6, chapterItems.size)
+            // Regardless of read status, chapters are ordered strictly by chapter number descending
+            assertEquals(listOf(6L, 5L, 4L, 3L, 2L, 1L), chapterItems.map { it.chapter.id })
+            assertFalse(success.filterActive)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `unread filter excludes read chapters and sets filterActive true`() = runTest {
+        val ch1 = Chapter.create().copy(id = 1L, mangaId = 1L, chapterNumber = 1.0, read = false)
+        val ch2 = Chapter.create().copy(id = 2L, mangaId = 1L, chapterNumber = 2.0, read = true)
+        val ch3 = Chapter.create().copy(id = 3L, mangaId = 1L, chapterNumber = 3.0, read = false)
+
+        val mangaWithFilter = Manga.create().copy(
+            id = 1L,
+            source = 100L,
+            chapterFlags = Manga.CHAPTER_SORT_DESC or Manga.CHAPTER_SORTING_NUMBER or Manga.CHAPTER_SHOW_UNREAD,
+        )
+
+        coEvery { getMangaAndChapters.subscribe(1L, any()) } returns flowOf(mangaWithFilter to listOf(ch3, ch2, ch1))
+
+        viewModel.state.test {
+            assertEquals(MangaViewModel.State.Loading, awaitItem())
+            viewModel.init(1L, false)
+            var success: MangaViewModel.State.Success? = null
+            while (success == null || success.chapterListItems.isEmpty()) {
+                val item = awaitItem()
+                if (item is MangaViewModel.State.Success) {
+                    success = item
+                }
+            }
+            val chapterItems = success.chapterListItems.filterIsInstance<ChapterList.Item>()
+            assertEquals(2, chapterItems.size)
+            assertEquals(listOf(3L, 1L), chapterItems.map { it.chapter.id })
+            assertTrue(success.filterActive)
             cancelAndIgnoreRemainingEvents()
         }
     }

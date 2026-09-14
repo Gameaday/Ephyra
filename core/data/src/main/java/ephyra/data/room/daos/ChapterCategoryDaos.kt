@@ -21,6 +21,7 @@ interface ChapterDao {
         AND (:applyScanlatorFilter = 0 OR scanlator IS NULL OR scanlator NOT IN (
             SELECT scanlator FROM excluded_scanlators WHERE manga_id = :mangaId
         ))
+        ORDER BY source_order ASC
     """,
     )
     fun getChaptersByMangaIdAsFlow(mangaId: Long, applyScanlatorFilter: Boolean): Flow<List<ChapterEntity>>
@@ -32,6 +33,7 @@ interface ChapterDao {
         AND (:applyScanlatorFilter = 0 OR scanlator IS NULL OR scanlator NOT IN (
             SELECT scanlator FROM excluded_scanlators WHERE manga_id = :mangaId
         ))
+        ORDER BY source_order ASC
     """,
     )
     suspend fun getChaptersByMangaId(mangaId: Long, applyScanlatorFilter: Boolean): List<ChapterEntity>
@@ -42,7 +44,7 @@ interface ChapterDao {
     @Query("SELECT DISTINCT scanlator FROM chapters WHERE manga_id = :mangaId AND scanlator IS NOT NULL")
     suspend fun getScanlatorsByMangaId(mangaId: Long): List<String>
 
-    @Query("SELECT * FROM chapters WHERE manga_id = :mangaId AND bookmark = 1")
+    @Query("SELECT * FROM chapters WHERE manga_id = :mangaId AND bookmark = 1 ORDER BY source_order ASC")
     suspend fun getBookmarkedChaptersByMangaId(mangaId: Long): List<ChapterEntity>
 
     @Query("SELECT * FROM chapters WHERE manga_id = :mangaId AND url = :url LIMIT 1")

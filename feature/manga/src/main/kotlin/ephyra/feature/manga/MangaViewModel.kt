@@ -21,6 +21,7 @@ import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.category.model.Category
 import ephyra.domain.chapter.interactor.GetAvailableScanlators
 import ephyra.domain.chapter.model.Chapter
+import ephyra.domain.chapter.service.applyFilters
 import ephyra.domain.chapter.service.getChapterSort
 import ephyra.domain.download.model.Download
 import ephyra.domain.download.service.DownloadManager
@@ -176,19 +177,39 @@ class MangaViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            combine(
-                getMangaAndChapters.subscribe(mangaId),
-                downloadCache.changes,
-                downloadManager.queueState,
+            val scanlatorsFlow = combine(
+                getAvailableScanlators.subscribe(mangaId),
+                getExcludedScanlators.subscribe(mangaId),
+            ) { available, excluded -> available to excluded }
+
+            val preferencesFlow = combine(
+                basePreferences.downloadedOnly().changes(),
                 libraryPreferences.swipeToEndAction().changes(),
                 libraryPreferences.swipeToStartAction().changes(),
-            ) { (manga, chapters), _, queue, swipeStart, swipeEnd ->
+            ) { downloadedOnly, end, start -> Triple(downloadedOnly, end, start) }
+
+            combine(
+                getMangaAndChapters.subscribe(mangaId, applyScanlatorFilter = true),
+                scanlatorsFlow,
+                downloadCache.changes,
+                downloadManager.queueState,
+                preferencesFlow,
+            ) { (manga, chapters), (availableScanlators, excludedScanlators), _, queue, (_, swipeEnd, swipeStart) ->
+                val filteredAndSortedChapters = chapters.applyFilters(manga, downloadManager, basePreferences)
                 updateState { state ->
                     val success = state as? State.Success ?: return@updateState state
                     success.copy(
                         manga = manga,
                         chapters = chapters,
-                        chapterListItems = chapters.toChapterListItems(manga, queue, success.selectedChapterIds),
+                        chapterListItems = filteredAndSortedChapters.toChapterListItems(
+                            manga,
+                            queue,
+                            success.selectedChapterIds,
+                        ),
+                        filterActive = manga.chaptersFiltered(basePreferences),
+                        scanlatorFilterActive = excludedScanlators.isNotEmpty(),
+                        availableScanlators = availableScanlators,
+                        excludedScanlators = excludedScanlators,
                         chapterSwipeStartAction = swipeStart,
                         chapterSwipeEndAction = swipeEnd,
                     )
@@ -386,10 +407,13 @@ class MangaViewModel @Inject constructor(
             }
             is MangaScreenEvent.ToggleAllSelection -> {
                 updateSelection { selected, success ->
+                    val visibleIds = success.chapterListItems.filterIsInstance<ChapterList.Item>().mapNotNull {
+                        it.chapter.id
+                    }
                     if (event.selected) {
-                        selected.addingAll(success.chapters.mapNotNull { it.id })
+                        selected.addingAll(visibleIds)
                     } else {
-                        selected.removingAll(success.chapters.mapNotNull { it.id })
+                        selected.removingAll(visibleIds)
                     }
                 }
             }
@@ -398,8 +422,10 @@ class MangaViewModel @Inject constructor(
             }
             is MangaScreenEvent.InvertSelection -> {
                 updateSelection { selected, success ->
-                    val allIds = success.chapters.mapNotNull { it.id }.toSet()
-                    val inverted = allIds.filter { it !in selected }
+                    val visibleIds = success.chapterListItems.filterIsInstance<ChapterList.Item>().mapNotNull {
+                        it.chapter.id
+                    }.toSet()
+                    val inverted = visibleIds.filter { it !in selected }
                     persistentSetOf<Long>().addingAll(inverted)
                 }
             }
