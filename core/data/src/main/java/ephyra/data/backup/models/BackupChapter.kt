@@ -18,6 +18,7 @@ data class BackupChapter(
     @ProtoNumber(10) var sourceOrder: Long = 0,
     @ProtoNumber(11) var lastModifiedAt: Long = 0,
     @ProtoNumber(12) var version: Long = 0,
+    @ProtoNumber(13) var memo: ByteArray = ByteArray(0),
 ) {
     fun toChapterImpl(): Chapter {
         return Chapter.create().copy(

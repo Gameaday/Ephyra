@@ -7,6 +7,7 @@ import ephyra.data.backup.models.Backup
 import ephyra.data.backup.models.BackupCategory
 import ephyra.data.backup.models.BackupChapter
 import ephyra.data.backup.models.BackupManga
+import ephyra.data.backup.models.BackupSavedSearch
 import ephyra.data.backup.models.BackupSource
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.protobuf.ProtoBuf
@@ -263,5 +264,55 @@ class BackupFormatRoundTripTest {
         } finally {
             tempFile.delete()
         }
+    }
+
+    @Test
+    fun `mihon and tachiyomiSY backups with memo and saved searches decode cleanly`() {
+        val memoBytes = """{"key":"value"}""".toByteArray()
+        val mangaWithMemo = BackupManga(
+            source = 1000L,
+            url = "/manga/sy_test",
+            title = "TachiyomiSY Title",
+            memo = memoBytes,
+            metadataSource = 12345L,
+            metadataUrl = "https://example.com/meta",
+            chapters = listOf(
+                BackupChapter(
+                    url = "/manga/sy_test/ch1",
+                    name = "Chapter 1",
+                    memo = memoBytes,
+                ),
+            ),
+        )
+
+        val backup = Backup(
+            backupManga = listOf(mangaWithMemo),
+            backupSavedSearches = listOf(
+                BackupSavedSearch(
+                    name = "Manga Updates",
+                    query = "genre:action",
+                    filterList = "[]",
+                    source = 1000L,
+                ),
+            ),
+        )
+
+        val bytes = protoBuf.encodeToByteArray(Backup.serializer(), backup)
+        val decoder = BackupDecoder(
+            context = ApplicationProvider.getApplicationContext(),
+            protoBuf = protoBuf,
+        )
+        val restored = decoder.decode(ByteArrayInputStream(bytes))
+
+        assertEquals(1, restored.backupManga.size)
+        val decodedManga = restored.backupManga.single()
+        assertEquals("TachiyomiSY Title", decodedManga.title)
+        assertTrue(decodedManga.memo.contentEquals(memoBytes))
+        assertEquals(12345L, decodedManga.metadataSource)
+        assertEquals("https://example.com/meta", decodedManga.metadataUrl)
+        assertEquals(1, decodedManga.chapters.size)
+        assertTrue(decodedManga.chapters.single().memo.contentEquals(memoBytes))
+        assertEquals(1, restored.backupSavedSearches.size)
+        assertEquals("Manga Updates", restored.backupSavedSearches.single().name)
     }
 }

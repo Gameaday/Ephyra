@@ -34,14 +34,15 @@ data class BackupManga(
     @ProtoNumber(109) var version: Long = 0,
     @ProtoNumber(110) var notes: String = "",
     @ProtoNumber(111) var initialized: Boolean = false,
-    @ProtoNumber(112) var metadataSource: Long? = null,
-    @ProtoNumber(113) var metadataUrl: String? = null,
-    @ProtoNumber(114) var alternativeTitles: List<String> = emptyList(),
-    @ProtoNumber(115) var canonicalId: String? = null,
-    @ProtoNumber(116) var sourceStatus: Int = 0,
-    @ProtoNumber(117) var deadSince: Long? = null,
-    @ProtoNumber(118) var contentType: Int = 0,
-    @ProtoNumber(119) var lockedFields: Long = 0L,
+    @ProtoNumber(112) var memo: ByteArray = ByteArray(0),
+    @ProtoNumber(912) var metadataSource: Long? = null,
+    @ProtoNumber(913) var metadataUrl: String? = null,
+    @ProtoNumber(914) var alternativeTitles: List<String> = emptyList(),
+    @ProtoNumber(915) var canonicalId: String? = null,
+    @ProtoNumber(916) var sourceStatus: Int = 0,
+    @ProtoNumber(917) var deadSince: Long? = null,
+    @ProtoNumber(918) var contentType: Int = 0,
+    @ProtoNumber(919) var lockedFields: Long = 0L,
 ) {
     fun getMangaImpl(): Manga {
         return Manga.create().copy(

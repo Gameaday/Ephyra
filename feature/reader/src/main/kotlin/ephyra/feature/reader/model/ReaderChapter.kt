@@ -20,6 +20,7 @@ class ReaderChapter(var chapter: Chapter) {
     var pageLoader: PageLoader? = null
 
     var requestedPage: Int = 0
+    var startingAtBeginning: Boolean = false
 
     private var references = 0
 

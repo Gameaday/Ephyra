@@ -70,7 +70,12 @@ abstract class PagerViewer(
      * Currently active item (either [ReaderPage] or [ChapterTransition]).
      */
     var currentPage: Any? = null
-        internal set
+        internal set(value) {
+            field = value
+            if (value !is ReaderPage) {
+                pendingTargetIndex = null
+            }
+        }
 
     /**
      * Callbacks invoked when reaching chapter boundaries.
@@ -111,6 +116,7 @@ abstract class PagerViewer(
      * Tells this viewer to set the given [chapters] as active.
      */
     override fun setChapters(chapters: ViewerChapters) {
+        pendingTargetIndex = null
         _chaptersState.value = chapters
         rebuildItems(chapters)
 
@@ -166,6 +172,8 @@ abstract class PagerViewer(
         _itemsState.value = newItems
     }
 
+    private var pendingTargetIndex: Int? = null
+
     /**
      * Tells this viewer to move to the given [page]. Programmatic seeks (such as slider scrubbing
      * or chapter initialization) perform an immediate jump without animation.
@@ -174,28 +182,35 @@ abstract class PagerViewer(
         val items = _itemsState.value
         val position = items.indexOf(page)
         if (position != -1) {
-            _targetPageRequest.tryEmit(TargetPage(position, animate = false))
+            pendingTargetIndex = null
             currentPage = page
+            _targetPageRequest.tryEmit(TargetPage(position, animate = false))
         } else {
             logcat { "Page $page not found in items list" }
         }
     }
 
     override fun moveToNext() {
-        val current = currentItemIndex()
+        val current = pendingTargetIndex ?: currentItemIndex()
         val count = _itemsState.value.size
         if (current < count - 1) {
-            _targetPageRequest.tryEmit(TargetPage(current + 1, animate = config.usePageTransitions))
+            val next = current + 1
+            pendingTargetIndex = next
+            _targetPageRequest.tryEmit(TargetPage(next, animate = config.usePageTransitions))
         } else if (count > 0 && current >= count - 1) {
+            pendingTargetIndex = null
             onNextChapter?.invoke()
         }
     }
 
     override fun moveToPrevious() {
-        val current = currentItemIndex()
+        val current = pendingTargetIndex ?: currentItemIndex()
         if (current > 0) {
-            _targetPageRequest.tryEmit(TargetPage(current - 1, animate = config.usePageTransitions))
+            val prev = current - 1
+            pendingTargetIndex = prev
+            _targetPageRequest.tryEmit(TargetPage(prev, animate = config.usePageTransitions))
         } else if (current <= 0) {
+            pendingTargetIndex = null
             onPreviousChapter?.invoke()
         }
     }
@@ -223,6 +238,10 @@ abstract class PagerViewer(
 
     fun onPageSelected(page: ReaderPage) {
         currentPage = page
+        val index = _itemsState.value.indexOf(page)
+        if (index != -1 && index == pendingTargetIndex) {
+            pendingTargetIndex = null
+        }
         activity.onPageSelected(page)
     }
 

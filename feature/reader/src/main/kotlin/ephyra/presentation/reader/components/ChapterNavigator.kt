@@ -76,18 +76,13 @@ fun ChapterNavigator(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             FilledIconButton(
-                enabled = if (isRtl) enabledNext else enabledPrevious,
-                onClick = if (isRtl) onNextChapter else onPreviousChapter,
+                enabled = enabledPrevious,
+                onClick = onPreviousChapter,
                 colors = buttonColor,
             ) {
-                val resourceId = if (isRtl) {
-                    ephyra.app.core.common.R.string.action_next_chapter
-                } else {
-                    ephyra.app.core.common.R.string.action_previous_chapter
-                }
                 Icon(
                     imageVector = Icons.Outlined.SkipPrevious,
-                    contentDescription = stringResource(resourceId),
+                    contentDescription = stringResource(ephyra.app.core.common.R.string.action_previous_chapter),
                 )
             }
 
@@ -135,18 +130,13 @@ fun ChapterNavigator(
             }
 
             FilledIconButton(
-                enabled = if (isRtl) enabledPrevious else enabledNext,
-                onClick = if (isRtl) onPreviousChapter else onNextChapter,
+                enabled = enabledNext,
+                onClick = onNextChapter,
                 colors = buttonColor,
             ) {
-                val resourceId = if (isRtl) {
-                    ephyra.app.core.common.R.string.action_previous_chapter
-                } else {
-                    ephyra.app.core.common.R.string.action_next_chapter
-                }
                 Icon(
                     imageVector = Icons.Outlined.SkipNext,
-                    contentDescription = stringResource(resourceId),
+                    contentDescription = stringResource(ephyra.app.core.common.R.string.action_next_chapter),
                 )
             }
         }

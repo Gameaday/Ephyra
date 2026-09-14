@@ -1,6 +1,8 @@
 package ephyra.feature.reader.viewer.pager
 
 import android.graphics.PointF
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.HorizontalPager
@@ -10,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -18,15 +21,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import ephyra.core.common.util.system.logcat
 import ephyra.feature.reader.model.ChapterTransition
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.viewer.ViewerNavigation
 import ephyra.presentation.reader.ChapterTransition
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.isActive
+import logcat.LogPriority
 
 /**
  * 100% Pure Jetpack Compose Reader Canvas for Paginated Manga:
@@ -60,14 +69,27 @@ fun ComposePagerReader(
         return
     }
 
-    val initialIndex = remember(currentChapterId) {
-        val requested = chapters?.currChapter?.requestedPage ?: 0
-        val targetPage = chapters?.currChapter?.pages?.getOrNull(requested)
+    val initialIndex = remember(currentChapterId, items) {
+        val currChapter = chapters?.currChapter
+        val requested = currChapter?.requestedPage ?: 0
+        val targetPage = currChapter?.pages?.getOrNull(requested)
         if (targetPage != null) {
             val idx = items.indexOf(targetPage)
-            if (idx != -1) idx else 0
+            if (idx != -1) {
+                idx
+            } else if (currChapter.startingAtBeginning) {
+                if (items.firstOrNull() is ChapterTransition.Prev) 1 else 0
+            } else {
+                if (items.firstOrNull() is ChapterTransition.Prev) 1 else 0
+            }
+        } else if (currChapter?.startingAtBeginning == true) {
+            if (items.firstOrNull() is ChapterTransition.Prev) 1 else 0
+        } else if (requested > 0) {
+            // End of chapter requested (e.g. from previous chapter navigation)
+            val lastPageIdx = items.indexOfLast { it is ReaderPage }
+            if (lastPageIdx != -1) lastPageIdx else (items.size - 1).coerceAtLeast(0)
         } else {
-            0
+            if (items.firstOrNull() is ChapterTransition.Prev) 1 else 0
         }
     }
 
@@ -80,12 +102,18 @@ fun ComposePagerReader(
         // Handle external page navigation requests (slider scrubbing, d-pad, volume keys)
         LaunchedEffect(viewer, pagerState) {
             viewer.targetPageRequest.collect { request ->
-                if (request.index in 0 until pagerState.pageCount) {
-                    if (request.animate) {
-                        pagerState.animateScrollToPage(request.index)
-                    } else {
-                        pagerState.scrollToPage(request.index)
+                try {
+                    if (request.index in 0 until pagerState.pageCount) {
+                        if (request.animate) {
+                            pagerState.animateScrollToPage(request.index)
+                        } else {
+                            pagerState.scrollToPage(request.index)
+                        }
                     }
+                } catch (e: CancellationException) {
+                    if (!currentCoroutineContext().isActive) throw e
+                } catch (e: Exception) {
+                    logcat(LogPriority.WARN, e) { "Failed to scroll to target page" }
                 }
             }
         }
@@ -142,8 +170,38 @@ fun ComposePagerReader(
         val pageContent: @Composable (Int) -> Unit = { position ->
             when (val item = items.getOrNull(position)) {
                 is ChapterTransition.Prev -> {
+                    var totalDrag by remember { mutableFloatStateOf(0f) }
+                    val dragModifier = if (viewer is VerticalPagerViewer) {
+                        Modifier.pointerInput(viewer, onPreviousChapter) {
+                            detectVerticalDragGestures(
+                                onDragStart = { totalDrag = 0f },
+                                onDragEnd = {
+                                    if (totalDrag > 80f) {
+                                        onPreviousChapter()
+                                    }
+                                    totalDrag = 0f
+                                },
+                                onVerticalDrag = { _, dragAmount -> totalDrag += dragAmount },
+                            )
+                        }
+                    } else {
+                        Modifier.pointerInput(viewer, onPreviousChapter) {
+                            detectHorizontalDragGestures(
+                                onDragStart = { totalDrag = 0f },
+                                onDragEnd = {
+                                    if (totalDrag > 80f) {
+                                        onPreviousChapter()
+                                    }
+                                    totalDrag = 0f
+                                },
+                                onHorizontalDrag = { _, dragAmount -> totalDrag += dragAmount },
+                            )
+                        }
+                    }
                     Box(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .then(dragModifier),
                         contentAlignment = Alignment.Center,
                     ) {
                         ChapterTransition(
@@ -156,8 +214,38 @@ fun ComposePagerReader(
                 }
 
                 is ChapterTransition.Next -> {
+                    var totalDrag by remember { mutableFloatStateOf(0f) }
+                    val dragModifier = if (viewer is VerticalPagerViewer) {
+                        Modifier.pointerInput(viewer, onNextChapter) {
+                            detectVerticalDragGestures(
+                                onDragStart = { totalDrag = 0f },
+                                onDragEnd = {
+                                    if (totalDrag < -80f) {
+                                        onNextChapter()
+                                    }
+                                    totalDrag = 0f
+                                },
+                                onVerticalDrag = { _, dragAmount -> totalDrag += dragAmount },
+                            )
+                        }
+                    } else {
+                        Modifier.pointerInput(viewer, onNextChapter) {
+                            detectHorizontalDragGestures(
+                                onDragStart = { totalDrag = 0f },
+                                onDragEnd = {
+                                    if (totalDrag < -80f) {
+                                        onNextChapter()
+                                    }
+                                    totalDrag = 0f
+                                },
+                                onHorizontalDrag = { _, dragAmount -> totalDrag += dragAmount },
+                            )
+                        }
+                    }
                     Box(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .then(dragModifier),
                         contentAlignment = Alignment.Center,
                     ) {
                         ChapterTransition(

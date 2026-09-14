@@ -85,9 +85,11 @@ class ChapterLoader(
                 // preProcessor instance.
                 preProcessor.processLoadedPages(pages)
 
-                // If the chapter is partially read, set the starting page to the last the user read
-                // otherwise use the requested page.
-                if (!chapter.chapter.read) {
+                // If the chapter is partially read and starting page was not explicitly requested,
+                // set the starting page to the last the user read.
+                if (!chapter.startingAtBeginning && !chapter.chapter.read && chapter.requestedPage == 0 &&
+                    chapter.chapter.lastPageRead > 0
+                ) {
                     chapter.requestedPage = chapter.chapter.lastPageRead.toInt()
                 }
 
