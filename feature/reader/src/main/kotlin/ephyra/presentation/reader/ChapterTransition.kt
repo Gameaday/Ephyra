@@ -17,9 +17,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.Info
@@ -143,18 +143,18 @@ private fun TransitionCard(
     // Arrows always point toward the chapter each button navigates to, expressed in the
     // reader's own reading flow: in an L2R pager the earlier chapter is to the left, in
     // an R2L pager it is to the right, and in vertical/webtoon readers it is above.
-    // (The card content is composed inside a forced-LTR layout, so the auto-mirrored
-    // icons render in their LTR orientation — direction is resolved explicitly here.)
+    // Non-mirrored icons are used here so direction is resolved purely by [TransitionDirection],
+    // avoiding any coupling to the ambient Compose [LayoutDirection].
     val actionArrow = when (direction) {
         TransitionDirection.LTR -> if (isNext) {
-            Icons.AutoMirrored.Filled.ArrowForward
+            Icons.Filled.ArrowForward
         } else {
-            Icons.AutoMirrored.Filled.ArrowBack
+            Icons.Filled.ArrowBack
         }
         TransitionDirection.RTL -> if (isNext) {
-            Icons.AutoMirrored.Filled.ArrowBack
+            Icons.Filled.ArrowBack
         } else {
-            Icons.AutoMirrored.Filled.ArrowForward
+            Icons.Filled.ArrowForward
         }
         TransitionDirection.VERTICAL -> if (isNext) {
             Icons.Filled.ArrowDownward
@@ -164,14 +164,14 @@ private fun TransitionCard(
     }
     val returnArrow = when (direction) {
         TransitionDirection.LTR -> if (isNext) {
-            Icons.AutoMirrored.Filled.ArrowBack
+            Icons.Filled.ArrowBack
         } else {
-            Icons.AutoMirrored.Filled.ArrowForward
+            Icons.Filled.ArrowForward
         }
         TransitionDirection.RTL -> if (isNext) {
-            Icons.AutoMirrored.Filled.ArrowForward
+            Icons.Filled.ArrowForward
         } else {
-            Icons.AutoMirrored.Filled.ArrowBack
+            Icons.Filled.ArrowBack
         }
         TransitionDirection.VERTICAL -> if (isNext) {
             Icons.Filled.ArrowUpward

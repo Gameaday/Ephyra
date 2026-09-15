@@ -44,8 +44,13 @@ class HardwareGuardDecoder private constructor(
                 return delegate.create(result, options, imageLoader)
             }
 
-            val oversized = result.source.sourceOrNull()?.use { source ->
-                !ImageUtil.canUseHardwareBitmap(source)
+            // NB: `sourceOrNull()` returns the shared stream that the downstream decoder
+            // will consume, so it must NOT be closed here (closing it breaks every decode
+            // — blank covers/pages). Peek a copy for header inspection instead: the peek
+            // shares the buffer without consuming it, and closing only the peek (as
+            // TachiyomiImageDecoder.Factory already does) leaves the original intact.
+            val oversized = result.source.sourceOrNull()?.peek()?.use { peeked ->
+                !ImageUtil.canUseHardwareBitmap(peeked)
             } ?: false
 
             val effectiveOptions = if (oversized) options.toSoftwareDecoding() else options
