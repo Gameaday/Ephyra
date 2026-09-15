@@ -1,6 +1,6 @@
 [versions]
 agp = "9.4.0"
-kotlin = "2.4.10"
+kotlin = "2.4.20"
 okhttp_version = "5.5.0"
 aboutlib_version = "15.2.0"
 shizuku_version = "13.1.5"
