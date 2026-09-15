@@ -109,7 +109,7 @@ materialKolor = { module = "com.materialkolor:material-kolor", version.ref = "ma
 
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
-hilt-navigation-compose = "androidx.hilt:hilt-navigation-compose:1.3.0"
+hilt-navigation-compose = "androidx.hilt:hilt-navigation-compose:1.4.0"
 navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation" }
 
 media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3" }
