@@ -52,6 +52,9 @@ import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.service.calculateChapterGap
 import ephyra.feature.reader.model.ChapterTransition
 import ephyra.feature.reader.model.ReaderChapter
+import ephyra.feature.reader.model.TransitionState
+import ephyra.feature.reader.model.toTransitionState
+import ephyra.presentation.core.components.material.SECONDARY_ALPHA
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.util.secondaryItemAlpha
@@ -73,6 +76,7 @@ fun ChapterTransition(
     goingToChapterDownloaded: Boolean,
     onTransitionClick: (() -> Unit)? = null,
     onReturnClick: (() -> Unit)? = null,
+    onReturnToSeries: (() -> Unit)? = null,
     direction: TransitionDirection = TransitionDirection.LTR,
     modifier: Modifier = Modifier,
 ) {
@@ -81,11 +85,11 @@ fun ChapterTransition(
     val hasDestination = transition.to != null
 
     ProvideTextStyle(MaterialTheme.typography.bodyMedium) {
-        when (transition) {
-            is ChapterTransition.Prev -> {
+        when (val state = transition.toTransitionState()) {
+            is TransitionState.ToPrevious -> {
                 TransitionCard(
                     topLabel = stringResource(ephyra.app.core.common.R.string.transition_previous),
-                    topChapter = goingToChapter,
+                    topChapter = state.targetChapter?.chapter,
                     topChapterDownloaded = goingToChapterDownloaded,
                     bottomLabel = stringResource(ephyra.app.core.common.R.string.transition_current),
                     bottomChapter = currChapter,
@@ -101,13 +105,13 @@ fun ChapterTransition(
                 )
             }
 
-            is ChapterTransition.Next -> {
+            is TransitionState.ToNext -> {
                 TransitionCard(
                     topLabel = stringResource(ephyra.app.core.common.R.string.transition_finished),
                     topChapter = currChapter,
                     topChapterDownloaded = currChapterDownloaded,
                     bottomLabel = stringResource(ephyra.app.core.common.R.string.transition_next),
-                    bottomChapter = goingToChapter,
+                    bottomChapter = state.targetChapter?.chapter,
                     bottomChapterDownloaded = goingToChapterDownloaded,
                     fallbackLabel = stringResource(ephyra.app.core.common.R.string.transition_no_next),
                     chapterGap = calculateChapterGap(goingToChapter, currChapter),
@@ -118,6 +122,80 @@ fun ChapterTransition(
                     direction = direction,
                     modifier = modifier,
                 )
+            }
+
+            // Forward navigation with no next chapter: the reader has caught up with the
+            // series. Render the terminal summary card with a high-prominence exit affordance.
+            TransitionState.EndOfSeries -> {
+                EndOfSeriesCard(
+                    onReturnToSeries = onReturnToSeries,
+                    modifier = modifier,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Terminal "End of Series" transition card. Shown when forward navigation has no next
+ * chapter: summarizes that the reader is caught up and offers a clean exit back to the
+ * series detail view instead of leaving the user stranded on an empty boundary page.
+ */
+@Composable
+private fun EndOfSeriesCard(
+    onReturnToSeries: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        ElevatedCard(
+            modifier = Modifier
+                .widthIn(max = 480.dp)
+                .fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.elevatedCardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.96f),
+                contentColor = MaterialTheme.colorScheme.onSurface,
+            ),
+            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.CheckCircle,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(48.dp),
+                )
+                Text(
+                    text = stringResource(ephyra.app.core.common.R.string.caught_up_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                )
+                Text(
+                    text = stringResource(ephyra.app.core.common.R.string.caught_up_description),
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = SECONDARY_ALPHA),
+                )
+                if (onReturnToSeries != null) {
+                    Button(
+                        onClick = onReturnToSeries,
+                        modifier = Modifier.padding(top = 8.dp),
+                    ) {
+                        Text(text = stringResource(ephyra.app.core.common.R.string.action_return_to_series))
+                    }
+                }
             }
         }
     }

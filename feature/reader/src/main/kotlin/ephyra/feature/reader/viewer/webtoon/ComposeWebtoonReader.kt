@@ -84,6 +84,7 @@ fun ComposeWebtoonReader(
     onRequestPreload: (ReaderChapter) -> Unit,
     onNextChapter: () -> Unit,
     onPreviousChapter: () -> Unit,
+    onReturnToSeries: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val items by viewer.itemsState.collectAsStateWithLifecycle()
@@ -297,6 +298,7 @@ fun ComposeWebtoonReader(
                                 onReturnClick = {
                                     scope.launch { lazyListState.animateScrollBy(scrollDistance) }
                                 },
+                                onReturnToSeries = onReturnToSeries,
                                 direction = TransitionDirection.VERTICAL,
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -312,6 +314,7 @@ fun ComposeWebtoonReader(
                                 onReturnClick = {
                                     scope.launch { lazyListState.animateScrollBy(-scrollDistance) }
                                 },
+                                onReturnToSeries = onReturnToSeries,
                                 direction = TransitionDirection.VERTICAL,
                                 modifier = Modifier
                                     .fillMaxWidth()

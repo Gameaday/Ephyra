@@ -58,6 +58,7 @@ fun ComposePagerReader(
     onRequestPreload: (ReaderChapter) -> Unit,
     onNextChapter: () -> Unit,
     onPreviousChapter: () -> Unit,
+    onReturnToSeries: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val items by viewer.itemsState.collectAsStateWithLifecycle()
@@ -227,6 +228,7 @@ fun ComposePagerReader(
                             goingToChapterDownloaded = isPreviousChapterDownloaded,
                             onTransitionClick = onPreviousChapter,
                             onReturnClick = { viewer.moveToNext() },
+                            onReturnToSeries = onReturnToSeries,
                             direction = transitionDirection,
                         )
                     }
@@ -249,6 +251,7 @@ fun ComposePagerReader(
                             goingToChapterDownloaded = isNextChapterDownloaded,
                             onTransitionClick = onNextChapter,
                             onReturnClick = { viewer.moveToPrevious() },
+                            onReturnToSeries = onReturnToSeries,
                             direction = transitionDirection,
                         )
                     }

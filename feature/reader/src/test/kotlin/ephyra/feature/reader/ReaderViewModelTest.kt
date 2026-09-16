@@ -245,4 +245,37 @@ class ReaderViewModelTest {
         assertTrue(readerChapter.chapter.read, "Chapter must be marked as read when all following pages are absorbed")
         coVerify { updateChapter.await(match { it.id == 50L && it.read == true }) }
     }
+
+    @Test
+    fun `checkChapterCompletion with BACKWARD vector never marks chapter read`() = runTest {
+        val viewModel = createViewModel()
+        val chapter = Chapter.create().copy(id = 51L, mangaId = 1L, name = "Ch 51", read = false)
+        val readerChapter = ReaderChapter(chapter)
+        val page0 = ReaderPage(0, "http://p/0").apply { this.chapter = readerChapter }
+        readerChapter.state = ReaderChapter.State.Loaded(listOf(page0))
+
+        val job = viewModel.checkChapterCompletion(page0, ephyra.feature.reader.model.NavigationVector.BACKWARD)
+        job?.join()
+
+        assertFalse(
+            readerChapter.chapter.read,
+            "Backward arrival on the (single-page) chapter's last page must not mutate read state",
+        )
+        coVerify(exactly = 0) { updateChapter.await(match { it.id == 51L && it.read == true }) }
+    }
+
+    @Test
+    fun `checkChapterCompletion with FORWARD vector marks chapter read`() = runTest {
+        val viewModel = createViewModel()
+        val chapter = Chapter.create().copy(id = 52L, mangaId = 1L, name = "Ch 52", read = false)
+        val readerChapter = ReaderChapter(chapter)
+        val page0 = ReaderPage(0, "http://p/0").apply { this.chapter = readerChapter }
+        readerChapter.state = ReaderChapter.State.Loaded(listOf(page0))
+
+        val job = viewModel.checkChapterCompletion(page0, ephyra.feature.reader.model.NavigationVector.FORWARD)
+        job?.join()
+
+        assertTrue(readerChapter.chapter.read, "Forward arrival on the last page must mark the chapter read")
+        coVerify { updateChapter.await(match { it.id == 52L && it.read == true }) }
+    }
 }

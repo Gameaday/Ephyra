@@ -101,6 +101,7 @@ fun ReaderScreen(
                     onRequestPreload = activity::requestPreloadChapter,
                     onNextChapter = onNextChapter,
                     onPreviousChapter = onPreviousChapter,
+                    onReturnToSeries = onNavigateUp,
                     modifier = Modifier.fillMaxSize(),
                 )
             } else if (currentViewer is WebtoonViewer && activity != null) {
@@ -112,6 +113,7 @@ fun ReaderScreen(
                     onRequestPreload = activity::requestPreloadChapter,
                     onNextChapter = onNextChapter,
                     onPreviousChapter = onPreviousChapter,
+                    onReturnToSeries = onNavigateUp,
                     modifier = Modifier.fillMaxSize(),
                 )
             } else if (currentViewer != null) {

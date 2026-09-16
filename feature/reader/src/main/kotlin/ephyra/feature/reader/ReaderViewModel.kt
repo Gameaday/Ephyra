@@ -54,6 +54,7 @@ import ephyra.domain.track.service.TrackPreferences
 import ephyra.feature.reader.loader.ChapterLoader
 import ephyra.feature.reader.loader.DownloadPageLoader
 import ephyra.feature.reader.model.InsertPage
+import ephyra.feature.reader.model.NavigationVector
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.model.ViewerChapters
@@ -150,6 +151,20 @@ class ReaderViewModel @Inject constructor(
             field = value
         }
     private var hasAppliedSavedPageIndex = false
+
+    /**
+     * Identity of the chapter that most recently produced a page selection. Used by
+     * [resolveNavigationVector] to distinguish a genuine within-chapter backward scroll
+     * from the first selection of a freshly loaded chapter (whose [chapterPageIndex] may
+     * still hold the previous chapter's value).
+     */
+    private var lastSelectedChapterId: Long? = null
+
+    /**
+     * Source order of the chapter that most recently produced a page selection, used to
+     * resolve the arrival direction when crossing a chapter boundary.
+     */
+    private var lastSelectedChapterSourceOrder: Long = 0L
 
     /**
      * The chapter loader for the loaded manga. It'll be null until [manga] is set.
@@ -603,9 +618,14 @@ class ReaderViewModel @Inject constructor(
         val selectedChapter = page.chapter
         val pages = selectedChapter.pages ?: return
 
+        // Resolve the direction the reader moved to reach this page. Completion side-effects
+        // are gated on FORWARD movement: re-entering a chapter from its top boundary (or
+        // scrolling back within one) must never mark it read.
+        val navigationVector = resolveNavigationVector(selectedChapter, page)
+
         // Save last page read and mark as read if needed
         viewModelScope.launchNonCancellable {
-            updateChapterProgress(selectedChapter, page)
+            updateChapterProgress(selectedChapter, page, navigationVector)
         }
 
         if (selectedChapter != getCurrentChapter()) {
@@ -724,10 +744,47 @@ class ReaderViewModel @Inject constructor(
     }
 
     /**
+     * Resolves the [NavigationVector] that produced the selection of [selectedChapter]/[page].
+     *
+     * - Crossing into a chapter with a lower source order (the previous chapter) is BACKWARD;
+     *   a higher source order (the next chapter) is FORWARD.
+     * - Within the same chapter, moving to a lower page index is BACKWARD.
+     * - The initial selection of a freshly opened reader is BACKWARD only when the chapter
+     *   was explicitly positioned at its end (backward arrival); otherwise FORWARD.
+     *
+     * Cross-chapter comparisons use source order — never raw display indices — so the
+     * resolution is independent of sort direction and list layout.
+     */
+    private fun resolveNavigationVector(selectedChapter: ReaderChapter, page: ReaderPage): NavigationVector {
+        val previousChapterId = lastSelectedChapterId
+        val vector = when {
+            previousChapterId == null ->
+                if (selectedChapter.startFromEnd) NavigationVector.BACKWARD else NavigationVector.FORWARD
+            previousChapterId != selectedChapter.chapter.id ->
+                if (selectedChapter.chapter.sourceOrder >= lastSelectedChapterSourceOrder) {
+                    NavigationVector.FORWARD
+                } else {
+                    NavigationVector.BACKWARD
+                }
+            page.index >= chapterPageIndex -> NavigationVector.FORWARD
+            else -> NavigationVector.BACKWARD
+        }
+        // Record the selection identity only once the vector has been resolved, so the next
+        // resolution compares against the chapter this vector was computed for.
+        lastSelectedChapterId = selectedChapter.chapter.id
+        lastSelectedChapterSourceOrder = selectedChapter.chapter.sourceOrder
+        return vector
+    }
+
+    /**
      * Saves the chapter progress (last read page and whether it's read)
      * if incognito mode isn't on.
      */
-    private suspend fun updateChapterProgress(readerChapter: ReaderChapter, page: Page) {
+    private suspend fun updateChapterProgress(
+        readerChapter: ReaderChapter,
+        page: Page,
+        navigationVector: NavigationVector = NavigationVector.FORWARD,
+    ) {
         val pageIndex = page.index
         val chapterPages = readerChapter.pages
 
@@ -758,7 +815,10 @@ class ReaderViewModel @Inject constructor(
             // plain-visible-page case where trailing blocked pages are skipped by the reader.
             val isEffectivelyLastPage = pageIndex == chapterPages?.lastIndex ||
                 chapterPages?.drop(pageIndex + 1)?.all { it.isHidden } == true
-            if (isEffectivelyLastPage) {
+            // Completion is dispatched only when the effective last page is reached while
+            // moving FORWARD. Backward navigation into (or within) a chapter — e.g. swiping
+            // back across the top/left boundary from page 0 — never mutates read state.
+            if (isEffectivelyLastPage && navigationVector == NavigationVector.FORWARD) {
                 updateChapterProgressOnComplete(readerChapter)
             }
 
@@ -805,9 +865,14 @@ class ReaderViewModel @Inject constructor(
     /**
      * Checks if [page] has become the effective last page of the chapter
      * (e.g. following pages were absorbed by smart-combine or blocked by filter).
-     * If so, marks the chapter read and updates trackers and DB.
+     * If so, marks the chapter read and updates trackers and DB — but only when the
+     * arrival [navigationVector] is [NavigationVector.FORWARD]; backward movement never
+     * mutates read state.
      */
-    fun checkChapterCompletion(page: ReaderPage): kotlinx.coroutines.Job? {
+    fun checkChapterCompletion(
+        page: ReaderPage,
+        navigationVector: NavigationVector = NavigationVector.FORWARD,
+    ): kotlinx.coroutines.Job? {
         if (page is InsertPage || incognitoMode) return null
         val readerChapter = page.chapter
         val chapterPages = readerChapter.pages ?: return null
@@ -816,7 +881,7 @@ class ReaderViewModel @Inject constructor(
         val isEffectivelyLastPage = pageIndex == chapterPages.lastIndex ||
             chapterPages.drop(pageIndex + 1).all { it.isHidden }
 
-        if (isEffectivelyLastPage) {
+        if (isEffectivelyLastPage && navigationVector == NavigationVector.FORWARD) {
             return viewModelScope.launchNonCancellable {
                 val prevRead = readerChapter.chapter.read
                 val prevLastPageRead = readerChapter.chapter.lastPageRead

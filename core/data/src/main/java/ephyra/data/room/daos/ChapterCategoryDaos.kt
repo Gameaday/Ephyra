@@ -62,6 +62,12 @@ interface ChapterDao {
     @Update
     suspend fun update(chapter: ChapterEntity)
 
+    /**
+     * Bulk partial update. Room executes the generated list-update inside a single
+     * database transaction, so readers observe either the previous or the new state of
+     * every chapter — never an intermediate one.
+     */
+    @Transaction
     @Update
     suspend fun updateAll(chapters: List<ChapterEntity>)
 
