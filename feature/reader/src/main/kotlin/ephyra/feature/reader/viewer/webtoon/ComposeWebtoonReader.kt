@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -32,6 +33,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -70,6 +72,9 @@ import ephyra.presentation.reader.TransitionDirection
 import eu.kanade.tachiyomi.source.model.Page
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+
+/** Fallback height reserved for a webtoon slice whose intrinsic size is not yet known. */
+private val ESTIMATED_WEBTOON_SLICE_HEIGHT = 400.dp
 
 /**
  * 100% Pure Jetpack Compose continuous vertical strip reader for Webtoon and Manhwa.
@@ -154,6 +159,18 @@ fun ComposeWebtoonReader(
             initialFirstVisibleItemIndex = initialIndex.coerceIn(0, (items.size - 1).coerceAtLeast(0)),
         )
 
+        // A freshly opened chapter must start pinned at its resolved top slice. Reserving
+        // slice heights upstream is not enough on its own: while the first slices decode, the
+        // lazy list can still anchor itself lower in a long strip, which is exactly the
+        // "viewport jumps to the bottom" symptom. Scrolling explicitly here locks the anchor
+        // until the initial layout pass has settled.
+        LaunchedEffect(currentChapterId, items.size) {
+            lazyListState.scrollToItem(
+                index = initialIndex.coerceIn(0, (items.size - 1).coerceAtLeast(0)),
+                scrollOffset = 0,
+            )
+        }
+
         // Listen to external scroll-to-index requests (e.g. from page slider scrubbing)
         LaunchedEffect(viewer, lazyListState) {
             viewer.scrollToIndexRequest.collect { targetIndex ->
@@ -194,6 +211,35 @@ fun ComposeWebtoonReader(
                             item.to?.let(onRequestPreload)
                         }
                     }
+                }
+        }
+
+        // Coverage-based completion. A webtoon counts as finished only once the final slice
+        // has been fully revealed inside the viewport. Watching the *last* visible item rather
+        // than the first keeps completion working for short trailing slices, which can never
+        // occupy the top of the viewport on their own and therefore never trip a
+        // first-visible-item check.
+        val isChapterCovered by remember(lazyListState) {
+            derivedStateOf {
+                val layoutInfo = lazyListState.layoutInfo
+                val totalItems = layoutInfo.totalItemsCount
+                if (totalItems == 0) return@derivedStateOf false
+
+                val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()
+                    ?: return@derivedStateOf false
+                lastVisible.index == totalItems - 1 &&
+                    (lastVisible.offset + lastVisible.size) <= layoutInfo.viewportEndOffset
+            }
+        }
+
+        LaunchedEffect(lazyListState, items) {
+            snapshotFlow { isChapterCovered }
+                .distinctUntilChanged()
+                .collect { covered ->
+                    if (!covered) return@collect
+                    val lastPage = items.lastOrNull { it is ReaderPage } as? ReaderPage
+                        ?: return@collect
+                    onPageSelected(lastPage)
                 }
         }
 
@@ -344,6 +390,9 @@ private fun WebtoonPageItem(
         }
     }
 
+    // Until a slice has been decoded its intrinsic size is unknown, so the container has to
+    // reserve a slot of its own. Reserving space up front keeps the scroll anchor stable and
+    // stops a long, unread strip from yanking the viewport around as each slice resolves.
     val itemModifier = if (page.aspectRatio != null) {
         modifier
             .fillMaxWidth()
@@ -351,7 +400,7 @@ private fun WebtoonPageItem(
     } else {
         modifier
             .fillMaxWidth()
-            .wrapContentHeight()
+            .defaultMinSize(minHeight = with(LocalDensity.current) { ESTIMATED_WEBTOON_SLICE_HEIGHT })
     }
 
     Box(
