@@ -51,7 +51,7 @@ rxjava = { module = "io.reactivex:rxjava", version.ref = "rxJava" }
 injekt-core = { module = "uy.kohesive.injekt:injekt-core", version.ref = "injekt" }
 
 # Coil
-coil-bom = { module = "io.coil-kt.coil3:coil-bom", version = "3.6.1" }
+coil-bom = { module = "io.coil-kt.coil3:coil-bom", version = "3.6.2" }
 coil-core = { module = "io.coil-kt.coil3:coil" }
 coil-gif = { module = "io.coil-kt.coil3:coil-gif" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose" }
