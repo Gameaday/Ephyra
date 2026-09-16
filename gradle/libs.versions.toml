@@ -19,7 +19,7 @@ leakcanary = "2.14"
 
 # Compiler Tools
 hilt = "2.60.1"
-ksp = "2.3.11"
+ksp = "2.3.12"
 room = "2.8.5"
 media3 = "1.11.0"
 paging = "3.5.1"
