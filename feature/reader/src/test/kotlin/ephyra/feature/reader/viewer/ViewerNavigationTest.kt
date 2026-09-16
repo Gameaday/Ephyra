@@ -8,6 +8,7 @@ import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.domain.ui.UiPreferences
 import ephyra.feature.reader.ReaderActivity
 import ephyra.feature.reader.model.ChapterTransition
+import ephyra.feature.reader.model.NavigationVector
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.model.ViewerChapters
@@ -412,7 +413,9 @@ class ViewerNavigationTest {
 
         assertFalse(viewer.itemsState.value.contains(page1), "Absorbed page must be removed from items")
         assertEquals(page0, viewer.currentPage, "Active page must shift to parent page when absorbed")
-        verify { activity.viewModel.checkChapterCompletion(page0) }
+        verify {
+            activity.viewModel.checkChapterCompletion(page0, NavigationVector.FORWARD)
+        }
     }
 
     @Test

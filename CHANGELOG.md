@@ -7,6 +7,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### 📖 Reader Navigation, State Machines & Chapter Lifecycle (Phase 1)
+- **Direction-Aware Chapter Completion**: Introduced `NavigationVector { FORWARD, BACKWARD }` and guarded read-completion dispatch through it. Swiping backward from page `0` of chapter *N* into chapter *N-1* no longer marks chapter *N* as read; completion requires the final page index **and** a `FORWARD` dispatch (webtoon coverage crossing ≥95% forward). Backward boundary crossings transition chapters without mutating read/progress state.
+- **Semantic "Mark Previous as Read"**: `MangaViewModel.markPreviousChapterRead` now compares against `Chapter.sourceOrder` (reading order) instead of raw display indices, so reverse-sorted or filtered chapter lists update exactly the chapters that precede the selection — never the ones merely rendered above it.
+- **Transition State Machine & "Caught Up" Terminal State**: Added the sealed `TransitionState { ToPrevious, ToNext, EndOfSeries }` hierarchy with `ChapterTransition.toTransitionState()`. Forward navigation past the final available chapter now renders a terminal summary card with a high-prominence **"Return to Series"** button wired to `onNavigateUp` in both the pager and webtoon readers.
+- **Directional Transition Arrows**: Added `TransitionDirection { LTR, RTL, VERTICAL }`, resolved from the active viewer (`R2LPagerViewer`/`VerticalPagerViewer`), so previous/next transition arrows point along the reader's own reading flow instead of a hard-coded horizontal direction.
+
 ### 🐛 Critical Fixes
 - **Extension zstd Crash (`Lokhttp3/zstd/Zstd;`)**: Bundled `com.squareup.okhttp3:okhttp-zstd` (5.5.0) via `core:common`. Dynamically loaded extension APKs (MangaDex, Mangabat, and most modern Mihon/Keiyoushi extensions) reference the `okhttp3.zstd` package, which OkHttp ships in a separate optional module. Without it, every source network call failed with `NoClassDefFoundError` (wrapped by `ExtensionCallBoundary` as "Source 'X' encountered an error"), breaking chapter loading, search results, covers, and making library buttons appear unresponsive on source-driven screens.
 - **Silent Chapter-Sync Failures**: `MangaChapterInteractor.syncChaptersWithSource` no longer swallows source fetch failures. Failed manga-details/chapter-list fetches are logged, manual refreshes now surface a toast via `MangaScreenEffect.ShowToast`, and background refreshes keep the local chapter list instead of wiping it.

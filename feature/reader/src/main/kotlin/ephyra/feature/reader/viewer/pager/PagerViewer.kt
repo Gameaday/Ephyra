@@ -12,6 +12,7 @@ import ephyra.domain.ui.UiPreferences
 import ephyra.feature.reader.ReaderActivity
 import ephyra.feature.reader.model.ChapterTransition
 import ephyra.feature.reader.model.InsertPage
+import ephyra.feature.reader.model.NavigationVector
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.model.ViewerChapters
 import ephyra.feature.reader.viewer.Viewer
@@ -287,7 +288,9 @@ abstract class PagerViewer(
             currentPage = parentPage
         }
         _itemsState.update { current -> current.filter { it != absorbedPage } }
-        activity.viewModel.checkChapterCompletion(parentPage)
+        // Smart-combine merges the *following* page into its predecessor, so reaching an
+        // absorbed parent page is always forward progress through the chapter.
+        activity.viewModel.checkChapterCompletion(parentPage, NavigationVector.FORWARD)
     }
 
     fun onPageAbsorb(page: ReaderPage) {
