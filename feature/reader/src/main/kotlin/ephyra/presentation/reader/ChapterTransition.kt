@@ -17,9 +17,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.Info
@@ -36,9 +36,12 @@ import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.buildAnnotatedString
@@ -46,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ephyra.domain.chapter.model.Chapter
@@ -201,6 +205,61 @@ private fun EndOfSeriesCard(
     }
 }
 
+/**
+ * The glyph a transition affordance renders, before layout direction is applied.
+ *
+ * Horizontal cases map to AutoMirrored icons so the platform supplies the mirrored form;
+ * vertical cases are distinct because up/down arrows are never mirrored.
+ */
+internal enum class TransitionArrowGlyph {
+    HORIZONTAL_NEXT,
+    HORIZONTAL_PREVIOUS,
+    VERTICAL_NEXT,
+    VERTICAL_PREVIOUS,
+}
+
+/**
+ * Resolves which glyph an affordance that moves toward [isNext] should render in [direction].
+ *
+ * Deliberately free of Compose so the mapping - the part that previously pointed the wrong
+ * way for backward navigation and vertical readers - can be asserted directly in unit tests.
+ */
+internal fun transitionArrowGlyph(isNext: Boolean, direction: TransitionDirection): TransitionArrowGlyph = when {
+    direction == TransitionDirection.VERTICAL && isNext -> TransitionArrowGlyph.VERTICAL_NEXT
+    direction == TransitionDirection.VERTICAL -> TransitionArrowGlyph.VERTICAL_PREVIOUS
+    isNext -> TransitionArrowGlyph.HORIZONTAL_NEXT
+    else -> TransitionArrowGlyph.HORIZONTAL_PREVIOUS
+}
+
+private fun TransitionArrowGlyph.toImageVector(): ImageVector = when (this) {
+    TransitionArrowGlyph.HORIZONTAL_NEXT -> Icons.AutoMirrored.Filled.ArrowForward
+    TransitionArrowGlyph.HORIZONTAL_PREVIOUS -> Icons.AutoMirrored.Filled.ArrowBack
+    TransitionArrowGlyph.VERTICAL_NEXT -> Icons.Filled.ArrowDownward
+    TransitionArrowGlyph.VERTICAL_PREVIOUS -> Icons.Filled.ArrowUpward
+}
+
+/**
+ * Renders a directional [imageVector] under an explicit [layoutDirection].
+ *
+ * AutoMirrored icons resolve their orientation from the ambient layout direction at draw
+ * time, so the reader's own flow is provided here instead of relying on the device locale.
+ * Vertical arrows carry `autoMirror = false` and are therefore unaffected.
+ */
+@Composable
+private fun DirectionalIcon(
+    imageVector: ImageVector,
+    layoutDirection: LayoutDirection,
+    modifier: Modifier = Modifier,
+) {
+    CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
+        Icon(
+            imageVector = imageVector,
+            contentDescription = null,
+            modifier = modifier,
+        )
+    }
+}
+
 @Composable
 private fun TransitionCard(
     topLabel: String,
@@ -218,45 +277,19 @@ private fun TransitionCard(
     direction: TransitionDirection = TransitionDirection.LTR,
     modifier: Modifier = Modifier,
 ) {
-    // Arrows always point toward the chapter each button navigates to, expressed in the
-    // reader's own reading flow: in an L2R pager the earlier chapter is to the left, in
-    // an R2L pager it is to the right, and in vertical/webtoon readers it is above.
-    // Non-mirrored icons are used here so direction is resolved purely by [TransitionDirection],
-    // avoiding any coupling to the ambient Compose [LayoutDirection].
-    val actionArrow = when (direction) {
-        TransitionDirection.LTR -> if (isNext) {
-            Icons.Filled.ArrowForward
-        } else {
-            Icons.Filled.ArrowBack
-        }
-        TransitionDirection.RTL -> if (isNext) {
-            Icons.Filled.ArrowBack
-        } else {
-            Icons.Filled.ArrowForward
-        }
-        TransitionDirection.VERTICAL -> if (isNext) {
-            Icons.Filled.ArrowDownward
-        } else {
-            Icons.Filled.ArrowUpward
-        }
+    // The layout direction is supplied explicitly rather than inherited from the device locale:
+    // an R2L manga pager advances leftwards even on an LTR device, and an LTR pager advances
+    // rightwards even on an RTL device. Reading direction, not locale, decides the arrows.
+    val directionLayout = when (direction) {
+        TransitionDirection.LTR -> LayoutDirection.Ltr
+        TransitionDirection.RTL -> LayoutDirection.Rtl
+        // Vertical arrows are not mirrored, so the ambient direction is irrelevant.
+        TransitionDirection.VERTICAL -> LocalLayoutDirection.current
     }
-    val returnArrow = when (direction) {
-        TransitionDirection.LTR -> if (isNext) {
-            Icons.Filled.ArrowBack
-        } else {
-            Icons.Filled.ArrowForward
-        }
-        TransitionDirection.RTL -> if (isNext) {
-            Icons.Filled.ArrowForward
-        } else {
-            Icons.Filled.ArrowBack
-        }
-        TransitionDirection.VERTICAL -> if (isNext) {
-            Icons.Filled.ArrowUpward
-        } else {
-            Icons.Filled.ArrowDownward
-        }
-    }
+    val actionArrow = transitionArrowGlyph(isNext, direction).toImageVector()
+    // "Return to current chapter" points back the way the reader came, so it is always the
+    // opposite affordance of the chapter-navigation button.
+    val returnArrow = transitionArrowGlyph(!isNext, direction).toImageVector()
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -361,9 +394,9 @@ private fun TransitionCard(
                                 text = actionLabel,
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                             )
-                            Icon(
+                            DirectionalIcon(
                                 imageVector = actionArrow,
-                                contentDescription = null,
+                                layoutDirection = directionLayout,
                             )
                         }
                     }
@@ -389,9 +422,9 @@ private fun TransitionCard(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Icon(
+                            DirectionalIcon(
                                 imageVector = returnArrow,
-                                contentDescription = null,
+                                layoutDirection = directionLayout,
                                 modifier = Modifier.size(18.dp),
                             )
                             Text(
