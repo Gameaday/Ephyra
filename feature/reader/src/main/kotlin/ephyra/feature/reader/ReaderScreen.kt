@@ -2,21 +2,26 @@ package ephyra.feature.reader
 
 import android.view.ViewGroup
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -43,6 +48,7 @@ import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.feature.reader.setting.ReaderSettingsViewModel
 import ephyra.feature.reader.viewer.Viewer
 import ephyra.feature.reader.viewer.ViewerNavigation
+import ephyra.feature.reader.viewer.extractEdgeColor
 import ephyra.feature.reader.viewer.pager.ComposePagerReader
 import ephyra.feature.reader.viewer.pager.PagerViewer
 import ephyra.feature.reader.viewer.webtoon.ComposeWebtoonReader
@@ -87,7 +93,43 @@ fun ReaderScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
 
-    Box(modifier = modifier.fillMaxSize()) {
+    // "Automatic" theme: the canvas takes its tint from the border pixels of the page on
+    // screen. Sampling walks only the outer band of a downscaled copy, off the main thread,
+    // so changing pages never stalls a frame; the shift itself is animated rather than
+    // snapped, which avoids a hard cut between pages of differing tone.
+    val readerTheme: Int by readerPreferences.readerTheme().collectAsState()
+    val automaticBackground = readerTheme == ReaderPreferences.THEME_AUTOMATIC
+
+    // Falls back to null (and therefore to the themed surface colour) whenever the page has
+    // not been decoded into memory yet, so the canvas never flashes an arbitrary tint.
+    val currentPageBytes = state.currentChapter
+        ?.pages
+        ?.getOrNull(state.currentPage)
+        ?.cachedBytes
+
+    val sampledEdgeColor by produceState<Color?>(
+        initialValue = null,
+        automaticBackground,
+        currentPageBytes,
+    ) {
+        value = if (automaticBackground && currentPageBytes != null) {
+            extractEdgeColor(currentPageBytes)?.let { Color(it) }
+        } else {
+            null
+        }
+    }
+
+    val canvasColor by animateColorAsState(
+        targetValue = sampledEdgeColor ?: MaterialTheme.colorScheme.surface,
+        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
+        label = "ReaderBackgroundColor",
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .then(if (automaticBackground) Modifier.background(canvasColor) else Modifier),
+    ) {
         // 1. Viewer Surface
         key(currentViewer) {
             val context = LocalContext.current

@@ -528,10 +528,16 @@ class ReaderActivity : BaseActivity() {
             readerPreferences.readerTheme().changes()
                 .onEach { theme ->
                     val color = when (theme) {
-                        0 -> Color.WHITE
-                        1 -> Color.BLACK
-                        2 -> automaticBackgroundColor()
-                        else -> Color.GRAY
+                        ReaderPreferences.THEME_WHITE -> Color.WHITE
+                        ReaderPreferences.THEME_BLACK -> Color.BLACK
+                        ReaderPreferences.THEME_GRAY -> grayBackgroundColor
+                        // The Compose canvas paints the sampled tint itself, so the window
+                        // behind it must be transparent for that colour to show through.
+                        // Previously this branch was unreachable: the mapping treated theme
+                        // 2 as "automatic", so selecting "Automatic background" (3) fell
+                        // through to the gray default and never sampled anything.
+                        ReaderPreferences.THEME_AUTOMATIC -> Color.TRANSPARENT
+                        else -> grayBackgroundColor
                     }
                     window.decorView.setBackgroundColor(color)
                     updateViewer()
@@ -575,14 +581,6 @@ class ReaderActivity : BaseActivity() {
             readerPreferences.colorFilterMode().changes()
                 .onEach { applyColorLayerPaint() }
                 .launchIn(lifecycleScope)
-        }
-
-        private fun automaticBackgroundColor(): Int {
-            return if (isNightMode()) {
-                Color.BLACK
-            } else {
-                Color.WHITE
-            }
         }
 
         fun setDisplayProfile(data: String) {

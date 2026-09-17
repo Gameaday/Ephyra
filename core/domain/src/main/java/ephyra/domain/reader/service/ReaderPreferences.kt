@@ -192,6 +192,21 @@ class ReaderPreferences(
     }
 
     companion object {
+        /** Reader background theme: plain white canvas. */
+        const val THEME_WHITE = 0
+
+        /** Reader background theme: plain black canvas (default). */
+        const val THEME_BLACK = 1
+
+        /** Reader background theme: plain gray canvas. */
+        const val THEME_GRAY = 2
+
+        /**
+         * Reader background theme: the canvas is tinted from the border pixels of the page
+         * currently on screen, so the surround blends into the artwork.
+         */
+        const val THEME_AUTOMATIC = 3
+
         const val WEBTOON_PADDING_MIN = 0
         const val WEBTOON_PADDING_MAX = 25
 
