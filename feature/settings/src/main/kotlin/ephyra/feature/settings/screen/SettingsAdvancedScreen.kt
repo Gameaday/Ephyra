@@ -147,7 +147,6 @@ object SettingsAdvancedScreen : SearchableSettings {
     @Composable
     private fun getBackgroundActivityGroup(): Preference.PreferenceGroup {
         val context = LocalContext.current
-        val uriHandler = LocalUriHandler.current
 
         return Preference.PreferenceGroup(
             title = stringResource(ephyra.app.core.common.R.string.label_background_activity),
@@ -177,11 +176,6 @@ object SettingsAdvancedScreen : SearchableSettings {
                             context.toast(ephyra.app.core.common.R.string.battery_optimization_disabled)
                         }
                     },
-                ),
-                Preference.PreferenceItem.TextPreference(
-                    title = "Don't kill my app!",
-                    subtitle = stringResource(ephyra.app.core.common.R.string.about_dont_kill_my_app),
-                    onClick = { uriHandler.openUri("https://dontkillmyapp.com/") },
                 ),
             ),
         )
