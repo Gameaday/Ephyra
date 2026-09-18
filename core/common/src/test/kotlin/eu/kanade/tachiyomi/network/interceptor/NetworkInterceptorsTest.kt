@@ -276,8 +276,8 @@ class NetworkInterceptorsTest {
         val ex = assertThrows(IOException::class.java) {
             interceptor.intercept(mockChain)
         }
-        assertTrue(ex.message!!.contains("rate-limit active for rate-limited.com")) {
-            "Should throw IOException indicating active rate-limit backoff"
+        assertTrue(ex.message!!.contains("backoff active for rate-limited.com")) {
+            "Should throw IOException indicating active backoff window"
         }
     }
 
@@ -319,6 +319,121 @@ class NetworkInterceptorsTest {
         // Host B should NOT be blocked
         val resultB = interceptor.intercept(chainHostB)
         assertEquals(200, resultB.code)
+    }
+
+    @Test
+    fun `RateLimitBackoffInterceptor treats 503 as a backoff signal`() {
+        val interceptor = RateLimitBackoffInterceptor(clock = { 0L }, random = { 0.0 })
+        val mockChain = mockk<Interceptor.Chain>()
+        val request = Request.Builder().url("https://unavailable.com/chapter").build()
+        val response503 = Response.Builder()
+            .request(request)
+            .protocol(okhttp3.Protocol.HTTP_1_1)
+            .code(503)
+            .message("Service Unavailable")
+            .body("{}".toResponseBody("application/json".toMediaType()))
+            .build()
+
+        every { mockChain.request() } returns request
+        every { mockChain.proceed(request) } returns response503
+
+        assertEquals(503, interceptor.intercept(mockChain).code)
+
+        // No Retry-After, so the window comes from the base exponential backoff.
+        assertEquals("5s", remainingLabel(interceptor, mockChain))
+    }
+
+    @Test
+    fun `RateLimitBackoffInterceptor escalates exponentially across consecutive failures`() {
+        var now = 0L
+        val interceptor = RateLimitBackoffInterceptor(clock = { now }, random = { 0.0 })
+        val mockChain = mockk<Interceptor.Chain>()
+        val request = Request.Builder().url("https://flaky.com/page").build()
+
+        every { mockChain.request() } returns request
+        every { mockChain.proceed(request) } returns Response.Builder()
+            .request(request)
+            .protocol(okhttp3.Protocol.HTTP_1_1)
+            .code(503)
+            .message("Service Unavailable")
+            .body("{}".toResponseBody("application/json".toMediaType()))
+            .build()
+
+        // random() is pinned to 0.0, so each window is exactly the previous ceiling.
+        interceptor.intercept(mockChain)
+        assertEquals("5s", remainingLabel(interceptor, mockChain))
+
+        now = 5_000L
+        interceptor.intercept(mockChain)
+        assertEquals("10s", remainingLabel(interceptor, mockChain))
+
+        now = 15_000L
+        interceptor.intercept(mockChain)
+        assertEquals("20s", remainingLabel(interceptor, mockChain))
+    }
+
+    @Test
+    fun `RateLimitBackoffInterceptor spreads concurrent retries with jitter`() {
+        val interceptor = RateLimitBackoffInterceptor(clock = { 0L }, random = { 0.5 })
+        val mockChain = mockk<Interceptor.Chain>()
+        val request = Request.Builder().url("https://jittered.com/page").build()
+
+        every { mockChain.request() } returns request
+        every { mockChain.proceed(request) } returns Response.Builder()
+            .request(request)
+            .protocol(okhttp3.Protocol.HTTP_1_1)
+            .code(429)
+            .message("Too Many Requests")
+            .body("{}".toResponseBody("application/json".toMediaType()))
+            .build()
+
+        interceptor.intercept(mockChain)
+
+        // Halfway between the 5s floor and the 10s ceiling, rather than a fixed 5s: without
+        // this, every page requested in parallel would retry at the same instant.
+        assertEquals("8s", remainingLabel(interceptor, mockChain))
+    }
+
+    @Test
+    fun `RateLimitBackoffInterceptor resets escalation once the host recovers`() {
+        var now = 0L
+        val interceptor = RateLimitBackoffInterceptor(clock = { now }, random = { 0.0 })
+        val mockChain = mockk<Interceptor.Chain>()
+        val request = Request.Builder().url("https://recovers.com/page").build()
+
+        val failure = Response.Builder()
+            .request(request)
+            .protocol(okhttp3.Protocol.HTTP_1_1)
+            .code(503)
+            .message("Service Unavailable")
+            .body("{}".toResponseBody("application/json".toMediaType()))
+            .build()
+        val success = Response.Builder()
+            .request(request)
+            .protocol(okhttp3.Protocol.HTTP_1_1)
+            .code(200)
+            .message("OK")
+            .body("{}".toResponseBody("application/json".toMediaType()))
+            .build()
+
+        every { mockChain.request() } returns request
+        every { mockChain.proceed(request) } returnsMany listOf(failure, success, failure)
+
+        interceptor.intercept(mockChain)
+        now = 5_000L
+        assertEquals(200, interceptor.intercept(mockChain).code)
+        assertEquals(503, interceptor.intercept(mockChain).code)
+
+        // Back to the base window: a source that recovered and then hiccuped again must not
+        // inherit the escalation from the earlier outage.
+        assertEquals("5s", remainingLabel(interceptor, mockChain))
+    }
+
+    /** Reads the remaining backoff window from the failure the interceptor reports. */
+    private fun remainingLabel(interceptor: RateLimitBackoffInterceptor, chain: Interceptor.Chain): String {
+        val ex = assertThrows(IOException::class.java) { interceptor.intercept(chain) }
+        return Regex("Retry after (\\d+s)").find(ex.message!!)?.groupValues?.get(1)
+            ?: error("No retry hint in: ${ex.message}")
     }
 
     @Test
