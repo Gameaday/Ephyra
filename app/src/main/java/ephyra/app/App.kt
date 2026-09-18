@@ -250,12 +250,6 @@ class App :
                 .catch { e -> logcat(LogPriority.ERROR, e) { "Failed to monitor crashlytics" } }
                 .launchIn(scope)
 
-            // Transient bitmap recycling policy. On capable devices (the supported baseline)
-            // ART reclaims intermediate bitmaps, so ImageUtil skips explicit recycle() calls
-            // that could otherwise fault a live Compose snapshot. Low-RAM devices keep eager
-            // recycling to bound native heap pressure on the ARGB_8888 fallback path.
-            ImageUtil.configureRecyclePolicy(DeviceUtil.isLowRamDevice(this@App))
-
             basePreferences.hardwareBitmapThreshold().let { preference ->
                 if (!preference.isSet()) preference.set(GLUtil.DEVICE_TEXTURE_LIMIT)
             }
@@ -354,11 +348,13 @@ class App :
                     .build(),
             )
             // Coil 3 lifecycle-aware background trimming: when the app moves to the
-            // background, the memory cache is automatically evicted down to 25% of its
-            // capacity and restored (grown back) on demand once resumed. This replaces
-            // the old manual onTrimMemory "clear everything on UI hidden" behavior,
-            // which discarded images that had to be re-decoded on return.
-            memoryCacheMaxSizePercentWhileInBackground(0.25)
+            // background, the memory cache is evicted down to 10% of its capacity and
+            // grown back on demand once resumed. Dropping the working set this aggressively
+            // yields graphics memory to the rest of the system; the entries that are
+            // discarded are re-decoded cheaply on return, which is the right trade while the
+            // reader is not on screen. This replaces the old manual onTrimMemory
+            // "clear everything on UI hidden" behaviour.
+            memoryCacheMaxSizePercentWhileInBackground(0.1)
 
             diskCache {
                 DiskCache.Builder()
@@ -375,11 +371,13 @@ class App :
 
             crossfade((300 * this@App.animatorDurationScale).toInt())
             allowRgb565(false)
-            val lowRam = DeviceUtil.isLowRamDevice(this@App)
-            // On capable devices, request GPU-resident hardware bitmaps as the global default.
-            // This eliminates the CPU→GPU upload on every render frame for covers and browse
-            // images. On low-RAM devices, fallback to ARGB_8888 for full 32-bit color fidelity.
-            bitmapConfig(if (!lowRam) Bitmap.Config.HARDWARE else Bitmap.Config.ARGB_8888)
+            // GPU-resident hardware bitmaps are the global default. Pages and covers land in
+            // graphics memory (AHardwareBuffer) instead of the native heap, which removes the
+            // CPU to GPU upload on every render frame and keeps large chapters off the Java
+            // heap entirely. HardwareGuardDecoder routes long-strip pages that would exceed
+            // GL_MAX_TEXTURE_SIZE to software decoding, so the texture ceiling is still
+            // respected without a per-device configuration switch.
+            bitmapConfig(Bitmap.Config.HARDWARE)
             if (verboseLoggingEnabled) logger(DebugLogger())
 
             // Coil spawns a new thread for every image load by default

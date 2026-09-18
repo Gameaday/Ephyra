@@ -51,9 +51,11 @@ class TachiyomiImageDecoder(private val resources: ImageSource, private val opti
         check(bitmap != null) { "Failed to decode image" }
 
         if (options.bitmapConfig == Bitmap.Config.HARDWARE && ImageUtil.canUseHardwareBitmap(bitmap)) {
+            // The software source bitmap is replaced by its GPU-resident copy and then simply
+            // dropped. It is deliberately not recycled: the graphics pipeline may already hold
+            // a reference to it, and recycling would fault that snapshot.
             val hwBitmap = bitmap.copy(Bitmap.Config.HARDWARE, false)
             if (hwBitmap != null) {
-                bitmap.recycle()
                 bitmap = hwBitmap
             }
         }

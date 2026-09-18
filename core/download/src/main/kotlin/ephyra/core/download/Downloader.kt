@@ -807,9 +807,9 @@ class Downloader(
                 val mergedTmp = tmpDir.createFile("$baseName.$ext.tmp")
                     ?: throw IOException("Could not create temp file for merged stub page")
                 mergedTmp.openOutputStream().use { encoder(mergedBitmap, it) }
-                // The merged bitmap is never handed to the UI, so it is eligible for eager
-                // recycling on low-RAM devices; capable devices let ART reclaim it.
-                ImageUtil.recycleIfLowRam(mergedBitmap)
+                // The merged bitmap is never handed to the UI, so it is simply dropped here and
+                // reclaimed by ART. An explicit recycle would be unsafe: the merge result may
+                // already be referenced by a snapshot.
                 current.delete()
                 next.delete()
                 pageFiles.removeAt(i + 1)

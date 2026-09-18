@@ -294,7 +294,6 @@ object ImageUtil {
     fun rotateImage(imageSource: BufferedSource, degrees: Float): Bitmap {
         val imageBitmap = BitmapFactory.decodeStream(imageSource.inputStream())
         val rotated = rotateBitMap(imageBitmap, degrees)
-        recycleIfLowRam(imageBitmap)
         return rotated
     }
 
@@ -350,11 +349,9 @@ object ImageUtil {
                 result.applyCanvas {
                     if (upperBitmap != null) {
                         drawBitmap(upperBitmap, 0f, 0f, null)
-                        recycleIfLowRam(upperBitmap)
                     }
                     if (lowerBitmap != null) {
                         drawBitmap(lowerBitmap, 0f, height.toFloat(), null)
-                        recycleIfLowRam(lowerBitmap)
                     }
                 }
                 return result
@@ -385,7 +382,6 @@ object ImageUtil {
             val bottomPart = Rect(0, height, width / 2, height * 2)
             drawBitmap(imageBitmap, leftPart, bottomPart, null)
         }
-        recycleIfLowRam(imageBitmap)
         return result
     }
 
@@ -459,15 +455,10 @@ object ImageUtil {
     fun mergePages(topSource: BufferedSource, bottomSource: BufferedSource): Bitmap {
         val topBitmap = BitmapFactory.decodeStream(topSource.inputStream())
             ?: throw IllegalArgumentException("Failed to decode top image for merge")
-        val bottomBitmap = try {
-            BitmapFactory.decodeStream(bottomSource.inputStream())
-                ?: throw IllegalArgumentException("Failed to decode bottom image for merge")
-        } catch (e: Throwable) {
-            recycleIfLowRam(topBitmap)
-            throw e
-        }
+        val bottomBitmap = BitmapFactory.decodeStream(bottomSource.inputStream())
+            ?: throw IllegalArgumentException("Failed to decode bottom image for merge")
 
-        return mergeBitmaps(topBitmap, bottomBitmap, recycleTop = true, recycleBottom = true)
+        return mergeBitmaps(topBitmap, bottomBitmap)
     }
 
     /**
@@ -477,44 +468,40 @@ object ImageUtil {
     fun mergePages(topBitmap: Bitmap, bottomSource: BufferedSource): Bitmap {
         val bottomBitmap = BitmapFactory.decodeStream(bottomSource.inputStream())
             ?: throw IllegalArgumentException("Failed to decode bottom image for merge")
-        return mergeBitmaps(topBitmap, bottomBitmap, recycleTop = false, recycleBottom = true)
+        return mergeBitmaps(topBitmap, bottomBitmap)
     }
 
     private fun mergeBitmaps(
         topBitmap: Bitmap,
         bottomBitmap: Bitmap,
-        recycleTop: Boolean,
-        recycleBottom: Boolean,
     ): Bitmap {
-        try {
-            val targetWidth = max(topBitmap.width, bottomBitmap.width)
-            val topScaledHeight = if (topBitmap.width != targetWidth && topBitmap.width > 0) {
-                (topBitmap.height.toFloat() * targetWidth / topBitmap.width).roundToInt()
-            } else {
-                topBitmap.height
-            }
-            val bottomScaledHeight = if (bottomBitmap.width != targetWidth && bottomBitmap.width > 0) {
-                (bottomBitmap.height.toFloat() * targetWidth / bottomBitmap.width).roundToInt()
-            } else {
-                bottomBitmap.height
-            }
-
-            val totalHeight = topScaledHeight + bottomScaledHeight
-            val result = createBitmap(targetWidth, totalHeight)
-            val paint = Paint(Paint.FILTER_BITMAP_FLAG)
-
-            result.applyCanvas {
-                val topDst = Rect(0, 0, targetWidth, topScaledHeight)
-                drawBitmap(topBitmap, null, topDst, paint)
-
-                val bottomDst = Rect(0, topScaledHeight, targetWidth, totalHeight)
-                drawBitmap(bottomBitmap, null, bottomDst, paint)
-            }
-            return result
-        } finally {
-            if (recycleTop) recycleIfLowRam(topBitmap)
-            if (recycleBottom) recycleIfLowRam(bottomBitmap)
+        val targetWidth = max(topBitmap.width, bottomBitmap.width)
+        val topScaledHeight = if (topBitmap.width != targetWidth && topBitmap.width > 0) {
+            (topBitmap.height.toFloat() * targetWidth / topBitmap.width).roundToInt()
+        } else {
+            topBitmap.height
         }
+        val bottomScaledHeight = if (bottomBitmap.width != targetWidth && bottomBitmap.width > 0) {
+            (bottomBitmap.height.toFloat() * targetWidth / bottomBitmap.width).roundToInt()
+        } else {
+            bottomBitmap.height
+        }
+
+        val totalHeight = topScaledHeight + bottomScaledHeight
+        val result = createBitmap(targetWidth, totalHeight)
+        val paint = Paint(Paint.FILTER_BITMAP_FLAG)
+
+        result.applyCanvas {
+            val topDst = Rect(0, 0, targetWidth, topScaledHeight)
+            drawBitmap(topBitmap, null, topDst, paint)
+
+            val bottomDst = Rect(0, topScaledHeight, targetWidth, totalHeight)
+            drawBitmap(bottomBitmap, null, bottomDst, paint)
+        }
+        // The intermediates are simply dropped here. Their pixel buffers are tracked by ART
+        // and released at the next GC, and the caller may still hold the source bitmaps
+        // (the chained-merge overload does), so an explicit recycle would be unsafe.
+        return result
     }
 
     enum class Side {
@@ -578,7 +565,6 @@ object ImageUtil {
                 splitFile.openOutputStream().use { outputStream ->
                     val splitBitmap = bitmapRegionDecoder.decodeRegion(region, options)
                     encoder(splitBitmap, outputStream)
-                    recycleIfLowRam(splitBitmap)
                 }
                 logcat {
                     "Success: Split #${splitData.index + 1} with topOffset=${splitData.topOffset} " +
@@ -669,46 +655,6 @@ object ImageUtil {
     }
 
     /**
-     * Whether transient intermediate bitmaps are eagerly recycled.
-     *
-     * Defaults to `false`. On the supported baseline (API 29+, non-low-RAM hardware) bitmap
-     * pixel buffers are tracked by ART and released at the next GC, so an explicit
-     * [Bitmap.recycle] is unnecessary — and actively unsafe, because it faults any snapshot
-     * that still holds the bitmap (`Canvas: trying to use a recycled bitmap`).
-     *
-     * Low-RAM devices opt back in via [configureRecyclePolicy], which keeps native heap
-     * pressure bounded on the software ([Bitmap.Config.ARGB_8888]) fallback path — the exact
-     * configuration where GPU-resident [Bitmap.Config.HARDWARE] allocations are absent.
-     */
-    @Volatile
-    private var eagerRecycleTransientBitmaps: Boolean = false
-
-    /**
-     * Configures the transient-bitmap recycling policy. Called once from
-     * `Application.onCreate` with [DeviceUtil.isLowRamDevice].
-     */
-    fun configureRecyclePolicy(isLowRamDevice: Boolean) {
-        eagerRecycleTransientBitmaps = isLowRamDevice
-    }
-
-    /**
-     * Retires a transient intermediate [Bitmap] that is never handed to the UI
-     * (rotation/split/merge intermediates, analysis-only decodes, thumbnails).
-     *
-     * On capable devices this is a no-op: the caller's reference is dropped and ART reclaims
-     * the pixel buffer. On low-RAM devices the bitmap is recycled eagerly. See
-     * [eagerRecycleTransientBitmaps].
-     *
-     * Never call this on a bitmap that has been handed to Compose or is retained by a page —
-     * use the reference-drop path instead.
-     */
-    fun recycleIfLowRam(bitmap: Bitmap?) {
-        if (eagerRecycleTransientBitmaps && bitmap != null && !bitmap.isRecycled) {
-            bitmap.recycle()
-        }
-    }
-
-    /**
      * Algorithm for determining what background to accompany a comic/manga page
      */
     fun chooseBackground(context: Context, imageStream: InputStream): Drawable {
@@ -726,7 +672,6 @@ object ImageUtil {
         val whiteColor = Color.WHITE
         if (image == null) return whiteColor.toDrawable()
         if (image.width < 50 || image.height < 50) {
-            recycleIfLowRam(image)
             return whiteColor.toDrawable()
         }
 
@@ -770,7 +715,6 @@ object ImageUtil {
             !color.isWhite() && color.isCloseTo(other)
         }
         if (isNotWhiteAndCloseTo.all { it }) {
-            recycleIfLowRam(image)
             return topLeftPixel.toDrawable()
         }
 
@@ -885,8 +829,6 @@ object ImageUtil {
             darkBG = true
         }
 
-        recycleIfLowRam(image)
-
         val isLandscape = context.resources.configuration?.orientation == Configuration.ORIENTATION_LANDSCAPE
         if (isLandscape) {
             return when {
@@ -999,7 +941,6 @@ object ImageUtil {
         val decodeOpts = BitmapFactory.Options().apply { inSampleSize = DHASH_SAMPLE_SIZE }
         val coarse = BitmapFactory.decodeStream(imageStream, null, decodeOpts) ?: return null
         val scaled = coarse.scale(DHASH_WIDTH, DHASH_HEIGHT, true)
-        if (scaled !== coarse) recycleIfLowRam(coarse)
 
         var hash = 0L
         for (y in 0 until DHASH_HEIGHT) {
@@ -1011,7 +952,6 @@ object ImageUtil {
                 }
             }
         }
-        recycleIfLowRam(scaled)
         return hash
     }
 
