@@ -275,8 +275,8 @@ fun ZoomableMangaPage(
                     val imageModifier = if (isTallImage) {
                         Modifier
                             .fillMaxWidth()
-                            .wrapContentHeight(unbounded = true)
                             .verticalScroll(tallImageScrollState)
+                            .wrapContentHeight(unbounded = true)
                     } else {
                         Modifier.fillMaxSize()
                     }

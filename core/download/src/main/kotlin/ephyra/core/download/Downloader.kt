@@ -21,6 +21,7 @@ import ephyra.data.cache.ChapterCache
 import ephyra.domain.category.interactor.GetCategories
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.model.toSChapter
+import ephyra.domain.chapter.service.getChapterSort
 import ephyra.domain.download.model.Download
 import ephyra.domain.download.service.DownloadNotifier
 import ephyra.domain.download.service.DownloadPreferences
@@ -297,8 +298,9 @@ class Downloader(
         val chaptersToQueue = chapters.asSequence()
             // Filter out those already downloaded.
             .filter { provider.findChapterDir(it.name, it.scanlator, it.url, manga.title, source) == null }
-            // Add chapters to queue from the start.
-            .sortedByDescending { it.sourceOrder }
+            // Preserve the manga's configured chapter ordering instead of assuming that raw
+            // source order always represents newest-first display order.
+            .sortedWith(getChapterSort(manga))
             // Filter out those already enqueued.
             .filter { chapter -> chapter.id !in enqueuedChapterIds }
             // Create a download for each one.

@@ -19,6 +19,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.suspendCancellableCoroutine
 import logcat.LogPriority
@@ -57,6 +58,7 @@ internal class HttpPageLoader(
 ) : PageLoader() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val persistenceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     /**
      * A queue used to manage requests one by one while allowing priorities.
@@ -279,10 +281,9 @@ internal class HttpPageLoader(
             // resolved: nothing changed during this session that the cache doesn't already
             // reflect, so the disk write would be redundant.
             if (cacheHadMissingImageUrls) {
-                scope.launchIO {
+                val pagesToSave = pages.map { Page(it.index, it.url, it.imageUrl) }
+                persistenceScope.launch {
                     try {
-                        // Convert to pages without reader information
-                        val pagesToSave = pages.map { Page(it.index, it.url, it.imageUrl) }
                         chapterCache.putPageListToCache(
                             chapter.chapter,
                             pagesToSave,
@@ -294,8 +295,12 @@ internal class HttpPageLoader(
                         logcat(LogPriority.WARN, e) {
                             "Failed to persist page list on recycle for ${chapter.chapter.name}"
                         }
+                    } finally {
+                        persistenceScope.cancel()
                     }
                 }
+            } else {
+                persistenceScope.cancel()
             }
         }
     }

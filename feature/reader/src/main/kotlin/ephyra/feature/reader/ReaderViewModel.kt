@@ -217,7 +217,7 @@ class ReaderViewModel @Inject constructor(
             chapters
         }
 
-        val result = chaptersForReader
+        val filteredChapters = chaptersForReader
             .sortedWith(getChapterSort(manga, sortDescending = false))
             .run {
                 if (readerPreferences.skipDupe().get()) {
@@ -233,7 +233,12 @@ class ReaderViewModel @Inject constructor(
                     this
                 }
             }
-            .map(::ReaderChapter)
+        val resultChapters = if (filteredChapters.any { it.id == selectedChapter.id }) {
+            filteredChapters
+        } else {
+            filteredChapters + selectedChapter
+        }.sortedWith(getChapterSort(manga, sortDescending = false))
+        val result = resultChapters.map(::ReaderChapter)
         chapterListCache = result
         return result
     }
