@@ -1,13 +1,60 @@
 #!/bin/sh
 # Ephyra pre-commit hook — catches spotless/ktlint violations before CI does.
+#
+# Lints only the Gradle projects that own staged .kt/.kts/.xml files, instead of
+# configuring and executing every module in the build. A repo-wide `spotlessCheck` is
+# ~430 tasks (~60s), which is far too slow to sit in front of every commit; a scoped run
+# covers exactly the same files for the staged change, in a few seconds.
+#
+# Sources at the repo root and under buildSrc are outside the root build's spotlessCheck
+# graph, so a repo-wide run never covered them either — they are skipped to match.
+#
+# CI still runs the full `./gradlew spotlessCheck`; run it yourself for a complete sweep.
+#
 # Install once with: scripts/setup-hooks.ps1  (sets git core.hooksPath to scripts/hooks)
 # Bypass in emergencies with: git commit --no-verify
 
 set -e
 
-# Only run when Kotlin/Gradle sources are staged
-if git diff --cached --name-only | grep -qE '\.(kt|kts|xml)$'; then
-    echo "==> Running spotlessCheck (pre-commit)..."
-    ./gradlew spotlessCheck --console=plain -q
-    echo "==> spotlessCheck passed."
-fi
+# Read through a temp file rather than a pipe so the project list survives the loop
+# (a piped while-loop would run in a subshell). Reading whole lines also tolerates
+# spaces in path names.
+staged_list=$(mktemp)
+trap 'rm -f "$staged_list"' EXIT
+git diff --cached --name-only --diff-filter=ACMR -- '*.kt' '*.kts' '*.xml' > "$staged_list"
+
+projects=""
+while IFS= read -r file; do
+    [ -z "$file" ] && continue
+
+    # Walk up to the nearest directory that declares a build script.
+    dir=$(dirname "$file")
+    while [ "$dir" != "." ] && [ ! -f "$dir/build.gradle.kts" ] && [ ! -f "$dir/build.gradle" ]; do
+        dir=$(dirname "$dir")
+    done
+
+    case "$dir" in
+        . | buildSrc | buildSrc/*) continue ;;
+    esac
+
+    project=":$(printf '%s' "$dir" | tr '/' ':')"
+    # De-duplicate: one module can own many staged files.
+    case " $projects " in
+        *" $project "*) ;;
+        *) projects="$projects $project" ;;
+    esac
+done < "$staged_list"
+
+# Nothing lintable was staged.
+[ -z "$projects" ] && exit 0
+
+tasks=""
+for project in $projects; do
+    tasks="$tasks $project:spotlessCheck"
+done
+
+echo "==> spotlessCheck (pre-commit), scoped to:$projects"
+# Word-splitting is intended here: $tasks is a list of separate Gradle task arguments.
+# shellcheck disable=SC2086
+./gradlew $tasks --console=plain -q
+echo "==> spotlessCheck passed."

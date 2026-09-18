@@ -5,5 +5,6 @@
 
 git config core.hooksPath scripts/hooks
 Write-Host "Installed git hooks (core.hooksPath = scripts/hooks)." -ForegroundColor Green
-Write-Host "Pre-commit will now run 'gradlew spotlessCheck' when .kt/.kts/.xml files are staged."
+Write-Host "Pre-commit will now run spotlessCheck scoped to the modules owning staged"
+Write-Host ".kt/.kts/.xml files, instead of the whole repository."
 Write-Host "Emergency bypass: git commit --no-verify"
