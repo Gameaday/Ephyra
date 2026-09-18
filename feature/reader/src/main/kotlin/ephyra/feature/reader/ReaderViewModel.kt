@@ -196,8 +196,8 @@ class ReaderViewModel @Inject constructor(
         chapterListCache?.let { return it }
 
         // Ensure the DownloadCache has finished reading its on-disk snapshot before we
-        // run any filter that calls isChapterDownloaded() (skipFiltered branch and the
-        // downloadedOnly filter below). On the warm path this is a single deferred check
+        // run any filter that calls isChapterDownloaded() (the downloadedOnly filter below).
+        // On the warm path this is a single deferred check
         // with no suspension. On a cold start it waits for the brief disk-cache read.
         downloadManager.awaitCacheReady()
 
@@ -207,52 +207,14 @@ class ReaderViewModel @Inject constructor(
         val selectedChapter = chapters.find { it.id == chapterId }
             ?: error("Requested chapter of id $chapterId not found in chapter list")
 
-        val chaptersForReader = when {
-            (readerPreferences.skipRead().get() || readerPreferences.skipFiltered().get()) -> {
-                val skipRead = readerPreferences.skipRead().get()
-                val skipFiltered = readerPreferences.skipFiltered().get()
-                val filteredChapters = chapters.filterNot {
-                    when {
-                        skipRead && it.read -> true
-                        skipFiltered -> {
-                            (manga.unreadFilterRaw == Manga.CHAPTER_SHOW_READ && !it.read) ||
-                                (manga.unreadFilterRaw == Manga.CHAPTER_SHOW_UNREAD && it.read) ||
-                                (
-                                    manga.downloadedFilterRaw == Manga.CHAPTER_SHOW_DOWNLOADED &&
-                                        !downloadManager.isChapterDownloaded(
-                                            it.name,
-                                            it.scanlator,
-                                            it.url,
-                                            manga.title,
-                                            manga.source,
-                                        )
-                                    ) ||
-                                (
-                                    manga.downloadedFilterRaw == Manga.CHAPTER_SHOW_NOT_DOWNLOADED &&
-                                        downloadManager.isChapterDownloaded(
-                                            it.name,
-                                            it.scanlator,
-                                            it.url,
-                                            manga.title,
-                                            manga.source,
-                                        )
-                                    ) ||
-                                (manga.bookmarkedFilterRaw == Manga.CHAPTER_SHOW_BOOKMARKED && !it.bookmark) ||
-                                (manga.bookmarkedFilterRaw == Manga.CHAPTER_SHOW_NOT_BOOKMARKED && it.bookmark)
-                        }
-
-                        else -> false
-                    }
-                }
-
-                if (selectedChapter in filteredChapters) {
-                    filteredChapters
-                } else {
-                    filteredChapters + listOf(selectedChapter)
-                }
-            }
-
-            else -> chapters
+        // Series-screen filters describe what is displayed there, not the reader's navigation
+        // universe. Removing read chapters here can make a newly opened chapter appear to have
+        // no previous chapter when it was opened from an unread-only series view.
+        val chaptersForReader = if (readerPreferences.skipRead().get()) {
+            val filteredChapters = chapters.filterNot { it.read }
+            if (selectedChapter in filteredChapters) filteredChapters else filteredChapters + selectedChapter
+        } else {
+            chapters
         }
 
         val result = chaptersForReader
@@ -746,33 +708,35 @@ class ReaderViewModel @Inject constructor(
     /**
      * Resolves the [NavigationVector] that produced the selection of [selectedChapter]/[page].
      *
-     * - Crossing into a chapter with a lower source order (the previous chapter) is BACKWARD;
-     *   a higher source order (the next chapter) is FORWARD.
+     * - Crossing chapters follows the canonical reader list order, independent of source order.
      * - Within the same chapter, moving to a lower page index is BACKWARD.
      * - The initial selection of a freshly opened reader is BACKWARD only when the chapter
      *   was explicitly positioned at its end (backward arrival); otherwise FORWARD.
-     *
-     * Cross-chapter comparisons use source order — never raw display indices — so the
-     * resolution is independent of sort direction and list layout.
      */
     private fun resolveNavigationVector(selectedChapter: ReaderChapter, page: ReaderPage): NavigationVector {
         val previousChapterId = lastSelectedChapterId
         val vector = when {
             previousChapterId == null ->
                 if (selectedChapter.startFromEnd) NavigationVector.BACKWARD else NavigationVector.FORWARD
-            previousChapterId != selectedChapter.chapter.id ->
-                if (selectedChapter.chapter.sourceOrder >= lastSelectedChapterSourceOrder) {
+            previousChapterId != selectedChapter.chapter.id -> {
+                val previousIndex = chapterListCache?.indexOfFirst {
+                    it.chapter.id == previousChapterId
+                } ?: -1
+                val selectedIndex = chapterListCache?.indexOfFirst {
+                    it.chapter.id == selectedChapter.chapter.id
+                } ?: -1
+                if (previousIndex >= 0 && selectedIndex >= 0 && selectedIndex >= previousIndex) {
                     NavigationVector.FORWARD
                 } else {
                     NavigationVector.BACKWARD
                 }
+            }
             page.index >= chapterPageIndex -> NavigationVector.FORWARD
             else -> NavigationVector.BACKWARD
         }
         // Record the selection identity only once the vector has been resolved, so the next
         // resolution compares against the chapter this vector was computed for.
         lastSelectedChapterId = selectedChapter.chapter.id
-        lastSelectedChapterSourceOrder = selectedChapter.chapter.sourceOrder
         return vector
     }
 

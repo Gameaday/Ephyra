@@ -474,26 +474,50 @@ class MangaViewModelTest {
 
     @Test
     fun `MarkPreviousChapterRead marks earlier chapters in reading order not display order`() = runTest {
-        val ch1 = Chapter.create().copy(id = 1L, mangaId = 1L, chapterNumber = 1.0, sourceOrder = 0L)
+        val ch1 = Chapter.create().copy(id = 1L, mangaId = 1L, chapterNumber = 1.0, sourceOrder = 2L)
         val ch2 = Chapter.create().copy(id = 2L, mangaId = 1L, chapterNumber = 2.0, sourceOrder = 1L)
-        val ch3 = Chapter.create().copy(id = 3L, mangaId = 1L, chapterNumber = 3.0, sourceOrder = 2L)
+        val ch3 = Chapter.create().copy(id = 3L, mangaId = 1L, chapterNumber = 3.0, sourceOrder = 0L)
 
         // Displayed newest-first (the default chapter list order): ch3, ch2, ch1.
         coEvery { getMangaAndChapters.subscribe(1L, any()) } returns flowOf(testManga to listOf(ch3, ch2, ch1))
 
         viewModel.init(1L, false)
 
-        // "Mark previous as read" on ch2 must mark ch1 (sourceOrder 0 < 1) — the chapter
-        // that comes *before* ch2 in reading order. The previous positional implementation
-        // marked ch3 instead, because ch3 is displayed *above* ch2 in the newest-first list.
+        // "Mark previous as read" on ch2 must mark ch1 — the chapter displayed *below* ch2
+        // that comes before ch2 in chronological reading order.
+        viewModel.onEvent(MangaScreenEvent.MarkPreviousChapterRead(ch2))
+        coVerify { mangaChapterInteractor.markChaptersRead(listOf(ch1), true) }
+    }
+
+    @Test
+    fun `MarkPreviousChapterRead marks earlier chapters in ascending order`() = runTest {
+        val ascendingManga: Manga = mockk(relaxed = true) {
+            every { id } returns 1L
+            every { source } returns 100L
+            every { sortDescending() } returns false
+            every { sorting } returns Manga.CHAPTER_SORTING_NUMBER
+            every { unreadFilterRaw } returns 0L
+            every { downloadedFilterRaw } returns 0L
+            every { bookmarkedFilterRaw } returns 0L
+        }
+        val ch1 = Chapter.create().copy(id = 1L, mangaId = 1L, chapterNumber = 1.0, sourceOrder = 2L)
+        val ch2 = Chapter.create().copy(id = 2L, mangaId = 1L, chapterNumber = 2.0, sourceOrder = 1L)
+        val ch3 = Chapter.create().copy(id = 3L, mangaId = 1L, chapterNumber = 3.0, sourceOrder = 0L)
+
+        // Displayed oldest-first: ch1, ch2, ch3.
+        coEvery { getMangaAndChapters.subscribe(1L, any()) } returns flowOf(ascendingManga to listOf(ch1, ch2, ch3))
+
+        viewModel.init(1L, false)
+
+        // "Mark previous as read" on ch2 in ascending sort must mark ch1 (the chapter displayed above it).
         viewModel.onEvent(MangaScreenEvent.MarkPreviousChapterRead(ch2))
         coVerify { mangaChapterInteractor.markChaptersRead(listOf(ch1), true) }
     }
 
     @Test
     fun `MarkPreviousChapterRead on the earliest chapter marks nothing`() = runTest {
-        val ch1 = Chapter.create().copy(id = 1L, mangaId = 1L, chapterNumber = 1.0, sourceOrder = 0L)
-        val ch2 = Chapter.create().copy(id = 2L, mangaId = 1L, chapterNumber = 2.0, sourceOrder = 1L)
+        val ch1 = Chapter.create().copy(id = 1L, mangaId = 1L, chapterNumber = 1.0, sourceOrder = 1L)
+        val ch2 = Chapter.create().copy(id = 2L, mangaId = 1L, chapterNumber = 2.0, sourceOrder = 0L)
 
         coEvery { getMangaAndChapters.subscribe(1L, any()) } returns flowOf(testManga to listOf(ch2, ch1))
 

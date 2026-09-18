@@ -721,21 +721,24 @@ class MangaViewModel @Inject constructor(
     }
 
     /**
-     * Marks every chapter that precedes [pointer] in **reading order** (by [Chapter.sourceOrder])
-     * as read. This is intentionally independent of the current display sort direction and
-     * active filters: "mark previous as read" must always target the earlier chapters the
-     * user would have read before [pointer], never the chapters that merely happen to be
-     * displayed above it in the (typically newest-first) chapter list.
+     * Marks every chapter that precedes [pointer] in reading order as read.
+     * In descending sort order (newest first, default), the previous chapters are displayed
+     * below the selected chapter. In ascending sort order (oldest first), the previous chapters
+     * are displayed above the selected chapter.
      */
     private fun markPreviousChapterRead(pointer: Chapter) {
         val success = successState ?: return
         val items = success.chapterListItems.filterIsInstance<ChapterList.Item>()
-        val pointerOrder = items.firstOrNull { it.chapter.id == pointer.id }?.chapter?.sourceOrder
-            ?: pointer.sourceOrder
-        val chapters = items.map { it.chapter }.filter { it.sourceOrder < pointerOrder }
-        if (chapters.isEmpty()) return
-        viewModelScope.launchIO {
-            mangaChapterInteractor.markChaptersRead(chapters, true)
+        val chapters = items.map { it.chapter }
+        val prevChapters = if (success.manga.sortDescending()) chapters.asReversed() else chapters
+        val pointerPos = prevChapters.indexOfFirst { it.id == pointer.id }
+        if (pointerPos != -1) {
+            val toMark = prevChapters.take(pointerPos)
+            if (toMark.isNotEmpty()) {
+                viewModelScope.launchIO {
+                    mangaChapterInteractor.markChaptersRead(toMark, true)
+                }
+            }
         }
     }
 

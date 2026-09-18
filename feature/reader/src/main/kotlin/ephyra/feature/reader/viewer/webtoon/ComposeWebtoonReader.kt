@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -61,6 +60,7 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.size.Precision
 import ephyra.core.common.util.lang.withIOContext
+import ephyra.core.common.util.system.ImageUtil
 import ephyra.feature.reader.model.ChapterTransition
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
@@ -72,9 +72,7 @@ import ephyra.presentation.reader.TransitionDirection
 import eu.kanade.tachiyomi.source.model.Page
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
-
-/** Fallback height reserved for a webtoon slice whose intrinsic size is not yet known. */
-private val ESTIMATED_WEBTOON_SLICE_HEIGHT = 400.dp
+import java.io.ByteArrayInputStream
 
 /**
  * 100% Pure Jetpack Compose continuous vertical strip reader for Webtoon and Manhwa.
@@ -390,17 +388,42 @@ private fun WebtoonPageItem(
         }
     }
 
-    // Until a slice has been decoded its intrinsic size is unknown, so the container has to
-    // reserve a slot of its own. Reserving space up front keeps the scroll anchor stable and
-    // stops a long, unread strip from yanking the viewport around as each slice resolves.
-    val itemModifier = if (page.aspectRatio != null) {
+    val intrinsicDimensions by produceState<Pair<Int, Int>?>(
+        initialValue = page.aspectRatio?.let { page.width to page.height },
+        page,
+        page.cachedBytes,
+    ) {
+        if (value == null) {
+            val bytes = page.cachedBytes ?: withIOContext {
+                runCatching {
+                    page.stream?.invoke()?.use { it.readBytes() }
+                }.getOrNull()
+            }
+            if (bytes != null) {
+                page.cachedBytes = bytes
+                value = withIOContext {
+                    ByteArrayInputStream(bytes).use(ImageUtil::getImageDimensions)
+                }
+            }
+        }
+
+        value?.let { (width, height) ->
+            page.width = width
+            page.height = height
+        }
+    }
+
+    // Use source dimensions before the image is decoded so LazyColumn gets the final slice
+    // height on its first real layout instead of replacing a fixed placeholder after scroll.
+    val aspectRatio = intrinsicDimensions?.let { (width, height) ->
+        if (width > 0 && height > 0) width.toFloat() / height.toFloat() else null
+    }
+    val itemModifier = if (aspectRatio != null) {
         modifier
             .fillMaxWidth()
-            .aspectRatio(page.aspectRatio!!)
+            .aspectRatio(aspectRatio)
     } else {
-        modifier
-            .fillMaxWidth()
-            .defaultMinSize(minHeight = with(LocalDensity.current) { ESTIMATED_WEBTOON_SLICE_HEIGHT })
+        modifier.fillMaxWidth()
     }
 
     Box(
