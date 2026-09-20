@@ -15,6 +15,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.sp
 import ephyra.presentation.theme.EphyraPreviewTheme
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReaderPageIndicator(
     currentPage: Int,
@@ -23,31 +24,49 @@ fun ReaderPageIndicator(
 ) {
     if (currentPage <= 0 || totalPages <= 0) return
 
+    val progress = if (totalPages > 1) (currentPage - 1).toFloat() / (totalPages - 1).toFloat() else 0f
     val text = "$currentPage / $totalPages"
 
     val style = TextStyle(
-        color = Color(235, 235, 235),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         fontSize = MaterialTheme.typography.bodySmall.fontSize,
         fontWeight = FontWeight.Bold,
         letterSpacing = 1.sp,
     )
-    val strokeStyle = style.copy(
-        color = Color(45, 45, 45),
-        drawStyle = Stroke(width = 4f),
-    )
 
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = modifier,
+    Surface(
+        shape = MaterialTheme.shapes.pill,
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
+        tonalElevation = 2.dp,
+        modifier = modifier
+            .padding(horizontal = 8.dp)
+            .navigationBarsPadding(),
     ) {
-        Text(
-            text = text,
-            style = strokeStyle,
-        )
-        Text(
-            text = text,
-            style = style,
-        )
+        Box(
+            modifier = Modifier
+                .padding(horizontal = 12.dp, vertical = 4.dp)
+                .fillMaxWidth(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+                modifier = Modifier.padding(bottom = 4.dp),
+            ) {
+                Text(
+                    text = text,
+                    style = style,
+                )
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(4.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                )
+            }
+        }
     }
 }
 
