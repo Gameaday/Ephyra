@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ephyra.core.archive.EpubChapter
+import ephyra.presentation.core.components.ExpressiveCircularProgressIndicator
 
 /**
  * Modern Compose-based text reader for Novels and Books.
@@ -79,7 +80,7 @@ fun BookReaderScreen(
                     .background(MaterialTheme.colorScheme.background),
                 contentAlignment = Alignment.Center,
             ) {
-                CircularProgressIndicator()
+                ExpressiveCircularProgressIndicator(progress = -1f)
             }
         }
         is BookReaderState.Error -> {

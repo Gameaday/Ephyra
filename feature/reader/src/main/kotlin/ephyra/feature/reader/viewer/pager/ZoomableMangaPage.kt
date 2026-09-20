@@ -33,7 +33,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -64,6 +63,7 @@ import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.ImageUtil
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.viewer.readerPageMemoryCacheKey
+import ephyra.presentation.core.components.ExpressiveCircularProgressIndicator
 import ephyra.presentation.core.data.coil.cropBorders
 import eu.kanade.tachiyomi.source.model.Page
 import kotlinx.coroutines.TimeoutCancellationException
@@ -153,8 +153,8 @@ fun ZoomableMangaPage(
                                 x = (containerWidth / 2f - tapOffset.x) * (targetScale - 1f),
                                 y = (containerHeight / 2f - tapOffset.y) * (targetScale - 1f),
                             )
-                            val maxPanX = (containerWidth * targetScale - containerWidth) / 2f
-                            val maxPanY = (containerHeight * targetScale - containerHeight) / 2f
+                            val maxPanX = (containerWidth * targetScale - containerWidth).coerceAtLeast(0f) / 2f
+                            val maxPanY = (containerHeight * targetScale - containerHeight).coerceAtLeast(0f) / 2f
                             val clampedOffset = Offset(
                                 x = targetOffset.x.coerceIn(-maxPanX, maxPanX),
                                 y = targetOffset.y.coerceIn(-maxPanY, maxPanY),
@@ -199,15 +199,18 @@ fun ZoomableMangaPage(
             when (val currentStatus = status) {
                 is Page.State.Queue, is Page.State.LoadPage -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(modifier = Modifier.size(48.dp))
+                        ExpressiveCircularProgressIndicator(progress = -1f, modifier = Modifier.size(48.dp))
                     }
                 }
                 is Page.State.DownloadImage -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         if (progress > 0) {
-                            CircularProgressIndicator(progress = { progress / 100f }, modifier = Modifier.size(48.dp))
+                            ExpressiveCircularProgressIndicator(
+                                progress = progress / 100f,
+                                modifier = Modifier.size(48.dp),
+                            )
                         } else {
-                            CircularProgressIndicator(modifier = Modifier.size(48.dp))
+                            ExpressiveCircularProgressIndicator(progress = -1f, modifier = Modifier.size(48.dp))
                         }
                     }
                 }
@@ -283,14 +286,7 @@ fun ZoomableMangaPage(
                     val imageContentScale = if (isTallImage) ContentScale.FillWidth else ContentScale.Fit
 
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer {
-                                scaleX = scaleAnim.value
-                                scaleY = scaleAnim.value
-                                translationX = offsetAnim.value.x
-                                translationY = offsetAnim.value.y
-                            },
+                        modifier = imageModifier,
                         contentAlignment = Alignment.Center,
                     ) {
                         if (merged != null && !merged.isRecycled) {
@@ -298,7 +294,7 @@ fun ZoomableMangaPage(
                                 bitmap = merged.asImageBitmap(),
                                 contentDescription = "Page ${page.number}",
                                 contentScale = imageContentScale,
-                                modifier = imageModifier,
+                                modifier = Modifier.fillMaxSize(),
                             )
                         } else if (imageModel != null) {
                             AsyncImage(

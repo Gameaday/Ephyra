@@ -25,7 +25,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Warning
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -66,6 +65,7 @@ import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.viewer.ViewerNavigation
 import ephyra.feature.reader.viewer.readerPageMemoryCacheKey
+import ephyra.presentation.core.components.ExpressiveCircularProgressIndicator
 import ephyra.presentation.core.data.coil.cropBorders
 import ephyra.presentation.reader.ChapterTransition
 import ephyra.presentation.reader.TransitionDirection
@@ -438,7 +438,7 @@ private fun WebtoonPageItem(
                         .height(300.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    CircularProgressIndicator(modifier = Modifier.size(48.dp))
+                    ExpressiveCircularProgressIndicator(progress = -1f, modifier = Modifier.size(48.dp))
                 }
             }
 
@@ -450,12 +450,9 @@ private fun WebtoonPageItem(
                     contentAlignment = Alignment.Center,
                 ) {
                     if (progress > 0) {
-                        CircularProgressIndicator(
-                            progress = { progress / 100f },
-                            modifier = Modifier.size(48.dp),
-                        )
+                        ExpressiveCircularProgressIndicator(progress = progress / 100f, modifier = Modifier.size(48.dp))
                     } else {
-                        CircularProgressIndicator(modifier = Modifier.size(48.dp))
+                        ExpressiveCircularProgressIndicator(progress = -1f, modifier = Modifier.size(48.dp))
                     }
                 }
             }
@@ -562,7 +559,7 @@ private fun WebtoonPageItem(
                             .height(300.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        CircularProgressIndicator(modifier = Modifier.size(48.dp))
+                        ExpressiveCircularProgressIndicator(progress = -1f, modifier = Modifier.size(48.dp))
                     }
                 }
             }
