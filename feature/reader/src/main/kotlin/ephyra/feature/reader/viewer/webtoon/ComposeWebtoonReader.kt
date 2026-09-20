@@ -25,6 +25,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -65,7 +66,6 @@ import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.viewer.ViewerNavigation
 import ephyra.feature.reader.viewer.readerPageMemoryCacheKey
-import ephyra.presentation.core.components.ExpressiveCircularProgressIndicator
 import ephyra.presentation.core.data.coil.cropBorders
 import ephyra.presentation.reader.ChapterTransition
 import ephyra.presentation.reader.TransitionDirection
@@ -438,7 +438,7 @@ private fun WebtoonPageItem(
                         .height(300.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    ExpressiveCircularProgressIndicator(progress = -1f, modifier = Modifier.size(48.dp))
+                    CircularProgressIndicator(modifier = Modifier.size(48.dp))
                 }
             }
 
@@ -450,9 +450,9 @@ private fun WebtoonPageItem(
                     contentAlignment = Alignment.Center,
                 ) {
                     if (progress > 0) {
-                        ExpressiveCircularProgressIndicator(progress = progress / 100f, modifier = Modifier.size(48.dp))
+                        CircularProgressIndicator(progress = { progress / 100f }, modifier = Modifier.size(48.dp))
                     } else {
-                        ExpressiveCircularProgressIndicator(progress = -1f, modifier = Modifier.size(48.dp))
+                        CircularProgressIndicator(modifier = Modifier.size(48.dp))
                     }
                 }
             }
@@ -512,6 +512,13 @@ private fun WebtoonPageItem(
                     }
                 }
 
+                // Use the device's actual screen width as the target for image loading.
+                // This ensures the image is loaded at native screen resolution, preserving
+                // quality for any device (phones, tablets, foldables) regardless of density.
+                val density = LocalDensity.current
+                val configuration = LocalConfiguration.current
+                val targetWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
+
                 if (page.mergedBitmap != null) {
                     Image(
                         bitmap = page.mergedBitmap!!.asImageBitmap(),
@@ -527,13 +534,20 @@ private fun WebtoonPageItem(
                 } else if (imageModel != null) {
                     val context = LocalContext.current
                     AsyncImage(
-                        model = remember(imageModel, cropBorders) {
+                        model = remember(imageModel, cropBorders, targetWidthPx) {
                             ImageRequest.Builder(context)
                                 .data(imageModel)
-                                .memoryCacheKey(readerPageMemoryCacheKey(page, cropBorders))
+                                .memoryCacheKey(
+                                    readerPageMemoryCacheKey(page, cropBorders) +
+                                        "_w${targetWidthPx.toInt()}",
+                                )
                                 .crossfade(false)
                                 .precision(Precision.EXACT)
                                 .cropBorders(cropBorders)
+                                // Constrain the decode to the screen width so very tall
+                                // strips are downsampled only in width (never below the
+                                // display size) while keeping their full vertical detail.
+                                .size(targetWidthPx.toInt())
                                 .build()
                         },
                         contentDescription = "Page ${page.number}",
@@ -559,7 +573,7 @@ private fun WebtoonPageItem(
                             .height(300.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        ExpressiveCircularProgressIndicator(progress = -1f, modifier = Modifier.size(48.dp))
+                        CircularProgressIndicator(modifier = Modifier.size(48.dp))
                     }
                 }
             }

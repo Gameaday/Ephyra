@@ -161,6 +161,14 @@ class ReaderViewModel @Inject constructor(
     private var lastSelectedChapterId: Long? = null
 
     /**
+     * The [NavigationVector] resolved for the most recent page selection. Absorb-driven
+     * completion checks reuse it so that landing on a merged parent page never counts as
+     * forward progress unless the user actually arrived there moving forward.
+     */
+    var lastNavigationVector: NavigationVector = NavigationVector.FORWARD
+        private set
+
+    /**
      * Source order of the chapter that most recently produced a page selection, used to
      * resolve the arrival direction when crossing a chapter boundary.
      */
@@ -589,6 +597,7 @@ class ReaderViewModel @Inject constructor(
         // are gated on FORWARD movement: re-entering a chapter from its top boundary (or
         // scrolling back within one) must never mark it read.
         val navigationVector = resolveNavigationVector(selectedChapter, page)
+        lastNavigationVector = navigationVector
 
         // Save last page read and mark as read if needed
         viewModelScope.launchNonCancellable {

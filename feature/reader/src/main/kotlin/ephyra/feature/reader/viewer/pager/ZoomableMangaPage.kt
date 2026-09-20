@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -64,7 +63,6 @@ import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.ImageUtil
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.viewer.readerPageMemoryCacheKey
-import ephyra.presentation.core.components.ExpressiveCircularProgressIndicator
 import ephyra.presentation.core.data.coil.cropBorders
 import eu.kanade.tachiyomi.source.model.Page
 import kotlinx.coroutines.TimeoutCancellationException
@@ -200,18 +198,18 @@ fun ZoomableMangaPage(
             when (val currentStatus = status) {
                 is Page.State.Queue, is Page.State.LoadPage -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        ExpressiveCircularProgressIndicator(progress = -1f, modifier = Modifier.size(48.dp))
+                        CircularProgressIndicator(modifier = Modifier.size(48.dp))
                     }
                 }
                 is Page.State.DownloadImage -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         if (progress > 0) {
-                            ExpressiveCircularProgressIndicator(
-                                progress = progress / 100f,
+                            CircularProgressIndicator(
+                                progress = { progress / 100f },
                                 modifier = Modifier.size(48.dp),
                             )
                         } else {
-                            ExpressiveCircularProgressIndicator(progress = -1f, modifier = Modifier.size(48.dp))
+                            CircularProgressIndicator(modifier = Modifier.size(48.dp))
                         }
                     }
                 }
@@ -276,18 +274,24 @@ fun ZoomableMangaPage(
                     }
 
                     val isTallImage = imageAspectRatio?.let { it < 0.5f } == true
-                    val imageModifier = if (isTallImage) {
+                    // Regular pages must fit entirely on screen. Tall (webtoon-style)
+                    // images fill the full device width and scroll vertically.
+                    val contentBoxModifier = if (isTallImage) {
                         Modifier
                             .fillMaxWidth()
                             .verticalScroll(tallImageScrollState)
-                            .wrapContentHeight(unbounded = true)
+                    } else {
+                        Modifier.fillMaxSize()
+                    }
+                    val imageItemModifier = if (isTallImage) {
+                        Modifier.fillMaxWidth()
                     } else {
                         Modifier.fillMaxSize()
                     }
                     val imageContentScale = if (isTallImage) ContentScale.FillWidth else ContentScale.Fit
 
                     Box(
-                        modifier = imageModifier,
+                        modifier = contentBoxModifier,
                         contentAlignment = Alignment.Center,
                     ) {
                         if (merged != null && !merged.isRecycled) {
@@ -295,7 +299,7 @@ fun ZoomableMangaPage(
                                 bitmap = merged.asImageBitmap(),
                                 contentDescription = "Page ${page.number}",
                                 contentScale = imageContentScale,
-                                modifier = Modifier.fillMaxSize(),
+                                modifier = imageItemModifier,
                             )
                         } else if (imageModel != null) {
                             AsyncImage(
@@ -308,13 +312,16 @@ fun ZoomableMangaPage(
                                         )
                                         .cropBorders(cropBorders)
                                         .precision(Precision.EXACT)
-                                        .apply { if (isTallImage) size(CoilSize.ORIGINAL) }
+                                        // Decode at the source's original resolution so
+                                        // zooming in preserves the full detail instead of
+                                        // showing a downsampled (blurry) version.
+                                        .size(CoilSize.ORIGINAL)
                                         .crossfade(false)
                                         .build()
                                 },
                                 contentDescription = "Page ${page.number}",
                                 contentScale = imageContentScale,
-                                modifier = imageModifier,
+                                modifier = imageItemModifier,
                             )
                         } else {
                             CircularProgressIndicator(modifier = Modifier.size(48.dp))

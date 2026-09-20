@@ -129,12 +129,16 @@ private fun Modifier.drawScrollbar(
                 } else {
                     layoutInfo.beforeContentPadding
                 }
-                startPadding + ((estimatedItemSize * index - offset) / totalSize * viewportSize)
+                startPadding + ((estimatedItemSize * index + offset) / totalSize * viewportSize)
             } ?: 0f
     }
+    // Keep the thumb within the visible track. Estimation errors (heterogeneous item
+    // sizes) can otherwise push the thumb past the ends, making it appear pinned at
+    // the top or bottom of the screen.
+    val clampedStartOffset = startOffset.coerceIn(0f, (viewportSize - thumbSize).coerceAtLeast(0f))
     val drawScrollbar = onDrawScrollbar(
         orientation, reverseDirection, atEnd, showScrollbar,
-        thickness, color, alpha, thumbSize, startOffset, positionOffset,
+        thickness, color, alpha, thumbSize, clampedStartOffset, positionOffset,
     )
     drawContent()
     drawScrollbar()

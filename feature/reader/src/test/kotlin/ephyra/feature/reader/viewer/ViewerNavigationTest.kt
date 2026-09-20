@@ -400,6 +400,7 @@ class ViewerNavigationTest {
 
     @Test
     fun `onPageAbsorb removes absorbed page and notifies ViewModel for chapter completion`() = runTest(testDispatcher) {
+        every { activity.viewModel.lastNavigationVector } returns NavigationVector.FORWARD
         val viewer = L2RPagerViewer(activity, downloadManager, readerPreferences, uiPreferences)
         val chapters = createViewerChapters(chapterId = 20L, pageCount = 3)
         viewer.setChapters(chapters)
@@ -415,6 +416,22 @@ class ViewerNavigationTest {
         assertEquals(page0, viewer.currentPage, "Active page must shift to parent page when absorbed")
         verify {
             activity.viewModel.checkChapterCompletion(page0, NavigationVector.FORWARD)
+        }
+    }
+
+    @Test
+    fun `onPageAbsorb after backward navigation must not notify forward completion`() = runTest(testDispatcher) {
+        every { activity.viewModel.lastNavigationVector } returns NavigationVector.BACKWARD
+        val viewer = L2RPagerViewer(activity, downloadManager, readerPreferences, uiPreferences)
+        val chapters = createViewerChapters(chapterId = 20L, pageCount = 3)
+        viewer.setChapters(chapters)
+
+        val pages = chapters.currChapter.pages!!
+        viewer.currentPage = pages[1]
+        viewer.onPageAbsorb(pages[0], pages[1])
+
+        verify {
+            activity.viewModel.checkChapterCompletion(pages[0], NavigationVector.BACKWARD)
         }
     }
 

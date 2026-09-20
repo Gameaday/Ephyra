@@ -288,9 +288,11 @@ abstract class PagerViewer(
             currentPage = parentPage
         }
         _itemsState.update { current -> current.filter { it != absorbedPage } }
-        // Smart-combine merges the *following* page into its predecessor, so reaching an
-        // absorbed parent page is always forward progress through the chapter.
-        activity.viewModel.checkChapterCompletion(parentPage, NavigationVector.FORWARD)
+        // Smart-combine merges the *following* page into its predecessor, so the parent
+        // page contains the absorbed page's content. Completion must respect the vector
+        // the user actually arrived with: swiping back into a chapter whose last visible
+        // page was absorbed must not mark it read.
+        activity.viewModel.checkChapterCompletion(parentPage, activity.viewModel.lastNavigationVector)
     }
 
     fun onPageAbsorb(page: ReaderPage) {
