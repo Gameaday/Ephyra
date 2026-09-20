@@ -38,7 +38,7 @@ kotlin-compose-gradle = { module = "org.jetbrains.kotlin:compose-compiler-gradle
 quickjs-android = { group = "com.github.zhanghai.quickjs-java", name = "quickjs-android", version = "547f5b1597" }
 jsoup = "org.jsoup:jsoup:1.23.2"
 unifile = "com.github.tachiyomiorg:unifile:e0def6b3dc"
-libarchive = "me.zhanghai.android.libarchive:library:1.1.7"
+libarchive = "me.zhanghai.android.libarchive:library:1.1.6"
 compose-runtime = "androidx.compose.runtime:runtime:1.12.1"
 
 sqlite-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "sqlite" }
