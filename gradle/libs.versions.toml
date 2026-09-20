@@ -1,13 +1,13 @@
 [versions]
-agp = "9.4.0"
+agp = "9.4.1"
 kotlin = "2.4.20"
 okhttp_version = "5.5.0"
 aboutlib_version = "15.2.0"
 shizuku_version = "13.1.5"
-sqlite = "2.7.0"
+sqlite = "2.7.1"
 datastore = "1.2.1"
 spotless = "8.10.2"
-navigation = "2.9.8"
+navigation = "2.10.1"
 ktlint-core = "1.8.0"
 markdown = "0.45.0"
 firebase-bom = "34.19.0"
@@ -38,8 +38,8 @@ kotlin-compose-gradle = { module = "org.jetbrains.kotlin:compose-compiler-gradle
 quickjs-android = { group = "com.github.zhanghai.quickjs-java", name = "quickjs-android", version = "547f5b1597" }
 jsoup = "org.jsoup:jsoup:1.23.2"
 unifile = "com.github.tachiyomiorg:unifile:e0def6b3dc"
-libarchive = "me.zhanghai.android.libarchive:library:1.1.6"
-compose-runtime = "androidx.compose.runtime:runtime:1.11.3"
+libarchive = "me.zhanghai.android.libarchive:library:1.1.7"
+compose-runtime = "androidx.compose.runtime:runtime:1.12.1"
 
 sqlite-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "sqlite" }
 sqlite-ktx = { module = "androidx.sqlite:sqlite-ktx", version.ref = "sqlite" }
@@ -51,7 +51,7 @@ rxjava = { module = "io.reactivex:rxjava", version.ref = "rxJava" }
 injekt-core = { module = "uy.kohesive.injekt:injekt-core", version.ref = "injekt" }
 
 # Coil
-coil-bom = { module = "io.coil-kt.coil3:coil-bom", version = "3.6.2" }
+coil-bom = { module = "io.coil-kt.coil3:coil-bom", version = "3.6.3" }
 coil-core = { module = "io.coil-kt.coil3:coil" }
 coil-gif = { module = "io.coil-kt.coil3:coil-gif" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose" }
@@ -89,12 +89,12 @@ paging-common = { module = "androidx.paging:paging-common", version.ref = "pagin
 
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
-kotest-assertions = "io.kotest:kotest-assertions-core:6.2.4"
+kotest-assertions = "io.kotest:kotest-assertions-core:6.2.5"
 mockk = "io.mockk:mockk:1.14.11"
 archunit = { module = "com.tngtech.archunit:archunit", version.ref = "archunit" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version = "1.11.3" }
-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version = "1.11.3" }
+compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version = "1.12.1" }
+compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version = "1.12.1" }
 turbine = "app.cash.turbine:turbine:1.2.1"
 
 spotless-gradle = { group = "com.diffplug.spotless", name = "spotless-plugin-gradle", version.ref = "spotless" }
