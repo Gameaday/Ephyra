@@ -53,7 +53,6 @@ import ephyra.feature.reader.viewer.pager.L2RPagerViewer
 import ephyra.feature.reader.viewer.pager.R2LPagerViewer
 import ephyra.feature.reader.viewer.pager.VerticalPagerViewer
 import ephyra.feature.reader.viewer.webtoon.WebtoonViewer
-import ephyra.presentation.core.data.coil.TachiyomiImageDecoder
 import ephyra.presentation.core.ui.activity.BaseActivity
 import ephyra.presentation.core.util.AppNavigator
 import ephyra.presentation.core.util.system.copyToClipboard
@@ -584,18 +583,10 @@ class ReaderActivity : BaseActivity() {
         }
 
         fun setDisplayProfile(data: String) {
-            TachiyomiImageDecoder.displayProfile = if (data.isNotEmpty()) {
-                try {
-                    contentResolver.openInputStream(data.toUri())?.readBytes()
-                } catch (e: Exception) {
-                    logcat(LogPriority.WARN, e) {
-                        "Failed to read display ICC profile from URI; disabling colour management"
-                    }
-                    null
-                }
-            } else {
-                null
-            }
+            // Custom ICC display profiles were only consumed by the retired Tachiyomi JXL
+            // decoder. The awxkee libjxl backend applies the image's embedded color profile
+            // internally, so there is nothing to configure — keep the entry point (still
+            // referenced by settings) as a viewer refresh.
             updateViewer()
         }
 

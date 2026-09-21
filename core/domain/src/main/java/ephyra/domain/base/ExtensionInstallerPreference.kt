@@ -31,21 +31,10 @@ class ExtensionInstallerPreference(
     }
 
     private fun check(value: ExtensionInstaller): ExtensionInstaller {
-        when (value) {
-            ExtensionInstaller.PACKAGEINSTALLER -> {
-                if (!capabilityProvider.isAvailable(
-                        ExtensionInstaller.PACKAGEINSTALLER,
-                    )
-                ) {
-                    return ExtensionInstaller.PRIVATE
-                }
-            }
-
-            ExtensionInstaller.SHIZUKU -> {
-                if (!capabilityProvider.isAvailable(ExtensionInstaller.SHIZUKU)) return defaultValue()
-            }
-
-            else -> {}
+        if (value == ExtensionInstaller.PACKAGEINSTALLER &&
+            !capabilityProvider.isAvailable(ExtensionInstaller.PACKAGEINSTALLER)
+        ) {
+            return ExtensionInstaller.PRIVATE
         }
         return value
     }

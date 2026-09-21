@@ -1,4 +1,4 @@
-package ephyra.presentation.core.data.coil
+package ephyra.data.coil
 
 import android.graphics.Bitmap
 import coil3.Extras
@@ -12,7 +12,7 @@ import ephyra.core.common.util.system.ImageUtil
 
 /**
  * A [Decoder.Factory] that enforces the [GL_MAX_TEXTURE_SIZE][ImageUtil.hardwareBitmapThreshold]
- * safety limit on the platform decode path.
+ * safety limit on the decode path.
  *
  * The global [ImageLoader] requests [Bitmap.Config.HARDWARE] bitmaps, which live in
  * `AHardwareBuffer` / GPU memory and are strictly capped by the device's maximum texture
@@ -23,9 +23,9 @@ import ephyra.core.common.util.system.ImageUtil
  * oversized sources, downgrades only that request to software [Bitmap.Config.ARGB_8888]
  * instead of failing — a targeted fallback that avoids any custom tiled renderer.
  *
- * Registered *after* [TachiyomiImageDecoder.Factory] (which handles JXL and applies the
- * same limit internally) so normal images keep hardware decoding and only oversized
- * sources fall back to software.
+ * The [delegate] defaults to the platform [BitmapFactoryDecoder] but any upstream decoder
+ * (e.g. the JXL decoder, registered before this guard) can be wrapped the same way so
+ * oversized sources of every format fall back to software.
  */
 class HardwareGuardDecoder private constructor(
     private val delegate: Decoder,
@@ -47,8 +47,8 @@ class HardwareGuardDecoder private constructor(
             // NB: `sourceOrNull()` returns the shared stream that the downstream decoder
             // will consume, so it must NOT be closed here (closing it breaks every decode
             // — blank covers/pages). Peek a copy for header inspection instead: the peek
-            // shares the buffer without consuming it, and closing only the peek (as
-            // TachiyomiImageDecoder.Factory already does) leaves the original intact.
+            // shares the buffer without consuming it, and closing only the peek leaves
+            // the original intact.
             val oversized = result.source.sourceOrNull()?.peek()?.use { peeked ->
                 !ImageUtil.canUseHardwareBitmap(peeked)
             } ?: false

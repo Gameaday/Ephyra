@@ -8,19 +8,15 @@ import android.webkit.WebStorage
 import android.webkit.WebView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -43,7 +39,6 @@ import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.CrashLogUtil
 import ephyra.presentation.core.util.collectAsState
-import ephyra.presentation.core.util.system.isShizukuInstalled
 import ephyra.presentation.core.util.system.toast
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.NetworkPreferences
@@ -351,16 +346,6 @@ object SettingsAdvancedScreen : SearchableSettings {
     private fun getReaderGroup(
         basePreferences: BasePreferences,
     ): Preference.PreferenceGroup {
-        val context = LocalContext.current
-        val chooseColorProfile = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.OpenDocument(),
-        ) { uri ->
-            uri?.let {
-                val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-                context.contentResolver.takePersistableUriPermission(uri, flags)
-                basePreferences.displayProfile().set(uri.toString())
-            }
-        }
         return Preference.PreferenceGroup(
             title = stringResource(ephyra.app.core.common.R.string.pref_category_reader),
             preferenceItems = persistentListOf(
@@ -389,20 +374,6 @@ object SettingsAdvancedScreen : SearchableSettings {
                     },
                     enabled = GLUtil.DEVICE_TEXTURE_LIMIT > GLUtil.SAFE_TEXTURE_LIMIT,
                 ),
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = basePreferences.alwaysDecodeLongStripWithSSIV(),
-                    title = stringResource(ephyra.app.core.common.R.string.pref_always_decode_long_strip_with_ssiv_2),
-                    subtitle = stringResource(
-                        ephyra.app.core.common.R.string.pref_always_decode_long_strip_with_ssiv_summary,
-                    ),
-                ),
-                Preference.PreferenceItem.TextPreference(
-                    title = stringResource(ephyra.app.core.common.R.string.pref_display_profile),
-                    subtitle = basePreferences.displayProfile().getSync(),
-                    onClick = {
-                        chooseColorProfile.launch(arrayOf("*/*"))
-                    },
-                ),
             ),
         )
     }
@@ -414,37 +385,8 @@ object SettingsAdvancedScreen : SearchableSettings {
         trustExtension: TrustExtension,
     ): Preference.PreferenceGroup {
         val context = LocalContext.current
-        val uriHandler = LocalUriHandler.current
         val extensionInstallerPref = basePreferences.extensionInstaller()
-        var shizukuMissing by rememberSaveable { mutableStateOf(false) }
 
-        if (shizukuMissing) {
-            val dismiss = { shizukuMissing = false }
-            AlertDialog(
-                onDismissRequest = dismiss,
-                title = { Text(text = stringResource(ephyra.app.core.common.R.string.ext_installer_shizuku)) },
-                text = {
-                    Text(
-                        text = stringResource(ephyra.app.core.common.R.string.ext_installer_shizuku_unavailable_dialog),
-                    )
-                },
-                dismissButton = {
-                    TextButton(onClick = dismiss) {
-                        Text(text = stringResource(ephyra.app.core.common.R.string.action_cancel))
-                    }
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            dismiss()
-                            uriHandler.openUri("https://shizuku.rikka.app/download")
-                        },
-                    ) {
-                        Text(text = stringResource(ephyra.app.core.common.R.string.action_ok))
-                    }
-                },
-            )
-        }
         return Preference.PreferenceGroup(
             title = stringResource(ephyra.app.core.common.R.string.label_extensions),
             preferenceItems = persistentListOf(
@@ -462,16 +404,7 @@ object SettingsAdvancedScreen : SearchableSettings {
                         .associateWith { stringResource(it.titleRes) }
                         .toImmutableMap(),
                     title = stringResource(ephyra.app.core.common.R.string.ext_installer_pref),
-                    onValueChanged = {
-                        if (it == BasePreferences.ExtensionInstaller.SHIZUKU &&
-                            !context.isShizukuInstalled
-                        ) {
-                            shizukuMissing = true
-                            false
-                        } else {
-                            true
-                        }
-                    },
+                    onValueChanged = { true },
                 ),
                 Preference.PreferenceItem.TextPreference(
                     title = stringResource(ephyra.app.core.common.R.string.ext_revoke_trust),

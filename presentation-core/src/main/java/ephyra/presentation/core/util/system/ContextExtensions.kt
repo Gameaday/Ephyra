@@ -12,7 +12,6 @@ import androidx.core.net.toUri
 import com.hippo.unifile.UniFile
 import ephyra.core.common.util.system.logcat
 import logcat.LogPriority
-import rikka.sui.Sui
 
 /**
  * Copies a string to clipboard
@@ -53,10 +52,6 @@ fun Context.isPackageInstalled(packageName: String): Boolean {
         false
     }
 }
-
-val Context.hasMiuiPackageInstaller get() = isPackageInstalled("com.miui.packageinstaller")
-
-val Context.isShizukuInstalled get() = isPackageInstalled("moe.shizuku.privileged.api") || Sui.isSui()
 
 fun Context.launchRequestPackageInstallsPermission() {
     Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {

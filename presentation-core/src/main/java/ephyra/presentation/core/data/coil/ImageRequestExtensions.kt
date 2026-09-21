@@ -1,6 +1,7 @@
 package ephyra.presentation.core.data.coil
 
 import coil3.request.ImageRequest
+import ephyra.data.coil.HardwareGuardDecoder as DataHardwareGuardDecoder
 import ephyra.data.coil.cropBorders as dataCropBorders
 import ephyra.data.coil.customDecoder as dataCustomDecoder
 
@@ -19,3 +20,9 @@ fun ImageRequest.Builder.cropBorders(enable: Boolean): ImageRequest.Builder =
 
 fun ImageRequest.Builder.customDecoder(enable: Boolean): ImageRequest.Builder =
     dataCustomDecoder(enable)
+
+/**
+ * Back-compat alias: [HardwareGuardDecoder] now lives in `:core:data` alongside the other
+ * Coil fetchers/decoders. Import `ephyra.data.coil.HardwareGuardDecoder` in new code.
+ */
+typealias HardwareGuardDecoder = DataHardwareGuardDecoder

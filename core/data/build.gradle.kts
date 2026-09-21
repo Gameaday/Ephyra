@@ -51,6 +51,7 @@ dependencies {
     implementation(libs.unifile)
     implementation(platform(libs.coil.bom))
     implementation(libs.coil.core)
+    api(libs.jxl.coder.coil)
     implementation(libs.okhttp.core)
 
     implementation(kotlinx.bundles.serialization)

@@ -22,13 +22,8 @@ class BasePreferences(
 
     enum class ExtensionInstaller(val titleRes: Int, val requiresSystemPermission: Boolean) {
         PACKAGEINSTALLER(ephyra.app.core.common.R.string.ext_installer_packageinstaller, true),
-        SHIZUKU(ephyra.app.core.common.R.string.ext_installer_shizuku, false),
         PRIVATE(ephyra.app.core.common.R.string.ext_installer_private, false),
     }
 
-    fun displayProfile() = preferenceStore.getString("pref_display_profile_key", "")
-
     fun hardwareBitmapThreshold() = preferenceStore.getInt("pref_hardware_bitmap_threshold", GLUtil.SAFE_TEXTURE_LIMIT)
-
-    fun alwaysDecodeLongStripWithSSIV() = preferenceStore.getBoolean("pref_always_decode_long_strip_with_ssiv", false)
 }

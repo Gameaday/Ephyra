@@ -58,7 +58,6 @@ dependencies {
     api(androidx.lifecycle.runtimektx)
     api(kotlinx.immutables)
     api(androidx.lifecycle.runtime.compose)
-    api(libs.image.decoder)
     api(libs.materialKolor)
     api(libs.material)
     api(libs.compose.materialmotion)
@@ -77,7 +76,6 @@ dependencies {
     api(libs.navigation.compose)
 
     // Utilities
-    api(libs.shizuku.api)
     api(androidx.biometricktx)
 
     testImplementation(libs.bundles.test)

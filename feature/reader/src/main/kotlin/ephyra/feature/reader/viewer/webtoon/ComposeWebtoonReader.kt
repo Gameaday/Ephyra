@@ -72,6 +72,7 @@ import ephyra.presentation.reader.TransitionDirection
 import eu.kanade.tachiyomi.source.model.Page
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import okio.Buffer
 import java.io.ByteArrayInputStream
 
 /**
@@ -490,16 +491,12 @@ private fun WebtoonPageItem(
             }
 
             Page.State.Ready -> {
-                val imageModel by produceState<Any?>(
-                    initialValue = page.mergedBitmap ?: page.cachedBytes,
+                val readyBytes by produceState<ByteArray?>(
+                    initialValue = page.mergedBitmap?.let { null } ?: page.cachedBytes,
                     page,
                     page.mergedBitmap,
                 ) {
-                    if (page.mergedBitmap != null) {
-                        value = page.mergedBitmap
-                    } else if (page.cachedBytes != null) {
-                        value = page.cachedBytes
-                    } else {
+                    if (page.mergedBitmap == null && value == null) {
                         value = withIOContext {
                             try {
                                 page.stream?.invoke()?.use { it.readBytes() }?.also {
@@ -512,12 +509,35 @@ private fun WebtoonPageItem(
                     }
                 }
 
+                // Animated check on buffered bytes (peek-based, no pixel decode). Animated
+                // pages and JXL (unsupported by BitmapRegionDecoder) bypass slicing:
+                // region decode would return the first frame only / fail outright.
+                val animatedHint = remember(readyBytes) {
+                    readyBytes?.let { bytes ->
+                        runCatching {
+                            Buffer().write(bytes).let {
+                                ImageUtil.isAnimatedAndSupported(it) ||
+                                    ImageUtil.findImageType(bytes.inputStream()) ==
+                                    ImageUtil.ImageType.JXL
+                            }
+                        }.getOrDefault(false)
+                    } ?: false
+                }
+
                 // Use the device's actual screen width as the target for image loading.
                 // This ensures the image is loaded at native screen resolution, preserving
                 // quality for any device (phones, tablets, foldables) regardless of density.
                 val density = LocalDensity.current
                 val configuration = LocalConfiguration.current
                 val targetWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
+                // Compose viewport height drives the per-slice ceiling (~1.5 viewports).
+                val viewportHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
+
+                // Long strips render sliced at full width resolution; everything else (and any
+                // slice failure) uses the single-image path via `fallback`.
+                val shouldAttemptSlices = !cropBorders && !animatedHint &&
+                    page.mergedBitmap == null && readyBytes != null &&
+                    (intrinsicDimensions != null || (page.width > 0 && page.height > 0))
 
                 if (page.mergedBitmap != null) {
                     Image(
@@ -531,40 +551,27 @@ private fun WebtoonPageItem(
                                 detectTapGestures(onLongPress = { onLongTap() })
                             },
                     )
-                } else if (imageModel != null) {
-                    val context = LocalContext.current
-                    AsyncImage(
-                        model = remember(imageModel, cropBorders, targetWidthPx) {
-                            ImageRequest.Builder(context)
-                                .data(imageModel)
-                                .memoryCacheKey(
-                                    readerPageMemoryCacheKey(page, cropBorders) +
-                                        "_w${targetWidthPx.toInt()}",
-                                )
-                                .crossfade(false)
-                                .precision(Precision.EXACT)
-                                .cropBorders(cropBorders)
-                                // Constrain the decode to the screen width so very tall
-                                // strips are downsampled only in width (never below the
-                                // display size) while keeping their full vertical detail.
-                                .size(targetWidthPx.toInt())
-                                .build()
+                } else if (shouldAttemptSlices && readyBytes != null) {
+                    val (knownW, knownH) = intrinsicDimensions ?: (page.width to page.height)
+                    SlicedWebtoonImage(
+                        page = page,
+                        bytes = readyBytes!!,
+                        srcWidth = knownW,
+                        srcHeight = knownH,
+                        targetWidthPx = targetWidthPx,
+                        viewportHeightPx = viewportHeightPx,
+                        cropBorders = cropBorders,
+                        isAnimated = animatedHint,
+                        onLongTap = onLongTap,
+                        fallback = {
+                            SingleWebtoonImage(
+                                page = page,
+                                imageModel = readyBytes!!,
+                                cropBorders = cropBorders,
+                                targetWidthPx = targetWidthPx,
+                                onLongTap = onLongTap,
+                            )
                         },
-                        contentDescription = "Page ${page.number}",
-                        contentScale = ContentScale.FillWidth,
-                        onSuccess = { result ->
-                            val img = result.result.image
-                            if (img.width > 0 && img.height > 0) {
-                                page.width = img.width
-                                page.height = img.height
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .wrapContentHeight()
-                            .pointerInput(page) {
-                                detectTapGestures(onLongPress = { onLongTap() })
-                            },
                     )
                 } else {
                     Box(
@@ -579,4 +586,52 @@ private fun WebtoonPageItem(
             }
         }
     }
+}
+
+/**
+ * Single-image fallback path: the pre-slice Coil request (screen-width constrained).
+ * Used for short pages and whenever slicing is bypassed or fails.
+ */
+@Composable
+private fun SingleWebtoonImage(
+    page: ReaderPage,
+    imageModel: Any,
+    cropBorders: Boolean,
+    targetWidthPx: Float,
+    onLongTap: () -> Unit,
+) {
+    val context = LocalContext.current
+    AsyncImage(
+        model = remember(imageModel, cropBorders, targetWidthPx) {
+            ImageRequest.Builder(context)
+                .data(imageModel)
+                .memoryCacheKey(
+                    readerPageMemoryCacheKey(page, cropBorders) +
+                        "_w${targetWidthPx.toInt()}",
+                )
+                .crossfade(false)
+                .precision(Precision.EXACT)
+                .cropBorders(cropBorders)
+                // Constrain the decode to the screen width so very tall
+                // strips are downsampled only in width (never below the
+                // display size) while keeping their full vertical detail.
+                .size(targetWidthPx.toInt())
+                .build()
+        },
+        contentDescription = "Page ${page.number}",
+        contentScale = ContentScale.FillWidth,
+        onSuccess = { result ->
+            val img = result.result.image
+            if (img.width > 0 && img.height > 0) {
+                page.width = img.width
+                page.height = img.height
+            }
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentHeight()
+            .pointerInput(page) {
+                detectTapGestures(onLongPress = { onLongTap() })
+            },
+    )
 }

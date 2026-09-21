@@ -48,11 +48,17 @@ class HistoryViewModelTest {
     private val updateManga: UpdateManga = mockk(relaxed = true)
     private val sourceManager: SourceManager = mockk(relaxed = true)
 
-    private val testDispatcher = UnconfinedTestDispatcher()
-    private val historyFlow = MutableSharedFlow<List<HistoryWithRelations>>(replay = 1)
+    private lateinit var testDispatcher: UnconfinedTestDispatcher
+    private lateinit var historyFlow: MutableSharedFlow<List<HistoryWithRelations>>
 
     @BeforeEach
     fun setUp() {
+        // Fresh dispatcher + flow per test: the ViewModel collects `historyFlow` in its
+        // viewModelScope, which outlives each test (nothing cancels it). A shared scheduler
+        // across tests lets a leaked coroutine from test N surface as
+        // `UncaughtExceptionsBeforeTest` in test N+1, so every test must own its own.
+        testDispatcher = UnconfinedTestDispatcher()
+        historyFlow = MutableSharedFlow(replay = 1)
         Dispatchers.setMain(testDispatcher)
         every { historyRepository.getHistory(any()) } returns historyFlow
     }
@@ -99,7 +105,7 @@ class HistoryViewModelTest {
     )
 
     @Test
-    fun `initial state starts with null list and dialog`() = runTest {
+    fun `initial state starts with null list and dialog`() = runTest(testDispatcher) {
         val viewModel = createViewModel()
 
         viewModel.state.test {
@@ -111,7 +117,7 @@ class HistoryViewModelTest {
     }
 
     @Test
-    fun `history flow updates state list`() = runTest {
+    fun `history flow updates state list`() = runTest(testDispatcher) {
         val viewModel = createViewModel()
 
         viewModel.state.test {
@@ -134,7 +140,7 @@ class HistoryViewModelTest {
      * leading day header.
      */
     @Test
-    fun `non-empty history populates items and inserts a date header`() = runTest {
+    fun `non-empty history populates items and inserts a date header`() = runTest(testDispatcher) {
         val viewModel = createViewModel()
 
         viewModel.state.test {
@@ -152,7 +158,7 @@ class HistoryViewModelTest {
     }
 
     @Test
-    fun `search query updates state`() = runTest {
+    fun `search query updates state`() = runTest(testDispatcher) {
         val viewModel = createViewModel()
 
         viewModel.state.test {
@@ -164,7 +170,7 @@ class HistoryViewModelTest {
     }
 
     @Test
-    fun `set dialog updates state dialog`() = runTest {
+    fun `set dialog updates state dialog`() = runTest(testDispatcher) {
         val viewModel = createViewModel()
 
         viewModel.state.test {
@@ -176,7 +182,7 @@ class HistoryViewModelTest {
     }
 
     @Test
-    fun `clearing all history emits HistoryCleared effect`() = runTest {
+    fun `clearing all history emits HistoryCleared effect`() = runTest(testDispatcher) {
         coEvery { removeHistory.awaitAll() } returns true
         val viewModel = createViewModel()
 
@@ -188,7 +194,7 @@ class HistoryViewModelTest {
     }
 
     @Test
-    fun `getNextChapterForManga emits OpenChapter effect`() = runTest {
+    fun `getNextChapterForManga emits OpenChapter effect`() = runTest(testDispatcher) {
         val mockChapter: Chapter = mockk(relaxed = true)
         coEvery { getNextChapters.await(1L, 2L, onlyUnread = false) } returns listOf(mockChapter)
         val viewModel = createViewModel()

@@ -31,7 +31,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Dynamic Sources Registration**: Configured `AndroidSourceManager.kt` to listen to the preference flow for profiled domains, dynamically instantiate `DynamicHttpSource` wrappers, and register them concurrently alongside legacy extension sources.
 - **Hilt Dependency Cycle Resolution**: Fixed the circular dependency in the DI graph between `AndroidSourceManager` and `DownloadManager` / `Downloader` by injecting a deferred Hilt `Provider<ContentSourceOrchestrator>` inside `AndroidSourceManager`.
 - **ArchUnit Feature Isolation**: Resolved all feature module package/dependency boundary violations by moving shared components (`MangaCover`, `LibraryBottomActionMenu`, `CategoryExtensions`, `ChangeCategoryDialog`) to the common `:presentation-core` module, and introducing compositional navigation interfaces via `LocalAppNavigator`.
-- **Injekt Shim Removal**: Cleanly removed `uy.kohesive.injekt` package shims from `core:common` and fully migrated dependency lookups to standard Hilt constructor injection.
+- **Injekt Confined To The Extension-Bridge ABI (Here's What Actually Happened)**: The prior changelog claimed `uy.kohesive.injekt` was "cleanly removed" and "eradicated"; that was false. What really happened — `core:common`'s internal `uy.kohesive.injekt` shim package is gone, every app/feature DI lookup now uses standard Hilt constructor injection, *and* a single Injekt container still runs on purpose inside the dynamic `eu.kanade.tachiyomi` extension bridge (`:core:common` / `:source-api`), because legacy extensions can't be wired through Hilt. Injekt is alive, but confined to exactly one place: the extension ABI.
 
 ### 🏛️ Architecture & Clean Separation (Phase 8)
 - **Domain Abstractions**: Introduced generic, media-agnostic domain interfaces `ContentDatabase`, `RemoteSource`, and `TrackingService` inside `:core:domain`, separating high-level business rules from concrete database/network frames.
@@ -40,7 +40,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### 🧹 Dependency & Legacy Purges (Phase 11)
 - **SQLDelight Complete Purge**: Systematically removed SQLDelight drivers, configuration files, and references from all module build scripts and version catalogs, completing the transition of mangas, chapters, categories, and history to standard Room DAOs.
-- **DI & Navigation Purges**: Eradicated all remnants of Voyager, Koin, and uy.kohesive.injekt libraries from all build configurations, achieving 100% compile-time determinism with Hilt and 100% Jetpack Navigation & Compose coverage.
+- **DI & Navigation Purges**: Eradicated all remnants of Voyager and Koin from all build configurations. (Narratively adjacent to "Injekt purged" above, but Injekt was *not* eradicated — it remains in `:core:common` / `:source-api` as a compatibility shim for legacy `eu.kanade.tachiyomi` extensions; app code is 100% Hilt, 100% Jetpack Navigation & Compose coverage.)
 - **CoreContainer Isolation**: Fully decoupled `CoreContainer` from all internal classes, confining it strictly as a bridge for external dynamic extensions in `:source-api`.
 
 ### 🛡️ Startup Resiliency & Safety (Phase 12)

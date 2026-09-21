@@ -8,7 +8,6 @@ import android.os.PowerManager
 import androidx.core.content.getSystemService
 import androidx.core.net.toUri
 import logcat.LogPriority
-import rikka.sui.Sui
 import java.io.File
 
 /**
@@ -22,10 +21,6 @@ fun Context.isPackageInstalled(packageName: String): Boolean {
         false
     }
 }
-
-val Context.hasMiuiPackageInstaller get() = isPackageInstalled("com.miui.packageinstaller")
-
-val Context.isShizukuInstalled get() = isPackageInstalled("moe.shizuku.privileged.api") || Sui.isSui()
 
 val Context.powerManager: PowerManager
     get() = getSystemService()!!

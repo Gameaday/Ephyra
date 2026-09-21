@@ -14,6 +14,9 @@ class DownloadPreferences(
 
     fun saveChaptersAsCBZ() = preferenceStore.getBoolean("save_chapter_as_cbz", true)
 
+    @Deprecated(
+        "No longer needed: tall images are now sliced virtually at render time — kept for one release so existing downloads keep working.",
+    )
     fun splitTallImages() = preferenceStore.getBoolean("split_tall_images", true)
 
     fun autoDownloadWhileReading() = preferenceStore.getInt("auto_download_while_reading", 0)

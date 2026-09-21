@@ -11,7 +11,6 @@ import ephyra.domain.base.InstallerCapabilityProvider
 class AndroidInstallerCapabilityProvider(private val context: Context) : InstallerCapabilityProvider {
     override fun isAvailable(installer: ExtensionInstaller): Boolean = when (installer) {
         ExtensionInstaller.PACKAGEINSTALLER -> false
-        ExtensionInstaller.SHIZUKU -> false
         ExtensionInstaller.PRIVATE -> true
     }
 }

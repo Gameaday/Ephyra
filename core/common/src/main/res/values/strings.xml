@@ -445,12 +445,7 @@
     <string name="ext_install_service_notif">Installing extension…</string>
     <string name="ext_installer_pref">Installer</string>
     <string name="ext_installer_packageinstaller" translatable="false">PackageInstaller</string>
-    <string name="ext_installer_shizuku" translatable="false">Shizuku</string>
     <string name="ext_installer_private" translatable="false">Private</string>
-    <string name="ext_installer_shizuku_stopped">Shizuku is not running</string>
-    <string name="ext_installer_shizuku_unavailable_dialog">Install and start Shizuku to use Shizuku
-        as extension installer.
-    </string>
     <string name="ext_revoke_trust">Revoke trusted unknown extensions</string>
 
     <!-- Extension repos -->
@@ -516,13 +511,6 @@
     <string name="pref_hardware_bitmap_threshold_summary">If reader loads a blank image
         incrementally reduce the threshold.\nSelected: %s
     </string>
-    <string name="pref_always_decode_long_strip_with_ssiv_2">Use legacy decoder for long strip
-        reader
-    </string>
-    <string name="pref_always_decode_long_strip_with_ssiv_summary">Affects performance. Only enable
-        if reducing bitmap threshold doesn\'t fix blank image issues
-    </string>
-    <string name="pref_display_profile">Custom display profile</string>
     <string name="pref_crop_borders">Crop borders</string>
     <string name="pref_custom_brightness">Custom brightness</string>
     <string name="pref_grayscale">Grayscale</string>
@@ -646,6 +634,7 @@
     <string name="save_chapter_as_cbz">Save as CBZ archive</string>
     <string name="split_tall_images">Split tall images</string>
     <string name="split_tall_images_summary">Improves reader performance</string>
+    <string name="split_tall_images_summary_no_longer_needed">No longer needed — tall images are sliced virtually at render time. Kept for one release so existing downloads keep working.</string>
     <string name="pref_download_concurrent_sources">Concurrent source downloads</string>
     <string name="pref_download_concurrent_pages">Concurrent page downloads</string>
     <string name="pref_download_concurrent_pages_summary">Pages downloaded simultaneously per

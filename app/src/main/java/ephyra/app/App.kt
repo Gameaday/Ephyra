@@ -19,6 +19,7 @@ import androidx.lifecycle.lifecycleScope
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
 import coil3.disk.DiskCache
+import coil3.gif.GifDecoder
 import coil3.memory.MemoryCache
 import coil3.memoryCacheMaxSizePercentWhileInBackground
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
@@ -47,6 +48,8 @@ import ephyra.core.migration.Migrator
 import ephyra.core.migration.migrations.migrations
 import ephyra.data.cache.CoverCache
 import ephyra.data.coil.BufferedSourceFetcher
+import ephyra.data.coil.HardwareGuardDecoder
+import ephyra.data.coil.JxlCoilBridgeDecoder
 import ephyra.data.coil.MangaCoverFetcher
 import ephyra.data.coil.MangaCoverKeyer
 import ephyra.data.coil.MangaKeyer
@@ -55,8 +58,6 @@ import ephyra.domain.base.BasePreferences
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.ui.UiPreferences
 import ephyra.domain.updates.interactor.GetUpdates
-import ephyra.presentation.core.data.coil.HardwareGuardDecoder
-import ephyra.presentation.core.data.coil.TachiyomiImageDecoder
 import ephyra.presentation.core.i18n.stringResource
 import ephyra.presentation.core.ui.delegate.SecureActivityDelegateState
 import ephyra.presentation.core.util.system.animatorDurationScale
@@ -326,11 +327,19 @@ class App :
             components {
                 // NetworkFetcher.Factory
                 add(OkHttpNetworkFetcherFactory(callFactoryLazy::value))
-                // Decoder.Factory
-                add(TachiyomiImageDecoder.Factory())
-                // Enforce the GL_MAX_TEXTURE_SIZE limit on the platform decode path:
-                // oversized long-strip pages fall back to software decoding instead of
-                // failing the hardware (AHardwareBuffer) decode.
+                // Decoder.Factory — order matters; Coil tries factories in registration order:
+                // 1. JXL bridge (awxkee jxl-coder 2.2.0 ships Coil 2; bridged into this Coil 3
+                //    pipeline): static JXL, which the platform cannot decode. libjxl applies
+                //    the embedded color profile internally, so the retired custom ICC
+                //    display-profile override is gone by design.
+                // 2. Platform animated drawables (GIF/WebP via coil-gif + ImageDecoderDecoder).
+                // 3. HardwareGuard: wraps BitmapFactoryDecoder and downgrades oversized
+                //    long-strip sources to software decoding instead of failing the
+                //    hardware (AHardwareBuffer) decode at GL_MAX_TEXTURE_SIZE.
+                //    Oversized JXL is guarded inside the bridge (decode-time downgrade)
+                //    because Coil 2/3 decoder types cannot share one guard factory.
+                add(JxlCoilBridgeDecoder.Factory())
+                add(GifDecoder.Factory())
                 add(HardwareGuardDecoder.Factory())
                 // Fetcher.Factory
                 add(BufferedSourceFetcher.Factory())

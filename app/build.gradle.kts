@@ -132,7 +132,7 @@ android {
             keepDebugSymbols += listOf(
                 "libandroidx.graphics.path",
                 "libarchive-jni",
-                "libimagedecoder",
+                "librjxlcoder",
                 "libquickjs",
                 "libsqlite3x",
             )
@@ -305,9 +305,6 @@ dependencies {
 
     // Logging
     implementation(libs.logcat)
-
-    // Shizuku
-    implementation(libs.bundles.shizuku)
 
     // String similarity
     implementation(libs.stringSimilarity)

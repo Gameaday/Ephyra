@@ -178,6 +178,7 @@ internal fun Project.configureCompose(commonExtension: CommonExtension) {
 internal fun Project.configureTest() {
     tasks.withType<Test>().configureEach {
         useJUnitPlatform()
+        maxParallelForks = 1
         testLogging {
             events(TestLogEvent.PASSED, TestLogEvent.SKIPPED, TestLogEvent.FAILED)
         }
