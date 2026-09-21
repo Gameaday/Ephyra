@@ -26,7 +26,7 @@ import java.util.concurrent.Executors
 
 @RunWith(AndroidJUnit4::class)
 @Config(
-    sdk = [34],
+    sdk = [36],
     application = App::class,
     shadows = [ShadowAnimatedVectorResources::class],
 )

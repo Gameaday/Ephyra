@@ -83,6 +83,7 @@ class AboutViewModelTest {
             assertTrue(effect is AboutEffect.NewUpdate)
             assertEquals("v2.0.0", (effect as AboutEffect.NewUpdate).result.release.version)
 
+            testDispatcher.scheduler.advanceUntilIdle()
             assertEquals(result, viewModel.state.value.updateResult)
             assertFalse(viewModel.state.value.isCheckingUpdates)
         }

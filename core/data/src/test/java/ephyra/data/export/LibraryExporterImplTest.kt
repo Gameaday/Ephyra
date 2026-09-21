@@ -16,7 +16,7 @@ import org.robolectric.annotation.Config
 import java.io.File
 
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [34])
+@Config(sdk = [36])
 class LibraryExporterImplTest {
 
     @get:Rule

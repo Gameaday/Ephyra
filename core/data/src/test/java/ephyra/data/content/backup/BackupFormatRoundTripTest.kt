@@ -43,7 +43,7 @@ import java.util.zip.GZIPOutputStream
  */
 @OptIn(ExperimentalSerializationApi::class)
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [34])
+@Config(sdk = [36])
 class BackupFormatRoundTripTest {
 
     private val protoBuf = ProtoBuf

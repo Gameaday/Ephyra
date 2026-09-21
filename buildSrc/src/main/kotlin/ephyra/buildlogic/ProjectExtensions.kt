@@ -111,6 +111,12 @@ internal fun Project.configureAndroid(commonExtension: CommonExtension) {
             }
         }
     }
+
+    // Robolectric's FileDescriptorInterceptor accesses jdk.internal.access.SharedSecrets
+    // via reflection; JDK 17+ module system blocks this without an explicit --add-opens.
+    tasks.withType<Test>().configureEach {
+        jvmArgs("--add-opens=java.base/jdk.internal.access=ALL-UNNAMED")
+    }
 }
 
 internal fun Project.configureCompose(commonExtension: CommonExtension) {

@@ -32,7 +32,7 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [34])
+@Config(sdk = [36])
 class MangaRestorerTest {
 
     private lateinit var database: EphyraDatabase

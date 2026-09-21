@@ -19,7 +19,7 @@ import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
 
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [34])
+@Config(sdk = [36])
 class AppUpdateInstallerTest {
 
     @Test
