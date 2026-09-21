@@ -25,10 +25,13 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 
 // Test configuration for faster CI builds and flaky test resilience
 tasks.withType<Test>().configureEach {
-    // Reduce parallelism in CI to avoid resource contention causing flaky failures
-    maxParallelForks = if (System.getenv("CI") != null) 2 else Runtime.getRuntime().availableProcessors()
-    // Enable test result caching
-    outputs.upToDateWhen { true }
+    // Bound the number of forked test JVMs. Every Gradle module schedules its own Test tasks and
+    // `org.gradle.parallel=true` runs those tasks concurrently, so forking on every processor
+    // spawns hundreds of JVMs during a full build. Robolectric (API 36) forks are memory heavy,
+    // and oversubscribing CPU/memory kills test workers, which surfaces as
+    // `java.io.EOFException` / `NoSuchFileException` on the test task instead of a test failure.
+    val availableProcessors = Runtime.getRuntime().availableProcessors()
+    maxParallelForks = if (System.getenv("CI") != null) 2 else (availableProcessors / 4).coerceIn(1, 4)
     // Set test timeout to prevent hanging tests
     timeout.set(java.time.Duration.ofMinutes(10))
     // Show test progress

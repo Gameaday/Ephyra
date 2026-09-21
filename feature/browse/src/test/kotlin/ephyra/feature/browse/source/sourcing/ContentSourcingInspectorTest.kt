@@ -19,6 +19,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -69,6 +70,19 @@ class ContentSourcingInspectorTest {
         Dispatchers.resetMain()
     }
 
+    /**
+     * Suspends until the ViewModel publishes a state matching [predicate].
+     *
+     * Inspection work is executed on `Dispatchers.IO` (`ContentSourcingViewModel.inspectSource`),
+     * so it is invisible to the `runTest` virtual clock: a `delay`-based polling loop advances
+     * virtual time instantly and can assert before the background coroutine has published its
+     * state. Collecting the state flow instead parks the test until the real thread emits, which
+     * keeps these tests deterministic regardless of machine load.
+     */
+    private suspend fun awaitState(
+        predicate: (ContentSourcingViewModel.State) -> Boolean,
+    ): ContentSourcingViewModel.State = viewModel.state.first(predicate)
+
     @Test
     fun `inspect source with valid url updates state with inspected profile`() = runTest {
         val testUrl = "https://test-manga.com"
@@ -87,14 +101,11 @@ class ContentSourcingInspectorTest {
 
         viewModel.onEvent(ContentSourcingViewModel.Event.InspectSource(testUrl))
 
-        var retries = 50
-        while (viewModel.state.value.inspectedProfile == null && retries-- > 0) {
-            kotlinx.coroutines.delay(20)
-        }
+        val state = awaitState { it.inspectedProfile != null }
 
-        assertFalse(viewModel.state.value.isInspecting)
-        assertNull(viewModel.state.value.inspectError)
-        assertEquals(expectedProfile, viewModel.state.value.inspectedProfile)
+        assertFalse(state.isInspecting)
+        assertNull(state.inspectError)
+        assertEquals(expectedProfile, state.inspectedProfile)
     }
 
     @Test
@@ -118,22 +129,15 @@ class ContentSourcingInspectorTest {
         coEvery { orchestrator.discover(testUrl) } returns Result.Success(expectedProfile)
         viewModel.onEvent(ContentSourcingViewModel.Event.InspectSource(testUrl))
 
-        var retries = 50
-        while (viewModel.state.value.inspectedProfile == null && retries-- > 0) {
-            kotlinx.coroutines.delay(20)
-        }
-        assertEquals(expectedProfile, viewModel.state.value.inspectedProfile)
+        assertEquals(expectedProfile, awaitState { it.inspectedProfile != null }.inspectedProfile)
 
         viewModel.onEvent(ContentSourcingViewModel.Event.SaveInspectedProfile)
 
-        retries = 50
-        while (viewModel.state.value.inspectedProfile != null && retries-- > 0) {
-            kotlinx.coroutines.delay(20)
-        }
+        val state = awaitState { it.inspectedProfile == null }
 
         coVerify { profileCache.save(expectedProfile) }
-        assertNull(viewModel.state.value.inspectedProfile)
-        assertEquals("", viewModel.state.value.inspectUrl)
+        assertNull(state.inspectedProfile)
+        assertEquals("", state.inspectUrl)
     }
 
     @Test
@@ -149,16 +153,13 @@ class ContentSourcingInspectorTest {
         coEvery { orchestrator.discover(testUrl) } returns Result.Success(expectedProfile)
         viewModel.onEvent(ContentSourcingViewModel.Event.InspectSource(testUrl))
 
-        var retries = 50
-        while (viewModel.state.value.inspectedProfile == null && retries-- > 0) {
-            kotlinx.coroutines.delay(20)
-        }
-        assertEquals(expectedProfile, viewModel.state.value.inspectedProfile)
+        assertEquals(expectedProfile, awaitState { it.inspectedProfile != null }.inspectedProfile)
 
         viewModel.onEvent(ContentSourcingViewModel.Event.ClearInspection)
 
-        assertNull(viewModel.state.value.inspectedProfile)
-        assertEquals("", viewModel.state.value.inspectUrl)
-        assertNull(viewModel.state.value.inspectError)
+        val state = viewModel.state.value
+        assertNull(state.inspectedProfile)
+        assertEquals("", state.inspectUrl)
+        assertNull(state.inspectError)
     }
 }
