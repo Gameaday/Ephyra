@@ -24,13 +24,6 @@
     </issue>
 
     <issue
-        id="Aligned16KB"
-        message="The native library `arm64-v8a/libimagedecoder.so` (from `com.github.tachiyomiorg:image-decoder:41c059e540`) is not 16 KB aligned">
-        <location
-            file="$GRADLE_USER_HOME/caches/9.5.1/transforms/b2625d5f7bdffad23b029615c9ba2c9c/transformed/image-decoder-41c059e540/jni/arm64-v8a/libimagedecoder.so"/>
-    </issue>
-
-    <issue
         id="DiscouragedApi"
         message="Use of this function is discouraged because resource reflection makes it harder to perform build optimizations and compile-time verification of code. It is much more efficient to retrieve resources by identifier (e.g. `R.foo.bar`) than by name (e.g. `getIdentifier(&quot;bar&quot;, &quot;foo&quot;, null)`)."
         errorLine1="        context.resources.getIdentifier(&quot;locales_config&quot;, &quot;xml&quot;, context.packageName),"

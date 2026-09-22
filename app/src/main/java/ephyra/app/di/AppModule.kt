@@ -403,8 +403,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideInstallerCapabilityProvider(@ApplicationContext context: Context): InstallerCapabilityProvider =
-        AndroidInstallerCapabilityProvider(context)
+    fun provideInstallerCapabilityProvider(): InstallerCapabilityProvider =
+        AndroidInstallerCapabilityProvider()
 
     @Provides
     @Singleton

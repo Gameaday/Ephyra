@@ -21,6 +21,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -48,7 +49,7 @@ class HistoryViewModelTest {
     private val updateManga: UpdateManga = mockk(relaxed = true)
     private val sourceManager: SourceManager = mockk(relaxed = true)
 
-    private lateinit var testDispatcher: UnconfinedTestDispatcher
+    private lateinit var testDispatcher: TestDispatcher
     private lateinit var historyFlow: MutableSharedFlow<List<HistoryWithRelations>>
 
     @BeforeEach
