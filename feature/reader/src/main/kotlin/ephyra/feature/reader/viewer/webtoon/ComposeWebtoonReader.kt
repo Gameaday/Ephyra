@@ -5,6 +5,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.calculateCentroidSize
+import androidx.compose.foundation.gestures.calculatePan
+import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
@@ -34,6 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -43,10 +47,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -54,6 +60,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastAny
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
@@ -70,10 +77,13 @@ import ephyra.presentation.core.data.coil.cropBorders
 import ephyra.presentation.reader.ChapterTransition
 import ephyra.presentation.reader.TransitionDirection
 import eu.kanade.tachiyomi.source.model.Page
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import okio.Buffer
 import java.io.ByteArrayInputStream
+import kotlin.math.abs
 
 /**
  * 100% Pure Jetpack Compose continuous vertical strip reader for Webtoon and Manhwa.
@@ -107,6 +117,15 @@ fun ComposeWebtoonReader(
     val density = LocalDensity.current
     val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
     val scrollDistance = screenHeightPx * 0.75f
+
+    // Shared visual zoom, reset per chapter: one pinch updates every strip so moving
+    // 1→5 (or back) keeps a consistent scale instead of per-item jumps.
+    val zoomState = rememberWebtoonZoomState(
+        chapterId = currentChapterId,
+        zoomEnabled = viewer.config.doubleTapZoom,
+        zoomOutDisabled = viewer.config.zoomOutDisabled,
+    )
+    val zoomEnabled = viewer.config.doubleTapZoom
 
     LaunchedEffect(viewer, onNextChapter, onPreviousChapter) {
         viewer.onNextChapter = onNextChapter
@@ -163,11 +182,17 @@ fun ComposeWebtoonReader(
         // lazy list can still anchor itself lower in a long strip, which is exactly the
         // "viewport jumps to the bottom" symptom. Scrolling explicitly here locks the anchor
         // until the initial layout pass has settled.
+        // One-shot positioning: run once per chapter, never on late page arrivals.
+        // Re-firing on items.size changes (pages arriving async) yanks the scroll position
+        // mid-chapter, which reads as jumps between sections.
+        val positionedChapter = remember { mutableSetOf<Long?>() }
         LaunchedEffect(currentChapterId, items.size) {
-            lazyListState.scrollToItem(
-                index = initialIndex.coerceIn(0, (items.size - 1).coerceAtLeast(0)),
-                scrollOffset = 0,
-            )
+            if (positionedChapter.add(currentChapterId)) {
+                lazyListState.scrollToItem(
+                    index = initialIndex.coerceIn(0, (items.size - 1).coerceAtLeast(0)),
+                    scrollOffset = 0,
+                )
+            }
         }
 
         // Listen to external scroll-to-index requests (e.g. from page slider scrubbing)
@@ -278,6 +303,9 @@ fun ComposeWebtoonReader(
             }
         }
 
+        // Pinch zoom + horizontal pan is applied per page item (visual only): content
+        // rescales without changing LazyColumn layout, so zoom can never shift section
+        // positions while scrolling between strips. Double-tap toggles 1x/2x fit.
         Box(
             modifier = modifier
                 .fillMaxSize()
@@ -331,6 +359,8 @@ fun ComposeWebtoonReader(
                             WebtoonPageItem(
                                 page = item,
                                 cropBorders = viewer.config.imageCropBorders,
+                                zoomState = zoomState,
+                                zoomEnabled = zoomEnabled,
                                 onLongTap = { onPageLongTap(item) },
                             )
                         }
@@ -377,6 +407,8 @@ fun ComposeWebtoonReader(
 private fun WebtoonPageItem(
     page: ReaderPage,
     cropBorders: Boolean,
+    zoomState: WebtoonZoomState,
+    zoomEnabled: Boolean,
     onLongTap: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -393,6 +425,7 @@ private fun WebtoonPageItem(
         initialValue = page.aspectRatio?.let { page.width to page.height },
         page,
         page.cachedBytes,
+        page.mergedBitmap,
     ) {
         if (value == null) {
             val bytes = page.cachedBytes ?: withIOContext {
@@ -408,27 +441,44 @@ private fun WebtoonPageItem(
             }
         }
 
-        value?.let { (width, height) ->
-            page.width = width
-            page.height = height
-        }
+        value?.let { (width, height) -> page.recordDimensionsOnce(width, height) }
     }
 
-    // Use source dimensions before the image is decoded so LazyColumn gets the final slice
-    // height on its first real layout instead of replacing a fixed placeholder after scroll.
-    val aspectRatio = intrinsicDimensions?.let { (width, height) ->
-        if (width > 0 && height > 0) width.toFloat() / height.toFloat() else null
-    }
-    val itemModifier = if (aspectRatio != null) {
-        modifier
-            .fillMaxWidth()
-            .aspectRatio(aspectRatio)
-    } else {
-        modifier.fillMaxWidth()
-    }
+    // Single layout contract for every branch below (see webtoonItemBox): when dims are
+    // known the item reserves the final full-strip height up front; sliced / single /
+    // loading states all render inside this box so switching between them can never
+    // resize the item or shift siblings.
+    val itemModifier = modifier.webtoonItemBox(webtoonAspectRatio(intrinsicDimensions))
 
     Box(
-        modifier = itemModifier,
+        modifier = itemModifier
+            // Visual-only zoom: graphicsLayer never changes layout size, so pinch and
+            // double-tap resize content to fit without moving any section in the list.
+            // Single pointerInput: tap/zoom share one detector chain so scales apply
+            // once and vertical scroll always reaches the list.
+            .graphicsLayer {
+                scaleX = zoomState.scale
+                scaleY = zoomState.scale
+                translationX = zoomState.offsetX
+                // Clip while zoomed: a scaled-up strip must not paint over its neighbors.
+                clip = zoomState.scale > 1.01f
+            }
+            .pointerInput(page.index, zoomEnabled to zoomState) {
+                if (!zoomEnabled) {
+                    detectTapGestures(onLongPress = { onLongTap() })
+                } else {
+                    val min = zoomState.min
+                    val max = zoomState.max
+                    detectWebtoonGestures(
+                        zoomMin = min,
+                        zoomMax = max,
+                        getScale = { zoomState.scale },
+                        onZoom = { s: Float, p: Float -> zoomState.applyZoom(s, p) },
+                        onDoubleTapToggle = { zoomState.toggleFit() },
+                        onLongPress = onLongTap,
+                    )
+                }
+            },
         contentAlignment = Alignment.Center,
     ) {
         when (val currentStatus = status) {
@@ -545,9 +595,11 @@ private fun WebtoonPageItem(
                         contentDescription = "Page ${page.number}",
                         contentScale = ContentScale.FillWidth,
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .wrapContentHeight()
-                            .pointerInput(page) {
+                            // Fill the reserved item box (sized by the single aspect contract
+                            // above) — never wrapContent, which would resize the LazyColumn
+                            // item after layout and jump siblings when moving between sections.
+                            .fillMaxSize()
+                            .pointerInput(page.index) {
                                 detectTapGestures(onLongPress = { onLongTap() })
                             },
                     )
@@ -562,14 +614,14 @@ private fun WebtoonPageItem(
                         viewportHeightPx = viewportHeightPx,
                         cropBorders = cropBorders,
                         isAnimated = animatedHint,
-                        onLongTap = onLongTap,
                         fallback = {
                             SingleWebtoonImage(
                                 page = page,
                                 imageModel = readyBytes!!,
                                 cropBorders = cropBorders,
                                 targetWidthPx = targetWidthPx,
-                                onLongTap = onLongTap,
+                                densityScale = density.density,
+                                bytesSize = readyBytes!!.size,
                             )
                         },
                     )
@@ -598,40 +650,36 @@ private fun SingleWebtoonImage(
     imageModel: Any,
     cropBorders: Boolean,
     targetWidthPx: Float,
-    onLongTap: () -> Unit,
+    densityScale: Float,
+    bytesSize: Int,
 ) {
     val context = LocalContext.current
+    // Decode at physical pixels (css width * density): decoding at bare screenWidthDp
+    // then upscaling via FillWidth is the "blurry strip" bug on high-dpi devices.
+    val decodeWidth = (targetWidthPx * densityScale.coerceAtLeast(1f)).toInt().coerceAtLeast(1)
     AsyncImage(
-        model = remember(imageModel, cropBorders, targetWidthPx) {
+        model = remember(imageModel, cropBorders, decodeWidth, bytesSize) {
             ImageRequest.Builder(context)
                 .data(imageModel)
                 .memoryCacheKey(
                     readerPageMemoryCacheKey(page, cropBorders) +
-                        "_w${targetWidthPx.toInt()}",
+                        "_w${decodeWidth}_b$bytesSize",
                 )
                 .crossfade(false)
                 .precision(Precision.EXACT)
                 .cropBorders(cropBorders)
-                // Constrain the decode to the screen width so very tall
-                // strips are downsampled only in width (never below the
-                // display size) while keeping their full vertical detail.
-                .size(targetWidthPx.toInt())
+                // Constrain the decode to the physical screen width: the full strip is
+                // downsampled only in width (never below the display size) while keeping
+                // its full vertical detail.
+                .size(decodeWidth)
                 .build()
         },
         contentDescription = "Page ${page.number}",
         contentScale = ContentScale.FillWidth,
-        onSuccess = { result ->
-            val img = result.result.image
-            if (img.width > 0 && img.height > 0) {
-                page.width = img.width
-                page.height = img.height
-            }
-        },
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
-            .pointerInput(page) {
-                detectTapGestures(onLongPress = { onLongTap() })
-            },
+        // Never overwrite page dims here: the item box is already reserved from intrinsic
+        // dimensions, and a Coil-reported size (post downsample/crop) would resize the
+        // LazyColumn item after layout and jump surrounding sections. Gestures live on the
+        // owning item Box — no pointerInput here so detectors never nest or double-apply.
+        modifier = Modifier.fillMaxSize(),
     )
 }

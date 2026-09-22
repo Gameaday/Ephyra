@@ -15,15 +15,17 @@ import kotlin.math.max
  * partCount = ceil(displayHeight / maxSliceDisplayPx)
  * ```
  *
- * Adjacent slices overlap by [OVERLAP_DISPLAY_PX] display pixels (converted back to source
- * pixels) so bilinear sampling at slice edges cannot leave 1px hairline seams.
+ * Slices form an **exact partition**: `slices[0].top == 0`, `slices.last().bottom == srcHeight`
+ * and `slices[i].bottom == slices[i + 1].top`. Every source row is decoded and displayed
+ * exactly once, so stacked slices can never double-render content.
+ *
+ * Overlap was deliberately removed: decoding overlapping rows and stacking both copies at full
+ * height duplicated a band of content at every joint (2x overlap), broke aspect-ratio
+ * accounting, and made revisit/layout unstable. If a 1px hairline seam is ever observed on a
+ * specific GPU, the fix is to decode with overlap but *clip* (display only the non-overlapping
+ * window) — never to stack overlapping bitmaps at full height.
  */
 object WebtoonSlicer {
-
-    /** Overlap between adjacent slices, measured in display pixels. Must comfortably exceed
-     * the 1px hairline-seam artifact it exists to prevent, with margin for decoder rounding
-     * drift at any display density (10px ≈ 10x headroom at 1x, ~3x at 3x). */
-    const val OVERLAP_DISPLAY_PX = 10
 
     /** Never emit more slices than this; beyond it the caller must use the single-image fallback. */
     const val MAX_SLICES = 32
@@ -81,6 +83,10 @@ object WebtoonSlicer {
      * Splits a [srcWidth]×[srcHeight] image into [SliceRect]s sized so no slice exceeds
      * [maxSliceDisplayPx] display pixels tall once scaled to [targetWidthPx].
      *
+     * The result is an exact partition with no overlap and no gaps: slice `i` covers
+     * `[i * srcHeight / partCount, (i + 1) * srcHeight / partCount)` (last slice clamped
+     * to [srcHeight]), so stacked slices render each source row exactly once.
+     *
      * Returns a single slice when no split is needed, or an empty list when the page would need
      * more than [MAX_SLICES] (caller must fall back to single-image rendering).
      */
@@ -98,25 +104,19 @@ object WebtoonSlicer {
         val displayHeight = srcHeight * scale
         if (displayHeight <= ceiling) return listOf(SliceRect(0, 1, 0, srcHeight))
 
-        // Reserve the overlap budget from the ceiling so a slice's own height plus the
-        // overlap added to its bottom edge can never exceed the texture limit.
-        val sliceBudget = (ceiling - OVERLAP_DISPLAY_PX).coerceAtLeast(MIN_SLICE_DISPLAY_PX / 2)
-        var partCount = ceil(displayHeight / sliceBudget).toInt()
+        // Exact tiling: partCount is sized directly from the ceiling, no overlap budget.
+        var partCount = ceil(displayHeight / ceiling).toInt()
         // Merge slivers: if the remainder would be shorter than the minimum, use fewer slices.
         while (partCount > 1 && displayHeight / partCount < MIN_SLICE_DISPLAY_PX) partCount--
         if (partCount < 2) return listOf(SliceRect(0, 1, 0, srcHeight))
         if (partCount > MAX_SLICES) return emptyList()
 
-        val overlapSrc = max(1, ceil(OVERLAP_DISPLAY_PX / scale).toInt())
-        val baseHeight = srcHeight / partCount
+        // Distribute remainder rows across leading slices so no slice exceeds the ceiling
+        // and no thin sliver remains: top(i) = floor(i * srcHeight / partCount).
         return List(partCount) { index ->
-            val top = max(0, index * baseHeight - if (index > 0) overlapSrc else 0)
-            val rawBottom = if (index == partCount - 1) {
-                srcHeight
-            } else {
-                (index + 1) * baseHeight + overlapSrc
-            }
-            SliceRect(index, partCount, top, minOf(rawBottom, srcHeight))
+            val top = (index.toLong() * srcHeight / partCount).toInt()
+            val bottom = ((index + 1).toLong() * srcHeight / partCount).toInt()
+            SliceRect(index, partCount, top, bottom)
         }
     }
 }

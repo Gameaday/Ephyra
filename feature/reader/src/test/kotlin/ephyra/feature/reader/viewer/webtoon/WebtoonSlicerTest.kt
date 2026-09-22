@@ -28,8 +28,22 @@ class WebtoonSlicerTest {
         // No slice exceeds the ceiling once scaled to display pixels.
         val scale = 1080.0 / 800
         slices.forEach { assertTrue(it.srcHeight * scale <= 2048 + 1e-6) }
-        // Adjacent slices overlap (no hairline seams).
-        slices.zipWithNext().forEach { (a, b) -> assertTrue(b.top < a.bottom) }
+        // Exact partition: no overlap, no gaps — each row rendered exactly once.
+        slices.zipWithNext().forEach { (a, b) -> assertEquals(a.bottom, b.top) }
+        assertEquals(12000, slices.sumOf { it.srcHeight })
+    }
+
+    @Test
+    fun `uneven heights distribute remainder without slivers`() {
+        // 800x10003 forces a remainder: exact tiling must still partition fully.
+        val slices = WebtoonSlicer.computeSlices(800, 10003, 1080, 2048)
+        assertTrue(slices.size >= 2)
+        assertEquals(0, slices.first().top)
+        assertEquals(10003, slices.last().bottom)
+        slices.zipWithNext().forEach { (a, b) -> assertEquals(a.bottom, b.top) }
+        assertEquals(10003, slices.sumOf { it.srcHeight })
+        val scale = 1080.0 / 800
+        slices.forEach { assertTrue(it.srcHeight * scale <= 2048 + 1e-6) }
     }
 
     @Test
@@ -51,5 +65,28 @@ class WebtoonSlicerTest {
     fun `invalid dimensions never slice`() {
         assertFalse(WebtoonSlicer.needsSlicing(0, 1000, 1080, 2048))
         assertFalse(WebtoonSlicer.needsSlicing(800, 0, 1080, 2048))
+    }
+
+    @Test
+    fun `random sizes always partition exactly under the ceiling`() {
+        val random = java.util.Random(42)
+        repeat(100) {
+            val srcWidth = 200 + random.nextInt(2000)
+            val srcHeight = 500 + random.nextInt(20000)
+            val targetWidth = 360 + random.nextInt(1440)
+            val ceiling = 512 + random.nextInt(3584)
+            val slices = WebtoonSlicer.computeSlices(srcWidth, srcHeight, targetWidth, ceiling)
+            if (slices.isEmpty()) return@repeat // over MAX_SLICES: caller falls back.
+            val effectiveCeiling = maxOf(ceiling, WebtoonSlicer.MIN_SLICE_DISPLAY_PX)
+            val scale = targetWidth.toDouble() / srcWidth
+            assertEquals(0, slices.first().top)
+            assertEquals(srcHeight, slices.last().bottom)
+            slices.zipWithNext().forEach { (a, b) -> assertEquals(a.bottom, b.top) }
+            assertEquals(srcHeight, slices.sumOf { it.srcHeight })
+            slices.forEach {
+                assertTrue(it.srcHeight * scale <= effectiveCeiling + 1e-6)
+                assertTrue(it.srcHeight > 0)
+            }
+        }
     }
 }
