@@ -403,17 +403,7 @@ fun ComposeWebtoonReader(
                     // composition for a weight-shared slice column (or vice versa) — the
                     // main source of blank/mis-measured items on fast scroll.
                     contentType = { _, item ->
-                        when (item) {
-                            is ChapterTransition -> "webtoon_transition"
-                            is ReaderPage ->
-                                when {
-                                    viewer.config.imageCropBorders ||
-                                        item.mergedBitmap != null -> "webtoon_single"
-                                    item.status == Page.State.Ready -> "webtoon_page_ready"
-                                    else -> "webtoon_page_pending"
-                                }
-                            else -> "webtoon_item"
-                        }
+                        webtoonContentType(item, viewer.config.imageCropBorders)
                     },
                 ) { _, item ->
                     when (item) {

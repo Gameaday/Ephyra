@@ -3,7 +3,9 @@ package ephyra.feature.reader.viewer.webtoon
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.Modifier
+import ephyra.feature.reader.model.ChapterTransition
 import ephyra.feature.reader.model.ReaderPage
+import eu.kanade.tachiyomi.source.model.Page
 
 /**
  * Single layout contract shared by every webtoon item branch (merged / sliced / single /
@@ -39,4 +41,22 @@ fun ReaderPage.recordDimensionsOnce(width: Int, height: Int) {
         this.width = width
         this.height = height
     }
+}
+
+/**
+ * LazyColumn contentType pools for the webtoon list. Transitions, unresolved pages
+ * (spinner), ready strip pages (weight-shared slice column), and single-image pages get
+ * separate composition pools so fast flings can't reuse a spinner composition for a slice
+ * column (or vice versa) — the main source of blank/mis-measured items on fast scroll.
+ * Pure function so the pooling contract is unit-testable without composition.
+ */
+fun webtoonContentType(item: Any?, cropBorders: Boolean): String = when (item) {
+    is ChapterTransition -> "webtoon_transition"
+    is ReaderPage ->
+        when {
+            cropBorders || item.mergedBitmap != null -> "webtoon_single"
+            item.status == Page.State.Ready -> "webtoon_page_ready"
+            else -> "webtoon_page_pending"
+        }
+    else -> "webtoon_item"
 }

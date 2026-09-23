@@ -53,6 +53,7 @@ import ephyra.feature.reader.viewer.pager.ComposePagerReader
 import ephyra.feature.reader.viewer.pager.PagerViewer
 import ephyra.feature.reader.viewer.webtoon.ComposeWebtoonReader
 import ephyra.feature.reader.viewer.webtoon.WebtoonViewer
+import ephyra.presentation.core.theme.MotionTokens
 import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.reader.DisplayRefreshHost
 import ephyra.presentation.reader.ReaderContentOverlay
@@ -121,7 +122,10 @@ fun ReaderScreen(
 
     val canvasColor by animateColorAsState(
         targetValue = sampledEdgeColor ?: MaterialTheme.colorScheme.surface,
-        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
+        animationSpec = tween(
+            durationMillis = MotionTokens.DURATION_MEDIUM_3,
+            easing = FastOutSlowInEasing,
+        ),
         label = "ReaderBackgroundColor",
     )
 
@@ -286,7 +290,7 @@ private fun ReaderNavigationOverlay(
     AnimatedVisibility(
         visible = isVisible,
         enter = fadeIn(),
-        exit = fadeOut(animationSpec = tween(1000)),
+        exit = fadeOut(animationSpec = tween(MotionTokens.DURATION_EXTRA_LONG_4)),
         modifier = modifier.fillMaxSize(),
     ) {
         Canvas(
