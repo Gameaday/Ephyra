@@ -24,6 +24,7 @@ local.properties
 # Build output scratch logs
 build_output.txt
 build_assemble_output.txt
+build-log*.txt
 gradle_domain*.txt
 gradle_domain*.txt.err
 
