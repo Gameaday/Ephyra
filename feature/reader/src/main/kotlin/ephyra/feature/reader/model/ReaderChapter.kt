@@ -39,11 +39,14 @@ class ReaderChapter(var chapter: Chapter) {
             pageLoader = null
             startingAtBeginning = false
             startFromEnd = false
-            // Drop any merged bitmaps held by pages before dropping the page list so the
-            // merged allocations become unreachable for the next GC; ART reclaims the pixel
-            // buffers, so no explicit recycling is required.
+            // Drop every heavy page payload (bytes + merges + measured dims) before
+            // dropping the page list so all allocations become unreachable for the next
+            // GC; ART reclaims the pixel buffers, so no explicit recycling is required
+            // (recycling while Compose holds a snapshot crashes). This is the boundary
+            // disposal that keeps long sessions from pinning every visited chapter:
+            // the active chapter is untouched, so in-chapter scrolling never re-downloads.
             (state as? State.Loaded)?.pages?.forEach { page ->
-                page.clearMergedBitmap()
+                page.releasePageResources()
             }
             state = State.Wait
         }

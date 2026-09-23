@@ -405,17 +405,29 @@ class App :
     }
 
     /**
-     * Called by the system when it determines that memory is running low. Only foreground
-     * *running-critical* pressure is handled manually here (evict the whole cache to keep
-     * the process alive); background trimming is handled automatically by Coil 3's
-     * lifecycle-aware [memoryCacheMaxSizePercentWhileInBackground] policy configured in
-     * [newImageLoader], so the legacy TRIM_MEMORY_UI_HIDDEN full clear is no longer needed.
+     * Called by the system when it determines that memory is running low.
+     *
+     * Foreground pressure is handled by shrinking Coil's memory cache to half its current
+     * size (Coil 3 [MemoryCache] sizes itself by percent of app memory, so halving the max
+     * evicts the least-recently-used decoded bitmaps). Background trimming is handled
+     * automatically by the lifecycle-aware [memoryCacheMaxSizePercentWhileInBackground]
+     * policy configured in [newImageLoader].
+     *
+     * Why LOW matters: long webtoon sessions pin chapter bytes + decoded strips in RAM,
+     * and waiting for RUNNING_CRITICAL meant the reader appeared "full" (stalled loads)
+     * until the app was restarted. Trimming early at RUNNING_LOW drops only decoded
+     * bitmaps; chapter bytes stay in Coil disk / chapter disk cache, so back-scroll
+     * re-decodes instead of re-downloading.
      */
     @Suppress("DEPRECATION")
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
+        val memoryCache = SingletonImageLoader.get(this).memoryCache
+        if (level >= TRIM_MEMORY_RUNNING_LOW && memoryCache != null) {
+            memoryCache.maxSize = (memoryCache.maxSize / 2).coerceAtLeast(16L * 1024 * 1024)
+        }
         if (level >= TRIM_MEMORY_RUNNING_CRITICAL) {
-            SingletonImageLoader.get(this).memoryCache?.clear()
+            memoryCache?.clear()
         }
     }
 

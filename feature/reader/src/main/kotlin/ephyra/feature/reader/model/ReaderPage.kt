@@ -36,6 +36,19 @@ open class ReaderPage(
     }
 
     /**
+     * Drops all heavy page payloads (bytes + merges) and resets measured dims. Called only
+     * at chapter boundaries (chapter falls out of the prev/curr/next window, or the reader
+     * screen is left) — never inside the active chapter, so up/down scrolling within a
+     * chapter can never trigger a re-download.
+     */
+    fun releasePageResources() {
+        cachedBytes = null
+        clearMergedBitmap()
+        width = 0
+        height = 0
+    }
+
+    /**
      * True once this page has been absorbed by the previous page as a stub during smart combine.
      * Absorbed pages are removed from the adapter's item list but remain in [chapter.pages].
      * The flag is used by the ViewModel to determine the effective last page of a chapter so

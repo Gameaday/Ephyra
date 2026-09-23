@@ -55,6 +55,8 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -67,6 +69,7 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.size.Precision
 import ephyra.core.common.util.lang.withIOContext
+import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.ImageUtil
 import ephyra.feature.reader.model.ChapterTransition
 import ephyra.feature.reader.model.ReaderChapter
@@ -115,6 +118,7 @@ fun ComposeWebtoonReader(
     val scope = rememberCoroutineScope()
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
+    val context = LocalContext.current
     val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
     val scrollDistance = screenHeightPx * 0.75f
 
@@ -177,6 +181,45 @@ fun ComposeWebtoonReader(
             initialFirstVisibleItemIndex = initialIndex.coerceIn(0, (items.size - 1).coerceAtLeast(0)),
         )
 
+        // Direction-aware byte warm-up: LazyColumn only composes the visible window, and
+        // loadPage() fires from inside the item — so sections skipped during a fast fling
+        // never queue and sit blank. Watching the first/last visible indices lets us queue
+        // the *next* N pages' downloads ahead of composition (bytes land in cachedBytes /
+        // chapter disk cache before the item exists). Tier-scaled so LOW devices don't
+        // burst the network and trip the source rate limit.
+        val prefetchWindow = when (DeviceUtil.performanceTier(context)) {
+            DeviceUtil.PerformanceTier.LOW -> 1
+            DeviceUtil.PerformanceTier.MEDIUM -> 2
+            DeviceUtil.PerformanceTier.HIGH -> 3
+        }
+        LaunchedEffect(lazyListState, items, prefetchWindow) {
+            snapshotFlow { lazyListState.layoutInfo.visibleItemsInfo.map { it.index } }
+                .distinctUntilChanged()
+                .collect { visible ->
+                    if (visible.isEmpty()) return@collect
+                    val pages = items.mapNotNull { it as? ReaderPage }
+                    if (pages.isEmpty()) return@collect
+                    val lastVisible = visible.max()
+                    val firstVisible = visible.min()
+                    // Forward: next unread window past the viewport.
+                    var queued = 0
+                    for (index in (lastVisible + 1)..(lastVisible + prefetchWindow)) {
+                        val item = items.getOrNull(index) as? ReaderPage ?: continue
+                        if (item.status == Page.State.Queue) {
+                            withIOContext { item.chapter.pageLoader?.loadPage(item) }
+                            if (++queued >= prefetchWindow) break
+                        }
+                    }
+                    // Backward: single page behind (covers 200-segment back-scroll).
+                    (firstVisible - 1 downTo maxOf(0, firstVisible - 1)).forEach { index ->
+                        val item = items.getOrNull(index) as? ReaderPage ?: return@forEach
+                        if (item.status == Page.State.Queue) {
+                            withIOContext { item.chapter.pageLoader?.loadPage(item) }
+                        }
+                    }
+                }
+        }
+
         // A freshly opened chapter must start pinned at its resolved top slice. Reserving
         // slice heights upstream is not enough on its own: while the first slices decode, the
         // lazy list can still anchor itself lower in a long strip, which is exactly the
@@ -185,9 +228,15 @@ fun ComposeWebtoonReader(
         // One-shot positioning: run once per chapter, never on late page arrivals.
         // Re-firing on items.size changes (pages arriving async) yanks the scroll position
         // mid-chapter, which reads as jumps between sections.
-        val positionedChapter = remember { mutableSetOf<Long?>() }
+        var positionedChapterId by remember { mutableStateOf<Long?>(null) }
+        // Evict the marker when the chapter changes so a revisit re-positions correctly
+        // instead of accumulating ids over a long session.
+        if (positionedChapterId != null && positionedChapterId != currentChapterId) {
+            positionedChapterId = null
+        }
         LaunchedEffect(currentChapterId, items.size) {
-            if (positionedChapter.add(currentChapterId)) {
+            if (currentChapterId != null && positionedChapterId != currentChapterId) {
+                positionedChapterId = currentChapterId
                 lazyListState.scrollToItem(
                     index = initialIndex.coerceIn(0, (items.size - 1).coerceAtLeast(0)),
                     scrollOffset = 0,
@@ -421,6 +470,24 @@ private fun WebtoonPageItem(
         }
     }
 
+    // Visibility watchdog: sections skipped during a fast fling may sit composed-but-blank
+    // (stale Queue/LoadPage, never queued). When this item is actually on screen and still
+    // not Ready after the grace period, re-queue at high priority so parking on a blank
+    // middle section loads it — no scroll-away-and-back needed.
+    var itemIsVisible by remember(page) { mutableStateOf(false) }
+    LaunchedEffect(page, itemIsVisible, status) {
+        if (!itemIsVisible) return@LaunchedEffect
+        if (status is Page.State.Ready || status is Page.State.Error) return@LaunchedEffect
+        kotlinx.coroutines.delay(WebtoonVisibility.WATCHDOG_GRACE_MS)
+        val current = page.status
+        if (current is Page.State.Ready || current is Page.State.Error) return@LaunchedEffect
+        if (page.cachedBytes == null && page.mergedBitmap == null) {
+            withIOContext {
+                page.chapter.pageLoader?.loadPage(page)
+            }
+        }
+    }
+
     val intrinsicDimensions by produceState<Pair<Int, Int>?>(
         initialValue = page.aspectRatio?.let { page.width to page.height },
         page,
@@ -452,6 +519,11 @@ private fun WebtoonPageItem(
 
     Box(
         modifier = itemModifier
+            .onGloballyPositioned { coordinates ->
+                // Track on-screen visibility for the watchdog: actually intersecting the
+                // window (not merely composed nearby via the prefetch window).
+                itemIsVisible = coordinates.isAttached && !coordinates.boundsInWindow().isEmpty
+            }
             // Visual-only zoom: graphicsLayer never changes layout size, so pinch and
             // double-tap resize content to fit without moving any section in the list.
             // Single pointerInput: tap/zoom share one detector chain so scales apply
@@ -483,10 +555,11 @@ private fun WebtoonPageItem(
     ) {
         when (val currentStatus = status) {
             is Page.State.Queue, is Page.State.LoadPage -> {
+                // Visible-but-loading keeps the reserved box (no 300dp jump) with a
+                // spinner: blank-background-forever becomes spinner → image, so the
+                // visibility watchdog's work is obvious during testing.
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(300.dp),
+                    modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center,
                 ) {
                     CircularProgressIndicator(modifier = Modifier.size(48.dp))
@@ -495,9 +568,7 @@ private fun WebtoonPageItem(
 
             is Page.State.DownloadImage -> {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(300.dp),
+                    modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (progress > 0) {
@@ -509,10 +580,12 @@ private fun WebtoonPageItem(
             }
 
             is Page.State.Error -> {
+                val isRateLimited = remember(currentStatus) {
+                    isRateLimitError(currentStatus.error)
+                }
                 Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(300.dp)
+                        .fillMaxSize()
                         .padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
@@ -530,12 +603,22 @@ private fun WebtoonPageItem(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    OutlinedButton(
-                        onClick = { page.chapter.pageLoader?.retryPage(page) },
-                    ) {
-                        Icon(imageVector = Icons.Outlined.Refresh, contentDescription = null)
-                        Spacer(modifier = Modifier.size(8.dp))
-                        Text(text = "Retry")
+                    if (isRateLimited) {
+                        // 429/503: the source asked us to back off — an instant Retry storm
+                        // only extends the ban. Debounce with a countdown, matching the
+                        // RateLimitBackoffInterceptor's escalation posture.
+                        RateLimitedRetry(
+                            page = page,
+                            onRetry = { page.chapter.pageLoader?.retryPage(page) },
+                        )
+                    } else {
+                        OutlinedButton(
+                            onClick = { page.chapter.pageLoader?.retryPage(page) },
+                        ) {
+                            Icon(imageVector = Icons.Outlined.Refresh, contentDescription = null)
+                            Spacer(modifier = Modifier.size(8.dp))
+                            Text(text = "Retry")
+                        }
                     }
                 }
             }
@@ -545,6 +628,10 @@ private fun WebtoonPageItem(
                     initialValue = page.mergedBitmap?.let { null } ?: page.cachedBytes,
                     page,
                     page.mergedBitmap,
+                    // Retry that re-downloads yields new bytes: include the size tag so the
+                    // state re-resolves instead of serving the stale entry (blank section
+                    // that only loads after scroll-away-and-back).
+                    page.cachedBytes?.size,
                 ) {
                     if (page.mergedBitmap == null && value == null) {
                         value = withIOContext {
