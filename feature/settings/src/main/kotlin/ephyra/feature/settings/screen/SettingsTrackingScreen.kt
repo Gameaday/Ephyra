@@ -334,7 +334,14 @@ object SettingsTrackingScreen : SearchableSettings {
             // MangaUpdates is always available (public search — no login required).
             val hasAuthoritativeTracker = true
             if (hasAuthoritativeTracker) {
-                val isJobRunning = matchUnlinkedJobRunner.isRunning(context)
+                // Checking the job state hits WorkManager over IPC and blocks the calling
+                // thread, so it must not run inline in composition.
+                var isJobRunning by remember { mutableStateOf(false) }
+                LaunchedEffect(Unit) {
+                    isJobRunning = withContext(Dispatchers.IO) {
+                        matchUnlinkedJobRunner.isRunning(context)
+                    }
+                }
 
                 // --- Authority tracker order (reorderable) ---
                 val orderPref = trackPreferences.authorityTrackerOrder()
