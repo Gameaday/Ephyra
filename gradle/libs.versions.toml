@@ -37,7 +37,7 @@ kotlin-compose-gradle = { module = "org.jetbrains.kotlin:compose-compiler-gradle
 quickjs-android = { group = "com.github.zhanghai.quickjs-java", name = "quickjs-android", version = "547f5b1597" }
 jsoup = "org.jsoup:jsoup:1.23.2"
 unifile = "com.github.tachiyomiorg:unifile:e0def6b3dc"
-libarchive = "me.zhanghai.android.libarchive:library:1.1.6"
+libarchive = "me.zhanghai.android.libarchive:library:1.1.7"
 compose-runtime = "androidx.compose.runtime:runtime:1.12.1"
 
 sqlite-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "sqlite" }
@@ -56,7 +56,7 @@ coil-gif = { module = "io.coil-kt.coil3:coil-gif" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose" }
 coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp" }
 
-jxl-coder-coil = "io.github.awxkee:jxl-coder-coil:2.2.0"
+jxl-coder-coil = "io.github.awxkee:jxl-coder-coil:2.6.1"
 
 material = "com.google.android.material:material:1.14.0"
 compose-materialmotion = "io.github.fornewid:material-motion-compose-core:2.0.1"
