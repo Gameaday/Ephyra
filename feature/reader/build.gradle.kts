@@ -7,6 +7,13 @@ plugins {
 
 android {
     namespace = "ephyra.feature.reader"
+
+    testOptions {
+        unitTests {
+            // Required for Robolectric-based Compose UI tests (resource loading).
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
@@ -28,4 +35,7 @@ dependencies {
     testImplementation(libs.bundles.test)
     testImplementation(kotlinx.coroutines.test)
     testRuntimeOnly(libs.junit.platform.launcher)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.compose.ui.test.junit4)
+    testDebugImplementation(libs.compose.ui.test.manifest)
 }

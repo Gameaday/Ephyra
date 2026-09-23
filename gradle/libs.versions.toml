@@ -37,7 +37,7 @@ kotlin-compose-gradle = { module = "org.jetbrains.kotlin:compose-compiler-gradle
 quickjs-android = { group = "com.github.zhanghai.quickjs-java", name = "quickjs-android", version = "547f5b1597" }
 jsoup = "org.jsoup:jsoup:1.23.2"
 unifile = "com.github.tachiyomiorg:unifile:e0def6b3dc"
-libarchive = "me.zhanghai.android.libarchive:library:1.1.7"
+libarchive = "me.zhanghai.android.libarchive:library:1.1.6"
 compose-runtime = "androidx.compose.runtime:runtime:1.12.1"
 
 sqlite-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "sqlite" }
@@ -85,6 +85,9 @@ paging-compose = { module = "androidx.paging:paging-compose", version.ref = "pag
 paging-common = { module = "androidx.paging:paging-common", version.ref = "paging" }
 
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+# Vintage engine: JUnit4-based tests (e.g. Robolectric/Compose rules) are silently
+# skipped under useJUnitPlatform() without it.
+junit-vintage = { module = "org.junit.vintage:junit-vintage-engine", version.ref = "junit" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 kotest-assertions = "io.kotest:kotest-assertions-core:6.2.5"
 mockk = "io.mockk:mockk:1.14.11"
@@ -133,5 +136,5 @@ coil = ["coil-core", "coil-gif", "coil-compose", "coil-network-okhttp"]
 room = ["room-runtime", "room-ktx", "room-paging"]
 paging = ["paging-runtime", "paging-compose", "paging-common"]
 js-engine = ["quickjs-android"]
-test = ["junit-jupiter", "kotest-assertions", "mockk", "archunit", "turbine"]
+test = ["junit-jupiter", "junit-vintage", "kotest-assertions", "mockk", "archunit", "turbine"]
 markdown = ["markdown-core", "markdown-coil"]
