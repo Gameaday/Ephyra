@@ -51,15 +51,7 @@ class BackupCreator(
 
     suspend fun createBackup(uri: Uri? = null, options: BackupOptions? = null): Uri {
         val effectiveOptions = options ?: BackupOptions()
-        val filename = getFilename()
-        val parentDir = if (uri != null) {
-            UniFile.fromUri(context, uri)
-        } else {
-            storageManager.getAutomaticBackupsDirectory()
-        } ?: throw Exception("Failed to find or create backup directory")
-
-        val file = parentDir.createFile(filename)
-            ?: throw Exception("Failed to create backup file")
+        val file = resolveTargetFile(uri, getFilename())
 
         val backupMangas = mangaBackupCreator(getFavorites.await(), effectiveOptions)
         val backup = Backup(
@@ -75,7 +67,48 @@ class BackupCreator(
         file.openOutputStream().sink().gzip().buffer().use {
             it.write(byteArray)
         }
+
+        // Only automatic runs update the "last auto backup" stat; manual backups are
+        // user-visible events and don't drive the Settings display.
+        if (uri == null) {
+            backupPreferences.lastAutoBackupTimestamp().set(System.currentTimeMillis())
+        }
         return file.uri
+    }
+
+    /**
+     * Resolves the destination file for a backup run.
+     *
+     * Manual runs receive the URI of a document SAF's CreateDocument already created
+     * (and named), so it is the target file itself — creating a *child* under it fails
+     * on every provider. Automatic runs resolve the configured storage directory, with
+     * a fallback to app-specific external storage (always writable, needs no
+     * permissions) because the platform default path at the shared-storage root cannot
+     * be created under scoped storage, which is what made every scheduled backup fail.
+     */
+    private fun resolveTargetFile(uri: Uri?, filename: String): UniFile {
+        if (uri != null) {
+            return UniFile.fromUri(context, uri)
+                ?: throw IllegalStateException("Invalid backup destination: $uri")
+        }
+
+        val primary = runCatching { storageManager.getAutomaticBackupsDirectory() }
+            .onFailure { logcat(LogPriority.WARN, it) { "Configured backup directory unavailable" } }
+            .getOrNull()
+        if (primary != null) {
+            runCatching { primary.createFile(filename) }
+                .onFailure { logcat(LogPriority.WARN, it) { "Could not create backup file in ${primary.uri}" } }
+                .getOrNull()?.let { return it }
+        }
+
+        val fallbackDir = context.getExternalFilesDir(StorageManager.AUTOMATIC_BACKUPS_PATH)
+            ?.also { if (!it.exists()) it.mkdirs() }
+            ?: throw IllegalStateException(
+                "No writable backup directory. Pick a storage location in Settings \u2192 Data and storage.",
+            )
+        logcat(LogPriority.WARN, IllegalStateException("Using app-specific backup directory: $fallbackDir"))
+        return runCatching { UniFile.fromFile(fallbackDir)?.createFile(filename) }.getOrNull()
+            ?: throw IllegalStateException("Failed to create backup file in $fallbackDir")
     }
 
     companion object {

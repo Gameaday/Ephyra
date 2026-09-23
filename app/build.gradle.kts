@@ -312,6 +312,7 @@ dependencies {
     // Tests
     testImplementation(libs.bundles.test)
     testRuntimeOnly(libs.junit.platform.launcher)
+    testImplementation(androidx.work.testing)
 
     testImplementation(kotlinx.coroutines.test)
     testImplementation("org.robolectric:robolectric:4.17")

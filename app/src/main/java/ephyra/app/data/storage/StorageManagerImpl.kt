@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.shareIn
+import java.io.File
 import javax.inject.Inject
 
 class StorageManagerImpl @Inject constructor(
@@ -57,7 +58,15 @@ class StorageManagerImpl @Inject constructor(
 
     private fun getBaseDir(uri: String): UniFile? {
         if (uri.isEmpty()) return null
-        return UniFile.fromUri(context, uri.toUri())
+        val parsed = uri.toUri()
+        // The platform-default raw path is stored without anything ever creating the
+        // directory (the exists() gate below would keep baseDir null forever). Try to
+        // create it — scoped storage may deny the shared-storage root, in which case
+        // callers receive null and use their own fallbacks (see BackupCreator).
+        if (parsed.scheme == "file" || parsed.scheme == null) {
+            parsed.path?.let { path -> runCatching { File(path).mkdirs() } }
+        }
+        return UniFile.fromUri(context, parsed)
             .takeIf { it?.exists() == true }
     }
 
