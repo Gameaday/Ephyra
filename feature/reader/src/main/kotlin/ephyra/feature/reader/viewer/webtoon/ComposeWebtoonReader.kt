@@ -74,6 +74,7 @@ import ephyra.core.common.util.system.ImageUtil
 import ephyra.feature.reader.model.ChapterTransition
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
+import ephyra.feature.reader.viewer.ChapterPositionTracker
 import ephyra.feature.reader.viewer.ViewerNavigation
 import ephyra.feature.reader.viewer.readerPageMemoryCacheKey
 import ephyra.presentation.core.data.coil.cropBorders
@@ -227,16 +228,12 @@ fun ComposeWebtoonReader(
         // until the initial layout pass has settled.
         // One-shot positioning: run once per chapter, never on late page arrivals.
         // Re-firing on items.size changes (pages arriving async) yanks the scroll position
-        // mid-chapter, which reads as jumps between sections.
-        var positionedChapterId by remember { mutableStateOf<Long?>(null) }
-        // Evict the marker when the chapter changes so a revisit re-positions correctly
-        // instead of accumulating ids over a long session.
-        if (positionedChapterId != null && positionedChapterId != currentChapterId) {
-            positionedChapterId = null
-        }
+        // mid-chapter, which reads as jumps between sections. The shared tracker resets its
+        // marker on chapter change, so revisits still re-position exactly once without
+        // accumulating ids over a long session.
+        val positionTracker = remember { ChapterPositionTracker() }
         LaunchedEffect(currentChapterId, items.size) {
-            if (currentChapterId != null && positionedChapterId != currentChapterId) {
-                positionedChapterId = currentChapterId
+            if (currentChapterId != null && positionTracker.claimPosition(currentChapterId)) {
                 lazyListState.scrollToItem(
                     index = initialIndex.coerceIn(0, (items.size - 1).coerceAtLeast(0)),
                     scrollOffset = 0,
@@ -400,6 +397,22 @@ fun ComposeWebtoonReader(
                             is ChapterTransition.Prev -> "prev_trans_${item.from.chapter.id}"
                             is ChapterTransition.Next -> "next_trans_${item.from.chapter.id}"
                             else -> "webtoon_item_$index"
+                        }
+                    },
+                    // Separate composition pools so flings don't reuse a spinner/transition
+                    // composition for a weight-shared slice column (or vice versa) — the
+                    // main source of blank/mis-measured items on fast scroll.
+                    contentType = { _, item ->
+                        when (item) {
+                            is ChapterTransition -> "webtoon_transition"
+                            is ReaderPage ->
+                                when {
+                                    viewer.config.imageCropBorders ||
+                                        item.mergedBitmap != null -> "webtoon_single"
+                                    item.status == Page.State.Ready -> "webtoon_page_ready"
+                                    else -> "webtoon_page_pending"
+                                }
+                            else -> "webtoon_item"
                         }
                     },
                 ) { _, item ->

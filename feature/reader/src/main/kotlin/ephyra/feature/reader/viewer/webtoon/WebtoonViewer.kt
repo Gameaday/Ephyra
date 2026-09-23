@@ -13,6 +13,7 @@ import ephyra.feature.reader.model.ChapterTransition
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.model.ViewerChapters
+import ephyra.feature.reader.viewer.ChapterPositionTracker
 import ephyra.feature.reader.viewer.Viewer
 import ephyra.feature.reader.viewer.calculateChapterGap
 import kotlinx.coroutines.MainScope
@@ -78,8 +79,7 @@ class WebtoonViewer(
     var onNextChapter: (() -> Unit)? = null
     var onPreviousChapter: (() -> Unit)? = null
 
-    private var activeChapterId: Long? = null
-    private var positionedChapterId: Long? = null
+    private val positionTracker = ChapterPositionTracker()
 
     private val fallbackView by lazy { View(activity) }
 
@@ -188,17 +188,17 @@ class WebtoonViewer(
             }
         }
 
-        if (activeChapterId != chapters.currChapter.chapter.id) {
-            activeChapterId = chapters.currChapter.chapter.id
-            positionedChapterId = null
-        }
-
         val curr = chapters.currChapter
         val pages = curr.pages
         val isAlreadyViewingCurrentChapter =
             (currentPage as? ReaderPage)?.chapter?.chapter?.id == curr.chapter.id
-        if (pages != null && positionedChapterId != curr.chapter.id && !isAlreadyViewingCurrentChapter) {
-            positionedChapterId = curr.chapter.id
+        // `pages != null` repeated after the claim purely to restore the smart-cast the
+        // compiler needs inside the block; canPosition already required it.
+        if (positionTracker.claimPosition(
+                curr.chapter.id,
+                canPosition = pages != null && !isAlreadyViewingCurrentChapter,
+            ) && pages != null
+        ) {
             val targetPage = when {
                 curr.startFromEnd -> pages.lastOrNull { !it.isHidden } ?: pages.last()
                 curr.startingAtBeginning -> pages.firstOrNull { !it.isHidden } ?: pages.first()
