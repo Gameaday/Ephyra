@@ -10,6 +10,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkerParameters
 import ephyra.app.data.backup.BackupNotifier
+import ephyra.core.common.util.system.cancelNotification
 import ephyra.core.common.util.system.isRunning
 import ephyra.core.common.util.system.logcat
 import ephyra.core.common.util.system.setForegroundSafely
@@ -44,7 +45,9 @@ class BackupCreateJob(
             Result.success()
         } catch (e: CancellationException) {
             // The system stopped the worker (reboot, OOM trim, app force-stop). This is
-            // not a backup failure — surfacing it spams a false "backup failed" alert.
+            // not a backup failure — surface neither a false alert nor a stuck progress
+            // notification (no success/error path runs to cancel it).
+            context.cancelNotification(Notifications.ID_BACKUP_PROGRESS)
             throw e
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e) { "Backup failed" }

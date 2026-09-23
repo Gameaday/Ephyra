@@ -9,12 +9,15 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkerParameters
 import ephyra.app.data.backup.BackupNotifier
 import ephyra.core.common.util.storage.BackupStaging
+import ephyra.core.common.util.system.cancelNotification
 import ephyra.core.common.util.system.isRunning
 import ephyra.core.common.util.system.logcat
 import ephyra.core.common.util.system.setForegroundSafely
 import ephyra.core.common.util.system.workManager
 import ephyra.data.backup.restore.BackupRestorer
 import ephyra.data.backup.restore.RestoreOptions
+import ephyra.data.notification.Notifications
+import kotlinx.coroutines.CancellationException
 import logcat.LogPriority
 
 class BackupRestoreJob(
@@ -39,11 +42,18 @@ class BackupRestoreJob(
             }
             // showRestoreComplete is called by BackupRestorer.restore() itself
             Result.success()
+        } catch (e: CancellationException) {
+            // System stop, not a restore failure — no false error alert; the finally
+            // block still drops the ongoing progress notification and staged file.
+            throw e
         } catch (e: Exception) {
-            logcat(LogPriority.ERROR, e)
-            notifier.showRestoreError(e.message)
+            logcat(LogPriority.ERROR, e) { "Restore failed" }
+            notifier.showRestoreError(e.message ?: e.toString())
             Result.failure()
         } finally {
+            // Idempotent: success/error paths cancel it too; the cancellation path above
+            // depends on it so a stopped restore can't leave an ongoing notification.
+            context.cancelNotification(Notifications.ID_RESTORE_PROGRESS)
             BackupStaging.clearStagedBackup(context)
         }
     }

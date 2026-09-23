@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.launch
 import java.io.File
 import javax.inject.Inject
 
@@ -42,8 +43,9 @@ class StorageManagerImpl @Inject constructor(
         .shareIn(scope, SharingStarted.Lazily, 1)
 
     init {
-        // Ensure directories exist for the current storage location when StorageManager is created.
-        baseDir?.let(::initializeDirectories)
+        // Directory creation is SAF IPC — keep it off the constructing (usually main)
+        // thread to avoid jank/ANR during Hilt singleton initialization.
+        baseDir?.let { dir -> scope.launch { initializeDirectories(dir) } }
 
         storagePreferences.baseStorageDirectory().changes()
             .drop(1)
@@ -83,7 +85,12 @@ class StorageManagerImpl @Inject constructor(
     }
 
     override fun getDownloadsDirectory(): UniFile? {
-        return baseDir?.createDirectory(StorageManager.DOWNLOADS_PATH)
+        baseDir?.createDirectory(StorageManager.DOWNLOADS_PATH)?.let { return it }
+        // App-specific fallback: the configured base dir may be unwritable (the legacy
+        // default sits at the shared-storage root, which scoped storage denies).
+        // Downloads are app-internal content — keep them functional regardless.
+        return context.getExternalFilesDir(StorageManager.DOWNLOADS_PATH)
+            ?.let { UniFile.fromFile(it) }
     }
 
     override fun getLocalSourceDirectory(): UniFile? {
