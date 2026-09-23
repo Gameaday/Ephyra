@@ -1,4 +1,4 @@
-package ephyra.feature.reader.viewer.webtoon
+﻿package ephyra.feature.reader.viewer.webtoon
 
 import android.graphics.PointF
 import androidx.compose.foundation.Image
@@ -496,6 +496,13 @@ private fun WebtoonPageItem(
         page,
         page.cachedBytes,
         page.mergedBitmap,
+        // React to the page status transition (Queue -> ... -> Ready). The loader worker
+        // sets [page.stream] immediately before flipping [page.status] to Ready; without
+        // this key the produceState block never re-runs after the first compose, so a
+        // strip whose bytes arrive after first layout stays blank until the composition is
+        // discarded (scroll off & back). `page.status` is collected from statusFlow and is
+        // stable per transition, so this only triggers the cheap null-gated re-check.
+        status,
     ) {
         if (value == null) {
             val bytes = page.cachedBytes ?: withIOContext {
@@ -635,6 +642,11 @@ private fun WebtoonPageItem(
                     // state re-resolves instead of serving the stale entry (blank section
                     // that only loads after scroll-away-and-back).
                     page.cachedBytes?.size,
+                    // Re-run when the page crosses into Ready: the worker sets [page.stream]
+                    // just before marking Ready, so reacting to the status transition lets the
+                    // bytes be read (and cachedBytes populated) on first paint instead of
+                    // forcing a scroll-away-and-back recycle to invalidate the composition.
+                    status,
                 ) {
                     if (page.mergedBitmap == null && value == null) {
                         value = withIOContext {
