@@ -32,6 +32,9 @@ android {
     testOptions {
         unitTests {
             isIncludeAndroidResources = true
+            // Robolectric is only pulled in by the Room/DAO suites; plain JVM tests still touch
+            // android.util.Log through the project's `logcat` helper, which must not throw.
+            isReturnDefaultValues = true
         }
     }
 }

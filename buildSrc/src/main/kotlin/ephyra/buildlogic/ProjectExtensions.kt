@@ -16,6 +16,7 @@ import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.compose.compiler.gradle.ComposeCompilerGradlePluginExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.io.File
+import java.time.Duration
 
 val Project.androidxCatalog get() = extensions.getByType<VersionCatalogsExtension>().named("androidx")
 val Project.composeCatalog get() = extensions.getByType<VersionCatalogsExtension>().named("compose")
@@ -178,9 +179,19 @@ internal fun Project.configureCompose(commonExtension: CommonExtension) {
 internal fun Project.configureTest() {
     tasks.withType<Test>().configureEach {
         useJUnitPlatform()
+        // Bound the number of forked test JVMs. Every module schedules its own Test tasks and
+        // `org.gradle.parallel=true` runs those tasks concurrently, so forking on every processor
+        // spawns hundreds of JVMs during a full build. Robolectric (API 36) forks are memory heavy,
+        // and oversubscribing CPU/memory kills test workers, which surfaces as
+        // `java.io.EOFException` / `NoSuchFileException` on the test task instead of a test failure.
         maxParallelForks = 1
+        // Fail a hung suite instead of letting it block the build forever.
+        timeout.set(Duration.ofMinutes(10))
         testLogging {
             events(TestLogEvent.PASSED, TestLogEvent.SKIPPED, TestLogEvent.FAILED)
+            showExceptions = true
+            showCauses = true
+            showStackTraces = true
         }
     }
 }

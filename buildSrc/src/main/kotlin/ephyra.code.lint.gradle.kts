@@ -32,7 +32,7 @@ tasks.register("ktlintCheck") {
     dependsOn("spotlessKotlinCheck")
 }
 
-tasks.register("detekt") {
-    group = "verification"
-    description = "Runs static code analysis"
-}
+// NOTE: there is deliberately no `detekt` task here. This build does not apply the detekt plugin,
+// so a task registered under that name would silently do nothing while CI reported a passing
+// "static analysis" step. Wire a real detekt (plugin + config + baseline) before re-adding one, and
+// add it to the CI verification command at the same time.

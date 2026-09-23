@@ -1,12 +1,10 @@
 package ephyra.data.track.kitsu.dto
 
+import ephyra.data.track.TrackDateFormats
 import ephyra.data.track.kitsu.KitsuApi
 import ephyra.data.track.model.TrackSearch
 import ephyra.domain.track.service.TrackerManager
 import kotlinx.serialization.Serializable
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @Serializable
 data class KitsuSearchResult(
@@ -46,10 +44,7 @@ data class KitsuAlgoliaSearchItem(
             score = averageRating ?: -1.0
             publishing_status = if (endDate == null) "Publishing" else "Finished"
             publishing_type = subtype ?: ""
-            start_date = startDate?.let {
-                val outputDf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-                outputDf.format(Date(it * 1000))
-            } ?: ""
+            start_date = startDate?.let { TrackDateFormats.formatEpochSeconds(it) }.orEmpty()
         }
     }
 }

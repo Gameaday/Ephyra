@@ -2,12 +2,11 @@ package ephyra.data.track.anilist.dto
 
 import ephyra.core.common.util.lang.htmlDecode
 import ephyra.data.database.models.Track
+import ephyra.data.track.TrackDateFormats
 import ephyra.data.track.anilist.Anilist
 import ephyra.data.track.anilist.AnilistApi
 import ephyra.data.track.model.TrackSearch
 import ephyra.domain.track.service.TrackerManager
-import java.text.SimpleDateFormat
-import java.util.Locale
 
 data class ALManga(
     val remoteId: Long,
@@ -38,12 +37,7 @@ data class ALManga(
         genres = this@ALManga.genres
         start_year = this@ALManga.startYear
         if (startDateFuzzy != 0L) {
-            start_date = try {
-                val outputDf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-                outputDf.format(startDateFuzzy)
-            } catch (e: IllegalArgumentException) {
-                ""
-            }
+            start_date = TrackDateFormats.formatDate(startDateFuzzy).orEmpty()
         }
         staff.edges.forEach {
             val name = it.node.name() ?: return@forEach

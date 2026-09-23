@@ -15,6 +15,9 @@ build/
 # Configuration
 local.properties
 
+# Telemetry/Firebase build inputs (only needed with -Pinclude-telemetry)
+google-services.json
+
 # Logs
 *.log
 

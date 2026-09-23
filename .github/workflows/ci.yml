@@ -36,4 +36,4 @@ jobs:
           gradle-home-cache-cleanup: true
 
       - name: Run PR Verification
-        run: ./gradlew testDebugUnitTest detekt ktlintCheck --continue
+        run: ./gradlew testDebugUnitTest ktlintCheck --continue
