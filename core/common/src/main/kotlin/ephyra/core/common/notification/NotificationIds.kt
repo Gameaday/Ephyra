@@ -15,7 +15,16 @@ object NotificationIds {
      * Common notification channel and IDs used anywhere.
      */
     const val CHANNEL_COMMON = "common_channel"
-    const val ID_DOWNLOAD_IMAGE = 2
+
+    /**
+     * Reader "save image" progress/completion notification.
+     *
+     * Negative IDs are reserved for app-managed notifications; the positive range belongs
+     * to the updater (see [ID_APP_UPDATER]). Previously this was `2`, colliding with
+     * [ID_APP_UPDATE_PROMPT]: notification IDs are app-global, so each post silently
+     * replaced the other (saving an image dismissed the update prompt and vice versa).
+     */
+    const val ID_DOWNLOAD_IMAGE = -801
 
     /**
      * Notification channel and IDs used by the library updater.

@@ -1,13 +1,20 @@
 package ephyra.app.data.backup
 
+import android.content.ContentResolver
 import android.content.Context
 import android.graphics.BitmapFactory
+import android.net.Uri
 import ephyra.app.R
+import ephyra.app.data.notification.NotificationReceiver
 import ephyra.core.common.i18n.stringResource
+import ephyra.core.common.util.storage.getUriCompat
 import ephyra.core.common.util.system.cancelNotification
+import ephyra.core.common.util.system.logcat
 import ephyra.core.common.util.system.notificationBuilder
 import ephyra.core.common.util.system.notify
 import ephyra.data.notification.Notifications
+import logcat.LogPriority
+import java.io.File
 import ephyra.domain.backup.service.BackupNotifier as DomainBackupNotifier
 
 class BackupNotifier(private val context: Context) : DomainBackupNotifier {
@@ -31,16 +38,50 @@ class BackupNotifier(private val context: Context) : DomainBackupNotifier {
     override fun showBackupComplete(uriString: String) {
         context.cancelNotification(Notifications.ID_BACKUP_PROGRESS)
 
+        val backupUri = Uri.parse(uriString)
+        // Offer a share action so the user can actually retrieve the file: the destination
+        // may be app-specific storage (not browsable) or a SAF provider whose path is not
+        // meaningful outside the app. Conversion can legitimately fail (e.g. a destination
+        // outside every configured FileProvider root), so the notification must still post.
+        val sharePendingIntent = runCatching {
+            shareableUri(backupUri)?.let { shareable ->
+                NotificationReceiver.shareBackupPendingActivity(context, shareable)
+            }
+        }.onFailure {
+            logcat(LogPriority.WARN, it) { "Sharing unavailable for backup at $uriString" }
+        }.getOrNull()
+
         context.notify(
             Notifications.ID_BACKUP_COMPLETE,
             Notifications.CHANNEL_BACKUP_RESTORE_COMPLETE,
         ) {
             setContentTitle(context.stringResource(ephyra.app.core.common.R.string.backup_created))
-            setContentText(android.net.Uri.parse(uriString).path)
+            setContentText(backupUri.path)
             setSmallIcon(ephyra.app.core.common.R.drawable.ic_ephyra)
             setLargeIcon(notificationBitmap)
             setAutoCancel(true)
+            sharePendingIntent?.let {
+                addAction(
+                    ephyra.app.core.common.R.drawable.ic_ephyra,
+                    context.stringResource(ephyra.app.core.common.R.string.action_share),
+                    it,
+                )
+            }
         }
+    }
+
+    /**
+     * Converts a backup destination into a URI other apps are allowed to read.
+     *
+     * SAF destinations are already content URIs. Raw file destinations must be routed
+     * through our FileProvider — handing a bare `file://` URI to another app cannot be
+     * granted read access on modern Android. Returns `null` when the URI is not shareable,
+     * in which case the notification simply omits the action.
+     */
+    private fun shareableUri(uri: Uri): Uri? = when (uri.scheme) {
+        ContentResolver.SCHEME_CONTENT -> uri
+        "file" -> uri.path?.let { path -> File(path).getUriCompat(context) }
+        else -> null
     }
 
     override fun showBackupError(error: String?) {
