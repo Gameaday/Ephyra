@@ -1,149 +1,83 @@
-# Ephyra: Modern Android Native Architecture Roadmap
+# Ephyra Reconstruction Program
 
-Ephyra has undergone a fundamental architectural pivot. We have deliberately severed ties with legacy codebases, "historical shackles," and prior works (such as Tachiyomi and Mihon). Ephyra is no longer a fork; it is a ground-up, modern Android-exclusive application.
+> **Authoritative status:** active program
+> **Baseline:** `4ec5b2c15` (`nightly-43-g4ec5b2c15`)
+> **Last verified:** 2026-09-24
+> **Target:** Android-native Ephyra 2.0 with explicit state, resource, navigation, and media ownership
 
-This document serves as the authoritative guide for our target architectural state.
+This file is the single entry point for the reconstruction program. If another document disagrees with this file, the disagreement is a documentation defect and must be corrected before implementation continues.
 
----
+## Program documents
 
-## 🌟 Core Architectural Pillars
+1. [`doc/REBUILD_PROGRAM.md`](doc/REBUILD_PROGRAM.md)  complete phased architecture and delivery plan.
+2. [`doc/REBUILD_EXECUTION_GUIDE.md`](doc/REBUILD_EXECUTION_GUIDE.md)  operating procedure for humans and coding agents.
+3. [`doc/REBUILD_STATUS.md`](doc/REBUILD_STATUS.md)  verified baseline, open defects, and task status ledger.
+4. [`doc/adr/`](doc/adr/)  accepted architectural decisions that must not be silently reversed.
+5. [`doc/CACHE_POLICY.md`](doc/CACHE_POLICY.md)  current cache invariants; preserve or supersede them through an ADR.
+6. [`doc/ARCHITECTURAL_ROADMAP.md`](doc/ARCHITECTURAL_ROADMAP.md)  historical modernization roadmap, superseded by this program.
 
-We prioritize native, mature Android solutions to drastically reduce maintenance overhead and maximize development speed.
+## Program outcome
 
-### 1. 100% Android Exclusive
-- **No Kotlin Multiplatform (KMP)**: All modules are standard Android modules (`com.android.application` or `com.android.library`).
-- **Simplified Source Sets**: We do not use `commonMain` or `androidMain`. All code resides in standard `src/main/` directories.
+Build a modern Android application in which:
 
-### 2. 100% Compile-Time Determinism
-- **Dependency Injection**: We use **Hilt (Dagger)**. Every single dependency must be explicitly and statically resolved at compile time. Runtime reflective service locators (like Koin or custom registries) are strictly prohibited.
-- **Fail Fast**: If the dependency graph is incomplete, the app must fail to compile.
+- every state has one authoritative owner;
+- every visible setting has an end-to-end effect;
+- rendering, persistence, and navigation do not share mutable ownership;
+- source bytes, decoded images, and render artifacts have distinct bounded lifecycles;
+- the reader has one gesture arbiter per viewport;
+- the continuous reader uses document coordinates rather than per-item transforms;
+- the main application has one navigation owner;
+- Material 3 defines interaction semantics without forcing specialized media behavior into generic components;
+- correctness is proven by executable contracts, instrumentation, screenshots, and benchmarks rather than optimistic comments.
 
-### 3. Jetpack Native UI & State
-- **Jetpack Navigation Compose**: We use official Android Navigation rather than third-party wrappers (like Voyager).
-- **Android ViewModels**: State holders are built on `androidx.lifecycle.ViewModel` integrated directly with Hilt via `@HiltViewModel`.
-- **Strict Unidirectional Data Flow (UDF)**: ViewModels expose a single, immutable `StateFlow<ViewState>` and consume discrete `Intent` or `Event` models. No two-way data binding.
+## Non-negotiable rules
 
-### 4. Native Android Resources
-- **Localization**: We rely entirely on native Android `res/values/strings.xml` for internationalization.
-- **No Third-Party Asset Managers**: Libraries like `moko-resources` are prohibited. Android natively handles plurals, formatting, and RTL languages perfectly.
+1. **Do not declare a device behavior complete from code inspection or JVM tests alone.**
+2. **Do not add a workaround on top of an unresolved ownership conflict.**
+3. **Do not preserve an option merely because it exists in the current UI.**
+4. **Do not introduce another cache layer without a documented identity, budget, and invalidation rule.**
+5. **Do not allow features to depend on data implementations or on each other without an explicit allowlist.**
+6. **Do not transform LazyColumn webtoon items vertically; continuous zoom belongs to a document viewport.**
+7. **Do not keep two active reader/navigation architectures after replacement.**
+8. **Every phase must compile, pass its automated gates, update status evidence, and remain independently reviewable.**
 
-### 5. Content-Agnostic & Source-Agnostic Engine
-- **Unified Identity**: Library content uses a Canonical ID, preventing duplicate series entries across different tracking services.
-- **No Legacy Extensions**: The legacy `eu.kanade.*` extension API surface is permanently deprecated. We do not support insecure dynamic APK extensions.
-- **Sandboxed Scrapers**: We favor sandboxed Javascript (QuickJS) or declarative scraping models that are Play Store compliant.
+## Phase summary
 
----
+| Phase | Outcome | Exit gate |
+|---|---|---|
+| 0 | Freeze and establish truth | Reproducible baseline and defect ledger |
+| 1 | Security and platform safety | No hardcoded secrets or unjustified exemptions |
+| 2 | Quality infrastructure | Device, screenshot, instrumentation, and benchmark gates exist |
+| 3 | Dependency and state foundations | Target graph and effect model enforced |
+| 4 | Media source and image planning | Stable identity, crop geometry, decode policy |
+| 5 | Bounded working and tile caches | Byte-budgeted ownership |
+| 6 | Pure reader core | Deterministic state, commands, chapter policy |
+| 7 | Paged reader | Proven fit/pinch/pan/page navigation |
+| 8 | Continuous reader | Proven virtualized document zoom and scroll |
+| 9 | Application shell and navigation | One main NavHost and adaptive shell |
+| 10 | Library and Series slice | Shared transition, back, predictive back proven |
+| 11 | Remaining product slices | Updates, browse, downloads, history, settings migrated |
+| 12 | Source, data, startup, workers | Typed outcomes, safe startup, bounded work |
+| 13 | Release and legacy deletion | New architecture is the only production architecture |
 
-## 🛠️ Ground-Up Rewrite Phases
+No phase may begin implementation until the prior phase exit criteria are recorded as `VERIFIED` in [`doc/REBUILD_STATUS.md`](doc/REBUILD_STATUS.md).
 
-We are currently executing a phased transition to reach the target state described above.
+## Immediate queue
 
-### Phase 1: De-KMP & Build System Simplification [COMPLETE]
-- Remove `org.jetbrains.kotlin.multiplatform` from all build scripts.
-- Convert `:i18n`, `:source-api`, `:source-local` to standard Android libraries.
-- Collapse all `commonMain` and `androidMain` directories into `main`.
-- Remove Legacy references and verbiage such as i18n, source-api, source-local.
+1. `GOV-001` baseline tag recorded: `reconstruction-baseline-2026-09-24` at `4ec5b2c15`.
+2. `GOV-002` this program supersedes stale roadmap claims.
+3. `TST-001` define deterministic reader fixtures and acceptance fixtures.
 
-### Phase 2: Hilt Integration & DI Purge [COMPLETE]
-- Setup Hilt/KSP globally in `libs.versions.toml` and root `build.gradle.kts`.
-- Purge manual Injekt/Koin registries, `AppDependencyContainer`, and all Koin remnants.
-- Annotate `App` with `@HiltAndroidApp` and implement standard `@Module` and `@Inject` bindings.
-- Bridge WorkManager background jobs via an elegant Hilt `@EntryPoint` factory (`AppWorkerFactory`).
-- Implement Hilt-backed deterministic `CoreContainer` compat-shim to facilitate zero-downtime incremental migration.
+Do **not** resume ad hoc reader zoom, crop, or transition patches before `TST-001` is complete.
 
-### Phase 3: Localization Simplification [COMPLETE]
-- Strip out `moko-resources` completely from gradle and application code.
-- Migrate all `commonMain/moko-resources` XML definitions directly to standard Android `src/main/res/values/strings.xml` structures.
-- Systematically replace all class types (`StringResource`, `PluralsResource`) and imports with native Android resource `Int` IDs (`@StringRes`, `@PluralsRes`).
+## Current truth
 
-### Phase 4: Navigation & State Modernization [COMPLETE]
-- [x] Integrate Jetpack Navigation `NavHost` in `MainActivity`.
-- [x] Decommission Voyager `TabNavigator` in `HomeScreen`:
-    - [x] Map `LibraryTab`, `UpdatesTab`, `HistoryTab`, `BrowseTab`, `MoreTab` to Jetpack Navigation routes.
-    - [x] Implement a Hilt-aware `BottomNavigationBar` that interacts with `NavController`.
-- [x] Migrate `Screen` objects to Composable functions:
-    - [x] `LibraryTab` -> `LibraryScreen` (Composable)
-    - [x] `UpdatesTab` -> `UpdatesScreen` (Composable)
-    - [x] `HistoryTab` -> `HistoryScreen` (Composable)
-    - [x] `BrowseTab` -> `BrowseScreen` (Composable)
-    - [x] `MoreTab` -> `MoreScreen` (Composable)
-- [x] Complete `ScreenModel` to `ViewModel` conversion:
-    - [x] Remove `cafe.adriel.voyager.core.model.StateScreenModel` from all classes.
-    - [x] Replace `screenModelScope` with `viewModelScope`.
-    - [x] Standardize on `StateFlow<ViewState>` and `onEvent(Intent)` pattern.
-    - [x] Key targets: `DeepLinkScreenModel`, `MigrationListScreenModel`, `CoverSearchScreenModel`.
+The current application is not considered a complete native reader architecture. These user-reported defects remain open at the baseline:
 
-### Phase 5: Database & Persistence [COMPLETE]
-- [x] Initialize Room (`EphyraDatabase.kt`).
-- [x] Progressively migrate SQLDelight `.sq` definitions to Room:
-    - [x] `mangas.sq` -> `MangaEntity` & `MangaDao`.
-    - [x] `chapters.sq` -> `ChapterEntity` & `ChapterDao`.
-    - [x] `history.sq` -> `HistoryEntity` & `HistoryDao`.
-    - [x] `categories.sq` -> `CategoryEntity` & `CategoryDao`.
-- [x] Replace `SQLDelight` drivers with Room in all Repositories.
-- [x] Standardize on DataStore (Preferences) for all key-value configuration, removing legacy `SharedPreferences` wrappers and integrating explicit `SharedPreferencesMigration` rules for all core stores.
+- paged reader zoom does not produce the intended result;
+- webtoon zoom primarily widens content rather than providing coherent document zoom;
+- sliced webtoon content can overlap or destabilize during zoom/scroll;
+- Series-to-Library return motion remains visually unacceptable;
+- crop-borders behavior requires fresh device acceptance after the Coil 3 rewrite.
 
-### Phase 6: UI & Feature Parity [COMPLETE]
-- [x] **Settings**: Implement `PreferenceFragmentCompat` styled with Material 3.
-- [x] **Library**: Implement robust grid/list views with two-handed gesture support.
-- [x] **Reader**: Implement "Two-Handed" reading gesture (swipe bottom for next page).
-
-### Phase 7: Remote Content Retrieval & Management [COMPLETE]
-- [x] Add Remote Content Source Manager
-- [x] Add Remote Tracking Service Manager
-- [x] Add Remote Content Scanner
-- [x] Add Remote Content Search
-- [x] Add Local Content Manager
-- [x] Add Local Content Scanner
-- [x] Add Local Content Search
-- [x] Add Merge Content
-- [x] Add Content Details
-- [x] Add Content opportunistic Merge
-- [x] Add Content Sync Services (Remote and Local)
-- [x] Add Content retrieval preference hierarchy
-- [x] Add Update Checker
-- [x] Add Downloader
-
-### Phase 8: Clean Arch & Domain Separation [COMPLETE]
-- [x] Identify core business logic in Repository and UseCase layers.
-- [x] Abstract `ContentDatabase`, `RemoteSource`, `TrackingService` behind interfaces in the domain layer.
-- [x] Enforce `sealed class Result` wrappers to handle remote/local data operations explicitly.
-
-### Phase 9: Advanced Features & Polish
-- [ ] Add Migration tools (Tachiyomi and Mihon).
-- [x] Implement **AniList Reading List Import** (parity with MAL import).
-- [x] Implement **Two-way Tracker Sync**: push library additions back to AniList/MAL.
-- [ ] Implement **Collections**: custom, smart, and auto-generated groups (beyond categories).
-- [ ] Implement **Personal Notes Sharing**: export manga cards with user-written notes.
-- [ ] Improve performance and memory usage.
-- [ ] Improve battery efficiency.
-- [ ] Add support for more content types and tracking services.
-
-### Phase 10: Improve app polish
-- improve ui and user experience
-- improve app onboarding
-- improve app performance and memory usage
-- improve app battery efficiency
-- improve app stability
-- improve app security
-- improve app accessibility
-- improve app test coverage
-
-### Phase 11: Refine app architecture and organization [COMPLETE]
-- [x] Deprecate and remove `CoreContainer` compat-shim once all consumers are Hilt-native.
-- [x] Remove Voyager, Koin, and Injekt from `libs.versions.toml` and build scripts.
-- [x] Remove SQLDelight from the build system once Room migration is 100% complete.
-- [x] Ensure 100% compile time determinism via Hilt.
-- [x] Ensure 100% Jetpack Navigation & Compose coverage.
-
-### Phase 12: Release
-- Release app to Play Store.
-
----
-
-1. [x] **Glance Widget Performance**: Move image loading out of the Glance lifecycle and implement a background worker to handle async pre-caching of bitmaps for `BaseUpdatesGridGlanceWidget`.
-
-
-
-
-
+These are program inputs, not isolated patch opportunities. See [`doc/REBUILD_STATUS.md`](doc/REBUILD_STATUS.md).

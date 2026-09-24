@@ -1,5 +1,7 @@
 # Ephyra Design Principles
 
+> **Current architectural rules:** [`../ROADMAP.md`](../ROADMAP.md) and the accepted ADRs in [`adr/`](adr/) take precedence. This file remains a useful review checklist, but examples referring to current module names or completed migrations are not proof of the Ephyra 2.0 target state.
+
 > **"Ephyra is a system of discrete, replaceable systems connected only by interfaces.
 > Each system performs exactly one responsibility. Data flows in one direction. State is
 > observable. Side effects are explicit. Every boundary is testable in isolation."**

@@ -98,6 +98,8 @@ The retrieval pipeline consists of three core components:
 
 ## Contributing
 
+Ephyra's active architecture and reader reconstruction is documented in the [program roadmap](./ROADMAP.md). Follow the [execution guide](./doc/REBUILD_EXECUTION_GUIDE.md) before making architectural changes.
+
 [Code of conduct](./CODE_OF_CONDUCT.md) · [Contributing guide](./CONTRIBUTING.md)
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would

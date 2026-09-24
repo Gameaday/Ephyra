@@ -13,6 +13,18 @@ If you're interested in taking on [an open issue](https://github.com/Gameaday/Ep
 comment on it so others are aware.
 You do not need to ask for permission nor an assignment.
 
+## Reconstruction program
+
+Architecture and reader work follows the authoritative [`ROADMAP.md`](./ROADMAP.md). Before starting a non-trivial change:
+
+1. Read [`doc/REBUILD_PROGRAM.md`](./doc/REBUILD_PROGRAM.md).
+2. Read [`doc/REBUILD_STATUS.md`](./doc/REBUILD_STATUS.md).
+3. Read the relevant records in [`doc/adr/`](./doc/adr/).
+4. Select one eligible task ID and follow [`doc/REBUILD_EXECUTION_GUIDE.md`](./doc/REBUILD_EXECUTION_GUIDE.md).
+5. Include tests and evidence required by that task in the same change.
+
+A coding agent must not infer completion from old roadmap checkboxes. Status is determined by the reconstruction ledger and declared evidence.
+
 ## Prerequisites
 
 Before you start, please note that the ability to use following technologies is **required** and

@@ -1,5 +1,7 @@
 # Ephyra Architectural Roadmap & Next-Phase Initiatives
 
+> **Historical document — superseded on 2026-09-24.** Claims marked complete describe the legacy modernization effort, not the Ephyra 2.0 reconstruction. The authoritative program is [`../ROADMAP.md`](../ROADMAP.md). In particular, the reader, navigation, media geometry, and runtime quality claims below are not current acceptance evidence.
+
 This document defines the architectural roadmap for Ephyra's continuous MAD evolution, multi-method content sourcing system, and autonomous library resilience.
 
 ---

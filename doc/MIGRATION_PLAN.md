@@ -1,5 +1,7 @@
 # Ephyra Migration Plan
 
+> **Historical migration record — superseded on 2026-09-24.** Do not infer current architecture or completion from this file. Use [`../ROADMAP.md`](../ROADMAP.md), [`REBUILD_PROGRAM.md`](REBUILD_PROGRAM.md), and [`REBUILD_STATUS.md`](REBUILD_STATUS.md) for active work.
+
 This document outlines the phased approach to fully modernize the Ephyra codebase.
 
 > **Current Status (as of modernization sprint `hilt-navigation-migration`):**
