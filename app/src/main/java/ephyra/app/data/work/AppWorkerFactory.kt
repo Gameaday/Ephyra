@@ -92,6 +92,12 @@ class AppWorkerFactory : WorkerFactory() {
             WorkerFactoryEntryPoint::class.java,
         )
         return when (workerClassName) {
+            CoverCacheMaintenanceWorker::class.java.name -> CoverCacheMaintenanceWorker(
+                appContext,
+                workerParameters,
+                entryPoint.coverCache(),
+                entryPoint.getLibraryManga(),
+            )
             AppUpdateDownloadJob::class.java.name -> AppUpdateDownloadJob(
                 appContext,
                 workerParameters,
