@@ -5,6 +5,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -36,6 +37,34 @@ class CoverCacheTest {
 
         assertEquals(first, second)
         assertFalse(first!!.parentFile == cache.getCustomCoverFile(1L).parentFile)
+    }
+
+    @Test
+    fun `remote cover revisions have distinct durable identities`() {
+        val first = cache.getCoverFile("https://example.test/cover.jpg", lastModified = 1L)
+        val refreshed = cache.getCoverFile("https://example.test/cover.jpg", lastModified = 2L)
+
+        assertNotEquals(first, refreshed)
+        assertEquals(
+            setOf(first!!.name, refreshed!!.name),
+            cache.coverFileNames(
+                listOf(
+                    "https://example.test/cover.jpg" to 1L,
+                    "https://example.test/cover.jpg" to 2L,
+                ),
+            ),
+        )
+    }
+
+    @Test
+    fun `touch refreshes durable hit age used by lru pruning`() {
+        val file = cache.getCoverFile("https://example.test/cover.jpg", lastModified = 1L)!!
+        file.parentFile?.mkdirs()
+        file.writeText("cover")
+        file.setLastModified(1_000L)
+
+        assertTrue(cache.touch(file))
+        assertTrue(file.lastModified() > 1_000L)
     }
 
     @Test

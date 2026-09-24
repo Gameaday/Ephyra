@@ -56,6 +56,7 @@ class MangaCoverFetcher(
     private val sourceLazy: Lazy<HttpSource?>,
     private val callFactoryLazy: Lazy<Call.Factory>,
     private val imageLoader: ImageLoader,
+    private val touchCoverCache: (File) -> Unit,
 ) : Fetcher {
 
     private val diskCacheKey: String
@@ -109,6 +110,7 @@ class MangaCoverFetcher(
     private suspend fun httpLoader(): FetchResult {
         val coverCacheFile = coverFileLazy.value ?: error("No cover specified")
         if (coverCacheFile.exists() && options.diskCachePolicy.readEnabled) {
+            touchCoverCache(coverCacheFile)
             logcat(LogPriority.DEBUG) { "Cover cache durable hit" }
             return fileLoader(coverCacheFile)
         }
@@ -270,7 +272,7 @@ class MangaCoverFetcher(
             return MangaCoverFetcher(
                 url = data.thumbnailUrl,
                 options = options,
-                coverFileLazy = lazy { coverCache.getCoverFile(data.thumbnailUrl) },
+                coverFileLazy = lazy { coverCache.getCoverFile(data.thumbnailUrl, data.coverLastModified) },
                 customCoverFileLazy = lazy { coverCache.getCustomCoverFile(data.id) },
                 diskCacheKeyLazy = lazy {
                     imageLoader.components.key(data, options)
@@ -282,6 +284,7 @@ class MangaCoverFetcher(
                 },
                 callFactoryLazy = callFactoryLazy,
                 imageLoader = imageLoader,
+                touchCoverCache = coverCache::touch,
             )
         }
     }
@@ -296,7 +299,7 @@ class MangaCoverFetcher(
             return MangaCoverFetcher(
                 url = data.url,
                 options = options,
-                coverFileLazy = lazy { coverCache.getCoverFile(data.url) },
+                coverFileLazy = lazy { coverCache.getCoverFile(data.url, data.lastModified) },
                 customCoverFileLazy = lazy { coverCache.getCustomCoverFile(data.mangaId) },
                 diskCacheKeyLazy = lazy {
                     imageLoader.components.key(data, options)
@@ -305,6 +308,7 @@ class MangaCoverFetcher(
                 sourceLazy = lazy { sourceManager.get(data.sourceId) as? HttpSource },
                 callFactoryLazy = callFactoryLazy,
                 imageLoader = imageLoader,
+                touchCoverCache = coverCache::touch,
             )
         }
     }

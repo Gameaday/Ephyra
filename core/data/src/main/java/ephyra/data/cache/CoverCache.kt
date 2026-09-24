@@ -50,7 +50,17 @@ class CoverCache(private val context: Context) : ICoverCache {
         }
     }
 
-    override fun getCoverFile(manga: Manga): File? = getCoverFile(manga.thumbnailUrl)
+    /**
+     * Durable identity for a remote cover revision. Keeping the URL and revision together
+     * prevents a forced refresh with an unchanged URL from serving stale bytes.
+     */
+    fun getCoverFile(mangaThumbnailUrl: String?, lastModified: Long): File? {
+        return mangaThumbnailUrl?.let {
+            File(cacheDir, DiskUtil.hashKeyForDisk("$it\u0000$lastModified"))
+        }
+    }
+
+    override fun getCoverFile(manga: Manga): File? = getCoverFile(manga.thumbnailUrl, manga.coverLastModified)
 
     /**
      * Returns the custom cover from cache.
@@ -84,7 +94,7 @@ class CoverCache(private val context: Context) : ICoverCache {
     fun deleteFromCacheWithResult(manga: Manga, deleteCustomCover: Boolean = false): Int {
         var deleted = 0
 
-        getCoverFile(manga.thumbnailUrl)?.let {
+        getCoverFile(manga.thumbnailUrl, manga.coverLastModified)?.let {
             if (it.exists() && it.delete()) ++deleted
         }
 
@@ -157,13 +167,23 @@ class CoverCache(private val context: Context) : ICoverCache {
     }
 
     /**
-     * Returns the set of cover cache filenames (MD5 hashes) for the given
-     * thumbnail URLs.
+     * Records a durable cache hit for least-recently-used retention. Failure to update
+     * access time is non-fatal; pruning will simply use the previous known access time.
      */
-    fun coverFileNames(thumbnailUrls: List<String?>): Set<String> {
-        return thumbnailUrls
-            .filterNotNull()
-            .mapTo(HashSet()) { DiskUtil.hashKeyForDisk(it) }
+    fun touch(file: File): Boolean {
+        if (!file.isFile) return false
+        return runCatching { file.setLastModified(System.currentTimeMillis()) }.getOrDefault(false)
+    }
+
+    /**
+     * Returns the set of current remote-cover filenames for the given URLs and revisions.
+     */
+    fun coverFileNames(
+        covers: List<Pair<String?, Long>>,
+    ): Set<String> {
+        return covers.mapNotNull { (url, lastModified) ->
+            url?.let { DiskUtil.hashKeyForDisk("$it\u0000$lastModified") }
+        }.toSet()
     }
 
     private fun getCacheDir(dir: String): File {

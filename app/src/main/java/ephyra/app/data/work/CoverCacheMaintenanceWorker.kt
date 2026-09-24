@@ -34,7 +34,7 @@ class CoverCacheMaintenanceWorker(
             withIOContext {
                 val libraryManga = getLibraryManga.await()
                 val protectedNames = coverCache.coverFileNames(
-                    libraryManga.map { it.manga.thumbnailUrl },
+                    libraryManga.map { it.manga.thumbnailUrl to it.manga.coverLastModified },
                 )
                 val pruned = coverCache.pruneOldCovers(protectedNames = protectedNames)
                 if (pruned > 0) {

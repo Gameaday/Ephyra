@@ -140,7 +140,7 @@ class LibraryUpdateJob(
         val libraryManga = getLibraryManga.await()
 
         favoriteCoverNames = coverCache.coverFileNames(
-            libraryManga.map { it.manga.thumbnailUrl },
+            libraryManga.map { it.manga.thumbnailUrl to it.manga.coverLastModified },
         )
 
         val listToUpdate = if (categoryId != -1L) {
