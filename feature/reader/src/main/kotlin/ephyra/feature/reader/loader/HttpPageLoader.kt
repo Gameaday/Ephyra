@@ -205,12 +205,12 @@ internal class HttpPageLoader(
 
         // Check if the image has been deleted
         if (page.status == Page.State.Ready && imageUrl != null && !chapterCache.isImageInCache(imageUrl)) {
-            page.status = Page.State.Queue
+            prepareForReload(page)
         }
 
         // Automatically retry failed pages when subscribed to this page
         if (page.status is Page.State.Error) {
-            page.status = Page.State.Queue
+            prepareForReload(page)
         }
 
         val queuedPages = mutableListOf<PriorityPage>()
@@ -236,10 +236,7 @@ internal class HttpPageLoader(
      */
     override fun retryPage(page: ReaderPage) {
         check(!isRecycled)
-        page.clearMergedBitmap()
-        if (page.status is Page.State.Error) {
-            page.status = Page.State.Queue
-        }
+        prepareForReload(page)
         queue.offer(PriorityPage(page, 2))
     }
 
@@ -408,6 +405,12 @@ internal class HttpPageLoader(
      * @param page the page whose source image has to be downloaded.
      * @param priority the queue priority at which this page was dequeued.
      */
+    private fun prepareForReload(page: ReaderPage) {
+        page.clearLoadedImage()
+        page.stream = null
+        page.status = Page.State.Queue
+    }
+
     private suspend fun internalLoadPage(page: ReaderPage, priority: Int) {
         var retries = 0
         while (true) {

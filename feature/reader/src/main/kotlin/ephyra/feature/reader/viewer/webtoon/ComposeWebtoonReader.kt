@@ -75,7 +75,11 @@ import ephyra.feature.reader.model.ChapterTransition
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.viewer.ChapterPositionTracker
+import ephyra.feature.reader.viewer.ReaderPageErrorView
+import ephyra.feature.reader.viewer.ReaderPageLoadingView
 import ephyra.feature.reader.viewer.ViewerNavigation
+import ephyra.feature.reader.viewer.pageImageErrorPainter
+import ephyra.feature.reader.viewer.pageImagePlaceholderPainter
 import ephyra.feature.reader.viewer.readerPageMemoryCacheKey
 import ephyra.presentation.core.data.coil.cropBorders
 import ephyra.presentation.reader.ChapterTransition
@@ -568,72 +572,35 @@ private fun WebtoonPageItem(
                 // Visible-but-loading keeps the reserved box (no 300dp jump) with a
                 // spinner: blank-background-forever becomes spinner → image, so the
                 // visibility watchdog's work is obvious during testing.
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator(modifier = Modifier.size(48.dp))
-                }
+                ReaderPageLoadingView(progress = progress)
             }
 
             is Page.State.DownloadImage -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    if (progress > 0) {
-                        CircularProgressIndicator(progress = { progress / 100f }, modifier = Modifier.size(48.dp))
-                    } else {
-                        CircularProgressIndicator(modifier = Modifier.size(48.dp))
-                    }
-                }
+                ReaderPageLoadingView(progress = progress)
             }
 
             is Page.State.Error -> {
                 val isRateLimited = remember(currentStatus) {
                     isRateLimitError(currentStatus.error)
                 }
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Warning,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(48.dp),
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = currentStatus.error.message ?: "Failed to load page ${page.number}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    if (isRateLimited) {
-                        // 429/503: the source asked us to back off — an instant Retry storm
-                        // only extends the ban. Debounce with a countdown, matching the
-                        // RateLimitBackoffInterceptor's escalation posture.
-                        RateLimitedRetry(
-                            page = page,
-                            onRetry = { page.chapter.pageLoader?.retryPage(page) },
-                        )
+                ReaderPageErrorView(
+                    modifier = Modifier,
+                    error = currentStatus.error,
+                    pageNumber = page.number,
+                    onRetry = { page.chapter.pageLoader?.retryPage(page) },
+                    // 429/503: the source asked us to back off — an instant Retry storm
+                    // only extends the ban. Debounce with a countdown, matching the
+                    // RateLimitBackoffInterceptor's escalation posture.
+                    retryContent = if (isRateLimited) {
+                        { RateLimitedRetry(page = page, onRetry = { page.chapter.pageLoader?.retryPage(page) }) }
                     } else {
-                        OutlinedButton(
-                            onClick = { page.chapter.pageLoader?.retryPage(page) },
-                        ) {
-                            Icon(imageVector = Icons.Outlined.Refresh, contentDescription = null)
-                            Spacer(modifier = Modifier.size(8.dp))
-                            Text(text = "Retry")
-                        }
-                    }
-                }
+                        null
+                    },
+                )
             }
 
             Page.State.Ready -> {
+                var readyBytesReadFailed by remember(page) { mutableStateOf(false) }
                 val readyBytes by produceState<ByteArray?>(
                     initialValue = page.mergedBitmap?.let { null } ?: page.cachedBytes,
                     page,
@@ -648,6 +615,7 @@ private fun WebtoonPageItem(
                     // forcing a scroll-away-and-back recycle to invalidate the composition.
                     status,
                 ) {
+                    readyBytesReadFailed = false
                     if (page.mergedBitmap == null && value == null) {
                         value = withIOContext {
                             try {
@@ -658,6 +626,7 @@ private fun WebtoonPageItem(
                                 null
                             }
                         }
+                        readyBytesReadFailed = value == null
                     }
                 }
 
@@ -727,6 +696,12 @@ private fun WebtoonPageItem(
                             )
                         },
                     )
+                } else if (readyBytesReadFailed) {
+                    ReaderPageErrorView(
+                        error = IllegalStateException("Page image is unavailable"),
+                        pageNumber = page.number,
+                        onRetry = { page.chapter.pageLoader?.retryPage(page) },
+                    )
                 } else {
                     Box(
                         modifier = Modifier
@@ -776,6 +751,8 @@ private fun SingleWebtoonImage(
                 .size(decodeWidth)
                 .build()
         },
+        placeholder = pageImagePlaceholderPainter(),
+        error = pageImageErrorPainter(),
         contentDescription = "Page ${page.number}",
         contentScale = ContentScale.FillWidth,
         // Never overwrite page dims here: the item box is already reserved from intrinsic

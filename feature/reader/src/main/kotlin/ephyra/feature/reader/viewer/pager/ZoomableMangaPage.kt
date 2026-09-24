@@ -62,7 +62,12 @@ import coil3.size.Precision
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.ImageUtil
 import ephyra.feature.reader.model.ReaderPage
+import ephyra.feature.reader.viewer.ReaderPageErrorView
+import ephyra.feature.reader.viewer.ReaderPageLoadingView
+import ephyra.feature.reader.viewer.pageImageErrorPainter
+import ephyra.feature.reader.viewer.pageImagePlaceholderPainter
 import ephyra.feature.reader.viewer.readerPageMemoryCacheKey
+import ephyra.feature.reader.viewer.zoom.ZoomPolicy
 import ephyra.presentation.core.data.coil.cropBorders
 import eu.kanade.tachiyomi.source.model.Page
 import kotlinx.coroutines.TimeoutCancellationException
@@ -120,7 +125,7 @@ fun ZoomableMangaPage(
                             if (up != null && !up.isConsumed) up else null
                         }
                     } catch (_: TimeoutCancellationException) {
-                        if (scaleAnim.value <= 1.05f) onLongTap()
+                        if (!ZoomPolicy.locksInteraction(scaleAnim.value)) onLongTap()
                         null
                     }
 
@@ -131,7 +136,7 @@ fun ZoomableMangaPage(
                             (tapOffset - lastTapOffset).getDistance() < viewConfiguration.touchSlop * 3
                         val isNav = isNavigationTap?.invoke(tapOffset, containerSize) ?: false
 
-                        if (scaleAnim.value > 1.05f) {
+                        if (scaleAnim.value > ZoomPolicy.ZOOM_GATE) {
                             if (isDoubleTap) {
                                 scope.launch {
                                     launch { scaleAnim.animateTo(1f, tween(300)) }
@@ -173,7 +178,7 @@ fun ZoomableMangaPage(
             }
             .pointerInput(page, containerSize) {
                 detectMangaTransformGestures(
-                    canPan = { scaleAnim.value > 1.05f },
+                    canPan = { ZoomPolicy.locksInteraction(scaleAnim.value) },
                     onGesture = { _, pan, zoom ->
                         val newScale = (scaleAnim.value * zoom).coerceIn(1f, 5f)
                         val maxPanX = ((containerWidth * newScale) - containerWidth).coerceAtLeast(0f) / 2f
@@ -197,61 +202,37 @@ fun ZoomableMangaPage(
         Box(modifier = gestureModifier, contentAlignment = Alignment.Center) {
             when (val currentStatus = status) {
                 is Page.State.Queue, is Page.State.LoadPage -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(modifier = Modifier.size(48.dp))
-                    }
+                    ReaderPageLoadingView(progress = progress)
                 }
                 is Page.State.DownloadImage -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        if (progress > 0) {
-                            CircularProgressIndicator(
-                                progress = { progress / 100f },
-                                modifier = Modifier.size(48.dp),
-                            )
-                        } else {
-                            CircularProgressIndicator(modifier = Modifier.size(48.dp))
-                        }
-                    }
+                    ReaderPageLoadingView(progress = progress)
                 }
                 is Page.State.Error -> {
-                    Column(
-                        modifier = Modifier.fillMaxSize().padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Warning,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(48.dp),
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = currentStatus.error.message ?: "Failed to load page ${page.number}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        OutlinedButton(onClick = { page.chapter.pageLoader?.retryPage(page) }) {
-                            Icon(imageVector = Icons.Outlined.Refresh, contentDescription = null)
-                            Spacer(modifier = Modifier.size(8.dp))
-                            Text(text = "Retry")
-                        }
-                    }
+                    ReaderPageErrorView(
+                        modifier = Modifier,
+                        error = currentStatus.error,
+                        pageNumber = page.number,
+                        onRetry = { page.chapter.pageLoader?.retryPage(page) },
+                    )
                 }
                 Page.State.Ready -> {
+                    var imageReadFailed by remember(page) { mutableStateOf(false) }
                     val imageModel by produceState<Any?>(
                         initialValue = page.mergedBitmap ?: page.cachedBytes,
                         page,
                         page.mergedBitmap,
+                        page.cachedBytes,
+                        page.status,
                     ) {
-                        value = page.mergedBitmap ?: page.cachedBytes ?: withIOContext {
+                        val resolved = page.mergedBitmap ?: page.cachedBytes ?: withIOContext {
                             try {
                                 page.stream?.invoke()?.use { it.readBytes() }?.also { page.cachedBytes = it }
                             } catch (_: Exception) {
                                 null
                             }
                         }
+                        value = resolved
+                        imageReadFailed = resolved == null
                     }
                     var imageAspectRatio by remember(page) { mutableStateOf(page.aspectRatio) }
                     val tallImageScrollState = rememberScrollState()
@@ -319,9 +300,17 @@ fun ZoomableMangaPage(
                                         .crossfade(false)
                                         .build()
                                 },
+                                placeholder = pageImagePlaceholderPainter(),
+                                error = pageImageErrorPainter(),
                                 contentDescription = "Page ${page.number}",
                                 contentScale = imageContentScale,
                                 modifier = imageItemModifier,
+                            )
+                        } else if (imageReadFailed) {
+                            ReaderPageErrorView(
+                                error = IllegalStateException("Page image is unavailable"),
+                                pageNumber = page.number,
+                                onRetry = { page.chapter.pageLoader?.retryPage(page) },
                             )
                         } else {
                             CircularProgressIndicator(modifier = Modifier.size(48.dp))

@@ -36,16 +36,24 @@ open class ReaderPage(
     }
 
     /**
+     * Clears the loaded image payload and derived dimensions without changing page identity.
+     * Used before an online page is fetched again after a failed or invalidated load.
+     */
+    fun clearLoadedImage() {
+        cachedBytes = null
+        clearMergedBitmap()
+        width = 0
+        height = 0
+    }
+
+    /**
      * Drops all heavy page payloads (bytes + merges) and resets measured dims. Called only
      * at chapter boundaries (chapter falls out of the prev/curr/next window, or the reader
      * screen is left) — never inside the active chapter, so up/down scrolling within a
      * chapter can never trigger a re-download.
      */
     fun releasePageResources() {
-        cachedBytes = null
-        clearMergedBitmap()
-        width = 0
-        height = 0
+        clearLoadedImage()
     }
 
     /**
