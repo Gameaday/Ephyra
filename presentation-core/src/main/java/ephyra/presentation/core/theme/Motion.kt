@@ -215,13 +215,7 @@ object MotionTokens {
     fun m3SharedElementContainerEnter(): EnterTransition =
         fadeIn(
             animationSpec = tween(
-                durationMillis = DURATION_LONG_2,
-                easing = EasingEmphasizedDecelerate,
-            ),
-        ) + scaleIn(
-            initialScale = 0.98f,
-            animationSpec = tween(
-                durationMillis = DURATION_LONG_2,
+                durationMillis = DURATION_MEDIUM_2,
                 easing = EasingEmphasizedDecelerate,
             ),
         )
@@ -230,13 +224,7 @@ object MotionTokens {
     fun m3SharedElementContainerExit(): ExitTransition =
         fadeOut(
             animationSpec = tween(
-                durationMillis = DURATION_LONG_2,
-                easing = EasingEmphasizedAccelerate,
-            ),
-        ) + scaleOut(
-            targetScale = 0.98f,
-            animationSpec = tween(
-                durationMillis = DURATION_LONG_2,
+                durationMillis = DURATION_SHORT_4,
                 easing = EasingEmphasizedAccelerate,
             ),
         )

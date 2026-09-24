@@ -24,7 +24,7 @@ class BorderCropTransformationTest {
         }
 
         assertArrayEquals(
-            intArrayOf(12, 9, 88, 71),
+            intArrayOf(4, 4, 96, 76),
             BorderCropTransformation.findUniformBorderBounds(bitmap),
         )
     }

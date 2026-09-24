@@ -48,16 +48,16 @@ class BorderCropTransformation : Transformation() {
                 return null
             }
 
-            val top = runLength(bitmap, horizontal = true, fromStart = true, max = maxBorderY, border)
-            val bottom = runLength(bitmap, horizontal = true, fromStart = false, max = maxBorderY, border)
-            val left = runLength(bitmap, horizontal = false, fromStart = true, max = maxBorderX, border)
-            val right = runLength(bitmap, horizontal = false, fromStart = false, max = maxBorderX, border)
+            val top = uniformBorderLength(bitmap, horizontal = true, fromStart = true, max = maxBorderY, border)
+            val bottom = uniformBorderLength(bitmap, horizontal = true, fromStart = false, max = maxBorderY, border)
+            val left = uniformBorderLength(bitmap, horizontal = false, fromStart = true, max = maxBorderX, border)
+            val right = uniformBorderLength(bitmap, horizontal = false, fromStart = false, max = maxBorderX, border)
             if (top < MIN_BORDER || bottom < MIN_BORDER || left < MIN_BORDER || right < MIN_BORDER) return null
 
             return intArrayOf(left, top, width - right, height - bottom)
         }
 
-        private fun runLength(
+        private fun uniformBorderLength(
             bitmap: Bitmap,
             horizontal: Boolean,
             fromStart: Boolean,
@@ -65,21 +65,20 @@ class BorderCropTransformation : Transformation() {
             border: Int,
         ): Int {
             val outer = if (horizontal) bitmap.width else bitmap.height
-            var count = 0
-            while (count < min(max, outer / 2)) {
-                val index = if (fromStart) count else outer - count - 1
-                val x = if (horizontal) {
-                    index
-                } else if (fromStart) {
-                    0
-                } else {
-                    bitmap.width - 1
+            val cross = if (horizontal) bitmap.height else bitmap.width
+            val limit = min(max, outer / 2)
+            var length = 0
+            while (length < limit) {
+                val edgeIndex = if (fromStart) length else outer - length - 1
+                val uniform = (0 until cross).all { crossIndex ->
+                    val x = if (horizontal) edgeIndex else crossIndex
+                    val y = if (horizontal) crossIndex else edgeIndex
+                    matches(border, bitmap.getPixel(x, y))
                 }
-                val y = if (horizontal) if (fromStart) 0 else bitmap.height - 1 else index
-                if (!matches(border, bitmap.getPixel(x, y))) break
-                count++
+                if (!uniform) break
+                length++
             }
-            return count
+            return length
         }
 
         private fun matches(first: Int, second: Int): Boolean {

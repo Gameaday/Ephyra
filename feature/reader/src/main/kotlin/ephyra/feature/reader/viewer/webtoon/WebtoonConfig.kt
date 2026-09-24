@@ -1,5 +1,8 @@
 package ephyra.feature.reader.viewer.webtoon
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.feature.reader.viewer.ViewerConfig
 import ephyra.feature.reader.viewer.ViewerNavigation
@@ -24,13 +27,13 @@ class WebtoonConfig(
 
     var themeChangedListener: (() -> Unit)? = null
 
-    var imageCropBorders = false
+    var imageCropBorders by mutableStateOf(false)
         private set
 
-    var sidePadding = 0
+    var sidePadding by mutableStateOf(0)
         private set
 
-    var doubleTapZoom = true
+    var doubleTapZoom by mutableStateOf(true)
         private set
 
     var doubleTapZoomChangedListener: ((Boolean) -> Unit)? = null

@@ -130,8 +130,9 @@ fun ComposeWebtoonReader(
     val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
     val scrollDistance = screenHeightPx * 0.75f
 
-    // Shared visual zoom, reset per chapter: one pinch updates every strip so moving
-    // 1→5 (or back) keeps a consistent scale instead of per-item jumps.
+    // Shared horizontal zoom across the chapter: continuous vertical flow stays authoritative,
+    // so changing zoom never changes any LazyColumn item's height or causes neighboring strips
+    // to overlap. The cover/detail width is enlarged while vertical scroll remains natural.
     val zoomState = rememberWebtoonZoomState(
         chapterId = currentChapterId,
         zoomEnabled = viewer.config.doubleTapZoom,
@@ -529,13 +530,10 @@ private fun WebtoonPageItem(
         value?.let { (width, height) -> page.recordDimensionsOnce(width, height) }
     }
 
-    // Single layout contract for every branch below (see webtoonItemBox): when dims are
-    // known the item reserves the final full-strip height up front; sliced / single /
-    // loading states all render inside this box so switching between them can never
-    // resize the item or shift siblings.
+    var transformedDimensions by remember(page, cropBorders) { mutableStateOf<Pair<Int, Int>?>(null) }
+    val layoutDimensions = if (cropBorders) transformedDimensions ?: intrinsicDimensions else intrinsicDimensions
     val itemModifier = modifier
-        .webtoonItemBox(webtoonAspectRatio(intrinsicDimensions))
-        .webtoonZoomLayout(zoomState.scale)
+        .webtoonItemBox(webtoonAspectRatio(layoutDimensions))
 
     Box(
         modifier = itemModifier
@@ -547,15 +545,15 @@ private fun WebtoonPageItem(
                 // window (not merely composed nearby via the prefetch window).
                 itemIsVisible = coordinates.isAttached && !coordinates.boundsInWindow().isEmpty
             }
-            // Each page owns a proportional zoom transform. The layout wrapper above reports the
-            // scaled height, so adjacent strips remain contiguous; the viewport clips horizontal
-            // overflow rather than clipping individual slices.
+            // Shared horizontal zoom: scaling Y would alter every lazy item's painted bounds
+            // while LazyColumn retains its original geometry, producing overlap/gaps. Width-only
+            // zoom keeps vertical document flow stable and leaves scrolling untouched.
             .graphicsLayer {
                 scaleX = zoomState.scale
-                scaleY = zoomState.scale
+                scaleY = 1f
                 translationX = zoomState.offsetX
                 transformOrigin = TransformOrigin(0f, 0f)
-                clip = false
+                clip = true
             }
             .pointerInput(page.index, zoomEnabled to zoomState) {
                 if (!zoomEnabled) {
@@ -691,6 +689,7 @@ private fun WebtoonPageItem(
                         targetWidthPx = targetWidthPx,
                         densityScale = density.density,
                         bytesSize = 0,
+                        onTransformedSize = { transformedDimensions = it },
                     )
                 } else if (shouldAttemptSlices && readyBytes != null) {
                     val (knownW, knownH) = intrinsicDimensions ?: (page.width to page.height)
@@ -711,6 +710,7 @@ private fun WebtoonPageItem(
                                 targetWidthPx = targetWidthPx,
                                 densityScale = density.density,
                                 bytesSize = readyBytes!!.size,
+                                onTransformedSize = { transformedDimensions = it },
                             )
                         },
                     )
@@ -747,6 +747,7 @@ private fun SingleWebtoonImage(
     targetWidthPx: Float,
     densityScale: Float,
     bytesSize: Int,
+    onTransformedSize: (Pair<Int, Int>) -> Unit = {},
 ) {
     val context = LocalContext.current
     // Decode at physical pixels (css width * density): decoding at bare screenWidthDp
@@ -771,6 +772,10 @@ private fun SingleWebtoonImage(
         },
         placeholder = pageImagePlaceholderPainter(),
         error = pageImageErrorPainter(),
+        onSuccess = { state ->
+            val image = state.result.image
+            if (image.width > 0 && image.height > 0) onTransformedSize(image.width to image.height)
+        },
         contentDescription = "Page ${page.number}",
         contentScale = ContentScale.FillWidth,
         // Never overwrite page dims here: the item box is already reserved from intrinsic

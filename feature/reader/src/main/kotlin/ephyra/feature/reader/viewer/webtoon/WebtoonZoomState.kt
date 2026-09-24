@@ -8,13 +8,8 @@ import androidx.compose.runtime.setValue
 import ephyra.feature.reader.viewer.zoom.ZoomPolicy
 
 /**
- * Shared proportional zoom for a webtoon chapter. Each page item reports a scaled layout
- * footprint while its bitmap is painted through [androidx.compose.ui.graphics.graphicsLayer], so
- * adjacent strips remain contiguous and the reader can preserve its vertical document flow. Reset
- * per chapter.
- *
- * Shared across all sections of the chapter by design: one pinch updates every strip so moving
- * 1→5 (or back) keeps a consistent scale instead of per-item jumps.
+ * Shared horizontal zoom for a webtoon chapter. The state is shared across strips for a seamless
+ * reading position, while the compositor scales X only so LazyColumn item geometry remains stable.
  */
 class WebtoonZoomState(
     val min: Float,
@@ -63,7 +58,8 @@ class WebtoonZoomState(
 
 /**
  * Remembers a [WebtoonZoomState] scoped to the current chapter. Honors the reader's
- * double-tap-zoom toggle ([zoomEnabled]).
+ * double-tap-zoom toggle ([zoomEnabled]). The state is shared by the chapter, but it is
+ * applied as a horizontal-only transform so LazyColumn item geometry never changes.
  */
 @Composable
 fun rememberWebtoonZoomState(
@@ -71,8 +67,7 @@ fun rememberWebtoonZoomState(
     zoomEnabled: Boolean,
     max: Float = 4f,
 ): WebtoonZoomState {
-    // Continuous vertical reading keeps the document's vertical layout authoritative. The layout
-    // wrapper scales each page footprint proportionally, so a floor of 1x prevents negative gaps.
+    // The shared state is horizontal-only; a 1x floor keeps the viewport and list geometry stable.
     val min = 1f
     return remember(chapterId, zoomEnabled, min) {
         WebtoonZoomState(min = min, max = max)

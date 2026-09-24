@@ -116,7 +116,12 @@ suspend fun PointerInputScope.detectWebtoonGestures(
                 }
                 break
             }
-            if (event.changes.fastAny { it.isConsumed }) break
+            // Do not reject a two-pointer event merely because a parent consumed the first
+            // movement. Keep observing a consumed single-pointer event so a second pointer can
+            // still claim the pinch; do not start single-pointer panning from that consumed event.
+            if (pressedCount < 2 && event.changes.fastAny { it.isConsumed }) {
+                continue
+            }
 
             val panChange = event.calculatePan()
             accumulatedPan += panChange

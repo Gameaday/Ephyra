@@ -265,8 +265,8 @@ fun ZoomableMangaPage(
                     }
 
                     val isTallImage = imageAspectRatio?.let { it < 0.5f } == true
-                    // Regular pages must fit entirely on screen. Tall (webtoon-style)
-                    // images fill the full device width and scroll vertically.
+                    // Regular pages always fit the available screen without distortion. Tall pages
+                    // remain width-filled and vertically scrollable.
                     val contentBoxModifier = if (isTallImage) {
                         Modifier
                             .fillMaxWidth()
@@ -279,7 +279,11 @@ fun ZoomableMangaPage(
                     } else {
                         Modifier.fillMaxSize()
                     }
-                    val imageContentScale = if (isTallImage) ContentScale.FillWidth else ContentScale.Fit
+                    val imageContentScale = if (isTallImage) {
+                        ContentScale.FillWidth
+                    } else {
+                        ContentScale.Fit
+                    }
 
                     Box(
                         modifier = contentBoxModifier,
@@ -374,7 +378,13 @@ private suspend fun PointerInputScope.detectPagerGestures(
                 }
                 break
             }
-            if (event.changes.fastAny { it.isConsumed }) break
+            // A parent may consume the first one-pointer movement before the second pointer
+            // arrives. Do not end the gesture: the second pointer must still be observed and
+            // allowed to claim the pinch before the pager/list consumes the transform.
+            if (pressedCount < 2 && event.changes.fastAny { it.isConsumed }) {
+                // Keep observing, but do not start single-pointer panning from a consumed event.
+                continue
+            }
 
             val isMultiTouch = pressedCount >= 2
             if (isMultiTouch) wasMultiTouch = true
