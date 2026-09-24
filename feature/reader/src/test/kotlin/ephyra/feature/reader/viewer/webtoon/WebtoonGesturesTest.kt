@@ -18,6 +18,20 @@ class WebtoonGesturesTest {
     }
 
     @Test
+    fun `webtoon claims only dominant horizontal pan while zoomed`() {
+        val slop = 20f
+        assertTrue(
+            shouldClaimWebtoonHorizontalPan(Offset(25f, 10f), locksInteraction = true, touchSlop = slop),
+        )
+        assertFalse(
+            shouldClaimWebtoonHorizontalPan(Offset(10f, 25f), locksInteraction = true, touchSlop = slop),
+        )
+        assertFalse(
+            shouldClaimWebtoonHorizontalPan(Offset(25f, 10f), locksInteraction = false, touchSlop = slop),
+        )
+    }
+
+    @Test
     fun `double tap needs fast second tap near the first`() {
         val slop = 20f
         assertTrue(

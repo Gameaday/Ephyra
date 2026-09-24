@@ -11,8 +11,6 @@ import androidx.compose.foundation.gestures.calculateCentroid
 import androidx.compose.foundation.gestures.calculateCentroidSize
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -116,21 +114,10 @@ fun ZoomableMangaPage(
         val gestureModifier = Modifier
             .fillMaxSize()
             .pointerInput(page, containerSize) {
-                awaitEachGesture {
-                    val down = awaitFirstDown(requireUnconsumed = false)
-                    val downPos = down.position
-                    val upEvent = try {
-                        withTimeout(viewConfiguration.longPressTimeoutMillis) {
-                            val up = waitForUpOrCancellation()
-                            if (up != null && !up.isConsumed) up else null
-                        }
-                    } catch (_: TimeoutCancellationException) {
-                        if (!ZoomPolicy.locksInteraction(scaleAnim.value)) onLongTap()
-                        null
-                    }
-
-                    if (upEvent != null && (upEvent.position - downPos).getDistance() < viewConfiguration.touchSlop) {
-                        val tapOffset = upEvent.position
+                detectPagerGestures(
+                    canPan = { ZoomPolicy.locksInteraction(scaleAnim.value) },
+                    onLongPress = onLongTap,
+                    onTap = { tapOffset ->
                         val currentTime = System.currentTimeMillis()
                         val isDoubleTap = currentTime - lastTapTime < 350L &&
                             (tapOffset - lastTapOffset).getDistance() < viewConfiguration.touchSlop * 3
@@ -173,17 +160,12 @@ fun ZoomableMangaPage(
                             lastTapOffset = tapOffset
                             onTap(tapOffset, containerSize)
                         }
-                    }
-                }
-            }
-            .pointerInput(page, containerSize) {
-                detectMangaTransformGestures(
-                    canPan = { ZoomPolicy.locksInteraction(scaleAnim.value) },
-                    onGesture = { _, pan, zoom ->
+                    },
+                    onTransform = { centroid, pan, zoom ->
                         val newScale = (scaleAnim.value * zoom).coerceIn(1f, 5f)
                         val maxPanX = ((containerWidth * newScale) - containerWidth).coerceAtLeast(0f) / 2f
                         val maxPanY = ((containerHeight * newScale) - containerHeight).coerceAtLeast(0f) / 2f
-                        val newOffset = if (newScale > 1f) {
+                        val newOffset = if (newScale > ZoomPolicy.FIT) {
                             Offset(
                                 x = (offsetAnim.value.x + pan.x).coerceIn(-maxPanX, maxPanX),
                                 y = (offsetAnim.value.y + pan.y).coerceIn(-maxPanY, maxPanY),
@@ -322,48 +304,73 @@ fun ZoomableMangaPage(
     }
 }
 
-private suspend fun PointerInputScope.detectMangaTransformGestures(
+internal fun shouldClaimPagerTransform(
+    pressedCount: Int,
+    accumulatedPan: Offset,
+    canPan: Boolean,
+    touchSlop: Float,
+): Boolean {
+    return pressedCount >= 2 || (canPan && accumulatedPan.getDistance() >= touchSlop)
+}
+
+private suspend fun PointerInputScope.detectPagerGestures(
     canPan: () -> Boolean,
-    onGesture: (centroid: Offset, pan: Offset, zoom: Float) -> Unit,
+    onLongPress: () -> Unit,
+    onTap: (Offset) -> Unit,
+    onTransform: (centroid: Offset, pan: Offset, zoom: Float) -> Unit,
 ) {
     awaitEachGesture {
-        var zoom = 1f
-        var pan = Offset.Zero
-        var pastTouchSlop = false
+        val down = awaitFirstDown(requireUnconsumed = false)
+        val downPosition = down.position
         val touchSlop = viewConfiguration.touchSlop
+        val longPressAt = System.currentTimeMillis() + viewConfiguration.longPressTimeoutMillis
+        var accumulatedPan = Offset.Zero
+        var transformStarted = false
+        var wasMultiTouch = false
 
-        awaitFirstDown(requireUnconsumed = false)
-        do {
-            val event = awaitPointerEvent()
-            val canceled = event.changes.fastAny { it.isConsumed }
-            if (!canceled) {
-                val pointerCount = event.changes.count { it.pressed }
-                val isMultiTouch = pointerCount >= 2
-                val zoomChange = event.calculateZoom()
-                val panChange = event.calculatePan()
-                if (!isMultiTouch && !canPan()) continue
-
-                if (!pastTouchSlop) {
-                    zoom *= zoomChange
-                    pan += panChange
-                    val centroidSize = event.calculateCentroidSize(useCurrent = false)
-                    val zoomMotion = kotlin.math.abs(1f - zoom) * centroidSize
-                    val panMotion = pan.getDistance()
-                    if ((isMultiTouch && zoomMotion > touchSlop) || (canPan() && panMotion > touchSlop)) {
-                        pastTouchSlop = true
-                    }
+        while (true) {
+            val event = try {
+                val remaining = (longPressAt - System.currentTimeMillis()).coerceAtLeast(1L)
+                withTimeout(remaining) { awaitPointerEvent() }
+            } catch (_: TimeoutCancellationException) {
+                if (!transformStarted && !wasMultiTouch) onLongPress()
+                break
+            }
+            val pressedCount = event.changes.count { it.pressed }
+            if (pressedCount == 0) {
+                val up = event.changes.firstOrNull { it.id == down.id }
+                if (!transformStarted && !wasMultiTouch && up != null &&
+                    (up.position - downPosition).getDistance() < touchSlop
+                ) {
+                    onTap(up.position)
                 }
+                break
+            }
+            if (event.changes.fastAny { it.isConsumed }) break
 
-                if (pastTouchSlop) {
-                    val centroid = event.calculateCentroid(useCurrent = false)
-                    if (zoomChange != 1f || (canPan() && panChange != Offset.Zero)) {
-                        onGesture(centroid, if (canPan()) panChange else Offset.Zero, zoomChange)
-                        event.changes.fastForEach {
-                            if (it.position != it.previousPosition) it.consume()
-                        }
-                    }
+            val isMultiTouch = pressedCount >= 2
+            if (isMultiTouch) wasMultiTouch = true
+            val zoomChange = event.calculateZoom()
+            val panChange = event.calculatePan()
+
+            if (!transformStarted) {
+                accumulatedPan += panChange
+                if (shouldClaimPagerTransform(pressedCount, accumulatedPan, canPan(), touchSlop)) {
+                    transformStarted = true
                 }
             }
-        } while (!canceled && event.changes.fastAny { it.pressed })
+
+            if (transformStarted && (zoomChange != 1f || (canPan() && panChange != Offset.Zero) || isMultiTouch)) {
+                val centroid = event.calculateCentroid(useCurrent = false)
+                onTransform(
+                    centroid,
+                    if (canPan()) panChange else Offset.Zero,
+                    zoomChange,
+                )
+                event.changes.fastForEach {
+                    if (it.position != it.previousPosition) it.consume()
+                }
+            }
+        }
     }
 }

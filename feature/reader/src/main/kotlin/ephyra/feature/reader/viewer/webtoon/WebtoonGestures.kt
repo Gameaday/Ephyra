@@ -2,17 +2,14 @@ package ephyra.feature.reader.viewer.webtoon
 
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.calculateCentroidSize
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.util.fastAny
 import ephyra.feature.reader.viewer.zoom.ZoomPolicy
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
-import kotlin.math.abs
 
 /**
  * Pure tap-timing helper: `true` when [now] + [pos] form a double-tap with the previous tap.
@@ -34,6 +31,16 @@ fun isWebtoonDoubleTap(
 /** Pure zoom clamp: keeps [requested] inside [min]..[max]. Extracted for JVM unit tests. */
 fun coerceWebtoonZoom(requested: Float, min: Float, max: Float): Float {
     return requested.coerceIn(min, max)
+}
+
+internal fun shouldClaimWebtoonHorizontalPan(
+    accumulatedPan: Offset,
+    locksInteraction: Boolean,
+    touchSlop: Float,
+): Boolean {
+    return locksInteraction &&
+        kotlin.math.abs(accumulatedPan.x) >= touchSlop &&
+        kotlin.math.abs(accumulatedPan.x) > kotlin.math.abs(accumulatedPan.y)
 }
 
 /**
@@ -58,74 +65,66 @@ suspend fun PointerInputScope.detectWebtoonGestures(
     var lastTapOffset = Offset.Zero
     awaitEachGesture {
         val down = awaitFirstDown(requireUnconsumed = false)
-        val downPos = down.position
-        var tapTimeout = false
-        // Long-press and tap share the pager's timeout: a hold fires onLongPress and ends
-        // the gesture; a quick release falls through to tap / double-tap handling.
-        try {
-            withTimeout(viewConfiguration.longPressTimeoutMillis) {
-                waitForUpOrCancellation()
-            }
-        } catch (_: TimeoutCancellationException) {
-            tapTimeout = true
-        }
-        if (tapTimeout && !ZoomPolicy.locksInteraction(getScale())) {
-            onLongPress()
-            return@awaitEachGesture
-        }
-
-        var pinchActive = false
-        var pastTouchSlop = false
+        val downPosition = down.position
         val touchSlop = viewConfiguration.touchSlop
-        do {
-            val event = awaitPointerEvent()
+        val longPressAt = System.currentTimeMillis() + viewConfiguration.longPressTimeoutMillis
+        var accumulatedPan = Offset.Zero
+        var transformStarted = false
+        var wasMultiTouch = false
+
+        while (true) {
+            val event = try {
+                val remaining = (longPressAt - System.currentTimeMillis()).coerceAtLeast(1L)
+                withTimeout(remaining) { awaitPointerEvent() }
+            } catch (_: TimeoutCancellationException) {
+                if (!transformStarted && !wasMultiTouch && !ZoomPolicy.locksInteraction(getScale())) {
+                    onLongPress()
+                }
+                break
+            }
+            val pressedCount = event.changes.count { it.pressed }
+            if (pressedCount == 0) {
+                val up = event.changes.firstOrNull { it.id == down.id }
+                if (!transformStarted && !wasMultiTouch && up != null &&
+                    (up.position - downPosition).getDistance() < touchSlop
+                ) {
+                    val now = System.currentTimeMillis()
+                    if (isWebtoonDoubleTap(now, lastTapTime, up.position, lastTapOffset, touchSlop = touchSlop)) {
+                        onDoubleTapToggle()
+                        lastTapTime = 0L
+                    } else {
+                        lastTapTime = now
+                        lastTapOffset = up.position
+                    }
+                }
+                break
+            }
             if (event.changes.fastAny { it.isConsumed }) break
-            val pressed = event.changes.count { it.pressed }
-            if (pressed >= 2) pinchActive = true
-            if (!pinchActive) {
-                val up = event.changes.firstOrNull { !it.pressed }
-                if (up != null) {
-                    val tapOffset = up.position
-                    val moved = (tapOffset - downPos).getDistance() > viewConfiguration.touchSlop
-                    if (!moved && !tapTimeout) {
-                        val now = System.currentTimeMillis()
-                        if (isWebtoonDoubleTap(now, lastTapTime, tapOffset, lastTapOffset, touchSlop = touchSlop)) {
-                            onDoubleTapToggle()
-                            lastTapTime = 0L
-                        } else {
-                            lastTapTime = now
-                            lastTapOffset = tapOffset
-                        }
-                    }
-                    break
+
+            val panChange = event.calculatePan()
+            accumulatedPan += panChange
+            if (pressedCount >= 2) {
+                // A second pointer is an explicit request to transform this strip. Claim it
+                // immediately so the LazyColumn cannot consume the pinch as a vertical drag.
+                wasMultiTouch = true
+                transformStarted = true
+                val zoomChange = event.calculateZoom()
+                if (zoomChange != 1f || panChange.x != 0f) {
+                    onZoom(coerceWebtoonZoom(getScale() * zoomChange, zoomMin, zoomMax), panChange.x)
                 }
-                // Single finger held/moved: horizontal pan only while zoomed (vertical
-                // belongs to the list); tapTimeout already ruled out long-press above.
-                if (ZoomPolicy.locksInteraction(getScale())) {
-                    val panX = event.calculatePan().x
-                    if (abs(panX) > 0.5f) {
-                        event.changes.forEach { it.consume() }
-                        onZoom(getScale(), panX)
-                    }
-                }
-                continue
-            }
-            // Pinch loop: rescale + horizontal pan only; vertical deltas stay with the list.
-            val zoomChange = event.calculateZoom()
-            val panX = event.calculatePan().x
-            if (!pastTouchSlop) {
-                val centroidSize = event.calculateCentroidSize(useCurrent = false)
-                if (abs(zoomChange - 1f) * centroidSize < touchSlop && abs(panX) < touchSlop) {
-                    if (!event.changes.fastAny { it.pressed }) break
-                    continue
-                }
-                pastTouchSlop = true
-            }
-            if (zoomChange != 1f || panX != 0f) {
                 event.changes.forEach { it.consume() }
-                onZoom(coerceWebtoonZoom(getScale() * zoomChange, zoomMin, zoomMax), panX)
+            } else if (ZoomPolicy.locksInteraction(getScale())) {
+                val horizontalIntent = shouldClaimWebtoonHorizontalPan(
+                    accumulatedPan = accumulatedPan,
+                    locksInteraction = ZoomPolicy.locksInteraction(getScale()),
+                    touchSlop = touchSlop,
+                )
+                if (horizontalIntent) {
+                    transformStarted = true
+                    onZoom(getScale(), panChange.x)
+                    event.changes.forEach { it.consume() }
+                }
             }
-            if (!event.changes.fastAny { it.pressed }) break
-        } while (true)
+        }
     }
 }
