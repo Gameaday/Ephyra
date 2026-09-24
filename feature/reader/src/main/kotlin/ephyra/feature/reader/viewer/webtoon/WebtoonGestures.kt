@@ -5,6 +5,7 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.util.fastAny
 import ephyra.feature.reader.viewer.zoom.ZoomPolicy
@@ -64,7 +65,7 @@ suspend fun PointerInputScope.detectWebtoonGestures(
     var lastTapTime = 0L
     var lastTapOffset = Offset.Zero
     awaitEachGesture {
-        val down = awaitFirstDown(requireUnconsumed = false)
+        val down = awaitFirstDown(pass = PointerEventPass.Initial, requireUnconsumed = false)
         val downPosition = down.position
         val touchSlop = viewConfiguration.touchSlop
         val longPressAt = System.currentTimeMillis() + viewConfiguration.longPressTimeoutMillis
@@ -75,7 +76,7 @@ suspend fun PointerInputScope.detectWebtoonGestures(
         while (true) {
             val event = try {
                 val remaining = (longPressAt - System.currentTimeMillis()).coerceAtLeast(1L)
-                withTimeout(remaining) { awaitPointerEvent() }
+                withTimeout(remaining) { awaitPointerEvent(PointerEventPass.Initial) }
             } catch (_: TimeoutCancellationException) {
                 if (!transformStarted && !wasMultiTouch && !ZoomPolicy.locksInteraction(getScale())) {
                     onLongPress()

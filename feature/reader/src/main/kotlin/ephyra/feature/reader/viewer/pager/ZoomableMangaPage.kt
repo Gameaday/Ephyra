@@ -45,6 +45,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -70,6 +71,8 @@ import ephyra.presentation.core.data.coil.cropBorders
 import eu.kanade.tachiyomi.source.model.Page
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
 import java.io.ByteArrayInputStream
 import coil3.size.Size as CoilSize
@@ -104,6 +107,7 @@ fun ZoomableMangaPage(
         val offsetAnim = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
         var lastTapTime by remember { mutableStateOf(0L) }
         var lastTapOffset by remember { mutableStateOf(Offset.Zero) }
+        val transformMutex = remember { Mutex() }
 
         LaunchedEffect(scaleAnim.value) { onScaleChanged(scaleAnim.value) }
         LaunchedEffect(page) {
@@ -162,20 +166,22 @@ fun ZoomableMangaPage(
                         }
                     },
                     onTransform = { centroid, pan, zoom ->
-                        val newScale = (scaleAnim.value * zoom).coerceIn(1f, 5f)
-                        val maxPanX = ((containerWidth * newScale) - containerWidth).coerceAtLeast(0f) / 2f
-                        val maxPanY = ((containerHeight * newScale) - containerHeight).coerceAtLeast(0f) / 2f
-                        val newOffset = if (newScale > ZoomPolicy.FIT) {
-                            Offset(
-                                x = (offsetAnim.value.x + pan.x).coerceIn(-maxPanX, maxPanX),
-                                y = (offsetAnim.value.y + pan.y).coerceIn(-maxPanY, maxPanY),
-                            )
-                        } else {
-                            Offset.Zero
-                        }
                         scope.launch {
-                            scaleAnim.snapTo(newScale)
-                            offsetAnim.snapTo(newOffset)
+                            transformMutex.withLock {
+                                val newScale = (scaleAnim.value * zoom).coerceIn(1f, 5f)
+                                val maxPanX = ((containerWidth * newScale) - containerWidth).coerceAtLeast(0f) / 2f
+                                val maxPanY = ((containerHeight * newScale) - containerHeight).coerceAtLeast(0f) / 2f
+                                val newOffset = if (newScale > ZoomPolicy.FIT) {
+                                    Offset(
+                                        x = (offsetAnim.value.x + pan.x).coerceIn(-maxPanX, maxPanX),
+                                        y = (offsetAnim.value.y + pan.y).coerceIn(-maxPanY, maxPanY),
+                                    )
+                                } else {
+                                    Offset.Zero
+                                }
+                                scaleAnim.snapTo(newScale)
+                                offsetAnim.snapTo(newOffset)
+                            }
                         }
                     },
                 )
@@ -320,7 +326,7 @@ private suspend fun PointerInputScope.detectPagerGestures(
     onTransform: (centroid: Offset, pan: Offset, zoom: Float) -> Unit,
 ) {
     awaitEachGesture {
-        val down = awaitFirstDown(requireUnconsumed = false)
+        val down = awaitFirstDown(pass = PointerEventPass.Initial, requireUnconsumed = false)
         val downPosition = down.position
         val touchSlop = viewConfiguration.touchSlop
         val longPressAt = System.currentTimeMillis() + viewConfiguration.longPressTimeoutMillis
@@ -331,7 +337,7 @@ private suspend fun PointerInputScope.detectPagerGestures(
         while (true) {
             val event = try {
                 val remaining = (longPressAt - System.currentTimeMillis()).coerceAtLeast(1L)
-                withTimeout(remaining) { awaitPointerEvent() }
+                withTimeout(remaining) { awaitPointerEvent(PointerEventPass.Initial) }
             } catch (_: TimeoutCancellationException) {
                 if (!transformStarted && !wasMultiTouch) onLongPress()
                 break
@@ -362,11 +368,7 @@ private suspend fun PointerInputScope.detectPagerGestures(
 
             if (transformStarted && (zoomChange != 1f || (canPan() && panChange != Offset.Zero) || isMultiTouch)) {
                 val centroid = event.calculateCentroid(useCurrent = false)
-                onTransform(
-                    centroid,
-                    if (canPan()) panChange else Offset.Zero,
-                    zoomChange,
-                )
+                onTransform(centroid, if (canPan()) panChange else Offset.Zero, zoomChange)
                 event.changes.fastForEach {
                     if (it.position != it.previousPosition) it.consume()
                 }
