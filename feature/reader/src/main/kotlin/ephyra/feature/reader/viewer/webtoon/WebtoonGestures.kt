@@ -9,7 +9,12 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.util.fastAny
 import ephyra.feature.reader.viewer.zoom.ZoomPolicy
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 
 /**
@@ -65,6 +70,8 @@ suspend fun PointerInputScope.detectWebtoonGestures(
 ) {
     var lastTapTime = 0L
     var lastTapOffset = Offset.Zero
+    var pendingSingleTap: Job? = null
+    val gestureScope = CoroutineScope(currentCoroutineContext())
     awaitEachGesture {
         val down = awaitFirstDown(pass = PointerEventPass.Initial, requireUnconsumed = false)
         val downPosition = down.position
@@ -79,6 +86,7 @@ suspend fun PointerInputScope.detectWebtoonGestures(
                 val remaining = (longPressAt - System.currentTimeMillis()).coerceAtLeast(1L)
                 withTimeout(remaining) { awaitPointerEvent(PointerEventPass.Initial) }
             } catch (_: TimeoutCancellationException) {
+                pendingSingleTap?.cancel()
                 if (!transformStarted && !wasMultiTouch && !ZoomPolicy.locksInteraction(getScale())) {
                     onLongPress()
                 }
@@ -92,12 +100,18 @@ suspend fun PointerInputScope.detectWebtoonGestures(
                 ) {
                     val now = System.currentTimeMillis()
                     if (isWebtoonDoubleTap(now, lastTapTime, up.position, lastTapOffset, touchSlop = touchSlop)) {
+                        pendingSingleTap?.cancel()
+                        pendingSingleTap = null
                         onDoubleTapToggle()
                         lastTapTime = 0L
                     } else {
                         lastTapTime = now
                         lastTapOffset = up.position
-                        onSingleTap(up.position)
+                        pendingSingleTap?.cancel()
+                        pendingSingleTap = gestureScope.launch {
+                            delay(350L)
+                            onSingleTap(up.position)
+                        }
                     }
                 }
                 break
@@ -107,6 +121,8 @@ suspend fun PointerInputScope.detectWebtoonGestures(
             val panChange = event.calculatePan()
             accumulatedPan += panChange
             if (pressedCount >= 2) {
+                pendingSingleTap?.cancel()
+                pendingSingleTap = null
                 // A second pointer is an explicit request to transform this strip. Claim it
                 // immediately so the LazyColumn cannot consume the pinch as a vertical drag.
                 wasMultiTouch = true
@@ -123,6 +139,8 @@ suspend fun PointerInputScope.detectWebtoonGestures(
                     touchSlop = touchSlop,
                 )
                 if (horizontalIntent) {
+                    pendingSingleTap?.cancel()
+                    pendingSingleTap = null
                     transformStarted = true
                     onZoom(getScale(), panChange.x)
                     event.changes.forEach { it.consume() }

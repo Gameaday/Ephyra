@@ -69,7 +69,9 @@ import ephyra.feature.reader.viewer.readerPageMemoryCacheKey
 import ephyra.feature.reader.viewer.zoom.ZoomPolicy
 import ephyra.presentation.core.data.coil.cropBorders
 import eu.kanade.tachiyomi.source.model.Page
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -107,10 +109,13 @@ fun ZoomableMangaPage(
         val offsetAnim = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
         var lastTapTime by remember { mutableStateOf(0L) }
         var lastTapOffset by remember { mutableStateOf(Offset.Zero) }
+        var pendingSingleTap by remember { mutableStateOf<Job?>(null) }
         val transformMutex = remember { Mutex() }
 
         LaunchedEffect(scaleAnim.value) { onScaleChanged(scaleAnim.value) }
         LaunchedEffect(page) {
+            pendingSingleTap?.cancel()
+            pendingSingleTap = null
             scaleAnim.snapTo(1f)
             offsetAnim.snapTo(Offset.Zero)
         }
@@ -120,7 +125,11 @@ fun ZoomableMangaPage(
             .pointerInput(page, containerSize) {
                 detectPagerGestures(
                     canPan = { ZoomPolicy.locksInteraction(scaleAnim.value) },
-                    onLongPress = onLongTap,
+                    onLongPress = {
+                        pendingSingleTap?.cancel()
+                        pendingSingleTap = null
+                        onLongTap()
+                    },
                     onTap = { tapOffset ->
                         val currentTime = System.currentTimeMillis()
                         val isDoubleTap = currentTime - lastTapTime < 350L &&
@@ -129,6 +138,8 @@ fun ZoomableMangaPage(
 
                         if (scaleAnim.value > ZoomPolicy.ZOOM_GATE) {
                             if (isDoubleTap) {
+                                pendingSingleTap?.cancel()
+                                pendingSingleTap = null
                                 scope.launch {
                                     launch { scaleAnim.animateTo(1f, tween(300)) }
                                     launch { offsetAnim.animateTo(Offset.Zero, tween(300)) }
@@ -137,12 +148,17 @@ fun ZoomableMangaPage(
                             } else {
                                 lastTapTime = currentTime
                                 lastTapOffset = tapOffset
-                                if (isNav) onTap(tapOffset, containerSize)
+                                if (isNav) {
+                                    pendingSingleTap?.cancel()
+                                    pendingSingleTap = scope.launch {
+                                        delay(350L)
+                                        onTap(tapOffset, containerSize)
+                                    }
+                                }
                             }
-                        } else if (isNav) {
-                            onTap(tapOffset, containerSize)
-                            lastTapTime = 0L
                         } else if (isDoubleTap) {
+                            pendingSingleTap?.cancel()
+                            pendingSingleTap = null
                             val targetScale = 2.5f
                             val targetOffset = Offset(
                                 x = (containerWidth / 2f - tapOffset.x) * (targetScale - 1f),
@@ -162,10 +178,16 @@ fun ZoomableMangaPage(
                         } else {
                             lastTapTime = currentTime
                             lastTapOffset = tapOffset
-                            onTap(tapOffset, containerSize)
+                            pendingSingleTap?.cancel()
+                            pendingSingleTap = scope.launch {
+                                delay(350L)
+                                onTap(tapOffset, containerSize)
+                            }
                         }
                     },
                     onTransform = { centroid, pan, zoom ->
+                        pendingSingleTap?.cancel()
+                        pendingSingleTap = null
                         scope.launch {
                             transformMutex.withLock {
                                 val newScale = (scaleAnim.value * zoom).coerceIn(1f, 5f)
