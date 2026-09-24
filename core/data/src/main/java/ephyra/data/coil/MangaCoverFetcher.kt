@@ -39,15 +39,16 @@ import java.io.IOException
  * A [Fetcher] that fetches cover image for [Manga] object.
  *
  * It uses [Manga.thumbnailUrl] if custom cover is not set by the user.
- * Disk caching for library items is handled by [CoverCache], otherwise
- * handled by Coil's [DiskCache].
+ * Remote cover bytes are persisted in [CoverCache] for both library and browse
+ * content. Coil owns decoding and memory caching; it is not a second durable
+ * source of truth for remote covers. Existing Coil disk snapshots are migrated
+ * into the dedicated store on first read.
  *
  * Available request parameter:
  * - [USE_CUSTOM_COVER_KEY]: Use custom cover if set by user, default is true
  */
 class MangaCoverFetcher(
     private val url: String?,
-    private val isLibraryManga: Boolean,
     private val options: Options,
     private val coverFileLazy: Lazy<File?>,
     private val customCoverFileLazy: Lazy<File>,
@@ -106,27 +107,20 @@ class MangaCoverFetcher(
     }
 
     private suspend fun httpLoader(): FetchResult {
-        // Only cache separately if it's a library item
-        val libraryCoverCacheFile = if (isLibraryManga) {
-            coverFileLazy.value ?: error("No cover specified")
-        } else {
-            null
-        }
-        if (libraryCoverCacheFile?.exists() == true && options.diskCachePolicy.readEnabled) {
-            return fileLoader(libraryCoverCacheFile)
+        val coverCacheFile = coverFileLazy.value ?: error("No cover specified")
+        if (coverCacheFile.exists() && options.diskCachePolicy.readEnabled) {
+            return fileLoader(coverCacheFile)
         }
 
         var snapshot = readFromDiskCache()
         try {
-            // Fetch from disk cache
+            // Migrate a legacy Coil disk entry into the dedicated durable store once.
             if (snapshot != null) {
-                val snapshotCoverCache = moveSnapshotToCoverCache(snapshot, libraryCoverCacheFile)
-                if (snapshotCoverCache != null) {
-                    // Read from cover cache after added to library
-                    return fileLoader(snapshotCoverCache)
+                val migratedCover = moveSnapshotToCoverCache(snapshot, coverCacheFile)
+                if (migratedCover != null) {
+                    return fileLoader(migratedCover)
                 }
 
-                // Read from snapshot
                 return SourceFetchResult(
                     source = snapshot.toImageSource(),
                     mimeType = "image/*",
@@ -134,27 +128,14 @@ class MangaCoverFetcher(
                 )
             }
 
-            // Fetch from network
             val response = executeNetworkRequest()
             val responseBody = checkNotNull(response.body) { "Null response source" }
             try {
-                // Read from cover cache after library manga cover updated
-                val responseCoverCache = writeResponseToCoverCache(response, libraryCoverCacheFile)
-                if (responseCoverCache != null) {
-                    return fileLoader(responseCoverCache)
+                val persistedCover = writeResponseToCoverCache(response, coverCacheFile)
+                if (persistedCover != null) {
+                    return fileLoader(persistedCover)
                 }
 
-                // Read from disk cache
-                snapshot = writeToDiskCache(response)
-                if (snapshot != null) {
-                    return SourceFetchResult(
-                        source = snapshot.toImageSource(),
-                        mimeType = "image/*",
-                        dataSource = DataSource.NETWORK,
-                    )
-                }
-
-                // Read from response if cache is unused or unusable
                 return SourceFetchResult(
                     source = ImageSource(source = responseBody.source(), fileSystem = FileSystem.SYSTEM),
                     mimeType = "image/*",
@@ -250,26 +231,6 @@ class MangaCoverFetcher(
         }
     }
 
-    private fun writeToDiskCache(
-        response: Response,
-    ): DiskCache.Snapshot? {
-        val diskCache = imageLoader.diskCache
-        val editor = diskCache?.openEditor(diskCacheKey) ?: return null
-        try {
-            diskCache.fileSystem.write(editor.data) {
-                response.body.source().readAll(this)
-            }
-            return editor.commitAndOpenSnapshot()
-        } catch (e: Exception) {
-            try {
-                editor.abort()
-            } catch (abortEx: Exception) {
-                logcat(LogPriority.DEBUG, abortEx) { "Failed to abort disk-cache editor after write failure" }
-            }
-            throw e
-        }
-    }
-
     private fun DiskCache.Snapshot.toImageSource(): ImageSource {
         return ImageSource(
             file = data,
@@ -304,7 +265,6 @@ class MangaCoverFetcher(
         override fun create(data: Manga, options: Options, imageLoader: ImageLoader): Fetcher {
             return MangaCoverFetcher(
                 url = data.thumbnailUrl,
-                isLibraryManga = data.favorite,
                 options = options,
                 coverFileLazy = lazy { coverCache.getCoverFile(data.thumbnailUrl) },
                 customCoverFileLazy = lazy { coverCache.getCustomCoverFile(data.id) },
@@ -331,7 +291,6 @@ class MangaCoverFetcher(
         override fun create(data: MangaCover, options: Options, imageLoader: ImageLoader): Fetcher {
             return MangaCoverFetcher(
                 url = data.url,
-                isLibraryManga = data.isMangaFavorite,
                 options = options,
                 coverFileLazy = lazy { coverCache.getCoverFile(data.url) },
                 customCoverFileLazy = lazy { coverCache.getCustomCoverFile(data.mangaId) },

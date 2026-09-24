@@ -9,8 +9,13 @@ import java.io.InputStream
 import ephyra.domain.manga.service.CoverCache as ICoverCache
 
 /**
- * Class used to create cover cache.
- * It is used to store the covers of the library.
+ * Durable cover store for remote and custom cover bytes.
+ *
+ * Remote cover files are keyed by the hashed thumbnail URL and live in app-external
+ * storage so they survive process death and app restarts. Custom covers are kept in a
+ * separate directory and are never removed by ordinary remote-cover pruning. Coil owns
+ * decoding and its disposable memory cache; this class is the durable source of truth.
+ *
  * Names of files are created with the md5 of the thumbnail URL.
  */
 class CoverCache(private val context: Context) : ICoverCache {
