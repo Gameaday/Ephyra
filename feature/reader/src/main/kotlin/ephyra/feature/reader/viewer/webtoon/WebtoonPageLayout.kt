@@ -3,9 +3,11 @@ package ephyra.feature.reader.viewer.webtoon
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.layout
 import ephyra.feature.reader.model.ChapterTransition
 import ephyra.feature.reader.model.ReaderPage
 import eu.kanade.tachiyomi.source.model.Page
+import kotlin.math.roundToInt
 
 /**
  * Single layout contract shared by every webtoon item branch (merged / sliced / single /
@@ -20,6 +22,19 @@ fun Modifier.webtoonItemBox(aspectRatio: Float?): Modifier {
             .aspectRatio(aspectRatio)
     } else {
         this.fillMaxWidth()
+    }
+}
+
+/**
+ * Reports a vertically scaled layout footprint while measuring the page content at its natural
+ * document size. The graphics layer inside this wrapper paints the proportional zoom; LazyColumn
+ * therefore sees contiguous item heights instead of independent unscaled gaps.
+ */
+fun Modifier.webtoonZoomLayout(scale: Float): Modifier = layout { measurable, constraints ->
+    val placeable = measurable.measure(constraints)
+    val safeScale = scale.coerceAtLeast(1f)
+    layout(placeable.width, (placeable.height * safeScale).roundToInt()) {
+        placeable.place(0, 0)
     }
 }
 

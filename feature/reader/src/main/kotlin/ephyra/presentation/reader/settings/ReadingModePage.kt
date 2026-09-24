@@ -192,39 +192,9 @@ private fun ColumnScope.WebtoonViewerSettings(ViewModel: ReaderSettingsViewModel
         pref = ViewModel.preferences.cropBordersWebtoon(),
     )
 
-    val dualPageSplitWebtoon by ViewModel.preferences.dualPageSplitWebtoon().collectAsState()
-    CheckboxItem(
-        label = stringResource(ephyra.app.core.common.R.string.pref_dual_page_split),
-        pref = ViewModel.preferences.dualPageSplitWebtoon(),
-    )
-
-    if (dualPageSplitWebtoon) {
-        CheckboxItem(
-            label = stringResource(ephyra.app.core.common.R.string.pref_dual_page_invert),
-            pref = ViewModel.preferences.dualPageInvertWebtoon(),
-        )
-    }
-
-    val dualPageRotateToFitWebtoon by ViewModel.preferences.dualPageRotateToFitWebtoon().collectAsState()
-    CheckboxItem(
-        label = stringResource(ephyra.app.core.common.R.string.pref_page_rotate),
-        pref = ViewModel.preferences.dualPageRotateToFitWebtoon(),
-    )
-
-    if (dualPageRotateToFitWebtoon) {
-        CheckboxItem(
-            label = stringResource(ephyra.app.core.common.R.string.pref_page_rotate_invert),
-            pref = ViewModel.preferences.dualPageRotateToFitInvertWebtoon(),
-        )
-    }
-
     CheckboxItem(
         label = stringResource(ephyra.app.core.common.R.string.pref_double_tap_zoom),
         pref = ViewModel.preferences.webtoonDoubleTapZoomEnabled(),
-    )
-    CheckboxItem(
-        label = stringResource(ephyra.app.core.common.R.string.pref_webtoon_disable_zoom_out),
-        pref = ViewModel.preferences.webtoonDisableZoomOut(),
     )
 }
 

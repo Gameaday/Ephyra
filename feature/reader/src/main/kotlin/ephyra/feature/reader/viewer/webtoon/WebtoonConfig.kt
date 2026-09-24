@@ -27,11 +27,6 @@ class WebtoonConfig(
     var imageCropBorders = false
         private set
 
-    var zoomOutDisabled = false
-        private set
-
-    var zoomPropertyChangedListener: ((Boolean) -> Unit)? = null
-
     var sidePadding = 0
         private set
 
@@ -58,30 +53,6 @@ class WebtoonConfig(
             .drop(1)
             .onEach { navigationModeChangedListener?.invoke() }
             .launchIn(scope)
-
-        readerPreferences.dualPageSplitWebtoon()
-            .register({ dualPageSplit = it }, { imagePropertyChangedListener?.invoke() })
-
-        readerPreferences.dualPageInvertWebtoon()
-            .register({ dualPageInvert = it }, { imagePropertyChangedListener?.invoke() })
-
-        readerPreferences.dualPageRotateToFitWebtoon()
-            .register(
-                { dualPageRotateToFit = it },
-                { imagePropertyChangedListener?.invoke() },
-            )
-
-        readerPreferences.dualPageRotateToFitInvertWebtoon()
-            .register(
-                { dualPageRotateToFitInvert = it },
-                { imagePropertyChangedListener?.invoke() },
-            )
-
-        readerPreferences.webtoonDisableZoomOut()
-            .register(
-                { zoomOutDisabled = it },
-                { zoomPropertyChangedListener?.invoke(it) },
-            )
 
         readerPreferences.webtoonDoubleTapZoomEnabled()
             .register(

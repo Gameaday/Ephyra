@@ -314,13 +314,9 @@ object SettingsReaderScreen : SearchableSettings {
         val numberFormat = remember { NumberFormat.getPercentInstance() }
 
         val navModePref = readerPreferences.navigationModeWebtoon()
-        val dualPageSplitPref = readerPreferences.dualPageSplitWebtoon()
-        val rotateToFitPref = readerPreferences.dualPageRotateToFitWebtoon()
         val webtoonSidePaddingPref = readerPreferences.webtoonSidePadding()
 
         val navMode by navModePref.collectAsState()
-        val dualPageSplit by dualPageSplitPref.collectAsState()
-        val rotateToFit by rotateToFitPref.collectAsState()
         val webtoonSidePadding by webtoonSidePaddingPref.collectAsState()
 
         return Preference.PreferenceGroup(
@@ -375,39 +371,8 @@ object SettingsReaderScreen : SearchableSettings {
                     title = stringResource(ephyra.app.core.common.R.string.pref_crop_borders),
                 ),
                 Preference.PreferenceItem.SwitchPreference(
-                    preference = dualPageSplitPref,
-                    title = stringResource(ephyra.app.core.common.R.string.pref_dual_page_split),
-                    onValueChanged = {
-                        rotateToFitPref.set(false)
-                        true
-                    },
-                ),
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = readerPreferences.dualPageInvertWebtoon(),
-                    title = stringResource(ephyra.app.core.common.R.string.pref_dual_page_invert),
-                    subtitle = stringResource(ephyra.app.core.common.R.string.pref_dual_page_invert_summary),
-                    enabled = dualPageSplit,
-                ),
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = rotateToFitPref,
-                    title = stringResource(ephyra.app.core.common.R.string.pref_page_rotate),
-                    onValueChanged = {
-                        dualPageSplitPref.set(false)
-                        true
-                    },
-                ),
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = readerPreferences.dualPageRotateToFitInvertWebtoon(),
-                    title = stringResource(ephyra.app.core.common.R.string.pref_page_rotate_invert),
-                    enabled = rotateToFit,
-                ),
-                Preference.PreferenceItem.SwitchPreference(
                     preference = readerPreferences.webtoonDoubleTapZoomEnabled(),
                     title = stringResource(ephyra.app.core.common.R.string.pref_double_tap_zoom),
-                ),
-                Preference.PreferenceItem.SwitchPreference(
-                    preference = readerPreferences.webtoonDisableZoomOut(),
-                    title = stringResource(ephyra.app.core.common.R.string.pref_webtoon_disable_zoom_out),
                 ),
             ),
         )

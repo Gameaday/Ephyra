@@ -46,6 +46,16 @@ class WebtoonZoomStateTest {
     }
 
     @Test
+    fun `zoom pan is bounded by viewport overflow`() {
+        val state = WebtoonZoomState(min = 1f, max = 4f)
+        state.setViewportWidth(100f)
+        state.applyZoom(2f, 10_000f)
+        assertEquals(50f, state.offsetX)
+        state.applyZoom(1f, 0f)
+        assertEquals(0f, state.offsetX)
+    }
+
+    @Test
     fun `layout helpers derive aspect and reject unknowns`() {
         assertEquals(0.5f, webtoonAspectRatio(800 to 1600))
         assertNull(webtoonAspectRatio(null))
