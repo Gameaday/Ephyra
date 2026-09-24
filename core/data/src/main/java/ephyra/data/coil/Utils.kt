@@ -4,6 +4,7 @@ import coil3.Extras
 import coil3.getExtra
 import coil3.request.ImageRequest
 import coil3.request.Options
+import coil3.request.transformations
 import coil3.size.Dimension
 import coil3.size.Scale
 import coil3.size.Size
@@ -27,6 +28,7 @@ internal fun Dimension.toPx(scale: Scale): Int = pxOrElse {
 
 fun ImageRequest.Builder.cropBorders(enable: Boolean) = apply {
     extras[cropBordersKey] = enable
+    transformations(if (enable) listOf(BorderCropTransformation()) else emptyList())
 }
 
 val Options.cropBorders: Boolean

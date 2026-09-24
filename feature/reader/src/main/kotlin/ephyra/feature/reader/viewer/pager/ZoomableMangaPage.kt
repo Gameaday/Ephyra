@@ -285,7 +285,7 @@ fun ZoomableMangaPage(
                         modifier = contentBoxModifier,
                         contentAlignment = Alignment.Center,
                     ) {
-                        if (merged != null && !merged.isRecycled) {
+                        if (merged != null && !merged.isRecycled && !cropBorders) {
                             Image(
                                 bitmap = merged.asImageBitmap(),
                                 contentDescription = "Page ${page.number}",

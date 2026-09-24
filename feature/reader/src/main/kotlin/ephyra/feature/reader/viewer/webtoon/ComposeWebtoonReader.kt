@@ -47,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
@@ -134,7 +135,6 @@ fun ComposeWebtoonReader(
     val zoomState = rememberWebtoonZoomState(
         chapterId = currentChapterId,
         zoomEnabled = viewer.config.doubleTapZoom,
-        zoomOutDisabled = viewer.config.zoomOutDisabled,
     )
     val zoomEnabled = viewer.config.doubleTapZoom
 
@@ -533,25 +533,29 @@ private fun WebtoonPageItem(
     // known the item reserves the final full-strip height up front; sliced / single /
     // loading states all render inside this box so switching between them can never
     // resize the item or shift siblings.
-    val itemModifier = modifier.webtoonItemBox(webtoonAspectRatio(intrinsicDimensions))
+    val itemModifier = modifier
+        .webtoonItemBox(webtoonAspectRatio(intrinsicDimensions))
+        .webtoonZoomLayout(zoomState.scale)
 
     Box(
         modifier = itemModifier
             .onGloballyPositioned { coordinates ->
+                // The viewport width is the reference for horizontal pan bounds. Do not derive
+                // bounds from a slice: all slices in this page share the same document width.
+                zoomState.setViewportWidth(coordinates.size.width.toFloat())
                 // Track on-screen visibility for the watchdog: actually intersecting the
                 // window (not merely composed nearby via the prefetch window).
                 itemIsVisible = coordinates.isAttached && !coordinates.boundsInWindow().isEmpty
             }
-            // Visual-only zoom: graphicsLayer never changes layout size, so pinch and
-            // double-tap resize content to fit without moving any section in the list.
-            // Single pointerInput: tap/zoom share one detector chain so scales apply
-            // once and vertical scroll always reaches the list.
+            // Each page owns a proportional zoom transform. The layout wrapper above reports the
+            // scaled height, so adjacent strips remain contiguous; the viewport clips horizontal
+            // overflow rather than clipping individual slices.
             .graphicsLayer {
                 scaleX = zoomState.scale
                 scaleY = zoomState.scale
                 translationX = zoomState.offsetX
-                // Clip while zoomed: a scaled-up strip must not paint over its neighbors.
-                clip = zoomState.scale > 1.01f
+                transformOrigin = TransformOrigin(0f, 0f)
+                clip = false
             }
             .pointerInput(page.index, zoomEnabled to zoomState) {
                 if (!zoomEnabled) {
@@ -668,7 +672,7 @@ private fun WebtoonPageItem(
                     page.mergedBitmap == null && readyBytes != null &&
                     (intrinsicDimensions != null || (page.width > 0 && page.height > 0))
 
-                if (page.mergedBitmap != null) {
+                if (page.mergedBitmap != null && !cropBorders) {
                     Image(
                         bitmap = page.mergedBitmap!!.asImageBitmap(),
                         contentDescription = "Page ${page.number}",
@@ -678,6 +682,15 @@ private fun WebtoonPageItem(
                             // above) — never wrapContent, which would resize the LazyColumn
                             // item after layout and jump siblings when moving between sections.
                             .fillMaxSize(),
+                    )
+                } else if (page.mergedBitmap != null) {
+                    SingleWebtoonImage(
+                        page = page,
+                        imageModel = page.mergedBitmap!!,
+                        cropBorders = true,
+                        targetWidthPx = targetWidthPx,
+                        densityScale = density.density,
+                        bytesSize = 0,
                     )
                 } else if (shouldAttemptSlices && readyBytes != null) {
                     val (knownW, knownH) = intrinsicDimensions ?: (page.width to page.height)
