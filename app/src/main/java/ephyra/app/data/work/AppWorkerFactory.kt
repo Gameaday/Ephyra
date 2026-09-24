@@ -141,7 +141,6 @@ class AppWorkerFactory : WorkerFactory() {
                 entryPoint.sourceManager(),
                 entryPoint.libraryPreferences(),
                 entryPoint.downloadManager(),
-                entryPoint.coverCache(),
                 entryPoint.getLibraryManga(),
                 entryPoint.getManga(),
                 entryPoint.updateManga(),

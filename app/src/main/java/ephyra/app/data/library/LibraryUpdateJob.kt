@@ -22,7 +22,6 @@ import ephyra.core.common.util.system.isRunning
 import ephyra.core.common.util.system.logcat
 import ephyra.core.common.util.system.setForegroundSafely
 import ephyra.core.common.util.system.workManager
-import ephyra.data.cache.CoverCache
 import ephyra.data.notification.Notifications
 import ephyra.domain.chapter.interactor.FilterChaptersForDownload
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
@@ -68,7 +67,6 @@ class LibraryUpdateJob(
     private val sourceManager: SourceManager,
     private val libraryPreferences: LibraryPreferences,
     private val downloadManager: DownloadManager,
-    private val coverCache: CoverCache,
     private val getLibraryManga: GetLibraryManga,
     private val getManga: GetManga,
     private val updateManga: UpdateManga,
@@ -81,8 +79,6 @@ class LibraryUpdateJob(
 ) : CoroutineWorker(context, workerParams) {
 
     private var mangaToUpdate: List<LibraryManga> = mutableListOf()
-
-    private var favoriteCoverNames: Set<String> = emptySet()
 
     override suspend fun doWork(): Result {
         if (tags.contains(WORK_NAME_AUTO)) {
@@ -115,14 +111,6 @@ class LibraryUpdateJob(
                     Result.failure()
                 }
             } finally {
-                try {
-                    val pruned = coverCache.pruneOldCovers(protectedNames = favoriteCoverNames)
-                    if (pruned > 0) {
-                        logcat(LogPriority.DEBUG) { "Cover cache: pruned $pruned stale covers" }
-                    }
-                } catch (e: Exception) {
-                    logcat(LogPriority.WARN, e) { "Cover cache pruning failed" }
-                }
                 notifier.cancelProgressNotification()
             }
         }
@@ -138,10 +126,6 @@ class LibraryUpdateJob(
 
     private suspend fun addMangaToQueue(categoryId: Long) {
         val libraryManga = getLibraryManga.await()
-
-        favoriteCoverNames = coverCache.coverFileNames(
-            libraryManga.map { it.manga.thumbnailUrl to it.manga.coverLastModified },
-        )
 
         val listToUpdate = if (categoryId != -1L) {
             libraryManga.filter { categoryId in it.categories }
