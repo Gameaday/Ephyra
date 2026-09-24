@@ -88,64 +88,33 @@ class ContentSourceAdapter(
 
     override suspend fun getPopularContent(page: Int, type: ContentType): List<ContentItem> {
         if (type != ContentType.MANGA || delegate !is CatalogueSource) return emptyList()
-        val result = delegate.getPopularManga(page)
-        return result.mangas.map { sManga ->
-            ContentItem(
-                id = -1L,
-                sourceId = id,
-                url = sManga.url,
-                title = sManga.title,
-                author = sManga.author,
-                artist = sManga.artist,
-                description = sManga.description,
-                genres = sManga.genre?.split(",")?.map { it.trim() } ?: emptyList(),
-                status = ContentStatus.fromLegacyInt(sManga.status.toLong()),
-                thumbnailUrl = sManga.thumbnail_url,
-                contentType = ContentType.MANGA,
-                initialized = sManga.initialized,
-            )
-        }
+        return delegate.getPopularManga(page).mangas.map { it.toContentItem(id) }
     }
 
     override suspend fun getSearchContent(page: Int, query: String, type: ContentType): List<ContentItem> {
         if (type != ContentType.MANGA || delegate !is CatalogueSource) return emptyList()
-        val result = delegate.getSearchManga(page, query, FilterList())
-        return result.mangas.map { sManga ->
-            ContentItem(
-                id = -1L,
-                sourceId = id,
-                url = sManga.url,
-                title = sManga.title,
-                author = sManga.author,
-                artist = sManga.artist,
-                description = sManga.description,
-                genres = sManga.genre?.split(",")?.map { it.trim() } ?: emptyList(),
-                status = ContentStatus.fromLegacyInt(sManga.status.toLong()),
-                thumbnailUrl = sManga.thumbnail_url,
-                contentType = ContentType.MANGA,
-                initialized = sManga.initialized,
-            )
-        }
+        return delegate.getSearchManga(page, query, FilterList()).mangas.map { it.toContentItem(id) }
     }
 
     override suspend fun getLatestContent(page: Int, type: ContentType): List<ContentItem> {
         if (type != ContentType.MANGA || delegate !is CatalogueSource) return emptyList()
-        val result = delegate.getLatestUpdates(page)
-        return result.mangas.map { sManga ->
-            ContentItem(
-                id = -1L,
-                sourceId = id,
-                url = sManga.url,
-                title = sManga.title,
-                author = sManga.author,
-                artist = sManga.artist,
-                description = sManga.description,
-                genres = sManga.genre?.split(",")?.map { it.trim() } ?: emptyList(),
-                status = ContentStatus.fromLegacyInt(sManga.status.toLong()),
-                thumbnailUrl = sManga.thumbnail_url,
-                contentType = ContentType.MANGA,
-                initialized = sManga.initialized,
-            )
-        }
+        return delegate.getLatestUpdates(page).mangas.map { it.toContentItem(id) }
     }
+}
+
+private fun SManga.toContentItem(sourceId: Long): ContentItem {
+    return ContentItem(
+        id = -1L,
+        sourceId = sourceId,
+        url = url,
+        title = title,
+        author = author,
+        artist = artist,
+        description = description,
+        genres = genre?.split(",")?.map { it.trim() } ?: emptyList(),
+        status = ContentStatus.fromLegacyInt(status.toLong()),
+        thumbnailUrl = thumbnail_url,
+        contentType = ContentType.MANGA,
+        initialized = initialized,
+    )
 }

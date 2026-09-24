@@ -58,21 +58,12 @@ class ContentSourceOrchestrator(
             if (!profile.enabled) {
                 return Result.Error(IllegalStateException("Source is disabled: $baseUrl"))
             }
-            val primaryEngine = resolveEngineForProfile(profile)
-            val items = try {
-                val result = primaryEngine.search(profile, query, page)
-                if (result.isEmpty() && primaryEngine !== heuristicEngine) {
-                    heuristicEngine.search(profile, query, page).ifEmpty { result }
-                } else {
-                    result
-                }
-            } catch (primaryEx: Exception) {
-                if (primaryEngine !== heuristicEngine) {
-                    heuristicEngine.search(profile, query, page)
-                } else {
-                    throw primaryEx
-                }
-            }
+            val items = withEngineFallback(
+                profile = profile,
+                primary = { engine -> engine.search(profile, query, page) },
+                fallback = { engine -> engine.search(profile, query, page) },
+                fallbackOnEmpty = { it.isEmpty() },
+            )
             updateProfileHealth(profile, success = true)
             Result.Success(items)
         } catch (e: Exception) {
@@ -87,16 +78,11 @@ class ContentSourceOrchestrator(
             if (!profile.enabled) {
                 return Result.Error(IllegalStateException("Source is disabled: $baseUrl"))
             }
-            val primaryEngine = resolveEngineForProfile(profile)
-            val item = try {
-                primaryEngine.getItem(profile, itemUrl)
-            } catch (primaryEx: Exception) {
-                if (primaryEngine !== heuristicEngine) {
-                    heuristicEngine.getItem(profile, itemUrl)
-                } else {
-                    throw primaryEx
-                }
-            }
+            val item = withEngineFallback(
+                profile = profile,
+                primary = { engine -> engine.getItem(profile, itemUrl) },
+                fallback = { engine -> engine.getItem(profile, itemUrl) },
+            )
             updateProfileHealth(profile, success = true)
             Result.Success(item)
         } catch (e: Exception) {
@@ -111,21 +97,12 @@ class ContentSourceOrchestrator(
             if (!profile.enabled) {
                 return Result.Error(IllegalStateException("Source is disabled: $baseUrl"))
             }
-            val primaryEngine = resolveEngineForProfile(profile)
-            val items = try {
-                val result = primaryEngine.getPopular(profile, page)
-                if (result.isEmpty() && primaryEngine !== heuristicEngine) {
-                    heuristicEngine.getPopular(profile, page).ifEmpty { result }
-                } else {
-                    result
-                }
-            } catch (primaryEx: Exception) {
-                if (primaryEngine !== heuristicEngine) {
-                    heuristicEngine.getPopular(profile, page)
-                } else {
-                    throw primaryEx
-                }
-            }
+            val items = withEngineFallback(
+                profile = profile,
+                primary = { engine -> engine.getPopular(profile, page) },
+                fallback = { engine -> engine.getPopular(profile, page) },
+                fallbackOnEmpty = { it.isEmpty() },
+            )
             updateProfileHealth(profile, success = true)
             Result.Success(items)
         } catch (e: Exception) {
@@ -140,21 +117,12 @@ class ContentSourceOrchestrator(
             if (!profile.enabled) {
                 return Result.Error(IllegalStateException("Source is disabled: $baseUrl"))
             }
-            val primaryEngine = resolveEngineForProfile(profile)
-            val items = try {
-                val result = primaryEngine.getLatest(profile, page)
-                if (result.isEmpty() && primaryEngine !== heuristicEngine) {
-                    heuristicEngine.getLatest(profile, page).ifEmpty { result }
-                } else {
-                    result
-                }
-            } catch (primaryEx: Exception) {
-                if (primaryEngine !== heuristicEngine) {
-                    heuristicEngine.getLatest(profile, page)
-                } else {
-                    throw primaryEx
-                }
-            }
+            val items = withEngineFallback(
+                profile = profile,
+                primary = { engine -> engine.getLatest(profile, page) },
+                fallback = { engine -> engine.getLatest(profile, page) },
+                fallbackOnEmpty = { it.isEmpty() },
+            )
             updateProfileHealth(profile, success = true)
             Result.Success(items)
         } catch (e: Exception) {
@@ -169,21 +137,12 @@ class ContentSourceOrchestrator(
             if (!profile.enabled) {
                 return Result.Error(IllegalStateException("Source is disabled: $baseUrl"))
             }
-            val primaryEngine = resolveEngineForProfile(profile)
-            val chapters = try {
-                val result = primaryEngine.getChapters(profile, itemUrl)
-                if (result.isEmpty() && primaryEngine !== heuristicEngine) {
-                    heuristicEngine.getChapters(profile, itemUrl).ifEmpty { result }
-                } else {
-                    result
-                }
-            } catch (primaryEx: Exception) {
-                if (primaryEngine !== heuristicEngine) {
-                    heuristicEngine.getChapters(profile, itemUrl)
-                } else {
-                    throw primaryEx
-                }
-            }
+            val chapters = withEngineFallback(
+                profile = profile,
+                primary = { engine -> engine.getChapters(profile, itemUrl) },
+                fallback = { engine -> engine.getChapters(profile, itemUrl) },
+                fallbackOnEmpty = { it.isEmpty() },
+            )
             updateProfileHealth(profile, success = true)
             Result.Success(chapters)
         } catch (e: Exception) {
@@ -198,21 +157,12 @@ class ContentSourceOrchestrator(
             if (!profile.enabled) {
                 return Result.Error(IllegalStateException("Source is disabled: $baseUrl"))
             }
-            val primaryEngine = resolveEngineForProfile(profile)
-            val pages = try {
-                val result = primaryEngine.getPages(profile, unitUrl)
-                if (result.isEmpty() && primaryEngine !== heuristicEngine) {
-                    heuristicEngine.getPages(profile, unitUrl).ifEmpty { result }
-                } else {
-                    result
-                }
-            } catch (primaryEx: Exception) {
-                if (primaryEngine !== heuristicEngine) {
-                    heuristicEngine.getPages(profile, unitUrl)
-                } else {
-                    throw primaryEx
-                }
-            }
+            val pages = withEngineFallback(
+                profile = profile,
+                primary = { engine -> engine.getPages(profile, unitUrl) },
+                fallback = { engine -> engine.getPages(profile, unitUrl) },
+                fallbackOnEmpty = { it.isEmpty() },
+            )
             updateProfileHealth(profile, success = true)
             Result.Success(pages)
         } catch (e: Exception) {
@@ -348,6 +298,37 @@ class ContentSourceOrchestrator(
             scriptEngine
         } else {
             heuristicEngine
+        }
+    }
+
+    /**
+     * Runs an operation against the profile's primary engine, falling back to the heuristic
+     * engine on either failure or (for collection results) an empty primary response.
+     *
+     * Keeping this policy in one place prevents search, detail, chapter, and page operations
+     * from drifting apart as new source engines are added.
+     */
+    private suspend fun <T> withEngineFallback(
+        profile: SourceProfile,
+        primary: suspend (ContentSourceEngine) -> T,
+        fallback: suspend (ContentSourceEngine) -> T,
+        fallbackOnEmpty: ((T) -> Boolean)? = null,
+    ): T {
+        val primaryEngine = resolveEngineForProfile(profile)
+        return try {
+            val result = primary(primaryEngine)
+            if (fallbackOnEmpty != null && primaryEngine !== heuristicEngine && fallbackOnEmpty(result)) {
+                val fallbackResult = fallback(heuristicEngine)
+                if (fallbackOnEmpty(fallbackResult)) result else fallbackResult
+            } else {
+                result
+            }
+        } catch (primaryEx: Exception) {
+            if (primaryEngine !== heuristicEngine) {
+                fallback(heuristicEngine)
+            } else {
+                throw primaryEx
+            }
         }
     }
 
