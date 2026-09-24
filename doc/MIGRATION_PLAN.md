@@ -198,9 +198,10 @@ Ensure modernizations do not break existing extensions.
 
 Ensure successful builds translate to failure-free runtime behavior.
 
-- [x] **Room schema crash prevention** — `fallbackToDestructiveMigration(dropAllTables = true)` in
-  `AppModule` prevents `IllegalStateException` on Room identity-hash mismatch.  Will be replaced
-  by versioned migrations before production.
+- [x] **Room schema crash prevention** — `AppModule` registers the tested lossless `Migrations.ALL`
+  registry and intentionally does not register `fallbackToDestructiveMigration`. Known legacy and
+  Room upgrade paths migrate to schema v3; an unknown future schema fails visibly instead of
+  deleting user data.
 - [x] **Typed `MangaNotFoundException`** — `domain/manga/model/MangaNotFoundException.kt` replaces
   generic `Exception("Manga not found")` in `MangaRepositoryImpl`; `GetManga.await()` catches it
   specifically; `GetManga.subscribe(id)` re-logs unexpected errors then re-throws so callers can

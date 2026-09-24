@@ -91,8 +91,8 @@ Together with Phase A's `SourceModelContractTest` (memo accessors/copy semantics
 1. ☐ On-device validation with a real Mangabat/MangaDex extension: details → chapter list →
    reader render on all five reading modes; no `IncompatibleClassChangeError` in logcat.
    *(cannot be automated from this workspace — requires an emulator/device)*
-2. ☐ Phase C: Room versioned migrations + legacy SQLDelight → Room v1 migration +
-   `MigrationTestHelper` unit tests; replace `fallbackToDestructiveMigration`.
+2. ☑ Phase C: Room v3 versioned migrations, legacy SQLDelight adoption, and migration tests are
+   complete; destructive fallback is absent.
 3. ☐ Phase D: remaining MIGRATION_PLAN items (Phase 4 ScreenModel→Interactor audit,
    Glance pre-caching worker, okhttp-zstd CI pin guard, global-search latency measurement,
    cross-doc reconciliation).

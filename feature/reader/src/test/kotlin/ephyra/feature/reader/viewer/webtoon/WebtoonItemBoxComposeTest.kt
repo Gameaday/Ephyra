@@ -34,6 +34,22 @@ class WebtoonItemBoxComposeTest {
     val composeRule = createComposeRule()
 
     @Test
+    fun `proportional zoom reports a scaled layout footprint`() {
+        composeRule.setContent {
+            Box(
+                Modifier
+                    .testTag("zoomItem")
+                    .webtoonZoomLayout(2f),
+            ) {
+                Box(Modifier.fillMaxWidth().height(50.dp))
+            }
+        }
+        composeRule.waitForIdle()
+        val bounds = composeRule.onNodeWithTag("zoomItem").getUnclippedBoundsInRoot()
+        assertEquals(100f, (bounds.bottom - bounds.top).value, 0.01f)
+    }
+
+    @Test
     fun `reserved box honors the aspect ratio`() {
         composeRule.setContent {
             // 2.0 (landscape) aspect so the reserved height fits the Robolectric window;
