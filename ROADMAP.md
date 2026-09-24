@@ -14,8 +14,18 @@ This file is the single entry point for the reconstruction program. If another d
 3. [`doc/REBUILD_STATUS.md`](doc/REBUILD_STATUS.md)  verified baseline, open defects, and task status ledger.
 4. [`doc/CACHE_POLICY.md`](doc/CACHE_POLICY.md)  current cache invariants; preserve or supersede them through an ADR.
 5. [`doc/SOURCE_DISCOVERY_ARCHITECTURE.md`](doc/SOURCE_DISCOVERY_ARCHITECTURE.md)  current source, search, ranking, compatibility, and discovery contract.
-6. [`doc/DOCUMENTATION_GOVERNANCE.md`](doc/DOCUMENTATION_GOVERNANCE.md)  current, historical, archived, and deleted-document policy.
-7. [`doc/adr/`](doc/adr/)  accepted architectural decisions that must not be silently reversed.
+6. [`doc/SOURCE_DISCOVERY_EXECUTION.md`](doc/SOURCE_DISCOVERY_EXECUTION.md)  source/search implementation order and task decomposition.
+7. [`doc/READER_ARCHITECTURE.md`](doc/READER_ARCHITECTURE.md)  reader session/state/resource contract.
+8. [`doc/READER_GESTURE_CONTRACT.md`](doc/READER_GESTURE_CONTRACT.md)  pointer state machine and gesture ownership.
+9. [`doc/DOCUMENT_VIEWPORT_CONTRACT.md`](doc/DOCUMENT_VIEWPORT_CONTRACT.md)  document coordinates, tiles, and viewport behavior.
+10. [`doc/MEDIA_PIPELINE_CONTRACT.md`](doc/MEDIA_PIPELINE_CONTRACT.md)  source, geometry, decode, and artifact contracts.
+11. [`doc/NAVIGATION_CONTRACT.md`](doc/NAVIGATION_CONTRACT.md)  one graph, typed routes, and back behavior.
+12. [`doc/MOTION_NAVIGATION_CONTRACT.md`](doc/MOTION_NAVIGATION_CONTRACT.md)  route-pair motion and predictive-back policy.
+13. [`doc/FIXTURE_MANIFEST.md`](doc/FIXTURE_MANIFEST.md)  fixture schema and evidence levels.
+14. [`doc/PERFORMANCE_BUDGETS.md`](doc/PERFORMANCE_BUDGETS.md)  initial resource and frame targets.
+15. [`doc/DEPENDENCY_TARGET_GRAPH.md`](doc/DEPENDENCY_TARGET_GRAPH.md)  allowed and forbidden dependency flow.
+16. [`doc/DOCUMENTATION_GOVERNANCE.md`](doc/DOCUMENTATION_GOVERNANCE.md)  current, historical, archived, and deleted-document policy.
+17. [`doc/adr/`](doc/adr/)  accepted architectural decisions that must not be silently reversed.
 
 ## Program outcome
 
@@ -53,6 +63,7 @@ Build a modern Android application in which:
 | Phase | Outcome | Exit gate |
 |---|---|---|
 | 0 | Freeze and establish truth | Reproducible baseline and defect ledger |
+| 0A | Technical contracts | Reader, gesture, viewport, media, navigation, motion, source, fixture, budget, and dependency contracts are executable |
 | 1 | Security and platform safety | No hardcoded secrets or unjustified exemptions |
 | 2 | Quality infrastructure | Device, screenshot, instrumentation, and benchmark gates exist |
 | 3 | Dependency and state foundations | Target graph and effect model enforced |
@@ -74,10 +85,11 @@ No phase may begin implementation until the prior phase exit criteria are record
 1. `GOV-001` baseline tag recorded: `reconstruction-baseline-2026-09-24` at `4ec5b2c15`.
 2. `GOV-002` this program supersedes stale roadmap claims.
 3. `GOV-003` enforce the documentation authority and deletion policy.
-4. `SRC-000` source/search/discovery contract and legacy-boundary inventory.
+4. `CON-001` complete and link the technical contract layer.
 5. `TST-001` define deterministic reader fixtures and acceptance fixtures.
-6. `SRC-001` capability model and typed source results.
-7. `SRC-002` progressive search session, deduplication, ranking, and cancellation.
+6. `SRC-000A/B/C` verify and classify the source/search compatibility inventory.
+7. `SRC-001` capability model and typed source results.
+8. `SRC-002` progressive search session, deduplication, ranking, and cancellation.
 
 Do **not** resume ad hoc reader zoom, crop, transition, or source fallback patches before the relevant contract/fixture task is complete.
 

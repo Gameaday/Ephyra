@@ -66,13 +66,16 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | GOV-002 | Supersede stale roadmap claims and remove obsolete plans from the current tree. | Agent | This ledger + documentation governance | CODE_COMPLETE |
 | GOV-003 | Enforce documentation authority and deletion policy. | Agent | Documentation governance + link/index gate | CODE_COMPLETE |
 | DOC-001 | Delete superseded “completed” documents after contract migration. | Agent | Git diff + link/index gate | CODE_COMPLETE |
-| SRC-000 | Source/search/discovery inventory and legacy-boundary classification. | Agent | Source inventory + ADR link | IN_PROGRESS |
+| SRC-000A | Static source/search inventory. | Agent | Inventory artifact | CODE_COMPLETE |
+| SRC-000B | Source/search call-site verification. | Agent | Call-site matrix | NOT_STARTED |
+| SRC-000C | Legacy compatibility classification and removal decision. | Agent | Approved classification | NOT_STARTED |
 | SRC-001 | SourceDescriptor, capabilities, SourceGateway, typed outcomes. | Agent | Adapter contract tests | NOT_STARTED |
 | SRC-002 | Progressive search session, deduplication, ranking, cancellation. | Agent | Pure search/ranking tests | NOT_STARTED |
 | SRC-003 | Capability-gated discovery, health, quarantine, recommendations. | Agent | Discovery/health tests | NOT_STARTED |
 | SRC-004 | Explicit confidence-scored reversible migration. | Agent | Migration contract tests | NOT_STARTED |
 | SRC-005 | Isolated credentials, trust, install, permission lifecycle. | Agent | Security/source trust tests | NOT_STARTED |
-| TST-001 | Deterministic page, crop, gesture, and transition fixtures. | Agent | Test paths and manifest | NOT_STARTED |
+| CON-001 | Technical contract layer for reader, media, navigation, motion, source, fixtures, budgets, and dependencies. | Agent | Contract links + execution review | CODE_COMPLETE |
+| TST-001 | Deterministic page, crop, gesture, and transition fixtures. | Agent | Fixture manifest + test paths | NOT_STARTED |
 | TST-002 | Connected instrumentation project and device matrix. | Agent | CI workflow | NOT_STARTED |
 | TST-003 | Screenshot and macrobenchmark release gates. | Agent | CI artifacts | NOT_STARTED |
 | SEC-001 | Remove hardcoded signing secrets from build logic. | Agent | Secret scan | NOT_STARTED |
@@ -101,7 +104,8 @@ Legacy defects are not fixed by changing the current implementation unless the t
 
 | Phase | Status | Evidence required to mark VERIFIED |
 |---|---|---|
-| 0  Baseline | NOT_STARTED | GOV-001, GOV-002, GOV-003, DOC-001, TST-001 |
+| 0  Baseline | NOT_STARTED | GOV-001, GOV-002, GOV-003, DOC-001, CON-001, TST-001 |
+| 0A Technical contracts | CODE_COMPLETE | CON-001 |
 | 1  Security/platform | NOT_STARTED | SEC-001 through SEC-003 |
 | 2  Quality infrastructure | NOT_STARTED | TST-001 through TST-003 |
 | 3  Foundations | NOT_STARTED | ARC-001 through ARC-003 |
@@ -123,3 +127,4 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | 2026-09-24 | Created annotated baseline tag `reconstruction-baseline-2026-09-24` at `4ec5b2c15`. | Git tag `20ab06c7255b4c649c82af5bf614299b5a5fca61` |
 | 2026-09-24 | Program initialized; legacy reader defects explicitly recorded. | This document |
 | 2026-09-24 | Added binding source/search/discovery contract, source-boundary ADR, documentation governance, and deleted superseded plans. | Documentation links, `git diff --check`, `spotlessCheck --offline` |
+| 2026-09-24 | Added reader, gesture, document viewport, media, navigation, motion, fixture, budget, dependency, and source execution contracts. | Contract links and execution review |

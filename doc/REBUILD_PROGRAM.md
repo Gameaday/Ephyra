@@ -204,6 +204,35 @@ Exit: baseline reproducible; fixtures available; open defects categorized; no un
 
 Rollback: documentation/fixtures only; no production rollback needed.
 
+### Phase 0A  Technical contracts
+
+**Purpose:** convert architectural decisions into implementation-sized contracts before production replacement begins.
+
+Contracts:
+
+- `READER_ARCHITECTURE.md`
+- `READER_GESTURE_CONTRACT.md`
+- `DOCUMENT_VIEWPORT_CONTRACT.md`
+- `MEDIA_PIPELINE_CONTRACT.md`
+- `NAVIGATION_CONTRACT.md`
+- `MOTION_NAVIGATION_CONTRACT.md`
+- `SOURCE_DISCOVERY_ARCHITECTURE.md`
+- `SOURCE_DISCOVERY_EXECUTION.md`
+- `FIXTURE_MANIFEST.md`
+- `PERFORMANCE_BUDGETS.md`
+- `DEPENDENCY_TARGET_GRAPH.md`
+
+Task: `CON-001`.
+
+Verification:
+
+- every current contract is linked from the roadmap;
+- every contract names owner, state/resource lifetime, failure/cancellation path, and evidence;
+- task IDs are implementation-sized and dependency-ordered;
+- no production code claims a replacement is complete from architectural prose alone.
+
+Exit: a new contributor can implement a contract task without inferring ownership or acceptance from legacy source.
+
 ### Phase 1  Security and platform safety
 
 **Purpose:** remove risks independent of the reconstruction.

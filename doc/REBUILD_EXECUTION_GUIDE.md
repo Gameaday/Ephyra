@@ -8,7 +8,11 @@ This guide tells a human developer or coding agent how to continue the program w
 2. Read [`REBUILD_PROGRAM.md`](REBUILD_PROGRAM.md).
 3. Read [`REBUILD_STATUS.md`](REBUILD_STATUS.md).
 4. Read the relevant ADR files in [`adr/`](adr/).
-5. Run:
+5. For reader/media work, read [`READER_ARCHITECTURE.md`](READER_ARCHITECTURE.md), [`READER_GESTURE_CONTRACT.md`](READER_GESTURE_CONTRACT.md), [`DOCUMENT_VIEWPORT_CONTRACT.md`](DOCUMENT_VIEWPORT_CONTRACT.md), and [`MEDIA_PIPELINE_CONTRACT.md`](MEDIA_PIPELINE_CONTRACT.md).
+6. For navigation/motion work, read [`NAVIGATION_CONTRACT.md`](NAVIGATION_CONTRACT.md) and [`MOTION_NAVIGATION_CONTRACT.md`](MOTION_NAVIGATION_CONTRACT.md).
+7. For source/search/discovery work, read [`SOURCE_DISCOVERY_ARCHITECTURE.md`](SOURCE_DISCOVERY_ARCHITECTURE.md) and [`SOURCE_DISCOVERY_EXECUTION.md`](SOURCE_DISCOVERY_EXECUTION.md).
+8. For documentation changes, read [`DOCUMENTATION_GOVERNANCE.md`](DOCUMENTATION_GOVERNANCE.md).
+9. Run:
 
 ```powershell
 git status --short
@@ -16,12 +20,12 @@ git log -5 --oneline --decorate
 ./gradlew projects
 ```
 
-6. Confirm the working tree is clean. If not, identify whether changes belong to the current task.
-7. Select exactly one `NOT_STARTED` task whose prerequisites are `VERIFIED`.
-8. Create a branch named `program/<phase-number>-<task-id>-<short-slug>`.
-9. Add the task ID to the branch and commit subject.
-10. Do not combine unrelated cleanup into the first commit.
-11. Before source/search work, read [`SOURCE_DISCOVERY_ARCHITECTURE.md`](SOURCE_DISCOVERY_ARCHITECTURE.md) and classify the change as target contract, adapter boundary, or deletion.
+10. Confirm the working tree is clean. If not, identify whether changes belong to the current task.
+11. Select exactly one `NOT_STARTED` task whose prerequisites are `VERIFIED`.
+12. Create a branch named `program/<phase-number>-<task-id>-<short-slug>`.
+13. Add the task ID to the branch and commit subject.
+14. Do not combine unrelated cleanup into the first commit.
+15. Before source/search work, read the source contracts and classify the change as target contract, adapter boundary, or deletion.
 
 ## 2. Task selection
 
