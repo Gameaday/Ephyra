@@ -33,6 +33,7 @@ class UpdatesRepositoryImpl @Inject constructor(
         started: Boolean?,
         bookmarked: Boolean?,
         hideExcludedScanlators: Boolean,
+        libraryOnly: Boolean,
     ): Flow<List<UpdatesWithRelations>> {
         return updateDao.getRecentUpdatesWithFilters(
             after = after,
@@ -40,6 +41,7 @@ class UpdatesRepositoryImpl @Inject constructor(
             read = unread?.let { !it },
             bookmarked = bookmarked,
             hideExcludedScanlators = if (hideExcludedScanlators) 1 else 0,
+            libraryOnly = libraryOnly,
         )
             .map { list -> list.map(UpdatesMapper::mapUpdatesWithRelations) }
             .flowOn(ioDispatcher)

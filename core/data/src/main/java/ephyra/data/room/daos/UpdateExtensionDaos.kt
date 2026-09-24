@@ -20,6 +20,7 @@ interface UpdateDao {
         AND (:read IS NULL OR read = :read)
         AND (:bookmarked IS NULL OR bookmark = :bookmarked)
         AND (:hideExcludedScanlators = 0 OR excludedScanlator IS NULL)
+        AND (:libraryOnly = 0 OR favorite = 1)
         ORDER BY dateFetch DESC
         LIMIT :limit
     """,
@@ -30,6 +31,7 @@ interface UpdateDao {
         read: Boolean?,
         bookmarked: Boolean?,
         hideExcludedScanlators: Int,
+        libraryOnly: Boolean,
     ): Flow<List<UpdatesView>>
 }
 

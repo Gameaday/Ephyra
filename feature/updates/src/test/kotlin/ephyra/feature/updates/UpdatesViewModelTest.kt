@@ -83,7 +83,9 @@ class UpdatesViewModelTest {
         coEvery { filterExcludedScanlatorsPref.get() } returns false
         every { updatesPreferences.filterExcludedScanlators() } returns filterExcludedScanlatorsPref
 
-        every { getUpdates.subscribe(any(), any(), any(), any(), any()) } returns flowOf(emptyList())
+        every {
+            getUpdates.subscribe(any(), any(), any(), any(), any(), any())
+        } returns flowOf(emptyList())
         every { downloadCache.changes } returns MutableSharedFlow()
         every { downloadManager.queueState } returns MutableStateFlow(emptyList<Download>())
         every { downloadManager.statusFlow() } returns MutableSharedFlow()
@@ -109,6 +111,24 @@ class UpdatesViewModelTest {
             updatesPreferences = updatesPreferences,
             libraryUpdateScheduler = libraryUpdateScheduler,
         )
+    }
+
+    @Test
+    fun `updates tab requests only library manga`() = runTest {
+        createViewModel().state.test {
+            awaitItem()
+        }
+
+        io.mockk.verify {
+            getUpdates.subscribe(
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+                eq(true),
+            )
+        }
     }
 
     @Test

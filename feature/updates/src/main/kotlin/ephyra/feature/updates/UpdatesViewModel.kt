@@ -93,6 +93,7 @@ class UpdatesViewModel @Inject constructor(
                             started = it.filterStarted.toBooleanOrNull(),
                             bookmarked = it.filterBookmarked.toBooleanOrNull(),
                             hideExcludedScanlators = it.filterExcludedScanlators,
+                            libraryOnly = true,
                         ).distinctUntilChanged()
                     },
                 downloadCache.changes,
