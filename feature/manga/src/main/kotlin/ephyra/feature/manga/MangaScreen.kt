@@ -1,4 +1,4 @@
-package ephyra.feature.manga
+﻿package ephyra.feature.manga
 
 import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -91,6 +92,7 @@ fun MangaDetailsScreen(
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
+    val shareLabel = stringResource(ephyra.app.core.common.R.string.action_share)
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(mangaId, fromSource) {
@@ -482,7 +484,7 @@ fun MangaDetailsScreen(
                         context.startActivity(
                             android.content.Intent.createChooser(
                                 shareIntent,
-                                context.getString(ephyra.app.core.common.R.string.action_share),
+                                shareLabel,
                             ),
                         )
                     } catch (e: Exception) {

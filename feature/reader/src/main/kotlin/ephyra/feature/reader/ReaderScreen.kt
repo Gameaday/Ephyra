@@ -1,4 +1,4 @@
-package ephyra.feature.reader
+﻿package ephyra.feature.reader
 
 import android.view.ViewGroup
 import androidx.compose.animation.AnimatedVisibility
@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
@@ -275,6 +276,7 @@ private fun ReaderNavigationOverlay(
     var isVisible by remember { mutableStateOf(true) }
     val textMeasurer = rememberTextMeasurer()
     val context = LocalContext.current
+    val regionLabels = navigation.getRegions().associate { it.type to stringResource(it.type.nameRes) }
     val textStyle = remember {
         TextStyle(
             color = Color.White,
@@ -319,7 +321,7 @@ private fun ReaderNavigationOverlay(
                     size = Size(width, height),
                 )
 
-                val label = context.getString(region.type.nameRes)
+                val label = regionLabels[region.type].orEmpty()
                 val measuredText = textMeasurer.measure(
                     text = label,
                     style = textStyle,

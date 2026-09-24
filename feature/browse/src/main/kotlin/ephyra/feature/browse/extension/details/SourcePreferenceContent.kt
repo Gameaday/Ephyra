@@ -1,5 +1,6 @@
-package ephyra.feature.browse.extension.details
+﻿package ephyra.feature.browse.extension.details
 
+import android.annotation.SuppressLint
 import android.content.SharedPreferences
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -48,6 +49,7 @@ import ephyra.presentation.core.preference.SharedPreferencesDataStore
 import eu.kanade.tachiyomi.source.ConfigurableSource
 import eu.kanade.tachiyomi.source.sourcePreferences
 
+@SuppressLint("RestrictedApi")
 @Composable
 fun SourcePreferenceContent(
     source: ConfigurableSource,
