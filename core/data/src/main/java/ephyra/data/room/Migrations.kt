@@ -21,6 +21,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * - **v2**: adopt databases created by the legacy SQLDelight engine (`AndroidDatabaseHandler`,
  *   which also used the `tachiyomi.db` file and left `user_version = 1`) and normalize
  *   everything to the canonical Room-managed shapes — see [MIGRATION_1_2].
+ * - **v3**: add the canonical Room-backed `source_profiles` table — see [MIGRATION_2_3].
  */
 object Migrations {
 

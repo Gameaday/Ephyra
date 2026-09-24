@@ -134,7 +134,7 @@ class EphyraDatabaseMigrationTest {
      */
     @Test
     @Throws(IOException::class)
-    fun testMigrateRoomV1ToV2() {
+    fun testMigrateRoomV1ToCurrent() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val dbPath = context.getDatabasePath("migration-test-room-v1-to-v2").absolutePath
 
