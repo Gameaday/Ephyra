@@ -109,6 +109,7 @@ class MangaCoverFetcher(
     private suspend fun httpLoader(): FetchResult {
         val coverCacheFile = coverFileLazy.value ?: error("No cover specified")
         if (coverCacheFile.exists() && options.diskCachePolicy.readEnabled) {
+            logcat(LogPriority.DEBUG) { "Cover cache durable hit" }
             return fileLoader(coverCacheFile)
         }
 
@@ -118,6 +119,7 @@ class MangaCoverFetcher(
             if (snapshot != null) {
                 val migratedCover = moveSnapshotToCoverCache(snapshot, coverCacheFile)
                 if (migratedCover != null) {
+                    logcat(LogPriority.DEBUG) { "Cover cache migrated legacy disk entry" }
                     return fileLoader(migratedCover)
                 }
 
@@ -128,11 +130,13 @@ class MangaCoverFetcher(
                 )
             }
 
+            logcat(LogPriority.DEBUG) { "Cover cache network fetch" }
             val response = executeNetworkRequest()
             val responseBody = checkNotNull(response.body) { "Null response source" }
             try {
                 val persistedCover = writeResponseToCoverCache(response, coverCacheFile)
                 if (persistedCover != null) {
+                    logcat(LogPriority.DEBUG) { "Cover cache durable write" }
                     return fileLoader(persistedCover)
                 }
 
