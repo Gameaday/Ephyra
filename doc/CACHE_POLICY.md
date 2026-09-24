@@ -17,7 +17,7 @@ This document defines the ownership and lifecycle of image data. The goal is not
 
 | Asset | Durable store | Decoded/working store | Identity | Invalidation | Retention |
 |---|---|---|---|---|---|
-| Remote cover | `core:data` `CoverCache` | Coil memory cache | Canonical thumbnail URL plus cover revision | URL change, `coverLastModified`, explicit cache deletion | Age/size bounded; library covers protected |
+| Remote cover | `core:data` `CoverCache` | Coil memory cache | Canonical thumbnail URL plus cover revision | URL change, `coverLastModified`, explicit cache deletion | LRU age/size bounded; library covers protected |
 | Custom cover | `CoverCache` custom directory | Coil memory cache | Manga ID plus cover revision | Replace or delete custom cover | Until user removes it or clears app data |
 | Downloaded page bytes | Chapter download/cache store | `ReaderPage.cachedBytes` and Coil memory | Chapter, page, source revision | Download replacement/removal | Chapter/cache policy |
 | Online page bytes | Chapter cache | `ReaderPage.cachedBytes` and Coil memory | Chapter, page, image URL/revision | Cache eviction or source change | Bounded by chapter/cache policy |
@@ -53,7 +53,9 @@ Page and cover identities are intentionally separate. They have different dimens
 ## Cleanup rules
 
 - Custom covers are never removed by ordinary remote-cover pruning.
-- Library remote covers are protected while their library metadata references them.
+- Library remote covers are protected while their library metadata references their current URL and revision.
+- Durable cache hits refresh access time so size pruning is least-recently-used rather than oldest-created.
+- `CoverCacheMaintenanceWorker` is the sole automatic pruning owner; library refreshes do not duplicate cache lifecycle work.
 - Browse/search remote covers are pruned first when stale.
 - Cleanup must be bounded by both age and, where measurements justify it, total size.
 - A cache miss is always safe: the loader may fetch the source again.

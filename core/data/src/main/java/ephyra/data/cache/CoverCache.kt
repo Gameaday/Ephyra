@@ -11,12 +11,11 @@ import ephyra.domain.manga.service.CoverCache as ICoverCache
 /**
  * Durable cover store for remote and custom cover bytes.
  *
- * Remote cover files are keyed by the hashed thumbnail URL and live in app-external
- * storage so they survive process death and app restarts. Custom covers are kept in a
- * separate directory and are never removed by ordinary remote-cover pruning. Coil owns
- * decoding and its disposable memory cache; this class is the durable source of truth.
- *
- * Names of files are created with the md5 of the thumbnail URL.
+ * Remote cover files are keyed by a hash of thumbnail URL plus cover revision and live
+ * in app-external storage so they survive process death and app restarts. Custom covers
+ * are kept in a separate directory and are never removed by ordinary remote-cover pruning.
+ * Coil owns decoding and its disposable memory cache; this class is the durable source
+ * of truth.
  */
 class CoverCache(private val context: Context) : ICoverCache {
 
@@ -37,18 +36,6 @@ class CoverCache(private val context: Context) : ICoverCache {
     private val cacheDir = getCacheDir(COVERS_DIR)
 
     private val customCoverCacheDir = getCacheDir(CUSTOM_COVERS_DIR)
-
-    /**
-     * Returns the cover from cache.
-     *
-     * @param mangaThumbnailUrl thumbnail url for the manga.
-     * @return cover image.
-     */
-    fun getCoverFile(mangaThumbnailUrl: String?): File? {
-        return mangaThumbnailUrl?.let {
-            File(cacheDir, DiskUtil.hashKeyForDisk(it))
-        }
-    }
 
     /**
      * Durable identity for a remote cover revision. Keeping the URL and revision together

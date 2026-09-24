@@ -32,8 +32,8 @@ class CoverCacheTest {
 
     @Test
     fun `remote cover identity is stable and persists outside custom storage`() {
-        val first = cache.getCoverFile("https://example.test/cover.jpg")
-        val second = cache.getCoverFile("https://example.test/cover.jpg")
+        val first = cache.getCoverFile("https://example.test/cover.jpg", lastModified = 0L)
+        val second = cache.getCoverFile("https://example.test/cover.jpg", lastModified = 0L)
 
         assertEquals(first, second)
         assertFalse(first!!.parentFile == cache.getCustomCoverFile(1L).parentFile)
@@ -69,8 +69,8 @@ class CoverCacheTest {
 
     @Test
     fun `size pruning evicts oldest unprotected remote covers`() {
-        val protected = cache.getCoverFile("https://example.test/protected.jpg")!!
-        val removable = cache.getCoverFile("https://example.test/removable.jpg")!!
+        val protected = cache.getCoverFile("https://example.test/protected.jpg", lastModified = 0L)!!
+        val removable = cache.getCoverFile("https://example.test/removable.jpg", lastModified = 0L)!!
         protected.parentFile?.mkdirs()
         protected.writeText("12345678")
         removable.writeText("abcdefgh")
@@ -90,7 +90,7 @@ class CoverCacheTest {
 
     @Test
     fun `ordinary pruning protects library names and custom covers`() {
-        val remote = cache.getCoverFile("https://example.test/library.jpg")!!
+        val remote = cache.getCoverFile("https://example.test/library.jpg", lastModified = 0L)!!
         remote.parentFile?.mkdirs()
         remote.writeText("remote")
         remote.setLastModified(0L)
