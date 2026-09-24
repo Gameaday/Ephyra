@@ -21,6 +21,7 @@ git log -5 --oneline --decorate
 8. Create a branch named `program/<phase-number>-<task-id>-<short-slug>`.
 9. Add the task ID to the branch and commit subject.
 10. Do not combine unrelated cleanup into the first commit.
+11. Before source/search work, read [`SOURCE_DISCOVERY_ARCHITECTURE.md`](SOURCE_DISCOVERY_ARCHITECTURE.md) and classify the change as target contract, adapter boundary, or deletion.
 
 ## 2. Task selection
 
@@ -227,3 +228,16 @@ Every task handoff must contain:
 An AI or new contributor must be able to continue from the handoff without reading the entire conversation.
 
 For media changes run affected data and reader suites first. For database changes run all Room migration and backup tests. For CI/build changes run the complete `./gradlew check` task where supported.
+
+## 11. Documentation changes
+
+Before editing documentation:
+
+1. Read [`DOCUMENTATION_GOVERNANCE.md`](DOCUMENTATION_GOVERNANCE.md) and the authority order.
+2. Update the current contract and status ledger before deleting or archiving an old document.
+3. Search every repository reference to the old file, including test comments and changelogs.
+4. Do not delete a document in a production-behavior commit.
+5. If a document contains useful evidence but is not current guidance, move it to a clearly historical state or delete it only after Git history and replacement evidence are verified.
+6. Run the documentation link/index check and `git diff --check`.
+
+A documentation cleanup commit must state which documents were retained, marked historical, archived, or deleted and why.

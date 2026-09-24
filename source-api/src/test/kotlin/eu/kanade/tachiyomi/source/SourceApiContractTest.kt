@@ -20,9 +20,8 @@ import org.junit.jupiter.api.Test
  * with `IncompatibleClassChangeError` (surfaced by `ExtensionCallBoundary` as
  * "Source 'X' encountered an error") — invisible to the compiler, so it is pinned here.
  *
- * Evidence: the member-level parity audit of 2026-09-10 (doc/PHASE_B_SOURCE_API_PARITY.md),
- * against Mihon upstream `main` @ `1e054ea14d551f5f16c8dd892bfb5962be2426d2`. The only gap
- * ever found was `SManga`/`SChapter.memo` (Phase A); everything below was verified present.
+ * Evidence: the legacy compatibility contract tests and the temporary source-boundary adapter
+ * tests. This proves the compatibility boundary, not the target source architecture.
  */
 class SourceApiContractTest {
 

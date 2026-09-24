@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test
  * `SChapter.memo` (getter and setter) on the host classes. If a member is missing, the
  * extension crashes with an `IncompatibleClassChangeError` wrapped by `ExtensionCallBoundary`
  * as "Source 'X' encountered an error" — the build compiles fine, so this is only detectable
- * here (see doc/MIGRATION_PLAN.md, Phase 13/14).
+ * here (see ADR-0007 and the temporary compatibility boundary tests).
  */
 class SourceModelContractTest {
 

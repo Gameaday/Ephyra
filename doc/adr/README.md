@@ -12,6 +12,7 @@ These records describe decisions that shape multiple Ephyra 2.0 phases. They are
 | [0004](0004-media-pipeline-and-cache.md) | Media separates source identity, decode plans, and render caches | Accepted |
 | [0005](0005-feature-boundaries.md) | Features depend on contracts, not implementations or siblings | Accepted |
 | [0006](0006-evidence-before-completion.md) | Device behavior requires executable evidence | Accepted |
+| [0007](0007-source-is-not-a-ui-adapter.md) | Sources are capability-based platform components; legacy extensions are temporary adapters | Accepted |
 
 ## ADR protocol
 

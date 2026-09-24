@@ -1,4 +1,5 @@
 
+> **Authority:** [`../ROADMAP.md`](../ROADMAP.md) is the program entry point. This document is the current source/search/discovery product contract. Historical audit files do not define the target architecture.
 # Ephyra 2.0 Reconstruction Program
 
 ## 1. Purpose
@@ -473,13 +474,19 @@ For each slice define, before coding:
 
 Exit: product parity checklist is complete; no old screen is reachable merely because it has not been migrated.
 
-### Phase 12  Source, data, startup, and worker hardening
+### Phase 12  Source, search, discovery, data, startup, and worker hardening
+
+The target product contract is [`SOURCE_DISCOVERY_ARCHITECTURE.md`](SOURCE_DISCOVERY_ARCHITECTURE.md). The Tachiyomi/Mihon API is a temporary compatibility boundary, not the source model.
 
 Tasks:
 
+- `SRC-000`: inventory every source adapter, capability, legacy type, service-locator dependency, and user-visible source/search entry point; classify each as target, adapter, or delete.
+- `SRC-001`: introduce `SourceDescriptor`, capability declarations, `SourceGateway`, and typed outcomes: `Success`, `Empty`, `Unsupported`, `TransientFailure`, `PermanentFailure`, `RateLimited`, and `Cancelled`.
+- `SRC-002`: implement progressive, cancellable search sessions with bounded concurrency, deadlines, partial results, provenance-preserving deduplication, deterministic ranking, and explicit retry.
+- `SRC-003`: implement capability-gated discovery surfaces, source health, quarantine, recommendations, and explainable ranking. Empty results must not be treated as failure.
+- `SRC-004`: make migration and source replacement explicit, confidence-scored, reversible, progress-preserving, and non-destructive by default.
+- `SRC-005`: isolate credentials, trust, install, and permission lifecycle from source execution; use Keystore-backed storage for secrets.
 - `DATA-001`: choose clean-slate schema or explicitly supported migration path. With no compatibility constraint, prefer a clean schema v1 plus explicit backup import.
-- `SRC-001`: introduce typed source results: `Success`, `Empty`, `Unsupported`, `TransientFailure`, `PermanentFailure`.
-- Make fallback capability-aware and observable; never infer failure solely from an empty list.
 - `OPS-001`: consolidate `StartupTracker`/`StartupGuard`; split `Application` responsibilities.
 - Audit every WorkManager job for constraints, retry policy, cancellation, idempotence, and user visibility.
 - Audit DataStore writes for completion, error propagation, and readiness.
@@ -487,13 +494,19 @@ Tasks:
 
 Verification:
 
-- source adapter contract suite;
+- capability matrix for every adapter;
+- typed-outcome and empty/fallback tests;
+- cancellation, deadline, partial-result, retry, and rate-limit tests;
+- deterministic deduplication and ranking tests;
+- provenance and source-health tests;
+- zero-legacy-source startup and product-path tests;
+- migration confidence, rollback, and progress-preservation tests;
 - backup/restore contract suite;
 - WorkManager smoke tests;
 - startup state tests;
 - process-death and migration tests.
 
-Exit: no empty list, exception, or cache miss is silently converted into a different user-visible state.
+Exit: the app is useful without legacy extensions; source/search/discovery behavior is capability-aware, bounded, typed, explainable, and device-verified; no source/search state is implicitly owned by legacy types or UI classes.
 
 ### Phase 13  Release engineering and legacy deletion
 
@@ -502,9 +515,9 @@ Tasks:
 - `REL-001`: require Spotless, architecture, unit, lint, instrumentation, screenshot, benchmark, and release artifact gates.
 - Publish signed artifacts only from protected CI.
 - Verify API-level matrix, low-memory behavior, and OEM-sensitive integrations.
-- `CLEAN-001`: delete legacy `Viewer` classes, old reader state, old route hierarchy, duplicate navigation events, dead image extras, old transitions, and obsolete migrations.
+- `CLEAN-001`: delete legacy `Viewer` classes, old reader state, old route hierarchy, duplicate navigation events, dead image extras, old transitions, obsolete migrations, and the legacy source bridge once the source removal gate is satisfied.
 - Remove old feature modules only after parity and navigation tests pass.
-- Archive historical docs; keep current policy and ADRs.
+- Delete or archive superseded documents according to [`DOCUMENTATION_GOVERNANCE.md`](DOCUMENTATION_GOVERNANCE.md); do not leave competing “completed” plans in the current tree.
 
 Verification:
 

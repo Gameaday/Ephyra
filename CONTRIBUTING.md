@@ -19,9 +19,12 @@ Architecture and reader work follows the authoritative [`ROADMAP.md`](./ROADMAP.
 
 1. Read [`doc/REBUILD_PROGRAM.md`](./doc/REBUILD_PROGRAM.md).
 2. Read [`doc/REBUILD_STATUS.md`](./doc/REBUILD_STATUS.md).
-3. Read the relevant records in [`doc/adr/`](./doc/adr/).
-4. Select one eligible task ID and follow [`doc/REBUILD_EXECUTION_GUIDE.md`](./doc/REBUILD_EXECUTION_GUIDE.md).
-5. Include tests and evidence required by that task in the same change.
+3. Read [`doc/REBUILD_EXECUTION_GUIDE.md`](./doc/REBUILD_EXECUTION_GUIDE.md).
+4. Read the relevant records in [`doc/adr/`](./doc/adr/).
+5. For source/search/discovery work, read [`doc/SOURCE_DISCOVERY_ARCHITECTURE.md`](./doc/SOURCE_DISCOVERY_ARCHITECTURE.md).
+6. For documentation changes, read [`doc/DOCUMENTATION_GOVERNANCE.md`](./doc/DOCUMENTATION_GOVERNANCE.md).
+7. Select one eligible task ID and follow the execution guide.
+8. Include tests and evidence required by that task in the same change.
 
 A coding agent must not infer completion from old roadmap checkboxes. Status is determined by the reconstruction ledger and declared evidence.
 

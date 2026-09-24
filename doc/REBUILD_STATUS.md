@@ -40,6 +40,8 @@ A task may be `CODE_COMPLETE` at `E2`; it may not be `DEVICE_VERIFIED` without `
 | B-009 | The current continuous reader transforms LazyColumn item geometry and paint. | `ComposeWebtoonReader.kt` | E1, confirmed debt |
 | B-010 | `preloadAllPages()` can enqueue an entire online chapter. | `HttpPageLoader.kt` | E1, confirmed debt |
 | B-011 | No connected device is available in the current workspace. | `adb devices` | VERIFIED environmental limit |
+| B-012 | Source/search is a mixed compatibility system with no single capability, result, ranking, or discovery contract. | Source/search inventory and current modules | E1, confirmed debt |
+| B-013 | Several historical documents make current-looking or “100% complete” claims that are superseded by the reconstruction program. | Documentation authority audit | E1, confirmed debt |
 
 ## Open user-reported defects
 
@@ -61,7 +63,15 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | ID | Task | Owner | Evidence | Status |
 |---|---|---|---|---|
 | GOV-001 | Tag and record reconstruction baseline. | Agent | Git tag/checksum | VERIFIED |
-| GOV-002 | Supersede stale roadmap claims and archive history. | Agent | This ledger + index | CODE_COMPLETE |
+| GOV-002 | Supersede stale roadmap claims and remove obsolete plans from the current tree. | Agent | This ledger + documentation governance | CODE_COMPLETE |
+| GOV-003 | Enforce documentation authority and deletion policy. | Agent | Documentation governance + link/index gate | CODE_COMPLETE |
+| DOC-001 | Delete superseded “completed” documents after contract migration. | Agent | Git diff + link/index gate | CODE_COMPLETE |
+| SRC-000 | Source/search/discovery inventory and legacy-boundary classification. | Agent | Source inventory + ADR link | IN_PROGRESS |
+| SRC-001 | SourceDescriptor, capabilities, SourceGateway, typed outcomes. | Agent | Adapter contract tests | NOT_STARTED |
+| SRC-002 | Progressive search session, deduplication, ranking, cancellation. | Agent | Pure search/ranking tests | NOT_STARTED |
+| SRC-003 | Capability-gated discovery, health, quarantine, recommendations. | Agent | Discovery/health tests | NOT_STARTED |
+| SRC-004 | Explicit confidence-scored reversible migration. | Agent | Migration contract tests | NOT_STARTED |
+| SRC-005 | Isolated credentials, trust, install, permission lifecycle. | Agent | Security/source trust tests | NOT_STARTED |
 | TST-001 | Deterministic page, crop, gesture, and transition fixtures. | Agent | Test paths and manifest | NOT_STARTED |
 | TST-002 | Connected instrumentation project and device matrix. | Agent | CI workflow | NOT_STARTED |
 | TST-003 | Screenshot and macrobenchmark release gates. | Agent | CI artifacts | NOT_STARTED |
@@ -83,7 +93,6 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | NAV-001 | Single main NavHost and adaptive shell. | Agent | Navigation contract | NOT_STARTED |
 | NAV-002 | Series shared-element/fade/predictive-back policy. | Agent | E3 + E4 matrix | NOT_STARTED |
 | DATA-001 | Clean-slate schema policy for replacement release. | Agent | Schema tests | NOT_STARTED |
-| SRC-001 | Typed source results and capability model. | Agent | Adapter contract tests | NOT_STARTED |
 | OPS-001 | One startup state model; split Application responsibilities. | Agent | Startup tests/benchmarks | NOT_STARTED |
 | REL-001 | Enforce lint, instrumentation, benchmark, and release artifact gates. | Agent | CI run | NOT_STARTED |
 | CLEAN-001 | Delete superseded reader/navigation/media code. | Agent | Dependency/import scan | NOT_STARTED |
@@ -92,7 +101,7 @@ Legacy defects are not fixed by changing the current implementation unless the t
 
 | Phase | Status | Evidence required to mark VERIFIED |
 |---|---|---|
-| 0  Baseline | NOT_STARTED | GOV-001, GOV-002, TST-001 |
+| 0  Baseline | NOT_STARTED | GOV-001, GOV-002, GOV-003, DOC-001, TST-001 |
 | 1  Security/platform | NOT_STARTED | SEC-001 through SEC-003 |
 | 2  Quality infrastructure | NOT_STARTED | TST-001 through TST-003 |
 | 3  Foundations | NOT_STARTED | ARC-001 through ARC-003 |
@@ -104,8 +113,8 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | 9  Shell/navigation | NOT_STARTED | NAV-001 |
 | 10  Library/Series | NOT_STARTED | NAV-002 |
 | 11  Remaining slices | NOT_STARTED | Product parity checklist |
-| 12  Source/data/ops | NOT_STARTED | DATA-001, SRC-001, OPS-001 |
-| 13  Release/cleanup | NOT_STARTED | REL-001, CLEAN-001 |
+| 12  Source/data/ops | NOT_STARTED | SRC-000 through SRC-005, DATA-001, OPS-001 |
+| 13  Release/cleanup | NOT_STARTED | REL-001, CLEAN-001, DOC-001 |
 
 ## Change log
 
@@ -113,3 +122,4 @@ Legacy defects are not fixed by changing the current implementation unless the t
 |---|---|---|
 | 2026-09-24 | Created annotated baseline tag `reconstruction-baseline-2026-09-24` at `4ec5b2c15`. | Git tag `20ab06c7255b4c649c82af5bf614299b5a5fca61` |
 | 2026-09-24 | Program initialized; legacy reader defects explicitly recorded. | This document |
+| 2026-09-24 | Added binding source/search/discovery contract, source-boundary ADR, documentation governance, and deleted superseded plans. | Documentation links, `git diff --check`, `spotlessCheck --offline` |

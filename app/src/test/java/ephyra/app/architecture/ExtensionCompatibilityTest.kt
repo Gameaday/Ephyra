@@ -34,7 +34,7 @@ class ExtensionCompatibilityTest {
                 "$className must be on the runtime classpath. " +
                     "Extension APKs reference it, and removing the 'okhttp-zstd' dependency " +
                     "from :core:common breaks all network calls from dynamically loaded sources. " +
-                    "See doc/MIGRATION_PLAN.md Phase 12 and CHANGELOG.",
+                    "This is a temporary compatibility boundary; see SOURCE_DISCOVERY_ARCHITECTURE.md.",
                 found,
             )
         }

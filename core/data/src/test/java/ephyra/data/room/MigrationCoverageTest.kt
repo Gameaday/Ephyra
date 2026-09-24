@@ -6,8 +6,7 @@ import org.junit.Test
 import java.io.File
 
 /**
- * Build-time gate for the Room migration strategy (doc/MIGRATION_PLAN.md Phase 6):
- * whenever the database schema version is bumped, a corresponding step must be registered
+ * Build-time gate for the Room migration strategy: whenever the database schema version is bumped, a corresponding step must be registered
  * in [Migrations.ALL] — otherwise upgrading installs crash on open.
  *
  * The source of truth is the newest exported schema JSON in `core/data/schemas/`

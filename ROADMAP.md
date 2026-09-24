@@ -12,9 +12,10 @@ This file is the single entry point for the reconstruction program. If another d
 1. [`doc/REBUILD_PROGRAM.md`](doc/REBUILD_PROGRAM.md)  complete phased architecture and delivery plan.
 2. [`doc/REBUILD_EXECUTION_GUIDE.md`](doc/REBUILD_EXECUTION_GUIDE.md)  operating procedure for humans and coding agents.
 3. [`doc/REBUILD_STATUS.md`](doc/REBUILD_STATUS.md)  verified baseline, open defects, and task status ledger.
-4. [`doc/adr/`](doc/adr/)  accepted architectural decisions that must not be silently reversed.
-5. [`doc/CACHE_POLICY.md`](doc/CACHE_POLICY.md)  current cache invariants; preserve or supersede them through an ADR.
-6. [`doc/ARCHITECTURAL_ROADMAP.md`](doc/ARCHITECTURAL_ROADMAP.md)  historical modernization roadmap, superseded by this program.
+4. [`doc/CACHE_POLICY.md`](doc/CACHE_POLICY.md)  current cache invariants; preserve or supersede them through an ADR.
+5. [`doc/SOURCE_DISCOVERY_ARCHITECTURE.md`](doc/SOURCE_DISCOVERY_ARCHITECTURE.md)  current source, search, ranking, compatibility, and discovery contract.
+6. [`doc/DOCUMENTATION_GOVERNANCE.md`](doc/DOCUMENTATION_GOVERNANCE.md)  current, historical, archived, and deleted-document policy.
+7. [`doc/adr/`](doc/adr/)  accepted architectural decisions that must not be silently reversed.
 
 ## Program outcome
 
@@ -28,7 +29,13 @@ Build a modern Android application in which:
 - the continuous reader uses document coordinates rather than per-item transforms;
 - the main application has one navigation owner;
 - Material 3 defines interaction semantics without forcing specialized media behavior into generic components;
-- correctness is proven by executable contracts, instrumentation, screenshots, and benchmarks rather than optimistic comments.
+- correctness is proven by executable contracts, instrumentation, screenshots, and benchmarks rather than optimistic comments;
+- the app is useful with zero legacy extensions installed; the Tachiyomi/Mihon API is a temporary compatibility boundary;
+- source adapters expose capabilities and typed outcomes; empty results are not failures;
+- search is progressive, cancellable, bounded, provenance-preserving, and deterministically ranked;
+- source health and migration are observable, explicit, reversible, and non-destructive by default;
+- no feature imports legacy source types, service locators, or concrete adapters directly;
+- documentation has one authority order; superseded “completed” documents are deleted or clearly historical.
 
 ## Non-negotiable rules
 
@@ -57,7 +64,7 @@ Build a modern Android application in which:
 | 9 | Application shell and navigation | One main NavHost and adaptive shell |
 | 10 | Library and Series slice | Shared transition, back, predictive back proven |
 | 11 | Remaining product slices | Updates, browse, downloads, history, settings migrated |
-| 12 | Source, data, startup, workers | Typed outcomes, safe startup, bounded work |
+| 12 | Source, search, discovery, data, startup, workers | Typed outcomes, capability-aware adapters, progressive search, safe startup, bounded work |
 | 13 | Release and legacy deletion | New architecture is the only production architecture |
 
 No phase may begin implementation until the prior phase exit criteria are recorded as `VERIFIED` in [`doc/REBUILD_STATUS.md`](doc/REBUILD_STATUS.md).
@@ -66,9 +73,13 @@ No phase may begin implementation until the prior phase exit criteria are record
 
 1. `GOV-001` baseline tag recorded: `reconstruction-baseline-2026-09-24` at `4ec5b2c15`.
 2. `GOV-002` this program supersedes stale roadmap claims.
-3. `TST-001` define deterministic reader fixtures and acceptance fixtures.
+3. `GOV-003` enforce the documentation authority and deletion policy.
+4. `SRC-000` source/search/discovery contract and legacy-boundary inventory.
+5. `TST-001` define deterministic reader fixtures and acceptance fixtures.
+6. `SRC-001` capability model and typed source results.
+7. `SRC-002` progressive search session, deduplication, ranking, and cancellation.
 
-Do **not** resume ad hoc reader zoom, crop, or transition patches before `TST-001` is complete.
+Do **not** resume ad hoc reader zoom, crop, transition, or source fallback patches before the relevant contract/fixture task is complete.
 
 ## Current truth
 
