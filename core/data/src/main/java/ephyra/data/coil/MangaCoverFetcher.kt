@@ -14,6 +14,7 @@ import coil3.request.Options
 import com.hippo.unifile.UniFile
 import ephyra.core.common.util.system.logcat
 import ephyra.data.cache.CoverCache
+import ephyra.data.cache.writeFileAtomically
 import ephyra.data.coil.MangaCoverFetcher.Companion.USE_CUSTOM_COVER_KEY
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.model.MangaCover
@@ -234,15 +235,10 @@ class MangaCoverFetcher(
     }
 
     private fun writeSourceToCoverCache(input: Source, cacheFile: File) {
-        cacheFile.parentFile?.mkdirs()
-        cacheFile.delete()
-        try {
-            cacheFile.sink().buffer().use { output ->
+        writeFileAtomically(cacheFile) { temporary ->
+            temporary.sink().buffer().use { output ->
                 output.writeAll(input)
             }
-        } catch (e: Exception) {
-            cacheFile.delete()
-            throw e
         }
     }
 

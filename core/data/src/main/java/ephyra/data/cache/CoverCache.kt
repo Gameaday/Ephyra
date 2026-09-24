@@ -61,9 +61,11 @@ class CoverCache(private val context: Context) : ICoverCache {
      */
     @Throws(IOException::class)
     override fun setCustomCoverToCache(manga: Manga, inputStream: InputStream) {
-        getCustomCoverFile(manga.id).outputStream().use { output ->
-            inputStream.use { input ->
-                input.copyTo(output)
+        writeFileAtomically(getCustomCoverFile(manga.id)) { temporary ->
+            temporary.outputStream().use { output ->
+                inputStream.use { input ->
+                    input.copyTo(output)
+                }
             }
         }
     }
