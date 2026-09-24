@@ -636,4 +636,3 @@ The program is complete only when:
 - no critical security, data-loss, accessibility, or memory finding remains;
 - the release artifact is reproducible and signed;
 - historical documentation is clearly marked historical.
-

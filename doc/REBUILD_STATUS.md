@@ -1,7 +1,7 @@
 # Reconstruction Status Ledger
 
-> Baseline: `4ec5b2c15`  
-> Program: [Ephyra Reconstruction Program](../ROADMAP.md)  
+> Baseline: `4ec5b2c15`
+> Program: [Ephyra Reconstruction Program](../ROADMAP.md)
 > This ledger is append-oriented. Update it in the same commit as the work it describes.
 
 ## Status vocabulary
