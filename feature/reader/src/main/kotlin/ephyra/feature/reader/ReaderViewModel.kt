@@ -58,6 +58,8 @@ import ephyra.feature.reader.model.NavigationVector
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.model.ViewerChapters
+import ephyra.feature.reader.model.selectNextNavigationItem
+import ephyra.feature.reader.model.selectPreviousNavigationItem
 import ephyra.feature.reader.viewer.Viewer
 import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.presentation.core.util.manga.editCover
@@ -216,16 +218,9 @@ class ReaderViewModel @Inject constructor(
             ?: error("Requested chapter of id $chapterId not found in chapter list")
 
         // Series-screen filters describe what is displayed there, not the reader's navigation
-        // universe. Removing read chapters here can make a newly opened chapter appear to have
-        // no previous chapter when it was opened from an unread-only series view.
-        val chaptersForReader = if (readerPreferences.skipRead().get()) {
-            val filteredChapters = chapters.filterNot { it.read }
-            if (selectedChapter in filteredChapters) filteredChapters else filteredChapters + selectedChapter
-        } else {
-            chapters
-        }
-
-        val filteredChapters = chaptersForReader
+        // universe. Keep read chapters in this list so backward navigation can deliberately
+        // revisit them; skipRead is applied only when selecting the forward neighbor below.
+        val filteredChapters = chapters
             .sortedWith(getChapterSort(manga, sortDescending = false))
             .run {
                 if (readerPreferences.skipDupe().get()) {
@@ -393,11 +388,17 @@ class ReaderViewModel @Inject constructor(
         chapter.pageLoader?.preloadAllPages()
 
         val chapterList = getChapterList()
-        val chapterPos = chapterList.indexOf(chapter)
+        val previousChapter = selectPreviousNavigationItem(chapterList, chapter)
+        val skipRead = readerPreferences.skipRead().get()
+        val nextChapter = selectNextNavigationItem(
+            items = chapterList,
+            current = chapter,
+            eligible = { !skipRead || !it.chapter.read },
+        )
         val newChapters = ViewerChapters(
             chapter,
-            chapterList.getOrNull(chapterPos - 1),
-            chapterList.getOrNull(chapterPos + 1),
+            previousChapter,
+            nextChapter,
         )
 
         // MutableStateFlow.update is thread-safe — no UI-thread dispatch needed.
