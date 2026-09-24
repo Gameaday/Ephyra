@@ -34,8 +34,8 @@ import ephyra.data.room.views.*
         HistoryView::class,
         UpdatesView::class,
     ],
-    // Canonical clean-slate Room database
-    version = 1,
+    // v3: canonical Room schema including source_profiles.
+    version = 3,
     exportSchema = true,
 )
 @TypeConverters(RoomTypeConverters::class)

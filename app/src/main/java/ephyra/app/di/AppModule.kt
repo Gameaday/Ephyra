@@ -71,6 +71,7 @@ import ephyra.data.manga.MangaRepositoryImpl
 import ephyra.data.release.ReleaseServiceImpl
 import ephyra.data.repository.ExtensionRepoRepositoryImpl
 import ephyra.data.room.EphyraDatabase
+import ephyra.data.room.Migrations
 import ephyra.data.room.daos.CategoryDao
 import ephyra.data.room.daos.ChapterDao
 import ephyra.data.room.daos.ExcludedScanlatorDao
@@ -241,6 +242,45 @@ import nl.adaptivity.xmlutil.serialization.XML
 import javax.inject.Provider
 import javax.inject.Singleton
 
+private fun adoptLegacyDatabaseIfNeeded(context: Context) {
+    val current = context.getDatabasePath("ephyra.db")
+    if (current.exists()) return
+
+    val legacy = context.getDatabasePath("tachiyomi.db")
+    if (!legacy.exists()) return
+
+    check(current.parentFile?.let { it.exists() || it.mkdirs() } == true) {
+        "Unable to create the database directory for ${current.absolutePath}"
+    }
+
+    val filesToMove = buildList {
+        add(legacy)
+        listOf("-wal", "-shm").forEach { suffix ->
+            val sidecar = java.io.File(legacy.absolutePath + suffix)
+            if (sidecar.exists()) add(sidecar)
+        }
+    }
+    check(filesToMove.none { java.io.File(it.absolutePath.replace("tachiyomi.db", "ephyra.db")).exists() }) {
+        "Refusing to overwrite an existing database during legacy adoption"
+    }
+
+    val movedSidecars = mutableListOf<java.io.File>()
+    try {
+        filesToMove.drop(1).forEach { source ->
+            val target = java.io.File(source.absolutePath.replace("tachiyomi.db", "ephyra.db"))
+            check(source.renameTo(target)) { "Unable to adopt legacy database sidecar ${source.absolutePath}" }
+            movedSidecars += source
+        }
+        check(legacy.renameTo(current)) { "Unable to adopt legacy database ${legacy.absolutePath}" }
+    } catch (failure: Throwable) {
+        movedSidecars.forEach { source ->
+            val target = java.io.File(source.absolutePath.replace("tachiyomi.db", "ephyra.db"))
+            target.renameTo(source)
+        }
+        throw failure
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
@@ -271,13 +311,14 @@ object AppModule {
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): EphyraDatabase {
+        adoptLegacyDatabaseIfNeeded(context)
         return Room.databaseBuilder(
             context = context,
             klass = EphyraDatabase::class.java,
             name = "ephyra.db",
         )
             .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
-            .fallbackToDestructiveMigration(dropAllTables = true)
+            .addMigrations(*Migrations.ALL)
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onOpen(db: SupportSQLiteDatabase) {
                     super.onOpen(db)
