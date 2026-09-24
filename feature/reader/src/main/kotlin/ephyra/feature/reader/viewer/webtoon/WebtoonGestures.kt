@@ -58,6 +58,7 @@ suspend fun PointerInputScope.detectWebtoonGestures(
     zoomMin: Float,
     zoomMax: Float,
     getScale: () -> Float,
+    onSingleTap: (Offset) -> Unit,
     onZoom: (Float, Float) -> Unit,
     onDoubleTapToggle: () -> Unit,
     onLongPress: () -> Unit,
@@ -96,6 +97,7 @@ suspend fun PointerInputScope.detectWebtoonGestures(
                     } else {
                         lastTapTime = now
                         lastTapOffset = up.position
+                        onSingleTap(up.position)
                     }
                 }
                 break

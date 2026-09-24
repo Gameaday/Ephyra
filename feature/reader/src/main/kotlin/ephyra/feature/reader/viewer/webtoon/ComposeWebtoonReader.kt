@@ -46,6 +46,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
@@ -62,6 +63,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.util.fastAny
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
@@ -356,37 +358,7 @@ fun ComposeWebtoonReader(
         // Pinch zoom + horizontal pan is applied per page item (visual only): content
         // rescales without changing LazyColumn layout, so zoom can never shift section
         // positions while scrolling between strips. Double-tap toggles 1x/2x fit.
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-                .pointerInput(viewer, onNextChapter, onPreviousChapter) {
-                    awaitEachGesture {
-                        val down = awaitFirstDown(pass = PointerEventPass.Initial, requireUnconsumed = false)
-                        val up = waitForUpOrCancellation(pass = PointerEventPass.Initial)
-                        if (up != null && (up.position - down.position).getDistance() < viewConfiguration.touchSlop) {
-                            val normX = if (size.width > 0) up.position.x / size.width else 0.5f
-                            val normY = if (size.height > 0) up.position.y / size.height else 0.5f
-                            when (viewer.config.navigator.getAction(PointF(normX, normY))) {
-                                ViewerNavigation.NavigationRegion.MENU -> onToggleMenu()
-                                ViewerNavigation.NavigationRegion.NEXT, ViewerNavigation.NavigationRegion.RIGHT -> {
-                                    if (!lazyListState.canScrollForward) {
-                                        onNextChapter()
-                                    } else {
-                                        scope.launch { lazyListState.animateScrollBy(scrollDistance) }
-                                    }
-                                }
-                                ViewerNavigation.NavigationRegion.PREV, ViewerNavigation.NavigationRegion.LEFT -> {
-                                    if (!lazyListState.canScrollBackward) {
-                                        onPreviousChapter()
-                                    } else {
-                                        scope.launch { lazyListState.animateScrollBy(-scrollDistance) }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-        ) {
+        Box(modifier = modifier.fillMaxSize()) {
             LazyColumn(
                 state = lazyListState,
                 modifier = Modifier
@@ -418,6 +390,37 @@ fun ComposeWebtoonReader(
                                 zoomState = zoomState,
                                 zoomEnabled = zoomEnabled,
                                 onLongTap = { onPageLongTap(item) },
+                                onSingleTap = { tapOffset, containerSize ->
+                                    val normX = if (containerSize.width > 0) tapOffset.x / containerSize.width else 0.5f
+                                    val normY = if (containerSize.height >
+                                        0
+                                    ) {
+                                        tapOffset.y / containerSize.height
+                                    } else {
+                                        0.5f
+                                    }
+                                    when (viewer.config.navigator.getAction(PointF(normX, normY))) {
+                                        ViewerNavigation.NavigationRegion.MENU -> onToggleMenu()
+                                        ViewerNavigation.NavigationRegion.NEXT,
+                                        ViewerNavigation.NavigationRegion.RIGHT,
+                                        -> {
+                                            if (!lazyListState.canScrollForward) {
+                                                onNextChapter()
+                                            } else {
+                                                scope.launch { lazyListState.animateScrollBy(scrollDistance) }
+                                            }
+                                        }
+                                        ViewerNavigation.NavigationRegion.PREV,
+                                        ViewerNavigation.NavigationRegion.LEFT,
+                                        -> {
+                                            if (!lazyListState.canScrollBackward) {
+                                                onPreviousChapter()
+                                            } else {
+                                                scope.launch { lazyListState.animateScrollBy(-scrollDistance) }
+                                            }
+                                        }
+                                    }
+                                },
                             )
                         }
                         is ChapterTransition.Prev -> {
@@ -466,6 +469,7 @@ private fun WebtoonPageItem(
     zoomState: WebtoonZoomState,
     zoomEnabled: Boolean,
     onLongTap: () -> Unit,
+    onSingleTap: (Offset, Size) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val status by page.statusFlow.collectAsStateWithLifecycle()
@@ -551,7 +555,10 @@ private fun WebtoonPageItem(
             }
             .pointerInput(page.index, zoomEnabled to zoomState) {
                 if (!zoomEnabled) {
-                    detectTapGestures(onLongPress = { onLongTap() })
+                    detectTapGestures(
+                        onTap = { tapOffset -> onSingleTap(tapOffset, size.toSize()) },
+                        onLongPress = { onLongTap() },
+                    )
                 } else {
                     val min = zoomState.min
                     val max = zoomState.max
@@ -559,6 +566,7 @@ private fun WebtoonPageItem(
                         zoomMin = min,
                         zoomMax = max,
                         getScale = { zoomState.scale },
+                        onSingleTap = { tapOffset -> onSingleTap(tapOffset, size.toSize()) },
                         onZoom = { s: Float, p: Float -> zoomState.applyZoom(s, p) },
                         onDoubleTapToggle = { zoomState.toggleFit() },
                         onLongPress = onLongTap,
@@ -669,10 +677,7 @@ private fun WebtoonPageItem(
                             // Fill the reserved item box (sized by the single aspect contract
                             // above) — never wrapContent, which would resize the LazyColumn
                             // item after layout and jump siblings when moving between sections.
-                            .fillMaxSize()
-                            .pointerInput(page.index) {
-                                detectTapGestures(onLongPress = { onLongTap() })
-                            },
+                            .fillMaxSize(),
                     )
                 } else if (shouldAttemptSlices && readyBytes != null) {
                     val (knownW, knownH) = intrinsicDimensions ?: (page.width to page.height)
