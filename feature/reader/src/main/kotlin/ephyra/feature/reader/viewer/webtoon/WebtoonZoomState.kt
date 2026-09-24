@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import ephyra.feature.reader.viewer.zoom.ZoomPolicy
 
 /**
  * Shared visual-only zoom for a webtoon chapter: scale + horizontal offset applied through
@@ -17,7 +18,7 @@ import androidx.compose.runtime.setValue
 class WebtoonZoomState(
     val min: Float,
     val max: Float,
-    initialScale: Float = 1f,
+    initialScale: Float = ZoomPolicy.FIT,
     initialOffsetX: Float = 0f,
 ) {
     var scale by mutableFloatStateOf(initialScale)
@@ -29,11 +30,11 @@ class WebtoonZoomState(
     fun applyZoom(newScale: Float, panX: Float) {
         scale = newScale.coerceIn(min, max)
         // Re-center when docking back to 1x; otherwise track the pan.
-        offsetX = if (scale <= 1f) 0f else offsetX + panX
+        offsetX = if (scale <= ZoomPolicy.FIT) 0f else offsetX + panX
     }
 
     fun toggleFit() {
-        if (scale > 1.05f) {
+        if (scale > ZoomPolicy.ZOOM_GATE) {
             reset()
         } else {
             applyZoom(2f, 0f)
@@ -41,7 +42,7 @@ class WebtoonZoomState(
     }
 
     fun reset() {
-        scale = 1f
+        scale = ZoomPolicy.FIT
         offsetX = 0f
     }
 }

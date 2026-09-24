@@ -1,5 +1,6 @@
 package ephyra.feature.reader.viewer.webtoon
 
+import ephyra.feature.reader.viewer.zoom.ZoomPolicy
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
@@ -30,6 +31,17 @@ class WebtoonZoomStateTest {
         assertEquals(2f, state.scale)
         state.toggleFit()
         assertEquals(1f, state.scale)
+        assertEquals(0f, state.offsetX)
+    }
+
+    @Test
+    fun `toggle fit uses the interaction escape gate`() {
+        val state = WebtoonZoomState(min = 0.5f, max = 4f)
+        state.applyZoom(ZoomPolicy.ZOOM_GATE + 0.001f, 0f)
+
+        state.toggleFit()
+
+        assertEquals(ZoomPolicy.FIT, state.scale)
         assertEquals(0f, state.offsetX)
     }
 

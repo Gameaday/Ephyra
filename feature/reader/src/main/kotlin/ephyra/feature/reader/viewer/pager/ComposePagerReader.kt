@@ -36,6 +36,7 @@ import ephyra.feature.reader.model.InsertPage
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.viewer.ViewerNavigation
+import ephyra.feature.reader.viewer.zoom.ZoomPolicy
 import ephyra.presentation.reader.ChapterTransition
 import ephyra.presentation.reader.TransitionDirection
 import kotlinx.coroutines.CancellationException
@@ -264,8 +265,9 @@ fun ComposePagerReader(
                         onTap = ::handleTap,
                         onLongTap = { onPageLongTap(item) },
                         onScaleChanged = { scale ->
-                            // Only disable swiping between pages when zoomed in (> 1.05x)
-                            isPagerScrollEnabled = scale <= 1.05f
+                            // Only disable swiping between pages when genuinely zoomed
+                            // (see ZoomPolicy.INTERACTION_LOCK).
+                            isPagerScrollEnabled = !ZoomPolicy.locksInteraction(scale)
                         },
                         isNavigationTap = { tapOffset, containerSize ->
                             val normX = if (containerSize.width > 0) tapOffset.x / containerSize.width else 0.5f

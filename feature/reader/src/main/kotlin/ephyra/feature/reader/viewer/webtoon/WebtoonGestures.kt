@@ -9,6 +9,7 @@ import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.util.fastAny
+import ephyra.feature.reader.viewer.zoom.ZoomPolicy
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
 import kotlin.math.abs
@@ -68,7 +69,7 @@ suspend fun PointerInputScope.detectWebtoonGestures(
         } catch (_: TimeoutCancellationException) {
             tapTimeout = true
         }
-        if (tapTimeout && getScale() <= 1.05f) {
+        if (tapTimeout && !ZoomPolicy.locksInteraction(getScale())) {
             onLongPress()
             return@awaitEachGesture
         }
@@ -100,7 +101,7 @@ suspend fun PointerInputScope.detectWebtoonGestures(
                 }
                 // Single finger held/moved: horizontal pan only while zoomed (vertical
                 // belongs to the list); tapTimeout already ruled out long-press above.
-                if (getScale() > 1.05f) {
+                if (ZoomPolicy.locksInteraction(getScale())) {
                     val panX = event.calculatePan().x
                     if (abs(panX) > 0.5f) {
                         event.changes.forEach { it.consume() }
