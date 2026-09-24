@@ -44,21 +44,21 @@ path explicit and test-covered.
 
 | Item | File | Notes |
 |---|---|---|
-| `Migrations` registry + `MIGRATION_1_2` | `core/data/src/main/java/ephyra/data/room/Migrations.kt` | `DB_VERSION = 2`; steps: normalize indices (legacy dropped, Room's recreated), rebuild `excluded_scanlators` (composite PK), rebuild `manga_sync` + `extension_repos` (drop legacy UNIQUE constraints, preserve rows/ids), drop all legacy triggers (dynamically enumerated), recreate all 3 views from canonical `createSql` (raw strings, byte-identical to `1.json`) |
-| Schema version bump | `core/data/src/main/java/ephyra/data/room/EphyraDatabase.kt` | `version = 2` with strategy comment; KSP re-exports `2.json` on compile |
-| Migration wiring | `app/src/main/java/ephyra/app/di/AppModule.kt` | `.addMigrations(*Migrations.ALL)` added; `fallbackToDestructiveMigration` KEPT as documented last resort (now inert for 1→2; only fires on a *missing* migration — a schema-change mistake; remove at schema freeze) |
-| Legacy upgrade test | `core/data/src/test/java/ephyra/data/room/LegacySqlDelightAdoptionTest.kt` + fixture `LegacySqlDelightSchema.kt` | Creates the **verbatim legacy SQLDelight schema** (tables/indices/triggers/views recovered byte-for-byte from `91a56d738^`), seeds every table, runs `runMigrationsAndValidate(…, 2, MIGRATION_1_2)`, asserts: data survived, views canonical & queryable, 0 triggers remain, legacy index names gone, Room's 7 expected indices present |
-| Room v1→v2 regression test | `EphyraDatabaseMigrationTest.testMigrateRoomV1ToV2` | Proves `MIGRATION_1_2` is idempotent for already-canonical Room-v1 databases (existing nightly installs) |
-| Coverage build gate | `core/data/src/test/java/ephyra/data/room/MigrationCoverageTest.kt` | Plain JVM: asserts `Migrations.DB_VERSION == @Database(version)` and `Migrations.ALL` covers every step `1 .. version-1` — a forgotten migration now fails the **build**, not user databases |
+| `Migrations` registry + `MIGRATION_1_2` + `MIGRATION_2_3` | `core/data/src/main/java/ephyra/data/room/Migrations.kt` | `DB_VERSION = 3`; v1→v2 adopts and normalizes legacy SQLDelight data; v2→v3 creates the canonical `source_profiles` table. |
+| Schema version | `core/data/src/main/java/ephyra/data/room/EphyraDatabase.kt` | `version = 3`; schemas `1.json`, `2.json`, and `3.json` are committed. |
+| Migration wiring | `app/src/main/java/ephyra/app/di/AppModule.kt` | Current `ephyra.db` is authoritative; legacy `tachiyomi.db` is adopted when the current file is absent; `.addMigrations(*Migrations.ALL)` is enabled; destructive fallback is absent. |
+| Legacy upgrade test | `core/data/src/test/java/ephyra/data/room/LegacySqlDelightAdoptionTest.kt` | Creates the verbatim legacy schema, seeds data, migrates through v3, and validates the final Room schema. |
+| Room upgrade test | `core/data/src/test/java/ephyra/data/room/EphyraDatabaseMigrationTest.kt` | Covers fresh v1 creation, v1→v3 upgrades, tables, and view integrity. |
+| Coverage build gate | `core/data/src/test/java/ephyra/data/room/MigrationCoverageTest.kt` | Fails if the newest exported schema, `Migrations.DB_VERSION`, or registered steps diverge. |
 
 ## Upgrade-path matrix (all covered)
 
 | Existing install | Path | Covered by |
 |---|---|---|
-| Legacy SQLDelight `tachiyomi.db` (`user_version = 1`, no `room_master_table`) | `MIGRATION_1_2` upgrade | `LegacySqlDelightAdoptionTest` |
-| Room v1 (current nightly, has `room_master_table` + v1 identity) | `MIGRATION_1_2` (no-op-normalizing) | `EphyraDatabaseMigrationTest.testMigrateRoomV1ToV2` |
-| Fresh install | Room creates v2 directly | `EphyraDatabaseMigrationTest.testDatabaseCreation` (now validates v2) |
-| Unknown future schema (dev mistake) | destructive fallback (documented last resort) | gated by `MigrationCoverageTest` |
+| Legacy SQLDelight `tachiyomi.db` (`user_version = 1`, no `room_master_table`) | adopted into `ephyra.db`, then `MIGRATION_1_2` + `MIGRATION_2_3` | `LegacySqlDelightAdoptionTest` |
+| Room v1 (has `room_master_table` + v1 identity) | `MIGRATION_1_2` + `MIGRATION_2_3` | `EphyraDatabaseMigrationTest` |
+| Fresh install | Room creates v3 directly | `EphyraDatabaseMigrationTest.testDatabaseCreation` |
+| Unknown future schema (dev mistake) | open fails visibly; no data deletion | `MigrationCoverageTest` plus explicit migration review |
 
 ## Policy going forward (recorded in MIGRATION_PLAN Phase 6)
 
@@ -66,8 +66,7 @@ path explicit and test-covered.
    to `Migrations.ALL`. `MigrationCoverageTest` fails the build otherwise.
 2. Commit the re-exported `schemas/ephyra.data.room.EphyraDatabase/(N+1).json`.
 3. Add a `runMigrationsAndValidate` test for the new step (pattern: the two tests above).
-4. `fallbackToDestructiveMigration` stays only until schema freeze (pre-production); remove
-   it once the migration policy has proven itself for one release.
+4. Keep destructive fallback absent. Unknown future schemas must fail visibly until a reviewed migration is added.
 
 ## Validation
 
@@ -77,10 +76,9 @@ path explicit and test-covered.
 
 ## Next steps (resume here)
 
-1. ☐ Update `doc/MIGRATION_PLAN.md` Phase 6 + Phase 14 checkboxes (Room versioned migrations ✅,
-   migration unit tests ✅, legacy SQLDelight → Room v1+ ✅; only "remove destructive fallback
-   at schema freeze" remains open).
-2. ☐ Phase D (larger sweep): Phase 4 ScreenModel→Interactor audit, Glance pre-caching worker,
-   okhttp-zstd CI pin guard, global-search latency measurement, cross-doc reconciliation.
-3. ☐ Commit + push Phase C (per user requirement: every phase pushed at the end).
-4. ☐ Device testing (user: blocked until these phases are pushed to git).
+1. ☑ Update `doc/MIGRATION_PLAN.md` and this handoff: Room v3 migrations, legacy adoption tests,
+   and destructive-fallback removal are complete.
+2. ☐ Phase D (larger sweep): ScreenModel→Interactor audit, Glance pre-caching worker, okhttp-zstd CI
+   pin guard, global-search latency measurement, and cross-doc reconciliation.
+3. ☐ Commit + push the validated migration restoration.
+4. ☐ Device testing when an emulator/device is available.
