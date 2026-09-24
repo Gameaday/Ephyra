@@ -71,7 +71,29 @@ Over time, library entries may silently break when websites shut down or alter U
 
 ---
 
-## 3. Room Schema Governance & Migration Checklist
+## 4. Motion, Shared Elements & Compositing Hardening
+
+### Completed
+
+- Centralized Material motion tokens in `presentation-core`.
+- Preserved the motion taxonomy: shared axis for hierarchical navigation, fade through for bottom-tab peers, directional transitions for compact list/detail panes, and component-specific enter/exit motion for sheets and visibility changes.
+- Added a dedicated shared-element container timeline for `Home ↔ Manga Details`. The non-shared screen content now crossfades and scales subtly over the same 500 ms window as the cover, instead of finishing on a separate 200–300 ms shared-axis timeline.
+- Replaced the reader's delayed transform detectors with immediate event-driven pinch ownership in both pager and webtoon modes.
+
+### Remaining Work
+
+1. Capture frame timing and jank metrics during Series ↔ Library navigation, tab changes, dialogs, sheets, and reader gestures on representative physical devices.
+2. Verify cover bounds, clipping, and shared-element keys across compact, large-screen, foldable, portrait, and landscape configurations.
+3. Audit every shared-element pair for matching enter/exit duration, easing direction, z-order, and placeholder behavior rather than applying one animation globally.
+4. Profile recomposition and image uploads during navigation; prefer stable keys and layout-affecting state isolation over blanket `graphicsLayer` use.
+5. Add macrobenchmark or instrumentation coverage for transition frame deadlines once a device/emulator target is available.
+6. Validate predictive-back and transition behavior on supported Android versions.
+
+Motion remains semantic: container motion, shared-element motion, directional pane motion, and state-change motion must not be collapsed into a single visual effect.
+
+---
+
+## 5. Room Schema Governance & Migration Checklist
 
 For all future database additions:
 1. Every entity change MUST bump `@Database(version = N)` in `EphyraDatabase.kt`.

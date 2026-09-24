@@ -208,6 +208,40 @@ object MotionTokens {
         )
 
     /**
+     * Container motion for destinations that share a hero element. The non-shared content
+     * crossfades on the same long-form timeline as the shared element, avoiding a short
+     * scale/fade that makes the remainder of the screen disappear before the cover lands.
+     */
+    fun m3SharedElementContainerEnter(): EnterTransition =
+        fadeIn(
+            animationSpec = tween(
+                durationMillis = DURATION_LONG_2,
+                easing = EasingEmphasizedDecelerate,
+            ),
+        ) + scaleIn(
+            initialScale = 0.98f,
+            animationSpec = tween(
+                durationMillis = DURATION_LONG_2,
+                easing = EasingEmphasizedDecelerate,
+            ),
+        )
+
+    /** Matching outgoing container motion for a shared-element destination. */
+    fun m3SharedElementContainerExit(): ExitTransition =
+        fadeOut(
+            animationSpec = tween(
+                durationMillis = DURATION_LONG_2,
+                easing = EasingEmphasizedAccelerate,
+            ),
+        ) + scaleOut(
+            targetScale = 0.98f,
+            animationSpec = tween(
+                durationMillis = DURATION_LONG_2,
+                easing = EasingEmphasizedAccelerate,
+            ),
+        )
+
+    /**
      * Material 3 Fade Through enter transition for peer navigation (e.g. bottom nav tabs).
      * Smoothly scales up from 96% with slight entry delay to let the departing screen clear.
      */

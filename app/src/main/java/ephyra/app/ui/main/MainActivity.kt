@@ -42,11 +42,13 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.util.Consumer
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import dagger.hilt.android.AndroidEntryPoint
 import ephyra.app.BuildConfig
 import ephyra.app.data.notification.NotificationReceiver
@@ -99,6 +101,12 @@ import kotlinx.coroutines.withTimeoutOrNull
 import logcat.LogPriority
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
+
+private fun NavBackStackEntry.isMangaDetails(): Boolean = runCatching {
+    toRoute<Screen.MangaDetails>()
+}.isSuccess
+
+private fun NavBackStackEntry.isHome(): Boolean = destination.route == ScreenRoutes.Home.route
 
 @AndroidEntryPoint
 class MainActivity : BaseActivity(), AppReadySignal {
@@ -222,48 +230,64 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                     navController = navController,
                                     startDestination = ScreenRoutes.Home.route,
                                     enterTransition = {
-                                        MotionTokens.m3SharedAxisZEnter() +
-                                            slideIntoContainer(
-                                                AnimatedContentTransitionScope.SlideDirection.Start,
-                                                initialOffset = { (it * 0.10f).toInt() },
-                                                animationSpec = tween(
-                                                    durationMillis = MotionTokens.DURATION_LONG_1,
-                                                    easing = MotionTokens.EasingEmphasizedDecelerate,
-                                                ),
-                                            )
+                                        if (initialState.isHome() && targetState.isMangaDetails()) {
+                                            MotionTokens.m3SharedElementContainerEnter()
+                                        } else {
+                                            MotionTokens.m3SharedAxisZEnter() +
+                                                slideIntoContainer(
+                                                    AnimatedContentTransitionScope.SlideDirection.Start,
+                                                    initialOffset = { (it * 0.10f).toInt() },
+                                                    animationSpec = tween(
+                                                        durationMillis = MotionTokens.DURATION_LONG_1,
+                                                        easing = MotionTokens.EasingEmphasizedDecelerate,
+                                                    ),
+                                                )
+                                        }
                                     },
                                     exitTransition = {
-                                        MotionTokens.m3SharedAxisZExit() +
-                                            slideOutOfContainer(
-                                                AnimatedContentTransitionScope.SlideDirection.Start,
-                                                targetOffset = { (it * 0.10f).toInt() },
-                                                animationSpec = tween(
-                                                    durationMillis = MotionTokens.DURATION_MEDIUM_3,
-                                                    easing = MotionTokens.EasingEmphasizedAccelerate,
-                                                ),
-                                            )
+                                        if (initialState.isHome() && targetState.isMangaDetails()) {
+                                            MotionTokens.m3SharedElementContainerExit()
+                                        } else {
+                                            MotionTokens.m3SharedAxisZExit() +
+                                                slideOutOfContainer(
+                                                    AnimatedContentTransitionScope.SlideDirection.Start,
+                                                    targetOffset = { (it * 0.10f).toInt() },
+                                                    animationSpec = tween(
+                                                        durationMillis = MotionTokens.DURATION_MEDIUM_3,
+                                                        easing = MotionTokens.EasingEmphasizedAccelerate,
+                                                    ),
+                                                )
+                                        }
                                     },
                                     popEnterTransition = {
-                                        MotionTokens.m3SharedAxisZPopEnter() +
-                                            slideIntoContainer(
-                                                AnimatedContentTransitionScope.SlideDirection.End,
-                                                initialOffset = { (it * 0.10f).toInt() },
-                                                animationSpec = tween(
-                                                    durationMillis = MotionTokens.DURATION_MEDIUM_4,
-                                                    easing = MotionTokens.EasingEmphasizedDecelerate,
-                                                ),
-                                            )
+                                        if (initialState.isMangaDetails() && targetState.isHome()) {
+                                            MotionTokens.m3SharedElementContainerEnter()
+                                        } else {
+                                            MotionTokens.m3SharedAxisZPopEnter() +
+                                                slideIntoContainer(
+                                                    AnimatedContentTransitionScope.SlideDirection.End,
+                                                    initialOffset = { (it * 0.10f).toInt() },
+                                                    animationSpec = tween(
+                                                        durationMillis = MotionTokens.DURATION_MEDIUM_4,
+                                                        easing = MotionTokens.EasingEmphasizedDecelerate,
+                                                    ),
+                                                )
+                                        }
                                     },
                                     popExitTransition = {
-                                        MotionTokens.m3SharedAxisZPopExit() +
-                                            slideOutOfContainer(
-                                                AnimatedContentTransitionScope.SlideDirection.End,
-                                                targetOffset = { (it * 0.10f).toInt() },
-                                                animationSpec = tween(
-                                                    durationMillis = MotionTokens.DURATION_MEDIUM_2,
-                                                    easing = MotionTokens.EasingEmphasizedAccelerate,
-                                                ),
-                                            )
+                                        if (initialState.isMangaDetails() && targetState.isHome()) {
+                                            MotionTokens.m3SharedElementContainerExit()
+                                        } else {
+                                            MotionTokens.m3SharedAxisZPopExit() +
+                                                slideOutOfContainer(
+                                                    AnimatedContentTransitionScope.SlideDirection.End,
+                                                    targetOffset = { (it * 0.10f).toInt() },
+                                                    animationSpec = tween(
+                                                        durationMillis = MotionTokens.DURATION_MEDIUM_2,
+                                                        easing = MotionTokens.EasingEmphasizedAccelerate,
+                                                    ),
+                                                )
+                                        }
                                     },
                                 ) {
                                     composable(ScreenRoutes.Home.route) {
