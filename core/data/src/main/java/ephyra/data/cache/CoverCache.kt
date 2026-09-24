@@ -26,6 +26,9 @@ class CoverCache(private val context: Context) : ICoverCache {
 
         /** Default max age for cover pruning: 30 days in milliseconds. */
         private const val COVER_PRUNE_MAX_AGE_MS = 30L * 24 * 60 * 60 * 1000
+
+        /** Maximum durable remote-cover storage before least-recently-used pruning. */
+        private const val COVER_CACHE_MAX_BYTES = 256L * 1024 * 1024
     }
 
     /**
@@ -127,14 +130,28 @@ class CoverCache(private val context: Context) : ICoverCache {
     fun pruneOldCovers(
         protectedNames: Set<String> = emptySet(),
         maxAgeMs: Long = COVER_PRUNE_MAX_AGE_MS,
+        maxBytes: Long = COVER_CACHE_MAX_BYTES,
     ): Int {
         val cutoff = System.currentTimeMillis() - maxAgeMs
         val files = cacheDir.listFiles() ?: return 0
         var deleted = 0
-        for (file in files) {
-            if (file.isDirectory) continue
-            if (file.name in protectedNames) continue
+        val candidates = files.filter { file ->
+            !file.isDirectory && file.name !in protectedNames
+        }
+
+        for (file in candidates) {
             if (file.lastModified() <= cutoff && file.delete()) deleted++
+        }
+
+        val remaining = candidates.filter { it.exists() }.sortedBy { it.lastModified() }
+        var totalBytes = cacheDir.listFiles().orEmpty().sumOf { it.length() }
+        for (file in remaining) {
+            if (totalBytes <= maxBytes) break
+            val size = file.length()
+            if (file.delete()) {
+                totalBytes -= size
+                deleted++
+            }
         }
         return deleted
     }
