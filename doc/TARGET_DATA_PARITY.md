@@ -1,7 +1,7 @@
 # Target Data Parity Matrix
 
-> **Task:** DATA-001I  
-> **Status:** audit complete; production cutover remains blocked  
+> **Task:** DATA-001I
+> **Status:** audit complete; production cutover remains blocked
 > **Authority:** target schema is isolated; Room v3 remains production authority
 
 ## Purpose
@@ -98,4 +98,4 @@ parity contract
 6. Production backup still emits and restores legacy models.
 7. No production cutover rehearsal exists.
 
-These are architecture blockers, not merely missing unit tests.
+The initial multi-series/source rehearsal is implemented in `core/data/src/test/java/ephyra/data/room/target/TargetMigrationRehearsalTest.kt`. It proves that same-title series remain distinct, source identities remain isolated, library membership is preserved, chapter state/history survive, and rerunning both migration plans is idempotent. It does not claim parity for categories, tracking, downloads, source lifecycle, or production backup restore; those remain explicit blockers.

@@ -92,6 +92,7 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | DATA-001F | Explicit canonical cross-source identity/link policy. | Agent | `CanonicalSeriesLinkTest`; no automatic linking, auditable confirm/reject/revoke lifecycle | CODE_COMPLETE |
 | DATA-001G | Isolated target link repository and Room execution contract. | Agent | `TargetSeriesLinkRepositoryTest`; proposal idempotency, required durable sources, evidence/content-type round-trip, lifecycle transitions | CODE_COMPLETE |
 | DATA-001H | Target repository production cutover decision. | Agent | [Target data cutover decision](TARGET_DATA_CUTOVER.md); production cutover deferred | CODE_COMPLETE |
+| DATA-001I | Production parity matrix and migration rehearsal fixture. | Agent | [Target data parity matrix](TARGET_DATA_PARITY.md) + `TargetMigrationRehearsalTest`; multi-series/source rehearsal passes; categories, tracking, downloads, source lifecycle, and production backup bridge remain open | IN_PROGRESS |
 | DATA-001I | Production parity matrix and migration rehearsal fixture. | Agent | [Target data parity matrix](TARGET_DATA_PARITY.md); fixture and rehearsal remain open | IN_PROGRESS |
 | CON-001 | Technical contract layer for reader, media, navigation, motion, source, fixtures, budgets, and dependencies. | Agent | Contract links + execution review | CODE_COMPLETE |
 | TST-001 | Deterministic page, crop, gesture, and transition fixtures. | Agent | Fixture manifest + test paths | NOT_STARTED |
