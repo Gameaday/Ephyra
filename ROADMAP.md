@@ -105,6 +105,7 @@ No phase may begin implementation until the prior phase exit criteria are record
 17. `SRC-001C` local/native adapter and offline fixtures.
 18. `SRC-001D` controlled native HTTP adapter.
 19. `SRC-002` progressive search session, deduplication, ranking, and cancellation.
+20. `MED-004` pure document viewport and exact tile partition — `CODE_COMPLETE` at E2 with 19 geometry and partition tests. Tile decode/cache integration and the `RDR-005` continuous reader remain open.
 
 Do **not** resume ad hoc reader zoom, crop, transition, or source fallback patches before the relevant contract/fixture task is complete.
 

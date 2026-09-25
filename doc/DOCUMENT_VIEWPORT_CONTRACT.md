@@ -16,6 +16,31 @@ TileKey         sourceId + pageIndex + tileIndex + scaleBucket
 
 Device pixel conversion happens only at decode/render boundaries.
 
+The pure implementation is `core:domain`'s `DocumentViewport`. It owns the single transform:
+
+- `viewToDocument` / `documentToView` are the only coordinate conversion;
+- `panByViewDelta` and `zoomBy` both operate on that same transform, so they cannot disagree;
+- `zoomBy` anchors on the focal document point, keeping it stable under the gesture centroid;
+- `clamped` bounds the scale and keeps the visible rect inside the document at every scale;
+- `resizedTo` preserves the visible centre across configuration changes;
+- `prefetchRect` is the visible rect expanded by a declared viewport margin and clipped to the document.
+
+## Tile partitioning
+
+`DocumentTilePartition.partitionIntoTiles` partitions a region on a fixed grid. Two properties are
+enforced by property tests over random geometry:
+
+- **Exact coverage.** The union of the tiles is the region: no gaps, no interior overlap.
+- **Stable identity.** A document point always lands in the same grid cell, so a tile survives
+  panning and keeps its cache key.
+
+Tile edges are computed from the *grid index*, not from the previous tile's rounded edge. Deriving
+`bottom` from `top + height` instead of `origin + (row + 1) * height` makes neighbouring edges differ
+by float rounding, which reintroduces exactly the sub-pixel overlaps this model exists to prevent.
+
+Callers that paginate a document should pass the document origin as the grid origin so tile indices
+remain comparable across queries.
+
 ## Structure
 
 ```text

@@ -110,7 +110,7 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | MED-001 | Page source, metadata, content-rect, and decode-plan contracts. | Agent | Contract tests | NOT_STARTED |
 | MED-002 | Page working byte budget and durable source ownership. | Agent | Memory tests | NOT_STARTED |
 | MED-003 | Crop-aware geometry and animated-image policy. | Agent | Synthetic image tests + E4 | NOT_STARTED |
-| MED-004 | Virtualized continuous-document tile pipeline. | Agent | Tile/geometry tests + E4 | NOT_STARTED |
+| MED-004 | Virtualized continuous-document tile pipeline. | Agent | `DocumentViewport` + `DocumentTilePartition` (19 tests: one transform, focal zoom, clamped bounds, exact gap-free tiling, stable grid identity) are CODE_COMPLETE at E2; tile decode/cache integration and RDR-005 rendering remain open | CODE_COMPLETE |
 | RDR-001 | Pure reader session state machine. | Agent | `ReaderSession.kt` + `ReaderSessionReducerTest`; deterministic command/effect matrix, restore invariants, retry/resource cleanup; not production-wired | CODE_COMPLETE |
 | RDR-002 | Chapter window and directional navigation policy. | Agent | `ReaderChapterWindowPolicy` + `ReaderChapterWindowPolicyTest`; explicit ordering, hard filters, forward-only read/filter skipping, downloaded-only boundaries, stable duplicate reduction, and current retention; not production-wired | CODE_COMPLETE |
 | RDR-003 | One gesture arbiter per viewport. | Agent | `ReaderGestureArbiter` (9 tests) + `ReaderTapSequencer` (6 tests) are CODE_COMPLETE at E2; `ReaderGesturePointerAdapter` compiles but has no production call sites, no Robolectric pointer-event coverage, and no E4 device evidence. Per-viewport integration belongs to RDR-004/RDR-005. | IN_PROGRESS |
@@ -133,7 +133,7 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | 2  Quality infrastructure | NOT_STARTED | TST-001A, TST-001B, TST-001C, TST-002, TST-003 |
 | 3  Foundations | NOT_STARTED | ARC-001 through ARC-003 |
 | 4  Media planning | NOT_STARTED | MED-001, MED-003 |
-| 5  Working memory | NOT_STARTED | MED-002, MED-004 |
+| 5  Working memory | IN_PROGRESS | MED-004 geometry/tile partition is CODE_COMPLETE at E2; MED-002 byte budget and tile decode/cache integration remain open. |
 | 6  Reader core | IN_PROGRESS | RDR-001 and RDR-002 are CODE_COMPLETE at E2. RDR-003 has a CODE_COMPLETE arbiter/tap policy at E2 but remains IN_PROGRESS until a replacement viewport owns it and E4 pointer evidence exists. |
 | 7  Paged reader | NOT_STARTED | RDR-004 |
 | 8  Continuous reader | NOT_STARTED | RDR-005 |
@@ -153,4 +153,5 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | 2026-09-25 | Added native `LocalSourceGateway` over `UnifiedContentSource`, inline local resource bytes, offline contract tests, and independent of legacy source DTOs. | `:source-local:test`, `:app:compileDebugKotlin` |
 | 2026-09-25 | Completed the isolated pure reader session owner, command/effect reducer, restore validation, resource cleanup, and full reducer matrix. | `ReaderSession.kt`, `ReaderSessionReducerTest`, `:feature:reader:testDebugUnitTest` |
 | 2026-09-25 | Added the source-neutral chapter-window policy with explicit ordering, hard exclusions, directional skip rules, downloaded-only boundaries, and stable duplicate reduction. | `ReaderChapterWindowPolicy.kt`, `ReaderChapterWindowPolicyTest`, `:core:domain:testDebugUnitTest` |
+| 2026-09-25 | Added the pure document viewport and tile partition model. Tile edges are derived from the grid index so neighbours share the identical expression; the first implementation derived each edge from the previous tile's rounded edge and produced sub-pixel overlaps. The partition tests are the regression guard. | `DocumentViewport`, `DocumentTilePartition`, 19 tests; `:core:domain:testDebugUnitTest` |
 | 2026-09-25 | Added the pure reader gesture arbiter and token-based single/double-tap sequencer, plus a thin uncalled pointer adapter. Arbiter emitted a raw `Tap` effect that had no double-tap gate; it is now `TapCandidate`, and only the sequencer may emit `SingleTap`/`DoubleTap`. | `ReaderGestureArbiter`, `ReaderTapSequencer`, `ReaderGesturePointerAdapter`; 15 domain gesture tests; `:core:domain:testDebugUnitTest`, `:feature:reader:testDebugUnitTest` |
