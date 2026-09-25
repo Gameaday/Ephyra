@@ -110,7 +110,7 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | ARC-002 | Remove nested main navigation ownership. | Agent | Navigation tests | NOT_STARTED |
 | ARC-003 | Implement effect/state contract for long workflows. | Agent | Pure reducer tests | NOT_STARTED |
 | MED-001 | Page source, metadata, content-rect, and decode-plan contracts. | Agent | `PageSourceId`/`PageSource`/`PageMetadata`/`DecodePlan`/`PageImage` with 43 contract tests. Identity carries a revision; crop is judged against content size, not intrinsic; oversized and animated pages plan a software decode instead of failing. | CODE_COMPLETE at E2 |
-| MED-002 | Page working byte budget and durable source ownership. | Agent | Memory tests | NOT_STARTED |
+| MED-002 | Page working byte budget and durable source ownership. | Agent | `PageByteStore` + `BoundedPageByteStore` with 22 tests: byte-bounded LRU, exact accounting, refcounted pins, oversized values refused rather than admitted. Replaces unbounded `ReaderPage.cachedBytes`. Durable bytes still belong to the chapter/download store; not production-wired. | CODE_COMPLETE at E2 |
 | MED-003 | Crop-aware geometry and animated-image policy. | Agent | Synthetic image tests + E4 | NOT_STARTED |
 | MED-004 | Virtualized continuous-document tile pipeline. | Agent | `DocumentViewport` + `DocumentTilePartition` (19 tests: one transform, focal zoom, clamped bounds, exact gap-free tiling, stable grid identity) are CODE_COMPLETE at E2; tile decode/cache integration and RDR-005 rendering remain open | CODE_COMPLETE |
 | RDR-001 | Pure reader session state machine. | Agent | `ReaderSession.kt` + `ReaderSessionReducerTest`; deterministic command/effect matrix, restore invariants, retry/resource cleanup; not production-wired | CODE_COMPLETE |
@@ -137,7 +137,7 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | 2  Quality infrastructure | NOT_STARTED | TST-001A, TST-001B, TST-001C, TST-002, TST-003 |
 | 3  Foundations | NOT_STARTED | ARC-001 through ARC-003 |
 | 4  Media planning | IN_PROGRESS | MED-001 page/source/metadata/decode-plan contracts are CODE_COMPLETE at E2. MED-003 crop-aware geometry and animated policy remain. |
-| 5  Working memory | IN_PROGRESS | MED-004 geometry/tile partition is CODE_COMPLETE at E2; MED-002 byte budget and tile decode/cache integration remain open. |
+| 5  Working memory | IN_PROGRESS | MED-002 byte-budgeted working store and MED-004 geometry/tile partition are CODE_COMPLETE at E2. Tile decode/cache integration remains open. |
 | 6  Reader core | IN_PROGRESS | RDR-001 and RDR-002 are CODE_COMPLETE at E2. RDR-003 has a CODE_COMPLETE arbiter/tap policy at E2 but remains IN_PROGRESS until a replacement viewport owns it and E4 pointer evidence exists. |
 | 7  Paged reader | NOT_STARTED | RDR-004 |
 | 8  Continuous reader | NOT_STARTED | RDR-005 |
