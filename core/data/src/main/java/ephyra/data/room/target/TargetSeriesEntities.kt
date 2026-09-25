@@ -19,6 +19,9 @@ data class TargetSeriesEntity(
     val artist: String?,
     val description: String?,
     val status: String?,
+    @ColumnInfo(name = "genres_json")
+    val genresJson: String,
+
     @ColumnInfo(name = "created_at")
     val createdAt: Long,
     @ColumnInfo(name = "updated_at")

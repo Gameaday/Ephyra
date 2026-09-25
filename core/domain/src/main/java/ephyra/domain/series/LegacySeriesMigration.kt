@@ -152,6 +152,7 @@ object LegacySeriesMigrationMapper {
                 sourceId = sourceId,
                 snapshot = snapshot,
                 inLibrary = series.inLibrary,
+                libraryAddedAt = series.dateAdded.coerceAtLeast(0L),
                 chapters = chapters,
                 history = history,
             ),
@@ -168,6 +169,7 @@ data class LegacySeriesMigrationPlan(
     val sourceId: String,
     val snapshot: DurableSeriesSnapshot,
     val inLibrary: Boolean,
+    val libraryAddedAt: Long = 0L,
     val chapters: List<MigratedChapter>,
     val history: List<MigratedHistory>,
 )

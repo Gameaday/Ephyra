@@ -22,6 +22,7 @@ class TargetMigrationWriter(
                 artist = snapshot.artist,
                 description = snapshot.description,
                 status = snapshot.status,
+                genresJson = json.encodeToString(snapshot.genres),
                 createdAt = 0L,
                 updatedAt = 0L,
             )
@@ -43,7 +44,7 @@ class TargetMigrationWriter(
                 dao.insertLibraryEntryIfMissing(
                     TargetLibraryEntryEntity(
                         seriesId = plan.targetLocalId,
-                        addedAt = 0L,
+                        addedAt = plan.libraryAddedAt,
                         librarySortPosition = null,
                         updatePolicy = "DEFAULT",
                         updateEnabled = true,

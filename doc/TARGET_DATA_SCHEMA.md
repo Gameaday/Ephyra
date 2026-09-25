@@ -3,7 +3,7 @@
 - **Status:** Proposed implementation contract
 - **Date:** 2026-09-25
 - **Scope:** Ephyra 2.0 target library and source persistence
-- **Current implementation:** Room v3 remains the compatibility schema. `TargetDatabase` and its entities exist as an isolated test/future-migration boundary; this document does not authorize a destructive or speculative Room migration.
+- **Current implementation:** Room v3 remains the compatibility schema. `TargetDatabase` and its entities exist as an isolated test/future-migration boundary. A separate versioned `TargetBackupDocument` and mapper now preserve target series/source/chapter/library/reading/history records without reusing legacy `BackupManga`; neither target persistence nor target backup is wired into production yet.
 
 ## Decision summary
 
@@ -207,10 +207,10 @@ The schema is not accepted until tests prove:
 ## Current next gate
 
 ```text
-DATA-001A — target Room entity and DAO contract, with no live database mutation
+DATA-001F — target repository execution contract and production-cutover decision
 ```
 
-Implementation must begin with a schema contract test and an isolated repository fixture. It must not change `@Database(version = 3)` until the migration matrix is approved.
+The target backup format is source-neutral and versioned, but production backup/restore remains legacy-only until the target repository owns reads/writes and the cutover is explicitly approved.
 
 Rules:
 

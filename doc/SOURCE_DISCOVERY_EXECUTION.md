@@ -73,7 +73,7 @@ Implement and test one controlled native HTTP source. Do not add script or heuri
 12. `DATA-001B`: pure legacy-to-target migration plan. **Complete and tested** with `LegacySeriesMigrationTest`; Room/backup execution remains open.
 13. `DATA-001C`: one-way current Room entity adapter. **Complete and tested** with `LegacyRoomMigrationAdapterTest`; it performs no writes and does not register target tables in v3.
 14. `DATA-001D`: isolated target Room database, transaction writer, and in-memory migration fixture. **Complete and tested**; the live Room v3 database remains unchanged and target tables are not yet production-authoritative.
-15. `SRC-004`: explicit migration candidates and reversible application. **Implemented and tested** as a pure source-api contract; persistence, UI, and actual library mutation remain separate tasks.
+15. `DATA-001E`: versioned source-neutral target backup document and lossless mapper. **Complete and tested**; legacy backup models remain compatibility-only and the target backup is not yet wired into production restore.
 9. `SRC-005`: source trust, credentials, install, and permission lifecycle. **Implemented and tested** as a pure source-api contract; Android Keystore/DataStore adapters, OAuth callbacks, and permission UI remain separate tasks.
 10. `SRC-006`: zero-legacy-source product path. **Implemented and tested** as a native-only registry boundary; product UI wiring and legacy bridge removal remain separate tasks.
 11. `CLEAN-SOURCE-001`: freeze new legacy source dependencies. **Implemented and tested** with `SourceApiBoundaryTest`; deletion of the compatibility bridge remains blocked by app composition, browse/search, updates, migration, deep-link, and reader call sites.

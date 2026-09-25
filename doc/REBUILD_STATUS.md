@@ -88,6 +88,7 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | DATA-001B | Reversible legacy-to-target migration plan and fixture mapping. | Agent | `LegacySeriesMigrationTest` | CODE_COMPLETE |
 | DATA-001C | One-way Room-entity-to-migration-input adapter. | Agent | `LegacyRoomMigrationAdapterTest` | CODE_COMPLETE |
 | DATA-001D | Isolated target Room transaction writer and migration fixture. | Agent | `TargetMigrationWriterTest`; source metadata refreshes while user-owned state is preserved | CODE_COMPLETE |
+| DATA-001E | Versioned source-neutral target backup/restore mapping. | Agent | `TargetBackupMapperTest`; protobuf round-trip, genre/library/chapter/history preservation, and referential guards | CODE_COMPLETE |
 | CON-001 | Technical contract layer for reader, media, navigation, motion, source, fixtures, budgets, and dependencies. | Agent | Contract links + execution review | CODE_COMPLETE |
 | TST-001 | Deterministic page, crop, gesture, and transition fixtures. | Agent | Fixture manifest + test paths | NOT_STARTED |
 | TST-002 | Connected instrumentation project and device matrix. | Agent | CI workflow | NOT_STARTED |
