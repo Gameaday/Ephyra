@@ -38,6 +38,7 @@
 
 - Introduce `GlobalSearchCoordinator` as the target product seam over `NativeSourceRegistry` and `SearchSession`.
 - Introduce `TargetSearchMapper` as a pure, source-neutral product presentation boundary.
+- Introduce `TargetSearchCommand` for explicit open-details, persist, and add-to-library actions.
 - Move fan-out, deadlines, partial results, and cancellation out of `SearchViewModel` in a later product seam.
 - Move deduplication and ranking into pure domain code.
 - Remove search-time persistence.

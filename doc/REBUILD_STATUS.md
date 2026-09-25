@@ -82,6 +82,7 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | CLEAN-SOURCE-001 | Freeze new legacy source dependencies and record removal blockers. | Agent | `SourceApiBoundaryTest` + explicit compatibility allowlist | CODE_COMPLETE |
 | SRC-007 | Target-native global search coordinator seam. | Agent | `GlobalSearchCoordinator` contract tests; product ViewModel migration remains open | CODE_COMPLETE |
 | SRC-008 | Source-neutral product search presentation mapping. | Agent | `TargetSearchMapper` contract tests; no legacy DTO or persistence imports | CODE_COMPLETE |
+| SRC-009 | Explicit, capability-gated target search commands. | Agent | `TargetSearchCommand` contract tests; persistence/navigation handlers remain open | CODE_COMPLETE |
 | CON-001 | Technical contract layer for reader, media, navigation, motion, source, fixtures, budgets, and dependencies. | Agent | Contract links + execution review | CODE_COMPLETE |
 | TST-001 | Deterministic page, crop, gesture, and transition fixtures. | Agent | Fixture manifest + test paths | NOT_STARTED |
 | TST-002 | Connected instrumentation project and device matrix. | Agent | CI workflow | NOT_STARTED |
