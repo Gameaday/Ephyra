@@ -70,7 +70,10 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | SRC-000A | Static source/search inventory. | Agent | Inventory artifact | CODE_COMPLETE |
 | SRC-000B | Source/search call-site verification. | Agent | `doc/source/SOURCE_CALL_GRAPH.md` | CODE_COMPLETE |
 | SRC-000C | Legacy compatibility classification and removal decision. | Agent | Compatibility matrix and removal plan | CODE_COMPLETE |
-| SRC-001 | SourceDescriptor, capabilities, SourceGateway, typed outcomes. | Agent | Adapter contract tests | NOT_STARTED |
+| SRC-001A | SourceDescriptor, capabilities, SourceGateway, typed outcomes, and source-protocol DTOs. | Agent | Source-api contract tests | CODE_COMPLETE |
+| SRC-001B | Adapt the currently verified legacy extension path to SourceGateway. | Agent | Adapter contract tests + zero-legacy callers guard | NOT_STARTED |
+| SRC-001C | Local/native source adapter and offline fixtures. | Agent | Local source contract tests | NOT_STARTED |
+| SRC-001D | Controlled native HTTP source adapter. | Agent | Native source contract tests | NOT_STARTED |
 | SRC-002 | Progressive search session, deduplication, ranking, cancellation. | Agent | Pure search/ranking tests | NOT_STARTED |
 | SRC-003 | Capability-gated discovery, health, quarantine, recommendations. | Agent | Discovery/health tests | NOT_STARTED |
 | SRC-004 | Explicit confidence-scored reversible migration. | Agent | Migration contract tests | NOT_STARTED |

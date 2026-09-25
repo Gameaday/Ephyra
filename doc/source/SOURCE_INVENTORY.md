@@ -121,10 +121,12 @@ The following are compatibility debt and must not be copied into the new archite
 
 ## Initial source sequence
 
-1. **Local/native source:** deterministic offline baseline.
-2. **Controlled native HTTP source:** validates search/details/units/resources and health.
-3. **External script source:** validates revisions, trust, sandboxing, and typed failures.
-4. **Jellyfin source adapter:** validates authenticated sources, collections, and progress sync.
+1. **Legacy extension adapter:** currently verified compatibility path.
+2. **Local/native source:** first target-native implementation and deterministic offline baseline.
+3. **Controlled native HTTP source:** validates search/details/units/resources and health.
+4. **Jellyfin source adapter:** future authenticated source and collections milestone.
+5. **External script source:** deferred until separately repaired, secured, and tested.
+6. **Heuristic discovery assistant:** deferred until separately validated; never authoritative.
 
 ## Evidence boundary
 

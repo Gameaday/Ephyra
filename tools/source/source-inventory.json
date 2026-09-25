@@ -37,14 +37,14 @@
     {
       "id": "scriptable-engine",
       "path": "core/data/src/main/java/ephyra/data/sourcing/ScriptableContentSourceEngine.kt",
-      "classification": "adapter",
-      "decision": "Retain QuickJS technology behind trusted ExternalSourceAdapter."
+      "classification": "compatibility",
+      "decision": "Deferred and currently unverified; do not include in the initial product path. Any future repair requires a dedicated security, revision, sandbox, and contract-test task."
     },
     {
       "id": "heuristic-engine",
       "path": "core/domain/src/main/java/ephyra/domain/content/source/AdaptiveHeuristicEngine.kt",
-      "classification": "adapter",
-      "decision": "Use for proposed profiles and validation, not opaque authoritative runtime."
+      "classification": "compatibility",
+      "decision": "Deferred and currently unverified; future use is limited to validated source proposals and never authoritative fallback."
     },
     {
       "id": "dynamic-http-source",
@@ -108,10 +108,17 @@
     }
   ],
   "initialSourceOrder": [
+    "legacy-extension-adapter-currently-verified",
     "local-native",
     "controlled-native-http",
-    "external-script",
-    "jellyfin-authenticated-collections"
+    "jellyfin-authenticated-collections",
+    "external-script-deferred-until-tested",
+    "heuristic-assistant-deferred-until-tested"
+  ],
+  "deferredTechnologies": [
+    "External script sources require a dedicated repair, security, revision, sandbox, and contract-test milestone.",
+    "Heuristic discovery requires a dedicated validation milestone and may only propose source definitions; it is never an authoritative source.",
+    "Jellyfin content retrieval remains future work; the current Jellyfin tracker is progress synchronization only."
   ],
   "removalGate": "Do not delete legacy paths until zero-legacy product scenarios, capability tests, trust lifecycle, migration rollback, backup/restore, and user-visible evidence pass."
 }

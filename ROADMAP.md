@@ -92,8 +92,11 @@ No phase may begin implementation until the prior phase exit criteria are record
 4. `CON-001` complete and link the technical contract layer.
 5. `TST-001` define deterministic reader fixtures and acceptance fixtures.
 6. `SRC-000A/B/C` verify and classify the source/search compatibility inventory — `CODE_COMPLETE` at E1; see `doc/source/` and `tools/source/source-inventory.json`.
-7. `SRC-001` capability model and typed source results.
-8. `SRC-002` progressive search session, deduplication, ranking, and cancellation.
+7. `SRC-001A` capability model and typed source results — `CODE_COMPLETE` at E2; source-api contract tests pass.
+8. `SRC-001B` adapt the currently verified legacy extension path.
+9. `SRC-001C` local/native adapter and offline fixtures.
+10. `SRC-001D` controlled native HTTP adapter.
+11. `SRC-002` progressive search session, deduplication, ranking, and cancellation.
 
 Do **not** resume ad hoc reader zoom, crop, transition, or source fallback patches before the relevant contract/fixture task is complete.
 

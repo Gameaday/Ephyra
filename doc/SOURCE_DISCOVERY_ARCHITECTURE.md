@@ -84,23 +84,40 @@ Rules:
 SourceGateway
   NativeSourceAdapter
   LocalSourceAdapter
-  ExternalSourceAdapter (new format)
-  LegacyExtensionAdapter (temporary)
+  LegacyExtensionAdapter (current verified path, temporary)
+  ExternalSourceAdapter (future, only after contract/test work)
+  HeuristicDiscoveryAssistant (future, experimental; never authoritative)
 ```
 
 Adapters are responsible only for protocol translation and validation. They do not own ranking, navigation, database writes, or UI state.
 
 Each adapter must provide capability discovery, request identity/version, cancellation and timeout behavior, safe network/filesystem access, normalized domain results, structured failure classification, and health observations without automatic destructive mutations.
 
-## Initial compatibility inventory (E1)
+## Current verified source path
+
+The only currently verified working source path is the legacy extension path. It is retained behind a compatibility boundary while the target gateway is built. Script and heuristic engines are not considered working source implementations and are not part of the initial source sequence.
+
+## Deferred source technologies
+
+- External scripts may be revisited only as a separately tested/trusted adapter task.
+- Heuristic discovery may be revisited only as a proposal/validation assistant, never as an authoritative opaque source.
+- Jellyfin remains a future authenticated source milestone; the current Jellyfin tracker is progress sync only.
+
+## Initial source sequence
+
+1. Local/native source: deterministic offline baseline.
+2. Controlled native HTTP source: validates search/details/units/resources and health.
+3. Jellyfin authenticated source and collections: only after authentication, source identity, and collection mapping are tested.
+4. External script source: only after a dedicated security, revision, sandbox, and contract test task is accepted.
+5. Heuristic discovery assistant: only after it can produce validated proposals without becoming an implicit source.
 
 | Current area | Current owner/type | Target classification | Required action |
 |---|---|---|---|
 | `:source-api` `eu.kanade.tachiyomi.*` | Legacy extension ABI | Temporary adapter boundary | Keep only behind `LegacyExtensionAdapter`; remove after exit gate |
 | `:source-api` `ephyra.source.api.*` | Emerging content-source API | Target contract candidate | Normalize into capability/result contracts; no legacy DTO leakage |
 | `ContentSourceOrchestrator` | Domain orchestration with heuristic fallback | Target policy | Replace empty-list inference with typed outcomes and explicit capabilities |
-| `ScriptableContentSourceEngine` | Script-backed source engine | Target adapter | Add capability/version/trust/failure contract |
-| `AdaptiveHeuristicEngine` | Heuristic DOM engine | Target adapter | Add deterministic request/result identity and safety limits |
+| `ScriptableContentSourceEngine` | Script-backed source engine, currently not verified | Deferred experimental adapter | Do not include in the initial product path; repair and test under a separate task before any release claim. |
+| `AdaptiveHeuristicEngine` | Heuristic DOM engine, currently not verified | Deferred discovery assistant | Do not use as an authoritative source. A future task may repair and test it as a proposal/validation tool. |
 | `DynamicHttpSource` | Legacy-shaped bridge over orchestrator | Temporary adapter | Migrate callers to `SourceGateway`; delete when no callers remain |
 | `ExtensionLoader` | APK install/load/trust boundary | Temporary platform adapter | Isolate trust, credentials, lifecycle, and removal gate |
 | `GlobalSearchViewModel` | Search orchestration/UI state | Target session owner | Replace with progressive `SearchSession` and pure ranking |

@@ -35,34 +35,46 @@ For every inventory item record:
 - migration destination;
 - deletion blocker.
 
-### SRC-000C — Compatibility decision
+### SRC-001A — Capability contract
 
-For each legacy path choose exactly one:
+Implement source-neutral identity, capability declarations, typed outcomes, and the four core source operations (search, details, units, resources). Do not implement script or heuristic engines in this task.
 
-- keep behind `LegacyExtensionAdapter`;
-- migrate to native/local/new-format adapter;
-- replace with platform capability;
-- delete.
+### SRC-001B — Verified extension adapter
 
-No path may remain “temporarily” without an owner and removal task.
+Adapt the currently working legacy extension path into the target `SourceGateway` without exposing legacy DTOs to new callers. This is the first executable source path.
+
+### SRC-001C — Local/native adapter
+
+Implement and test a local/native source adapter as the first target-native path. This establishes offline behavior and proves the gateway independently of extensions.
+
+### SRC-001D — Controlled native HTTP adapter
+
+Implement and test one controlled native HTTP source. Do not add script or heuristic sources until they have their own test and security gates.
 
 ## Implementation sequence
 
-1. `SRC-001`: `SourceDescriptor`, capabilities, `SourceGateway`, typed result types.
-2. `SRC-002`: `SearchSession`, per-source jobs, deadlines, progressive state, cancellation.
-3. `SRC-003`: deterministic deduplication and ranking with provenance.
-4. `SRC-004`: capability-gated discovery and source health.
-5. `SRC-005`: explicit migration candidates and reversible application.
-6. `SRC-006`: source trust, credentials, install, and permission lifecycle.
-7. `SRC-007`: zero-legacy-source product path.
-8. `CLEAN-SOURCE-001`: remove legacy bridge and its service-locator support.
+1. `SRC-001A`: `SourceDescriptor`, capabilities, `SourceGateway`, typed result types, and source-protocol DTOs.
+2. `SRC-001B`: adapt the currently working legacy extension path to `SourceGateway` behind a compatibility boundary.
+3. `SRC-001C`: local/native adapter and offline acceptance fixtures.
+4. `SRC-001D`: one controlled native HTTP adapter with tested capability/outcome behavior.
+5. `SRC-002`: `SearchSession`, per-source jobs, deadlines, progressive state, cancellation.
+6. `SRC-003`: deterministic deduplication and ranking with provenance.
+7. `SRC-004`: capability-gated discovery and source health.
+8. `SRC-005`: explicit migration candidates and reversible application.
+9. `SRC-006`: source trust, credentials, install, and permission lifecycle.
+10. `SRC-007`: zero-legacy-source product path.
+11. `CLEAN-SOURCE-001`: remove legacy bridge and its service-locator support.
+
+Deferred technology tasks are separate from the initial sequence: script sources require their own repair/security/test milestone; heuristic discovery requires a validated proposal milestone; Jellyfin requires an authenticated source/collections milestone.
 
 ## Search implementation rules
 
 - `SearchSession` is the only owner of active search jobs.
 - Every source job is cancellable and deadline-bounded.
+- Cancellation propagates through structured coroutine cancellation; it is not a normal [SourceResult] value.
 - A completed source result is immutable.
-- Empty, unsupported, rate-limited, transient failure, permanent failure, and cancellation remain distinct.
+- Empty, unsupported, rate-limited, transient failure, and permanent failure remain distinct in [SourceResult].
+- Cancellation propagates through structured coroutine cancellation and is not converted into a source result.
 - Partial results are valid product state.
 - Ranking is pure and deterministic.
 - Provenance survives deduplication.

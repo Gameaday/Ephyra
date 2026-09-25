@@ -11,8 +11,8 @@
 | `SourceManager` | compatibility | `SourceRegistry` | Search, browse, updates, reader | Keep only as bridge. |
 | `SourceRepository` | compatibility | Catalog/query gateways | Browse/migration call sites | Keep only as bridge. |
 | `DynamicHttpSource` | compatibility | Native/external source adapter | Legacy UI registration | Isolate. |
-| `ScriptableContentSourceEngine` | adapter technology | `ExternalSourceAdapter` | New-format contract not complete | Retain behind boundary. |
-| `AdaptiveHeuristicEngine` | experimental | Discovery assistant | No proposal/approval flow | Do not use as opaque source. |
+| `ScriptableContentSourceEngine` | deferred | None until a dedicated repair/security/test task exists | Current path is unverified; do not claim support. |
+| `AdaptiveHeuristicEngine` | deferred | Proposal/validation assistant only in a future task | Current path is unverified; never authoritative. |
 | `UnifiedSearchEngine` | compatibility | `SearchSession` | Global/migration search | Retain until replacement. |
 | `SmartSourceSearchEngine` | compatibility | Candidate matching policy | Migration matching relies on it | Restrict to migration. |
 | `SearchResultMerger` | target candidate | Pure ranking/deduplication | Manga-specific model | Generalize. |
@@ -58,10 +58,12 @@ It must not automatically invoke deep search, heuristic fallback, or another unr
 
 ## Initial source implementation order
 
-1. Local/native source.
-2. Controlled native HTTP source.
-3. External script source.
-4. Jellyfin source and collections.
+1. Legacy extension adapter: currently verified compatibility path.
+2. Local/native source.
+3. Controlled native HTTP source.
+4. Jellyfin authenticated source and collections.
+5. Script source: deferred until separately repaired, secured, and tested.
+6. Heuristic discovery assistant: deferred until separately validated.
 
 ## Related documents
 
