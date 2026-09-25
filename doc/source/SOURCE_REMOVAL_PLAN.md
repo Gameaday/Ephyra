@@ -46,7 +46,7 @@
 - `DATA-001F`: define canonical cross-source identity/link policy. **Complete and tested**; candidate evidence, confidence, explicit confirmation, rejection, and revocation are auditable and reversible. No title-only or automatic linking is permitted.
 - `DATA-001G`: implement the isolated target link repository and Room execution contract. **Complete and tested**; proposals require durable canonical and linked source representations, are idempotent, preserve evidence/content types, and transition only through the domain lifecycle.
 - `DATA-001H`: target repository production cutover decision. **Complete as a decision gate; production cutover deferred** until target schema parity, production backup/restore, migration rehearsal, rollback, and device evidence are complete. See `../TARGET_DATA_CUTOVER.md`.
-- `DATA-001I`: build the production parity matrix and migration rehearsal fixture before any live cutover. **Next required task.**
+- `DATA-001I`: production parity matrix and migration rehearsal fixture. **In progress**; the capability matrix is complete, while the multi-source fixture and production-like rehearsal remain open. See `../TARGET_DATA_PARITY.md`.
 - Move fan-out, deadlines, partial results, and cancellation out of `SearchViewModel` in a later product seam.
 - Move deduplication and ranking into pure domain code.
 - Remove search-time persistence.
