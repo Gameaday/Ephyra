@@ -69,8 +69,9 @@ Implement and test one controlled native HTTP source. Do not add script or heuri
 8. `SRC-008`: `TargetSearchMapper`, the source-neutral product presentation boundary. **Implemented and tested**; rows preserve source provenance and source failures remain typed; persistence and navigation remain explicit later commands.
 9. `SRC-009`: `TargetSearchCommand`, explicit capability-gated actions for open-details, persist, and add-to-library. **Implemented and tested**; handlers remain separate from search execution.
 10. `SRC-010`: `DurableSeriesIdentity`, `DurableSeriesSnapshot`, and `SeriesRepository`, the target persistence contract. **Implemented and tested as a pure contract**; Room tables, migration, backup mapping, and adapters remain open.
-11. `DATA-001A`: target Room entity/DAO contract and migration fixture boundary. **Next task**; follow `doc/TARGET_DATA_SCHEMA.md`; do not mutate the live v3 database yet.
-12. `SRC-004`: explicit migration candidates and reversible application. **Implemented and tested** as a pure source-api contract; persistence, UI, and actual library mutation remain separate tasks.
+11. `DATA-001A`: target Room entity/DAO contract and migration fixture boundary. **Complete as an isolated contract**; follow `doc/TARGET_DATA_SCHEMA.md`; do not mutate the live v3 database yet.
+12. `DATA-001B`: pure legacy-to-target migration plan. **Complete and tested** with `LegacySeriesMigrationTest`; Room/backup execution remains open.
+13. `SRC-004`: explicit migration candidates and reversible application. **Implemented and tested** as a pure source-api contract; persistence, UI, and actual library mutation remain separate tasks.
 9. `SRC-005`: source trust, credentials, install, and permission lifecycle. **Implemented and tested** as a pure source-api contract; Android Keystore/DataStore adapters, OAuth callbacks, and permission UI remain separate tasks.
 10. `SRC-006`: zero-legacy-source product path. **Implemented and tested** as a native-only registry boundary; product UI wiring and legacy bridge removal remain separate tasks.
 11. `CLEAN-SOURCE-001`: freeze new legacy source dependencies. **Implemented and tested** with `SourceApiBoundaryTest`; deletion of the compatibility bridge remains blocked by app composition, browse/search, updates, migration, deep-link, and reader call sites.
