@@ -39,7 +39,8 @@
 - Introduce `GlobalSearchCoordinator` as the target product seam over `NativeSourceRegistry` and `SearchSession`.
 - Introduce `TargetSearchMapper` as a pure, source-neutral product presentation boundary.
 - Introduce `TargetSearchCommand` for explicit open-details, persist, and add-to-library actions.
-- Define `DurableSeriesIdentity` and `SeriesRepository` before changing Room.
+- Define `DurableSeriesIdentity` and `SeriesRepository` before changing Room. **Complete as a pure contract**; follow `../TARGET_DATA_SCHEMA.md` for the target schema.
+- `DATA-001A`: implement target Room entity/DAO contracts and migration fixtures in an isolated boundary; do not mutate `@Database(version = 3)` yet.
 - Move fan-out, deadlines, partial results, and cancellation out of `SearchViewModel` in a later product seam.
 - Move deduplication and ranking into pure domain code.
 - Remove search-time persistence.
