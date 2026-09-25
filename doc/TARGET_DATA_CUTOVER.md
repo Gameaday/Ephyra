@@ -1,7 +1,7 @@
 # Target Data Cutover Decision
 
-> **Decision ID:** DATA-001H  
-> **Decision:** DEFER PRODUCTION CUTOVER  
+> **Decision ID:** DATA-001H
+> **Decision:** DEFER PRODUCTION CUTOVER
 > **Evidence level:** E2 — isolated implementation and fixture tests are complete; production/device evidence is not complete.
 
 ## Decision
