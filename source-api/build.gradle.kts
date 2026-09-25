@@ -28,5 +28,6 @@ dependencies {
     implementation(platform(kotlinx.coroutines.bom))
 
     testImplementation(libs.bundles.test)
+    testImplementation(kotlinx.coroutines.test)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
