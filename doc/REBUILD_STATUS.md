@@ -55,7 +55,7 @@ A task may be `CODE_COMPLETE` at `E2`; it may not be `DEVICE_VERIFIED` without `
 | DEF-005 | Series-to-Library return motion is still visually unacceptable. | E3 transition test + E4 predictive-back matrix | IN_PROGRESS, legacy |
 | DEF-006 | Updates must remain library-scoped unless a consumer explicitly opts out. | DAO contract + ViewModel test | CODE_COMPLETE |
 | DEF-007 | Backward chapter navigation must remain available with skip-read enabled. | Pure navigation contract + viewer tests | CODE_COMPLETE |
-| DEF-008 | Crop-borders transformation measured insets transposed, aborted on a single artifact, and cropped contentless images. | Robolectric bitmap tests + E4 matrix | CODE_COMPLETE at E2, E4 pending |
+| DEF-008 | Crop-borders transformation measured insets transposed, aborted on a single artifact, and cropped contentless images. | 8 Robolectric tests incl. real JPEG encode/decode round-trip; the compression-artifact test was proven to FAIL under the old strict matching, and the no-border JPEG test proven to still PASS, so the tolerance change is shown to crop more without over-cropping. E4 matrix pending. | CODE_COMPLETE at E2, E4 pending |
 | DEF-009 | Long-strip reading-mode precedence lived in `ReaderViewModel` with untested content-type handling. | Pure resolver contract tests | CODE_COMPLETE at E2 |
 
 Legacy defects are not fixed by changing the current implementation unless the task explicitly says so. They are acceptance inputs for the replacement.

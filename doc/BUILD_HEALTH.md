@@ -43,6 +43,32 @@ This metric is listed here rather than in Tier A precisely so the table above st
 description of what the build actually enforces. A metric that cannot be checked on every change
 is visibility, not a gate.
 
+## E4 device availability (diagnosed 2026-09-25)
+
+E4 evidence is currently unreachable on this workstation, and the reason is specific rather than
+"no device attached":
+
+- `ANDROID_HOME` is set and `platform-tools/adb.exe` (37.0.1) and `emulator/emulator.exe` (37.2.10)
+  are installed, so the tooling exists.
+- **No AVD is defined**, and `cmdline-tools` is absent, so there is no `avdmanager` or `sdkmanager`
+  to create one.
+- `system-images/android-36/google_apis_playstore` exists but is **empty**, so there is no image to
+  boot even if an AVD were defined.
+- Hardware acceleration is available: `HypervisorPresent` is true and virtualization firmware is
+  enabled, so WHPX/Hyper-V can host an emulator once an image exists. HAXM is not installed and is
+  not needed under WHPX.
+
+To unblock E4, install `cmdline-tools` plus one system image (the API 35 emulator the execution
+guide pins, or the API 36 image already scaffolded here), then create an AVD and confirm with:
+
+```powershell
+adb devices
+adb shell getprop ro.build.version.sdk
+```
+
+Until that happens, every reader claim stays at E2 and no phase may be marked `VERIFIED`. This is
+recorded here because it is a tooling gap with a known fix, not an evidence gap.
+
 ### Tier B — timing budgets (measured on a schedule)
 
 Build times vary by machine, cache state, and load, so they are recorded and alerted rather than
