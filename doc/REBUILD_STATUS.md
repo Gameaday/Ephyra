@@ -75,7 +75,7 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | SRC-001C | Local/native source adapter and offline fixtures. | Agent | `LocalSourceGateway` contract tests + local source test suite | CODE_COMPLETE |
 | SRC-001D | Controlled native HTTP source adapter. | Agent | `OpdsSourceGateway` contract tests + existing OPDS parser tests | CODE_COMPLETE |
 | SRC-002 | Progressive search session, deduplication, ranking, cancellation. | Agent | `SearchSession` contract tests | CODE_COMPLETE |
-| SRC-003 | Capability-gated discovery, health, quarantine, recommendations. | Agent | Discovery/health tests | NOT_STARTED |
+| SRC-003 | Capability-gated discovery, health, quarantine, recommendations. | Agent | `SourceHealth` contract tests | CODE_COMPLETE |
 | SRC-004 | Explicit confidence-scored reversible migration. | Agent | Migration contract tests | NOT_STARTED |
 | SRC-005 | Isolated credentials, trust, install, permission lifecycle. | Agent | Security/source trust tests | NOT_STARTED |
 | CON-001 | Technical contract layer for reader, media, navigation, motion, source, fixtures, budgets, and dependencies. | Agent | Contract links + execution review | CODE_COMPLETE |
@@ -121,7 +121,7 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | 9  Shell/navigation | NOT_STARTED | NAV-001 |
 | 10  Library/Series | NOT_STARTED | NAV-002 |
 | 11  Remaining slices | NOT_STARTED | Product parity checklist |
-| 12  Source/data/ops | IN_PROGRESS | SRC-000 through SRC-002 are CODE_COMPLETE at E1/E2; SRC-003 through SRC-005, DATA-001, and OPS-001 remain open. |
+| 12  Source/data/ops | IN_PROGRESS | SRC-000 through SRC-003 are CODE_COMPLETE at E1/E2; SRC-004 through SRC-005, DATA-001, and OPS-001 remain open. |
 | 13  Release/cleanup | NOT_STARTED | REL-001, CLEAN-001, DOC-001 |
 
 ## Change log
