@@ -67,7 +67,7 @@ Implement and test one controlled native HTTP source. Do not add script or heuri
 6. `SRC-003`: capability-gated discovery and source health. **Implemented and tested**; health persistence and product-surface wiring remain separate tasks.
 7. `SRC-004`: explicit migration candidates and reversible application. **Implemented and tested** as a pure source-api contract; persistence, UI, and actual library mutation remain separate tasks.
 8. `SRC-005`: source trust, credentials, install, and permission lifecycle. **Implemented and tested** as a pure source-api contract; Android Keystore/DataStore adapters, OAuth callbacks, and permission UI remain separate tasks.
-9. `SRC-006`: zero-legacy-source product path.
+9. `SRC-006`: zero-legacy-source product path. **Implemented and tested** as a native-only registry boundary; product UI wiring and legacy bridge removal remain separate tasks.
 10. `CLEAN-SOURCE-001`: remove legacy bridge and its service-locator support.
 
 Deferred technology tasks are separate from the initial sequence: script sources require their own repair/security/test milestone; heuristic discovery requires a validated proposal milestone; Jellyfin requires an authenticated source/collections milestone.
