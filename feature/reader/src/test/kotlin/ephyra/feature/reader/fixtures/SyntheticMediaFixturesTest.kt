@@ -22,7 +22,11 @@ import org.robolectric.annotation.GraphicsMode
 class SyntheticMediaFixturesTest {
     @Test
     fun `generated jpeg and png decode to declared dimensions`() {
-        listOf(SyntheticMediaFixtures.staticJpeg(), SyntheticMediaFixtures.staticPng()).forEach { fixture ->
+        listOf(
+            SyntheticMediaFixtures.staticJpeg(),
+            SyntheticMediaFixtures.staticPng(),
+            SyntheticMediaFixtures.staticWebp(),
+        ).forEach { fixture ->
             val bitmap = BitmapFactory.decodeByteArray(fixture.bytes, 0, fixture.bytes.size)
             assertNotNull(bitmap)
             assertEquals(fixture.width, bitmap.width)

@@ -38,6 +38,14 @@ object SyntheticMediaFixtures {
         fill = Color.rgb(48, 128, 96),
     )
 
+    fun staticWebp(): EncodedMediaFixture = encoded(
+        id = "static-webp-v1",
+        format = FixtureMediaFormat.WEBP,
+        width = 80,
+        height = 120,
+        fill = Color.rgb(128, 64, 160),
+    )
+
     fun uniformBorderedJpeg(): EncodedMediaFixture = encoded(
         id = "uniform-bordered-page-v1",
         format = FixtureMediaFormat.JPEG,
@@ -114,11 +122,13 @@ object SyntheticMediaFixtures {
         return encode(id, format, bitmap)
     }
 
+    @Suppress("DEPRECATION")
     private fun encode(id: String, format: FixtureMediaFormat, bitmap: Bitmap): EncodedMediaFixture {
         val output = ByteArrayOutputStream()
         val compressFormat = when (format) {
             FixtureMediaFormat.JPEG -> Bitmap.CompressFormat.JPEG
             FixtureMediaFormat.PNG -> Bitmap.CompressFormat.PNG
+            FixtureMediaFormat.WEBP -> Bitmap.CompressFormat.WEBP
             else -> error("Unsupported generated fixture format: $format")
         }
         check(bitmap.compress(compressFormat, 100, output)) { "Unable to encode fixture $id" }

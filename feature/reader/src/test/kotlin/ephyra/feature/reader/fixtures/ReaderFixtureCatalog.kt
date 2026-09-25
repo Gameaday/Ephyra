@@ -55,6 +55,14 @@ object ReaderFixtureCatalog {
                 testPath = TEST_PATH,
             ),
             ReaderFixtureSpec(
+                "static-webp-v1",
+                FixtureBehavior.STATIC,
+                FixtureMediaFormat.WEBP,
+                800,
+                1200,
+                testPath = TEST_PATH,
+            ),
+            ReaderFixtureSpec(
                 "static-long-webtoon-v1",
                 FixtureBehavior.LONG_STRIP,
                 FixtureMediaFormat.JPEG,
