@@ -1,6 +1,6 @@
 # Reconstruction Fixtures and Evidence Manifest
 
-> **Status:** binding fixture contract for `TST-001` and later reader/media tasks.
+> **Status:** binding fixture contract. `TST-001A` is code-complete; `TST-001B` and device evidence remain open.
 
 ## Manifest shape
 

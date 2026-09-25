@@ -94,7 +94,8 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | DATA-001H | Target repository production cutover decision. | Agent | [Target data cutover decision](TARGET_DATA_CUTOVER.md); production cutover deferred | CODE_COMPLETE |
 | DATA-001I | Production parity matrix and migration rehearsal fixture. | Agent | [Target data parity matrix](TARGET_DATA_PARITY.md) + `TargetMigrationRehearsalTest` + `TargetCanonicalSeriesReadRepositoryTest` + `SourceLifecycleTest` + `ReconcileSourceRegistryTest` + `TargetSourceRepositoryTest` + `DownloadArtifactVerifier`; category, tracking, excluded-scanlator policy, target backup, confirmed-link aggregate projection, source lifecycle persistence/reconciliation, and core:download `UniFileDownloadArtifactProbe`; pure download artifact verification and UniFile observation covered; transactional index publication and legacy read-only adoption remain open | IN_PROGRESS |
 | CON-001 | Technical contract layer for reader, media, navigation, motion, source, fixtures, budgets, and dependencies. | Agent | Contract links + execution review | CODE_COMPLETE |
-| TST-001 | Deterministic page, crop, gesture, and transition fixtures. | Agent | Fixture manifest + test paths | NOT_STARTED |
+| TST-001A | Executable reader/media fixture catalog and interaction case registry. | Agent | `ReaderFixtureCatalog` + `ReaderFixtureCatalogTest` | CODE_COMPLETE |
+| TST-001B | Real synthetic media artifacts and decoder acceptance fixtures. | Agent | Binary fixtures + E2 tests | NOT_STARTED |
 | TST-002 | Connected instrumentation project and device matrix. | Agent | CI workflow | NOT_STARTED |
 | TST-003 | Screenshot and macrobenchmark release gates. | Agent | CI artifacts | NOT_STARTED |
 | SEC-001 | Remove hardcoded signing secrets from build logic. | Agent | Secret scan | NOT_STARTED |
