@@ -49,8 +49,8 @@ A task may be `CODE_COMPLETE` at `E2`; it may not be `DEVICE_VERIFIED` without `
 | ID | Report | Required acceptance evidence | Status |
 |---|---|---|---|
 | DEF-001 | Paged pinch zoom did nothing: the pager computed a scale/offset on every pinch and never bound them to any modifier, so the gesture mutated state nothing drew. `graphicsLayer` was imported and unused. The transform centroid was also discarded, so zoom was not anchored to the fingers. | `PagerZoomPolicy` 16 tests (focal invariant, pan clamping, double-tap) + E4 matrix | CODE_COMPLETE at E2, PRODUCTION-WIRED, E4 pending |
-| DEF-002 | Webtoon pinch mainly widens content. | E3 document transform test + E4 matrix | IN_PROGRESS, legacy |
-| DEF-003 | Sliced webtoon elements overlap or destabilize after zoom/scroll. | E3 continuity/clipping test + E4 matrix | IN_PROGRESS, legacy |
+| DEF-002 | Webtoon pinch mainly widened content: the per-item transform hardcoded `scaleY = 1f`, and the gesture centroid was never passed to the zoom state, so the strip was not anchored to the fingers either. | `WebtoonZoomPolicy` 22 tests (focal invariant, pan clamp, coverage, scroll symmetry) + E4 matrix | CODE_COMPLETE at E2, PRODUCTION-WIRED, E4 pending |
+| DEF-003 | Sliced webtoon elements overlapped because zoom was applied per LazyColumn item: a scaled item paints outside its layout slot while the list retains the unscaled geometry, so neighbours collide. The transform now lives once on the scroll container, so no per-item painted bounds can disagree with layout. | `WebtoonZoomPolicy` coverage tests + E4 matrix | CODE_COMPLETE at E2, PRODUCTION-WIRED, E4 pending |
 | DEF-004 | Crop toggle is inconsistent and does not reliably enlarge content immediately. | E3 same-page toggle test + E4 static/animated matrix | IN_PROGRESS, legacy |
 | DEF-005 | Series-to-Library return motion is still visually unacceptable. | E3 transition test + E4 predictive-back matrix | IN_PROGRESS, legacy |
 | DEF-006 | Updates must remain library-scoped unless a consumer explicitly opts out. | DAO contract + ViewModel test | CODE_COMPLETE |
@@ -140,7 +140,7 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | 5  Working memory | IN_PROGRESS | MED-002 byte-budgeted working store and MED-004 geometry/tile partition are CODE_COMPLETE at E2. Tile decode/cache integration remains open. |
 | 6  Reader core | IN_PROGRESS | RDR-001 and RDR-002 are CODE_COMPLETE at E2. RDR-003 has a CODE_COMPLETE arbiter/tap policy at E2 but remains IN_PROGRESS until a replacement viewport owns it and E4 pointer evidence exists. |
 | 7  Paged reader | IN_PROGRESS | RDR-004 not started, but the DEF-001 zoom defect is now fixed and production-wired: the transform is applied via graphicsLayer and anchored on the gesture centroid. E4 pending. |
-| 8  Continuous reader | NOT_STARTED | RDR-005 |
+| 8  Continuous reader | IN_PROGRESS | RDR-005 not started, but DEF-002 and DEF-003 are now fixed and production-wired: one isotropic document transform on the scroll container, focal-anchored, replacing the per-item X-only layer. E4 pending. |
 | 9  Shell/navigation | NOT_STARTED | NAV-001 |
 | 10  Library/Series | NOT_STARTED | NAV-002 |
 | 11  Remaining slices | NOT_STARTED | Product parity checklist |

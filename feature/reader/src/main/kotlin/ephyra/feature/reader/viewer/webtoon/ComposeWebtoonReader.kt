@@ -1,4 +1,4 @@
-﻿package ephyra.feature.reader.viewer.webtoon
+package ephyra.feature.reader.viewer.webtoon
 
 import android.graphics.PointF
 import androidx.compose.foundation.Image
@@ -360,10 +360,26 @@ fun ComposeWebtoonReader(
         // rescales without changing LazyColumn layout, so zoom can never shift section
         // positions while scrolling between strips. Double-tap toggles 1x/2x fit.
         Box(modifier = modifier.fillMaxSize()) {
+            // One transform for the whole document, on the scroll container.
+            //
+            // It used to live on each page item, which is the direct cause of the reported overlap:
+            // a scaled item paints outside the LazyColumn slot it occupies while the list retains
+            // the unscaled layout, so neighbours collide. Scaling the container instead keeps every
+            // item at its true document position, and the list keeps owning measurement and scroll.
+            //
+            // The transform origin is top-start so the list's own scroll offset stays meaningful in
+            // document units, and `clip` keeps the scaled result inside the viewport.
             LazyColumn(
                 state = lazyListState,
                 modifier = Modifier
                     .fillMaxSize()
+                    .graphicsLayer {
+                        scaleX = zoomState.scale
+                        scaleY = zoomState.scale
+                        translationX = zoomState.offsetX
+                        transformOrigin = TransformOrigin(0f, 0f)
+                        clip = true
+                    }
                     .nestedScroll(webtoonOverscrollConnection),
             ) {
                 itemsIndexed(
@@ -390,6 +406,11 @@ fun ComposeWebtoonReader(
                                 cropBorders = viewer.config.imageCropBorders,
                                 zoomState = zoomState,
                                 zoomEnabled = zoomEnabled,
+                                onZoomFocal = { correction ->
+                                    if (correction != 0f) {
+                                        scope.launch { lazyListState.scrollBy(correction) }
+                                    }
+                                },
                                 onLongTap = { onPageLongTap(item) },
                                 onSingleTap = { tapOffset, containerSize ->
                                     val normX = if (containerSize.width > 0) tapOffset.x / containerSize.width else 0.5f
@@ -471,6 +492,8 @@ private fun WebtoonPageItem(
     zoomEnabled: Boolean,
     onLongTap: () -> Unit,
     onSingleTap: (Offset, Size) -> Unit,
+    /** Scroll owner for the focal correction; the item cannot reach the list's state itself. */
+    onZoomFocal: (Float) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val status by page.statusFlow.collectAsStateWithLifecycle()
@@ -545,16 +568,6 @@ private fun WebtoonPageItem(
                 // window (not merely composed nearby via the prefetch window).
                 itemIsVisible = coordinates.isAttached && !coordinates.boundsInWindow().isEmpty
             }
-            // Shared horizontal zoom: scaling Y would alter every lazy item's painted bounds
-            // while LazyColumn retains its original geometry, producing overlap/gaps. Width-only
-            // zoom keeps vertical document flow stable and leaves scrolling untouched.
-            .graphicsLayer {
-                scaleX = zoomState.scale
-                scaleY = 1f
-                translationX = zoomState.offsetX
-                transformOrigin = TransformOrigin(0f, 0f)
-                clip = true
-            }
             .pointerInput(page.index, zoomEnabled to zoomState) {
                 if (!zoomEnabled) {
                     detectTapGestures(
@@ -569,7 +582,12 @@ private fun WebtoonPageItem(
                         zoomMax = max,
                         getScale = { zoomState.scale },
                         onSingleTap = { tapOffset -> onSingleTap(tapOffset, size.toSize()) },
-                        onZoom = { s: Float, p: Float -> zoomState.applyZoom(s, p) },
+                        // The list owns its scroll state, so the focal correction is handed back to
+                        // the caller. Without it the list stays put and the strip jumps under the
+                        // fingers even though the scale arithmetic is correct.
+                        onZoom = { s: Float, p: Float, focal: Offset ->
+                            onZoomFocal(zoomState.applyZoom(s, p, focal.x, focal.y).scrollCorrection)
+                        },
                         onDoubleTapToggle = { zoomState.toggleFit() },
                         onLongPress = onLongTap,
                     )

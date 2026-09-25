@@ -2,6 +2,7 @@ package ephyra.feature.reader.viewer.webtoon
 
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.calculateCentroid
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.ui.geometry.Offset
@@ -64,7 +65,7 @@ suspend fun PointerInputScope.detectWebtoonGestures(
     zoomMax: Float,
     getScale: () -> Float,
     onSingleTap: (Offset) -> Unit,
-    onZoom: (Float, Float) -> Unit,
+    onZoom: (scale: Float, panX: Float, focal: Offset) -> Unit,
     onDoubleTapToggle: () -> Unit,
     onLongPress: () -> Unit,
 ) {
@@ -134,7 +135,13 @@ suspend fun PointerInputScope.detectWebtoonGestures(
                 transformStarted = true
                 val zoomChange = event.calculateZoom()
                 if (zoomChange != 1f || panChange.x != 0f) {
-                    onZoom(coerceWebtoonZoom(getScale() * zoomChange, zoomMin, zoomMax), panChange.x)
+                    // The centroid is the focal point. It was previously discarded entirely, so the
+                    // strip was never anchored to the fingers and slid away from a pinch.
+                    onZoom(
+                        coerceWebtoonZoom(getScale() * zoomChange, zoomMin, zoomMax),
+                        panChange.x,
+                        event.calculateCentroid(),
+                    )
                 }
                 event.changes.forEach { it.consume() }
             } else if (ZoomPolicy.locksInteraction(getScale())) {
@@ -147,7 +154,7 @@ suspend fun PointerInputScope.detectWebtoonGestures(
                     pendingSingleTap?.cancel()
                     pendingSingleTap = null
                     transformStarted = true
-                    onZoom(getScale(), panChange.x)
+                    onZoom(getScale(), panChange.x, event.calculateCentroid())
                     event.changes.forEach { it.consume() }
                 }
             }
