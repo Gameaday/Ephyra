@@ -86,6 +86,7 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | SRC-010 | Durable target series identity and persistence contract. | Agent | `SeriesPersistenceContractTest`; Room/backup implementation remains open | CODE_COMPLETE |
 | DATA-001A | Target Room entity/DAO contract and migration fixture boundary. | Agent | `TARGET_DATA_SCHEMA.md` + target entity/DAO compile gate | CODE_COMPLETE |
 | DATA-001B | Reversible legacy-to-target migration plan and fixture mapping. | Agent | `LegacySeriesMigrationTest` | CODE_COMPLETE |
+| DATA-001C | One-way Room-entity-to-migration-input adapter. | Agent | `LegacyRoomMigrationAdapterTest` | CODE_COMPLETE |
 | CON-001 | Technical contract layer for reader, media, navigation, motion, source, fixtures, budgets, and dependencies. | Agent | Contract links + execution review | CODE_COMPLETE |
 | TST-001 | Deterministic page, crop, gesture, and transition fixtures. | Agent | Fixture manifest + test paths | NOT_STARTED |
 | TST-002 | Connected instrumentation project and device matrix. | Agent | CI workflow | NOT_STARTED |

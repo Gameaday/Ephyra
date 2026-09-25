@@ -42,6 +42,7 @@
 - Define `DurableSeriesIdentity` and `SeriesRepository` before changing Room. **Complete as a pure contract**; follow `../TARGET_DATA_SCHEMA.md` for the target schema.
 - `DATA-001A`: implement target Room entity/DAO contracts and migration fixtures in an isolated boundary; do not mutate `@Database(version = 3)` yet. **Complete as an isolated contract.**
 - `DATA-001B`: define and test reversible legacy-to-target mapping plans. **Complete as a pure mapper**; Room and backup execution remain open.
+- `DATA-001C`: adapt current Room entities into the pure migration input. **Complete and tested**; this is read-only compatibility mapping.
 - Move fan-out, deadlines, partial results, and cancellation out of `SearchViewModel` in a later product seam.
 - Move deduplication and ranking into pure domain code.
 - Remove search-time persistence.
