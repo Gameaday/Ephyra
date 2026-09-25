@@ -1,0 +1,19 @@
+{
+  "_comment": "Deterministic repository health ratchets. Each value is a CEILING: the build fails if the current value exceeds it. Lowering a value is a deliberate act that makes the end state strictly better. Timing budgets live in doc/BUILD_HEALTH.md and are measured on a schedule, not per-PR.",
+  "measuredAt": "2026-09-25",
+  "measuredFromTag": "390fb2d31",
+  "metrics": {
+    "moduleCount": 29,
+    "projectDependencyEdges": 166,
+    "mainSourceFiles": 1202,
+    "testSourceFiles": 233,
+    "todoFixmeMarkers": 14,
+    "deprecatedMarkers": 39,
+    "releaseApkMibPerAbi": 30.7
+  },
+  "notes": {
+    "todoFixmeMarkers": "Ceiling only. Do not raise to accommodate new work; record intentional debt in doc/REBUILD_STATUS.md instead.",
+    "releaseApkMibPerAbi": "Track release, not debug. Debug is ~126 MiB because it is unminified and is not a shipped-payload signal.",
+    "mainSourceFiles": "Grows legitimately during the reconstruction. Tracked for visibility, not gated, until the legacy deletion task defines a target."
+  }
+}

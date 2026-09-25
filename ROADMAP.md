@@ -49,7 +49,7 @@ Build a modern Android application in which:
 - search is progressive, cancellable, bounded, provenance-preserving, and deterministically ranked;
 - source health and migration are observable, explicit, reversible, and non-destructive by default;
 - no feature imports legacy source types, service locators, or concrete adapters directly;
-- documentation has one authority order; superseded “completed” documents are deleted or clearly historical.
+- documentation has one authority order; superseded â€œcompletedâ€ documents are deleted or clearly historical.
 
 ## Non-negotiable rules
 
@@ -84,28 +84,38 @@ Build a modern Android application in which:
 
 No phase may begin implementation until the prior phase exit criteria are recorded as `VERIFIED` in [`doc/REBUILD_STATUS.md`](doc/REBUILD_STATUS.md).
 
+## Program health and build performance
+
+Build time and repository health are a standing workstream, not a one-time task. Deterministic
+ceilings are committed in `app/src/test/resources/health-baseline.json` and enforced by
+`HealthRatchetTest` on every change. Timing budgets and agent working rules live in
+[`doc/BUILD_HEALTH.md`](doc/BUILD_HEALTH.md). No phase may be recorded `VERIFIED` while a health
+budget is breached.
+
+Debt is removed by **tightening** a ceiling, never by raising it.
+
 ## Immediate queue
 
 1. `GOV-001` baseline tag recorded: `reconstruction-baseline-2026-09-24` at `4ec5b2c15`.
 2. `GOV-002` this program supersedes stale roadmap claims.
 3. `GOV-003` enforce the documentation authority and deletion policy.
 4. `CON-001` complete and link the technical contract layer.
-5. `TST-001A` define the executable fixture catalog — `CODE_COMPLETE`; see `ReaderFixtureCatalog` and `ReaderFixtureCatalogTest`.
-6. `TST-001B` generate deterministic static media artifacts and bind them to crop, slice, and decoder tests — `CODE_COMPLETE`; see `SyntheticMediaFixtures` and `SyntheticMediaFixturesTest`.
-7. `TST-001C1` static WebP fixture — `CODE_COMPLETE` at E2 through Android's bitmap encoder and decoder.
-8. `TST-001C2` immutable animated WebP/GIF fixtures — `CODE_COMPLETE` at E2; app animation-policy detection and Android animated decoding pass.
-9. `TST-001C3` static JXL fixture — `BLOCKED` on the current host: the available encoder/decoder is Android-native and requires connected Android execution or an independently reviewed immutable artifact.
-10. `TST-002` connected instrumentation infrastructure — `CODE_COMPLETE` at compile level; the pinned API 35 emulator workflow must complete once before E3 evidence is recorded.
-11. `SRC-000A/B/C` verify and classify the source/search compatibility inventory — `CODE_COMPLETE` at E1; see `doc/source/` and `tools/source/source-inventory.json`.
-12. `SRC-001A` capability model and typed source results — `CODE_COMPLETE` at E2; source-api contract tests pass.
-13. `RDR-001` pure reader session state machine — `CODE_COMPLETE` at E2; isolated from production until RDR-002/003 and viewport adapters are proven.
-14. `RDR-002` canonical chapter window and directional navigation policy — `CODE_COMPLETE` at E2; isolated from production until the replacement session/viewport consumes it.
-15. `RDR-003` pure gesture arbiter plus a thin Android pointer adapter — `IN_PROGRESS`; the arbiter and token-based tap sequencer are `CODE_COMPLETE` at E2, while the adapter remains unwired and lacks E4 pointer evidence.
+5. `TST-001A` define the executable fixture catalog â€” `CODE_COMPLETE`; see `ReaderFixtureCatalog` and `ReaderFixtureCatalogTest`.
+6. `TST-001B` generate deterministic static media artifacts and bind them to crop, slice, and decoder tests â€” `CODE_COMPLETE`; see `SyntheticMediaFixtures` and `SyntheticMediaFixturesTest`.
+7. `TST-001C1` static WebP fixture â€” `CODE_COMPLETE` at E2 through Android's bitmap encoder and decoder.
+8. `TST-001C2` immutable animated WebP/GIF fixtures â€” `CODE_COMPLETE` at E2; app animation-policy detection and Android animated decoding pass.
+9. `TST-001C3` static JXL fixture â€” `BLOCKED` on the current host: the available encoder/decoder is Android-native and requires connected Android execution or an independently reviewed immutable artifact.
+10. `TST-002` connected instrumentation infrastructure â€” `CODE_COMPLETE` at compile level; the pinned API 35 emulator workflow must complete once before E3 evidence is recorded.
+11. `SRC-000A/B/C` verify and classify the source/search compatibility inventory â€” `CODE_COMPLETE` at E1; see `doc/source/` and `tools/source/source-inventory.json`.
+12. `SRC-001A` capability model and typed source results â€” `CODE_COMPLETE` at E2; source-api contract tests pass.
+13. `RDR-001` pure reader session state machine â€” `CODE_COMPLETE` at E2; isolated from production until RDR-002/003 and viewport adapters are proven.
+14. `RDR-002` canonical chapter window and directional navigation policy â€” `CODE_COMPLETE` at E2; isolated from production until the replacement session/viewport consumes it.
+15. `RDR-003` pure gesture arbiter plus a thin Android pointer adapter â€” `IN_PROGRESS`; the arbiter and token-based tap sequencer are `CODE_COMPLETE` at E2, while the adapter remains unwired and lacks E4 pointer evidence.
 16. `SRC-001B` adapt the currently verified legacy extension path.
 17. `SRC-001C` local/native adapter and offline fixtures.
 18. `SRC-001D` controlled native HTTP adapter.
 19. `SRC-002` progressive search session, deduplication, ranking, and cancellation.
-20. `MED-004` pure document viewport and exact tile partition — `CODE_COMPLETE` at E2 with 19 geometry and partition tests. Tile decode/cache integration and the `RDR-005` continuous reader remain open.
+20. `MED-004` pure document viewport and exact tile partition â€” `CODE_COMPLETE` at E2 with 19 geometry and partition tests. Tile decode/cache integration and the `RDR-005` continuous reader remain open.
 
 Do **not** resume ad hoc reader zoom, crop, transition, or source fallback patches before the relevant contract/fixture task is complete.
 

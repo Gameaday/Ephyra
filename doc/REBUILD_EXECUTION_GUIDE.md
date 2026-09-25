@@ -92,24 +92,47 @@ Do not begin with a Composable and then invent the state model from its callback
 
 ## 5. Required local gates
 
-For every Kotlin/Gradle change, at minimum run:
+Gate **what you touched**, not the whole repository. Measured cost on a warm cache:
+
+| Task | Cost |
+|---|---:|
+| `:core:domain:compileDebugKotlin` | 15.5s |
+| `:core:domain:testDebugUnitTest` | 15.3s |
+| `:app:compileDebugKotlin` | 40.8s |
+| repo-wide `spotlessCheck` | 81.3s |
+
+A repo-wide formatting run on every iteration is the single largest avoidable cost in this
+program's loop. See [`BUILD_HEALTH.md`](BUILD_HEALTH.md).
+
+While iterating on a change:
 
 ```powershell
-./gradlew spotlessKotlinApply
-./gradlew spotlessCheck
-./gradlew testDebugUnitTest
-./gradlew :app:compileDebugKotlin
-./gradlew :app:lintDebug
+./gradlew :<touched-module>:spotlessKotlinApply
+./gradlew :<touched-module>:testDebugUnitTest --tests '<FQCN>'
+git diff --check
 ```
 
-Also run `git diff --check`.
+Once per slice, before commit, run the wider gate:
 
-For resource, manifest, or navigation changes:
+```powershell
+./gradlew :<touched-module>:spotlessCheck
+./gradlew :<touched-module>:testDebugUnitTest
+./gradlew :app:compileDebugKotlin
+```
+
+Run `:app:testDebugUnitTest` whenever the change touches `app/`, because it hosts
+`HealthRatchetTest` and the architecture rules.
+
+For resource, manifest, or navigation changes also run:
 
 ```powershell
 ./gradlew :app:assembleDebug
-./gradlew :app:assembleRelease
+./gradlew :app:lintDebug
 ```
+
+Never raise a health ceiling in `app/src/test/resources/health-baseline.json` to make a gate pass.
+Ceilings move down when debt is removed. If a metric must legitimately rise, record the reason in
+[`REBUILD_STATUS.md`](REBUILD_STATUS.md) in the same commit.
 
 
 

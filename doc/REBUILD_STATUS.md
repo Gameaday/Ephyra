@@ -41,7 +41,7 @@ A task may be `CODE_COMPLETE` at `E2`; it may not be `DEVICE_VERIFIED` without `
 | B-010 | `preloadAllPages()` can enqueue an entire online chapter. | `HttpPageLoader.kt` | E1, confirmed debt |
 | B-011 | No connected device is available in the current workspace. | `adb devices` | VERIFIED environmental limit |
 | B-012 | Source/search is a mixed compatibility system with no single capability, result, ranking, or discovery contract. | Source/search inventory and current modules | E1, confirmed debt |
-| B-013 | Several historical documents make current-looking or “100% complete” claims that are superseded by the reconstruction program. | Documentation authority audit | E1, confirmed debt |
+| B-013 | Several historical documents make current-looking or Ã¢â‚¬Å“100% completeÃ¢â‚¬Â claims that are superseded by the reconstruction program. | Documentation authority audit | E1, confirmed debt |
 | B-014 | `SRC-000` classifies source/search paths as target, adapter, compatibility, or delete; legacy removal is gated by zero-legacy product evidence. | `doc/source/` inventory artifacts, `tools/source/source-inventory.json` | E1, CODE_COMPLETE |
 
 ## Open user-reported defects
@@ -66,7 +66,7 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | GOV-001 | Tag and record reconstruction baseline. | Agent | Git tag/checksum | VERIFIED |
 | GOV-002 | Supersede stale roadmap claims and remove obsolete plans from the current tree. | Agent | This ledger + documentation governance | CODE_COMPLETE |
 | GOV-003 | Enforce documentation authority and deletion policy. | Agent | Documentation governance + link/index gate | CODE_COMPLETE |
-| DOC-001 | Delete superseded “completed” documents after contract migration. | Agent | Git diff + link/index gate | CODE_COMPLETE |
+| DOC-001 | Delete superseded Ã¢â‚¬Å“completedÃ¢â‚¬Â documents after contract migration. | Agent | Git diff + link/index gate | CODE_COMPLETE |
 | SRC-000A | Static source/search inventory. | Agent | Inventory artifact | CODE_COMPLETE |
 | SRC-000B | Source/search call-site verification. | Agent | `doc/source/SOURCE_CALL_GRAPH.md` | CODE_COMPLETE |
 | SRC-000C | Legacy compatibility classification and removal decision. | Agent | Compatibility matrix and removal plan | CODE_COMPLETE |
@@ -120,6 +120,8 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | NAV-002 | Series shared-element/fade/predictive-back policy. | Agent | E3 + E4 matrix | NOT_STARTED |
 | DATA-001 | Clean-slate schema policy for replacement release. | Agent | Schema tests | NOT_STARTED |
 | OPS-001 | One startup state model; split Application responsibilities. | Agent | Startup tests/benchmarks | NOT_STARTED |
+| OPS-002 | Build performance budgets established and tracked. | Agent | `doc/BUILD_HEALTH.md` baselines + scheduled timing measurement; clean-build number still outstanding | IN_PROGRESS |
+| OPS-003 | Deterministic repository health ratchets enforced. | Agent | `HealthRatchetTest` + `health-baseline.json`; module/edge/main/test/TODO/APK ceilings gated on every change | CODE_COMPLETE |
 | REL-001 | Enforce lint, instrumentation, benchmark, and release artifact gates. | Agent | CI run | NOT_STARTED |
 | CLEAN-001 | Delete superseded reader/navigation/media code. | Agent | Dependency/import scan | NOT_STARTED |
 
@@ -142,6 +144,7 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | 11  Remaining slices | NOT_STARTED | Product parity checklist |
 | 12  Source/data/ops | IN_PROGRESS | SRC-000 through SRC-003 are CODE_COMPLETE at E1/E2; SRC-004 through SRC-005, DATA-001, and OPS-001 remain open. |
 | 13  Release/cleanup | NOT_STARTED | REL-001, CLEAN-001, DOC-001 |
+| Health  Build and repository health | IN_PROGRESS | OPS-002, OPS-003. No phase advances to VERIFIED while a health ceiling or timing budget is breached. |
 
 ## Change log
 
