@@ -53,6 +53,10 @@ The native local adapter is implemented in `source-local` and does not use `Cont
 
 Implement and test one controlled native HTTP source. Do not add script or heuristic sources until they have their own test and security gates.
 
+**Current implementation:** `core:data` provides `OpdsSourceGateway`, adapting the existing tested `OpdsContentSource` (OPDS 1.2 XML and OPDS 2.0 JSON) to `SourceGateway`. It reuses the existing OkHttp transport and parser; it does not create a second HTTP stack. Its descriptor advertises only search, details, units, and resources until separate catalog/popular capability methods exist. Product search/browse callers are not migrated by this task.
+
+**Evidence:** `OpdsSourceGatewayTest` plus the existing `OpdsContentSourceTest` parser/transport tests. This is an E2 contract implementation, not device acceptance.
+
 ## Implementation sequence
 
 1. `SRC-001A`: `SourceDescriptor`, capabilities, `SourceGateway`, typed result types, and source-protocol DTOs.

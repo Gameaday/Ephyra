@@ -73,6 +73,7 @@ These are not target architecture and must not receive new features:
 | `source-api/ContentSourceAdapter` | Tachiyomi/Mihon `Source` → generic content adapter | **compatibility** | Keep only until callers migrate; superseded by the one-way `LegacySourceGateway` boundary. |
 | `source-api/LegacySourceGateway` | Legacy `Source`/`CatalogueSource` → target `SourceGateway` | **temporary compatibility** | Isolate; delete after all product callers use native gateways. |
 | `source-local/LocalSourceGateway` | Canonical `UnifiedContentSource` → target `SourceGateway` | **target native adapter** | Keep; prove offline, SAF, archive, and resource-byte behavior. |
+| `core:data/OpdsSourceGateway` | Existing OPDS 1.2/2.0 HTTP source → target `SourceGateway` | **target native adapter** | Keep; controlled HTTP path with parser/transport contract tests. |
 | `source-api/SourceHierarchy` | Transport-oriented hierarchy | **compatibility concept** | Reuse transport descriptors, not interface inheritance as the product model. |
 | `domain/content/source/ContentSourceEngine` | Profile-based source engine contract | **compatibility contract** | Replace with capability-gated `SourceGateway`. |
 | `ContentSourceOrchestrator` | Modern profile engine selection and fallback | **target concept, incomplete implementation** | Retain orchestration role; remove profile-as-source-truth assumptions. |

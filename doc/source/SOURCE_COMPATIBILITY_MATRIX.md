@@ -10,6 +10,7 @@
 | `ContentSourceAdapter` | compatibility | `LegacySourceGateway` (temporary) | Extensions still installed and product callers still use the old bridge | Isolate; migrate callers, then delete. |
 | `LegacySourceGateway` | temporary compatibility | No permanent target model; callers move to native gateways | Product callers still use legacy source types | Keep isolated; delete at R-008. |
 | `LocalSourceGateway` | target native | `SourceGateway` over `UnifiedContentSource` | Product callers have not been migrated yet | Keep; first offline/native source path. |
+| `OpdsSourceGateway` | target native | `SourceGateway` over existing OPDS HTTP source | Product callers have not been migrated; device acceptance pending | Keep; controlled native HTTP path. |
 | `SourceManager` | compatibility | `SourceRegistry` | Search, browse, updates, reader | Keep only as bridge. |
 | `SourceRepository` | compatibility | Catalog/query gateways | Browse/migration call sites | Keep only as bridge. |
 | `DynamicHttpSource` | compatibility | Native/external source adapter | Legacy UI registration | Isolate. |
