@@ -65,7 +65,7 @@ Implement and test one controlled native HTTP source. Do not add script or heuri
 4. `SRC-001D`: one controlled native HTTP adapter with tested capability/outcome behavior.
 5. `SRC-002`: `SearchSession`, per-source jobs, deadlines, progressive state, cancellation, and exact provenance-preserving aggregation. **Implemented and tested**; product search/browse callers are not migrated by this task.
 6. `SRC-003`: capability-gated discovery and source health. **Implemented and tested**; health persistence and product-surface wiring remain separate tasks.
-7. `SRC-004`: explicit migration candidates and reversible application.
+7. `SRC-004`: explicit migration candidates and reversible application. **Implemented and tested** as a pure source-api contract; persistence, UI, and actual library mutation remain separate tasks.
 8. `SRC-005`: source trust, credentials, install, and permission lifecycle.
 9. `SRC-006`: zero-legacy-source product path.
 10. `CLEAN-SOURCE-001`: remove legacy bridge and its service-locator support.
