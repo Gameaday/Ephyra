@@ -1,6 +1,6 @@
 # Source Compatibility Matrix
 
-> **Task:** `SRC-000C`  
+> **Task:** `SRC-000C`
 > **Status:** `CODE_COMPLETE` at evidence level `E1`
 
 | Path | Classification | Target destination | Removal blocker | Current decision |

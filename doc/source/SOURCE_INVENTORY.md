@@ -1,8 +1,8 @@
 # Source Compatibility Inventory
 
-> **Task:** `SRC-000`  
-> **Status:** `CODE_COMPLETE` at evidence level `E1` (static inspection)  
-> **Scope:** source, search, discovery, migration, and compatibility boundaries  
+> **Task:** `SRC-000`
+> **Status:** `CODE_COMPLETE` at evidence level `E1` (static inspection)
+> **Scope:** source, search, discovery, migration, and compatibility boundaries
 > **Rule:** this document describes the target migration boundary. It does not claim that the legacy product path is already replaced.
 
 ## Executive decision
@@ -138,4 +138,3 @@ This inventory is static. It does not prove runtime behavior, source compatibili
 - [Call-site verification](SOURCE_CALL_GRAPH.md)
 - [Compatibility matrix](SOURCE_COMPATIBILITY_MATRIX.md)
 - [Removal plan](SOURCE_REMOVAL_PLAN.md)
-

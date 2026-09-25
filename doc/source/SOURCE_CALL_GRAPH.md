@@ -1,7 +1,7 @@
 # Source Call-Site Verification
 
-> **Task:** `SRC-000B`  
-> **Status:** `CODE_COMPLETE` at evidence level `E1`  
+> **Task:** `SRC-000B`
+> **Status:** `CODE_COMPLETE` at evidence level `E1`
 > **Purpose:** record the actual call paths that the target source boundary must replace or isolate.
 
 ## Legacy global search path

@@ -1,6 +1,6 @@
 # Source Legacy Removal Plan
 
-> **Task:** `SRC-000C`  
+> **Task:** `SRC-000C`
 > **Status:** planning artifact; removal is not yet authorized.
 
 ## Removal principles
