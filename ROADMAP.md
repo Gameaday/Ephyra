@@ -91,13 +91,15 @@ No phase may begin implementation until the prior phase exit criteria are record
 3. `GOV-003` enforce the documentation authority and deletion policy.
 4. `CON-001` complete and link the technical contract layer.
 5. `TST-001A` define the executable fixture catalog — `CODE_COMPLETE`; see `ReaderFixtureCatalog` and `ReaderFixtureCatalogTest`.
-6. `TST-001B` generate real deterministic static media artifacts and bind them to crop, slice, and decoder tests.
-7. `SRC-000A/B/C` verify and classify the source/search compatibility inventory — `CODE_COMPLETE` at E1; see `doc/source/` and `tools/source/source-inventory.json`.
-7. `SRC-001A` capability model and typed source results — `CODE_COMPLETE` at E2; source-api contract tests pass.
-8. `SRC-001B` adapt the currently verified legacy extension path.
-9. `SRC-001C` local/native adapter and offline fixtures.
-10. `SRC-001D` controlled native HTTP adapter.
-11. `SRC-002` progressive search session, deduplication, ranking, and cancellation.
+6. `TST-001B` generate deterministic static media artifacts and bind them to crop, slice, and decoder tests — `CODE_COMPLETE`; see `SyntheticMediaFixtures` and `SyntheticMediaFixturesTest`.
+7. `TST-001C` generate and test animated WebP/GIF and JXL artifacts using the project decoder paths.
+8. `TST-002` establish connected instrumentation and device evidence.
+9. `SRC-000A/B/C` verify and classify the source/search compatibility inventory — `CODE_COMPLETE` at E1; see `doc/source/` and `tools/source/source-inventory.json`.
+10. `SRC-001A` capability model and typed source results — `CODE_COMPLETE` at E2; source-api contract tests pass.
+11. `SRC-001B` adapt the currently verified legacy extension path.
+12. `SRC-001C` local/native adapter and offline fixtures.
+13. `SRC-001D` controlled native HTTP adapter.
+14. `SRC-002` progressive search session, deduplication, ranking, and cancellation.
 
 Do **not** resume ad hoc reader zoom, crop, transition, or source fallback patches before the relevant contract/fixture task is complete.
 

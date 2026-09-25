@@ -95,7 +95,8 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | DATA-001I | Production parity matrix and migration rehearsal fixture. | Agent | [Target data parity matrix](TARGET_DATA_PARITY.md) + `TargetMigrationRehearsalTest` + `TargetCanonicalSeriesReadRepositoryTest` + `SourceLifecycleTest` + `ReconcileSourceRegistryTest` + `TargetSourceRepositoryTest` + `DownloadArtifactVerifier`; category, tracking, excluded-scanlator policy, target backup, confirmed-link aggregate projection, source lifecycle persistence/reconciliation, and core:download `UniFileDownloadArtifactProbe`; pure download artifact verification and UniFile observation covered; transactional index publication and legacy read-only adoption remain open | IN_PROGRESS |
 | CON-001 | Technical contract layer for reader, media, navigation, motion, source, fixtures, budgets, and dependencies. | Agent | Contract links + execution review | CODE_COMPLETE |
 | TST-001A | Executable reader/media fixture catalog and interaction case registry. | Agent | `ReaderFixtureCatalog` + `ReaderFixtureCatalogTest` | CODE_COMPLETE |
-| TST-001B | Real synthetic media artifacts and decoder acceptance fixtures. | Agent | Binary fixtures + E2 tests | NOT_STARTED |
+| TST-001B | Deterministic static PNG/JPEG/corrupt/missing media artifacts plus crop and slicing acceptance tests. | Agent | `SyntheticMediaFixtures` + `SyntheticMediaFixturesTest` | CODE_COMPLETE |
+| TST-001C | Animated WebP/GIF and JXL artifacts using project decoder paths. | Agent | Codec fixture tests | NOT_STARTED |
 | TST-002 | Connected instrumentation project and device matrix. | Agent | CI workflow | NOT_STARTED |
 | TST-003 | Screenshot and macrobenchmark release gates. | Agent | CI artifacts | NOT_STARTED |
 | SEC-001 | Remove hardcoded signing secrets from build logic. | Agent | Secret scan | NOT_STARTED |
@@ -124,10 +125,10 @@ Legacy defects are not fixed by changing the current implementation unless the t
 
 | Phase | Status | Evidence required to mark VERIFIED |
 |---|---|---|
-| 0  Baseline | NOT_STARTED | GOV-001, GOV-002, GOV-003, DOC-001, CON-001, TST-001A |
+| 0  Baseline | NOT_STARTED | GOV-001, GOV-002, GOV-003, DOC-001, CON-001, TST-001A, TST-001B |
 | 0A Technical contracts | CODE_COMPLETE | CON-001 |
 | 1  Security/platform | NOT_STARTED | SEC-001 through SEC-003 |
-| 2  Quality infrastructure | NOT_STARTED | TST-001A, TST-001B, TST-002, TST-003 |
+| 2  Quality infrastructure | NOT_STARTED | TST-001A, TST-001B, TST-001C, TST-002, TST-003 |
 | 3  Foundations | NOT_STARTED | ARC-001 through ARC-003 |
 | 4  Media planning | NOT_STARTED | MED-001, MED-003 |
 | 5  Working memory | NOT_STARTED | MED-002, MED-004 |

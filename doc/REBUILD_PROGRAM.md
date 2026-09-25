@@ -180,18 +180,10 @@ Tasks:
 
 - `GOV-001`: create a signed/tagged reconstruction baseline and record SHA, Gradle, JDK, and dependency state.
 - `GOV-002`: mark legacy roadmaps as historical; establish this program as authoritative.
-- `TST-001`: add deterministic fixtures:
-  - bordered/uncropped static page;
-  - crop-only border;
-  - mismatched artwork corners;
-  - tall page;
-  - short page;
-  - animated page;
-  - multi-slice page;
-  - corrupted page;
-  - missing page;
-  - landscape/portrait/compact/expanded navigation scenes.
-- Capture current failing behavior as a known-bad baseline, not as expected behavior.
+- `TST-001A`: define the executable fixture catalog and interaction registry.
+- `TST-001B`: generate deterministic static PNG/JPEG/corrupt/missing artifacts and bind them to decoder, crop, and slicing tests.
+- `TST-001C`: generate animated WebP/GIF and JXL artifacts using the project decoder paths.
+- `TST-002`: add a connected instrumentation module for reader, navigation, cache, migration, and WorkManager smoke tests.
 
 Verification:
 
