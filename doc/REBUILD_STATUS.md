@@ -99,7 +99,7 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | TST-001C1 | Static WebP fixture through the Android bitmap encoder/decoder. | Agent | `SyntheticMediaFixtures.staticWebp` + `SyntheticMediaFixturesTest` | CODE_COMPLETE |
 | TST-001C2 | Immutable animated WebP/GIF fixtures through app policy and Android animated decoding. | Agent | `animated-two-frame-v1.webp/.gif` + hash/policy/decode tests; connected playback remains open | CODE_COMPLETE |
 | TST-001C3 | Static JXL artifact through the project Coil bridge decoder. | Agent | Blocked: host cannot execute Android-native jxl-coder; requires connected Android evidence or independently reviewed immutable artifact | BLOCKED |
-| TST-002 | Connected instrumentation project and device matrix. | Agent | CI workflow | NOT_STARTED |
+| TST-002 | Connected instrumentation source set, real app launch/recreate smoke test, normal-CI instrumentation APK compile, and pinned API 35 emulator workflow. | Agent | `MainActivityConnectedTest`; `:app:assembleDebugAndroidTest` passes; connected workflow execution pending | IN_PROGRESS |
 | TST-003 | Screenshot and macrobenchmark release gates. | Agent | CI artifacts | NOT_STARTED |
 | SEC-001 | Remove hardcoded signing secrets from build logic. | Agent | Secret scan | NOT_STARTED |
 | SEC-002 | Encrypt source/tracker credentials with Keystore-backed storage. | Agent | Threat-model tests | NOT_STARTED |

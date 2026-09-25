@@ -95,13 +95,13 @@ No phase may begin implementation until the prior phase exit criteria are record
 7. `TST-001C1` static WebP fixture — `CODE_COMPLETE` at E2 through Android's bitmap encoder and decoder.
 8. `TST-001C2` immutable animated WebP/GIF fixtures — `CODE_COMPLETE` at E2; app animation-policy detection and Android animated decoding pass.
 9. `TST-001C3` static JXL fixture — `BLOCKED` on the current host: the available encoder/decoder is Android-native and requires connected Android execution or an independently reviewed immutable artifact.
-10. `TST-002` establish connected instrumentation and device evidence.
-9. `SRC-000A/B/C` verify and classify the source/search compatibility inventory — `CODE_COMPLETE` at E1; see `doc/source/` and `tools/source/source-inventory.json`.
-10. `SRC-001A` capability model and typed source results — `CODE_COMPLETE` at E2; source-api contract tests pass.
-11. `SRC-001B` adapt the currently verified legacy extension path.
-12. `SRC-001C` local/native adapter and offline fixtures.
-13. `SRC-001D` controlled native HTTP adapter.
-14. `SRC-002` progressive search session, deduplication, ranking, and cancellation.
+10. `TST-002` connected instrumentation infrastructure — `CODE_COMPLETE` at compile level; the pinned API 35 emulator workflow must complete once before E3 evidence is recorded.
+11. `SRC-000A/B/C` verify and classify the source/search compatibility inventory — `CODE_COMPLETE` at E1; see `doc/source/` and `tools/source/source-inventory.json`.
+12. `SRC-001A` capability model and typed source results — `CODE_COMPLETE` at E2; source-api contract tests pass.
+13. `SRC-001B` adapt the currently verified legacy extension path.
+14. `SRC-001C` local/native adapter and offline fixtures.
+15. `SRC-001D` controlled native HTTP adapter.
+16. `SRC-002` progressive search session, deduplication, ranking, and cancellation.
 
 Do **not** resume ad hoc reader zoom, crop, transition, or source fallback patches before the relevant contract/fixture task is complete.
 

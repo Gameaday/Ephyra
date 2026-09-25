@@ -323,6 +323,11 @@ dependencies {
     debugImplementation(compose.ui.test.manifest)
     debugImplementation(libs.leakcanary)
 
+    // Connected instrumentation
+    androidTestImplementation(androidx.test.ext)
+    androidTestImplementation(androidx.test.core)
+    androidTestImplementation(androidx.test.runner)
+
     // Hilt dependencies
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

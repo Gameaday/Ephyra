@@ -51,6 +51,15 @@ Animated WebP/GIF are immutable two-frame 32×32 synthetic assets. They are not 
 
 `SyntheticMediaFixturesTest` verifies both hashes, app animation-policy detection, and Android `ImageDecoder` returning an `AnimatedImageDrawable`. Exact playback timing/frame progression requires connected Android evidence.
 
+## Connected instrumentation entry points
+
+- Compile locally without a device: `./gradlew :app:assembleDebugAndroidTest --offline`.
+- Run with an attached API 35+ emulator/device: `./gradlew :app:connectedDebugAndroidTest --offline`.
+- CI workflow: `.github/workflows/connected-instrumentation.yml` (manual, weekly, or reusable).
+- Current smoke contract: `app/src/androidTest/java/ephyra/app/startup/MainActivityConnectedTest.kt` launches, resumes, recreates, and resumes the real `MainActivity`.
+
+A successful compile is not E3. E3 requires a successful connected run whose report is retained. JXL decoding and reader viewport interaction tests are deliberately not represented as passing until those connected cases exist and run.
+
 ## Evidence rules
 
 Every fixture records:
