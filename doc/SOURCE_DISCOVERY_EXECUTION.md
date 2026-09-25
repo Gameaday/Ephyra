@@ -63,12 +63,13 @@ Implement and test one controlled native HTTP source. Do not add script or heuri
 2. `SRC-001B`: adapt the currently working legacy extension path to `SourceGateway` behind a compatibility boundary.
 3. `SRC-001C`: local/native adapter and offline acceptance fixtures.
 4. `SRC-001D`: one controlled native HTTP adapter with tested capability/outcome behavior.
-5. `SRC-002`: `SearchSession`, per-source jobs, deadlines, progressive state, cancellation, and exact provenance-preserving aggregation. **Implemented and tested**; product search/browse callers are not migrated by this task.
+5. `SRC-002`: `SearchSession`, per-source jobs, deadlines, progressive state, cancellation, and exact provenance-preserving aggregation. **Implemented and tested**.
 6. `SRC-003`: capability-gated discovery and source health. **Implemented and tested**; health persistence and product-surface wiring remain separate tasks.
-7. `SRC-004`: explicit migration candidates and reversible application. **Implemented and tested** as a pure source-api contract; persistence, UI, and actual library mutation remain separate tasks.
-8. `SRC-005`: source trust, credentials, install, and permission lifecycle. **Implemented and tested** as a pure source-api contract; Android Keystore/DataStore adapters, OAuth callbacks, and permission UI remain separate tasks.
-9. `SRC-006`: zero-legacy-source product path. **Implemented and tested** as a native-only registry boundary; product UI wiring and legacy bridge removal remain separate tasks.
-10. `CLEAN-SOURCE-001`: freeze new legacy source dependencies. **Implemented and tested** with `SourceApiBoundaryTest`; deletion of the compatibility bridge remains blocked by app composition, browse/search, updates, migration, deep-link, and reader call sites.
+7. `SRC-007`: `GlobalSearchCoordinator`, the target product seam over `SearchSession` and `NativeSourceRegistry`. **Implemented and tested**; it does not import legacy DTOs and does not yet replace `GlobalSearchViewModel`.
+8. `SRC-004`: explicit migration candidates and reversible application. **Implemented and tested** as a pure source-api contract; persistence, UI, and actual library mutation remain separate tasks.
+9. `SRC-005`: source trust, credentials, install, and permission lifecycle. **Implemented and tested** as a pure source-api contract; Android Keystore/DataStore adapters, OAuth callbacks, and permission UI remain separate tasks.
+10. `SRC-006`: zero-legacy-source product path. **Implemented and tested** as a native-only registry boundary; product UI wiring and legacy bridge removal remain separate tasks.
+11. `CLEAN-SOURCE-001`: freeze new legacy source dependencies. **Implemented and tested** with `SourceApiBoundaryTest`; deletion of the compatibility bridge remains blocked by app composition, browse/search, updates, migration, deep-link, and reader call sites.
 
 Deferred technology tasks are separate from the initial sequence: script sources require their own repair/security/test milestone; heuristic discovery requires a validated proposal milestone; Jellyfin requires an authenticated source/collections milestone.
 
