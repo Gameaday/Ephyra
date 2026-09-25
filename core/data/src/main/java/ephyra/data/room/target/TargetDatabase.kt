@@ -9,6 +9,7 @@ import androidx.room.RoomDatabase
         TargetSeriesEntity::class,
         TargetSeriesSourceEntity::class,
         TargetLibraryEntryEntity::class,
+        TargetSeriesLinkEntity::class,
         TargetChapterEntity::class,
         TargetChapterStateEntity::class,
         TargetHistoryEntity::class,

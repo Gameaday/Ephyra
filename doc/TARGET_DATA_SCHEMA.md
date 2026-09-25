@@ -237,7 +237,7 @@ The schema is not accepted until tests prove:
 ## Current next gate
 
 ```text
-DATA-001G — isolated target link repository and Room execution contract
+DATA-001H — target repository production cutover decision
 ```
 
 The target backup format is source-neutral and versioned, but production backup/restore remains legacy-only until the target repository owns reads/writes and the cutover is explicitly approved.

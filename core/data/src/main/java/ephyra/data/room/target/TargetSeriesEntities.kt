@@ -91,6 +91,51 @@ data class TargetLibraryEntryEntity(
     val lastChangedAt: Long?,
 )
 
+/** Explicitly reviewed relationship between a canonical series and another source representation. */
+@Entity(
+    tableName = "target_series_source_links",
+    foreignKeys = [
+        ForeignKey(
+            entity = TargetSeriesEntity::class,
+            parentColumns = ["local_id"],
+            childColumns = ["canonical_series_id"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
+    indices = [Index(value = ["canonical_series_id", "state"]), Index(value = ["source_id", "external_id"])],
+)
+data class TargetSeriesLinkEntity(
+    @PrimaryKey
+    @ColumnInfo(name = "link_id")
+    val linkId: String,
+    @ColumnInfo(name = "canonical_series_id")
+    val canonicalSeriesId: String,
+    @ColumnInfo(name = "canonical_source_id")
+    val canonicalSourceId: String,
+    @ColumnInfo(name = "canonical_external_id")
+    val canonicalExternalId: String?,
+    @ColumnInfo(name = "canonical_url")
+    val canonicalUrl: String,
+    @ColumnInfo(name = "canonical_content_type")
+    val canonicalContentType: String,
+    @ColumnInfo(name = "source_id")
+    val sourceId: String,
+    @ColumnInfo(name = "external_id")
+    val externalId: String?,
+    val url: String,
+    @ColumnInfo(name = "content_type")
+    val contentType: String,
+    val confidence: Double,
+    @ColumnInfo(name = "evidence_json")
+    val evidenceJson: String,
+    val state: String,
+    val revision: Long,
+    @ColumnInfo(name = "created_at")
+    val createdAt: Long,
+    @ColumnInfo(name = "decided_at")
+    val decidedAt: Long?,
+)
+
 /** Canonical target chapter/unit metadata. Reading state is intentionally separate. */
 @Entity(
     tableName = "target_chapters",

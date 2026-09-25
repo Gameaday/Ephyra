@@ -90,6 +90,7 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | DATA-001D | Isolated target Room transaction writer, repository, and migration fixture. | Agent | `TargetMigrationWriterTest` + `TargetSeriesRepositoryTest`; live Room v3 unchanged; cross-source grouping deferred | CODE_COMPLETE |
 | DATA-001E | Versioned source-neutral target backup/restore mapping. | Agent | `TargetBackupMapperTest`; protobuf round-trip, genre/library/chapter/history preservation, and referential guards | CODE_COMPLETE |
 | DATA-001F | Explicit canonical cross-source identity/link policy. | Agent | `CanonicalSeriesLinkTest`; no automatic linking, auditable confirm/reject/revoke lifecycle | CODE_COMPLETE |
+| DATA-001G | Isolated target link repository and Room execution contract. | Agent | `TargetSeriesLinkRepositoryTest`; proposal idempotency, required durable sources, evidence/content-type round-trip, lifecycle transitions | CODE_COMPLETE |
 | CON-001 | Technical contract layer for reader, media, navigation, motion, source, fixtures, budgets, and dependencies. | Agent | Contract links + execution review | CODE_COMPLETE |
 | TST-001 | Deterministic page, crop, gesture, and transition fixtures. | Agent | Fixture manifest + test paths | NOT_STARTED |
 | TST-002 | Connected instrumentation project and device matrix. | Agent | CI workflow | NOT_STARTED |

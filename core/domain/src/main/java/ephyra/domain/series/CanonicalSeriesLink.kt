@@ -1,7 +1,11 @@
 package ephyra.domain.series
 
+import kotlinx.serialization.Serializable
+
 /** Explainable evidence used to review a cross-source identity candidate. */
+@Serializable
 sealed interface CanonicalLinkEvidence {
+    @Serializable
     data class ExactExternalIdentity(val sourceLabel: String, val externalId: String) : CanonicalLinkEvidence {
         init {
             require(sourceLabel.isNotBlank()) { "Evidence source label must not be blank" }
@@ -9,24 +13,28 @@ sealed interface CanonicalLinkEvidence {
         }
     }
 
+    @Serializable
     data class TitleSimilarity(val score: Double) : CanonicalLinkEvidence {
         init {
             require(score in 0.0..1.0) { "Title similarity must be between 0 and 1" }
         }
     }
 
+    @Serializable
     data class AuthorMatch(val normalizedAuthor: String) : CanonicalLinkEvidence {
         init {
             require(normalizedAuthor.isNotBlank()) { "Normalized author must not be blank" }
         }
     }
 
+    @Serializable
     data class ChapterStructureMatch(val normalizedUnitCount: Int) : CanonicalLinkEvidence {
         init {
             require(normalizedUnitCount >= 0) { "Normalized unit count must not be negative" }
         }
     }
 
+    @Serializable
     data class UserSignal(val description: String) : CanonicalLinkEvidence {
         init {
             require(description.isNotBlank()) { "User signal must not be blank" }
@@ -100,18 +108,32 @@ enum class CanonicalLinkState {
     REVOKED,
 }
 
-/**
- * Durable lifecycle for a user-reviewed cross-source relationship.
- *
- * Only [CONFIRMED] is active. Confirmation is explicit and cannot be reached automatically.
- * Rejection and revocation are retained as auditable terminal states rather than deleting history.
- */
+/** Persistence boundary for explicitly reviewed canonical cross-source links. */
+interface CanonicalLinkRepository {
+    suspend fun find(id: String): CanonicalSeriesLink?
+
+    suspend fun propose(candidate: CanonicalLinkCandidate): CanonicalSeriesLink?
+
+    suspend fun confirm(id: String, nowMillis: Long): CanonicalSeriesLink?
+
+    suspend fun reject(id: String, nowMillis: Long): CanonicalSeriesLink?
+
+    suspend fun revoke(id: String, nowMillis: Long): CanonicalSeriesLink?
+}
+
 data class CanonicalSeriesLink(
     val id: String,
     val candidate: CanonicalLinkCandidate,
     val state: CanonicalLinkState = CanonicalLinkState.PROPOSED,
     val revision: Long = 1L,
     val createdAtMillis: Long,
+/**
+     * Durable lifecycle for a user-reviewed cross-source relationship.
+     *
+     * Only [CONFIRMED] is active. Confirmation is explicit and cannot be reached automatically.
+     * Rejection and revocation are retained as auditable terminal states rather than deleting history.
+     */
+
     val decidedAtMillis: Long? = null,
 ) {
     init {

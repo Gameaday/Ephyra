@@ -75,8 +75,7 @@ sealed interface SeriesRefreshResult {
     ) : SeriesRefreshResult
 }
 
-/**
- * Target persistence boundary. Implementations must be idempotent by [DurableSeriesIdentity.stableKey],
+/** Target persistence boundary. Implementations must be idempotent by [DurableSeriesIdentity.stableKey],
  * preserve user-owned state, and never perform library membership changes implicitly.
  */
 interface SeriesRepository {

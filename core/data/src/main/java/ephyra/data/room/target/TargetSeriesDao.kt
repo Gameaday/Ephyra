@@ -32,6 +32,18 @@ interface TargetSeriesDao {
     @Query("SELECT * FROM target_series_sources WHERE series_id = :seriesId ORDER BY source_id")
     suspend fun getSourceReferences(seriesId: String): List<TargetSeriesSourceEntity>
 
+    @Query("SELECT * FROM target_series_source_links WHERE link_id = :linkId LIMIT 1")
+    suspend fun getLink(linkId: String): TargetSeriesLinkEntity?
+
+    @Query("SELECT * FROM target_series_source_links WHERE canonical_series_id = :seriesId ORDER BY created_at DESC")
+    suspend fun getLinksForSeries(seriesId: String): List<TargetSeriesLinkEntity>
+
+    @Upsert
+    suspend fun upsertLink(link: TargetSeriesLinkEntity)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertLinkIfMissing(link: TargetSeriesLinkEntity): Long
+
     @Query("DELETE FROM target_library_entries WHERE series_id = :seriesId")
     suspend fun deleteLibraryEntry(seriesId: String)
 
