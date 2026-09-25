@@ -116,6 +116,8 @@ Debt is removed by **tightening** a ceiling, never by raising it.
 18. `SRC-001D` controlled native HTTP adapter.
 19. `SRC-002` progressive search session, deduplication, ranking, and cancellation.
 20. `MED-004` pure document viewport and exact tile partition â€” `CODE_COMPLETE` at E2 with 19 geometry and partition tests. Tile decode/cache integration and the `RDR-005` continuous reader remain open.
+21. `DEF-009` long-strip reading-mode precedence extracted from `ReaderViewModel` into `DefaultReadingModeResolver` with focused tests — `CODE_COMPLETE` at E2. This is an ownership fix, not a behaviour fix: detection already worked for the reported series, so it does not address the user-reported zoom defects below.
+22. `DEF-008` `BorderCropTransformation` corrected for transposed per-edge insets, single-outlier intolerance, and contentless cropping — `CODE_COMPLETE` at E2, with each defect proven by a failing test before the fix. Device acceptance still required.
 
 Do **not** resume ad hoc reader zoom, crop, transition, or source fallback patches before the relevant contract/fixture task is complete.
 
@@ -127,6 +129,6 @@ The current application is not considered a complete native reader architecture.
 - webtoon zoom primarily widens content rather than providing coherent document zoom;
 - sliced webtoon content can overlap or destabilize during zoom/scroll;
 - Series-to-Library return motion remains visually unacceptable;
-- crop-borders behavior requires fresh device acceptance after the Coil 3 rewrite.
+- crop-borders behaviour is corrected in code (`DEF-008`) but still requires fresh device acceptance after the Coil 3 rewrite.
 
-These are program inputs, not isolated patch opportunities. See [`doc/REBUILD_STATUS.md`](doc/REBUILD_STATUS.md).
+The first four are program inputs, not isolated patch opportunities, and are owned by the `MED-001` -> `MED-003` -> `RDR-004`/`RDR-005` sequence. The crop fix is a confirmed code defect that is fixed and unit-proven; it is expected to change what you see, but that is only claimable once a device confirms it. See [`doc/REBUILD_STATUS.md`](doc/REBUILD_STATUS.md).

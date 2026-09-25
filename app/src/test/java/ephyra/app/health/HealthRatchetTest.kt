@@ -9,9 +9,18 @@ import java.io.File
 /**
  * Repository health ratchets.
  *
- * Every value in `health-baseline.json` is a CEILING. The build fails when the current value
- * exceeds it, so build and health debt cannot silently accumulate. Lowering a ceiling is a
- * deliberate act and is the mechanism that makes the end state strictly better than the start.
+ * Ceilings (module count, dependency edges, TODO/FIXME, deprecated markers) fail the build when
+ * exceeded, so health debt cannot silently accumulate. Lowering a ceiling is a deliberate act and
+ * is the mechanism that makes the end state strictly better than the start.
+ *
+ * Two metrics deliberately use a different rule. `mainSourceFiles` is compared for exact
+ * equality: it legitimately grows during the reconstruction, and an exact check is what keeps the
+ * final legacy-deletion target measurable. `testSourceFiles` is a floor, because deleting a test
+ * needs a recorded replacement rather than a silent removal.
+ *
+ * `releaseApkMibPerAbi` is recorded but NOT gated. Measuring it requires a full release build,
+ * which is neither cheap nor deterministic enough to run on every change; it is reported in
+ * doc/BUILD_HEALTH.md and measured on a schedule.
  *
  * These metrics are deterministic and cheap, so they gate every change. Timing budgets are
  * deliberately excluded: they are noisy and are measured on a schedule (see doc/BUILD_HEALTH.md).
@@ -51,6 +60,18 @@ class HealthRatchetTest {
             actual <= baseline.todoFixmeMarkers,
             "TODO/FIXME markers regressed: $actual > ${baseline.todoFixmeMarkers}. " +
                 "Track intentional debt in doc/REBUILD_STATUS.md, not in code comments.",
+        )
+    }
+
+    @Test
+    fun `deprecated markers do not accumulate`() {
+        val actual = projectSources()
+            .sumOf { Regex("""@Deprecated""").findAll(it.readText()).count() }
+        assertTrue(
+            actual <= baseline.deprecatedMarkers,
+            "Deprecated markers regressed: $actual > ${baseline.deprecatedMarkers}. " +
+                "Each @Deprecated is a bridge to a replacement path this program is meant to remove. " +
+                "Deleting the legacy call site is cheaper than keeping the bridge.",
         )
     }
 

@@ -18,13 +18,28 @@ These are exact, deterministic, and cheap, so they run in `:app:testDebugUnitTes
 |---|---:|---|
 | Module count | 29 | Ceiling |
 | Inter-project dependency edges | 166 | Ceiling |
-| Main source files | 1202 | Exact; must move deliberately |
+| Main source files | 1203 | Exact; must move deliberately |
 | Test source files | 233 | Floor |
 | TODO/FIXME markers | 14 | Ceiling |
-| Release APK per ABI | 30.7 MiB | Ceiling |
+| Deprecated markers | 39 | Ceiling |
 
 **Lowering a ceiling is the mechanism of improvement.** Debt is removed by tightening the
 baseline, never by raising it. Intentional debt is recorded in `doc/REBUILD_STATUS.md`.
+
+The rule column is not decorative. Ceilings fail the build when exceeded; `Main source files` is
+an exact comparison because it legitimately grows during the reconstruction and only an exact
+check keeps the final legacy-deletion target measurable; `Test source files` is a floor so that
+deleting a test demands a recorded replacement.
+
+### Recorded but not gated
+
+| Metric | Last measured | Why it is not a ratchet |
+|---|---:|---|
+| Release APK per ABI | 30.7 MiB | Requires a full release build — too slow and too machine-dependent to gate every change. Track release, not debug: debug is ~126 MiB because it is unminified and is not a shipped-payload signal. |
+
+This metric is listed here rather than in Tier A precisely so the table above stays a truthful
+description of what the build actually enforces. A metric that cannot be checked on every change
+is visibility, not a gate.
 
 ### Tier B — timing budgets (measured on a schedule)
 

@@ -55,6 +55,8 @@ A task may be `CODE_COMPLETE` at `E2`; it may not be `DEVICE_VERIFIED` without `
 | DEF-005 | Series-to-Library return motion is still visually unacceptable. | E3 transition test + E4 predictive-back matrix | IN_PROGRESS, legacy |
 | DEF-006 | Updates must remain library-scoped unless a consumer explicitly opts out. | DAO contract + ViewModel test | CODE_COMPLETE |
 | DEF-007 | Backward chapter navigation must remain available with skip-read enabled. | Pure navigation contract + viewer tests | CODE_COMPLETE |
+| DEF-008 | Crop-borders transformation measured insets transposed, aborted on a single artifact, and cropped contentless images. | Robolectric bitmap tests + E4 matrix | CODE_COMPLETE at E2, E4 pending |
+| DEF-009 | Long-strip reading-mode precedence lived in `ReaderViewModel` with untested content-type handling. | Pure resolver contract tests | CODE_COMPLETE at E2 |
 
 Legacy defects are not fixed by changing the current implementation unless the task explicitly says so. They are acceptance inputs for the replacement.
 
@@ -121,7 +123,7 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | DATA-001 | Clean-slate schema policy for replacement release. | Agent | Schema tests | NOT_STARTED |
 | OPS-001 | One startup state model; split Application responsibilities. | Agent | Startup tests/benchmarks | NOT_STARTED |
 | OPS-002 | Build performance budgets established and tracked. | Agent | `doc/BUILD_HEALTH.md` baselines + scheduled timing measurement; clean-build number still outstanding | IN_PROGRESS |
-| OPS-003 | Deterministic repository health ratchets enforced. | Agent | `HealthRatchetTest` + `health-baseline.json`; module/edge/main/test/TODO/APK ceilings gated on every change | CODE_COMPLETE |
+| OPS-003 | Deterministic repository health ratchets enforced. | Agent | `HealthRatchetTest` + `health-baseline.json`; module/edge/TODO/deprecated ceilings, exact main-source match, and test-source floor gated on every change. Release APK size is recorded but NOT gated: measuring it needs a full release build. Deprecated-marker ceiling (39) was previously unenforced config and is now enforced. | CODE_COMPLETE |
 | REL-001 | Enforce lint, instrumentation, benchmark, and release artifact gates. | Agent | CI run | NOT_STARTED |
 | CLEAN-001 | Delete superseded reader/navigation/media code. | Agent | Dependency/import scan | NOT_STARTED |
 

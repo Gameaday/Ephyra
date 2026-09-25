@@ -31,7 +31,6 @@ import ephyra.domain.chapter.model.ChapterUpdate
 import ephyra.domain.chapter.model.toSChapter
 import ephyra.domain.chapter.service.ChapterCache
 import ephyra.domain.chapter.service.getChapterSort
-import ephyra.domain.content.model.ContentType
 import ephyra.domain.download.model.Download
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.download.service.DownloadPreferences
@@ -46,6 +45,7 @@ import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.service.CoverCache
 import ephyra.domain.reader.model.ReaderOrientation
 import ephyra.domain.reader.model.ReadingMode
+import ephyra.domain.reader.policy.DefaultReadingModeResolver
 import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.domain.source.interactor.GetIncognitoState
 import ephyra.domain.source.service.SourceManager
@@ -977,21 +977,25 @@ class ReaderViewModel @Inject constructor(
 
     /**
      * Returns the viewer position used by this manga or the default one.
-     * When reading mode is DEFAULT, auto-detects webtoon content from
-     * genre keywords and publishing type to suggest continuous vertical
-     * scrolling — matching Jellyfin's content-aware reader behaviour.
+     *
+     * Precedence and long-strip inference are owned by [DefaultReadingModeResolver];
+     * this only adapts reader state to that policy and back to the stored flag value.
      */
     fun getMangaReadingMode(resolveDefault: Boolean = true): Int {
         val default = defaultReadingMode.value
         val readingMode = ReadingMode.fromPreference(manga?.readingMode?.toInt())
         return when {
             resolveDefault && readingMode == ReadingMode.DEFAULT -> {
-                // Content-type-aware default: auto-detect webtoon from metadata
                 val currentManga = manga
-                if (currentManga != null && ContentType.isLikelyWebtoon(currentManga.genre)) {
-                    ReadingMode.WEBTOON.flagValue
-                } else {
+                if (currentManga == null) {
                     default
+                } else {
+                    DefaultReadingModeResolver.resolve(
+                        explicitMode = readingMode,
+                        userDefaultMode = ReadingMode.fromPreference(default),
+                        contentType = currentManga.contentType,
+                        genres = currentManga.genre,
+                    ).flagValue
                 }
             }
 
