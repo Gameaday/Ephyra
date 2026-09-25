@@ -15,7 +15,7 @@ A target capability is cutover-ready only when it has a target owner, determinis
 | Production capability | Current target owner | Status | Cutover requirement |
 |---|---|---|---|
 | Series core metadata | `TargetSeriesEntity` | **Covered** | Preserve title, author, artist, description, genres, status, timestamps, and content type. |
-| Source identity | `TargetSeriesSourceEntity` | **Covered, narrow** | One source representation is currently projected; full multi-source aggregation is not production-equivalent. |
+| Source identity | `TargetSeriesSourceEntity` | **Covered, narrow** | One source representation is written per target series; confirmed cross-source links are projected read-only through `CanonicalSeriesAggregate`. |
 | Source revision | `TargetSeriesSourceEntity.revision` | **Covered** | Require monotonic revisions and explicit stale-write conflicts. |
 | Thumbnail/cover reference | `TargetSeriesSourceEntity.thumbnailUrl` | **Covered as reference** | Cover bytes/cache remain owned by the media pipeline. |
 | Library membership | `TargetLibraryEntryEntity` | **Covered** | Preserve add/remove semantics and timestamps. |
@@ -92,7 +92,7 @@ parity contract
 1. Target tracking persistence and backup mapping exist only in the isolated target store; production tracker adapters still use legacy IDs and scheduling.
 2. Download artifact contract is defined, but the reconciled index, filesystem verifier, and legacy read-only adoption pass are not implemented.
 3. No target source lifecycle store; source trust/credentials/install state are not production-persisted.
-4. Multi-source aggregation is incomplete; canonical links are not yet a complete series aggregate.
+4. Multi-source aggregation is implemented and tested only in the isolated target read projection; production navigation, source selection, and lifecycle ownership remain unimplemented.
 5. Production backup still emits and restores legacy models.
 6. No production cutover rehearsal exists.
 

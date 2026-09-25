@@ -17,11 +17,21 @@ interface TargetSeriesDao {
     @Query("SELECT * FROM target_series WHERE local_id = :localId LIMIT 1")
     suspend fun getSeries(localId: String): TargetSeriesEntity?
 
-    @Query("SELECT * FROM target_series_sources WHERE source_id = :sourceId AND external_id = :externalId LIMIT 1")
+    @Query(
+        "SELECT * FROM target_series_sources WHERE source_id = :sourceId AND external_id = :externalId ORDER BY series_id",
+    )
     suspend fun getSeriesByExternalId(sourceId: String, externalId: String): TargetSeriesSourceEntity?
 
-    @Query("SELECT * FROM target_series_sources WHERE source_id = :sourceId AND url = :url LIMIT 1")
+    @Query("SELECT * FROM target_series_sources WHERE source_id = :sourceId AND url = :url ORDER BY series_id")
     suspend fun getSeriesByUrl(sourceId: String, url: String): TargetSeriesSourceEntity?
+
+    @Query(
+        "SELECT * FROM target_series_sources WHERE source_id = :sourceId AND external_id = :externalId ORDER BY series_id",
+    )
+    suspend fun getSeriesSourcesByExternalId(sourceId: String, externalId: String): List<TargetSeriesSourceEntity>
+
+    @Query("SELECT * FROM target_series_sources WHERE source_id = :sourceId AND url = :url ORDER BY series_id")
+    suspend fun getSeriesSourcesByUrl(sourceId: String, url: String): List<TargetSeriesSourceEntity>
 
     @Query("SELECT * FROM target_library_entries WHERE series_id = :seriesId LIMIT 1")
     suspend fun getLibraryEntry(seriesId: String): TargetLibraryEntryEntity?
@@ -37,6 +47,11 @@ interface TargetSeriesDao {
 
     @Query("SELECT * FROM target_series_source_links WHERE canonical_series_id = :seriesId ORDER BY created_at DESC")
     suspend fun getLinksForSeries(seriesId: String): List<TargetSeriesLinkEntity>
+
+    @Query(
+        "SELECT * FROM target_series_source_links WHERE canonical_series_id = :seriesId AND state = :state ORDER BY created_at DESC",
+    )
+    suspend fun getLinksForSeriesAndState(seriesId: String, state: String): List<TargetSeriesLinkEntity>
 
     @Upsert
     suspend fun upsertLink(link: TargetSeriesLinkEntity)
