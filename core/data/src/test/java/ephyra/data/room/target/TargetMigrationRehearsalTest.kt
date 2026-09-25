@@ -5,6 +5,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ephyra.domain.content.model.ContentType
+import ephyra.domain.series.LegacyCategoryRecord
 import ephyra.domain.series.LegacyChapterRecord
 import ephyra.domain.series.LegacyHistoryRecord
 import ephyra.domain.series.LegacySeriesMigrationInput
@@ -44,7 +45,14 @@ class TargetMigrationRehearsalTest {
 
     @Test
     fun `multi series source rehearsal preserves user state without title merging`() = runBlocking {
-        val first = plan(seriesId = 10L, sourceId = 7L, title = "Same Title", favorite = true)
+        val first = plan(
+            seriesId = 10L,
+            sourceId = 7L,
+            title = "Same Title",
+            favorite = true,
+            categories = listOf(LegacyCategoryRecord(0L, "Default", -1L, 3L, isSystem = true)),
+            seriesCategoryIds = listOf(0L),
+        )
         val second = plan(seriesId = 11L, sourceId = 8L, title = "Same Title", favorite = false)
         val writer = TargetMigrationWriter(database)
 
@@ -59,6 +67,9 @@ class TargetMigrationRehearsalTest {
         assertEquals(1, dao.getSourceReferences(second.targetLocalId).size)
         assertTrue(dao.getLibraryEntry(first.targetLocalId) != null)
         assertTrue(dao.getLibraryEntry(second.targetLocalId) == null)
+        assertEquals(1, dao.getCategories().size)
+        assertEquals("Default", dao.getCategories().single().name)
+        assertEquals(listOf("legacy-category:0"), dao.getSeriesCategories(first.targetLocalId).map { it.categoryId })
         assertEquals(2, dao.getChapters(first.targetLocalId).size)
         assertEquals(2, dao.getChapters(second.targetLocalId).size)
         assertTrue(dao.getChapterState("legacy-chapter:100")!!.isRead)
@@ -66,7 +77,14 @@ class TargetMigrationRehearsalTest {
         assertEquals(1234L, dao.getHistory("legacy-chapter:100")!!.lastReadAt)
     }
 
-    private fun plan(seriesId: Long, sourceId: Long, title: String, favorite: Boolean) =
+    private fun plan(
+        seriesId: Long,
+        sourceId: Long,
+        title: String,
+        favorite: Boolean,
+        categories: List<LegacyCategoryRecord> = emptyList(),
+        seriesCategoryIds: List<Long> = emptyList(),
+    ) =
         (
             LegacySeriesMigrationMapper.migrate(
                 LegacySeriesMigrationInput(
@@ -121,6 +139,8 @@ class TargetMigrationRehearsalTest {
                         ),
                     ),
                     history = listOf(LegacyHistoryRecord(seriesId * 10, 1234L, 56L)),
+                    categories = categories,
+                    seriesCategoryIds = seriesCategoryIds,
                 ),
             ) as LegacySeriesMigrationResult.Migrated
             ).plan

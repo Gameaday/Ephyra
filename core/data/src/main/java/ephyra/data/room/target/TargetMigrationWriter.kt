@@ -53,6 +53,25 @@ class TargetMigrationWriter(
                     ),
                 )
             }
+            plan.categories.forEach { category ->
+                dao.upsertCategory(
+                    TargetCategoryEntity(
+                        categoryId = category.targetCategoryId,
+                        name = category.name,
+                        sortOrder = category.order,
+                        flags = category.flags,
+                        isSystem = category.isSystem,
+                    ),
+                )
+            }
+            plan.seriesCategories.forEach { categoryId ->
+                dao.insertSeriesCategoryIfMissing(
+                    TargetSeriesCategoryEntity(
+                        seriesId = plan.targetLocalId,
+                        categoryId = categoryId,
+                    ),
+                )
+            }
             plan.chapters.forEach { chapter ->
                 dao.upsertChapter(
                     TargetChapterEntity(

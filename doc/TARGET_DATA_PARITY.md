@@ -21,7 +21,7 @@ A target capability is cutover-ready only when it has a target owner, determinis
 | Library membership | `TargetLibraryEntryEntity` | **Covered** | Preserve add/remove semantics and timestamps. |
 | Library update enablement | `TargetLibraryEntryEntity.updateEnabled` | **Partial** | Legacy update strategy/interval mapping is incomplete. |
 | Library sort position | `TargetLibraryEntryEntity.librarySortPosition` | **Partial** | Production sort semantics and UI ownership are not proven. |
-| Categories | No target entity yet | **Missing** | Model definitions, membership, order, flags, and transactions. |
+| Categories | `TargetCategoryEntity` + `TargetSeriesCategoryEntity` | **Covered in isolated target fixture** | Preserve definitions, membership, order, flags, referential integrity, and production category semantics. |
 | Excluded scanlators | No target entity yet | **Missing** | Preserve as explicit series/policy state. |
 | Chapter metadata | `TargetChapterEntity` | **Covered** | Preserve URL, title, scanlator, number, order, revision, timestamps. |
 | Chapter source identity | `TargetChapterEntity` | **Partial** | Stable external chapter IDs need source-specific mapping. |
@@ -33,8 +33,7 @@ A target capability is cutover-ready only when it has a target owner, determinis
 | Tracking | No target entity yet | **Missing** | Preserve tracker identity, remote ID, progress, status, score, dates, privacy. |
 | Downloads | No target entity yet | **Missing** | Define file-system relationship and restore rules. |
 | Source lifecycle | No target owner yet | **Missing** | Persist descriptors, trust, credentials, installation, enabled state. |
-| Preferences | No target entity | **Outside series schema** | Keep in preference infrastructure; do not duplicate. |
-| Backup format | `TargetBackupDocument` | **Covered, not wired** | Production creator/restorer must use a bridge or target format. |
+| Backup format | `TargetBackupDocument` | **Covered in target mapper, not wired** | Production creator/restorer must use a bridge or target format. |
 | Clean install | Target fixture only | **Not proven** | Target-only database startup fixture required. |
 | Legacy upgrade | Target fixture only | **Not proven** | Production-like rehearsal and rollback required. |
 
@@ -90,12 +89,11 @@ parity contract
 
 ## Confirmed blockers
 
-1. No target category model; user organization would be lost.
-2. No target tracking model; tracking is user-owned data.
-3. No download relationship model; download directories are not derivable from series metadata.
-4. No target source lifecycle store; source trust/credentials/install state are not production-persisted.
-5. Multi-source aggregation is incomplete; canonical links are not yet a complete series aggregate.
-6. Production backup still emits and restores legacy models.
-7. No production cutover rehearsal exists.
+1. No target tracking model; tracking is user-owned data.
+2. No download relationship model; download directories are not derivable from series metadata.
+3. No target source lifecycle store; source trust/credentials/install state are not production-persisted.
+4. Multi-source aggregation is incomplete; canonical links are not yet a complete series aggregate.
+5. Production backup still emits and restores legacy models.
+6. No production cutover rehearsal exists.
 
-The initial multi-series/source rehearsal is implemented in `core/data/src/test/java/ephyra/data/room/target/TargetMigrationRehearsalTest.kt`. It proves that same-title series remain distinct, source identities remain isolated, library membership is preserved, chapter state/history survive, and rerunning both migration plans is idempotent. It does not claim parity for categories, tracking, downloads, source lifecycle, or production backup restore; those remain explicit blockers.
+The target-only rehearsal is implemented in `core/data/src/test/java/ephyra/data/room/target/TargetMigrationRehearsalTest.kt` and the target backup contract in `core/data/src/main/java/ephyra/data/backup/target/TargetBackupMapper.kt`. These tests prove same-title isolation, source identity, library membership, category definitions/membership, chapter state/history, protobuf round-trip, referential validation, and idempotent migration replay. They do not claim production parity for tracking, downloads, source lifecycle, or production backup restore; those remain explicit blockers.

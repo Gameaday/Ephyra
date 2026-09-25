@@ -13,6 +13,8 @@ import androidx.room.RoomDatabase
         TargetChapterEntity::class,
         TargetChapterStateEntity::class,
         TargetHistoryEntity::class,
+        TargetCategoryEntity::class,
+        TargetSeriesCategoryEntity::class,
     ],
     version = 1,
     exportSchema = false,

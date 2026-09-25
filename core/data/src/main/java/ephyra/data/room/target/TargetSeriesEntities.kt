@@ -217,3 +217,44 @@ data class TargetHistoryEntity(
     @ColumnInfo(name = "read_duration_ms")
     val readDurationMs: Long,
 )
+
+/** User-owned library category. The target identity is opaque and independent of legacy numeric IDs. */
+@Entity(tableName = "target_categories")
+data class TargetCategoryEntity(
+    @PrimaryKey
+    @ColumnInfo(name = "category_id")
+    val categoryId: String,
+    val name: String,
+    @ColumnInfo(name = "sort_order")
+    val sortOrder: Long,
+    val flags: Long,
+    @ColumnInfo(name = "is_system")
+    val isSystem: Boolean = false,
+)
+
+/** Membership of a target series in a target category. */
+@Entity(
+    tableName = "target_series_categories",
+    primaryKeys = ["series_id", "category_id"],
+    foreignKeys = [
+        ForeignKey(
+            entity = TargetSeriesEntity::class,
+            parentColumns = ["local_id"],
+            childColumns = ["series_id"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+        ForeignKey(
+            entity = TargetCategoryEntity::class,
+            parentColumns = ["category_id"],
+            childColumns = ["category_id"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
+    indices = [Index(value = ["category_id"]), Index(value = ["series_id"])],
+)
+data class TargetSeriesCategoryEntity(
+    @ColumnInfo(name = "series_id")
+    val seriesId: String,
+    @ColumnInfo(name = "category_id")
+    val categoryId: String,
+)

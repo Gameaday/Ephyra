@@ -1,5 +1,6 @@
 package ephyra.data.backup.target
 
+import ephyra.data.room.target.TargetCategoryEntity
 import ephyra.data.room.target.TargetChapterEntity
 import ephyra.data.room.target.TargetChapterStateEntity
 import ephyra.data.room.target.TargetHistoryEntity
@@ -30,16 +31,57 @@ class TargetBackupMapper(
             chapters = snapshot.chapters.map { it.toBackup() },
             chapterStates = snapshot.chapterStates.map { it.toBackup() },
             history = snapshot.history.map { it.toBackup() },
+            categoryIds = snapshot.seriesCategories.map { it.categoryId },
         )
     }
 
     fun toBackupDocument(snapshots: List<TargetBackupSnapshot>): TargetBackupDocument {
-        return TargetBackupDocument(series = snapshots.map(::toBackupSeries))
+        val categoryGroups = snapshots.flatMap { it.categories }.groupBy { it.categoryId }
+        val categories = categoryGroups.map { (categoryId, definitions) ->
+            require(definitions.distinct().size == 1) {
+                "Target backup contains conflicting definitions for category $categoryId"
+            }
+            definitions.first()
+        }
+        snapshots.forEach { snapshot ->
+            require(snapshot.seriesCategories.all { membership -> categoryGroups.containsKey(membership.categoryId) }) {
+                "Target backup series references a category absent from the document"
+            }
+        }
+        return TargetBackupDocument(
+            series = snapshots.map(::toBackupSeries),
+            categories = categories
+                .sortedWith(compareBy<TargetCategoryEntity> { it.sortOrder }.thenBy { it.categoryId })
+                .map { it.toBackup() },
+        )
     }
 
-    fun fromBackup(series: TargetBackupSeries): TargetBackupSnapshot {
+    fun fromBackupDocument(document: TargetBackupDocument): List<TargetBackupSnapshot> {
+        require(document.formatVersion in 1..TargetBackupDocument.CURRENT_FORMAT_VERSION) {
+            "Unsupported target backup format version: ${document.formatVersion}"
+        }
+        val categories = document.categories.map { it.toEntity() }
+        val categoryIds = categories.map { it.categoryId }
+        require(categoryIds.size == categoryIds.toSet().size) {
+            "Target backup contains duplicate category ids"
+        }
+        return document.series.map { fromBackup(it, categories) }
+    }
+
+    fun fromBackup(
+        series: TargetBackupSeries,
+        categories: List<TargetCategoryEntity> = emptyList(),
+    ): TargetBackupSnapshot {
         require(series.localId.isNotBlank()) { "Target series local id must not be blank" }
         require(series.title.isNotBlank()) { "Target series title must not be blank" }
+        val categoryIds = series.categoryIds
+        val knownCategoryIds = categories.map { it.categoryId }.toSet()
+        require(categoryIds.size == categoryIds.toSet().size) {
+            "Target backup series contains duplicate category ids"
+        }
+        require(categoryIds.all { it in knownCategoryIds }) {
+            "Target backup series references an unknown category"
+        }
         val chapterIds = series.chapters.map { it.localId }.toSet()
         require(chapterIds.size == series.chapters.size) { "Target backup contains duplicate chapter local ids" }
         require(series.chapterStates.all { it.chapterId in chapterIds }) {
@@ -66,6 +108,10 @@ class TargetBackupMapper(
             chapters = series.chapters.map { it.toEntity(series.localId) },
             chapterStates = series.chapterStates.map { it.toEntity() },
             history = series.history.map { it.toEntity() },
+            categories = categories,
+            seriesCategories = categoryIds.map {
+                ephyra.data.room.target.TargetSeriesCategoryEntity(series.localId, it)
+            },
         )
     }
 
@@ -78,6 +124,22 @@ class TargetBackupMapper(
         thumbnailUrl,
         sourceMetadataJson,
         lastSeenAt,
+    )
+
+    private fun TargetCategoryEntity.toBackup() = TargetBackupCategory(
+        categoryId = categoryId,
+        name = name,
+        order = sortOrder,
+        flags = flags,
+        isSystem = isSystem,
+    )
+
+    private fun TargetBackupCategory.toEntity() = TargetCategoryEntity(
+        categoryId = categoryId,
+        name = name,
+        sortOrder = order,
+        flags = flags,
+        isSystem = isSystem,
     )
 
     private fun TargetBackupSourceReference.toEntity(seriesId: String) = TargetSeriesSourceEntity(

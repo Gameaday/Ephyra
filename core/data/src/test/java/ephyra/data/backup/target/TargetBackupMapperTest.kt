@@ -21,11 +21,18 @@ class TargetBackupMapperTest {
             chapters = listOf(TargetBackupMapperTest.chapter()),
             chapterStates = listOf(TargetBackupMapperTest.chapterState()),
             history = listOf(TargetBackupMapperTest.history()),
+            categories = listOf(TargetBackupMapperTest.category()),
+            seriesCategories = listOf(
+                ephyra.data.room.target.TargetSeriesCategoryEntity(
+                    seriesId = "native:opds",
+                    categoryId = "category:reading",
+                ),
+            ),
         )
         val document = mapper.toBackupDocument(listOf(snapshot))
         val bytes = protoBuf.encodeToByteArray(TargetBackupDocument.serializer(), document)
         val decoded = protoBuf.decodeFromByteArray(TargetBackupDocument.serializer(), bytes)
-        val restored = mapper.fromBackup(decoded.series.single())
+        val restored = mapper.fromBackupDocument(decoded).single()
 
         assertEquals("native:opds", restored.series.localId)
         assertEquals(listOf("Action"), Json.decodeFromString<List<String>>(restored.series.genresJson))
@@ -33,6 +40,8 @@ class TargetBackupMapperTest {
         assertEquals(true, restored.libraryEntry!!.updateEnabled)
         assertEquals(true, restored.chapterStates.single().isRead)
         assertEquals(1234L, restored.history.single().lastReadAt)
+        assertEquals("Reading", restored.categories.single().name)
+        assertEquals("category:reading", restored.seriesCategories.single().categoryId)
     }
 
     @Test
@@ -50,21 +59,79 @@ class TargetBackupMapperTest {
             ),
         )
 
-        val failure = runCatching { mapper.fromBackup(malformed.series.single()) }.exceptionOrNull()
+        val failure = runCatching { mapper.fromBackupDocument(malformed) }.exceptionOrNull()
+        assertTrue(failure is IllegalArgumentException)
+    }
+
+    @Test
+    fun `target backup rejects conflicting category definitions`() {
+        val first = TargetBackupSnapshot(
+            series = series(),
+            sourceReferences = emptyList(),
+            libraryEntry = null,
+            chapters = emptyList(),
+            chapterStates = emptyList(),
+            history = emptyList(),
+            categories = listOf(category()),
+        )
+        val conflicting = first.copy(
+            categories = listOf(category().copy(name = "Different")),
+        )
+
+        val failure = runCatching { mapper.toBackupDocument(listOf(first, conflicting)) }.exceptionOrNull()
+        assertTrue(failure is IllegalArgumentException)
+    }
+
+    @Test
+    fun `target backup rejects missing category definition for membership`() {
+        val snapshot = TargetBackupSnapshot(
+            series = series(),
+            sourceReferences = emptyList(),
+            libraryEntry = null,
+            chapters = emptyList(),
+            chapterStates = emptyList(),
+            history = emptyList(),
+            seriesCategories = listOf(
+                ephyra.data.room.target.TargetSeriesCategoryEntity("native:opds", "missing"),
+            ),
+        )
+
+        val failure = runCatching { mapper.toBackupDocument(listOf(snapshot)) }.exceptionOrNull()
+        assertTrue(failure is IllegalArgumentException)
+    }
+
+    @Test
+    fun `target backup rejects unknown category membership`() {
+        val malformed = mapper.toBackupDocument(emptyList()).copy(
+            series = listOf(
+                TargetBackupSeries(
+                    localId = "native:opds",
+                    contentType = "MANGA",
+                    title = "Target Series",
+                    categoryIds = listOf("missing"),
+                ),
+            ),
+        )
+
+        val failure = runCatching { mapper.fromBackupDocument(malformed) }.exceptionOrNull()
         assertTrue(failure is IllegalArgumentException)
     }
 
     @Test
     fun `target backup rejects blank local identity`() {
         val malformed = mapper.toBackupDocument(emptyList()).copy(
-            series = listOf(
-                TargetBackupMapperTest.series().let { series ->
-                    series.toBackup().copy(localId = " ")
-                },
-            ),
+            series = listOf(series().toBackup().copy(localId = " ")),
         )
 
-        val failure = runCatching { mapper.fromBackup(malformed.series.single()) }.exceptionOrNull()
+        val failure = runCatching { mapper.fromBackupDocument(malformed) }.exceptionOrNull()
+        assertTrue(failure is IllegalArgumentException)
+    }
+
+    @Test
+    fun `target backup rejects unsupported format version`() {
+        val malformed = mapper.toBackupDocument(emptyList()).copy(formatVersion = 99)
+
+        val failure = runCatching { mapper.fromBackupDocument(malformed) }.exceptionOrNull()
         assertTrue(failure is IllegalArgumentException)
     }
 
@@ -143,6 +210,14 @@ class TargetBackupMapperTest {
             targetChapterLocalId = "native:chapter:1",
             lastReadAt = 1234L,
             readDurationMs = 60L,
+        )
+
+        fun category() = ephyra.data.room.target.TargetCategoryEntity(
+            categoryId = "category:reading",
+            name = "Reading",
+            sortOrder = 2L,
+            flags = 1L,
+            isSystem = false,
         )
     }
 }

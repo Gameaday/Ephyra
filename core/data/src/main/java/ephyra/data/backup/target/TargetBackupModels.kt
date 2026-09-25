@@ -1,5 +1,6 @@
 package ephyra.data.backup.target
 
+import ephyra.data.room.target.TargetCategoryEntity
 import ephyra.data.room.target.TargetChapterEntity
 import ephyra.data.room.target.TargetChapterStateEntity
 import ephyra.data.room.target.TargetHistoryEntity
@@ -14,6 +15,7 @@ import kotlinx.serialization.protobuf.ProtoNumber
 data class TargetBackupDocument(
     @ProtoNumber(1) val formatVersion: Int = CURRENT_FORMAT_VERSION,
     @ProtoNumber(2) val series: List<TargetBackupSeries> = emptyList(),
+    @ProtoNumber(3) val categories: List<TargetBackupCategory> = emptyList(),
 ) {
     companion object {
         const val CURRENT_FORMAT_VERSION = 1
@@ -37,6 +39,7 @@ data class TargetBackupSeries(
     @ProtoNumber(13) val chapters: List<TargetBackupChapter> = emptyList(),
     @ProtoNumber(14) val chapterStates: List<TargetBackupChapterState> = emptyList(),
     @ProtoNumber(15) val history: List<TargetBackupHistory> = emptyList(),
+    @ProtoNumber(16) val categoryIds: List<String> = emptyList(),
 )
 
 @Serializable
@@ -49,6 +52,15 @@ data class TargetBackupSourceReference(
     @ProtoNumber(6) val thumbnailUrl: String? = null,
     @ProtoNumber(7) val sourceMetadataJson: String? = null,
     @ProtoNumber(8) val lastSeenAt: Long = 0L,
+)
+
+@Serializable
+data class TargetBackupCategory(
+    @ProtoNumber(1) val categoryId: String,
+    @ProtoNumber(2) val name: String,
+    @ProtoNumber(3) val order: Long,
+    @ProtoNumber(4) val flags: Long,
+    @ProtoNumber(5) val isSystem: Boolean = false,
 )
 
 @Serializable
@@ -99,4 +111,6 @@ data class TargetBackupSnapshot(
     val chapters: List<TargetChapterEntity>,
     val chapterStates: List<TargetChapterStateEntity>,
     val history: List<TargetHistoryEntity>,
+    val categories: List<TargetCategoryEntity> = emptyList(),
+    val seriesCategories: List<ephyra.data.room.target.TargetSeriesCategoryEntity> = emptyList(),
 )

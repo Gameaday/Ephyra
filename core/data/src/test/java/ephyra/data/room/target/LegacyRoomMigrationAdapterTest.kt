@@ -1,7 +1,9 @@
 package ephyra.data.room.target
 
+import ephyra.data.room.entities.CategoryEntity
 import ephyra.data.room.entities.ChapterEntity
 import ephyra.data.room.entities.HistoryEntity
+import ephyra.data.room.entities.MangaCategoryEntity
 import ephyra.data.room.entities.MangaEntity
 import ephyra.domain.series.LegacySeriesMigrationMapper
 import ephyra.domain.series.LegacySeriesMigrationResult
@@ -80,5 +82,34 @@ class LegacyRoomMigrationAdapterTest {
         assertEquals(3L, plan.chapters.single().lastPageRead)
         assertEquals(1234L, plan.history.single().lastReadAtMillis)
         assertEquals(60L, plan.history.single().readDurationMillis)
+    }
+
+    @Test
+    fun `maps category definitions and series membership`() {
+        val manga = MangaEntity(
+            id = 12L, source = 7L, url = "/series/12", artist = null, author = null,
+            description = null, genre = emptyList(), title = "Series", status = 0L,
+            thumbnailUrl = null, favorite = true, lastUpdate = null, nextUpdate = null,
+            initialized = true, viewerFlags = 0L, chapterFlags = 0L, coverLastModified = 0L,
+            dateAdded = 0L, updateStrategy = 0, calculateInterval = 0, lastModifiedAt = 0L,
+            favoriteModifiedAt = null, version = 1L, isSyncing = false, notes = "",
+            metadataSource = null, metadataUrl = null, canonicalId = null, sourceStatus = 0,
+            alternativeTitles = null, deadSince = null, contentType = 0, lockedFields = 0L,
+        )
+        val category = CategoryEntity(id = 0L, name = "Default", sort = -1, flags = 3L)
+        val membership = MangaCategoryEntity(id = 1L, mangaId = 12L, categoryId = 0L)
+
+        val input = LegacyRoomMigrationAdapter.toMigrationInput(
+            manga = manga,
+            chapters = emptyList(),
+            history = emptyList(),
+            categories = listOf(category),
+            seriesCategories = listOf(membership),
+        )
+        val plan = (LegacySeriesMigrationMapper.migrate(input) as LegacySeriesMigrationResult.Migrated).plan
+
+        assertEquals("legacy-category:0", plan.categories.single().targetCategoryId)
+        assertTrue(plan.categories.single().isSystem)
+        assertEquals(listOf("legacy-category:0"), plan.seriesCategories)
     }
 }

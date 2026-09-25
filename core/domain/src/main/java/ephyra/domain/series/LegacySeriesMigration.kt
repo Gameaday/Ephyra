@@ -43,10 +43,21 @@ data class LegacyHistoryRecord(
     val readDurationMillis: Long,
 )
 
+/** Legacy category definition and ordering needed by the target library organization model. */
+data class LegacyCategoryRecord(
+    val legacyId: Long,
+    val name: String,
+    val order: Long,
+    val flags: Long,
+    val isSystem: Boolean = false,
+)
+
 data class LegacySeriesMigrationInput(
     val series: LegacySeriesRecord,
     val chapters: List<LegacyChapterRecord>,
     val history: List<LegacyHistoryRecord>,
+    val categories: List<LegacyCategoryRecord> = emptyList(),
+    val seriesCategoryIds: List<Long> = emptyList(),
 )
 
 data class MigratedChapter(
@@ -72,6 +83,15 @@ data class MigratedHistory(
     val legacyChapterId: Long,
     val lastReadAtMillis: Long?,
     val readDurationMillis: Long,
+)
+
+data class MigratedCategory(
+    val targetCategoryId: String,
+    val legacyCategoryId: Long,
+    val name: String,
+    val order: Long,
+    val flags: Long,
+    val isSystem: Boolean,
 )
 
 /**
@@ -146,6 +166,23 @@ object LegacySeriesMigrationMapper {
             }
         }
 
+        val categories = input.categories.map { category ->
+            require(category.legacyId >= 0L) { "Category id must not be negative" }
+            require(category.name.isNotBlank()) { "Category name must not be blank" }
+            MigratedCategory(
+                targetCategoryId = targetCategoryId(category.legacyId),
+                legacyCategoryId = category.legacyId,
+                name = category.name,
+                order = category.order,
+                flags = category.flags,
+                isSystem = category.isSystem,
+            )
+        }
+        val categoryIds = input.seriesCategoryIds.map { categoryId ->
+            categories.firstOrNull { it.legacyCategoryId == categoryId }?.targetCategoryId
+                ?: throw IllegalArgumentException("Series references unknown category $categoryId")
+        }
+
         return LegacySeriesMigrationResult.Migrated(
             LegacySeriesMigrationPlan(
                 targetLocalId = targetLocalId,
@@ -155,6 +192,8 @@ object LegacySeriesMigrationMapper {
                 libraryAddedAt = series.dateAdded.coerceAtLeast(0L),
                 chapters = chapters,
                 history = history,
+                categories = categories,
+                seriesCategories = categoryIds,
             ),
         )
     }
@@ -162,6 +201,7 @@ object LegacySeriesMigrationMapper {
     fun targetSourceId(legacySourceId: Long): String = "legacy:$legacySourceId"
     fun targetSeriesLocalId(legacySeriesId: Long): String = "legacy-series:$legacySeriesId"
     fun targetChapterLocalId(legacyChapterId: Long): String = "legacy-chapter:$legacyChapterId"
+    fun targetCategoryId(legacyCategoryId: Long): String = "legacy-category:$legacyCategoryId"
 }
 
 data class LegacySeriesMigrationPlan(
@@ -172,6 +212,8 @@ data class LegacySeriesMigrationPlan(
     val libraryAddedAt: Long = 0L,
     val chapters: List<MigratedChapter>,
     val history: List<MigratedHistory>,
+    val categories: List<MigratedCategory> = emptyList(),
+    val seriesCategories: List<String> = emptyList(),
 )
 
 sealed interface LegacySeriesMigrationResult {

@@ -1,9 +1,12 @@
 package ephyra.data.room.target
 
+import ephyra.data.room.entities.CategoryEntity
 import ephyra.data.room.entities.ChapterEntity
 import ephyra.data.room.entities.HistoryEntity
+import ephyra.data.room.entities.MangaCategoryEntity
 import ephyra.data.room.entities.MangaEntity
 import ephyra.domain.content.model.ContentType
+import ephyra.domain.series.LegacyCategoryRecord
 import ephyra.domain.series.LegacyChapterRecord
 import ephyra.domain.series.LegacyHistoryRecord
 import ephyra.domain.series.LegacySeriesMigrationInput
@@ -18,6 +21,8 @@ object LegacyRoomMigrationAdapter {
         manga: MangaEntity,
         chapters: List<ChapterEntity>,
         history: List<HistoryEntity>,
+        categories: List<CategoryEntity> = emptyList(),
+        seriesCategories: List<MangaCategoryEntity> = emptyList(),
     ): LegacySeriesMigrationInput {
         val series = LegacySeriesRecord(
             legacyId = manga.id,
@@ -60,6 +65,22 @@ object LegacyRoomMigrationAdapter {
                 readDurationMillis = record.timeRead,
             )
         }
-        return LegacySeriesMigrationInput(series, legacyChapters, legacyHistory)
+        val legacyCategories = categories.map { category ->
+            LegacyCategoryRecord(
+                legacyId = category.id,
+                name = category.name,
+                order = category.sort.toLong(),
+                flags = category.flags,
+                isSystem = category.id == 0L,
+            )
+        }
+        val legacySeriesCategories = seriesCategories.map { membership -> membership.categoryId }
+        return LegacySeriesMigrationInput(
+            series = series,
+            chapters = legacyChapters,
+            history = legacyHistory,
+            categories = legacyCategories,
+            seriesCategoryIds = legacySeriesCategories,
+        )
     }
 }

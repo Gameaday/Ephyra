@@ -62,6 +62,18 @@ interface TargetSeriesDao {
     @Query("SELECT * FROM target_history WHERE target_chapter_local_id = :chapterId LIMIT 1")
     suspend fun getHistory(chapterId: String): TargetHistoryEntity?
 
+    @Query("SELECT * FROM target_categories ORDER BY sort_order, category_id")
+    suspend fun getCategories(): List<TargetCategoryEntity>
+
+    @Query("SELECT * FROM target_series_categories WHERE series_id = :seriesId ORDER BY category_id")
+    suspend fun getSeriesCategories(seriesId: String): List<TargetSeriesCategoryEntity>
+
+    @Upsert
+    suspend fun upsertCategory(category: TargetCategoryEntity)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertSeriesCategoryIfMissing(category: TargetSeriesCategoryEntity): Long
+
     @Upsert
     suspend fun upsertSeries(series: TargetSeriesEntity)
 
