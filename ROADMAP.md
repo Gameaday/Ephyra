@@ -100,7 +100,7 @@ No phase may begin implementation until the prior phase exit criteria are record
 12. `SRC-001A` capability model and typed source results — `CODE_COMPLETE` at E2; source-api contract tests pass.
 13. `RDR-001` pure reader session state machine — `CODE_COMPLETE` at E2; isolated from production until RDR-002/003 and viewport adapters are proven.
 14. `RDR-002` canonical chapter window and directional navigation policy — `CODE_COMPLETE` at E2; isolated from production until the replacement session/viewport consumes it.
-15. `RDR-003` one pure gesture arbiter plus a thin Android pointer adapter.
+15. `RDR-003` pure gesture arbiter plus a thin Android pointer adapter — `IN_PROGRESS`; the arbiter and token-based tap sequencer are `CODE_COMPLETE` at E2, while the adapter remains unwired and lacks E4 pointer evidence.
 16. `SRC-001B` adapt the currently verified legacy extension path.
 17. `SRC-001C` local/native adapter and offline fixtures.
 18. `SRC-001D` controlled native HTTP adapter.

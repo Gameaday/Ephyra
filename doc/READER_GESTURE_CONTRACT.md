@@ -56,6 +56,18 @@ A cancelled transform restores the last committed transform. A chapter or page c
 
 Double-tap recognition is a gesture policy, not a navigation side effect. The first tap is deferred only for the configured double-tap interval. If no second tap arrives, the single command is delivered exactly once. Navigation regions do not receive an early first tap.
 
+The pure policy is `core:domain`'s `ReaderTapSequencer`:
+
+- pointer-up produces `TapCandidate`, never a navigable tap;
+- each deferred tap owns a monotonically increasing token;
+- only the current token can emit `SingleTap`;
+- a matching second tap cancels the pending token and emits `DoubleTap`;
+- a too-slow, too-distant, or superseded tap replaces the pending token and invalidates the old timer;
+- transform, long press, parent-scroll delegation, pointer cancellation, and document revision change all cancel a pending single tap;
+- timer scheduling and job ownership belong to the platform adapter, never to the domain policy.
+
+The current implementation is `ReaderTapSequencer` plus `feature:reader`'s thin pointer adapter. The adapter has no production call sites; per-viewport ownership and E4 device evidence are tracked under `RDR-003`, `RDR-004`, and `RDR-005`.
+
 ## Test matrix
 
 - one pointer crossing slop;
