@@ -94,9 +94,39 @@ last_checked_at          INTEGER NULL
 last_changed_at          INTEGER NULL
 ```
 
-## Identity rules
+### `series_source_links`
 
-The target identity is:
+One row per explicitly reviewed relationship between source representations of one canonical series.
+
+Required columns:
+
+```text
+link_id                   TEXT PRIMARY KEY
+canonical_series_id       TEXT NOT NULL REFERENCES series(local_id) ON DELETE CASCADE
+canonical_source_id       TEXT NOT NULL
+canonical_external_id     TEXT NULL
+canonical_url             TEXT NOT NULL
+source_id                 TEXT NOT NULL
+external_id               TEXT NULL
+url                       TEXT NOT NULL
+confidence                REAL NOT NULL
+evidence_json             TEXT NOT NULL
+state                     TEXT NOT NULL
+revision                  INTEGER NOT NULL DEFAULT 1
+created_at                INTEGER NOT NULL
+decided_at                INTEGER NULL
+```
+
+Rules:
+
+- The canonical and linked representations must have different source IDs.
+- Only `CONFIRMED` is active; `PROPOSED`, `REJECTED`, and `REVOKED` remain auditable history.
+- A link cannot be activated automatically, including when confidence is high or evidence is exact.
+- Titles and fuzzy metadata may rank candidates but cannot create a link without explicit confirmation.
+- Rejection and revocation do not delete the source representation or user-owned series state.
+- The target backup must preserve proposed, confirmed, rejected, and revoked links.
+
+
 
 ```text
 DurableSeriesIdentity {
@@ -207,7 +237,7 @@ The schema is not accepted until tests prove:
 ## Current next gate
 
 ```text
-DATA-001F — target repository execution contract and production-cutover decision
+DATA-001G — isolated target link repository and Room execution contract
 ```
 
 The target backup format is source-neutral and versioned, but production backup/restore remains legacy-only until the target repository owns reads/writes and the cutover is explicitly approved.
