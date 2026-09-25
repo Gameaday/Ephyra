@@ -7,7 +7,8 @@
 |---|---|---|---|---|
 | `ContentSource` | target foundation | Capability-based `SourceGateway` | None | Keep and evolve. |
 | `ContentCatalogueSource` | adapter/target bridge | Capability-specific contracts | Feature callers still use it | Keep temporarily. |
-| `ContentSourceAdapter` | compatibility | `LegacyExtensionAdapter` | Extensions still installed | Isolate. |
+| `ContentSourceAdapter` | compatibility | `LegacySourceGateway` (temporary) | Extensions still installed and product callers still use the old bridge | Isolate; migrate callers, then delete. |
+| `LegacySourceGateway` | temporary compatibility | No permanent target model; callers move to native gateways | Product callers still use legacy source types | Keep isolated; delete at R-008. |
 | `SourceManager` | compatibility | `SourceRegistry` | Search, browse, updates, reader | Keep only as bridge. |
 | `SourceRepository` | compatibility | Catalog/query gateways | Browse/migration call sites | Keep only as bridge. |
 | `DynamicHttpSource` | compatibility | Native/external source adapter | Legacy UI registration | Isolate. |

@@ -71,7 +71,7 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | SRC-000B | Source/search call-site verification. | Agent | `doc/source/SOURCE_CALL_GRAPH.md` | CODE_COMPLETE |
 | SRC-000C | Legacy compatibility classification and removal decision. | Agent | Compatibility matrix and removal plan | CODE_COMPLETE |
 | SRC-001A | SourceDescriptor, capabilities, SourceGateway, typed outcomes, and source-protocol DTOs. | Agent | Source-api contract tests | CODE_COMPLETE |
-| SRC-001B | Adapt the currently verified legacy extension path to SourceGateway. | Agent | Adapter contract tests + zero-legacy callers guard | NOT_STARTED |
+| SRC-001B | Adapt the currently verified legacy extension path to SourceGateway. | Agent | `LegacySourceGateway` contract tests + zero-legacy callers guard | CODE_COMPLETE |
 | SRC-001C | Local/native source adapter and offline fixtures. | Agent | Local source contract tests | NOT_STARTED |
 | SRC-001D | Controlled native HTTP source adapter. | Agent | Native source contract tests | NOT_STARTED |
 | SRC-002 | Progressive search session, deduplication, ranking, cancellation. | Agent | Pure search/ranking tests | NOT_STARTED |
@@ -131,4 +131,4 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | 2026-09-24 | Created annotated baseline tag `reconstruction-baseline-2026-09-24` at `4ec5b2c15`. | Git tag `20ab06c7255b4c649c82af5bf614299b5a5fca61` |
 | 2026-09-24 | Program initialized; legacy reader defects explicitly recorded. | This document |
 | 2026-09-24 | Added binding source/search/discovery contract, source-boundary ADR, documentation governance, and deleted superseded plans. | Documentation links, `git diff --check`, `spotlessCheck --offline` |
-| 2026-09-24 | Added reader, gesture, document viewport, media, navigation, motion, fixture, budget, dependency, and source execution contracts. | Contract links and execution review |
+| 2026-09-25 | Added `LegacySourceGateway` one-way compatibility adapter and contract tests; no product callers migrated yet; legacy removal remains blocked by active legacy UI/source callers. | `LegacySourceGatewayTest`, `:source-api:test` |

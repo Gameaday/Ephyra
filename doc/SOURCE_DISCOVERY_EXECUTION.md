@@ -41,7 +41,7 @@ Implement source-neutral identity, capability declarations, typed outcomes, and 
 
 ### SRC-001B — Verified extension adapter
 
-Adapt the currently working legacy extension path into the target `SourceGateway` without exposing legacy DTOs to new callers. This is the first executable source path.
+Adapt the currently working legacy extension path into the target `SourceGateway` without exposing legacy DTOs to new callers. This is the first executable source path. The bridge is deliberately one-way: unsupported legacy filters return `Unsupported`, empty results remain `Empty`, and legacy failures are translated into typed outcomes. It is not a permanent second source model and must be removed after product callers migrate.
 
 ### SRC-001C — Local/native adapter
 

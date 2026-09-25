@@ -75,7 +75,8 @@ Preconditions:
 
 Delete:
 
-- `ContentSourceAdapter` or reduce it to a one-way migration tool;
+- `ContentSourceAdapter` (after all callers are migrated);
+- `LegacySourceGateway`;
 - `DynamicHttpSource`;
 - `SourceManager` compatibility interface;
 - legacy `SourceRepository` search methods;
