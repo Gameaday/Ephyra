@@ -26,8 +26,20 @@ data class SourceLifecycleRecord(
     }
 }
 
+/** Describes why an applied lifecycle transition changed persisted state. */
+enum class SourceLifecycleChange {
+    CREATED,
+    METADATA_UPDATED,
+    UNCHANGED,
+    LIFECYCLE_UPDATED,
+}
+
 sealed interface SourceLifecycleTransition {
-    data class Applied(val record: SourceLifecycleRecord) : SourceLifecycleTransition
+    data class Applied(
+        val record: SourceLifecycleRecord,
+        val change: SourceLifecycleChange,
+    ) : SourceLifecycleTransition
+
     data class Rejected(val reason: String) : SourceLifecycleTransition
 }
 
@@ -41,13 +53,14 @@ object SourceLifecyclePolicy {
         require(atMillis >= 0L) { "Source lifecycle time must not be negative" }
         if (existing == null) {
             return SourceLifecycleTransition.Applied(
-                SourceLifecycleRecord(
+                record = SourceLifecycleRecord(
                     descriptor = descriptor,
                     installationState = SourceInstallationState.UNINSTALLED,
                     enabled = false,
                     firstSeenAtMillis = atMillis,
                     lastChangedAtMillis = atMillis,
                 ),
+                change = SourceLifecycleChange.CREATED,
             )
         }
         require(existing.descriptor.id == descriptor.id) { "Source identity cannot change" }
@@ -57,7 +70,7 @@ object SourceLifecyclePolicy {
             descriptor.revision == existing.descriptor.revision && descriptor != existing.descriptor ->
                 SourceLifecycleTransition.Rejected("Source metadata changed without a revision bump")
             else -> SourceLifecycleTransition.Applied(
-                existing.copy(
+                record = existing.copy(
                     descriptor = descriptor,
                     lastChangedAtMillis = if (descriptor !=
                         existing.descriptor
@@ -67,6 +80,11 @@ object SourceLifecyclePolicy {
                         existing.lastChangedAtMillis
                     },
                 ),
+                change = if (descriptor != existing.descriptor) {
+                    SourceLifecycleChange.METADATA_UPDATED
+                } else {
+                    SourceLifecycleChange.UNCHANGED
+                },
             )
         }
     }
@@ -80,11 +98,12 @@ object SourceLifecyclePolicy {
         if (discovered is SourceLifecycleTransition.Rejected) return discovered
         val current = (discovered as SourceLifecycleTransition.Applied).record
         return SourceLifecycleTransition.Applied(
-            current.copy(
+            record = current.copy(
                 installationState = SourceInstallationState.INSTALLED,
                 enabled = true,
                 lastChangedAtMillis = atMillis,
             ),
+            change = SourceLifecycleChange.LIFECYCLE_UPDATED,
         )
     }
 
@@ -98,17 +117,24 @@ object SourceLifecyclePolicy {
             return SourceLifecycleTransition.Rejected("An uninstalled source must be installed before enabling")
         }
         return SourceLifecycleTransition.Applied(
-            existing.copy(
+            record = existing.copy(
                 enabled = enabled,
                 lastChangedAtMillis = if (enabled != existing.enabled) atMillis else existing.lastChangedAtMillis,
             ),
+            change = if (enabled ==
+                existing.enabled
+            ) {
+                SourceLifecycleChange.UNCHANGED
+            } else {
+                SourceLifecycleChange.LIFECYCLE_UPDATED
+            },
         )
     }
 
     fun uninstall(existing: SourceLifecycleRecord, atMillis: Long): SourceLifecycleTransition {
         require(atMillis >= 0L) { "Source lifecycle time must not be negative" }
         return SourceLifecycleTransition.Applied(
-            existing.copy(
+            record = existing.copy(
                 installationState = SourceInstallationState.UNINSTALLED,
                 enabled = false,
                 lastChangedAtMillis = if (existing.installationState == SourceInstallationState.UNINSTALLED) {
@@ -117,6 +143,11 @@ object SourceLifecyclePolicy {
                     atMillis
                 },
             ),
+            change = if (existing.installationState == SourceInstallationState.UNINSTALLED) {
+                SourceLifecycleChange.UNCHANGED
+            } else {
+                SourceLifecycleChange.LIFECYCLE_UPDATED
+            },
         )
     }
 }

@@ -18,14 +18,14 @@ import kotlinx.serialization.json.Json
 class TargetSourceRepository(
     private val database: TargetDatabase,
     private val json: Json = Json,
-) {
+) : ephyra.domain.source.repository.SourceLifecycleRepository {
     suspend fun get(sourceId: String): SourceLifecycleRecord? =
         database.targetSourceDao().get(sourceId)?.toRecord()
 
-    suspend fun getAll(): List<SourceLifecycleRecord> =
+    override suspend fun getAll(): List<SourceLifecycleRecord> =
         database.targetSourceDao().getAll().map { it.toRecord() }
 
-    suspend fun discover(descriptor: SourceDescriptor, atMillis: Long): SourceLifecycleTransition =
+    override suspend fun discover(descriptor: SourceDescriptor, atMillis: Long): SourceLifecycleTransition =
         database.withTransaction {
             val dao = database.targetSourceDao()
             val transition = SourceLifecyclePolicy.discover(

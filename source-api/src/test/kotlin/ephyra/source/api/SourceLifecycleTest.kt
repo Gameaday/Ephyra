@@ -9,8 +9,11 @@ import org.junit.jupiter.api.Test
 class SourceLifecycleTest {
     @Test
     fun `discovery creates an explicit uninstalled record`() {
-        val record = applied(SourceLifecyclePolicy.discover(null, descriptor(), 10L))
+        val transition = SourceLifecyclePolicy.discover(null, descriptor(), 10L)
+        val applied = appliedTransition(transition)
+        val record = appliedRecord(transition)
 
+        assertEquals(SourceLifecycleChange.CREATED, applied.change)
         assertEquals(SourceInstallationState.UNINSTALLED, record.installationState)
         assertFalse(record.enabled)
         assertEquals(10L, record.firstSeenAtMillis)
@@ -18,9 +21,9 @@ class SourceLifecycleTest {
 
     @Test
     fun `install enables and discovery update preserves lifecycle`() {
-        val discovered = applied(SourceLifecyclePolicy.discover(null, descriptor(), 10L))
-        val installed = applied(SourceLifecyclePolicy.install(discovered, descriptor(), 20L))
-        val updated = applied(
+        val discovered = appliedRecord(SourceLifecyclePolicy.discover(null, descriptor(), 10L))
+        val installed = appliedRecord(SourceLifecyclePolicy.install(discovered, descriptor(), 20L))
+        val updated = appliedRecord(
             SourceLifecyclePolicy.discover(installed, descriptor(revision = 2, name = "Updated"), 30L),
         )
 
@@ -32,14 +35,14 @@ class SourceLifecycleTest {
 
     @Test
     fun `uninstall disables and cannot be enabled before reinstall`() {
-        val installed = applied(
+        val installed = appliedRecord(
             SourceLifecyclePolicy.install(
-                applied(SourceLifecyclePolicy.discover(null, descriptor(), 0L)),
+                appliedRecord(SourceLifecyclePolicy.discover(null, descriptor(), 0L)),
                 descriptor(),
                 1L,
             ),
         )
-        val uninstalled = applied(SourceLifecyclePolicy.uninstall(installed, 2L))
+        val uninstalled = appliedRecord(SourceLifecyclePolicy.uninstall(installed, 2L))
         val rejected = SourceLifecyclePolicy.setEnabled(uninstalled, enabled = true, atMillis = 3L)
 
         assertFalse(uninstalled.enabled)
@@ -49,9 +52,9 @@ class SourceLifecycleTest {
 
     @Test
     fun `stale and same revision metadata changes are rejected`() {
-        val current = applied(
+        val current = appliedRecord(
             SourceLifecyclePolicy.install(
-                applied(SourceLifecyclePolicy.discover(null, descriptor(), 0L)),
+                appliedRecord(SourceLifecyclePolicy.discover(null, descriptor(), 0L)),
                 descriptor(revision = 2, name = "Current"),
                 1L,
             ),
@@ -67,8 +70,11 @@ class SourceLifecycleTest {
         )
     }
 
-    private fun applied(transition: SourceLifecycleTransition): SourceLifecycleRecord =
-        assertInstanceOf(SourceLifecycleTransition.Applied::class.java, transition).record
+    private fun appliedTransition(transition: SourceLifecycleTransition): SourceLifecycleTransition.Applied =
+        assertInstanceOf(SourceLifecycleTransition.Applied::class.java, transition)
+
+    private fun appliedRecord(transition: SourceLifecycleTransition): SourceLifecycleRecord =
+        appliedTransition(transition).record
 
     private fun descriptor(
         revision: Long = 1L,
