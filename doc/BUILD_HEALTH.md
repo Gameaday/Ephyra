@@ -18,7 +18,7 @@ These are exact, deterministic, and cheap, so they run in `:app:testDebugUnitTes
 |---|---:|---|
 | Module count | 29 | Ceiling |
 | Inter-project dependency edges | 166 | Ceiling |
-| Main source files | 1210 | Exact; must move deliberately |
+| Main source files | 1213 | Exact; must move deliberately |
 | Test source files | 233 | Floor |
 | TODO/FIXME markers | 14 | Ceiling |
 | Deprecated markers | 39 | Ceiling |
