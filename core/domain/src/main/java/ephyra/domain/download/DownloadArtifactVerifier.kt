@@ -10,6 +10,7 @@ data class DownloadArtifactProbe(
     val container: DownloadContainer? = null,
     val pageCount: Int = 0,
     val byteSize: Long = 0L,
+    val invalidReason: String? = null,
 )
 
 sealed interface DownloadArtifactVerification {
@@ -36,6 +37,9 @@ fun verifyDownloadArtifact(
     verifiedAt: Long,
 ): DownloadArtifactVerification {
     if (!probe.exists) return DownloadArtifactVerification.Missing(expected.artifactId)
+    if (!probe.invalidReason.isNullOrBlank()) {
+        return DownloadArtifactVerification.Invalid(expected.artifactId, probe.invalidReason)
+    }
 
     val actualContainer = probe.container
         ?: return DownloadArtifactVerification.Invalid(expected.artifactId, "container is unknown")
