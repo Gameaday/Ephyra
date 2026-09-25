@@ -10,9 +10,10 @@ This guide tells a human developer or coding agent how to continue the program w
 4. Read the relevant ADR files in [`adr/`](adr/).
 5. For reader/media work, read [`READER_ARCHITECTURE.md`](READER_ARCHITECTURE.md), [`READER_GESTURE_CONTRACT.md`](READER_GESTURE_CONTRACT.md), [`DOCUMENT_VIEWPORT_CONTRACT.md`](DOCUMENT_VIEWPORT_CONTRACT.md), and [`MEDIA_PIPELINE_CONTRACT.md`](MEDIA_PIPELINE_CONTRACT.md).
 6. For navigation/motion work, read [`NAVIGATION_CONTRACT.md`](NAVIGATION_CONTRACT.md) and [`MOTION_NAVIGATION_CONTRACT.md`](MOTION_NAVIGATION_CONTRACT.md).
-7. For source/search/discovery work, read [`SOURCE_DISCOVERY_ARCHITECTURE.md`](SOURCE_DISCOVERY_ARCHITECTURE.md), [`SOURCE_DISCOVERY_EXECUTION.md`](SOURCE_DISCOVERY_EXECUTION.md), and the `SRC-000` artifacts under [`source/`](source/).
-8. For documentation changes, read [`DOCUMENTATION_GOVERNANCE.md`](DOCUMENTATION_GOVERNANCE.md).
-9. Run:
+7. For fixture work, read [`FIXTURE_MANIFEST.md`](FIXTURE_MANIFEST.md), then use the executable `ReaderFixtureCatalog` as the identity registry. Do not invent new fixture IDs in individual tests.
+8. For source/search/discovery work, read [`SOURCE_DISCOVERY_ARCHITECTURE.md`](SOURCE_DISCOVERY_ARCHITECTURE.md), [`SOURCE_DISCOVERY_EXECUTION.md`](SOURCE_DISCOVERY_EXECUTION.md), and the `SRC-000` artifacts under [`source/`](source/).
+9. For documentation changes, read [`DOCUMENTATION_GOVERNANCE.md`](DOCUMENTATION_GOVERNANCE.md).
+10. Run:
 
 ```powershell
 git status --short
@@ -20,12 +21,13 @@ git log -5 --oneline --decorate
 ./gradlew projects
 ```
 
-10. Confirm the working tree is clean. If not, identify whether changes belong to the current task.
-11. Select exactly one `NOT_STARTED` task whose prerequisites are `VERIFIED`.
-12. Create a branch named `program/<phase-number>-<task-id>-<short-slug>`.
-13. Add the task ID to the branch and commit subject.
-14. Do not combine unrelated cleanup into the first commit.
-15. Before source/search work, read the source contracts and classify the change as target contract, adapter boundary, or deletion.
+11. Confirm the working tree is clean. If not, identify whether changes belong to the current task.
+12. Select exactly one `NOT_STARTED` task whose prerequisites are `VERIFIED`.
+13. If the task is `TST-001B`, use the `ReaderFixtureCatalog` as the source of fixture identity and do not add production code.
+14. Create a branch named `program/<phase-number>-<task-id>-<short-slug>`.
+15. Add the task ID to the branch and commit subject.
+16. Do not combine unrelated cleanup into the first commit.
+17. Before source/search work, read the source contracts and classify the change as target contract, adapter boundary, or deletion.
 
 ## 2. Task selection
 

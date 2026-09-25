@@ -90,8 +90,9 @@ No phase may begin implementation until the prior phase exit criteria are record
 2. `GOV-002` this program supersedes stale roadmap claims.
 3. `GOV-003` enforce the documentation authority and deletion policy.
 4. `CON-001` complete and link the technical contract layer.
-5. `TST-001` define deterministic reader fixtures and acceptance fixtures.
-6. `SRC-000A/B/C` verify and classify the source/search compatibility inventory — `CODE_COMPLETE` at E1; see `doc/source/` and `tools/source/source-inventory.json`.
+5. `TST-001A` define the executable fixture catalog — `CODE_COMPLETE`; see `ReaderFixtureCatalog` and `ReaderFixtureCatalogTest`.
+6. `TST-001B` generate real deterministic static media artifacts and bind them to crop, slice, and decoder tests.
+7. `SRC-000A/B/C` verify and classify the source/search compatibility inventory — `CODE_COMPLETE` at E1; see `doc/source/` and `tools/source/source-inventory.json`.
 7. `SRC-001A` capability model and typed source results — `CODE_COMPLETE` at E2; source-api contract tests pass.
 8. `SRC-001B` adapt the currently verified legacy extension path.
 9. `SRC-001C` local/native adapter and offline fixtures.

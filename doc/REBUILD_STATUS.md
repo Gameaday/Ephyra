@@ -124,10 +124,10 @@ Legacy defects are not fixed by changing the current implementation unless the t
 
 | Phase | Status | Evidence required to mark VERIFIED |
 |---|---|---|
-| 0  Baseline | NOT_STARTED | GOV-001, GOV-002, GOV-003, DOC-001, CON-001, TST-001 |
+| 0  Baseline | NOT_STARTED | GOV-001, GOV-002, GOV-003, DOC-001, CON-001, TST-001A |
 | 0A Technical contracts | CODE_COMPLETE | CON-001 |
 | 1  Security/platform | NOT_STARTED | SEC-001 through SEC-003 |
-| 2  Quality infrastructure | NOT_STARTED | TST-001 through TST-003 |
+| 2  Quality infrastructure | NOT_STARTED | TST-001A, TST-001B, TST-002, TST-003 |
 | 3  Foundations | NOT_STARTED | ARC-001 through ARC-003 |
 | 4  Media planning | NOT_STARTED | MED-001, MED-003 |
 | 5  Working memory | NOT_STARTED | MED-002, MED-004 |

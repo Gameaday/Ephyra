@@ -260,6 +260,8 @@ Exit: no known critical security finding; every accepted exception has an owner,
 
 Tasks:
 
+- `TST-001A`: define the executable reader/media fixture catalog and interaction registry.
+- `TST-001B`: generate deterministic synthetic static media artifacts and bind them to decoder, crop, and slicing tests.
 - `TST-002`: add a connected instrumentation module for reader, navigation, cache, migration, and WorkManager smoke tests.
 - `TST-003`: add deterministic screenshot tests and macrobenchmark execution.
 - Define device matrix:
