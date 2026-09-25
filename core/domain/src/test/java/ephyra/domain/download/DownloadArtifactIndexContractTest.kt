@@ -2,6 +2,7 @@ package ephyra.domain.download
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DownloadArtifactIndexContractTest {
@@ -40,6 +41,91 @@ class DownloadArtifactIndexContractTest {
         )
         assertEquals(DownloadReconciliation.Added, (success as DownloadArtifactIndexResult.Success).change)
         assertEquals(id, (DownloadArtifactIndexResult.NotFound(id) as DownloadArtifactIndexResult.NotFound).artifactId)
+    }
+
+    @Test
+    fun `missing filesystem probe does not invent a record`() {
+        val result = verifyDownloadArtifact(
+            indexed = null,
+            expected = artifact(),
+            probe = DownloadArtifactProbe(exists = false),
+            verifiedAt = 2_000L,
+        )
+        assertEquals(DownloadArtifactVerification.Missing(DownloadArtifactId("artifact:1")), result)
+    }
+
+    @Test
+    fun `valid probe publishes added record with verified timestamp`() {
+        val result = verifyDownloadArtifact(
+            indexed = null,
+            expected = artifact(),
+            probe = DownloadArtifactProbe(
+                exists = true,
+                relativePath = "Opds/Series/Chapter",
+                container = DownloadContainer.DIRECTORY,
+                pageCount = 20,
+                byteSize = 4_096L,
+            ),
+            verifiedAt = 2_000L,
+        )
+        val valid = result as DownloadArtifactVerification.Valid
+        assertEquals(DownloadReconciliation.Added, valid.change)
+        assertEquals(2_000L, valid.record.verifiedAt)
+    }
+
+    @Test
+    fun `changed filesystem facts update rather than invalidate record`() {
+        val result = verifyDownloadArtifact(
+            indexed = artifact(),
+            expected = artifact(),
+            probe = DownloadArtifactProbe(
+                exists = true,
+                relativePath = "Opds/Series/Renamed",
+                container = DownloadContainer.CBZ,
+                pageCount = 21,
+                byteSize = 5_000L,
+            ),
+            verifiedAt = 2_000L,
+        )
+        val valid = result as DownloadArtifactVerification.Valid
+        assertEquals(DownloadReconciliation.Updated, valid.change)
+        assertEquals("Opds/Series/Renamed", valid.record.relativePath)
+        assertEquals(DownloadContainer.CBZ, valid.record.container)
+        assertEquals(21, valid.record.pageCount)
+    }
+
+    @Test
+    fun `unsafe relative path is invalid`() {
+        val result = verifyDownloadArtifact(
+            indexed = null,
+            expected = artifact(),
+            probe = DownloadArtifactProbe(
+                exists = true,
+                relativePath = "/outside/chapter",
+                container = DownloadContainer.DIRECTORY,
+                pageCount = 1,
+                byteSize = 1L,
+            ),
+            verifiedAt = 2_000L,
+        )
+        assertTrue(result is DownloadArtifactVerification.Invalid)
+    }
+
+    @Test
+    fun `malformed probe is invalid`() {
+        val result = verifyDownloadArtifact(
+            indexed = artifact(),
+            expected = artifact(),
+            probe = DownloadArtifactProbe(
+                exists = true,
+                relativePath = "Opds/Series/Chapter",
+                container = DownloadContainer.CBZ,
+                pageCount = 0,
+                byteSize = 0L,
+            ),
+            verifiedAt = 2_000L,
+        )
+        assertTrue(result is DownloadArtifactVerification.Invalid)
     }
 
     private fun artifact(
