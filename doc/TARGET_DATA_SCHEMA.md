@@ -3,6 +3,7 @@
 - **Status:** Proposed implementation contract
 - **Date:** 2026-09-25
 - **Scope:** Ephyra 2.0 target library and source persistence
+- **Current implementation:** Room v3 remains the compatibility and production authority. `TargetDatabase` and its entities exist as an isolated test/future-migration boundary. `TargetSeriesRepository` provides an isolated, idempotent one-source-representation repository projection; canonical cross-source grouping is intentionally not implemented yet. A separate versioned `TargetBackupDocument` and mapper now preserve target series/source/chapter/library/reading/history records without reusing legacy `BackupManga`; neither target persistence nor target backup is wired into production yet. The explicit cutover decision is documented in [TARGET_DATA_CUTOVER.md](TARGET_DATA_CUTOVER.md): production cutover is deferred until parity, migration rehearsal, backup/restore, rollback, and device evidence are complete.
 - **Current implementation:** Room v3 remains the compatibility schema. `TargetDatabase` and its entities exist as an isolated test/future-migration boundary. `TargetSeriesRepository` provides an isolated, idempotent one-source-representation repository projection; canonical cross-source grouping is intentionally not implemented yet. A separate versioned `TargetBackupDocument` and mapper now preserve target series/source/chapter/library/reading/history records without reusing legacy `BackupManga`; neither target persistence nor target backup is wired into production yet.
 
 ## Decision summary
