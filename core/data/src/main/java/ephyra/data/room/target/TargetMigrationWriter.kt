@@ -98,6 +98,26 @@ class TargetMigrationWriter(
                     ),
                 )
             }
+            plan.tracking.forEach { tracking ->
+                dao.upsertTracking(
+                    TargetTrackingEntity(
+                        seriesId = plan.targetLocalId,
+                        trackerId = tracking.targetTrackerId,
+                        remoteId = tracking.remoteId,
+                        libraryId = tracking.libraryId,
+                        title = tracking.title,
+                        lastChapterRead = tracking.lastChapterRead,
+                        totalChapters = tracking.totalChapters,
+                        status = tracking.status,
+                        score = tracking.score,
+                        remoteUrl = tracking.remoteUrl,
+                        startedAt = tracking.startedAt,
+                        finishedAt = tracking.finishedAt,
+                        isPrivate = tracking.isPrivate,
+                        updatedAt = 0L,
+                    ),
+                )
+            }
             plan.history.forEach { history ->
                 dao.insertHistoryIfMissing(
                     TargetHistoryEntity(

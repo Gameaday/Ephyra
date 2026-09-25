@@ -62,6 +62,15 @@ interface TargetSeriesDao {
     @Query("SELECT * FROM target_history WHERE target_chapter_local_id = :chapterId LIMIT 1")
     suspend fun getHistory(chapterId: String): TargetHistoryEntity?
 
+    @Query("SELECT * FROM target_tracking WHERE series_id = :seriesId ORDER BY tracker_id")
+    suspend fun getTracking(seriesId: String): List<TargetTrackingEntity>
+
+    @Upsert
+    suspend fun upsertTracking(tracking: TargetTrackingEntity)
+
+    @Query("DELETE FROM target_tracking WHERE series_id = :seriesId AND tracker_id = :trackerId")
+    suspend fun deleteTracking(seriesId: String, trackerId: String)
+
     @Query("SELECT * FROM target_categories ORDER BY sort_order, category_id")
     suspend fun getCategories(): List<TargetCategoryEntity>
 

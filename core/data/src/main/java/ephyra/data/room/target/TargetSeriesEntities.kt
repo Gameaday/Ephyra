@@ -218,6 +218,48 @@ data class TargetHistoryEntity(
     val readDurationMs: Long,
 )
 
+/** User-owned tracking state for one target series and tracker. */
+@Entity(
+    tableName = "target_tracking",
+    primaryKeys = ["series_id", "tracker_id"],
+    foreignKeys = [
+        ForeignKey(
+            entity = TargetSeriesEntity::class,
+            parentColumns = ["local_id"],
+            childColumns = ["series_id"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
+    indices = [Index(value = ["tracker_id"]), Index(value = ["series_id"])],
+)
+data class TargetTrackingEntity(
+    @ColumnInfo(name = "series_id")
+    val seriesId: String,
+    @ColumnInfo(name = "tracker_id")
+    val trackerId: String,
+    @ColumnInfo(name = "remote_id")
+    val remoteId: String?,
+    @ColumnInfo(name = "library_id")
+    val libraryId: String?,
+    val title: String,
+    @ColumnInfo(name = "last_chapter_read")
+    val lastChapterRead: Double,
+    @ColumnInfo(name = "total_chapters")
+    val totalChapters: Long,
+    val status: String,
+    val score: Double,
+    @ColumnInfo(name = "remote_url")
+    val remoteUrl: String,
+    @ColumnInfo(name = "started_at")
+    val startedAt: Long,
+    @ColumnInfo(name = "finished_at")
+    val finishedAt: Long,
+    @ColumnInfo(name = "is_private")
+    val isPrivate: Boolean,
+    @ColumnInfo(name = "updated_at")
+    val updatedAt: Long,
+)
+
 /** User-owned library category. The target identity is opaque and independent of legacy numeric IDs. */
 @Entity(tableName = "target_categories")
 data class TargetCategoryEntity(

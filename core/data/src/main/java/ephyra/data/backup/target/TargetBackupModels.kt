@@ -7,6 +7,7 @@ import ephyra.data.room.target.TargetHistoryEntity
 import ephyra.data.room.target.TargetLibraryEntryEntity
 import ephyra.data.room.target.TargetSeriesEntity
 import ephyra.data.room.target.TargetSeriesSourceEntity
+import ephyra.data.room.target.TargetTrackingEntity
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoNumber
 
@@ -40,6 +41,7 @@ data class TargetBackupSeries(
     @ProtoNumber(14) val chapterStates: List<TargetBackupChapterState> = emptyList(),
     @ProtoNumber(15) val history: List<TargetBackupHistory> = emptyList(),
     @ProtoNumber(16) val categoryIds: List<String> = emptyList(),
+    @ProtoNumber(17) val tracking: List<TargetBackupTracking> = emptyList(),
 )
 
 @Serializable
@@ -103,6 +105,23 @@ data class TargetBackupHistory(
     @ProtoNumber(3) val readDurationMs: Long,
 )
 
+@Serializable
+data class TargetBackupTracking(
+    @ProtoNumber(1) val trackerId: String,
+    @ProtoNumber(2) val remoteId: String?,
+    @ProtoNumber(3) val libraryId: String?,
+    @ProtoNumber(4) val title: String,
+    @ProtoNumber(5) val lastChapterRead: Double,
+    @ProtoNumber(6) val totalChapters: Long,
+    @ProtoNumber(7) val status: String,
+    @ProtoNumber(8) val score: Double,
+    @ProtoNumber(9) val remoteUrl: String,
+    @ProtoNumber(10) val startedAt: Long,
+    @ProtoNumber(11) val finishedAt: Long,
+    @ProtoNumber(12) val isPrivate: Boolean,
+    @ProtoNumber(13) val updatedAt: Long = 0L,
+)
+
 /** All target tables for one series, used as the lossless backup/restore boundary. */
 data class TargetBackupSnapshot(
     val series: TargetSeriesEntity,
@@ -113,4 +132,5 @@ data class TargetBackupSnapshot(
     val history: List<TargetHistoryEntity>,
     val categories: List<TargetCategoryEntity> = emptyList(),
     val seriesCategories: List<ephyra.data.room.target.TargetSeriesCategoryEntity> = emptyList(),
+    val tracking: List<TargetTrackingEntity> = emptyList(),
 )

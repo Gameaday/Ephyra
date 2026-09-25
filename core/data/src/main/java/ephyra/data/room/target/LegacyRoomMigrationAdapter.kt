@@ -5,12 +5,14 @@ import ephyra.data.room.entities.ChapterEntity
 import ephyra.data.room.entities.HistoryEntity
 import ephyra.data.room.entities.MangaCategoryEntity
 import ephyra.data.room.entities.MangaEntity
+import ephyra.data.room.entities.TrackEntity
 import ephyra.domain.content.model.ContentType
 import ephyra.domain.series.LegacyCategoryRecord
 import ephyra.domain.series.LegacyChapterRecord
 import ephyra.domain.series.LegacyHistoryRecord
 import ephyra.domain.series.LegacySeriesMigrationInput
 import ephyra.domain.series.LegacySeriesRecord
+import ephyra.domain.series.LegacyTrackingRecord
 
 /**
  * One-way compatibility adapter from the current Room v3 entities to the pure target migration
@@ -21,6 +23,7 @@ object LegacyRoomMigrationAdapter {
         manga: MangaEntity,
         chapters: List<ChapterEntity>,
         history: List<HistoryEntity>,
+        tracking: List<TrackEntity> = emptyList(),
         categories: List<CategoryEntity> = emptyList(),
         seriesCategories: List<MangaCategoryEntity> = emptyList(),
     ): LegacySeriesMigrationInput {
@@ -65,6 +68,23 @@ object LegacyRoomMigrationAdapter {
                 readDurationMillis = record.timeRead,
             )
         }
+        val legacyTracking = tracking.map { record ->
+            LegacyTrackingRecord(
+                legacyMangaId = record.mangaId,
+                legacyTrackerId = record.syncId,
+                remoteId = record.remoteId.takeIf { it > 0L },
+                libraryId = record.libraryId,
+                title = record.title,
+                lastChapterRead = record.lastChapterRead,
+                totalChapters = record.totalChapters,
+                status = record.status,
+                score = record.score,
+                remoteUrl = record.remoteUrl,
+                startDate = record.startDate,
+                finishDate = record.finishDate,
+                isPrivate = record.isPrivate,
+            )
+        }
         val legacyCategories = categories.map { category ->
             LegacyCategoryRecord(
                 legacyId = category.id,
@@ -79,6 +99,7 @@ object LegacyRoomMigrationAdapter {
             series = series,
             chapters = legacyChapters,
             history = legacyHistory,
+            tracking = legacyTracking,
             categories = legacyCategories,
             seriesCategoryIds = legacySeriesCategories,
         )

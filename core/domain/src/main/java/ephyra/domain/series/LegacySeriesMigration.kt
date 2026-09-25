@@ -43,6 +43,22 @@ data class LegacyHistoryRecord(
     val readDurationMillis: Long,
 )
 
+data class LegacyTrackingRecord(
+    val legacyMangaId: Long,
+    val legacyTrackerId: Long,
+    val remoteId: Long?,
+    val libraryId: Long?,
+    val title: String,
+    val lastChapterRead: Double,
+    val totalChapters: Long,
+    val status: Long,
+    val score: Double,
+    val remoteUrl: String,
+    val startDate: Long,
+    val finishDate: Long,
+    val isPrivate: Boolean,
+)
+
 /** Legacy category definition and ordering needed by the target library organization model. */
 data class LegacyCategoryRecord(
     val legacyId: Long,
@@ -56,6 +72,7 @@ data class LegacySeriesMigrationInput(
     val series: LegacySeriesRecord,
     val chapters: List<LegacyChapterRecord>,
     val history: List<LegacyHistoryRecord>,
+    val tracking: List<LegacyTrackingRecord> = emptyList(),
     val categories: List<LegacyCategoryRecord> = emptyList(),
     val seriesCategoryIds: List<Long> = emptyList(),
 )
@@ -83,6 +100,22 @@ data class MigratedHistory(
     val legacyChapterId: Long,
     val lastReadAtMillis: Long?,
     val readDurationMillis: Long,
+)
+
+data class MigratedTracking(
+    val targetTrackerId: String,
+    val legacyTrackerId: Long,
+    val remoteId: String?,
+    val libraryId: String?,
+    val title: String,
+    val lastChapterRead: Double,
+    val totalChapters: Long,
+    val status: String,
+    val score: Double,
+    val remoteUrl: String,
+    val startedAt: Long,
+    val finishedAt: Long,
+    val isPrivate: Boolean,
 )
 
 data class MigratedCategory(
@@ -166,6 +199,28 @@ object LegacySeriesMigrationMapper {
             }
         }
 
+        val tracking = input.tracking.map { record ->
+            require(record.legacyMangaId == series.legacyId) {
+                "Tracking record belongs to legacy series ${record.legacyMangaId}"
+            }
+            require(record.legacyTrackerId >= 0L) { "Tracker id must not be negative" }
+            MigratedTracking(
+                targetTrackerId = targetTrackerId(record.legacyTrackerId),
+                legacyTrackerId = record.legacyTrackerId,
+                remoteId = record.remoteId?.toString(),
+                libraryId = record.libraryId?.toString(),
+                title = record.title,
+                lastChapterRead = record.lastChapterRead,
+                totalChapters = record.totalChapters.coerceAtLeast(0L),
+                status = record.status.toString(),
+                score = record.score,
+                remoteUrl = record.remoteUrl,
+                startedAt = record.startDate,
+                finishedAt = record.finishDate,
+                isPrivate = record.isPrivate,
+            )
+        }
+
         val categories = input.categories.map { category ->
             require(category.legacyId >= 0L) { "Category id must not be negative" }
             require(category.name.isNotBlank()) { "Category name must not be blank" }
@@ -192,6 +247,7 @@ object LegacySeriesMigrationMapper {
                 libraryAddedAt = series.dateAdded.coerceAtLeast(0L),
                 chapters = chapters,
                 history = history,
+                tracking = tracking,
                 categories = categories,
                 seriesCategories = categoryIds,
             ),
@@ -202,6 +258,7 @@ object LegacySeriesMigrationMapper {
     fun targetSeriesLocalId(legacySeriesId: Long): String = "legacy-series:$legacySeriesId"
     fun targetChapterLocalId(legacyChapterId: Long): String = "legacy-chapter:$legacyChapterId"
     fun targetCategoryId(legacyCategoryId: Long): String = "legacy-category:$legacyCategoryId"
+    fun targetTrackerId(legacyTrackerId: Long): String = "legacy-tracker:$legacyTrackerId"
 }
 
 data class LegacySeriesMigrationPlan(
@@ -212,6 +269,7 @@ data class LegacySeriesMigrationPlan(
     val libraryAddedAt: Long = 0L,
     val chapters: List<MigratedChapter>,
     val history: List<MigratedHistory>,
+    val tracking: List<MigratedTracking> = emptyList(),
     val categories: List<MigratedCategory> = emptyList(),
     val seriesCategories: List<String> = emptyList(),
 )

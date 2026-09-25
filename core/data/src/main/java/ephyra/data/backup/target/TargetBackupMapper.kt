@@ -7,6 +7,7 @@ import ephyra.data.room.target.TargetHistoryEntity
 import ephyra.data.room.target.TargetLibraryEntryEntity
 import ephyra.data.room.target.TargetSeriesEntity
 import ephyra.data.room.target.TargetSeriesSourceEntity
+import ephyra.data.room.target.TargetTrackingEntity
 import kotlinx.serialization.json.Json
 
 class TargetBackupMapper(
@@ -32,6 +33,7 @@ class TargetBackupMapper(
             chapterStates = snapshot.chapterStates.map { it.toBackup() },
             history = snapshot.history.map { it.toBackup() },
             categoryIds = snapshot.seriesCategories.map { it.categoryId },
+            tracking = snapshot.tracking.map { it.toBackup() },
         )
     }
 
@@ -112,8 +114,42 @@ class TargetBackupMapper(
             seriesCategories = categoryIds.map {
                 ephyra.data.room.target.TargetSeriesCategoryEntity(series.localId, it)
             },
+            tracking = series.tracking.map { it.toEntity(series.localId) },
         )
     }
+
+    private fun TargetTrackingEntity.toBackup() = TargetBackupTracking(
+        trackerId = trackerId,
+        remoteId = remoteId,
+        libraryId = libraryId,
+        title = title,
+        lastChapterRead = lastChapterRead,
+        totalChapters = totalChapters,
+        status = status,
+        score = score,
+        remoteUrl = remoteUrl,
+        startedAt = startedAt,
+        finishedAt = finishedAt,
+        isPrivate = isPrivate,
+        updatedAt = updatedAt,
+    )
+
+    private fun TargetBackupTracking.toEntity(seriesId: String) = TargetTrackingEntity(
+        seriesId = seriesId,
+        trackerId = trackerId,
+        remoteId = remoteId,
+        libraryId = libraryId,
+        title = title,
+        lastChapterRead = lastChapterRead,
+        totalChapters = totalChapters,
+        status = status,
+        score = score,
+        remoteUrl = remoteUrl,
+        startedAt = startedAt,
+        finishedAt = finishedAt,
+        isPrivate = isPrivate,
+        updatedAt = updatedAt,
+    )
 
     private fun TargetSeriesSourceEntity.toBackup() = TargetBackupSourceReference(
         sourceId,

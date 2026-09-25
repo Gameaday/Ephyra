@@ -21,6 +21,7 @@ class TargetBackupMapperTest {
             chapters = listOf(TargetBackupMapperTest.chapter()),
             chapterStates = listOf(TargetBackupMapperTest.chapterState()),
             history = listOf(TargetBackupMapperTest.history()),
+            tracking = listOf(TargetBackupMapperTest.tracking()),
             categories = listOf(TargetBackupMapperTest.category()),
             seriesCategories = listOf(
                 ephyra.data.room.target.TargetSeriesCategoryEntity(
@@ -42,6 +43,9 @@ class TargetBackupMapperTest {
         assertEquals(1234L, restored.history.single().lastReadAt)
         assertEquals("Reading", restored.categories.single().name)
         assertEquals("category:reading", restored.seriesCategories.single().categoryId)
+        assertEquals("legacy-tracker:3", restored.tracking.single().trackerId)
+        assertEquals("99", restored.tracking.single().remoteId)
+        assertEquals("Remote title", restored.tracking.single().title)
     }
 
     @Test
@@ -210,6 +214,23 @@ class TargetBackupMapperTest {
             targetChapterLocalId = "native:chapter:1",
             lastReadAt = 1234L,
             readDurationMs = 60L,
+        )
+
+        fun tracking() = ephyra.data.room.target.TargetTrackingEntity(
+            seriesId = "native:opds",
+            trackerId = "legacy-tracker:3",
+            remoteId = "99",
+            libraryId = null,
+            title = "Remote title",
+            lastChapterRead = 12.0,
+            totalChapters = 24L,
+            status = "2",
+            score = 8.5,
+            remoteUrl = "https://tracker.test/99",
+            startedAt = 1000L,
+            finishedAt = 0L,
+            isPrivate = true,
+            updatedAt = 2L,
         )
 
         fun category() = ephyra.data.room.target.TargetCategoryEntity(

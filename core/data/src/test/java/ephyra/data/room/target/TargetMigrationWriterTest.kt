@@ -78,6 +78,23 @@ class TargetMigrationWriterTest {
                     ),
                 ),
                 history = listOf(LegacyHistoryRecord(100L, 1234L, 56L)),
+                tracking = listOf(
+                    ephyra.domain.series.LegacyTrackingRecord(
+                        legacyMangaId = 10L,
+                        legacyTrackerId = 3L,
+                        remoteId = 99L,
+                        libraryId = null,
+                        title = "Remote title",
+                        lastChapterRead = 12.0,
+                        totalChapters = 24L,
+                        status = 2L,
+                        score = 8.5,
+                        remoteUrl = "https://tracker.test/99",
+                        startDate = 1000L,
+                        finishDate = 0L,
+                        isPrivate = true,
+                    ),
+                ),
             ),
         )
         val plan = (result as LegacySeriesMigrationResult.Migrated).plan
@@ -102,5 +119,11 @@ class TargetMigrationWriterTest {
         assertEquals(4L, dao.getChapterState("legacy-chapter:100")!!.lastPageRead)
         assertEquals(1234L, dao.getHistory("legacy-chapter:100")!!.lastReadAt)
         assertEquals(56L, dao.getHistory("legacy-chapter:100")!!.readDurationMs)
+        val tracking = dao.getTracking(plan.targetLocalId).single()
+        assertEquals("legacy-tracker:3", tracking.trackerId)
+        assertEquals("99", tracking.remoteId)
+        assertEquals("Remote title", tracking.title)
+        assertEquals(12.0, tracking.lastChapterRead, 0.0)
+        assertTrue(tracking.isPrivate)
     }
 }
