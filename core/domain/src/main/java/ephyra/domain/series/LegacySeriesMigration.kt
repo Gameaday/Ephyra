@@ -75,6 +75,7 @@ data class LegacySeriesMigrationInput(
     val tracking: List<LegacyTrackingRecord> = emptyList(),
     val categories: List<LegacyCategoryRecord> = emptyList(),
     val seriesCategoryIds: List<Long> = emptyList(),
+    val excludedScanlators: Set<String> = emptySet(),
 )
 
 data class MigratedChapter(
@@ -250,6 +251,9 @@ object LegacySeriesMigrationMapper {
                 tracking = tracking,
                 categories = categories,
                 seriesCategories = categoryIds,
+                excludedScanlators = input.excludedScanlators.map { it.trim() }
+                    .filter { it.isNotEmpty() }
+                    .toSet(),
             ),
         )
     }
@@ -272,6 +276,7 @@ data class LegacySeriesMigrationPlan(
     val tracking: List<MigratedTracking> = emptyList(),
     val categories: List<MigratedCategory> = emptyList(),
     val seriesCategories: List<String> = emptyList(),
+    val excludedScanlators: Set<String> = emptySet(),
 )
 
 sealed interface LegacySeriesMigrationResult {

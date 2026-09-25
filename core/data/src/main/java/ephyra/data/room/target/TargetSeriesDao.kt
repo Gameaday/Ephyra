@@ -95,6 +95,15 @@ interface TargetSeriesDao {
     @Upsert
     suspend fun upsertCategory(category: TargetCategoryEntity)
 
+    @Query("SELECT scanlator FROM target_excluded_scanlators WHERE series_id = :seriesId ORDER BY scanlator")
+    suspend fun getExcludedScanlators(seriesId: String): List<String>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertExcludedScanlators(entries: List<TargetExcludedScanlatorEntity>)
+
+    @Query("DELETE FROM target_excluded_scanlators WHERE series_id = :seriesId")
+    suspend fun deleteExcludedScanlators(seriesId: String)
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertSeriesCategoryIfMissing(category: TargetSeriesCategoryEntity): Long
 

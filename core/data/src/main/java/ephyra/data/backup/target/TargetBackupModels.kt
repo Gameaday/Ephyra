@@ -1,10 +1,12 @@
-package ephyra.data.backup.target
+﻿package ephyra.data.backup.target
 
 import ephyra.data.room.target.TargetCategoryEntity
 import ephyra.data.room.target.TargetChapterEntity
 import ephyra.data.room.target.TargetChapterStateEntity
+import ephyra.data.room.target.TargetExcludedScanlatorEntity
 import ephyra.data.room.target.TargetHistoryEntity
 import ephyra.data.room.target.TargetLibraryEntryEntity
+import ephyra.data.room.target.TargetSeriesCategoryEntity
 import ephyra.data.room.target.TargetSeriesEntity
 import ephyra.data.room.target.TargetSeriesSourceEntity
 import ephyra.data.room.target.TargetTrackingEntity
@@ -42,6 +44,7 @@ data class TargetBackupSeries(
     @ProtoNumber(15) val history: List<TargetBackupHistory> = emptyList(),
     @ProtoNumber(16) val categoryIds: List<String> = emptyList(),
     @ProtoNumber(17) val tracking: List<TargetBackupTracking> = emptyList(),
+    @ProtoNumber(18) val excludedScanlators: List<String> = emptyList(),
 )
 
 @Serializable
@@ -131,6 +134,7 @@ data class TargetBackupSnapshot(
     val chapterStates: List<TargetChapterStateEntity>,
     val history: List<TargetHistoryEntity>,
     val categories: List<TargetCategoryEntity> = emptyList(),
-    val seriesCategories: List<ephyra.data.room.target.TargetSeriesCategoryEntity> = emptyList(),
+    val seriesCategories: List<TargetSeriesCategoryEntity> = emptyList(),
     val tracking: List<TargetTrackingEntity> = emptyList(),
+    val excludedScanlators: List<TargetExcludedScanlatorEntity> = emptyList(),
 )

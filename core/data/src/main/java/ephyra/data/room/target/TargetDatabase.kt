@@ -16,6 +16,7 @@ import androidx.room.RoomDatabase
         TargetTrackingEntity::class,
         TargetCategoryEntity::class,
         TargetSeriesCategoryEntity::class,
+        TargetExcludedScanlatorEntity::class,
     ],
     version = 1,
     exportSchema = false,

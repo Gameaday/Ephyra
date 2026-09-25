@@ -72,6 +72,16 @@ class TargetMigrationWriter(
                     ),
                 )
             }
+            if (plan.excludedScanlators.isNotEmpty()) {
+                dao.insertExcludedScanlators(
+                    plan.excludedScanlators.map { scanlator ->
+                        TargetExcludedScanlatorEntity(
+                            seriesId = plan.targetLocalId,
+                            scanlator = scanlator,
+                        )
+                    },
+                )
+            }
             plan.chapters.forEach { chapter ->
                 dao.upsertChapter(
                     TargetChapterEntity(

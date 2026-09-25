@@ -29,6 +29,12 @@ class TargetBackupMapperTest {
                     categoryId = "category:reading",
                 ),
             ),
+            excludedScanlators = listOf(
+                ephyra.data.room.target.TargetExcludedScanlatorEntity(
+                    seriesId = "native:opds",
+                    scanlator = "Official",
+                ),
+            ),
         )
         val document = mapper.toBackupDocument(listOf(snapshot))
         val bytes = protoBuf.encodeToByteArray(TargetBackupDocument.serializer(), document)
@@ -41,6 +47,8 @@ class TargetBackupMapperTest {
         assertEquals(true, restored.libraryEntry!!.updateEnabled)
         assertEquals(true, restored.chapterStates.single().isRead)
         assertEquals(1234L, restored.history.single().lastReadAt)
+        assertEquals("Remote title", restored.tracking.single().title)
+        assertEquals(listOf("Official"), restored.excludedScanlators.map { it.scanlator })
         assertEquals("Reading", restored.categories.single().name)
         assertEquals("category:reading", restored.seriesCategories.single().categoryId)
         assertEquals("legacy-tracker:3", restored.tracking.single().trackerId)
@@ -129,6 +137,19 @@ class TargetBackupMapperTest {
 
         val failure = runCatching { mapper.fromBackupDocument(malformed) }.exceptionOrNull()
         assertTrue(failure is IllegalArgumentException)
+    }
+
+    @Test
+    fun `target backup rejects blank or duplicate excluded scanlators`() {
+        val blank = mapper.toBackupDocument(emptyList()).copy(
+            series = listOf(series().toBackup().copy(excludedScanlators = listOf(" "))),
+        )
+        val duplicate = mapper.toBackupDocument(emptyList()).copy(
+            series = listOf(series().toBackup().copy(excludedScanlators = listOf("Official", "Official"))),
+        )
+
+        assertTrue(runCatching { mapper.fromBackupDocument(blank) }.exceptionOrNull() is IllegalArgumentException)
+        assertTrue(runCatching { mapper.fromBackupDocument(duplicate) }.exceptionOrNull() is IllegalArgumentException)
     }
 
     @Test

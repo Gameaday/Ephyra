@@ -70,6 +70,7 @@ class TargetMigrationRehearsalTest {
         assertEquals(1, dao.getCategories().size)
         assertEquals("Default", dao.getCategories().single().name)
         assertEquals(listOf("legacy-category:0"), dao.getSeriesCategories(first.targetLocalId).map { it.categoryId })
+        assertEquals(listOf("Official"), dao.getExcludedScanlators(first.targetLocalId))
         assertEquals(2, dao.getChapters(first.targetLocalId).size)
         assertEquals(2, dao.getChapters(second.targetLocalId).size)
         assertTrue(dao.getChapterState("legacy-chapter:100")!!.isRead)
@@ -141,6 +142,7 @@ class TargetMigrationRehearsalTest {
                     history = listOf(LegacyHistoryRecord(seriesId * 10, 1234L, 56L)),
                     categories = categories,
                     seriesCategoryIds = seriesCategoryIds,
+                    excludedScanlators = setOf("Official", "Official"),
                 ),
             ) as LegacySeriesMigrationResult.Migrated
             ).plan

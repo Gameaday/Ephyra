@@ -3,6 +3,7 @@ package ephyra.data.backup.target
 import ephyra.data.room.target.TargetCategoryEntity
 import ephyra.data.room.target.TargetChapterEntity
 import ephyra.data.room.target.TargetChapterStateEntity
+import ephyra.data.room.target.TargetExcludedScanlatorEntity
 import ephyra.data.room.target.TargetHistoryEntity
 import ephyra.data.room.target.TargetLibraryEntryEntity
 import ephyra.data.room.target.TargetSeriesEntity
@@ -34,6 +35,7 @@ class TargetBackupMapper(
             history = snapshot.history.map { it.toBackup() },
             categoryIds = snapshot.seriesCategories.map { it.categoryId },
             tracking = snapshot.tracking.map { it.toBackup() },
+            excludedScanlators = snapshot.excludedScanlators.map { it.scanlator },
         )
     }
 
@@ -92,6 +94,13 @@ class TargetBackupMapper(
         require(series.history.all { it.targetChapterLocalId in chapterIds }) {
             "Target backup contains history for an unknown chapter"
         }
+        val excludedScanlators = series.excludedScanlators.map { it.trim() }
+        require(excludedScanlators.none { it.isEmpty() }) {
+            "Target backup contains a blank excluded scanlator"
+        }
+        require(excludedScanlators.size == excludedScanlators.toSet().size) {
+            "Target backup contains duplicate excluded scanlators"
+        }
         return TargetBackupSnapshot(
             series = TargetSeriesEntity(
                 localId = series.localId,
@@ -115,6 +124,9 @@ class TargetBackupMapper(
                 ephyra.data.room.target.TargetSeriesCategoryEntity(series.localId, it)
             },
             tracking = series.tracking.map { it.toEntity(series.localId) },
+            excludedScanlators = excludedScanlators.map {
+                TargetExcludedScanlatorEntity(seriesId = series.localId, scanlator = it)
+            },
         )
     }
 

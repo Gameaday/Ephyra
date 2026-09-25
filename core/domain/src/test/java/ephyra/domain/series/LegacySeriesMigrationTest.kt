@@ -67,6 +67,21 @@ class LegacySeriesMigrationTest {
         assertTrue(plan.history.isEmpty())
     }
 
+    @Test
+    fun `excluded scanlators normalize once and survive migration`() {
+        val result = LegacySeriesMigrationMapper.migrate(
+            LegacySeriesMigrationInput(
+                series = series(id = 13L),
+                chapters = emptyList(),
+                history = emptyList(),
+                excludedScanlators = linkedSetOf(" Official ", "Official", "  "),
+            ),
+        )
+
+        val plan = assertInstanceOf(LegacySeriesMigrationResult.Migrated::class.java, result).plan
+        assertEquals(setOf("Official"), plan.excludedScanlators)
+    }
+
     private fun series(id: Long, title: String = "Series", favorite: Boolean = false) = LegacySeriesRecord(
         legacyId = id,
         sourceId = 7L,

@@ -300,3 +300,29 @@ data class TargetSeriesCategoryEntity(
     @ColumnInfo(name = "category_id")
     val categoryId: String,
 )
+
+/** User-owned exclusion policy for chapter scanlators within one target series. */
+@Entity(
+    tableName = "target_excluded_scanlators",
+    primaryKeys = ["series_id", "scanlator"],
+    foreignKeys = [
+        ForeignKey(
+            entity = TargetSeriesEntity::class,
+            parentColumns = ["local_id"],
+            childColumns = ["series_id"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
+    indices = [Index(value = ["series_id"]), Index(value = ["scanlator"])],
+)
+data class TargetExcludedScanlatorEntity(
+    @ColumnInfo(name = "series_id")
+    val seriesId: String,
+    @ColumnInfo(name = "scanlator")
+    val scanlator: String,
+) {
+    init {
+        require(seriesId.isNotBlank()) { "Target series id must not be blank" }
+        require(scanlator.isNotBlank()) { "Excluded scanlator must not be blank" }
+    }
+}
