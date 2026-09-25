@@ -30,8 +30,8 @@ A target capability is cutover-ready only when it has a target owner, determinis
 | Reader progress | `TargetChapterStateEntity.lastPageRead` | **Covered in field** | Validate semantics across filtered pages and reader modes. |
 | History | `TargetHistoryEntity` | **Covered** | Preserve timestamp, duration, and referential integrity. |
 | Canonical links | `TargetSeriesLinkEntity` | **Covered, not integrated** | Requires lifecycle integration and production migration. |
-| Tracking | No target entity yet | **Missing** | Preserve tracker identity, remote ID, progress, status, score, dates, privacy. |
-| Downloads | No target entity yet | **Missing** | Define file-system relationship and restore rules. |
+| Tracking | `TargetTrackingEntity` + `TargetTrackingRepository` | **Covered in isolated target store** | Preserve tracker identity, remote ID, progress, status, score, dates, and privacy; production tracker adapter/scheduling cutover remains open. |
+| Downloads | `DownloadArtifactIndex` contract only | **Contract complete; implementation missing** | Filesystem remains authoritative; define a reconciled index, queue/work separation, legacy filesystem adoption, and backup restore behavior before adding a target table. |
 | Source lifecycle | No target owner yet | **Missing** | Persist descriptors, trust, credentials, installation, enabled state. |
 | Backup format | `TargetBackupDocument` | **Covered in target mapper, not wired** | Production creator/restorer must use a bridge or target format. |
 | Clean install | Target fixture only | **Not proven** | Target-only database startup fixture required. |
@@ -90,10 +90,10 @@ parity contract
 ## Confirmed blockers
 
 1. Target tracking persistence and backup mapping exist only in the isolated target store; production tracker adapters still use legacy IDs and scheduling.
-2. No download relationship model; download directories are not derivable from series metadata.
+2. Download artifact contract is defined, but the reconciled index, filesystem verifier, and legacy read-only adoption pass are not implemented.
 3. No target source lifecycle store; source trust/credentials/install state are not production-persisted.
 4. Multi-source aggregation is incomplete; canonical links are not yet a complete series aggregate.
 5. Production backup still emits and restores legacy models.
 6. No production cutover rehearsal exists.
 
-The target-only rehearsal is implemented in `core/data/src/test/java/ephyra/data/room/target/TargetMigrationRehearsalTest.kt` and the target backup contract in `core/data/src/main/java/ephyra/data/backup/target/TargetBackupMapper.kt`. These tests prove same-title isolation, source identity, library membership, category definitions/membership, chapter state/history, target tracking, protobuf round-trip, referential validation, and idempotent migration replay. They do not claim production parity for downloads, source lifecycle, production tracker scheduling/adapters, or production backup restore; those remain explicit blockers.
+The target-only rehearsal is implemented in `core/data/src/test/java/ephyra/data/room/target/TargetMigrationRehearsalTest.kt` and the target backup contract in `core/data/src/main/java/ephyra/data/backup/target/TargetBackupMapper.kt`. These tests prove same-title isolation, source identity, library membership, category definitions/membership, chapter state/history, target tracking, protobuf round-trip, referential validation, and idempotent migration replay. Download artifact semantics are contract-tested in `DownloadArtifactIndexContractTest`, but no target table or filesystem reconciliation is implemented. These tests do not claim production parity for downloads, source lifecycle, production tracker scheduling/adapters, or production backup restore; those remain explicit blockers.
