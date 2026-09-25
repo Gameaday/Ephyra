@@ -26,6 +26,15 @@ interface TargetSeriesDao {
     @Query("SELECT * FROM target_library_entries WHERE series_id = :seriesId LIMIT 1")
     suspend fun getLibraryEntry(seriesId: String): TargetLibraryEntryEntity?
 
+    @Query("SELECT * FROM target_series_sources WHERE series_id = :seriesId AND source_id = :sourceId LIMIT 1")
+    suspend fun getSourceReference(seriesId: String, sourceId: String): TargetSeriesSourceEntity?
+
+    @Query("SELECT * FROM target_series_sources WHERE series_id = :seriesId ORDER BY source_id")
+    suspend fun getSourceReferences(seriesId: String): List<TargetSeriesSourceEntity>
+
+    @Query("DELETE FROM target_library_entries WHERE series_id = :seriesId")
+    suspend fun deleteLibraryEntry(seriesId: String)
+
     @Query("SELECT * FROM target_library_entries WHERE series_id = :seriesId LIMIT 1")
     fun observeLibraryEntry(seriesId: String): Flow<TargetLibraryEntryEntity?>
 
