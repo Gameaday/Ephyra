@@ -12,13 +12,15 @@
 
 ## Removal sequence
 
-### R-001 — Freeze new legacy dependencies
+### R-001 — Freeze new legacy dependencies (complete)
 
 - Add architecture checks for new feature imports of `eu.kanade.tachiyomi.source.*`.
 - New source code must use target contracts.
 - Existing legacy imports become an explicit allowlist.
 
-### R-002 — Introduce the target gateway
+`SourceApiBoundaryTest` enforces this for the target source API. The current allowlist is limited to the existing compatibility ABI/adapter files; it is not permission for new target code to use legacy types.
+
+### R-002 — Introduce the target gateway (complete)
 
 - Add `SourceDescriptor`.
 - Add capability declarations.
@@ -32,12 +34,14 @@
 - Implement one controlled native HTTP source adapter.
 - Prove search, details, units, resources, health, offline behavior, and cancellation.
 
-### R-004 — Replace global search execution
+### R-004 — Replace global search execution (in progress)
 
 - Introduce `SearchSession`.
 - Move fan-out, deadlines, partial results, and cancellation out of `SearchViewModel`.
 - Move deduplication and ranking into pure domain code.
 - Remove search-time persistence.
+
+`SearchSession` and native registry contracts exist, but the product search ViewModels still use the legacy execution path. R-008 is not authorized yet.
 
 ### R-005 — Replace browse and updates surfaces
 
