@@ -1,0 +1,117 @@
+{
+  "task": "SRC-000",
+  "status": "CODE_COMPLETE",
+  "evidence": "E1",
+  "classificationRule": "target|adapter|compatibility|delete",
+  "sourceFamilies": [
+    {
+      "id": "content-source",
+      "path": "source-api/src/main/kotlin/ephyra/source/api/ContentSource.kt",
+      "classification": "target",
+      "decision": "Keep as generic domain foundation; evolve to capability-gated contract."
+    },
+    {
+      "id": "content-catalogue-source",
+      "path": "source-api/src/main/kotlin/ephyra/source/api/ContentSource.kt",
+      "classification": "adapter",
+      "decision": "Keep only as bridge where native sources need catalogue operations."
+    },
+    {
+      "id": "legacy-content-adapter",
+      "path": "source-api/src/main/kotlin/ephyra/source/api/ContentSourceAdapter.kt",
+      "classification": "compatibility",
+      "decision": "Isolate as LegacyExtensionAdapter; remove after bridge gate."
+    },
+    {
+      "id": "content-source-engine",
+      "path": "core/domain/src/main/java/ephyra/domain/content/source/ContentSourceEngine.kt",
+      "classification": "compatibility",
+      "decision": "Replace with capability-gated SourceGateway."
+    },
+    {
+      "id": "content-source-orchestrator",
+      "path": "core/domain/src/main/java/ephyra/domain/content/source/ContentSourceOrchestrator.kt",
+      "classification": "target",
+      "decision": "Retain orchestration role; separate descriptor, health, profile, and execution."
+    },
+    {
+      "id": "scriptable-engine",
+      "path": "core/data/src/main/java/ephyra/data/sourcing/ScriptableContentSourceEngine.kt",
+      "classification": "adapter",
+      "decision": "Retain QuickJS technology behind trusted ExternalSourceAdapter."
+    },
+    {
+      "id": "heuristic-engine",
+      "path": "core/domain/src/main/java/ephyra/domain/content/source/AdaptiveHeuristicEngine.kt",
+      "classification": "adapter",
+      "decision": "Use for proposed profiles and validation, not opaque authoritative runtime."
+    },
+    {
+      "id": "dynamic-http-source",
+      "path": "app/src/main/java/eu/kanade/tachiyomi/source/online/DynamicHttpSource.kt",
+      "classification": "compatibility",
+      "decision": "Isolate and remove after features use modern gateway."
+    },
+    {
+      "id": "source-manager",
+      "path": "core/domain/src/main/java/ephyra/domain/source/service/SourceManager.kt",
+      "classification": "compatibility",
+      "decision": "Replace as primary registry with SourceRegistry."
+    },
+    {
+      "id": "source-repository",
+      "path": "core/domain/src/main/java/ephyra/domain/source/repository/SourceRepository.kt",
+      "classification": "compatibility",
+      "decision": "Replace FilterList search contract with typed queries."
+    },
+    {
+      "id": "global-search-view-model",
+      "path": "feature/browse/src/main/kotlin/ephyra/feature/browse/source/globalsearch/SearchViewModel.kt",
+      "classification": "compatibility",
+      "decision": "Split feature state from SearchSession execution and ranking."
+    },
+    {
+      "id": "unified-search-engine",
+      "path": "core/domain/src/main/java/ephyra/domain/manga/interactor/UnifiedSearchEngine.kt",
+      "classification": "compatibility",
+      "decision": "Migrate fan-out to SearchSession; remove search-time persistence."
+    },
+    {
+      "id": "smart-search-engine",
+      "path": "core/domain/src/main/java/ephyra/domain/manga/interactor/SmartSourceSearchEngine.kt",
+      "classification": "compatibility",
+      "decision": "Restrict to migration candidate matching until replacement."
+    },
+    {
+      "id": "search-result-merger",
+      "path": "feature/browse/src/main/kotlin/ephyra/feature/browse/source/globalsearch/SearchResultMerger.kt",
+      "classification": "target",
+      "decision": "Generalize to normalized content and deterministic ranking."
+    },
+    {
+      "id": "jellyfin-tracker",
+      "path": "core/data/src/main/java/ephyra/data/track/jellyfin/Jellyfin.kt",
+      "classification": "compatibility",
+      "decision": "Keep progress sync separate from future content source."
+    },
+    {
+      "id": "jellyfin-api",
+      "path": "core/data/src/main/java/ephyra/data/track/jellyfin/JellyfinApi.kt",
+      "classification": "adapter",
+      "decision": "Extract transport for future authenticated JellyfinSourceAdapter."
+    },
+    {
+      "id": "stub-source",
+      "path": "core/domain/src/main/java/ephyra/domain/source/model/StubSource.kt",
+      "classification": "delete",
+      "decision": "Replace with registry trust/availability state."
+    }
+  ],
+  "initialSourceOrder": [
+    "local-native",
+    "controlled-native-http",
+    "external-script",
+    "jellyfin-authenticated-collections"
+  ],
+  "removalGate": "Do not delete legacy paths until zero-legacy product scenarios, capability tests, trust lifecycle, migration rollback, backup/restore, and user-visible evidence pass."
+}

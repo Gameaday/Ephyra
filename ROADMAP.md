@@ -26,6 +26,10 @@ This file is the single entry point for the reconstruction program. If another d
 15. [`doc/DEPENDENCY_TARGET_GRAPH.md`](doc/DEPENDENCY_TARGET_GRAPH.md)  allowed and forbidden dependency flow.
 16. [`doc/DOCUMENTATION_GOVERNANCE.md`](doc/DOCUMENTATION_GOVERNANCE.md)  current, historical, archived, and deleted-document policy.
 17. [`doc/adr/`](doc/adr/)  accepted architectural decisions that must not be silently reversed.
+18. [`doc/source/SOURCE_INVENTORY.md`](doc/source/SOURCE_INVENTORY.md)  `SRC-000` target/adapter/compatibility/delete classification.
+19. [`doc/source/SOURCE_CALL_GRAPH.md`](doc/source/SOURCE_CALL_GRAPH.md)  current source/search paths and replacement owners.
+20. [`doc/source/SOURCE_COMPATIBILITY_MATRIX.md`](doc/source/SOURCE_COMPATIBILITY_MATRIX.md)  explicit compatibility decisions and deletion blockers.
+21. [`doc/source/SOURCE_REMOVAL_PLAN.md`](doc/source/SOURCE_REMOVAL_PLAN.md)  ordered legacy bridge removal gates.
 
 ## Program outcome
 
@@ -87,7 +91,7 @@ No phase may begin implementation until the prior phase exit criteria are record
 3. `GOV-003` enforce the documentation authority and deletion policy.
 4. `CON-001` complete and link the technical contract layer.
 5. `TST-001` define deterministic reader fixtures and acceptance fixtures.
-6. `SRC-000A/B/C` verify and classify the source/search compatibility inventory.
+6. `SRC-000A/B/C` verify and classify the source/search compatibility inventory — `CODE_COMPLETE` at E1; see `doc/source/` and `tools/source/source-inventory.json`.
 7. `SRC-001` capability model and typed source results.
 8. `SRC-002` progressive search session, deduplication, ranking, and cancellation.
 

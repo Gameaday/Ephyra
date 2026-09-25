@@ -42,6 +42,7 @@ A task may be `CODE_COMPLETE` at `E2`; it may not be `DEVICE_VERIFIED` without `
 | B-011 | No connected device is available in the current workspace. | `adb devices` | VERIFIED environmental limit |
 | B-012 | Source/search is a mixed compatibility system with no single capability, result, ranking, or discovery contract. | Source/search inventory and current modules | E1, confirmed debt |
 | B-013 | Several historical documents make current-looking or “100% complete” claims that are superseded by the reconstruction program. | Documentation authority audit | E1, confirmed debt |
+| B-014 | `SRC-000` classifies source/search paths as target, adapter, compatibility, or delete; legacy removal is gated by zero-legacy product evidence. | `doc/source/` inventory artifacts, `tools/source/source-inventory.json` | E1, CODE_COMPLETE |
 
 ## Open user-reported defects
 
@@ -67,8 +68,8 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | GOV-003 | Enforce documentation authority and deletion policy. | Agent | Documentation governance + link/index gate | CODE_COMPLETE |
 | DOC-001 | Delete superseded “completed” documents after contract migration. | Agent | Git diff + link/index gate | CODE_COMPLETE |
 | SRC-000A | Static source/search inventory. | Agent | Inventory artifact | CODE_COMPLETE |
-| SRC-000B | Source/search call-site verification. | Agent | Call-site matrix | NOT_STARTED |
-| SRC-000C | Legacy compatibility classification and removal decision. | Agent | Approved classification | NOT_STARTED |
+| SRC-000B | Source/search call-site verification. | Agent | `doc/source/SOURCE_CALL_GRAPH.md` | CODE_COMPLETE |
+| SRC-000C | Legacy compatibility classification and removal decision. | Agent | Compatibility matrix and removal plan | CODE_COMPLETE |
 | SRC-001 | SourceDescriptor, capabilities, SourceGateway, typed outcomes. | Agent | Adapter contract tests | NOT_STARTED |
 | SRC-002 | Progressive search session, deduplication, ranking, cancellation. | Agent | Pure search/ranking tests | NOT_STARTED |
 | SRC-003 | Capability-gated discovery, health, quarantine, recommendations. | Agent | Discovery/health tests | NOT_STARTED |
@@ -117,7 +118,7 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | 9  Shell/navigation | NOT_STARTED | NAV-001 |
 | 10  Library/Series | NOT_STARTED | NAV-002 |
 | 11  Remaining slices | NOT_STARTED | Product parity checklist |
-| 12  Source/data/ops | NOT_STARTED | SRC-000 through SRC-005, DATA-001, OPS-001 |
+| 12  Source/data/ops | IN_PROGRESS | SRC-000 is CODE_COMPLETE at E1; SRC-001 through SRC-005, DATA-001, and OPS-001 remain open. |
 | 13  Release/cleanup | NOT_STARTED | REL-001, CLEAN-001, DOC-001 |
 
 ## Change log
