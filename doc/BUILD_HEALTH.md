@@ -18,7 +18,7 @@ These are exact, deterministic, and cheap, so they run in `:app:testDebugUnitTes
 |---|---:|---|
 | Module count | 29 | Ceiling |
 | Inter-project dependency edges | 166 | Ceiling |
-| Main source files | 1213 | Exact; must move deliberately |
+| Main source files | 1213 | Ceiling |
 | Test source files | 233 | Floor |
 | TODO/FIXME markers | 14 | Ceiling |
 | Deprecated markers | 39 | Ceiling |
@@ -26,10 +26,12 @@ These are exact, deterministic, and cheap, so they run in `:app:testDebugUnitTes
 **Lowering a ceiling is the mechanism of improvement.** Debt is removed by tightening the
 baseline, never by raising it. Intentional debt is recorded in `doc/REBUILD_STATUS.md`.
 
-The rule column is not decorative. Ceilings fail the build when exceeded; `Main source files` is
-an exact comparison because it legitimately grows during the reconstruction and only an exact
-check keeps the final legacy-deletion target measurable; `Test source files` is a floor so that
-deleting a test demands a recorded replacement.
+The rule column is not decorative. Ceilings fail the build when exceeded; `Test source files` is
+a floor so that deleting a test demands a recorded replacement. `Main source files` was an exact
+match until it proved counterproductive: the reconstruction adds contract types by design, so
+every legitimate addition forced a manual baseline edit, which trains people to bump the number
+without reading it. It is now a ceiling, and the legacy-deletion target is judged by watching the
+ceiling's value fall over time rather than by the equality of any single run.
 
 ### Recorded but not gated
 

@@ -119,7 +119,16 @@ Debt is removed by **tightening** a ceiling, never by raising it.
 21. `DEF-009` long-strip reading-mode precedence extracted from `ReaderViewModel` into `DefaultReadingModeResolver` with focused tests — `CODE_COMPLETE` at E2. This is an ownership fix, not a behaviour fix: detection already worked for the reported series, so it does not address the user-reported zoom defects below.
 22. `DEF-008` `BorderCropTransformation` corrected for transposed per-edge insets, single-outlier intolerance, and contentless cropping — `CODE_COMPLETE` at E2, with each defect proven by a failing test before the fix. Device acceptance still required.
 23. `MED-001` page source, identity/revision, metadata, content-rect, animation, and decode-plan contracts — `CODE_COMPLETE` at E2 with 43 tests. Pure and not production-wired; the adapters and viewport consumption come later.
-24. `MED-002` byte-budgeted working page store — `CODE_COMPLETE` at E2 with 22 tests. Replaces the unbounded `ReaderPage.cachedBytes` that grows with scroll distance. Pure and not production-wired; retiring the field itself waits on the viewport cutover.25. `MED-003` crop-aware render-path, animation, and tile-scale policy — `CODE_COMPLETE` at E2 with 52 tests. Fixes crop disabling webtoon slicing, separates JXL from an animation verdict, and adds scale-bucket hysteresis so zoom settles instead of re-decoding.
+24. `MED-002` byte-budgeted working page store — `CODE_COMPLETE` at E2 with 22 tests. Replaces the unbounded `ReaderPage.cachedBytes` that grows with scroll distance. Pure and not production-wired; retiring the field itself waits on the viewport cutover.
+25. `MED-003` crop-aware render-path, animation, and tile-scale policy — `CODE_COMPLETE` at E2 with 54 tests. Fixes crop disabling webtoon slicing, separates JXL from an animation verdict, and adds scale-bucket hysteresis so zoom settles instead of re-decoding.
+**Program audit, 2026-09-25.** Re-read the plan, program, status, execution guide, and the
+media/cache contracts against the code, and reconciled the ledger with reality. Findings:
+
+- Phase 4 is `CODE_COMPLETE`, not `VERIFIED`: `FIXTURE_MANIFEST.md` is explicit that E3 needs a retained connected run, and no connected run exists. The phase row now says so.
+- The ledger overstated MED-003 at 52 tests; the suites hold 54 (21 + 13 + 15 + 5). Corrected, with per-suite counts recorded so the number is checkable.
+- `OPS-003`'s main-source rule was an exact match while the baseline note called it ungated. It fired on four consecutive commits, each forcing a manual edit, which trains people to bump the number without reading it. Now a ceiling; the legacy-deletion target is judged by that value falling over time.
+- The crop toggle was re-verified end to end: `toggleCropBorders` writes `cropBorders`/`cropBordersWebtoon`, `ReaderScreen` observes both via `collectAsState`, and both the pager and webtoon path key their Coil request and cache key on the flag. The plumbing was never the defect; the transform was (`DEF-008`).
+- Not done: no contract added this pass is production-wired, and nothing here is device-verified. The gap is the Android/Compose adapter step the execution guide puts at step 4 of 10.
 
 Do **not** resume ad hoc reader zoom, crop, transition, or source fallback patches before the relevant contract/fixture task is complete.
 
