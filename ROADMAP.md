@@ -99,7 +99,7 @@ No phase may begin implementation until the prior phase exit criteria are record
 11. `SRC-000A/B/C` verify and classify the source/search compatibility inventory — `CODE_COMPLETE` at E1; see `doc/source/` and `tools/source/source-inventory.json`.
 12. `SRC-001A` capability model and typed source results — `CODE_COMPLETE` at E2; source-api contract tests pass.
 13. `RDR-001` pure reader session state machine — `CODE_COMPLETE` at E2; isolated from production until RDR-002/003 and viewport adapters are proven.
-14. `RDR-002` canonical chapter window, directional previous/next eligibility, forward `skipRead`, duplicate policy, and downloaded-only policy as pure functions.
+14. `RDR-002` canonical chapter window and directional navigation policy — `CODE_COMPLETE` at E2; isolated from production until the replacement session/viewport consumes it.
 15. `RDR-003` one pure gesture arbiter plus a thin Android pointer adapter.
 16. `SRC-001B` adapt the currently verified legacy extension path.
 17. `SRC-001C` local/native adapter and offline fixtures.

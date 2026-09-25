@@ -112,7 +112,7 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | MED-003 | Crop-aware geometry and animated-image policy. | Agent | Synthetic image tests + E4 | NOT_STARTED |
 | MED-004 | Virtualized continuous-document tile pipeline. | Agent | Tile/geometry tests + E4 | NOT_STARTED |
 | RDR-001 | Pure reader session state machine. | Agent | `ReaderSession.kt` + `ReaderSessionReducerTest`; deterministic command/effect matrix, restore invariants, retry/resource cleanup; not production-wired | CODE_COMPLETE |
-| RDR-002 | Chapter window and directional navigation policy. | Agent | Pure policy tests | NOT_STARTED |
+| RDR-002 | Chapter window and directional navigation policy. | Agent | `ReaderChapterWindowPolicy` + `ReaderChapterWindowPolicyTest`; explicit ordering, hard filters, forward-only read/filter skipping, downloaded-only boundaries, stable duplicate reduction, and current retention; not production-wired | CODE_COMPLETE |
 | RDR-003 | One gesture arbiter per viewport. | Agent | Pointer/instrumentation tests | NOT_STARTED |
 | RDR-004 | Paged reader replacement. | Agent | E3 + E4 matrix | NOT_STARTED |
 | RDR-005 | Continuous reader replacement. | Agent | E3 + E4 matrix | NOT_STARTED |
@@ -134,7 +134,7 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | 3  Foundations | NOT_STARTED | ARC-001 through ARC-003 |
 | 4  Media planning | NOT_STARTED | MED-001, MED-003 |
 | 5  Working memory | NOT_STARTED | MED-002, MED-004 |
-| 6  Reader core | IN_PROGRESS | RDR-001 is CODE_COMPLETE at E2; RDR-002 and RDR-003 remain open. |
+| 6  Reader core | IN_PROGRESS | RDR-001 and RDR-002 are CODE_COMPLETE at E2; RDR-003 remains open. |
 | 7  Paged reader | NOT_STARTED | RDR-004 |
 | 8  Continuous reader | NOT_STARTED | RDR-005 |
 | 9  Shell/navigation | NOT_STARTED | NAV-001 |
@@ -152,3 +152,4 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | 2026-09-24 | Added binding source/search/discovery contract, source-boundary ADR, documentation governance, and deleted superseded plans. | Documentation links, `git diff --check`, `spotlessCheck --offline` |
 | 2026-09-25 | Added native `LocalSourceGateway` over `UnifiedContentSource`, inline local resource bytes, offline contract tests, and independent of legacy source DTOs. | `:source-local:test`, `:app:compileDebugKotlin` |
 | 2026-09-25 | Completed the isolated pure reader session owner, command/effect reducer, restore validation, resource cleanup, and full reducer matrix. | `ReaderSession.kt`, `ReaderSessionReducerTest`, `:feature:reader:testDebugUnitTest` |
+| 2026-09-25 | Added the source-neutral chapter-window policy with explicit ordering, hard exclusions, directional skip rules, downloaded-only boundaries, and stable duplicate reduction. | `ReaderChapterWindowPolicy.kt`, `ReaderChapterWindowPolicyTest`, `:core:domain:testDebugUnitTest` |

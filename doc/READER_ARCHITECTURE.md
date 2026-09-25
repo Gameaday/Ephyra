@@ -79,7 +79,25 @@ Every effect is cancellable and has an owner. Duplicate delivery must be idempot
 
 ## Chapter navigation
 
-The canonical ordered chapter list is the navigation universe. `skipRead` may filter only forward candidates. Backward navigation must retain read chapters unless the user explicitly chooses a stricter filter. A missing canonical neighbor is different from a filtered neighbor.
+The canonical ordered chapter list is the navigation universe. Ordering is an explicit reader
+input (`SOURCE`, `NUMBER`, `UPLOAD_DATE`, or `TITLE`) with stable identity tie-breaking; the reader
+does not infer continuity from a series screen's incidental sort preference.
+
+Navigation rules:
+
+- hard exclusions such as excluded scanlators apply in both directions;
+- `skipRead` and `skipFiltered` are forward-only;
+- `downloadedOnly` applies in both directions, but an explicitly opened current chapter is always
+  retained;
+- duplicate reduction groups only finite non-negative chapter numbers, keeps the current candidate
+  for its number, then applies the preferred scanlator and stable input order;
+- unknown chapter numbers remain distinct;
+- previous is the immediate eligible canonical neighbor;
+- next is the first forward-eligible canonical neighbor;
+- missing or duplicate chapter identity is an explicit policy result, not an empty transition.
+
+The isolated implementation is `core:domain`'s `ReaderChapterWindowPolicy`. It is not wired into
+production until the replacement session/viewport owners consume it.
 
 ## Replacement boundary
 
