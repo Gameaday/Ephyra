@@ -23,7 +23,7 @@ git log -5 --oneline --decorate
 
 11. Confirm the working tree is clean. If not, identify whether changes belong to the current task.
 12. Select exactly one `NOT_STARTED` task whose prerequisites are `VERIFIED`.
-13. For `TST-001B`/`TST-001C`, use the `ReaderFixtureCatalog` as the source of fixture identity and do not add production code.
+13. For `TST-001B`/`TST-001C1`/`TST-001C2`/`TST-001C3`, use the `ReaderFixtureCatalog` as the source of fixture identity and do not add production code. Animated WebP/GIF binaries are immutable and hash-verified; do not regenerate them casually. JXL remains blocked until an Android runtime or independently reviewed immutable artifact is available.
 14. Create a branch named `program/<phase-number>-<task-id>-<short-slug>`.
 15. Add the task ID to the branch and commit subject.
 16. Do not combine unrelated cleanup into the first commit.

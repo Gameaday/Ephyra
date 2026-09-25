@@ -96,7 +96,9 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | CON-001 | Technical contract layer for reader, media, navigation, motion, source, fixtures, budgets, and dependencies. | Agent | Contract links + execution review | CODE_COMPLETE |
 | TST-001A | Executable reader/media fixture catalog and interaction case registry. | Agent | `ReaderFixtureCatalog` + `ReaderFixtureCatalogTest` | CODE_COMPLETE |
 | TST-001B | Deterministic static PNG/JPEG/corrupt/missing media artifacts plus crop and slicing acceptance tests. | Agent | `SyntheticMediaFixtures` + `SyntheticMediaFixturesTest` | CODE_COMPLETE |
-| TST-001C | Animated WebP/GIF and JXL artifacts using project decoder paths. | Agent | Codec fixture tests | NOT_STARTED |
+| TST-001C1 | Static WebP fixture through the Android bitmap encoder/decoder. | Agent | `SyntheticMediaFixtures.staticWebp` + `SyntheticMediaFixturesTest` | CODE_COMPLETE |
+| TST-001C2 | Immutable animated WebP/GIF fixtures through app policy and Android animated decoding. | Agent | `animated-two-frame-v1.webp/.gif` + hash/policy/decode tests; connected playback remains open | CODE_COMPLETE |
+| TST-001C3 | Static JXL artifact through the project Coil bridge decoder. | Agent | Blocked: host cannot execute Android-native jxl-coder; requires connected Android evidence or independently reviewed immutable artifact | BLOCKED |
 | TST-002 | Connected instrumentation project and device matrix. | Agent | CI workflow | NOT_STARTED |
 | TST-003 | Screenshot and macrobenchmark release gates. | Agent | CI artifacts | NOT_STARTED |
 | SEC-001 | Remove hardcoded signing secrets from build logic. | Agent | Secret scan | NOT_STARTED |

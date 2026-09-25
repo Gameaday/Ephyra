@@ -46,6 +46,18 @@ object SyntheticMediaFixtures {
         fill = Color.rgb(128, 64, 160),
     )
 
+    fun animatedGif(): EncodedMediaFixture = resourceEncoded(
+        id = "gif-animation-v1",
+        format = FixtureMediaFormat.GIF,
+        resource = "fixtures/reader/animated-two-frame-v1.gif",
+    )
+
+    fun animatedWebp(): EncodedMediaFixture = resourceEncoded(
+        id = "animated-static-compatible-v1",
+        format = FixtureMediaFormat.WEBP,
+        resource = "fixtures/reader/animated-two-frame-v1.webp",
+    )
+
     fun uniformBorderedJpeg(): EncodedMediaFixture = encoded(
         id = "uniform-bordered-page-v1",
         format = FixtureMediaFormat.JPEG,
@@ -120,6 +132,17 @@ object SyntheticMediaFixtures {
             )
         }
         return encode(id, format, bitmap)
+    }
+
+    private fun resourceEncoded(
+        id: String,
+        format: FixtureMediaFormat,
+        resource: String,
+    ): EncodedMediaFixture {
+        val bytes = requireNotNull(SyntheticMediaFixtures::class.java.classLoader?.getResourceAsStream(resource)) {
+            "Missing reader fixture resource: $resource"
+        }.use { it.readBytes() }
+        return EncodedMediaFixture(id, format, width = 32, height = 32, bytes = bytes)
     }
 
     @Suppress("DEPRECATION")
