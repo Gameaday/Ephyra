@@ -37,11 +37,12 @@
 ### R-004 — Replace global search execution (in progress)
 
 - Introduce `GlobalSearchCoordinator` as the target product seam over `NativeSourceRegistry` and `SearchSession`.
+- Introduce `TargetSearchMapper` as a pure, source-neutral product presentation boundary.
 - Move fan-out, deadlines, partial results, and cancellation out of `SearchViewModel` in a later product seam.
 - Move deduplication and ranking into pure domain code.
 - Remove search-time persistence.
 
-`SearchSession`, `NativeSourceRegistry`, and `GlobalSearchCoordinator` are implemented and tested. `GlobalSearchViewModel` remains on the legacy execution path until an explicit `SourceContentItem` to product-library/series presentation mapping is approved. R-008 is not authorized yet.
+`SearchSession`, `NativeSourceRegistry`, `GlobalSearchCoordinator`, and `TargetSearchMapper` are implemented and tested. `GlobalSearchViewModel` remains on the legacy execution path until an explicit `SourceContentItem` to product-library/series presentation mapping is approved. R-008 is not authorized yet.
 
 ### R-005 — Replace browse and updates surfaces
 
