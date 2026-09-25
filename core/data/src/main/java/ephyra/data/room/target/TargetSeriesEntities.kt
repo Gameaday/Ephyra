@@ -124,3 +124,48 @@ data class TargetChapterEntity(
     @ColumnInfo(name = "fetched_at")
     val fetchedAt: Long?,
 )
+
+/** User-owned reading state kept separate from source-owned chapter metadata. */
+@Entity(
+    tableName = "target_chapter_states",
+    foreignKeys = [
+        ForeignKey(
+            entity = TargetChapterEntity::class,
+            parentColumns = ["local_id"],
+            childColumns = ["chapter_id"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
+)
+data class TargetChapterStateEntity(
+    @PrimaryKey
+    @ColumnInfo(name = "chapter_id")
+    val chapterId: String,
+    @ColumnInfo(name = "is_read")
+    val isRead: Boolean,
+    val bookmarked: Boolean,
+    @ColumnInfo(name = "last_page_read")
+    val lastPageRead: Long,
+)
+
+/** Durable user history for a target chapter. */
+@Entity(
+    tableName = "target_history",
+    foreignKeys = [
+        ForeignKey(
+            entity = TargetChapterEntity::class,
+            parentColumns = ["local_id"],
+            childColumns = ["target_chapter_local_id"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
+)
+data class TargetHistoryEntity(
+    @PrimaryKey
+    @ColumnInfo(name = "target_chapter_local_id")
+    val targetChapterLocalId: String,
+    @ColumnInfo(name = "last_read_at")
+    val lastReadAt: Long?,
+    @ColumnInfo(name = "read_duration_ms")
+    val readDurationMs: Long,
+)

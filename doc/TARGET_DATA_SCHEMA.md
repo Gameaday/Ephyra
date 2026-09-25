@@ -3,7 +3,7 @@
 - **Status:** Proposed implementation contract
 - **Date:** 2026-09-25
 - **Scope:** Ephyra 2.0 target library and source persistence
-- **Current implementation:** Room v3 remains the compatibility schema. This document does not authorize a destructive or speculative Room migration.
+- **Current implementation:** Room v3 remains the compatibility schema. `TargetDatabase` and its entities exist as an isolated test/future-migration boundary; this document does not authorize a destructive or speculative Room migration.
 
 ## Decision summary
 
