@@ -17,10 +17,12 @@ import androidx.room.RoomDatabase
         TargetCategoryEntity::class,
         TargetSeriesCategoryEntity::class,
         TargetExcludedScanlatorEntity::class,
+        TargetSourceEntity::class,
     ],
     version = 1,
     exportSchema = false,
 )
 abstract class TargetDatabase : RoomDatabase() {
     abstract fun targetSeriesDao(): TargetSeriesDao
+    abstract fun targetSourceDao(): TargetSourceDao
 }

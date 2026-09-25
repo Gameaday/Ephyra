@@ -78,6 +78,37 @@ Rules:
 - A source row is not library membership.
 - A source row is never the canonical series identity.
 
+### `sources`
+
+One row per source definition available to the target application, separate from any series source reference.
+
+Required columns:
+
+```text
+source_id                TEXT PRIMARY KEY
+display_name             TEXT NOT NULL
+kind                     TEXT NOT NULL
+revision                 INTEGER NOT NULL
+capabilities_json        TEXT NOT NULL
+trust_level              TEXT NOT NULL
+compatibility_level      TEXT NOT NULL
+content_types_json       TEXT NOT NULL
+installation_state       TEXT NOT NULL
+enabled                  INTEGER NOT NULL
+first_seen_at            INTEGER NOT NULL
+last_changed_at          INTEGER NOT NULL
+```
+
+Rules:
+
+- Rows are created by explicit descriptor discovery, not by searching or browsing.
+- Legacy numeric source IDs are never promoted into lifecycle records without a real target descriptor.
+- Descriptor changes require a monotonic revision.
+- Discovery preserves install/enabled state.
+- Uninstall disables the source but preserves its definition/history until an explicit retention policy removes it.
+- Credentials, permission grants, tokens, and security-sensitive trust decisions are not stored here.
+- Backup restores series source references; it does not silently reinstall or re-trust sources.
+
 ### `library_entries`
 
 One row per user-owned library relationship.
