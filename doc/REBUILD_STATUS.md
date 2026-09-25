@@ -77,7 +77,7 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | SRC-002 | Progressive search session, deduplication, ranking, cancellation. | Agent | `SearchSession` contract tests | CODE_COMPLETE |
 | SRC-003 | Capability-gated discovery, health, quarantine, recommendations. | Agent | `SourceHealth` contract tests | CODE_COMPLETE |
 | SRC-004 | Explicit confidence-scored reversible migration. | Agent | Migration contract tests | CODE_COMPLETE |
-| SRC-005 | Isolated credentials, trust, install, permission lifecycle. | Agent | Security/source trust tests | NOT_STARTED |
+| SRC-005 | Isolated credentials, trust, install, permission lifecycle. | Agent | Source trust contract tests | CODE_COMPLETE |
 | CON-001 | Technical contract layer for reader, media, navigation, motion, source, fixtures, budgets, and dependencies. | Agent | Contract links + execution review | CODE_COMPLETE |
 | TST-001 | Deterministic page, crop, gesture, and transition fixtures. | Agent | Fixture manifest + test paths | NOT_STARTED |
 | TST-002 | Connected instrumentation project and device matrix. | Agent | CI workflow | NOT_STARTED |
