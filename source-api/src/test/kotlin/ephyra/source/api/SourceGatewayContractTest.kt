@@ -61,6 +61,16 @@ class SourceGatewayContractTest {
     }
 
     @Test
+    fun `resource accepts inline bytes for local sources`() {
+        val resource = SourceResource("", ResourceKind.IMAGE, inlineBytes = byteArrayOf(1, 2, 3))
+
+        assertTrue(resource.inlineBytes!!.contentEquals(byteArrayOf(1, 2, 3)))
+        assertThrowsIllegalArgument {
+            SourceResource("", ResourceKind.IMAGE)
+        }
+    }
+
+    @Test
     fun `gateway exposes only the four core operation boundaries`() = runBlocking {
         val gateway = FakeGateway()
         val item = SourceContentItem(SourceId("fake"), url = "/item", title = "Item")

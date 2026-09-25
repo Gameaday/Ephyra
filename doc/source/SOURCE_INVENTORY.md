@@ -70,7 +70,9 @@ These are not target architecture and must not receive new features:
 |---|---|---|---|
 | `source-api/ContentSource` | Generic content identity/details/units/resources contract | **target foundation** | Keep; evolve into capability-gated contract. |
 | `source-api/ContentCatalogueSource` | Catalogue/search extension of generic source | **adapter/target bridge** | Keep only where it serves native sources; do not make it universal. |
-| `source-api/ContentSourceAdapter` | Tachiyomi/Mihon `Source` → generic content adapter | **compatibility** | Isolate as `LegacyExtensionAdapter`; remove after bridge gate. |
+| `source-api/ContentSourceAdapter` | Tachiyomi/Mihon `Source` → generic content adapter | **compatibility** | Keep only until callers migrate; superseded by the one-way `LegacySourceGateway` boundary. |
+| `source-api/LegacySourceGateway` | Legacy `Source`/`CatalogueSource` → target `SourceGateway` | **temporary compatibility** | Isolate; delete after all product callers use native gateways. |
+| `source-local/LocalSourceGateway` | Canonical `UnifiedContentSource` → target `SourceGateway` | **target native adapter** | Keep; prove offline, SAF, archive, and resource-byte behavior. |
 | `source-api/SourceHierarchy` | Transport-oriented hierarchy | **compatibility concept** | Reuse transport descriptors, not interface inheritance as the product model. |
 | `domain/content/source/ContentSourceEngine` | Profile-based source engine contract | **compatibility contract** | Replace with capability-gated `SourceGateway`. |
 | `ContentSourceOrchestrator` | Modern profile engine selection and fallback | **target concept, incomplete implementation** | Retain orchestration role; remove profile-as-source-truth assumptions. |

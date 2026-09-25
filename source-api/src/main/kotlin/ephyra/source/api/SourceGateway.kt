@@ -1,3 +1,5 @@
+
+
 package ephyra.source.api
 
 import ephyra.domain.content.model.ContentType
@@ -110,9 +112,32 @@ data class SourceResource(
     val kind: ResourceKind,
     val mimeType: String? = null,
     val metadata: Map<String, String> = emptyMap(),
+    /** Inline payload for local/archive sources whose resource is not addressable by a URL. */
+    val inlineBytes: ByteArray? = null,
 ) {
     init {
-        require(url.isNotBlank()) { "Resource URL must not be blank" }
+        require(url.isNotBlank() || inlineBytes != null) {
+            "A source resource requires a URL or inline bytes"
+        }
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is SourceResource) return false
+        return url == other.url &&
+            kind == other.kind &&
+            mimeType == other.mimeType &&
+            metadata == other.metadata &&
+            (inlineBytes?.contentEquals(other.inlineBytes) ?: (other.inlineBytes == null))
+    }
+
+    override fun hashCode(): Int {
+        var result = url.hashCode()
+        result = 31 * result + kind.hashCode()
+        result = 31 * result + (mimeType?.hashCode() ?: 0)
+        result = 31 * result + metadata.hashCode()
+        result = 31 * result + (inlineBytes?.contentHashCode() ?: 0)
+        return result
     }
 }
 

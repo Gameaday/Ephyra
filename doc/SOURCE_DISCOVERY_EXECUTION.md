@@ -47,6 +47,8 @@ Adapt the currently working legacy extension path into the target `SourceGateway
 
 Implement and test a local/native source adapter as the first target-native path. This establishes offline behavior and proves the gateway independently of extensions.
 
+The native local adapter is implemented in `source-local` and does not use `ContentSourceAdapter`, `LocalSource`, `SManga`, or `SChapter`.
+
 ### SRC-001D — Controlled native HTTP adapter
 
 Implement and test one controlled native HTTP source. Do not add script or heuristic sources until they have their own test and security gates.
