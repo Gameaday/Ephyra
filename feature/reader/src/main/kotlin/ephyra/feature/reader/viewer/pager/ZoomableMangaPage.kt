@@ -43,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -60,6 +61,10 @@ import coil3.request.crossfade
 import coil3.size.Precision
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.ImageUtil
+import ephyra.domain.reader.viewport.PagerTransformPoint
+import ephyra.domain.reader.viewport.PagerZoomPolicy
+import ephyra.domain.reader.viewport.PagerZoomTransform
+import ephyra.domain.reader.viewport.ViewportSize
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.viewer.ReaderPageErrorView
 import ephyra.feature.reader.viewer.ReaderPageLoadingView
@@ -112,6 +117,13 @@ fun ZoomableMangaPage(
         var pendingSingleTap by remember { mutableStateOf<Job?>(null) }
         val transformMutex = remember { Mutex() }
 
+        // Zoom arithmetic lives in the domain so the focal-point invariant is unit tested. The
+        // composable only adapts gesture values to it and applies the result.
+        val zoomPolicy = remember { PagerZoomPolicy() }
+        val viewportSize = remember(containerWidth, containerHeight) {
+            ViewportSize(containerWidth, containerHeight)
+        }
+
         LaunchedEffect(scaleAnim.value) { onScaleChanged(scaleAnim.value) }
         LaunchedEffect(page) {
             pendingSingleTap?.cancel()
@@ -159,20 +171,26 @@ fun ZoomableMangaPage(
                         } else if (isDoubleTap) {
                             pendingSingleTap?.cancel()
                             pendingSingleTap = null
-                            val targetScale = 2.5f
-                            val targetOffset = Offset(
-                                x = (containerWidth / 2f - tapOffset.x) * (targetScale - 1f),
-                                y = (containerHeight / 2f - tapOffset.y) * (targetScale - 1f),
-                            )
-                            val maxPanX = (containerWidth * targetScale - containerWidth).coerceAtLeast(0f) / 2f
-                            val maxPanY = (containerHeight * targetScale - containerHeight).coerceAtLeast(0f) / 2f
-                            val clampedOffset = Offset(
-                                x = targetOffset.x.coerceIn(-maxPanX, maxPanX),
-                                y = targetOffset.y.coerceIn(-maxPanY, maxPanY),
+                            // Anchored on the tapped point, so double-tap zoom grows out from the
+                            // finger rather than from the page centre.
+                            val target = zoomPolicy.doubleTap(
+                                current = PagerZoomTransform(
+                                    scaleAnim.value,
+                                    offsetAnim.value.x,
+                                    offsetAnim.value.y,
+                                ),
+                                tapped = PagerTransformPoint(tapOffset.x, tapOffset.y),
+                                viewportSize = viewportSize,
+                                targetScale = 2.5f,
                             )
                             scope.launch {
-                                launch { scaleAnim.animateTo(targetScale, tween(300)) }
-                                launch { offsetAnim.animateTo(clampedOffset, tween(300)) }
+                                launch { scaleAnim.animateTo(target.scale, tween(300)) }
+                                launch {
+                                    offsetAnim.animateTo(
+                                        Offset(target.offsetX, target.offsetY),
+                                        tween(300),
+                                    )
+                                }
                             }
                             lastTapTime = 0L
                         } else {
@@ -190,19 +208,24 @@ fun ZoomableMangaPage(
                         pendingSingleTap = null
                         scope.launch {
                             transformMutex.withLock {
-                                val newScale = (scaleAnim.value * zoom).coerceIn(1f, 5f)
-                                val maxPanX = ((containerWidth * newScale) - containerWidth).coerceAtLeast(0f) / 2f
-                                val maxPanY = ((containerHeight * newScale) - containerHeight).coerceAtLeast(0f) / 2f
-                                val newOffset = if (newScale > ZoomPolicy.FIT) {
-                                    Offset(
-                                        x = (offsetAnim.value.x + pan.x).coerceIn(-maxPanX, maxPanX),
-                                        y = (offsetAnim.value.y + pan.y).coerceIn(-maxPanY, maxPanY),
-                                    )
-                                } else {
-                                    Offset.Zero
-                                }
-                                scaleAnim.snapTo(newScale)
-                                offsetAnim.snapTo(newOffset)
+                                // The centroid is the focal point. It was previously discarded, so
+                                // the content slid away from the fingers instead of staying under
+                                // them. `PagerZoomPolicy` holds the focal point fixed and clamps
+                                // pan to the scaled viewport; both are unit tested.
+                                val next = zoomPolicy.next(
+                                    current = PagerZoomTransform(
+                                        scaleAnim.value,
+                                        offsetAnim.value.x,
+                                        offsetAnim.value.y,
+                                    ),
+                                    zoom = zoom,
+                                    pan = pan.x,
+                                    panY = pan.y,
+                                    focal = PagerTransformPoint(centroid.x, centroid.y),
+                                    viewportSize = viewportSize,
+                                )
+                                scaleAnim.snapTo(next.scale)
+                                offsetAnim.snapTo(Offset(next.offsetX, next.offsetY))
                             }
                         }
                     },
@@ -285,8 +308,24 @@ fun ZoomableMangaPage(
                         ContentScale.Fit
                     }
 
+                    // The zoom transform is applied here and nowhere else. Before this, the pager
+                    // computed `scaleAnim`/`offsetAnim` on every pinch and never bound them to any
+                    // modifier, so a pinch changed internal state that nothing drew -- the direct
+                    // cause of the reported "paged pinch zoom does nothing".
+                    //
+                    // `clip = true` bounds the painted result to the page box, so a zoomed page is
+                    // cropped by the viewport instead of drawing over its pager neighbours.
+                    val zoomModifier = Modifier.graphicsLayer {
+                        scaleX = scaleAnim.value
+                        scaleY = scaleAnim.value
+                        translationX = offsetAnim.value.x
+                        translationY = offsetAnim.value.y
+                        transformOrigin = TransformOrigin.Center
+                        clip = true
+                    }
+
                     Box(
-                        modifier = contentBoxModifier,
+                        modifier = contentBoxModifier.then(zoomModifier),
                         contentAlignment = Alignment.Center,
                     ) {
                         if (merged != null && !merged.isRecycled && !cropBorders) {

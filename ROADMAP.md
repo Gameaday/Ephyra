@@ -120,7 +120,9 @@ Debt is removed by **tightening** a ceiling, never by raising it.
 22. `DEF-008` `BorderCropTransformation` corrected for transposed per-edge insets, single-outlier intolerance, and contentless cropping — `CODE_COMPLETE` at E2, with each defect proven by a failing test before the fix. Device acceptance still required.
 23. `MED-001` page source, identity/revision, metadata, content-rect, animation, and decode-plan contracts — `CODE_COMPLETE` at E2 with 43 tests. Pure and not production-wired; the adapters and viewport consumption come later.
 24. `MED-002` byte-budgeted working page store — `CODE_COMPLETE` at E2 with 22 tests. Replaces the unbounded `ReaderPage.cachedBytes` that grows with scroll distance. Pure and not production-wired; retiring the field itself waits on the viewport cutover.
-25. `MED-003` crop-aware render-path, animation, and tile-scale policy — `CODE_COMPLETE` at E2 with 54 tests. Fixes crop disabling webtoon slicing, separates JXL from an animation verdict, and adds scale-bucket hysteresis so zoom settles instead of re-decoding.
+25. `MED-003` crop-aware render-path, animation, and tile-scale policy — `CODE_COMPLETE` at E2 with 54 tests. Fixes crop disabling webtoon slicing, separates JXL from an animation verdict, and adds scale-bucket hysteresis so zoom settles instead of re-decoding.26. `DEF-001` paged pinch zoom fixed at the root: the transform was computed but never applied (`graphicsLayer` was imported and unused), and the gesture centroid was discarded — `CODE_COMPLETE` at E2 with 16 tests, **production-wired**. This is the first pass to change reader rendering behaviour; E4 device acceptance is now the only thing missing.
+
+26. `DEF-001` paged pinch zoom fixed at the root — the transform was computed but never applied (`graphicsLayer` was imported and unused), and the gesture centroid was discarded. `CODE_COMPLETE` at E2 with 16 tests, **production-wired**. First pass to change reader rendering behaviour; E4 acceptance is the only thing missing.
 **Program audit, 2026-09-25.** Re-read the plan, program, status, execution guide, and the
 media/cache contracts against the code, and reconciled the ledger with reality. Findings:
 
@@ -136,7 +138,7 @@ Do **not** resume ad hoc reader zoom, crop, transition, or source fallback patch
 
 The current application is not considered a complete native reader architecture. These user-reported defects remain open at the baseline:
 
-- paged reader zoom does not produce the intended result;
+- paged reader zoom was broken at the root and is now fixed in code (`DEF-001`, production-wired); it still needs E4 device acceptance.
 - webtoon zoom primarily widens content rather than providing coherent document zoom;
 - sliced webtoon content can overlap or destabilize during zoom/scroll;
 - Series-to-Library return motion remains visually unacceptable;
