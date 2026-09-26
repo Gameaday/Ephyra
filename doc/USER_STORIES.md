@@ -123,25 +123,30 @@ Neither failure is observable in a demo, which is exactly why both are asserted.
 
 ---
 
-## US-OPS-003 — The health gate measures the project, not the tooling
+## US-OPS-003 — Health gates cannot be satisfied by editing a number
 
-**As a** maintainer working in a branch or worktree,
-**I want** health ratchets to reflect my project's size,
-**so that** a green ratchet means something.
+**As a** maintainer,
+**I want** a failing build to mean a real regression,
+**so that** a green build is worth something.
 
-**Evidence:** `HealthRatchetTest` (6 ratchets), all green with **every ceiling unchanged**.
+**Evidence**
 
-**Why this is a story and not a chore.** The walk originally counted `.kilo/worktrees/<name>/`, which
-is a second complete copy of the repository. With one worktree present, `mainSourceFiles` read 2432
-against a 1217 ceiling and `projectDependencyEdges` read 332 against 166 — while the real tree
-measured exactly 1217 and exactly 166. The ratchet was reporting "an agent is working" as "this
-project is twice as big as its budget".
+| Claim | Test |
+|---|---|
+| No core, source, or presentation module depends on a feature module | `ModuleDependencyGraphTest` |
+| No feature module depends on another feature module | `ModuleDependencyGraphTest` |
+| No presentation module depends on a feature module | `ModuleDependencyGraphTest` |
+| `core:domain` depends on no other project | `ModuleDependencyGraphTest` |
+| No build script assigns a literal signing credential | `SigningSecretTest` |
+| No unacknowledged keystore is committed | `SigningSecretTest` |
+| No sensitive manifest permission lacks a justification and removal condition | `ManifestPrivilegeTest` |
 
-That failure mode is worse than a missing ratchet. A ratchet that fires on routine activity gets
-either disabled or re-baselined, and both destroy the signal. So the correct response to a red
-ratchet is to establish what actually changed, not to move the number. Four of the four apparent
-regressions here were measurement artifacts; the two that survived scrutiny were the published
-keystore and the undeclared permissions, both of which became stories above.
+Size metrics are deliberately **not** gates. A count is always satisfiable by editing the number, so
+it cannot detect anything about a product — and the 2.0 programme legitimately increases file and
+module counts while building the replacement alongside the shipping app, then decreases them at
+`CLEAN-001`. Test count especially: deleting a legacy test after its replacement exists is a required
+outcome, not a regression. If a limit matters, the gate is a structural rule like the layering tests
+above, which no edit to a baseline can satisfy.
 
 ---
 

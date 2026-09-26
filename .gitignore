@@ -39,9 +39,8 @@ _*.ps1
 Thumbs.db
 
 # Agent Manager worktrees. Each `.kilo/worktrees/<name>/` is a full second copy of the
-# repository, so leaving it untracked-by-accident is what put ~1465 duplicate sources in reach
-# of `git add .` — and is the same copy that made every health ratchet report the project as
-# roughly twice its size. HealthRatchetTest excludes this path for the same reason.
+# repository, so leaving it untracked-by-accident puts ~1465 duplicate sources in reach of
+# `git add .`. Size metrics in doc/BUILD_HEALTH.md must exclude this path for the same reason.
 .kilo/
 
 # Project IDX

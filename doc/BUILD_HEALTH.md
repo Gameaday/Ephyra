@@ -1,66 +1,65 @@
 # Build & Repository Health
 
-> **Status:** binding program health contract. Deterministic ratchets gate every change; timing budgets are measured on a schedule.
+> **Status:** binding program health contract. Structural gates and domain-purity gates run on every
+> change; repository size and timing are measured on a schedule.
 
-Build time and repository health are not distractions to be checked once. They are a standing
-workstream with committed baselines, enforced ceilings, and a gate at every phase. The purpose is
+Build time and repository health are a standing workstream, not a once-off check. The purpose is
 that the end state is **structurally** better than the start, not merely intentionally better.
 
-## Two tiers, because timing is noisy
+## The rule
 
-### Tier A — deterministic ratchets (gate every change)
+A check earns the right to fail a build only if it is **structural** — asserting a property of the
+code's shape, so it cannot be satisfied by editing a number — or if it detects a **regression the
+programme is not trying to cause**.
 
-These are exact, deterministic, and cheap, so they run in `:app:testDebugUnitTest` via
-`HealthRatchetTest`. Ceilings live in
-[`app/src/test/resources/health-baseline.json`](../app/src/test/resources/health-baseline.json).
+| Gate | Rule | Enforced by |
+|---|---|---|
+| Module layering | no core→feature, feature→feature, presentation→feature, or →`:app` edges | `ModuleDependencyGraphTest` |
+| Domain purity | no `android.*` imports in `core/domain` | `ArchitectureTest` + CI grep |
+| No unwired data shortcuts | bounded `ephyra.data.*` imports in feature modules | CI grep |
+| Signing credentials | no credential literal; no unacknowledged keystore | `SigningSecretTest` |
+| Manifest privileges | no sensitive permission without a written justification and removal condition | `ManifestPrivilegeTest` |
 
-| Metric | Baseline | Rule |
+**Repository size is not gated.** Module count, dependency-edge count, main source files, test source
+files, TODO/FIXME markers, and `@Deprecated` markers are measured on a schedule and recorded below.
+
+A count is a poor gate for three reasons: it is always satisfiable by editing the number, so it
+cannot detect anything about the product; it drifts for reasons unrelated to quality; and the 2.0
+programme legitimately increases file and module counts while it builds the replacement alongside the
+shipping app, then decreases them at `CLEAN-001`. Test count in particular must not be gated, because
+deleting legacy tests after their replacements exist is a required outcome, not a regression.
+
+**If a metric matters enough to gate on, write a structural rule.** That is what
+`ModuleDependencyGraphTest` does for layering, and why counting edges is redundant: the graph rules
+catch the actual defect and cannot be satisfied by changing a number.
+
+## Scheduled measurements
+
+Measured on a cadence, recorded here, never gating a change. Last measured 2026-09-26.
+
+| Metric | Value | Expected direction |
 |---|---:|---|
-| Module count | 29 | Ceiling |
-| Inter-project dependency edges | 166 | Ceiling |
-| Main source files | 1219 | Ceiling |
-| Test source files | 233 | Floor |
-| TODO/FIXME markers | 14 | Ceiling |
-| Deprecated markers | 39 | Ceiling |
+| Module count | 29 | may rise for a 2.0 quarantine module |
+| Inter-project dependency edges | 166 | falls as `CLEAN-001` removes legacy edges |
+| Main source files | 1219 | falls as legacy reader and routes are deleted |
+| Test source files | 233 | falls as legacy tests are replaced; not a quality signal |
+| TODO/FIXME markers | 14 | intentional debt belongs in `REBUILD_STATUS.md` |
+| `@Deprecated` markers | 39 | each is a bridge this programme intends to remove |
+| Release APK per ABI | 30.7 MiB | track release, not the ~126 MiB unminified debug build |
+| Clean build time | not yet measured | `OPS-002` owes this number |
 
-**Lowering a ceiling is the mechanism of improvement.** Debt is removed by tightening the
-baseline, never by raising it. Intentional debt is recorded in `doc/REBUILD_STATUS.md`.
+The file and module walk behind these measurements must exclude `build/`, `.git/`, and `.kilo/`.
+`.kilo/worktrees/<name>/` is a complete second copy of the repository; counting it reports the
+project as roughly doubled.
 
-The rule column is not decorative. Ceilings fail the build when exceeded; `Test source files` is
-a floor so that deleting a test demands a recorded replacement. `Main source files` was an exact
-match until it proved counterproductive: the reconstruction adds contract types by design, so
-every legitimate addition forced a manual baseline edit, which trains people to bump the number
-without reading it. It is now a ceiling, and the legacy-deletion target is judged by watching the
-ceiling's value fall over time rather than by the equality of any single run.
+## `E4-lab` device availability (re-verified 2026-09-25)
 
-**A ceiling raise must name its files.** `mainSourceFiles` went 1217 → 1219 on 2026-09-26 for
-exactly two added contract files (`Workflow.kt`, `StartupWorkflow.kt`, ARC-003). The same day an
-earlier edit raised it to 2432 on the strength of a failing test; that was wrong and was reverted,
-because 2432 was the `.kilo/worktrees/` copy of the repository being counted while the real tree
-measured exactly 1217. The distinction is not how large the number moved but whether a named file
-accounts for it. A measurement artifact is a bug in the gate, not a budget increase.
+**`E4-lab` evidence is reachable on this workstation.** A working emulator is attached and the
+application is installed on it.
 
-**The ratchets also had a blind spot worth recording.** Their file walk excluded `/build/` and
-`/.git/` but not `.kilo/`, so with any Agent Manager worktree present all four counting ratchets
-reported the project as roughly doubled. A ratchet that fires on routine activity gets disabled or
-re-baselined, and both destroy the signal, so this is recorded here as the reason the exclusion
-exists rather than left as an unexplained line in the test.
-
-### Recorded but not gated
-
-| Metric | Last measured | Why it is not a ratchet |
-|---|---:|---|
-| Release APK per ABI | 30.7 MiB | Requires a full release build — too slow and too machine-dependent to gate every change. Track release, not debug: debug is ~126 MiB because it is unminified and is not a shipped-payload signal. |
-
-This metric is listed here rather than in Tier A precisely so the table above stays a truthful
-description of what the build actually enforces. A metric that cannot be checked on every change
-is visibility, not a gate.
-
-## E4 device availability (re-verified 2026-09-25)
-
-**E4 evidence is reachable on this workstation.** A working emulator is attached and the
-application is installed on it. The previously recorded blocker was a tooling gap that has since
-been closed, and this section supersedes it.
+`E4-lab` is the in-tree capture channel. It is available but optional; the primary device channel is
+`E4-user`, validation on real user devices from a pushed build. See
+[`adr/0009`](adr/0009-evidence-channels-match-validation.md).
 
 Verified state:
 

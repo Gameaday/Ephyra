@@ -1,25 +1,55 @@
-# E4 Acceptance Runbook
+# Device Acceptance Runbook
 
-> **Status:** binding evidence procedure for `E4`-level claims.
-> **Authority:** [`ROADMAP.md`](../ROADMAP.md) → [`REBUILD_PROGRAM.md`](REBUILD_PROGRAM.md) → this document.
-> **Device state:** see [`BUILD_HEALTH.md`](BUILD_HEALTH.md) § "E4 device availability".
+> **Status:** binding evidence procedure for device-level claims.
+> **Authority:** [`ROADMAP.md`](../ROADMAP.md) → [`REBUILD_PROGRAM.md`](../REBUILD_PROGRAM.md) →
+> [`adr/0009`](adr/0009-evidence-channels-match-validation.md) → this document.
+> **Covers:** `E4-lab` (in-tree device capture) and `E4-user` (validation on real user devices from a
+> pushed build). Each ledger row declares which one it waits on.
 
-This runbook exists because five defect rows and two fixture tasks are `CODE_COMPLETE` at `E2`
-and owe device evidence, and because an informal screenshot is explicitly *not* evidence under
+This runbook exists because five defect rows and two fixture tasks are `CODE_COMPLETE` at `E2` and
+owe device evidence, and because an informal screenshot is explicitly *not* evidence under
 [ADR-0006](adr/0006-evidence-before-completion.md).
+
+## 0. Which channel
+
+This project validates by pushing a build and exercising it on **real user devices**. That is the
+primary device channel and it is `E4-user`. `E4-lab` — agent-driven capture against an attached
+emulator or lab device — is available and worthwhile for `E3` regression gates, but it is **not** a
+default obligation, and no row is permitted to stay blocked waiting for it.
+
+| Channel | Produced by | Use for |
+|---|---|---|
+| `E4-user` | the release/validation process on real devices | user-facing acceptance |
+| `E4-lab` | an in-tree capture run (§2–§5) | deterministic reproduction, claim archaeology |
+
+If a row needs a channel that is not available, it is `BLOCKED` naming the channel. It is never
+`pass`. See §6.
 
 ## 1. The rule this runbook enforces
 
-A claim reaches `E4` only when all five are present:
+A claim reaches its declared device level only when all five are present:
 
 1. the **exact user-reported reproduction**, not a proxy for it;
 2. the **command or gesture** that was performed, written out;
-3. **device identity** — model, API level, ABI, resolution, density, build SHA;
-4. the **artifact** — screenshot, screen recording, or benchmark report;
+3. **device identity** — for `E4-lab`, model, API level, ABI, resolution, density, build SHA; for
+   `E4-user`, the build SHA and the device class;
+4. the **artifact** — screenshot, screen recording, benchmark report, or validation record;
 5. a **verdict** — pass or fail — recorded against the defect row.
 
-Missing any one of these, the row stays `CODE_COMPLETE` at `E2` with E4 outstanding. A partial
-record is not a partial pass; it is no record.
+Missing any one of these, the row stays `CODE_COMPLETE` at `E2` with the device level outstanding. A
+partial record is not a partial pass; it is no record.
+
+**A record may only describe a run that occurred.** If the reproduction cannot be re-performed by
+someone else from the record, the record is void — regardless of whether the outcome was favourable.
+A record of an idle screen is not a record of a gesture. A record whose fixture ID does not exist in
+`ReaderFixtureCatalog` is not a record. This rule exists because it was broken once: five sidecars
+were written claiming `verdict: "pass"` over recordings of a static screen, and the only thing that
+caught it was rereading them.
+
+**A claim that could regress silently again is gated at `E3`, not at a device level.** Device
+validation confirms a behaviour; only a repeatable in-repository test guards it. Most reader claims
+therefore target an `E3` pointer-event or screenshot test, with device validation as confirmation of
+the specific defect.
 
 ## 2. Preconditions
 
@@ -44,8 +74,9 @@ git --no-pager rev-parse HEAD                   # record the SHA under test
 
 Use `& $adb` for the remainder of the run so the resolved path is not re-resolved by `PATH` lookup.
 
-If `adb devices` lists no device, **stop and record the blocker**. Do not substitute a JVM test
-and do not mark the row complete.
+If `adb devices` lists no device, **stop and record the blocker for `E4-lab`**. Do not substitute a
+JVM test, do not mark the row complete, and do not hold an `E4-user` row hostage to it: a row waiting
+on `E4-user` proceeds through §6 regardless of whether a local device is attached.
 
 ## 3. What a screenshot can and cannot prove
 
@@ -122,18 +153,57 @@ Update `doc/REBUILD_STATUS.md` **in the same commit as the evidence**:
   patch is worse than a reopened defect.
 - the phase gate row lists what is still outstanding.
 
-## 6. Known open items in this runbook
+## 6. `E4-user` validation record
 
-- `TST-001C3` (JXL fixture) was `BLOCKED` because the only available codec is Android-native. With
-  an emulator now attached, that runtime exists; the blocker reason is void. The fixture binary is
-  immutable — hash-verify it before use and do not regenerate it.
+The primary channel. A pushed build is installed on real devices and exercised; this records what
+was asked, what came back, and against which build. It is lighter than §4 on purpose: the artifact
+is the user's report, not a file this repository can manufacture.
+
+```text
+doc/evidence/
+  DEF-001-10-user-validation.md
+```
+
+```markdown
+# DEF-001 — user-device validation
+
+- Build: `<versionCode>` / `<versionName>`, commit `<sha>`
+- Channel: release-candidate (or: nightly)
+- Devices: <n> installs across <device classes, e.g. "Pixel 7a API 34, Galaxy S23 API 35">
+- Asked: <the exact question, phrased so a user can answer it — "pinch to zoom on a page and confirm
+  the content under your fingers stays under your fingers">
+- Result: pass | fail | partial
+- Observed: <what users reported, quoted>
+- Follow-up: <defect reopened with a quoted observation, or none>
+```
+
+Rules specific to this channel:
+
+- **The question is written before the run**, in user terms, not implementation terms. If a user
+  cannot be asked the question, the row is not ready for `E4-user`.
+- **Partial is a real result** and is recorded as such. "Two of three users saw the old behaviour"
+  is a `partial` that reopens the defect, not a pass.
+- **A fail does not carry a fix in the same commit.** Reopen the defect with the quoted observation
+  and fix it separately, matching §5.
+- `E4-user` covers the *shipped* surface. Unwired contract work is in no build and is therefore
+  owed no `E4-user`; that is the coherent form of the ADR-0008 exception.
+
+## 7. Known open items in this runbook
+
+- `TST-001C3` (JXL fixture) is `IN_PROGRESS`. The only available codec is Android-native, so the
+  fixture must be produced on a device runtime; the fixture binary is immutable — hash-verify it
+  before use and do not regenerate it.
 - The local device is API 37 while CI boots API 35. These are complementary, not interchangeable.
   Both must be recorded where a claim spans API levels.
-- The `doc/evidence/e4-01-home.png` file found in the working tree predates this runbook and has
-  no sidecar. It must be given one or removed; an untracked image is not evidence.
+- The reader composables are not yet hostable in an instrumentation test: `feature/reader` declares
+  no `androidTest` compose dependencies, and only one instrumentation test exists in the repository.
+  That blocks `E3` pointer-event tests, not `E4-user`. See §8.
 
-## 7. Related
+## 8. Related
 
 - [`REBUILD_STATUS.md`](REBUILD_STATUS.md) — evidence levels `E0`–`E5` and the task ledger.
-- [`adr/0006-evidence-before-completion.md`](adr/0006-evidence-before-completion.md) — the decision this enforces.
+- [`adr/0006-evidence-before-completion.md`](adr/0006-evidence-before-completion.md) — why a
+  screenshot is not sufficient evidence.
+- [`adr/0009-evidence-channels-match-validation.md`](adr/0009-evidence-channels-match-validation.md)
+  — why the ladder is defined by producing system, and why a missing channel is a blocker.
 - [`FIXTURE_MANIFEST.md`](FIXTURE_MANIFEST.md) — fixture identity; never invent a fixture ID.

@@ -121,8 +121,8 @@ Once per slice, before commit, run the wider gate:
 ./gradlew :app:compileDebugKotlin
 ```
 
-Run `:app:testDebugUnitTest` whenever the change touches `app/`, because it hosts
-`HealthRatchetTest` and the architecture rules.
+Run `:app:testDebugUnitTest` whenever the change touches `app/`, because it hosts the module
+layering, signing-secret and manifest-privilege gates.
 
 For resource, manifest, or navigation changes also run:
 
@@ -131,9 +131,9 @@ For resource, manifest, or navigation changes also run:
 ./gradlew :app:lintDebug
 ```
 
-Never raise a health ceiling in `app/src/test/resources/health-baseline.json` to make a gate pass.
-Ceilings move down when debt is removed. If a metric must legitimately rise, record the reason in
-[`REBUILD_STATUS.md`](REBUILD_STATUS.md) in the same commit.
+Repository size is not a gate. Do not edit a baseline number to make a build pass, and do not treat a
+size change as a problem to fix. If a size limit genuinely matters, express it as a structural rule
+that cannot be satisfied by editing a number.
 
 
 

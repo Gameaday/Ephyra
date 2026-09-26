@@ -88,13 +88,11 @@ No phase may begin implementation until the prior phase exit criteria are record
 
 ## Program health and build performance
 
-Build time and repository health are a standing workstream, not a one-time task. Deterministic
-ceilings are committed in `app/src/test/resources/health-baseline.json` and enforced by
-`HealthRatchetTest` on every change. Timing budgets and agent working rules live in
-[`doc/BUILD_HEALTH.md`](doc/BUILD_HEALTH.md). No phase may be recorded `VERIFIED` while a health
-budget is breached.
-
-Debt is removed by **tightening** a ceiling, never by raising it.
+Build time and repository health are a standing workstream, not a one-time task. Structural gates —
+module layering, domain purity, signing credentials, manifest privileges — run on every change.
+Repository size and timing are measured on a schedule and never gate a change; see
+[`doc/BUILD_HEALTH.md`](doc/BUILD_HEALTH.md) for the rule and the current numbers. No phase may be
+recorded `VERIFIED` while a health budget is breached.
 
 ## Immediate queue
 

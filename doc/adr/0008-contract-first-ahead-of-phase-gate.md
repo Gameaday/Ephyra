@@ -34,8 +34,10 @@ Either the rule is wrong or the ledger is wrong. Both cannot hold, and an agent 
 
 - The ledger's `NOT_STARTED` and `CODE_COMPLETE` cells can be trusted again: a task is either
   unwired pure work or integrated work, and the row says which.
-- The ratchet ceilings (`mainSourceFiles`, dependency edges) remain the backstop against contract
-  code accumulating without bound, since the exception permits only additive, unwired work.
+- Size metrics (module count, dependency edges, source file count) remain visible in
+  [`../BUILD_HEALTH.md`](../BUILD_HEALTH.md) as scheduled measurements, so the exception cannot grow
+  invisible. They do not gate, because a count cannot be a gate; the structural backstop is
+  `ModuleDependencyGraphTest`.
 - The exception is **narrow and self-limiting**. It does not authorise a second active
   architecture; `RDR-004`/`RDR-005` integration is still gated, and non-negotiable rule 7 (no two
   active reader/navigation architectures) continues to bind at integration time.
@@ -59,8 +61,8 @@ Either the rule is wrong or the ledger is wrong. Both cannot hold, and an agent 
 
 - The ledger row for every exception task states "not production-wired" explicitly.
 - The `Phase 0` gate cell is corrected from `NOT_STARTED` to its substantively accurate value.
-- `HealthRatchetTest` continues to pass, so the exception cannot silently grow into unbounded
-  addition.
+- Size metrics in [`../BUILD_HEALTH.md`](../BUILD_HEALTH.md) are recorded on a schedule, so the
+  exception cannot grow invisibly.
 - This ADR is listed in [`README.md`](README.md) and linked from `ROADMAP.md`.
 
 ## Supersedes / superseded by
