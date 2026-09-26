@@ -88,7 +88,7 @@ Measured on a cadence, recorded here, never gating a change. Last measured 2026-
 | Module count | 29 | may rise for a 2.0 quarantine module |
 | Inter-project dependency edges | 166 | falls as `CLEAN-001` removes legacy edges |
 | Main source files | 1219 | falls as legacy reader and routes are deleted |
-| Test source files | 233 | falls as legacy tests are replaced; not a quality signal |
+| Test source files | 251 | falls as legacy tests are replaced; not a quality signal |
 | TODO/FIXME markers | 14 | intentional debt belongs in `REBUILD_STATUS.md` |
 | `@Deprecated` markers | 39 | each is a bridge this programme intends to remove |
 | Release APK per ABI | 30.7 MiB | track release, not the ~126 MiB unminified debug build |
