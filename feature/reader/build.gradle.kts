@@ -22,6 +22,18 @@ android {
             // Required for Robolectric-based Compose UI tests (resource loading).
             isIncludeAndroidResources = true
         }
+
+        // Forward the fixture materialisation switch into the test JVM. Gradle does not pass
+        // arbitrary `-D` flags through to forked test processes, so without this
+        // `-Dfixture.materialise=true` silently leaves `FixtureMaterialiser` SKIPPED — a green
+        // run that wrote nothing, which is the same "looks like success, did nothing" shape as the
+        // missing `testInstrumentationRunner` recorded in `B-030`.
+        unitTests.all {
+            it.systemProperty(
+                "fixture.materialise",
+                System.getProperty("fixture.materialise") ?: "false",
+            )
+        }
     }
 }
 
