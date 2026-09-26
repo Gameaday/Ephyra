@@ -1,11 +1,11 @@
 {
   "_comment": "Repository health ratchets. Each metric states its own rule; see doc/BUILD_HEALTH.md for the authoritative table and HealthRatchetTest for enforcement. Ceilings (moduleCount, projectDependencyEdges, todoFixmeMarkers, deprecatedMarkers) fail the build when exceeded. mainSourceFiles and testSourceFiles use a ceiling and a floor respectively, and releaseApkMibPerAbi is recorded but NOT gated because measuring it needs a full release build. Timing budgets live in doc/BUILD_HEALTH.md and are measured on a schedule, not per-PR.",
-  "measuredAt": "2026-09-25",
-  "measuredFromTag": "390fb2d31",
+  "measuredAt": "2026-09-26",
+  "measuredFromTag": "kilo/security-platform-slice",
   "metrics": {
     "moduleCount": 29,
     "projectDependencyEdges": 166,
-    "mainSourceFiles": 1217,
+    "mainSourceFiles": 1219,
     "testSourceFiles": 233,
     "todoFixmeMarkers": 14,
     "deprecatedMarkers": 39,
@@ -14,7 +14,7 @@
   "notes": {
     "todoFixmeMarkers": "Ceiling only. Do not raise to accommodate new work; record intentional debt in doc/REBUILD_STATUS.md instead.",
     "releaseApkMibPerAbi": "Track release, not debug. Debug is ~126 MiB because it is unminified and is not a shipped-payload signal.",
-    "mainSourceFiles": "Ceiling. The reconstruction adds contract types by design, so an exact match forced a manual edit on every legitimate addition. Judge the legacy-deletion target by this value falling over time.",
+    "mainSourceFiles": "Ceiling. The reconstruction adds contract types by design, so an exact match forced a manual edit on every legitimate addition. Judge the legacy-deletion target by this value falling over time. Raised 1217 -> 1219 on 2026-09-26 for exactly two added contract files, Workflow.kt and StartupWorkflow.kt (ARC-003). This is deliberately NOT the same as the 2432 reading rejected the same day: that was the .kilo/worktrees copy being counted, and the real tree measured exactly 1217. Every raise here must be justified by a named file, not by a measurement artifact.",
     "deprecatedMarkers": "Ceiling only. Every @Deprecated is a bridge to a replacement path; removing the call site is the improvement."
   }
 }

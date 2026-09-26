@@ -106,7 +106,7 @@ Debt is removed by **tightening** a ceiling, never by raising it.
 6. `TST-001B` generate deterministic static media artifacts and bind them to crop, slice, and decoder tests — `CODE_COMPLETE`; see `SyntheticMediaFixtures` and `SyntheticMediaFixturesTest`.
 7. `TST-001C1` static WebP fixture — `CODE_COMPLETE` at E2 through Android's bitmap encoder and decoder.
 8. `TST-001C2` immutable animated WebP/GIF fixtures — `CODE_COMPLETE` at E2; app animation-policy detection and Android animated decoding pass.
-9. `TST-001C3` static JXL fixture — `BLOCKED` on the current host: the available encoder/decoder is Android-native and requires connected Android execution or an independently reviewed immutable artifact.
+9. `TST-001C3` static JXL fixture — `IN_PROGRESS`; the prior `BLOCKED` reason is void since a connected emulator exists, so the Android-native codec can be executed. The fixture binary is immutable: hash-verify before use, do not regenerate.
 10. `TST-002` connected instrumentation infrastructure — `CODE_COMPLETE` at compile level; the pinned API 35 emulator workflow must complete once before E3 evidence is recorded.
 11. `SRC-000A/B/C` verify and classify the source/search compatibility inventory — `CODE_COMPLETE` at E1; see `doc/source/` and `tools/source/source-inventory.json`.
 12. `SRC-001A` capability model and typed source results — `CODE_COMPLETE` at E2; source-api contract tests pass.

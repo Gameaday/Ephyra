@@ -18,7 +18,7 @@ These are exact, deterministic, and cheap, so they run in `:app:testDebugUnitTes
 |---|---:|---|
 | Module count | 29 | Ceiling |
 | Inter-project dependency edges | 166 | Ceiling |
-| Main source files | 1217 | Ceiling |
+| Main source files | 1219 | Ceiling |
 | Test source files | 233 | Floor |
 | TODO/FIXME markers | 14 | Ceiling |
 | Deprecated markers | 39 | Ceiling |
@@ -32,6 +32,19 @@ match until it proved counterproductive: the reconstruction adds contract types 
 every legitimate addition forced a manual baseline edit, which trains people to bump the number
 without reading it. It is now a ceiling, and the legacy-deletion target is judged by watching the
 ceiling's value fall over time rather than by the equality of any single run.
+
+**A ceiling raise must name its files.** `mainSourceFiles` went 1217 → 1219 on 2026-09-26 for
+exactly two added contract files (`Workflow.kt`, `StartupWorkflow.kt`, ARC-003). The same day an
+earlier edit raised it to 2432 on the strength of a failing test; that was wrong and was reverted,
+because 2432 was the `.kilo/worktrees/` copy of the repository being counted while the real tree
+measured exactly 1217. The distinction is not how large the number moved but whether a named file
+accounts for it. A measurement artifact is a bug in the gate, not a budget increase.
+
+**The ratchets also had a blind spot worth recording.** Their file walk excluded `/build/` and
+`/.git/` but not `.kilo/`, so with any Agent Manager worktree present all four counting ratchets
+reported the project as roughly doubled. A ratchet that fires on routine activity gets disabled or
+re-baselined, and both destroy the signal, so this is recorded here as the reason the exclusion
+exists rather than left as an unexplained line in the test.
 
 ### Recorded but not gated
 

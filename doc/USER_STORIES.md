@@ -85,6 +85,44 @@ deleting an edge rather than by editing a test.
 
 ---
 
+## US-ARC-003 — A long workflow survives being interrupted
+
+**As a** user whose phone kills the app while it is starting up,
+**I want** startup to resume rather than restart from nothing,
+**so that** a cold start never silently repeats work it already committed.
+
+**Evidence:** `WorkflowContractTest` (22 tests) over `WorkflowReducer`, `EffectLedger`, and the
+`StartupReducer` reference implementation.
+
+| Claim | Rule defended |
+|---|---|
+| Reduction returns effects rather than performing them | 2 — effects are explicit |
+| Reduction is deterministic across repeated identical inputs | 1 — state is values |
+| A settled step yields exactly one follow-up effect | 2 |
+| Completing the last step emits no further effect | 3 — bounded lifetime |
+| Non-terminal effects stay cancellable; the committing terminal effect does not | 2, 3 |
+| Cancelling twice, or cancelling unknown work, is a no-op | 2 |
+| A result for cancelled or never-started work cannot be applied | 8 — no ambiguous duplicate delivery |
+| An effect completes exactly once; duplicate identity is refused | 8 |
+| State survives a snapshot/restore round trip and resumes at the same step | 7 — recreation is in the contract |
+| A corrupt snapshot fails loudly instead of yielding default state | 7 |
+| A restored snapshot does not alias the original state | 7, 1 |
+| Out-of-order settlement is refused | 3, 8 |
+| A met precondition skips a step and is distinct from completion | 1 — one canonical representation |
+| Retry re-issues the failed step and increments its attempt count | 3 |
+
+**Known gap.** The pattern and its reference implementation are isolated and un-wired; `App.kt`
+still initialises inline, so no user benefits yet. The second half of `ARC-003` is migrating a real
+feature onto it. Ledger row B-019 records this.
+
+**Why these particular rules are tested.** Rules 7 and 8 are the ones prose tends to overstate.
+A `restore` that silently returns default state on corrupt input is indistinguishable from a fresh
+start, and it would re-run committed work — so it is required to throw. Likewise a `complete` that
+returns success for unknown work would let a late result resurrect state the user already left.
+Neither failure is observable in a demo, which is exactly why both are asserted.
+
+---
+
 ## US-OPS-003 — The health gate measures the project, not the tooling
 
 **As a** maintainer working in a branch or worktree,
