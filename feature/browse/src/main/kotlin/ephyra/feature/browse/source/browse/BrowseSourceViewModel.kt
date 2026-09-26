@@ -95,7 +95,10 @@ class BrowseSourceViewModel @Inject constructor(
         val navSourceId: Long? = savedStateHandle.get<Long>("sourceId")
             ?: savedStateHandle.get<String>("sourceId")?.toLongOrNull()
         val navListingQuery: String? = savedStateHandle.get<String>("query")
-        if (navSourceId != null && navSourceId > 0L) {
+        // `>= 0`, not `> 0`: `LocalSource.ID` is 0L, so a strict comparison here silently skipped
+        // restoring a Local source browse after process death, and `init` below was then never
+        // called. The unset sentinel is negative, so zero is a legitimate id.
+        if (navSourceId != null && navSourceId >= 0L) {
             init(navSourceId, navListingQuery)
         }
     }
@@ -154,7 +157,11 @@ class BrowseSourceViewModel @Inject constructor(
     val mangaPagerFlowFlow = state.map { it.sourceId to it.listing }
         .distinctUntilChanged()
         .map { (sourceId, listing) ->
-            if (sourceId <= 0L) return@map emptyFlow()
+            // Negative means "not set yet" — `State.sourceId` defaults to -1L. It must not be
+            // `<= 0`: `LocalSource.ID` is 0L, and rejecting zero here returned `emptyFlow()` for
+            // the Local source, which under `SharingStarted.Lazily` is terminal and left the
+            // browse screen spinning forever (DEF-010).
+            if (sourceId < 0L) return@map emptyFlow()
             Pager(PagingConfig(pageSize = 25, prefetchDistance = 15)) {
                 getRemoteManga(sourceId, listing.query ?: "", listing.filters)
             }.flow.map { pagingData ->

@@ -20,13 +20,16 @@ import ephyra.domain.track.interactor.AddTracks
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.model.FilterList
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -167,10 +170,61 @@ class BrowseSourceViewModelTest {
         viewModel.init(100L, GetRemoteManga.QUERY_POPULAR)
         advanceUntilIdle()
 
-        viewModel.mangaPagerFlowFlow.test {
-            val flow = awaitItem()
-            org.junit.jupiter.api.Assertions.assertNotNull(flow)
+        // Asserting `assertNotNull` on the outer StateFlow could not fail: that flow is seeded
+        // with `emptyFlow()` and always emits, so it passed even when the inner flow was the
+        // terminal empty one. The behaviour that matters is whether a paging source is ever
+        // requested, so that is what is asserted.
+        collectPager(viewModel)
+        coVerify(atLeast = 1) { getRemoteManga(100L, GetRemoteManga.QUERY_POPULAR, any()) }
+    }
+
+    @Test
+    fun `a source id of zero is browsable and not mistaken for unset`() = runTest {
+        // `LocalSource.ID` is 0L — the only legitimate source id that is not positive. A guard
+        // written as `sourceId <= 0` conflates it with the "not set" sentinel and yields a
+        // perpetual spinner on the Local source browse screen (DEF-010).
+        every { catalogueSource.id } returns 0L
+        every { sourceManager.getOrStub(0L) } returns catalogueSource
+        every { getIncognitoState.await(0L) } returns false
+
+        val viewModel = createViewModel()
+        viewModel.init(0L, GetRemoteManga.QUERY_POPULAR)
+        advanceUntilIdle()
+
+        collectPager(viewModel)
+        coVerify(atLeast = 1) { getRemoteManga(0L, GetRemoteManga.QUERY_POPULAR, any()) }
+    }
+
+    @Test
+    fun `a negative source id is still treated as unset`() = runTest {
+        // The counterpart to the test above: the sentinel must still be rejected, or an
+        // uninitialised screen would start requesting paging sources for nothing.
+        every { sourceManager.getOrStub(-1L) } returns catalogueSource
+        every { getIncognitoState.await(-1L) } returns false
+
+        val viewModel = createViewModel()
+        viewModel.init(-1L, GetRemoteManga.QUERY_POPULAR)
+        advanceUntilIdle()
+
+        collectPager(viewModel)
+        coVerify(exactly = 0) { getRemoteManga(any(), any(), any()) }
+    }
+
+    /**
+     * Subscribes to [BrowseSourceViewModel.mangaPagerFlowFlow] and to the paging flow it yields.
+     *
+     * Both subscriptions are required. The outer flow is `SharingStarted.Lazily`, so nothing
+     * starts until something collects it; and the inner flow is what actually drives the
+     * `Pager`, whose `PagingSource` factory — and therefore [GetRemoteManga] — only runs once
+     * the paging data is collected.
+     */
+    private suspend fun TestScope.collectPager(viewModel: BrowseSourceViewModel) {
+        val job = launch {
+            viewModel.mangaPagerFlowFlow.collect { flow -> flow.collect { } }
         }
+        advanceUntilIdle()
+        job.cancel()
+        advanceUntilIdle()
     }
 
     @Test
