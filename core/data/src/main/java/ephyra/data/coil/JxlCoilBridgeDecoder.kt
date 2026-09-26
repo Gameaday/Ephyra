@@ -123,11 +123,30 @@ private fun Coil3Options.toPreferredConfig(): PreferredColorConfig {
     }
 }
 
-private fun ByteArray.isJxl(): Boolean {
+/**
+ * Sniffs the JXL container signature.
+ *
+ * Two forms are accepted, per the JXL specification:
+ *  - a bare codestream, which begins `FF 0A`;
+ *  - an ISOBMFF container, whose first twelve bytes are
+ *    `00 00 00 0C 6A 58 4C 20 0D 0A 87 0A` — that is, a 12-byte box header whose type is
+ *    `jXL ` followed by the JXL brand.
+ *
+ * Made `internal` rather than private so it can be covered at `E2`. This is the whole of the
+ * decoder's own logic: everything past this point belongs to jxl-coder, and without a decode the
+ * signature check is the only behaviour that can be asserted without a device. A decoder that
+ * silently returns null for every input is indistinguishable from a correct one at the UI level,
+ * which is exactly why the negative cases are asserted here rather than only the positive one.
+ */
+internal fun ByteArray.isJxl(): Boolean {
     if (size < 2) return false
     if (this[0] == 0xFF.toByte() && this[1] == 0x0A.toByte()) return true
     if (size < 12) return false
-    return this[4] == 0x4A.toByte() && this[5] == 0x58.toByte() &&
+    // The box type is `jXL ` — a lowercase `j` (0x6A) followed by `XL` and a space. This read
+    // `0x4A` (uppercase `J`) and so never matched a real container; the container form silently
+    // fell through to "not JXL" and returned null. Caught by `JxlSignatureTest`, which asserts the
+    // container positively rather than only testing that non-images are rejected.
+    return this[4] == 0x6A.toByte() && this[5] == 0x58.toByte() &&
         this[6] == 0x4C.toByte() && this[7] == 0x20.toByte() &&
         this[10] == 0x87.toByte() && this[11] == 0x0A.toByte() &&
         Buffer().write(this).rangeEquals(
