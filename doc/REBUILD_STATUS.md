@@ -87,6 +87,30 @@ Three rules follow, and they exist because their absence caused a fabricated evi
 
 Legacy defects are not fixed by changing the current implementation unless the task explicitly says so. They are acceptance inputs for the replacement.
 
+### Evidence obligations transfer to the replacement
+
+`DEF-001`, `DEF-002`, `DEF-003`, `DEF-005` and `DEF-008` are fixed in code inside the **legacy** viewer
+monoliths (`ZoomableMangaPage`, `ComposeWebtoonReader`, `ComposePagerReader`, and the shared-element
+motion policy). `CLEAN-001` deletes those files.
+
+**The acceptance obligations therefore transfer with the behaviour, not with the file.** When
+`RDR-004`/`RDR-005` replace the paged and continuous readers, each defect's required evidence
+applies to the **replacement** viewport:
+
+| Defect | Must be re-proven against | At cutover |
+|---|---|---|
+| `DEF-001` | the paged replacement's zoom transform | `RDR-004` |
+| `DEF-002` | the continuous replacement's isotropic document zoom | `RDR-005` |
+| `DEF-003` | the continuous replacement's one-transform/one-clip surface | `RDR-005` |
+| `DEF-005` | the single-graph shell's shared-element motion | `NAV-001` |
+| `DEF-008` | the media render path's crop policy | `MED-001` consumer |
+
+**This is recorded so deletion cannot quietly discharge it.** Deleting the legacy fix without
+transferring the evidence would leave a user-reported defect permanently unproven while every ledger
+row reads `CODE_COMPLETE` — the exact shape of the failure this programme has already produced once,
+where an absence of evidence was mistaken for evidence. A row may not be closed by the deletion of
+the code that implemented it.
+
 
 ## Task ledger
 
@@ -143,7 +167,7 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | RDR-001 | Pure reader session state machine. | Agent | `ReaderSession.kt` + `ReaderSessionReducerTest`; deterministic command/effect matrix, restore invariants, retry/resource cleanup; not production-wired | CODE_COMPLETE |
 | RDR-002 | Chapter window and directional navigation policy. | Agent | `ReaderChapterWindowPolicy` + `ReaderChapterWindowPolicyTest`; explicit ordering, hard filters, forward-only read/filter skipping, downloaded-only boundaries, stable duplicate reduction, and current retention; not production-wired | CODE_COMPLETE |
 | RDR-003 | One gesture arbiter per viewport. | Agent | `ReaderGestureArbiter` (9) + `ReaderTapSequencer` (6) + new `ReaderGesturePointerAdapterTest` (5, real pointer events through the adapter at `E2`). **The adapter had zero coverage and the new tests found a real defect:** it swallowed `DelegateSingleScroll`, so the arbiter's only *negative* decision was invisible to its consumer — a viewport could not learn it had declined. Fixed, and falsification-verified (the test fails against the pre-fix code). Still no production call site, so the row remains `IN_PROGRESS`; per-viewport integration belongs to `RDR-004`/`RDR-005`. | IN_PROGRESS |
-| RDR-004 | Paged reader replacement. | Agent | E3 + E4 matrix | NOT_STARTED |
+| RDR-004 | Paged reader replacement. | Agent | `PagerViewport` + `PagerViewportTest` (12, E2): the viewport now has an explicit state owner for transient transform, which `READER_ARCHITECTURE.md` requires and which did not exist. Covers the `DEF-001` invariant directly (a zoom must change the *rendered* transform), focal anchoring on double-tap, fit re-centring, pan clamping, viewport-resize re-clamping, and commit-vs-cancel. Falsification-verified: reintroducing the `DEF-001` pattern (a transform computed but not applied, and a discarded focal point) makes 2 of the 12 go red. **Not production-wired and no Compose adapter yet** — the legacy detector stays in place until the replacement viewport owns the gesture, per non-negotiable rule 7. | CODE_COMPLETE at E2, not production-wired |
 | RDR-005 | Continuous reader replacement. | Agent | E3 + E4 matrix | NOT_STARTED |
 | NAV-001 | Single main NavHost and adaptive shell. | Agent | Navigation contract | NOT_STARTED |
 | NAV-002 | Series shared-element/fade/predictive-back policy. | Agent | `MotionPolicy` 17 tests CODE_COMPLETE at E2 and wired into the NavHost; the NAV-001 single-graph work and E4 predictive-back evidence remain | IN_PROGRESS |
