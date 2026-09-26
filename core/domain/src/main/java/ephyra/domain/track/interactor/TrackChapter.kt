@@ -2,6 +2,7 @@ package ephyra.domain.track.interactor
 
 import ephyra.core.common.util.lang.withNonCancellableContext
 import ephyra.core.common.util.system.logcat
+import ephyra.domain.chapter.service.ChapterNumber
 import ephyra.domain.track.service.TrackerManager
 import ephyra.domain.track.service.TrackingJobScheduler
 import ephyra.domain.track.store.TrackingQueueStore
@@ -25,7 +26,9 @@ class TrackChapter(
 
             val trackersToUpdate = tracks.mapNotNull { track ->
                 val service = trackerManager.get(track.trackerId)
-                if (service == null || !service.isLoggedIn() || chapterNumber <= track.lastChapterRead) {
+                if (service == null || !service.isLoggedIn() ||
+                    ChapterNumber.hasReached(chapterNumber, track.lastChapterRead)
+                ) {
                     null
                 } else {
                     track to service

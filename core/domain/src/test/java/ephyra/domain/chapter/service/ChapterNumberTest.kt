@@ -91,4 +91,37 @@ class ChapterNumberTest {
             "epsilon must stay well under the half-step that separates a special from a chapter",
         )
     }
+
+    @Test
+    fun `reached survives a Float round trip on either side`() {
+        // The tracking failure. A restored chapter sits at 12.300000190734863 while a fresh
+        // lastRead is 12.3; the restored value is *greater*, so a plain `<=` says not reached
+        // and the chapter silently never gets marked read.
+        val restored = 12.3.toFloat().toDouble()
+        assertFalse(restored <= 12.3, "premise: plain ordering misses the restored value")
+        assertTrue(ChapterNumber.hasReached(restored, 12.3))
+        assertTrue(ChapterNumber.hasReached(12.3, restored))
+    }
+
+    @Test
+    fun `reached is false for a chapter genuinely beyond the marker`() {
+        assertFalse(ChapterNumber.hasReached(13.0, 12.0))
+        assertFalse(ChapterNumber.hasReached(12.5, 12.0), "a special past the marker is not reached")
+        assertTrue(ChapterNumber.hasReached(12.0, 12.0), "the marker chapter itself is reached")
+        assertTrue(ChapterNumber.hasReached(11.0, 12.0))
+    }
+
+    @Test
+    fun `reached refuses unrecognised numbers on either side`() {
+        assertFalse(ChapterNumber.hasReached(-1.0, 12.0))
+        assertFalse(ChapterNumber.hasReached(12.0, -1.0))
+        assertFalse(ChapterNumber.hasReached(-1.0, -1.0))
+    }
+
+    @Test
+    fun `reached never advances by a real numbering step`() {
+        // Bias is toward counting, but only within the tolerance.
+        assertFalse(ChapterNumber.hasReached(12.5, 12.0))
+        assertFalse(ChapterNumber.hasReached(13.0, 12.0))
+    }
 }

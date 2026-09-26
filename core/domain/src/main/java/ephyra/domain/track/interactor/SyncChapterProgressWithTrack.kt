@@ -4,6 +4,7 @@ import ephyra.core.common.util.system.logcat
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
 import ephyra.domain.chapter.interactor.UpdateChapter
 import ephyra.domain.chapter.model.toChapterUpdate
+import ephyra.domain.chapter.service.ChapterNumber
 import ephyra.domain.track.model.Track
 import ephyra.domain.track.service.EnhancedTracker
 import ephyra.domain.track.service.Tracker
@@ -30,7 +31,10 @@ class SyncChapterProgressWithTrack(
             .filter { it.isRecognizedNumber }
 
         val chapterUpdates = sortedChapters
-            .filter { chapter -> chapter.chapterNumber <= remoteTrack.lastChapterRead && !chapter.read }
+            .filter { chapter ->
+                ChapterNumber.hasReached(chapter.chapterNumber, remoteTrack.lastChapterRead) &&
+                    !chapter.read
+            }
             .map { it.copy(read = true).toChapterUpdate() }
 
         // only take into account continuous reading

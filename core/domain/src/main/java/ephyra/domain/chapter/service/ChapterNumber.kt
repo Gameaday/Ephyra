@@ -58,4 +58,22 @@ object ChapterNumber {
      * unrecognised.
      */
     fun isRecognized(chapterNumber: Double): Boolean = chapterNumber >= 0f
+
+    /**
+     * True when [chapterNumber] is at or before [lastRead] — "the user has reached this chapter".
+     *
+     * Progress propagation compares by *ordering*, not identity, so it fails differently from
+     * [sameChapterNumber] and needs its own rule. After a restore, a chapter stored as
+     * `12.300000190734863` compared against a fresh `12.3` fails `chapterNumber <= lastRead`
+     * outright, so the chapter is never marked read and the tracker never advances.
+     *
+     * The comparison is biased by [EPSILON] toward *counting* the chapter: a boundary case
+     * resolves to "reached" rather than "not reached". That is the safe direction for read
+     * state, because the alternative is silently losing a chapter the user did read. It cannot
+     * over-advance by a real amount either, since [EPSILON] is far below any numbering step.
+     */
+    fun hasReached(chapterNumber: Double, lastRead: Double): Boolean {
+        if (!isRecognized(chapterNumber) || !isRecognized(lastRead)) return false
+        return chapterNumber <= lastRead + EPSILON
+    }
 }
