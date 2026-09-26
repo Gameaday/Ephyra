@@ -45,6 +45,7 @@ import ephyra.domain.manga.model.Manga
 import ephyra.domain.manga.service.CoverCache
 import ephyra.domain.reader.model.ReaderOrientation
 import ephyra.domain.reader.model.ReadingMode
+import ephyra.domain.reader.policy.ChapterCompletionPolicy
 import ephyra.domain.reader.policy.DefaultReadingModeResolver
 import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.domain.source.interactor.GetIncognitoState
@@ -788,16 +789,23 @@ class ReaderViewModel @Inject constructor(
 
             readerChapter.chapter = readerChapter.chapter.copy(lastPageRead = pageIndex.toLong())
 
-            // A page is the effective last page when it literally is the last page in the
-            // chapter's page list, OR when all subsequent pages are hidden (absorbed stubs
-            // or blocked credit pages). This covers both the merged-bitmap stub case and the
-            // plain-visible-page case where trailing blocked pages are skipped by the reader.
-            val isEffectivelyLastPage = pageIndex == chapterPages?.lastIndex ||
-                chapterPages?.drop(pageIndex + 1)?.all { it.isHidden } == true
-            // Completion is dispatched only when the effective last page is reached while
-            // moving FORWARD. Backward navigation into (or within) a chapter — e.g. swiping
-            // back across the top/left boundary from page 0 — never mutates read state.
-            if (isEffectivelyLastPage && navigationVector == NavigationVector.FORWARD) {
+            // RDR-006: the completion rule lives in `ChapterCompletionPolicy` and is shared with
+            // `checkChapterCompletion`. It previously existed twice in this file, inline, and the
+            // two copies could disagree. The policy also refuses to complete an out-of-range index
+            // or an unresolved chapter, which the inline form did not.
+            if (
+                ChapterCompletionPolicy.isChapterComplete(
+                    pageIndex = pageIndex,
+                    pageCount = chapterPages?.size ?: 0,
+                    visiblePagesAfter = chapterPages?.let { pages ->
+                        ChapterCompletionPolicy.countVisiblePagesAfter(pageIndex, pages.size) { i ->
+                            pages[i].isHidden
+                        }
+                    } ?: 0,
+                    chapterResolved = readerChapter.state is ReaderChapter.State.Loaded,
+                    movingForward = navigationVector == NavigationVector.FORWARD,
+                )
+            ) {
                 updateChapterProgressOnComplete(readerChapter)
             }
 
@@ -857,10 +865,20 @@ class ReaderViewModel @Inject constructor(
         val chapterPages = readerChapter.pages ?: return null
         val pageIndex = page.index
 
-        val isEffectivelyLastPage = pageIndex == chapterPages.lastIndex ||
-            chapterPages.drop(pageIndex + 1).all { it.isHidden }
-
-        if (isEffectivelyLastPage && navigationVector == NavigationVector.FORWARD) {
+        // RDR-006: the same `ChapterCompletionPolicy` used on the page-progress path, so the two
+        // call sites cannot drift. Both previously carried their own inline copy of this rule.
+        if (
+            ChapterCompletionPolicy.isChapterComplete(
+                pageIndex = pageIndex,
+                pageCount = chapterPages.size,
+                visiblePagesAfter = ChapterCompletionPolicy.countVisiblePagesAfter(
+                    pageIndex,
+                    chapterPages.size,
+                ) { i -> chapterPages[i].isHidden },
+                chapterResolved = readerChapter.state is ReaderChapter.State.Loaded,
+                movingForward = navigationVector == NavigationVector.FORWARD,
+            )
+        ) {
             return viewModelScope.launchNonCancellable {
                 val prevRead = readerChapter.chapter.read
                 val prevLastPageRead = readerChapter.chapter.lastPageRead
