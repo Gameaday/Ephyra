@@ -5,12 +5,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.calculateCentroid
 import androidx.compose.foundation.gestures.calculateCentroidSize
-import androidx.compose.foundation.gestures.calculatePan
-import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -44,17 +39,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.PointerInputScope
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastAny
-import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
@@ -62,7 +51,7 @@ import coil3.request.crossfade
 import coil3.size.Precision
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.ImageUtil
-import ephyra.domain.reader.viewport.PagerTransformPoint
+import ephyra.domain.reader.gesture.ReaderGestureEffect
 import ephyra.domain.reader.viewport.PagerViewport
 import ephyra.domain.reader.viewport.PagerViewportState
 import ephyra.domain.reader.viewport.PagerZoomTransform
@@ -77,12 +66,10 @@ import ephyra.feature.reader.viewer.zoom.ZoomPolicy
 import ephyra.presentation.core.data.coil.cropBorders
 import eu.kanade.tachiyomi.source.model.Page
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withTimeout
 import java.io.ByteArrayInputStream
 import coil3.size.Size as CoilSize
 
@@ -114,26 +101,22 @@ fun ZoomableMangaPage(
         val containerSize = remember(containerWidth, containerHeight) { Size(containerWidth, containerHeight) }
         val scaleAnim = remember { Animatable(1f) }
         val offsetAnim = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
-        var lastTapTime by remember { mutableStateOf(0L) }
-        var lastTapOffset by remember { mutableStateOf(Offset.Zero) }
-        var pendingSingleTap by remember { mutableStateOf<Job?>(null) }
         val transformMutex = remember { Mutex() }
 
         val viewportSize = remember(containerWidth, containerHeight) {
             ViewportSize(containerWidth, containerHeight)
         }
 
-        // RDR-004 stage 1: the viewport state is now the single owner of the rendered transform.
+        // RDR-004: the viewport state is the single owner of the rendered transform.
         //
         // The two `Animatable`s remain only as the *timing* mechanism for double-tap, which is
         // animated, and are mirrored into `viewportState` on every frame. They are deliberately not
         // the source of truth: reading the transform from them is what let the two disagree, which is
-        // the `DEF-001` defect class. Pinch remains instant (matching the previous `snapTo`), and
-        // double-tap remains a 300ms tween, so no user-visible timing changes here.
+        // the `DEF-001` defect class. Pinch remains instant and double-tap remains a 300ms tween.
         //
-        // The gesture source is unchanged in this stage. `detectReaderGestures` replaces
-        // `detectPagerGestures` in stage 2, because that swap changes tap-deferral and long-press
-        // timing and is not a behaviour-preserving change.
+        // The gesture source is `detectReaderGestures`; the legacy `detectPagerGestures` and
+        // `shouldClaimPagerTransform` are deleted, so there is exactly one pointer path in this
+        // reader.
         var viewportState by remember { mutableStateOf(PagerViewportState(viewportSize = viewportSize)) }
 
         // Mirror the animation driver into the owning state. Without this the two would disagree,
@@ -153,10 +136,10 @@ fun ZoomableMangaPage(
             onScaleChanged(viewportState.transform.scale)
         }
 
-        // A page change invalidates the transform: a new page always starts at fit.
+        // A page change invalidates the transform: a new page always starts at fit. The adapter
+        // cancels any pending tap on its own when the document revision changes, so there is no
+        // tap bookkeeping left here to reset.
         LaunchedEffect(page) {
-            pendingSingleTap?.cancel()
-            pendingSingleTap = null
             scaleAnim.snapTo(1f)
             offsetAnim.snapTo(Offset.Zero)
             viewportState = PagerViewportState(viewportSize = viewportSize)
@@ -171,114 +154,154 @@ fun ZoomableMangaPage(
             }
         }
 
+        // RDR-004 stage 2: the gesture arbiter now owns the pointer stream.
+        //
+        // `detectPagerGestures` is deleted rather than deprecated. Two live gesture paths in one
+        // reader is exactly what ROADMAP.md non-negotiable rule 7 forbids.
+        //
+        // The mapping is behaviour-preserving. The legacy detector already deferred at-fit single
+        // taps by `delay(350L)` and already guarded long-press with
+        // `!transformStarted && !wasMultiTouch`, so the swap changes neither timing. What does
+        // change, as improvements rather than regressions: a transform now requires a second
+        // pointer, and `DelegateSingleScroll` reaches this consumer so the viewport learns it
+        // declined.
+        //
+        // Tap *routing* stays here rather than moving into the arbiter because it is product
+        // policy, not gesture recognition: a navigation-zone tap turns the page, a menu-zone tap
+        // toggles the menu, a double-tap at fit zooms, and a double-tap while zoomed returns to fit.
+        // Applies a transform effect. Split out so the `when` below stays a readable mapping from
+        // effect to behaviour, and so `TransformStarted` and `TransformUpdated` — which differ only
+        // in how the arbiter tracks them — share one implementation rather than a grouped branch
+        // that Kotlin cannot smart-cast. The two adapters are named apart because Kotlin treats
+        // local functions differing only in parameter type as recursive.
+        //
+        // Declared before its callers: a local function cannot be forward-referenced, so the
+        // overloads that delegate here must appear after it.
+        fun applyTransform(
+            zoomChange: Float,
+            panX: Float,
+            panY: Float,
+            focalX: Float,
+            focalY: Float,
+        ) {
+            scope.launch {
+                transformMutex.withLock {
+                    val action = PagerViewport.onTransform(
+                        state = viewportState,
+                        zoomChange = zoomChange,
+                        panX = panX,
+                        panY = panY,
+                        focalX = focalX,
+                        focalY = focalY,
+                    )
+                    if (action.changed) {
+                        viewportState = viewportState.copy(
+                            transform = action.transform,
+                            transforming = true,
+                        )
+                        // Pinch is instant, matching the legacy detector's `snapTo`.
+                        scaleAnim.snapTo(action.transform.scale)
+                        offsetAnim.snapTo(
+                            Offset(
+                                action.transform.offsetX,
+                                action.transform.offsetY,
+                            ),
+                        )
+                    }
+                }
+            }
+        }
+
+        fun applyStartedTransform(effect: ReaderGestureEffect.TransformStarted) =
+            applyTransform(effect.zoomChange, effect.panX, effect.panY, effect.centroidX, effect.centroidY)
+
+        fun applyUpdatedTransform(effect: ReaderGestureEffect.TransformUpdated) =
+            applyTransform(effect.zoomChange, effect.panX, effect.panY, effect.centroidX, effect.centroidY)
+
+        // Handles one arbiter effect. Declared before `gestureModifier` so the mapping from effect
+        // to product behaviour is readable in one place, and so every effect is handled
+        // exhaustively — a new effect added to the arbiter will not compile until it is considered
+        // here rather than being silently ignored.
+        fun handlePagerEffect(effect: ReaderGestureEffect) {
+            when (effect) {
+                is ReaderGestureEffect.TransformStarted -> applyStartedTransform(effect)
+                is ReaderGestureEffect.TransformUpdated -> applyUpdatedTransform(effect)
+
+                ReaderGestureEffect.LongPress -> onLongTap()
+
+                is ReaderGestureEffect.DoubleTap -> {
+                    if (viewportState.transform.scale > ZoomPolicy.ZOOM_GATE) {
+                        // Zoomed: return to fit, animated as before.
+                        scope.launch {
+                            launch { scaleAnim.animateTo(1f, tween(300)) }
+                            launch { offsetAnim.animateTo(Offset.Zero, tween(300)) }
+                        }
+                    } else {
+                        // At fit: zoom in from the tapped point, animated as before.
+                        val target = PagerViewport.onDoubleTap(
+                            state = viewportState,
+                            tappedX = effect.x,
+                            tappedY = effect.y,
+                            targetScale = 2.5f,
+                        )
+                        scope.launch {
+                            launch { scaleAnim.animateTo(target.transform.scale, tween(300)) }
+                            launch {
+                                offsetAnim.animateTo(
+                                    Offset(
+                                        target.transform.offsetX,
+                                        target.transform.offsetY,
+                                    ),
+                                    tween(300),
+                                )
+                            }
+                        }
+                    }
+                }
+
+                is ReaderGestureEffect.SingleTap -> {
+                    val tapOffset = Offset(effect.x, effect.y)
+                    val isNav = isNavigationTap?.invoke(tapOffset, containerSize) ?: false
+                    // While zoomed only a navigation-zone tap acts; at fit every tap routes, which
+                    // is how the menu is toggled. The arbiter has already delivered this after the
+                    // double-tap window, so no extra delay is applied here.
+                    val routes = viewportState.transform.scale <= ZoomPolicy.ZOOM_GATE || isNav
+                    if (routes) onTap(tapOffset, containerSize)
+                }
+
+                // The arbiter declined and the pager owns this gesture. Deliberately not consumed,
+                // which is precisely what lets the pager scroll.
+                ReaderGestureEffect.DelegateSingleScroll -> Unit
+
+                // A commit keeps the transform already applied; a cancellation restores the
+                // committed one. Both are the state owner's business, so nothing is needed here.
+                is ReaderGestureEffect.TransformCommitted,
+                is ReaderGestureEffect.GestureCancelled,
+                ReaderGestureEffect.None,
+                is ReaderGestureEffect.TapCandidate,
+                -> Unit
+            }
+        }
+
+        // The arbiter's slop must match the Android touch slop the legacy detector used. It is read
+        // from `LocalViewConfiguration` rather than hard-coded so a density change cannot silently
+        // alter gesture ownership. It has to be read here, in composition, because the `config`
+        // lambda below is not itself composable.
+        val touchSlop = LocalViewConfiguration.current.touchSlop
+
         val gestureModifier = Modifier
             .fillMaxSize()
-            .pointerInput(page, containerSize) {
-                detectPagerGestures(
-                    canPan = { ZoomPolicy.locksInteraction(viewportState.transform.scale) },
-                    onLongPress = {
-                        pendingSingleTap?.cancel()
-                        pendingSingleTap = null
-                        onLongTap()
-                    },
-                    onTap = { tapOffset ->
-                        val currentTime = System.currentTimeMillis()
-                        val isDoubleTap = currentTime - lastTapTime < 350L &&
-                            (tapOffset - lastTapOffset).getDistance() < viewConfiguration.touchSlop * 3
-                        val isNav = isNavigationTap?.invoke(tapOffset, containerSize) ?: false
-
-                        // Reads the owning state, not the animation driver. Reading `scaleAnim`
-                        // here would reintroduce two sources of truth for the same value, which is
-                        // how the pager and its zoom could previously disagree.
-                        if (viewportState.transform.scale > ZoomPolicy.ZOOM_GATE) {
-                            if (isDoubleTap) {
-                                pendingSingleTap?.cancel()
-                                pendingSingleTap = null
-                                scope.launch {
-                                    launch { scaleAnim.animateTo(1f, tween(300)) }
-                                    launch { offsetAnim.animateTo(Offset.Zero, tween(300)) }
-                                }
-                                lastTapTime = 0L
-                            } else {
-                                lastTapTime = currentTime
-                                lastTapOffset = tapOffset
-                                if (isNav) {
-                                    pendingSingleTap?.cancel()
-                                    pendingSingleTap = scope.launch {
-                                        delay(350L)
-                                        onTap(tapOffset, containerSize)
-                                    }
-                                }
-                            }
-                        } else if (isDoubleTap) {
-                            pendingSingleTap?.cancel()
-                            pendingSingleTap = null
-                            // Anchored on the tapped point, so double-tap zoom grows out from the
-                            // finger rather than from the page centre. The target comes from the
-                            // owning state, and the `Animatable`s only drive the 300ms tween.
-                            val target = PagerViewport.onDoubleTap(
-                                state = viewportState,
-                                tappedX = tapOffset.x,
-                                tappedY = tapOffset.y,
-                                targetScale = 2.5f,
-                            )
-                            scope.launch {
-                                launch { scaleAnim.animateTo(target.transform.scale, tween(300)) }
-                                launch {
-                                    offsetAnim.animateTo(
-                                        Offset(
-                                            target.transform.offsetX,
-                                            target.transform.offsetY,
-                                        ),
-                                        tween(300),
-                                    )
-                                }
-                            }
-                            lastTapTime = 0L
-                        } else {
-                            lastTapTime = currentTime
-                            lastTapOffset = tapOffset
-                            pendingSingleTap?.cancel()
-                            pendingSingleTap = scope.launch {
-                                delay(350L)
-                                onTap(tapOffset, containerSize)
-                            }
-                        }
-                    },
-                    onTransform = { centroid, pan, zoom ->
-                        pendingSingleTap?.cancel()
-                        pendingSingleTap = null
-                        scope.launch {
-                            transformMutex.withLock {
-                                // The centroid is the focal point. It was previously discarded, so
-                                // the content slid away from the fingers instead of staying under
-                                // them. `PagerViewport.onTransform` holds the focal point fixed and
-                                // clamps pan to the scaled viewport; both are unit tested.
-                                val action = PagerViewport.onTransform(
-                                    state = viewportState,
-                                    zoomChange = zoom,
-                                    panX = pan.x,
-                                    panY = pan.y,
-                                    focalX = centroid.x,
-                                    focalY = centroid.y,
-                                )
-                                if (action.changed) {
-                                    // The viewport state is the owner; the `Animatable`s are told
-                                    // what to animate toward and mirror back, never read as truth.
-                                    viewportState = viewportState.copy(
-                                        transform = action.transform,
-                                        transforming = true,
-                                    )
-                                    scaleAnim.snapTo(action.transform.scale)
-                                    offsetAnim.snapTo(
-                                        Offset(action.transform.offsetX, action.transform.offsetY),
-                                    )
-                                }
-                            }
-                        }
-                    },
-                )
-            }
+            .pagerGestureStream(
+                documentRevision = { page.toString() },
+                config = {
+                    pagerGestureConfig(
+                        state = viewportState,
+                        touchSlop = touchSlop,
+                        zoomLockThreshold = ZoomPolicy.INTERACTION_LOCK,
+                    )
+                },
+                onEffect = { effect -> handlePagerEffect(effect) },
+            )
 
         Box(modifier = gestureModifier, contentAlignment = Alignment.Center) {
             when (val currentStatus = status) {
@@ -411,79 +434,6 @@ fun ZoomableMangaPage(
                             CircularProgressIndicator(modifier = Modifier.size(48.dp))
                         }
                     }
-                }
-            }
-        }
-    }
-}
-
-internal fun shouldClaimPagerTransform(
-    pressedCount: Int,
-    accumulatedPan: Offset,
-    canPan: Boolean,
-    touchSlop: Float,
-): Boolean {
-    return pressedCount >= 2 || (canPan && accumulatedPan.getDistance() >= touchSlop)
-}
-
-private suspend fun PointerInputScope.detectPagerGestures(
-    canPan: () -> Boolean,
-    onLongPress: () -> Unit,
-    onTap: (Offset) -> Unit,
-    onTransform: (centroid: Offset, pan: Offset, zoom: Float) -> Unit,
-) {
-    awaitEachGesture {
-        val down = awaitFirstDown(pass = PointerEventPass.Initial, requireUnconsumed = false)
-        val downPosition = down.position
-        val touchSlop = viewConfiguration.touchSlop
-        val longPressAt = System.currentTimeMillis() + viewConfiguration.longPressTimeoutMillis
-        var accumulatedPan = Offset.Zero
-        var transformStarted = false
-        var wasMultiTouch = false
-
-        while (true) {
-            val event = try {
-                val remaining = (longPressAt - System.currentTimeMillis()).coerceAtLeast(1L)
-                withTimeout(remaining) { awaitPointerEvent(PointerEventPass.Initial) }
-            } catch (_: TimeoutCancellationException) {
-                if (!transformStarted && !wasMultiTouch) onLongPress()
-                break
-            }
-            val pressedCount = event.changes.count { it.pressed }
-            if (pressedCount == 0) {
-                val up = event.changes.firstOrNull { it.id == down.id }
-                if (!transformStarted && !wasMultiTouch && up != null &&
-                    (up.position - downPosition).getDistance() < touchSlop
-                ) {
-                    onTap(up.position)
-                }
-                break
-            }
-            // A parent may consume the first one-pointer movement before the second pointer
-            // arrives. Do not end the gesture: the second pointer must still be observed and
-            // allowed to claim the pinch before the pager/list consumes the transform.
-            if (pressedCount < 2 && event.changes.fastAny { it.isConsumed }) {
-                // Keep observing, but do not start single-pointer panning from a consumed event.
-                continue
-            }
-
-            val isMultiTouch = pressedCount >= 2
-            if (isMultiTouch) wasMultiTouch = true
-            val zoomChange = event.calculateZoom()
-            val panChange = event.calculatePan()
-
-            if (!transformStarted) {
-                accumulatedPan += panChange
-                if (shouldClaimPagerTransform(pressedCount, accumulatedPan, canPan(), touchSlop)) {
-                    transformStarted = true
-                }
-            }
-
-            if (transformStarted && (zoomChange != 1f || (canPan() && panChange != Offset.Zero) || isMultiTouch)) {
-                val centroid = event.calculateCentroid(useCurrent = false)
-                onTransform(centroid, if (canPan()) panChange else Offset.Zero, zoomChange)
-                event.changes.fastForEach {
-                    if (it.position != it.previousPosition) it.consume()
                 }
             }
         }
