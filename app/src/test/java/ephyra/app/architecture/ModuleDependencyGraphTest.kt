@@ -184,6 +184,51 @@ class ModuleDependencyGraphTest {
                 file.readLines().count { it.trimStart().startsWith("import ephyra.data.") }
             }
 
+    /**
+     * A declared feature-to-feature edge must be backed by a real import.
+     *
+     * This is the same rule as the `core:data` one, applied to the edges `B-020` declared as
+     * debt. Twelve of the twenty-four declared edges had **no** import in main, test or
+     * androidTest; they existed only in build files, so they read as coupling the code did not
+     * have. They are removed.
+     *
+     * The twelve that remain are genuinely used -- `feature/updates` importing
+     * `ephyra.feature.manga` seven times, `feature/more` importing `feature:settings` six --
+     * and stay declared. A feature reaching another's internals is the real problem, and
+     * `feature modules do not depend on each other` is what forces a new one to be routed
+     * through a public navigation contract. This rule only stops the *unused* case: a declared
+     * edge with nothing behind it is invisible coupling in the same way an unused
+     * `core:data` edge was.
+     */
+    @Test
+    fun `a declared feature-to-feature edge is backed by a real import`() {
+        val offenders = mutableListOf<String>()
+        for (edge in DECLARED_FEATURE_EDGES) {
+            val from = edge.from.removePrefix(":").replace(':', '/')
+            val to = edge.to.removePrefix(":").replace(':', '/')
+            val targetPackage = "ephyra.${to.split('/').joinToString(".")}."
+            val uses = TrackedFiles.list(repositoryRoot())
+                .filter { it.isFile && it.extension == "kt" }
+                // `TrackedFiles.list` roots each path at the repository, so `File.path` is
+                // absolute. Comparing that against a relative prefix matched nothing and
+                // reported all twelve genuinely used edges as unused -- which the compiler had
+                // already disproved. Make the path relative before comparing.
+                .map { it.relativeTo(repositoryRoot()).invariantSeparatorsPath }
+                .filter { it.startsWith("$from/src/") }
+                .map { File(repositoryRoot(), it) }
+                .sumOf { file -> file.readLines().count { it.trimStart().startsWith("import $targetPackage") } }
+            if (uses == 0) {
+                offenders += "${edge.from} -> ${edge.to} is declared but nothing imports $targetPackage"
+            }
+        }
+        assertTrue(
+            offenders.isEmpty(),
+            "Declared feature-to-feature edges with no import behind them:\n  " +
+                offenders.joinToString("\n  ") +
+                "\nEither remove the edge and its declaration, or make the dependency real.",
+        )
+    }
+
     @Test
     fun `presentation modules do not depend on feature modules`() {
         val offenders = allEdges()
@@ -375,29 +420,17 @@ class ModuleDependencyGraphTest {
         val DECLARED_FEATURE_EDGES =
             setOf(
                 Edge(":feature:browse", ":feature:manga"),
-                Edge(":feature:browse", ":feature:category"),
                 Edge(":feature:browse", ":feature:migration"),
-                Edge(":feature:history", ":feature:category"),
                 Edge(":feature:history", ":feature:manga"),
                 Edge(":feature:history", ":feature:migration"),
                 Edge(":feature:history", ":feature:reader"),
                 Edge(":feature:manga", ":feature:reader"),
-                Edge(":feature:manga", ":feature:webview"),
-                Edge(":feature:manga", ":feature:category"),
-                Edge(":feature:manga", ":feature:settings"),
                 Edge(":feature:manga", ":feature:migration"),
-                Edge(":feature:more", ":feature:category"),
-                Edge(":feature:more", ":feature:download"),
                 Edge(":feature:more", ":feature:settings"),
-                Edge(":feature:more", ":feature:stats"),
                 Edge(":feature:more", ":feature:manga"),
-                Edge(":feature:reader", ":feature:webview"),
                 Edge(":feature:settings", ":feature:category"),
-                Edge(":feature:upcoming", ":feature:manga"),
-                Edge(":feature:updates", ":feature:download"),
                 Edge(":feature:updates", ":feature:manga"),
                 Edge(":feature:updates", ":feature:reader"),
-                Edge(":feature:updates", ":feature:upcoming"),
             )
 
         /**

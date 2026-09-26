@@ -44,7 +44,6 @@ dependencies {
     implementation(projects.sourceApi)
     implementation(projects.sourceLocal)
     implementation(projects.presentationCore)
-    implementation(projects.feature.webview)
 
     implementation(libs.logcat)
 

@@ -16,7 +16,6 @@ dependencies {
     implementation(projects.core.domain)
     implementation(projects.sourceApi)
     implementation(projects.presentationCore)
-    implementation(projects.feature.manga)
 
     // Jetpack Compose
     implementation(compose.material3.core)

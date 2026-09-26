@@ -16,10 +16,7 @@ dependencies {
     implementation(projects.sourceApi)
     implementation(projects.presentationCore)
 
-    implementation(projects.feature.category)
-    implementation(projects.feature.download)
     implementation(projects.feature.settings)
-    implementation(projects.feature.stats)
     implementation(projects.feature.manga)
     implementation(libs.bundles.markdown)
 

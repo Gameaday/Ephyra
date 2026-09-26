@@ -24,9 +24,6 @@ dependencies {
     implementation(projects.sourceLocal)
     implementation(projects.presentationCore)
     implementation(projects.feature.reader)
-    implementation(projects.feature.webview)
-    implementation(projects.feature.category)
-    implementation(projects.feature.settings)
     implementation(projects.feature.migration)
 
     implementation(libs.hilt.android)

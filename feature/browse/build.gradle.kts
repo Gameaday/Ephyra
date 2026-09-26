@@ -22,7 +22,6 @@ dependencies {
     implementation(projects.sourceApi)
     implementation(projects.presentationCore)
     implementation(projects.feature.manga)
-    implementation(projects.feature.category)
     implementation(projects.feature.migration)
 
     implementation(libs.hilt.android)

@@ -16,7 +16,6 @@ dependencies {
     implementation(projects.sourceApi)
     implementation(projects.presentationCore)
 
-    implementation(projects.feature.category)
     implementation(projects.feature.manga)
     implementation(projects.feature.migration)
     implementation(projects.feature.reader)

@@ -16,10 +16,8 @@ dependencies {
     implementation(projects.sourceApi)
     implementation(projects.presentationCore)
 
-    implementation(projects.feature.download)
     implementation(projects.feature.manga)
     implementation(projects.feature.reader)
-    implementation(projects.feature.upcoming)
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
