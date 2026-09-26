@@ -6,6 +6,7 @@ import ephyra.domain.chapter.model.copyFromSChapter
 import ephyra.domain.chapter.model.toChapterUpdate
 import ephyra.domain.chapter.model.toSChapter
 import ephyra.domain.chapter.repository.ChapterRepository
+import ephyra.domain.chapter.service.ChapterNumber
 import ephyra.domain.chapter.service.ChapterRecognition
 import ephyra.domain.chapter.service.ChapterSanitizer
 import ephyra.domain.download.service.DownloadManager
@@ -181,7 +182,10 @@ class SyncChaptersWithSource(
         var updatedToAdd = newChapters.map { toAddItem ->
             var chapter = toAddItem.copy(dateFetch = nowMillis + itemCount--)
 
-            if (chapter.chapterNumber in readChapterNumbers && markDuplicateAsRead) {
+            val isDuplicateOfRead = readChapterNumbers.any { read ->
+                ChapterNumber.sameChapterNumber(chapter.chapterNumber, read)
+            }
+            if (isDuplicateOfRead && markDuplicateAsRead) {
                 changedOrDuplicateReadUrls.add(chapter.url)
                 chapter = chapter.copy(read = true)
             }

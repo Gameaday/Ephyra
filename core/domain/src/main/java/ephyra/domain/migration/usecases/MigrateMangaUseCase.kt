@@ -8,6 +8,7 @@ import ephyra.domain.chapter.interactor.GetChaptersByMangaId
 import ephyra.domain.chapter.interactor.SyncChaptersWithSource
 import ephyra.domain.chapter.interactor.UpdateChapter
 import ephyra.domain.chapter.model.toChapterUpdate
+import ephyra.domain.chapter.service.ChapterNumber
 import ephyra.domain.content.source.ContentSourceOrchestrator
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.manga.interactor.UpdateManga
@@ -114,7 +115,10 @@ class MigrateMangaUseCase(
                     var updatedChapter = mangaChapter
                     if (updatedChapter.isRecognizedNumber) {
                         val prevChapter = prevMangaChapters
-                            .find { it.isRecognizedNumber && it.chapterNumber == updatedChapter.chapterNumber }
+                            .find {
+                                it.isRecognizedNumber &&
+                                    ChapterNumber.sameChapterNumber(it.chapterNumber, updatedChapter.chapterNumber)
+                            }
 
                         if (prevChapter != null) {
                             updatedChapter = updatedChapter.copy(
