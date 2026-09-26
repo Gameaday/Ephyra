@@ -8,6 +8,15 @@ plugins {
 android {
     namespace = "ephyra.feature.reader"
 
+    defaultConfig {
+        // Required for the `E3` channel. Without an explicit runner, instrumentation fails with
+        // `INSTRUMENTATION_FAILED: .../androidx.test.runner.AndroidJUnitRunner` and — the part that
+        // matters — Gradle reports the task **SUCCESSFUL** with `tests="0"`. A green build that ran
+        // nothing is worse than a red one, because it reads as evidence. Declared here to match
+        // `:app`, which has always set it.
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
     testOptions {
         unitTests {
             // Required for Robolectric-based Compose UI tests (resource loading).
