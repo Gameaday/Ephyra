@@ -5,6 +5,7 @@ import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.lang.withNonCancellableContext
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.chapter.interactor.GetChaptersByMangaId
+import ephyra.domain.chapter.service.ChapterNumber
 import ephyra.domain.content.model.ContentType
 import ephyra.domain.history.repository.HistoryRepository
 import ephyra.domain.manga.model.Manga
@@ -60,7 +61,7 @@ class AddTracks(
                     .lastOrNull()
                     ?.chapterNumber ?: -1.0
 
-                if (latestLocalReadChapterNumber > currentTrack.lastChapterRead) {
+                if (!ChapterNumber.hasReached(currentTrack.lastChapterRead, latestLocalReadChapterNumber)) {
                     currentTrack = currentTrack.copy(
                         lastChapterRead = latestLocalReadChapterNumber,
                     )
