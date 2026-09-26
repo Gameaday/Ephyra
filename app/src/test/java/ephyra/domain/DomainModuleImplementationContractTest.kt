@@ -54,7 +54,8 @@ class DomainModuleImplementationContractTest {
     @Test
     fun `CategoryRepositoryImpl implements CategoryRepository`() {
         assertTrue(CategoryRepository::class.java.isAssignableFrom(CategoryRepositoryImpl::class.java)) {
-            "ephyra.data.category.CategoryRepositoryImpl must implement ephyra.domain.category.repository.CategoryRepository"
+            "ephyra.data.category.CategoryRepositoryImpl must implement " +
+                "ephyra.domain.category.repository.CategoryRepository"
         }
     }
 
@@ -78,7 +79,8 @@ class DomainModuleImplementationContractTest {
     @Test
     fun `ChapterRepositoryImpl implements ChapterRepository`() {
         assertTrue(ChapterRepository::class.java.isAssignableFrom(ChapterRepositoryImpl::class.java)) {
-            "ephyra.data.chapter.ChapterRepositoryImpl must implement ephyra.domain.chapter.repository.ChapterRepository"
+            "ephyra.data.chapter.ChapterRepositoryImpl must implement " +
+                "ephyra.domain.chapter.repository.ChapterRepository"
         }
     }
 
@@ -122,7 +124,8 @@ class DomainModuleImplementationContractTest {
     @Test
     fun `HistoryRepositoryImpl implements HistoryRepository`() {
         assertTrue(HistoryRepository::class.java.isAssignableFrom(HistoryRepositoryImpl::class.java)) {
-            "ephyra.data.history.HistoryRepositoryImpl must implement ephyra.domain.history.repository.HistoryRepository"
+            "ephyra.data.history.HistoryRepositoryImpl must implement " +
+                "ephyra.domain.history.repository.HistoryRepository"
         }
     }
 
@@ -134,7 +137,8 @@ class DomainModuleImplementationContractTest {
     @Test
     fun `UpdatesRepositoryImpl implements UpdatesRepository`() {
         assertTrue(UpdatesRepository::class.java.isAssignableFrom(UpdatesRepositoryImpl::class.java)) {
-            "ephyra.data.updates.UpdatesRepositoryImpl must implement ephyra.domain.updates.repository.UpdatesRepository"
+            "ephyra.data.updates.UpdatesRepositoryImpl must implement " +
+                "ephyra.domain.updates.repository.UpdatesRepository"
         }
     }
 
@@ -158,7 +162,8 @@ class DomainModuleImplementationContractTest {
     @Test
     fun `StubSourceRepositoryImpl implements StubSourceRepository`() {
         assertTrue(StubSourceRepository::class.java.isAssignableFrom(StubSourceRepositoryImpl::class.java)) {
-            "ephyra.data.source.StubSourceRepositoryImpl must implement ephyra.domain.source.repository.StubSourceRepository"
+            "ephyra.data.source.StubSourceRepositoryImpl must implement " +
+                "ephyra.domain.source.repository.StubSourceRepository"
         }
     }
 
@@ -183,7 +188,8 @@ class DomainModuleImplementationContractTest {
     @Test
     fun `ExtensionRepoRepositoryImpl implements ExtensionRepoRepository`() {
         assertTrue(ExtensionRepoRepository::class.java.isAssignableFrom(ExtensionRepoRepositoryImpl::class.java)) {
-            "ephyra.data.repository.ExtensionRepoRepositoryImpl must implement ephyra.domain.extensionrepo.repository.ExtensionRepoRepository"
+            "ephyra.data.repository.ExtensionRepoRepositoryImpl must implement " +
+                "ephyra.domain.extensionrepo.repository.ExtensionRepoRepository"
         }
     }
 }

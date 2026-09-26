@@ -84,11 +84,13 @@ class VectorDrawableValidationTest {
 
                         assertNotNull(
                             widthVal,
-                            "File ${file.absolutePath} has invalid float value for android:viewportWidth: '$viewportWidth'",
+                            "File ${file.absolutePath} has invalid float value for " +
+                                "android:viewportWidth: '$viewportWidth'",
                         )
                         assertNotNull(
                             heightVal,
-                            "File ${file.absolutePath} has invalid float value for android:viewportHeight: '$viewportHeight'",
+                            "File ${file.absolutePath} has invalid float value for " +
+                                "android:viewportHeight: '$viewportHeight'",
                         )
 
                         assertTrue(
@@ -112,11 +114,13 @@ class VectorDrawableValidationTest {
 
                         assertTrue(
                             width.endsWith("dp") || width.endsWith("dip") || width.endsWith("px"),
-                            "File ${file.absolutePath} has invalid width dimension specification (expected dp, dip or px): '$width'",
+                            "File ${file.absolutePath} has invalid width dimension " +
+                                "specification (expected dp, dip or px): '$width'",
                         )
                         assertTrue(
                             height.endsWith("dp") || height.endsWith("dip") || height.endsWith("px"),
-                            "File ${file.absolutePath} has invalid height dimension specification (expected dp, dip or px): '$height'",
+                            "File ${file.absolutePath} has invalid height dimension " +
+                                "specification (expected dp, dip or px): '$height'",
                         )
                     }
 
@@ -139,7 +143,9 @@ class VectorDrawableValidationTest {
         }
 
         println(
-            "VectorDrawableValidationTest: Scanned $checkedFiles XML files. Validated $checkedVectors <vector> elements and $checkedPaths <path> elements successfully.",
+            "VectorDrawableValidationTest: Scanned $checkedFiles XML files. " +
+                "Validated $checkedVectors <vector> elements and $checkedPaths " +
+                "<path> elements successfully.",
         )
     }
 }

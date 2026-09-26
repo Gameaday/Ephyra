@@ -125,7 +125,8 @@ class AppModuleImplementationContractTest {
     @Test
     fun `app LibraryUpdateNotifier implements domain LibraryUpdateNotifier`() {
         assertTrue(DomainLibraryUpdateNotifier::class.java.isAssignableFrom(LibraryUpdateNotifier::class.java)) {
-            "ephyra.app.data.library.LibraryUpdateNotifier must implement ephyra.domain.library.service.LibraryUpdateNotifier"
+            "ephyra.app.data.library.LibraryUpdateNotifier must implement " +
+                "ephyra.domain.library.service.LibraryUpdateNotifier"
         }
     }
 

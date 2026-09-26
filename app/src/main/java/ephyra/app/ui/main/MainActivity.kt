@@ -81,11 +81,13 @@ import ephyra.presentation.core.theme.MotionTokens
 import ephyra.presentation.core.ui.AppInfo
 import ephyra.presentation.core.ui.AppReadySignal
 import ephyra.presentation.core.ui.activity.BaseActivity
+import ephyra.presentation.core.ui.navigation.LocalMotionPreference
 import ephyra.presentation.core.ui.navigation.LocalNavAnimatedVisibilityScope
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.LocalSharedTransitionScope
 import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
+import ephyra.presentation.core.ui.navigation.rememberSystemReducedMotion
 import ephyra.presentation.core.util.AppNavigator
 import ephyra.presentation.core.util.LocalAppNavigator
 import ephyra.presentation.core.util.collectAsState
@@ -111,31 +113,44 @@ private fun NavBackStackEntry.isHome(): Boolean = destination.route == ScreenRou
 @AndroidEntryPoint
 class MainActivity : BaseActivity(), AppReadySignal {
 
-    @Inject lateinit var libraryPreferences: LibraryPreferences
+    @Inject
+    lateinit var libraryPreferences: LibraryPreferences
 
-    @Inject lateinit var preferences: BasePreferences
+    @Inject
+    lateinit var preferences: BasePreferences
 
-    @Inject lateinit var downloadCache: DownloadCache
+    @Inject
+    lateinit var downloadCache: DownloadCache
 
-    @Inject lateinit var chapterCache: ChapterCache
+    @Inject
+    lateinit var chapterCache: ChapterCache
 
-    @Inject lateinit var getIncognitoState: GetIncognitoState
+    @Inject
+    lateinit var getIncognitoState: GetIncognitoState
 
-    @Inject lateinit var uiPreferences: ephyra.domain.ui.UiPreferences
+    @Inject
+    lateinit var uiPreferences: ephyra.domain.ui.UiPreferences
 
-    @Inject lateinit var privacyPreferences: ephyra.core.common.core.security.PrivacyPreferences
+    @Inject
+    lateinit var privacyPreferences: ephyra.core.common.core.security.PrivacyPreferences
 
-    @Inject lateinit var storagePreferences: ephyra.domain.storage.service.StoragePreferences
+    @Inject
+    lateinit var storagePreferences: ephyra.domain.storage.service.StoragePreferences
 
-    @Inject lateinit var extensionApi: ExtensionApi
+    @Inject
+    lateinit var extensionApi: ExtensionApi
 
-    @Inject lateinit var appUpdateChecker: AppUpdateChecker
+    @Inject
+    lateinit var appUpdateChecker: AppUpdateChecker
 
-    @Inject lateinit var appInfo: AppInfo
+    @Inject
+    lateinit var appInfo: AppInfo
 
-    @Inject lateinit var appNavigator: AppNavigator
+    @Inject
+    lateinit var appNavigator: AppNavigator
 
-    @Inject lateinit var featureApis: Set<@JvmSuppressWildcards FeatureApi>
+    @Inject
+    lateinit var featureApis: Set<@JvmSuppressWildcards FeatureApi>
 
     var ready = false
 
@@ -222,157 +237,167 @@ class MainActivity : BaseActivity(), AppReadySignal {
                             WindowInsets.navigationBars.only(WindowInsetsSides.Horizontal),
                         ),
                     ) {
-                        SharedTransitionLayout {
-                            CompositionLocalProvider(
-                                LocalSharedTransitionScope provides this,
-                            ) {
-                                NavHost(
-                                    navController = navController,
-                                    startDestination = ScreenRoutes.Home.route,
-                                    enterTransition = {
-                                        if (initialState.isHome() && targetState.isMangaDetails()) {
-                                            MotionTokens.m3SharedElementContainerEnter()
-                                        } else {
-                                            MotionTokens.m3SharedAxisZEnter() +
-                                                slideIntoContainer(
-                                                    AnimatedContentTransitionScope.SlideDirection.Start,
-                                                    initialOffset = { (it * 0.10f).toInt() },
-                                                    animationSpec = tween(
-                                                        durationMillis = MotionTokens.DURATION_LONG_1,
-                                                        easing = MotionTokens.EasingEmphasizedDecelerate,
-                                                    ),
-                                                )
-                                        }
-                                    },
-                                    exitTransition = {
-                                        if (initialState.isHome() && targetState.isMangaDetails()) {
-                                            MotionTokens.m3SharedElementContainerExit()
-                                        } else {
-                                            MotionTokens.m3SharedAxisZExit() +
-                                                slideOutOfContainer(
-                                                    AnimatedContentTransitionScope.SlideDirection.Start,
-                                                    targetOffset = { (it * 0.10f).toInt() },
-                                                    animationSpec = tween(
-                                                        durationMillis = MotionTokens.DURATION_MEDIUM_3,
-                                                        easing = MotionTokens.EasingEmphasizedAccelerate,
-                                                    ),
-                                                )
-                                        }
-                                    },
-                                    popEnterTransition = {
-                                        if (initialState.isMangaDetails() && targetState.isHome()) {
-                                            MotionTokens.m3SharedElementContainerEnter()
-                                        } else {
-                                            MotionTokens.m3SharedAxisZPopEnter() +
-                                                slideIntoContainer(
-                                                    AnimatedContentTransitionScope.SlideDirection.End,
-                                                    initialOffset = { (it * 0.10f).toInt() },
-                                                    animationSpec = tween(
-                                                        durationMillis = MotionTokens.DURATION_MEDIUM_4,
-                                                        easing = MotionTokens.EasingEmphasizedDecelerate,
-                                                    ),
-                                                )
-                                        }
-                                    },
-                                    popExitTransition = {
-                                        if (initialState.isMangaDetails() && targetState.isHome()) {
-                                            MotionTokens.m3SharedElementContainerExit()
-                                        } else {
-                                            MotionTokens.m3SharedAxisZPopExit() +
-                                                slideOutOfContainer(
-                                                    AnimatedContentTransitionScope.SlideDirection.End,
-                                                    targetOffset = { (it * 0.10f).toInt() },
-                                                    animationSpec = tween(
-                                                        durationMillis = MotionTokens.DURATION_MEDIUM_2,
-                                                        easing = MotionTokens.EasingEmphasizedAccelerate,
-                                                    ),
-                                                )
-                                        }
-                                    },
+                        // Read once here so every transition in this graph agrees. Reading it per
+                        // transition would let two screens disagree about whether the user asked
+                        // for less motion.
+                        val reducedMotion = rememberSystemReducedMotion()
+                        CompositionLocalProvider(
+                            LocalMotionPreference provides reducedMotion,
+                        ) {
+                            SharedTransitionLayout {
+                                CompositionLocalProvider(
+                                    LocalSharedTransitionScope provides this,
                                 ) {
-                                    composable(ScreenRoutes.Home.route) {
-                                        CompositionLocalProvider(
-                                            LocalNavAnimatedVisibilityScope provides this@composable,
-                                        ) {
-                                            HomeScreen(navController)
+                                    NavHost(
+                                        navController = navController,
+                                        startDestination = ScreenRoutes.Home.route,
+                                        enterTransition = {
+                                            if (initialState.isHome() && targetState.isMangaDetails()) {
+                                                MotionTokens.m3SharedElementContainerEnter(reducedMotion)
+                                            } else {
+                                                MotionTokens.m3SharedAxisZEnter() +
+                                                    slideIntoContainer(
+                                                        AnimatedContentTransitionScope.SlideDirection.Start,
+                                                        initialOffset = { (it * 0.10f).toInt() },
+                                                        animationSpec = tween(
+                                                            durationMillis = MotionTokens.DURATION_LONG_1,
+                                                            easing = MotionTokens.EasingEmphasizedDecelerate,
+                                                        ),
+                                                    )
+                                            }
+                                        },
+                                        exitTransition = {
+                                            if (initialState.isHome() && targetState.isMangaDetails()) {
+                                                MotionTokens.m3SharedElementContainerExit(reducedMotion)
+                                            } else {
+                                                MotionTokens.m3SharedAxisZExit() +
+                                                    slideOutOfContainer(
+                                                        AnimatedContentTransitionScope.SlideDirection.Start,
+                                                        targetOffset = { (it * 0.10f).toInt() },
+                                                        animationSpec = tween(
+                                                            durationMillis = MotionTokens.DURATION_MEDIUM_3,
+                                                            easing = MotionTokens.EasingEmphasizedAccelerate,
+                                                        ),
+                                                    )
+                                            }
+                                        },
+                                        popEnterTransition = {
+                                            if (initialState.isMangaDetails() && targetState.isHome()) {
+                                                MotionTokens.m3SharedElementContainerEnter(reducedMotion)
+                                            } else {
+                                                MotionTokens.m3SharedAxisZPopEnter() +
+                                                    slideIntoContainer(
+                                                        AnimatedContentTransitionScope.SlideDirection.End,
+                                                        initialOffset = { (it * 0.10f).toInt() },
+                                                        animationSpec = tween(
+                                                            durationMillis = MotionTokens.DURATION_MEDIUM_4,
+                                                            easing = MotionTokens.EasingEmphasizedDecelerate,
+                                                        ),
+                                                    )
+                                            }
+                                        },
+                                        popExitTransition = {
+                                            if (initialState.isMangaDetails() && targetState.isHome()) {
+                                                MotionTokens.m3SharedElementContainerExit(reducedMotion)
+                                            } else {
+                                                MotionTokens.m3SharedAxisZPopExit() +
+                                                    slideOutOfContainer(
+                                                        AnimatedContentTransitionScope.SlideDirection.End,
+                                                        targetOffset = { (it * 0.10f).toInt() },
+                                                        animationSpec = tween(
+                                                            durationMillis = MotionTokens.DURATION_MEDIUM_2,
+                                                            easing = MotionTokens.EasingEmphasizedAccelerate,
+                                                        ),
+                                                    )
+                                            }
+                                        },
+                                    ) {
+                                        composable(ScreenRoutes.Home.route) {
+                                            CompositionLocalProvider(
+                                                LocalNavAnimatedVisibilityScope provides this@composable,
+                                            ) {
+                                                HomeScreen(navController)
+                                            }
                                         }
-                                    }
 
-                                    composable(ScreenRoutes.DownloadQueue.route) {
-                                        ephyra.feature.download.DownloadQueueScreen(navController)
-                                    }
-                                    composable(ScreenRoutes.MigrationConfig.route) { backStackEntry ->
-                                        val mangaIdsStr =
-                                            backStackEntry.arguments?.getString("mangaIds") ?: return@composable
-                                        val mangaIds = mangaIdsStr.split(",").mapNotNull { it.toLongOrNull() }
-                                        ephyra.feature.migration.config.MigrationConfigScreen(mangaIds, navController)
-                                    }
+                                        composable(ScreenRoutes.DownloadQueue.route) {
+                                            ephyra.feature.download.DownloadQueueScreen(navController)
+                                        }
+                                        composable(ScreenRoutes.MigrationConfig.route) { backStackEntry ->
+                                            val mangaIdsStr =
+                                                backStackEntry.arguments?.getString("mangaIds") ?: return@composable
+                                            val mangaIds = mangaIdsStr.split(",").mapNotNull { it.toLongOrNull() }
+                                            ephyra.feature.migration.config.MigrationConfigScreen(
+                                                mangaIds,
+                                                navController,
+                                            )
+                                        }
 
-                                    composable(
-                                        route = ScreenRoutes.MigrationList.route,
-                                        arguments = listOf(
-                                            androidx.navigation.navArgument("mangaIds") {
-                                                type =
-                                                    androidx.navigation.NavType.StringType
-                                            },
-                                            androidx.navigation.navArgument("query") { nullable = true },
-                                        ),
-                                    ) { backStackEntry ->
-                                        val mangaIdsStr =
-                                            backStackEntry.arguments?.getString("mangaIds") ?: return@composable
-                                        val mangaIds = mangaIdsStr.split(",").mapNotNull { it.toLongOrNull() }
-                                        val query = backStackEntry.arguments?.getString("query")
-                                        ephyra.feature.migration.list.MigrationListScreen(
-                                            mangaIds,
-                                            query,
-                                            navController,
-                                        )
-                                    }
+                                        composable(
+                                            route = ScreenRoutes.MigrationList.route,
+                                            arguments = listOf(
+                                                androidx.navigation.navArgument("mangaIds") {
+                                                    type = androidx.navigation.NavType.StringType
+                                                },
+                                                androidx.navigation.navArgument("query") { nullable = true },
+                                            ),
+                                        ) { backStackEntry ->
+                                            val mangaIdsStr =
+                                                backStackEntry.arguments?.getString("mangaIds") ?: return@composable
+                                            val mangaIds = mangaIdsStr.split(",").mapNotNull { it.toLongOrNull() }
+                                            val query = backStackEntry.arguments?.getString("query")
+                                            ephyra.feature.migration.list.MigrationListScreen(
+                                                mangaIds,
+                                                query,
+                                                navController,
+                                            )
+                                        }
 
-                                    featureApis.forEach { featureApi ->
-                                        try {
-                                            featureApi.register(this, navController)
-                                        } catch (e: Exception) {
-                                            logcat(LogPriority.ERROR, e) {
-                                                "Failed to register feature: ${featureApi.javaClass.simpleName}"
+                                        featureApis.forEach { featureApi ->
+                                            try {
+                                                featureApi.register(this, navController)
+                                            } catch (e: Exception) {
+                                                logcat(LogPriority.ERROR, e) {
+                                                    "Failed to register feature: ${featureApi.javaClass.simpleName}"
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
                         }
-                    }
 
-                    HandleOnNewIntent(context, navController)
-                    CheckForUpdates()
-                    ShowOnboarding()
+                        HandleOnNewIntent(context, navController)
+                        CheckForUpdates()
+                        ShowOnboarding()
 
-                    var showChangelog by remember { mutableStateOf(value = false) }
-                    LaunchedEffect(didMigration) {
-                        if ((didMigration == true) && !BuildConfig.DEBUG) showChangelog = true
-                    }
-                    if (showChangelog) {
-                        AlertDialog(
-                            onDismissRequest = { showChangelog = false },
-                            title = {
-                                Text(
-                                    text = stringResource(
-                                        ephyra.app.core.common.R.string.updated_version,
-                                        BuildConfig.VERSION_NAME,
-                                    ),
-                                )
-                            },
-                            dismissButton = {
-                                TextButton(onClick = { openInBrowser(appInfo.releaseUrl) }) {
-                                    Text(text = stringResource(ephyra.app.core.common.R.string.whats_new))
-                                }
-                            },
-                            confirmButton = {
-                                TextButton(onClick = { showChangelog = false }) {
-                                    Text(text = stringResource(ephyra.app.core.common.R.string.action_ok))
-                                }
-                            },
-                        )
+                        var showChangelog by remember { mutableStateOf(value = false) }
+                        LaunchedEffect(didMigration) {
+                            if ((didMigration == true) && !BuildConfig.DEBUG) showChangelog = true
+                        }
+                        if (showChangelog) {
+                            AlertDialog(
+                                onDismissRequest = { showChangelog = false },
+                                title = {
+                                    Text(
+                                        text = stringResource(
+                                            ephyra.app.core.common.R.string.updated_version,
+                                            BuildConfig.VERSION_NAME,
+                                        ),
+                                    )
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { openInBrowser(appInfo.releaseUrl) }) {
+                                        Text(text = stringResource(ephyra.app.core.common.R.string.whats_new))
+                                    }
+                                },
+                                confirmButton = {
+                                    TextButton(onClick = { showChangelog = false }) {
+                                        Text(text = stringResource(ephyra.app.core.common.R.string.action_ok))
+                                    }
+                                },
+                            )
+                        }
                     }
                 }
             }
@@ -458,6 +483,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
                 navController.popBackStack(navController.graph.findStartDestination().id, inclusive = false)
                 HomeScreen.Tab.Library(idToOpen)
             }
+
             Constants.SHORTCUT_UPDATES -> HomeScreen.Tab.Updates
             Constants.SHORTCUT_HISTORY -> HomeScreen.Tab.History
             Constants.SHORTCUT_SOURCES -> HomeScreen.Tab.Browse(false)
@@ -466,6 +492,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
                 navController.popBackStack(navController.graph.findStartDestination().id, inclusive = false)
                 HomeScreen.Tab.More(toDownloads = true)
             }
+
             Intent.ACTION_SEARCH, Intent.ACTION_SEND, "com.google.android.gms.actions.SEARCH_ACTION" -> {
                 val query = intent.getStringExtra(SearchManager.QUERY) ?: intent.getStringExtra(Intent.EXTRA_TEXT)
                 if (!query.isNullOrEmpty()) {
@@ -474,9 +501,11 @@ class MainActivity : BaseActivity(), AppReadySignal {
                 }
                 null
             }
+
             Intent.ACTION_VIEW -> {
                 val data = intent.data
-                if (data != null && (data.scheme == "tachiyomi" || data.scheme == "mihon" || data.scheme == "ephyra") &&
+                val scheme = data?.scheme
+                if (data != null && (scheme == "tachiyomi" || scheme == "mihon" || scheme == "ephyra") &&
                     data.host == "add-repo"
                 ) {
                     val repoUrl = data.getQueryParameter("url")
@@ -493,7 +522,8 @@ class MainActivity : BaseActivity(), AppReadySignal {
                             try {
                                 val stagedUri = BackupStaging.stageBackupFile(this@MainActivity, data)
                                 withContext(Dispatchers.Main) {
-                                    navController.navigate(ScreenRoutes.RestoreBackup.createRoute(stagedUri.toString()))
+                                    val route = ScreenRoutes.RestoreBackup.createRoute(stagedUri.toString())
+                                    navController.navigate(route)
                                 }
                             } catch (e: Exception) {
                                 logcat(LogPriority.ERROR, e) { "Failed to stage backup from external intent: $data" }
@@ -503,6 +533,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
                 }
                 null
             }
+
             else -> return false
         }
 

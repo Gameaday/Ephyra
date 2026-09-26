@@ -5,6 +5,7 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -212,22 +213,38 @@ object MotionTokens {
      * crossfades on the same long-form timeline as the shared element, avoiding a short
      * scale/fade that makes the remainder of the screen disappear before the cover lands.
      */
-    fun m3SharedElementContainerEnter(): EnterTransition =
-        fadeIn(
+    fun m3SharedElementContainerEnter(reducedMotion: Boolean = false): EnterTransition {
+        if (reducedMotion) return EnterTransition.None
+        return fadeIn(
             animationSpec = tween(
-                durationMillis = DURATION_MEDIUM_2,
-                easing = EasingEmphasizedDecelerate,
+                durationMillis = sharedElementContainerDuration(),
+                easing = LinearEasing,
             ),
         )
+    }
 
     /** Matching outgoing container motion for a shared-element destination. */
-    fun m3SharedElementContainerExit(): ExitTransition =
-        fadeOut(
+    fun m3SharedElementContainerExit(reducedMotion: Boolean = false): ExitTransition {
+        if (reducedMotion) return ExitTransition.None
+        return fadeOut(
             animationSpec = tween(
-                durationMillis = DURATION_SHORT_4,
-                easing = EasingEmphasizedAccelerate,
+                durationMillis = sharedElementContainerDuration(),
+                easing = LinearEasing,
             ),
         )
+    }
+
+    /**
+     * Duration shared by both halves of a shared-element transition.
+     *
+     * Enter and exit must use one value. The previous pair was 300ms in and 200ms out, so the two
+     * screens crossed opacity at different points and the cover competed with a container that was
+     * still fading, which reads as a stutter rather than one continuous movement. A linear easing is
+     * used deliberately: an eased container over an eased cover gives two curves competing for the
+     * same visual element.
+     */
+    fun sharedElementContainerDuration(): Int = ephyra.domain.navigation.motion.MotionPolicy
+        .SHARED_ELEMENT_DURATION_MILLIS
 
     /**
      * Material 3 Fade Through enter transition for peer navigation (e.g. bottom nav tabs).

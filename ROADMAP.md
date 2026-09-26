@@ -125,6 +125,8 @@ Debt is removed by **tightening** a ceiling, never by raising it.
 26. `DEF-001` paged pinch zoom fixed at the root — the transform was computed but never applied (`graphicsLayer` was imported and unused), and the gesture centroid was discarded. `CODE_COMPLETE` at E2 with 16 tests, **production-wired**. First pass to change reader rendering behaviour; E4 acceptance is the only thing missing.
 
 27. `DEF-002`/`DEF-003` webtoon zoom made document-space and focal-anchored — `CODE_COMPLETE` at E2 with 22 tests, **production-wired**. Replaces the per-item X-only transform that caused widening-only pinch and item overlap.
+
+28. `DEF-005`/`NAV-002` shared-element motion given symmetric durations, linear easing, and live reduced motion — `CODE_COMPLETE` at E2 with 17 tests, **production-wired**.
 **Program audit, 2026-09-25.** Re-read the plan, program, status, execution guide, and the
 media/cache contracts against the code, and reconciled the ledger with reality. Findings:
 
@@ -142,7 +144,7 @@ The current application is not considered a complete native reader architecture.
 
 - paged reader zoom was broken at the root and is now fixed in code (`DEF-001`, production-wired); it still needs E4 device acceptance.
 - webtoon pinch only widened content and strips overlapped (`DEF-002`/`DEF-003`); both are now fixed in code and production-wired, pending E4 acceptance.
-- Series-to-Library return motion remains visually unacceptable;
+- Series-to-Library return motion had mismatched enter/exit durations and no reduced-motion support (`DEF-005`); both are fixed in code and production-wired, pending E4 acceptance.
 - crop-borders behaviour is corrected in code (`DEF-008`) but still requires fresh device acceptance after the Coil 3 rewrite.
 
-Paged and continuous zoom are now fixed in code and production-wired (`DEF-001`, `DEF-002`, `DEF-003`); all three still need E4 device acceptance, and the broader `MED` -> `RDR-004`/`RDR-005` replacement sequence is still open. The remaining items are program inputs, not isolated patch opportunities. The crop fix is a confirmed code defect that is fixed and unit-proven; it is expected to change what you see, but that is only claimable once a device confirms it. See [`doc/REBUILD_STATUS.md`](doc/REBUILD_STATUS.md).
+All five reported reader and motion defects (`DEF-001`, `DEF-002`, `DEF-003`, `DEF-005`, `DEF-008`) are now fixed in code and production-wired. Every one of them still needs E4 device acceptance, and the broader `MED` -> `RDR-004`/`RDR-005` replacement sequence is still open. Motion quality in particular is judged from duration and easing arithmetic here, not from frames, so E4 matters more for this item than for the others. The crop fix is a confirmed code defect that is fixed and unit-proven; it is expected to change what you see, but that is only claimable once a device confirms it. See [`doc/REBUILD_STATUS.md`](doc/REBUILD_STATUS.md).

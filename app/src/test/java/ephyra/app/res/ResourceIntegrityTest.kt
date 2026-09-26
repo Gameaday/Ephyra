@@ -191,14 +191,20 @@ class ResourceIntegrityTest {
                 for (key in transKeys) {
                     assertTrue(
                         defaultKeys.contains(key),
-                        "Translation key '$key' found in localized translation ${transFile.absolutePath} but is missing from default file ${defaultStringsFile.absolutePath}! This will trigger Resources\$NotFoundException on default locales.",
+                        "Translation key '$key' found in localized translation " +
+                            "${transFile.absolutePath} but is missing from default file " +
+                            "${defaultStringsFile.absolutePath}! This will trigger " +
+                            "Resources\$NotFoundException on default locales.",
                     )
                 }
             }
         }
 
         println(
-            "ResourceIntegrityTest: Statically audited $xmlFilesChecked XML resource files. Checked $vectorElementsChecked vectors and $translationKeysChecked string/plurals entries. Verified default fallback matches across $stringsFilesChecked strings files.",
+            "ResourceIntegrityTest: Statically audited $xmlFilesChecked XML resource " +
+                "files. Checked $vectorElementsChecked vectors and " +
+                "$translationKeysChecked string/plurals entries. Verified default " +
+                "fallback matches across $stringsFilesChecked strings files.",
         )
     }
 
@@ -248,7 +254,8 @@ class ResourceIntegrityTest {
 
             // 2. Indirect/semi-direct violation:
             // If the file references any 'anim_' drawables, and uses 'painterResource(arg)',
-            // check if the argument of painterResource matches any variable or field that was assigned to an anim_ resource,
+            // check if the argument of painterResource matches any variable or field
+            // that was assigned to an anim_ resource,
             // or contains common indicators like 'iconres'.
             val animDrawables = animReferenceRegex.findAll(content).map { it.value }.toSet()
             if (animDrawables.isNotEmpty()) {

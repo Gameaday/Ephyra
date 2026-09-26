@@ -52,7 +52,7 @@ A task may be `CODE_COMPLETE` at `E2`; it may not be `DEVICE_VERIFIED` without `
 | DEF-002 | Webtoon pinch mainly widened content: the per-item transform hardcoded `scaleY = 1f`, and the gesture centroid was never passed to the zoom state, so the strip was not anchored to the fingers either. | `WebtoonZoomPolicy` 22 tests (focal invariant, pan clamp, coverage, scroll symmetry) + E4 matrix | CODE_COMPLETE at E2, PRODUCTION-WIRED, E4 pending |
 | DEF-003 | Sliced webtoon elements overlapped because zoom was applied per LazyColumn item: a scaled item paints outside its layout slot while the list retains the unscaled geometry, so neighbours collide. The transform now lives once on the scroll container, so no per-item painted bounds can disagree with layout. | `WebtoonZoomPolicy` coverage tests + E4 matrix | CODE_COMPLETE at E2, PRODUCTION-WIRED, E4 pending |
 | DEF-004 | Crop toggle is inconsistent and does not reliably enlarge content immediately. | E3 same-page toggle test + E4 static/animated matrix | IN_PROGRESS, legacy |
-| DEF-005 | Series-to-Library return motion is still visually unacceptable. | E3 transition test + E4 predictive-back matrix | IN_PROGRESS, legacy |
+| DEF-005 | Series-to-Library return motion: the shared-element container enter/exit used mismatched durations (300ms in, 200ms out), so the two screens crossed at different points while the cover competed with a still-fading container. Easing was also opposed (decelerate in, accelerate out) over the same visual element. There was no reduced-motion handling anywhere, which the motion contract requires. | `MotionPolicy` 17 tests (symmetric duration, unusable-element fallback, reduced motion) + E4 predictive-back matrix | CODE_COMPLETE at E2, PRODUCTION-WIRED, E4 pending |
 | DEF-006 | Updates must remain library-scoped unless a consumer explicitly opts out. | DAO contract + ViewModel test | CODE_COMPLETE |
 | DEF-007 | Backward chapter navigation must remain available with skip-read enabled. | Pure navigation contract + viewer tests | CODE_COMPLETE |
 | DEF-008 | Crop-borders transformation measured insets transposed, aborted on a single artifact, and cropped contentless images. | 8 Robolectric tests incl. real JPEG encode/decode round-trip; the compression-artifact test was proven to FAIL under the old strict matching, and the no-border JPEG test proven to still PASS, so the tolerance change is shown to crop more without over-cropping. E4 matrix pending. | CODE_COMPLETE at E2, E4 pending |
@@ -119,7 +119,7 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | RDR-004 | Paged reader replacement. | Agent | E3 + E4 matrix | NOT_STARTED |
 | RDR-005 | Continuous reader replacement. | Agent | E3 + E4 matrix | NOT_STARTED |
 | NAV-001 | Single main NavHost and adaptive shell. | Agent | Navigation contract | NOT_STARTED |
-| NAV-002 | Series shared-element/fade/predictive-back policy. | Agent | E3 + E4 matrix | NOT_STARTED |
+| NAV-002 | Series shared-element/fade/predictive-back policy. | Agent | `MotionPolicy` 17 tests CODE_COMPLETE at E2 and wired into the NavHost; the NAV-001 single-graph work and E4 predictive-back evidence remain | IN_PROGRESS |
 | DATA-001 | Clean-slate schema policy for replacement release. | Agent | Schema tests | NOT_STARTED |
 | OPS-001 | One startup state model; split Application responsibilities. | Agent | Startup tests/benchmarks | NOT_STARTED |
 | OPS-002 | Build performance budgets established and tracked. | Agent | `doc/BUILD_HEALTH.md` baselines + scheduled timing measurement; clean-build number still outstanding | IN_PROGRESS |
@@ -142,7 +142,7 @@ Legacy defects are not fixed by changing the current implementation unless the t
 | 7  Paged reader | IN_PROGRESS | RDR-004 not started, but the DEF-001 zoom defect is now fixed and production-wired: the transform is applied via graphicsLayer and anchored on the gesture centroid. E4 pending. |
 | 8  Continuous reader | IN_PROGRESS | RDR-005 not started, but DEF-002 and DEF-003 are now fixed and production-wired: one isotropic document transform on the scroll container, focal-anchored, replacing the per-item X-only layer. E4 pending. |
 | 9  Shell/navigation | NOT_STARTED | NAV-001 |
-| 10  Library/Series | NOT_STARTED | NAV-002 |
+| 10  Library/Series | IN_PROGRESS | DEF-005 motion defects fixed and production-wired: symmetric shared-element duration, linear container easing, live reduced-motion support. NAV-002 contract layer still open; E4 pending. |
 | 11  Remaining slices | NOT_STARTED | Product parity checklist |
 | 12  Source/data/ops | IN_PROGRESS | SRC-000 through SRC-003 are CODE_COMPLETE at E1/E2; SRC-004 through SRC-005, DATA-001, and OPS-001 remain open. |
 | 13  Release/cleanup | NOT_STARTED | REL-001, CLEAN-001, DOC-001 |
