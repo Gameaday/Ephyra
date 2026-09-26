@@ -2,6 +2,8 @@ package ephyra.domain.track.service
 
 import ephyra.core.common.preference.Preference
 import ephyra.core.common.preference.PreferenceStore
+import ephyra.core.common.preference.SecretCipher
+import ephyra.core.common.preference.SecretStringPreference
 import ephyra.core.common.preference.getEnum
 import ephyra.core.common.preference.getLongArray
 import ephyra.domain.track.model.AutoTrackState
@@ -9,6 +11,7 @@ import ephyra.domain.track.service.Tracker
 
 class TrackPreferences(
     private val preferenceStore: PreferenceStore,
+    private val secretCipher: SecretCipher? = null,
 ) {
 
     fun trackUsername(tracker: Tracker) = preferenceStore.getString(
@@ -16,9 +19,19 @@ class TrackPreferences(
         "",
     )
 
-    fun trackPassword(tracker: Tracker) = preferenceStore.getString(
-        Preference.privateKey("pref_mangasync_password_${tracker.id}"),
-        "",
+    /**
+     * The account password, encrypted at rest when a [SecretCipher] is supplied.
+     *
+     * SEC-002: this and [trackToken] were plaintext strings in the preference store. The
+     * `privateKey` prefix kept them out of backups, which is a different property — the bytes on
+     * disk were still readable.
+     */
+    fun trackPassword(tracker: Tracker) = protect(
+        preferenceStore.getString(
+            Preference.privateKey("pref_mangasync_password_${tracker.id}"),
+            "",
+        ),
+        secretCipher,
     )
 
     fun trackAuthExpired(tracker: Tracker) = preferenceStore.getBoolean(
@@ -32,7 +45,24 @@ class TrackPreferences(
         trackAuthExpired(tracker).set(false)
     }
 
-    fun trackToken(tracker: Tracker) = preferenceStore.getString(Preference.privateKey("track_token_${tracker.id}"), "")
+    /** The OAuth token for [tracker], encrypted at rest when a [SecretCipher] is supplied. */
+    fun trackToken(tracker: Tracker) = protect(
+        preferenceStore.getString(Preference.privateKey("track_token_${tracker.id}"), ""),
+        secretCipher,
+    )
+
+    /**
+     * Wraps [preference] in [SecretStringPreference] when a cipher is available, and returns it
+     * unchanged when one is not.
+     *
+     * The fallback is deliberate rather than defensive coding: it keeps the preference usable in
+     * tests and in any context without a platform cipher, without silently pretending a value was
+     * encrypted when it was not. Production always supplies one.
+     */
+    private fun protect(
+        preference: Preference<String>,
+        secretCipher: SecretCipher?,
+    ): Preference<String> = if (secretCipher == null) preference else SecretStringPreference(preference, secretCipher)
 
     /**
      * Ordered list of preferred authority trackers for matching.

@@ -23,6 +23,7 @@ import ephyra.app.extension.api.ExtensionApi
 import ephyra.app.extension.util.ExtensionInstaller
 import ephyra.app.extension.util.ExtensionLoader
 import ephyra.app.installer.AndroidInstallerCapabilityProvider
+import ephyra.app.security.AndroidKeyStoreCipher
 import ephyra.app.track.DelayedTrackingStore
 import ephyra.app.track.TrackingJobSchedulerImpl
 import ephyra.app.ui.base.delegate.SecureActivityDelegateImpl
@@ -35,6 +36,7 @@ import ephyra.core.common.di.IoDispatcher
 import ephyra.core.common.notification.NotificationManager
 import ephyra.core.common.preference.DataStorePreferenceStore
 import ephyra.core.common.preference.PreferenceStore
+import ephyra.core.common.preference.SecretCipher
 import ephyra.core.common.saver.ImageSaver
 import ephyra.core.common.storage.AndroidStorageFolderProvider
 import ephyra.core.download.DownloadCache
@@ -412,8 +414,12 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideTrackPreferences(preferenceStore: PreferenceStore) =
-        TrackPreferences(preferenceStore)
+    fun provideSecretCipher(): SecretCipher = AndroidKeyStoreCipher()
+
+    @Provides
+    @Singleton
+    fun provideTrackPreferences(preferenceStore: PreferenceStore, secretCipher: SecretCipher) =
+        TrackPreferences(preferenceStore, secretCipher)
 
     @Provides
     @Singleton
