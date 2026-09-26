@@ -1,9 +1,17 @@
 name: Build & Test
 on:
   pull_request:
+    # Runs on every pull request, including documentation-only changes.
+    #
+    # This previously excluded `**.md`, which meant a markdown-only PR executed no
+    # verification at all — indefensible in a program that treats documentation as a
+    # deliverable, because the only way to falsify a documentation gate is a PR that changes
+    # nothing but the thing it checks. A duplicate `ci.yml` existed to cover that gap; it also
+    # re-ran the full test suite and a `ktlintCheck` alias that `spotlessCheck` already
+    # covers, so every PR paid for the suite twice. `ci.yml` is deleted and this workflow is
+    # the single gate. `WorkflowRedundancyTest` keeps it that way.
     paths:
       - '**'
-      - '!**.md'
       - '!i18n/src/commonMain/moko-resources/**/strings.xml'
       - '!i18n/src/commonMain/moko-resources/**/plurals.xml'
       - 'i18n/src/commonMain/moko-resources/base/strings.xml'

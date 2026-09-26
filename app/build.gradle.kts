@@ -196,6 +196,30 @@ android {
     }
 }
 
+/*
+ * Repository-level gates read files that are not compiled inputs, so Gradle does not know the
+ * test task depends on them. Without this the task is `UP-TO-DATE` after such a file changes and
+ * the gate silently does not run — which is the same failure as a gate that cannot fail, and is
+ * worse because the build still reports success.
+ *
+ * `BaselineProfileRuleTest` hit this on `app/src/main/baseline-prof.txt` and
+ * `WorkflowRedundancyTest` on `.github/workflows/`. Declaring the inputs here is the structural
+ * fix; `--rerun-tasks` only papers over it.
+ */
+val repositoryFileGates = listOf(
+    rootProject.file(".github/workflows"),
+)
+
+tasks.withType<Test>().configureEach {
+    repositoryFileGates.forEach { gateDir ->
+        if (gateDir.exists()) {
+            inputs.dir(gateDir)
+                .withPropertyName("repositoryGate:" + gateDir.name)
+                .withPathSensitivity(PathSensitivity.RELATIVE)
+        }
+    }
+}
+
 kotlin {
     compilerOptions {
         freeCompilerArgs.addAll(
