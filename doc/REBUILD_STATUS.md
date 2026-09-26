@@ -226,7 +226,7 @@ the code that implemented it.
 
 | Date | Change | Evidence/commit |
 |---|---|---|
-| 2026-09-26 | **Phase 0A marked `VERIFIED` — the first phase gate in the programme to close.** Its only requirement is `CON-001`, which is `CODE_COMPLETE`; the contract layer was then verified rather than assumed, element by element, against the tree. Under the ROADMAP rule this is what permits Phase 1 implementation to begin. Two phase rows that still cited the resolved API 37 blocker were corrected rather than left to mislead. |
+| 2026-09-26 | **Phase 0A marked `VERIFIED` — the first phase gate in the programme to close.** Its only requirement is `CON-001`, which is `CODE_COMPLETE`; the contract layer was then verified rather than assumed, element by element, against the tree. Under the ROADMAP rule this is what permits Phase 1 implementation to begin. Two phase rows that still cited the resolved API 37 blocker were corrected rather than left to mislead. | `REBUILD_STATUS.md` phase gate table, row `0A Technical contracts` |
 | 2026-09-26 | **First reader `E4-lab` capture produced.** `DEF-010` fixed: the Local source now lists seeded content and the reader renders page 1/6 on a real device. Evidence, identity and reproduction steps in `doc/evidence/`. | `doc/evidence/e4lab-reader-page1.png`, SHA-256 `817c8321…` |
 | 2026-09-26 | Added `DEF-010`: Discover → Local source showed a perpetual loading spinner and never listed content, **whether or not any content exists**. Found while producing an `E4-lab` capture, not caused by it. | On-device, API 37, content-present and content-absent both observed |
 | 2026-09-24 | Created annotated baseline tag `reconstruction-baseline-2026-09-24` at `4ec5b2c15`. | Git tag `20ab06c7255b4c649c82af5bf614299b5a5fca61` | |
