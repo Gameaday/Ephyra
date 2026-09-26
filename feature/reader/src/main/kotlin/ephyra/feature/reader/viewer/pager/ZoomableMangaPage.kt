@@ -39,6 +39,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -62,7 +63,8 @@ import coil3.size.Precision
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.ImageUtil
 import ephyra.domain.reader.viewport.PagerTransformPoint
-import ephyra.domain.reader.viewport.PagerZoomPolicy
+import ephyra.domain.reader.viewport.PagerViewport
+import ephyra.domain.reader.viewport.PagerViewportState
 import ephyra.domain.reader.viewport.PagerZoomTransform
 import ephyra.domain.reader.viewport.ViewportSize
 import ephyra.feature.reader.model.ReaderPage
@@ -117,26 +119,63 @@ fun ZoomableMangaPage(
         var pendingSingleTap by remember { mutableStateOf<Job?>(null) }
         val transformMutex = remember { Mutex() }
 
-        // Zoom arithmetic lives in the domain so the focal-point invariant is unit tested. The
-        // composable only adapts gesture values to it and applies the result.
-        val zoomPolicy = remember { PagerZoomPolicy() }
         val viewportSize = remember(containerWidth, containerHeight) {
             ViewportSize(containerWidth, containerHeight)
         }
 
-        LaunchedEffect(scaleAnim.value) { onScaleChanged(scaleAnim.value) }
+        // RDR-004 stage 1: the viewport state is now the single owner of the rendered transform.
+        //
+        // The two `Animatable`s remain only as the *timing* mechanism for double-tap, which is
+        // animated, and are mirrored into `viewportState` on every frame. They are deliberately not
+        // the source of truth: reading the transform from them is what let the two disagree, which is
+        // the `DEF-001` defect class. Pinch remains instant (matching the previous `snapTo`), and
+        // double-tap remains a 300ms tween, so no user-visible timing changes here.
+        //
+        // The gesture source is unchanged in this stage. `detectReaderGestures` replaces
+        // `detectPagerGestures` in stage 2, because that swap changes tap-deferral and long-press
+        // timing and is not a behaviour-preserving change.
+        var viewportState by remember { mutableStateOf(PagerViewportState(viewportSize = viewportSize)) }
+
+        // Mirror the animation driver into the owning state. Without this the two would disagree,
+        // which is precisely the failure this refactor exists to remove.
+        LaunchedEffect(scaleAnim, offsetAnim) {
+            snapshotFlow { scaleAnim.value to offsetAnim.value }
+                .collect { (scale, offset) ->
+                    val next = PagerZoomTransform(scale, offset.x, offset.y)
+                    viewportState = viewportState.copy(
+                        transform = next,
+                        transforming = scale > ZoomPolicy.INTERACTION_LOCK,
+                    )
+                }
+        }
+
+        LaunchedEffect(viewportState.transform) {
+            onScaleChanged(viewportState.transform.scale)
+        }
+
+        // A page change invalidates the transform: a new page always starts at fit.
         LaunchedEffect(page) {
             pendingSingleTap?.cancel()
             pendingSingleTap = null
             scaleAnim.snapTo(1f)
             offsetAnim.snapTo(Offset.Zero)
+            viewportState = PagerViewportState(viewportSize = viewportSize)
+        }
+
+        // A rotation or resize re-clamps rather than leaving the page dragged out of bounds.
+        LaunchedEffect(viewportSize) {
+            val action = PagerViewport.onViewportSizeChanged(viewportState, viewportSize)
+            if (action.changed) {
+                scaleAnim.snapTo(action.transform.scale)
+                offsetAnim.snapTo(Offset(action.transform.offsetX, action.transform.offsetY))
+            }
         }
 
         val gestureModifier = Modifier
             .fillMaxSize()
             .pointerInput(page, containerSize) {
                 detectPagerGestures(
-                    canPan = { ZoomPolicy.locksInteraction(scaleAnim.value) },
+                    canPan = { ZoomPolicy.locksInteraction(viewportState.transform.scale) },
                     onLongPress = {
                         pendingSingleTap?.cancel()
                         pendingSingleTap = null
@@ -148,7 +187,10 @@ fun ZoomableMangaPage(
                             (tapOffset - lastTapOffset).getDistance() < viewConfiguration.touchSlop * 3
                         val isNav = isNavigationTap?.invoke(tapOffset, containerSize) ?: false
 
-                        if (scaleAnim.value > ZoomPolicy.ZOOM_GATE) {
+                        // Reads the owning state, not the animation driver. Reading `scaleAnim`
+                        // here would reintroduce two sources of truth for the same value, which is
+                        // how the pager and its zoom could previously disagree.
+                        if (viewportState.transform.scale > ZoomPolicy.ZOOM_GATE) {
                             if (isDoubleTap) {
                                 pendingSingleTap?.cancel()
                                 pendingSingleTap = null
@@ -172,22 +214,22 @@ fun ZoomableMangaPage(
                             pendingSingleTap?.cancel()
                             pendingSingleTap = null
                             // Anchored on the tapped point, so double-tap zoom grows out from the
-                            // finger rather than from the page centre.
-                            val target = zoomPolicy.doubleTap(
-                                current = PagerZoomTransform(
-                                    scaleAnim.value,
-                                    offsetAnim.value.x,
-                                    offsetAnim.value.y,
-                                ),
-                                tapped = PagerTransformPoint(tapOffset.x, tapOffset.y),
-                                viewportSize = viewportSize,
+                            // finger rather than from the page centre. The target comes from the
+                            // owning state, and the `Animatable`s only drive the 300ms tween.
+                            val target = PagerViewport.onDoubleTap(
+                                state = viewportState,
+                                tappedX = tapOffset.x,
+                                tappedY = tapOffset.y,
                                 targetScale = 2.5f,
                             )
                             scope.launch {
-                                launch { scaleAnim.animateTo(target.scale, tween(300)) }
+                                launch { scaleAnim.animateTo(target.transform.scale, tween(300)) }
                                 launch {
                                     offsetAnim.animateTo(
-                                        Offset(target.offsetX, target.offsetY),
+                                        Offset(
+                                            target.transform.offsetX,
+                                            target.transform.offsetY,
+                                        ),
                                         tween(300),
                                     )
                                 }
@@ -210,22 +252,28 @@ fun ZoomableMangaPage(
                             transformMutex.withLock {
                                 // The centroid is the focal point. It was previously discarded, so
                                 // the content slid away from the fingers instead of staying under
-                                // them. `PagerZoomPolicy` holds the focal point fixed and clamps
-                                // pan to the scaled viewport; both are unit tested.
-                                val next = zoomPolicy.next(
-                                    current = PagerZoomTransform(
-                                        scaleAnim.value,
-                                        offsetAnim.value.x,
-                                        offsetAnim.value.y,
-                                    ),
-                                    zoom = zoom,
-                                    pan = pan.x,
+                                // them. `PagerViewport.onTransform` holds the focal point fixed and
+                                // clamps pan to the scaled viewport; both are unit tested.
+                                val action = PagerViewport.onTransform(
+                                    state = viewportState,
+                                    zoomChange = zoom,
+                                    panX = pan.x,
                                     panY = pan.y,
-                                    focal = PagerTransformPoint(centroid.x, centroid.y),
-                                    viewportSize = viewportSize,
+                                    focalX = centroid.x,
+                                    focalY = centroid.y,
                                 )
-                                scaleAnim.snapTo(next.scale)
-                                offsetAnim.snapTo(Offset(next.offsetX, next.offsetY))
+                                if (action.changed) {
+                                    // The viewport state is the owner; the `Animatable`s are told
+                                    // what to animate toward and mirror back, never read as truth.
+                                    viewportState = viewportState.copy(
+                                        transform = action.transform,
+                                        transforming = true,
+                                    )
+                                    scaleAnim.snapTo(action.transform.scale)
+                                    offsetAnim.snapTo(
+                                        Offset(action.transform.offsetX, action.transform.offsetY),
+                                    )
+                                }
                             }
                         }
                     },
@@ -313,16 +361,10 @@ fun ZoomableMangaPage(
                     // modifier, so a pinch changed internal state that nothing drew -- the direct
                     // cause of the reported "paged pinch zoom does nothing".
                     //
+                    // It now reads from `viewportState`, the single owner, via `pagerZoomLayer`.
                     // `clip = true` bounds the painted result to the page box, so a zoomed page is
                     // cropped by the viewport instead of drawing over its pager neighbours.
-                    val zoomModifier = Modifier.graphicsLayer {
-                        scaleX = scaleAnim.value
-                        scaleY = scaleAnim.value
-                        translationX = offsetAnim.value.x
-                        translationY = offsetAnim.value.y
-                        transformOrigin = TransformOrigin.Center
-                        clip = true
-                    }
+                    val zoomModifier = Modifier.pagerZoomLayer(viewportState.transform)
 
                     Box(
                         modifier = contentBoxModifier.then(zoomModifier),
