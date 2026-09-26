@@ -43,8 +43,27 @@ class ExternalServiceDependencyTest {
     /** The reserved TLDs cannot resolve on the public internet. */
     private val reservedTldPattern = Regex(".*\\.(test|example|invalid|localhost)$")
 
-    /** Matches `https://host/.../index.json`, capturing the host. */
+    /**
+     * Matches a repository index URL, capturing the host.
+     *
+     * The example is written with angle brackets around the host on purpose: they are outside the
+     * character class, so this KDoc cannot match the pattern it documents and the gate does not
+     * fail on its own source.
+     */
     private val repositoryIndexPattern = Regex("""https?://([A-Za-z0-9._-]+)[^"'\\\s)]*/index\.json""")
+
+    /**
+     * Hosts of community extension repositories, as patterns rather than literals.
+     *
+     * Written as patterns on purpose: a list of plain strings would contain the very text this
+     * gate searches for, and the gate would then fail on its own source. Escaping the dots means
+     * the file never holds the contiguous literal, so no self-exemption is needed and there is no
+     * exemption that could later be abused.
+     */
+    private val communityExtensionRepos = listOf(
+        Regex("""keiyoushi\.github\.io"""),
+        Regex("""keiyoushi\.org"""),
+    )
 
     private fun isAcceptableHost(host: String): Boolean {
         val lower = host.lowercase(Locale.ROOT)
@@ -90,11 +109,12 @@ class ExternalServiceDependencyTest {
 
     @Test
     fun `no test source hardcodes a community extension repository`() {
-        val banned = listOf("keiyoushi.github.io", "keiyoushi.org")
         val offenders = testSourceFiles().flatMap { file ->
             val path = file.relativeTo(repositoryRoot).invariantSeparatorsPath
             val text = file.readText().lowercase(Locale.ROOT)
-            banned.filter { text.contains(it) }.map { "$path -> $it" }
+            communityExtensionRepos
+                .filter { it.containsMatchIn(text) }
+                .map { "$path -> ${it.pattern}" }
         }
 
         assertTrue(
