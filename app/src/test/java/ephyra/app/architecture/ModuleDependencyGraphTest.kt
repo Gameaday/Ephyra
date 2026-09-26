@@ -133,6 +133,58 @@ class ModuleDependencyGraphTest {
     }
 
     @Test
+    fun `a feature module depends on core data only where it actually imports it`() {
+        // B-020 closed: fifteen feature modules declared `projects.core.data` while importing
+        // nothing from `ephyra.data.*`, and `feature/reader` needed it for exactly one test
+        // file. Those edges are gone. This rule is what stops them coming back, and it is derived
+        // from the sources rather than stored as a number, so it cannot be satisfied by editing
+        // a baseline.
+        //
+        // It is deliberately *not* "features must not depend on core:data". Whether they may is
+        // the `DATA-001I` ownership decision (B-027). What is not negotiable is declaring the
+        // edge without using it: that is invisible coupling, because the feature's build file
+        // implies a data dependency no source acknowledges.
+        val offenders = buildFiles()
+            .filter { it.path.replace(File.separatorChar, '/').contains("/feature/") }
+            .mapNotNull { file ->
+                val text = file.readText()
+                if (!text.contains("projects.core.data")) return@mapNotNull null
+                val module = file.parentFile.path.replace(File.separatorChar, '/')
+                val mainUses = countImports(module, "src/main")
+                val testUses = countImports(module, "src/test") + countImports(module, "src/androidTest")
+                val productionScope = "implementation(projects.core.data)" in text ||
+                    "api(projects.core.data)" in text
+                if (productionScope && mainUses == 0) {
+                    "feature/${file.parentFile.name} declares a production core.data edge but has " +
+                        "$mainUses main-source imports of ephyra.data.*"
+                } else if (!productionScope && mainUses == 0 && testUses == 0) {
+                    "feature/${file.parentFile.name} declares a core.data edge used by nothing " +
+                        "in main, test or androidTest"
+                } else {
+                    null
+                }
+            }
+
+        assertTrue(
+            offenders.isEmpty(),
+            "Feature modules declare a `core:data` dependency they do not use:\n  " +
+                offenders.joinToString("\n  ") +
+                "\nRemove the edge, or narrow it to `testImplementation` when only a test uses " +
+                "it. Unused edges are invisible coupling: the build file implies a data " +
+                "dependency that no source acknowledges.",
+        )
+    }
+
+    /** Counts `import ephyra.data.` lines in tracked Kotlin under [sourceDir] of [modulePath]. */
+    private fun countImports(modulePath: String, sourceDir: String): Int =
+        TrackedFiles.list(repositoryRoot())
+            .filter { it.isFile && it.extension == "kt" }
+            .filter { it.path.replace(File.separatorChar, '/').contains("$modulePath/$sourceDir/") }
+            .sumOf { file ->
+                file.readLines().count { it.trimStart().startsWith("import ephyra.data.") }
+            }
+
+    @Test
     fun `presentation modules do not depend on feature modules`() {
         val offenders = allEdges()
             .filter { isLayer(it.from, "presentation") && isLayer(it.to, "feature") }

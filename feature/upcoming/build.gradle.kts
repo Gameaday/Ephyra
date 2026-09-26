@@ -14,7 +14,6 @@ dependencies {
     // Internal project dependencies
     implementation(projects.core.common)
     implementation(projects.core.domain)
-    implementation(projects.core.data)
     implementation(projects.sourceApi)
     implementation(projects.presentationCore)
     implementation(projects.feature.manga)

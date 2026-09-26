@@ -14,7 +14,6 @@ dependencies {
     implementation(projects.core.domain)
     implementation(projects.core.common)
     implementation(projects.sourceApi)
-    implementation(projects.core.data)
     implementation(projects.core.download)
 
     implementation(libs.hilt.android)
