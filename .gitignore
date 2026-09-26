@@ -38,11 +38,6 @@ _*.ps1
 .DS_Store
 Thumbs.db
 
-# Agent Manager worktrees. Each `.kilo/worktrees/<name>/` is a full second copy of the
-# repository, so leaving it untracked-by-accident puts ~1465 duplicate sources in reach of
-# `git add .`. Size metrics in doc/BUILD_HEALTH.md must exclude this path for the same reason.
-.kilo/
-
 # Project IDX
 # .idx/dev.nix (Keep tracked)
 *.pytroubleshooting/

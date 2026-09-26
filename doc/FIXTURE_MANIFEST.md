@@ -76,11 +76,37 @@ A fixture that is only a screenshot is not a complete fixture. A fixture without
 
 ## Evidence levels
 
-- `E1`: static inventory;
-- `E2`: JVM/Robolectric test;
-- `E3`: instrumentation/screenshot;
-- `E4`: representative device;
-- `E5`: macrobenchmark.
+Defined by **who produces the evidence**, per
+[`adr/0009`](adr/0009-evidence-channels-match-validation.md). A task is never expected to reach a
+level the programme has no means to produce.
+
+- `E0`: claim only.
+- `E1`: static inspection.
+- `E2`: JVM/Robolectric test.
+- `E3`: instrumentation, screenshot, or pointer-event test on an emulator.
+- `E4-user`: validation on real user devices from a pushed build — the primary device channel.
+- `E4-lab`: in-tree physical/representative device capture — available, optional.
+- `E5`: macrobenchmark / performance measurement.
+
+`DEVICE_VERIFIED` requires `E3` plus `E4-user` or `E4-lab`, declared per row. **A missing channel is
+a blocker, never a pass.**
+
+> **This section previously described a single `E4` as "representative device" and contradicted
+> ADR-0009.** The authority order in `DOCUMENTATION_GOVERNANCE.md` makes a lower-authority document
+> that disagrees with a higher one a documentation defect, and `ROADMAP.md` requires such a
+> disagreement to be corrected before implementation continues. Corrected 2026-09-26.
+
+## Current limitation: no fixture data in a shippable source set
+
+**No reader fixture data exists in any `main` or `androidTest` source set.** The only fixture binaries
+in the repository are the two animated assets below, and they live in `src/test/resources`.
+
+The consequence is concrete and is recorded here as a blocker rather than left implicit: a shipped
+build cannot display known geometry, so no reader `E4-user` claim is currently producible. The `DEF`
+rows describe *rendering* rather than source or library plumbing, so this is closable without a full
+app-seeding pipeline — a hostable test surface over known-geometry bitmaps is the bounded piece of
+work, and it is the first task of the evidence wave. Until it exists, rows depending on it stay
+`CODE_COMPLETE` with the device channel named as outstanding.
 
 ## Privacy
 

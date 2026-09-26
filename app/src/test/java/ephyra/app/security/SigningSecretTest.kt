@@ -1,5 +1,6 @@
 package ephyra.app.security
 
+import ephyra.app.architecture.TrackedFiles
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.io.File
@@ -84,19 +85,12 @@ class SigningSecretTest {
         )
     }
 
-    private fun committedKeystores(): List<File> = File(repositoryRoot(), "")
-        .walkTopDown()
+    private fun committedKeystores(): List<File> = TrackedFiles.list(repositoryRoot())
         .filter { it.isFile && it.extension.lowercase() in KEYSTORE_EXTENSIONS }
-        .filterNot { it.path.contains("${File.separator}build${File.separator}") }
-        .filterNot { it.path.contains("${File.separator}.git${File.separator}") }
-        .filterNot { it.path.contains("${File.separator}.kilo${File.separator}") }
         .toList()
 
-    private fun buildFiles(): List<File> = File(repositoryRoot(), "")
-        .walkTopDown()
+    private fun buildFiles(): List<File> = TrackedFiles.list(repositoryRoot())
         .filter { it.isFile && it.name == "build.gradle.kts" }
-        .filterNot { it.path.contains("${File.separator}build${File.separator}") }
-        .filterNot { it.path.contains("${File.separator}.kilo${File.separator}") }
         .toList()
 
     private fun repositoryRoot(): File {

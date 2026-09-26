@@ -1,39 +1,85 @@
 # Build & Repository Health
 
 > **Status:** binding program health contract. Structural gates and domain-purity gates run on every
-> change; repository size and timing are measured on a schedule.
+> change; repository size and timing are measured on a schedule and are **not** gates.
 
 Build time and repository health are a standing workstream, not a once-off check. The purpose is
 that the end state is **structurally** better than the start, not merely intentionally better.
 
 ## The rule
 
-A check earns the right to fail a build only if it is **structural** — asserting a property of the
-code's shape, so it cannot be satisfied by editing a number — or if it detects a **regression the
-programme is not trying to cause**.
+> **A measurement is a metric until it earns promotion to a gate. Promotion requires a named
+> antipattern.** A number becomes a gate only when it measures a violation we must ratchet down or
+> prevent, **and** the rule is structural — asserting a property of the code's shape, so it cannot be
+> satisfied by editing the number.
+
+**Counts do not qualify, and are not gates here.** A count is always satisfiable by editing the
+number, so it cannot detect anything about the product; it drifts for reasons unrelated to quality;
+and during this programme it moves in both legitimate directions — file and module counts **rise**
+while the replacement is built alongside the shipping app and **fall** at `CLEAN-001`. Test count in
+particular must never gate, because deleting legacy tests after their replacements exist is a
+required outcome, not a regression.
+
+**If a metric matters enough to gate, write the structural rule that catches the actual defect.**
+That is what `ModuleDependencyGraphTest` does for layering: it asserts graph *shape*, so retiring a
+legacy edge satisfies it automatically instead of requiring a number to be edited, and a count of
+dependency edges is therefore redundant.
+
+## Gates
 
 | Gate | Rule | Enforced by |
 |---|---|---|
 | Module layering | no core→feature, feature→feature, presentation→feature, or →`:app` edges | `ModuleDependencyGraphTest` |
+| Declared debt does not drift | every tolerated edge is declared, and a stale declaration fails | `ModuleDependencyGraphTest`, `SigningSecretTest`, `ManifestPrivilegeTest` |
 | Domain purity | no `android.*` imports in `core/domain` | `ArchitectureTest` + CI grep |
 | No unwired data shortcuts | bounded `ephyra.data.*` imports in feature modules | CI grep |
 | Signing credentials | no credential literal; no unacknowledged keystore | `SigningSecretTest` |
 | Manifest privileges | no sensitive permission without a written justification and removal condition | `ManifestPrivilegeTest` |
 
-**Repository size is not gated.** Module count, dependency-edge count, main source files, test source
-files, TODO/FIXME markers, and `@Deprecated` markers are measured on a schedule and recorded below.
+### Every gate must be falsifiable
 
-A count is a poor gate for three reasons: it is always satisfiable by editing the number, so it
-cannot detect anything about the product; it drifts for reasons unrelated to quality; and the 2.0
-programme legitimately increases file and module counts while it builds the replacement alongside the
-shipping app, then decreases them at `CLEAN-001`. Test count in particular must not be gated, because
-deleting legacy tests after their replacements exist is a required outcome, not a regression.
+A gate that cannot fail is indistinguishable from a gate that is passing, so a green run proves
+nothing on its own. Each gate therefore carries the property that makes it meaningful:
 
-**If a metric matters enough to gate on, write a structural rule.** That is what
-`ModuleDependencyGraphTest` does for layering, and why counting edges is redundant: the graph rules
-catch the actual defect and cannot be satisfied by changing a number.
+- **It must fail when the condition it forbids is introduced.** Verified by staging a deliberate
+  violation and observing the failure, not by reading the assertion. `ModuleDependencyGraphTest` was
+  falsification-tested on 2026-09-26 and **failed to fail** — see the correction below.
+- **It must assert against a non-empty subject.** "No offenders" is vacuously true over an empty
+  list, so `the dependency graph is non-empty` exists to distinguish *the graph is clean* from *the
+  graph was not read*.
+- **Its own helpers are asserted.** The edge extractor and the layer matcher have direct tests, so a
+  regression in either cannot quietly turn the rules into no-ops.
 
-## Scheduled measurements
+## Correction, 2026-09-26: `ModuleDependencyGraphTest` was inert
+
+Five of the six graph rules **could not fail.** Two independent defects combined:
+
+1. The edge extractor was `projects\.([a-zA-Z][a-zA-Z0-9_]*)` followed by
+   `filter { it.startsWith(":") }`. The repository writes every dependency in type-safe accessor form
+   (`projects.core.data`), and that regex captures one segment — `projects.feature.reader` yielded
+   `"feature"`, which does not start with a colon. Since the accessor form never contains a colon,
+   **every real edge was discarded**, `allEdges()` was always empty, and all five rules asserted over
+   an empty list.
+2. The prefix filters compared `startsWith("core")` against coordinates like `:core:domain`. The
+   leading colon meant no prefix test could ever match.
+
+This is the failure mode `REBUILD_EXECUTION_GUIDE.md` §7 names: *a test that passes because behavior
+is skipped is not passing.* It was found by staging a deliberate `core → feature` edge and observing
+the gate stay green — not by reading the code.
+
+**What the corrected gates then revealed**, having been invisible until now:
+
+| Debt | Edges | Ledger |
+|---|---:|---|
+| `core:domain` → project dependencies | 3 | B-006 class |
+| feature → feature | 24 | B-006 |
+
+These are **declared individually**, with the same two-way staleness check `SEC-003` applies to
+manifest permissions: a *new* edge fails, and a *stale* declaration fails. A count could not have
+distinguished them, and could not have named which edge to remove. This is the concrete case for the
+rule above.
+
+## Metrics — recorded, never gating
 
 Measured on a cadence, recorded here, never gating a change. Last measured 2026-09-26.
 
@@ -48,9 +94,22 @@ Measured on a cadence, recorded here, never gating a change. Last measured 2026-
 | Release APK per ABI | 30.7 MiB | track release, not the ~126 MiB unminified debug build |
 | Clean build time | not yet measured | `OPS-002` owes this number |
 
-The file and module walk behind these measurements must exclude `build/`, `.git/`, and `.kilo/`.
-`.kilo/worktrees/<name>/` is a complete second copy of the repository; counting it reports the
-project as roughly doubled.
+These figures are **informational**. A change to any of them is not a reviewable event unless it also
+breaks a structural gate.
+
+### How these are counted
+
+The walk is `git ls-files`-based, not a filesystem walk. A filesystem walk needs an exclusion list for
+every directory that can appear inside the repository — `build/`, `.git/`, and previously a duplicate
+agent worktree — and such a list fails *open*, because an unseen tree is simply not checked.
+`SigningSecretTest` is the sharp case: a keystore in an unscanned tree is exactly the leak it exists
+to catch. `git ls-files` cannot see untracked or ignored trees at all, so the exclusion is structural
+rather than remembered.
+
+**Stated limitation:** if git cannot be executed the list is empty, and the gates pass without having
+checked anything. That is acceptable for a repository-shape gate, whose real risk is noise across
+~1,200 files, and both CI and developer checkouts necessarily have git. A future gate that becomes
+load-bearing for security should assert the list is non-empty rather than rely on this.
 
 ## `E4-lab` device availability (re-verified 2026-09-25)
 
@@ -127,14 +186,17 @@ These exist because measurement showed the cost, not because of convention.
 3. **Do not run repo-wide tasks to validate a local change.** Validate, then run the full gate
    once at the end of a slice.
 
-## Why the module count is a ceiling
+## Why modules and edges still matter
 
 Each module costs configuration time, KSP/Hilt aggregation, and IDE indexing. 29 modules for a
 project of this size is already high. Adding a module should be the exception, justified by a
 distinct build/runtime contract — not a convenient way to avoid a package boundary.
 
-The same logic applies to dependency edges: a new `projects.*` edge is usually a layering leak and
-directly increases build coupling.
+This is a reason to prefer a structural rule over a count, and it is why the module and edge numbers
+above are metrics. A `maxModuleCount` would be satisfiable by raising the number, would fire for
+legitimate work during the replacement, and would say nothing about whether the graph is sound. The
+graph rules say something specific: they name *which* edge inverts the layering, and they stop
+firing on their own as the debt is retired.
 
 ## Bounded scope
 

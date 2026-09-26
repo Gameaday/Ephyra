@@ -1,11 +1,14 @@
 name: CI
 
+# Runs on every pull request, including documentation-only changes.
+#
+# This previously excluded `**.md` and `docs/**`, which meant a markdown-only PR executed no
+# verification at all. That is indefensible in a program that treats documentation as a
+# deliverable: the documentation gate would have been structurally unfalsifiable, because the only
+# way to falsify it is a PR that changes nothing but the thing it checks. The exclusion bought a
+# little CI time and cost the guarantee that the repository's own records are true.
 on:
   pull_request:
-    paths:
-      - '**'
-      - '!**.md'
-      - '!docs/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
