@@ -38,3 +38,39 @@ a transform reaches the screen — those rows rest on the `E3` pointer tests
 carry a recorded gesture or pointer trace, not this image.
 
 `E4-user` remains deferred by owner decision. Nothing in this directory substitutes for it.
+
+## e4lab-reader-controls-toggle
+
+| Field | Value |
+|---|---|
+| Capture date | 2026-09-26 |
+| Commit | `476e4e119` |
+| Device | `sdk_gphone16k_x86_64`, API 37, x86_64, 1080x2424, density 420 |
+| Gesture | Single tap at (540, 1200) in the reader, twice, separated by a `screencap` |
+| Verdict | **PASS — a single tap toggles the reader controls, and the toggle round-trips** |
+
+Observed: with the controls hidden a tap shows them (`C` and `E1` both capture the controls
+visible, 175749 and 175742 bytes), and a second tap hides them again (`E2`, 167749 bytes, matching
+the post-gesture frame `D` byte-for-byte by hash). This is the documented at-fit routing in
+`ZoomableMangaPage`: at or below `ZoomPolicy.ZOOM_GATE` every tap routes, which is how the menu is
+toggled at all.
+
+## BLOCKED — pinch and double-tap `E4-lab` capture
+
+`DEF-001` and `DEF-002` are **not** advanced by this directory, and the reason is a tooling limit
+rather than a product one.
+
+`adb shell input` synthesises one pointer per process invocation. It cannot place two taps inside
+the 350 ms double-tap window — each `input` call is a separate process spawn, so an attempted
+double-tap arrives as two independent single taps — and it has no multi-touch form at all, so a
+pinch cannot be produced. Driving these gestures needs either raw `sendevent` sequences with
+hand-timed event codes, or an instrumentation test that injects pointers.
+
+Per `E4_ACCEPTANCE.md` §3 a screenshot cannot establish a transform reaching the screen. Rather
+than relabel an uncontrolled frame as a zoom capture, those rows stay on their `E3` pointer tests:
+`PagerViewportRenderTest` and `WebtoonZoomRenderTest`, which do inject real pointer events.
+
+An earlier attempt in this session produced frames that could not be attributed to a specific
+gesture — the menu overlay and any zoom were confounded. Those captures were discarded rather than
+recorded, and this note exists so the next attempt does not repeat them.
+
