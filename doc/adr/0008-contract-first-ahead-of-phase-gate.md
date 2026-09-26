@@ -67,5 +67,5 @@ Either the rule is wrong or the ledger is wrong. Both cannot hold, and an agent 
 
 ## Supersedes / superseded by
 
-- Amends the phase-sequencing rule stated in [`../ROADMAP.md`](../ROADMAP.md) § "Phase summary".
+- Amends the phase-sequencing rule stated in [`ROADMAP.md`](../../ROADMAP.md) § "Phase summary".
   The rule text is retained and unchanged; this ADR defines its one documented exception.

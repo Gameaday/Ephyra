@@ -2,7 +2,7 @@
 
 > **Status:** binding intent register. Every story names the executable evidence that proves it, so
 > "does this work?" is answered by a named test rather than by opinion.
-> **Authority:** [`ROADMAP.md`](../ROADMAP.md) → [`REBUILD_PROGRAM.md`](../REBUILD_PROGRAM.md) →
+> **Authority:** [`ROADMAP.md`](../ROADMAP.md) → [`REBUILD_PROGRAM.md`](REBUILD_PROGRAM.md) →
 > this document → [`REBUILD_STATUS.md`](REBUILD_STATUS.md).
 > **Evidence levels:** `E2` (JVM/Robolectric) is the current floor for a story to be counted as met.
 > `E3`/`E4` are recorded in the status ledger and are not claimed by this file.

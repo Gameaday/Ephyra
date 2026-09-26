@@ -1,7 +1,7 @@
 # Device Acceptance Runbook
 
 > **Status:** binding evidence procedure for device-level claims.
-> **Authority:** [`ROADMAP.md`](../ROADMAP.md) → [`REBUILD_PROGRAM.md`](../REBUILD_PROGRAM.md) →
+> **Authority:** [`ROADMAP.md`](../ROADMAP.md) → [`REBUILD_PROGRAM.md`](REBUILD_PROGRAM.md) →
 > [`adr/0009`](adr/0009-evidence-channels-match-validation.md) → this document.
 > **Covers:** `E4-lab` (in-tree device capture) and `E4-user` (validation on real user devices from a
 > pushed build). Each ledger row declares which one it waits on.

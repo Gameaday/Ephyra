@@ -66,7 +66,9 @@ The pure policy is `core:domain`'s `ReaderTapSequencer`:
 - transform, long press, parent-scroll delegation, pointer cancellation, and document revision change all cancel a pending single tap;
 - timer scheduling and job ownership belong to the platform adapter, never to the domain policy.
 
-The current implementation is `ReaderTapSequencer` plus `feature:reader`'s thin pointer adapter. The adapter has no production call sites; per-viewport ownership and E4 device evidence are tracked under `RDR-003`, `RDR-004`, and `RDR-005`.
+The current implementation is `ReaderTapSequencer` plus `feature:reader`'s thin pointer adapter. As of 2026-09-26 the adapter has pointer-event coverage at `E2` (`ReaderGesturePointerAdapterTest`, 5 tests, including a falsification check) which found and fixed a real defect: it swallowed `DelegateSingleScroll`, so the arbiter's only *negative* decision was invisible to its consumer.
+
+**It still has no production call site.** `RDR-004` stage 1 made `PagerViewportState` the owner of the paged transform, but the pager's gesture source is still the legacy `detectPagerGestures`; the adapter takes over in stage 2, which is separated because it changes tap-deferral and long-press timing. `RDR-005` is blocked on `B-025`. Per-viewport ownership is tracked under `RDR-003`, `RDR-004`, and `RDR-005`, and device evidence under `B-024`.
 
 ## Test matrix
 

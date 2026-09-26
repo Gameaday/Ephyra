@@ -25,6 +25,28 @@ The pure implementation is `core:domain`'s `DocumentViewport`. It owns the singl
 - `resizedTo` preserves the visible centre across configuration changes;
 - `prefetchRect` is the visible rect expanded by a declared viewport margin and clipped to the document.
 
+## Which surface this model is for
+
+**`DocumentViewport` has no concept of an external owner of vertical scroll.** It clamps `offset.y`
+itself. The shipping continuous reader does the opposite: it uses `WebtoonDocumentZoom`
+(`scale` + `offsetX` only) and returns a `scrollCorrection`, because a `LazyColumn` owns vertical
+position and the transform deliberately must not also claim it.
+
+Wiring `DocumentViewport` into `ComposeWebtoonReader` would therefore give the surface **two owners
+of vertical position**. They would fight, and it would surface as content that jumps — on the exact
+surface where `DEF-002` and `DEF-003` are meant to improve. This was found by attempting the cutover
+on 2026-09-26; see `B-025` in the status ledger.
+
+**Decision.** `WebtoonDocumentZoom` remains the correct model for a `LazyColumn`-backed continuous
+surface. `DocumentViewport` is the model for a **canvas-backed** surface, where the renderer owns
+both axes and nothing else scrolls. `REBUILD_PROGRAM.md` leaves open whether a `LazyColumn` is
+retained for logical chapters only or a custom virtualised canvas is used instead; that choice
+determines which model applies, and it is `RDR-005`'s to make.
+
+Until that is decided, `DocumentViewport` and `DocumentTilePartition` are a **canvas-surface
+contract with no production consumer**, which is intentional and recorded rather than an oversight.
+
+
 ## Tile partitioning
 
 `DocumentTilePartition.partitionIntoTiles` partitions a region on a fixed grid. Two properties are
