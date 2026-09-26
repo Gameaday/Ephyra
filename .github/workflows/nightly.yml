@@ -31,6 +31,15 @@ jobs:
 
       - name: Build app
         run: ./gradlew assembleNightly -Penable-updater -PversionCode=${{ github.run_number }}
+        env:
+          # The signing secrets must be handed to the Gradle process explicitly. GitHub does
+          # not export repository secrets into a step's environment on its own, and
+          # `signingSecret()` resolves the `EPHYRA_NIGHTLY_STORE_PASSWORD` /
+          # `EPHYRA_NIGHTLY_KEY_PASSWORD` environment variables — so without this block the
+          # nightly build failed with "nightlyStorePassword is unset" no matter how the
+          # repository secrets were configured.
+          EPHYRA_NIGHTLY_STORE_PASSWORD: ${{ secrets.EPHYRA_NIGHTLY_STORE_PASSWORD }}
+          EPHYRA_NIGHTLY_KEY_PASSWORD: ${{ secrets.EPHYRA_NIGHTLY_KEY_PASSWORD }}
 
       - name: Sign APK
         if: ${{ env.SIGNING_KEY != '' }}
