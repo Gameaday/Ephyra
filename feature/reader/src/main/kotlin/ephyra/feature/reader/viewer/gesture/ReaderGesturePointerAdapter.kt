@@ -172,7 +172,17 @@ suspend fun PointerInputScope.detectReaderGestures(
                 when (val effect = transition.effect) {
                     ReaderGestureEffect.None -> Unit
 
-                    ReaderGestureEffect.DelegateSingleScroll -> cancelPendingTap()
+                    // Forwarded, not swallowed. Delegation is achieved by *not* consuming below, so
+                    // the parent scrolls naturally — but the viewport also has to know the arbiter
+                    // declined, so it can stop presenting zoom affordances and re-enable page
+                    // swipes. Swallowing this effect made the arbiter's only negative decision
+                    // invisible to its consumer, and it is the decision the consumer most needs:
+                    // the five effects were otherwise treated asymmetrically, with the positive
+                    // transform path reported and the decline path silent.
+                    ReaderGestureEffect.DelegateSingleScroll -> {
+                        cancelPendingTap()
+                        onEffect(effect)
+                    }
 
                     is ReaderGestureEffect.TapCandidate,
                     is ReaderGestureEffect.SingleTap,
