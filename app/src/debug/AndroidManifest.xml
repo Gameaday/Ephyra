@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+      Debug-only. Merged into debug builds and into nothing else, so neither this receiver nor
+      the `ephyra-e4lab` fixture assets can reach a nightly or release APK.
+
+      It exists because the reader cannot otherwise be reached during `E4-lab` capture: files
+      pushed with `adb` into the app's own `Android/data` tree are owned by `shell`, and the app
+      cannot read them on API 37. This receiver writes the same committed fixtures through the
+      app's own `StorageManager`, so they are owned correctly.
+
+      Trigger:
+        adb shell am broadcast -a ephyra.app.debug.SEED_E4LAB_FIXTURES \
+          -n app.ephyra.dev/ephyra.app.debug.E4LabFixtureReceiver
+
+      Delete with the rest of the evidence scaffolding at CLEAN-001.
+    -->
+    <application>
+        <receiver
+            android:name="ephyra.app.debug.E4LabFixtureReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="ephyra.app.debug.SEED_E4LAB_FIXTURES" />
+            </intent-filter>
+        </receiver>
+    </application>
+
+</manifest>
