@@ -72,15 +72,26 @@ jobs:
             exit 1
           fi
 
-      - name: Architecture fitness – feature module data.* import baseline
+      # Structural, not a count. The previous form compared a grep count against `BASELINE=0`
+      # and told the author to "lower BASELINE in build.yml" — a gate satisfiable by editing a
+      # number, which is the metric-as-measure antipattern recorded in BUILD_HEALTH.md. It also
+      # failed on a *test* file, which is not a layering violation at all.
+      #
+      # Scoped to `src/main` deliberately: only production sources carry a layering obligation. A
+      # test may reach into `core:data` to exercise behaviour owned there, and that is legitimate.
+      #
+      # The unresolved question this rule deliberately does NOT hide: `feature/reader` declares
+      # `implementation(projects.core.data)`, so features *can* depend on data. Whether they
+      # should is a data-ownership decision belonging to the DATA-001I cutover gate, not to a
+      # grep. See B-027.
+      - name: Architecture fitness – no ephyra.data.* imports in feature production sources
         run: |
-          BASELINE=0
-          VIOLATION_COUNT=$(grep -rn --include="*.kt" "^\s*import ephyra\.data\." feature/*/src 2>/dev/null | wc -l | tr -d ' ')
-          echo "ephyra.data.* imports in feature modules: ${VIOLATION_COUNT} (baseline: ${BASELINE})"
-          if [ "${VIOLATION_COUNT}" -gt "${BASELINE}" ]; then
-            echo "::error::ephyra.data.* import count (${VIOLATION_COUNT}) exceeds baseline (${BASELINE})."
-            echo "::error::Fix the new violations before merging, then lower BASELINE in build.yml."
-            grep -rn --include="*.kt" "^\s*import ephyra\.data\." feature/*/src 2>/dev/null || true
+          VIOLATIONS=$(grep -rn --include="*.kt" "^\s*import ephyra\.data\." \
+            feature/*/src/main 2>/dev/null || true)
+          if [ -n "$VIOLATIONS" ]; then
+            echo "::error::ephyra.data.* imports found in feature production sources (architectural violation):"
+            echo "$VIOLATIONS"
+            echo "::error::A feature must reach data through a contract, not by importing it directly."
             exit 1
           fi
       # Regression guard for the Mangabat/extension-zstd crash (CHANGELOG: extensions
