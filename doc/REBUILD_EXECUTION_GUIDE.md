@@ -23,12 +23,13 @@ git log -5 --oneline --decorate
 
 11. Confirm the working tree is clean. If not, identify whether changes belong to the current task.
 12. Select exactly one `IN_PROGRESS`/`NOT_STARTED` task whose prerequisites are `VERIFIED`. An in-progress task may be resumed only to finish its named evidence gate.
-13. For `TST-001B`/`TST-001C1`/`TST-001C2`/`TST-001C3`, use the `ReaderFixtureCatalog` as the source of fixture identity and do not add production code. Animated WebP/GIF binaries are immutable and hash-verified; do not regenerate them casually. JXL remains blocked until an Android runtime or independently reviewed immutable artifact is available.
+13. For `TST-001A`/`TST-001B`/`TST-001C1`/`TST-001C2`/`TST-001C3`, use the `ReaderFixtureCatalog` as the source of fixture identity and do not add production code. Animated WebP/GIF binaries are immutable and hash-verified; do not regenerate them casually. **JXL (`TST-001C3`) was `BLOCKED` because the only available codec is Android-native; that reason is void as of 2026-09-25 now that an emulator is attached. Hash-verify the existing artifact before use.**
 14. For `TST-002`, compile with `./gradlew :app:assembleDebugAndroidTest --offline`. E3 evidence requires a successful run of `.github/workflows/connected-instrumentation.yml`; compilation alone is not E3.
-15. Create a branch named `program/<phase-number>-<task-id>-<short-slug>`.
-16. Add the task ID to the branch and commit subject.
-17. Do not combine unrelated cleanup into the first commit.
-18. Before source/search work, read the source contracts and classify the change as target contract, adapter boundary, or deletion.
+15. **For any device-dependent claim, read [`E4_ACCEPTANCE.md`](E4_ACCEPTANCE.md) first.** It defines the required artifact format and, critically, which claims a screenshot may not prove. A still frame cannot demonstrate focal anchoring or frame pacing.
+16. Create a branch named `program/<phase-number>-<task-id>-<short-slug>`.
+17. Add the task ID to the branch and commit subject.
+18. Do not combine unrelated cleanup into the first commit.
+19. Before source/search work, read the source contracts and classify the change as target contract, adapter boundary, or deletion.
 
 ## 2. Task selection
 

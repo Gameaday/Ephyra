@@ -2,7 +2,7 @@
 
 > **Authoritative status:** active program
 > **Baseline:** `4ec5b2c15` (`nightly-43-g4ec5b2c15`)
-> **Last verified:** 2026-09-24
+> **Last verified:** 2026-09-25
 > **Target:** Android-native Ephyra 2.0 with explicit state, resource, navigation, and media ownership
 
 This file is the single entry point for the reconstruction program. If another document disagrees with this file, the disagreement is a documentation defect and must be corrected before implementation continues.
@@ -30,6 +30,8 @@ This file is the single entry point for the reconstruction program. If another d
 19. [`doc/source/SOURCE_CALL_GRAPH.md`](doc/source/SOURCE_CALL_GRAPH.md)  current source/search paths and replacement owners.
 20. [`doc/source/SOURCE_COMPATIBILITY_MATRIX.md`](doc/source/SOURCE_COMPATIBILITY_MATRIX.md)  explicit compatibility decisions and deletion blockers.
 21. [`doc/source/SOURCE_REMOVAL_PLAN.md`](doc/source/SOURCE_REMOVAL_PLAN.md)  ordered legacy bridge removal gates.
+22. [`doc/E4_ACCEPTANCE.md`](doc/E4_ACCEPTANCE.md)  device-evidence runbook, artifact format, and what a screenshot may and may not prove.
+23. [`doc/BUILD_HEALTH.md`](doc/BUILD_HEALTH.md)  repository health ratchets, timing budgets, and verified device availability.
 
 ## Program outcome
 
@@ -120,17 +122,44 @@ Debt is removed by **tightening** a ceiling, never by raising it.
 22. `DEF-008` `BorderCropTransformation` corrected for transposed per-edge insets, single-outlier intolerance, and contentless cropping — `CODE_COMPLETE` at E2, with each defect proven by a failing test before the fix. Device acceptance still required.
 23. `MED-001` page source, identity/revision, metadata, content-rect, animation, and decode-plan contracts — `CODE_COMPLETE` at E2 with 43 tests. Pure and not production-wired; the adapters and viewport consumption come later.
 24. `MED-002` byte-budgeted working page store — `CODE_COMPLETE` at E2 with 22 tests. Replaces the unbounded `ReaderPage.cachedBytes` that grows with scroll distance. Pure and not production-wired; retiring the field itself waits on the viewport cutover.
-25. `MED-003` crop-aware render-path, animation, and tile-scale policy — `CODE_COMPLETE` at E2 with 54 tests. Fixes crop disabling webtoon slicing, separates JXL from an animation verdict, and adds scale-bucket hysteresis so zoom settles instead of re-decoding.26. `DEF-001` paged pinch zoom fixed at the root: the transform was computed but never applied (`graphicsLayer` was imported and unused), and the gesture centroid was discarded — `CODE_COMPLETE` at E2 with 16 tests, **production-wired**. This is the first pass to change reader rendering behaviour; E4 device acceptance is now the only thing missing.
+25. `MED-003` crop-aware render-path, animation, and tile-scale policy — `CODE_COMPLETE` at E2 with 54 tests. Fixes crop disabling webtoon slicing, separates JXL from an animation verdict, and adds scale-bucket hysteresis so zoom settles instead of re-decoding.
 
-26. `DEF-001` paged pinch zoom fixed at the root — the transform was computed but never applied (`graphicsLayer` was imported and unused), and the gesture centroid was discarded. `CODE_COMPLETE` at E2 with 16 tests, **production-wired**. First pass to change reader rendering behaviour; E4 acceptance is the only thing missing.
-
+26. `DEF-001` paged pinch zoom fixed at the root — the transform was computed but never applied (`graphicsLayer` was imported and unused), and the gesture centroid was discarded. `CODE_COMPLETE` at E2 with 16 tests, **production-wired**. First pass to change reader rendering behaviour; E4 acceptance is now the only thing missing.
 27. `DEF-002`/`DEF-003` webtoon zoom made document-space and focal-anchored — `CODE_COMPLETE` at E2 with 22 tests, **production-wired**. Replaces the per-item X-only transform that caused widening-only pinch and item overlap.
-
 28. `DEF-005`/`NAV-002` shared-element motion given symmetric durations, linear easing, and live reduced motion — `CODE_COMPLETE` at E2 with 17 tests, **production-wired**.
+29. **Wave 0, 2026-09-25 — the record was reconciled against reality.** The recorded E4 blocker was
+    false. A working emulator is attached (`Pixel_10`, API 37, x86_64, 1080x2424 @ 420dpi) with
+    `app.ephyra.dev` installed, so `TST-002`, `TST-001C3`, and the E4 obligation on `DEF-001`,
+    `DEF-002`, `DEF-003`, `DEF-005`, and `DEF-008` are actionable now. `BUILD_HEALTH.md` § E4 was
+    rewritten with the verified facts and its residual limits: `cmdline-tools` is still absent, so
+    no new AVD or system image can be created; the emulator is a *representative* device, not
+    physical hardware; and local API 37 is not the API 35 emulator CI boots.
+30. **Device evidence is now the highest-priority work.** Executing it converts seven stalled rows
+    into verified product and gives the `RDR-004`/`RDR-005` rewrite a real device baseline. Adding
+    more contract code while the hardware that would verify seven rows sits attached is the wrong
+    order of work. Runbook: [`doc/E4_ACCEPTANCE.md`](doc/E4_ACCEPTANCE.md).
+31. **The phase-gate contradiction is resolved by
+    [`ADR-0008`](doc/adr/0008-contract-first-ahead-of-phase-gate.md), not by marking a phase
+    `VERIFIED`.** Phases 3–6 were `CODE_COMPLETE` while `Phase 0` read `NOT_STARTED`, contradicting
+    the "no phase may begin implementation" rule. Marking a phase `VERIFIED` to tidy the table
+    would have manufactured a record, which ADR-0006 forbids. ADR-0008 instead permits pure,
+    unwired contract work to precede its gate, and such rows still earn `CODE_COMPLETE` only —
+    never `VERIFIED` — until device evidence lands. The `Phase 0` cell was corrected to its
+    substantively accurate value.
+32. `DEF-004` is closed as **resolved by `DEF-008`**. The audit below traced the crop toggle end to
+    end and found the plumbing correct and the transform defective. Leaving both rows open
+    invited a future agent to "fix `DEF-004`" by touching already-verified plumbing, which is
+    precisely the workaround-on-top-of-a-resolved-conflict that non-negotiable rule 2 forbids.
+    **Program audit, 2026-09-25 (continued).** `DEF-004` is closed as resolved by `DEF-008`, per the
+    crop-toggle finding below. The E4 environmental limit recorded earlier in this ledger was
+    false; a working emulator is attached, and [`doc/E4_ACCEPTANCE.md`](doc/E4_ACCEPTANCE.md) now
+    defines how those runs are executed and recorded. No phase was promoted to `VERIFIED` in this
+    pass, because reaching a device is not the same as producing evidence from it.
+
 **Program audit, 2026-09-25.** Re-read the plan, program, status, execution guide, and the
 media/cache contracts against the code, and reconciled the ledger with reality. Findings:
 
-- Phase 4 is `CODE_COMPLETE`, not `VERIFIED`: `FIXTURE_MANIFEST.md` is explicit that E3 needs a retained connected run, and no connected run exists. The phase row now says so.
+- Phase 4 is `CODE_COMPLETE`, not `VERIFIED`: `FIXTURE_MANIFEST.md` is explicit that E3 needs a retained connected run, and no connected run exists. The phase row now says so. **(2026-09-25: the "no connected run" part is now actionable — a device is attached — but the run has still not been executed, so the cell remains `CODE_COMPLETE`.)**
 - The ledger overstated MED-003 at 52 tests; the suites hold 54 (21 + 13 + 15 + 5). Corrected, with per-suite counts recorded so the number is checkable.
 - `OPS-003`'s main-source rule was an exact match while the baseline note called it ungated. It fired on four consecutive commits, each forcing a manual edit, which trains people to bump the number without reading it. Now a ceiling; the legacy-deletion target is judged by that value falling over time.
 - The crop toggle was re-verified end to end: `toggleCropBorders` writes `cropBorders`/`cropBordersWebtoon`, `ReaderScreen` observes both via `collectAsState`, and both the pager and webtoon path key their Coil request and cache key on the flag. The plumbing was never the defect; the transform was (`DEF-008`).
@@ -148,3 +177,11 @@ The current application is not considered a complete native reader architecture.
 - crop-borders behaviour is corrected in code (`DEF-008`) but still requires fresh device acceptance after the Coil 3 rewrite.
 
 All five reported reader and motion defects (`DEF-001`, `DEF-002`, `DEF-003`, `DEF-005`, `DEF-008`) are now fixed in code and production-wired. Every one of them still needs E4 device acceptance, and the broader `MED` -> `RDR-004`/`RDR-005` replacement sequence is still open. Motion quality in particular is judged from duration and easing arithmetic here, not from frames, so E4 matters more for this item than for the others. The crop fix is a confirmed code defect that is fixed and unit-proven; it is expected to change what you see, but that is only claimable once a device confirms it. See [`doc/REBUILD_STATUS.md`](doc/REBUILD_STATUS.md).
+
+**As of 2026-09-25 that E4 acceptance is no longer blocked.** A working emulator is attached
+(`Pixel_10`, API 37, x86_64) with the app installed, so every "pending E4" item above is now
+executable rather than deferred. Two constraints keep the claims honest: a gesture-anchoring or
+frame-pacing defect cannot be discharged by a still screenshot (see the table in
+[`doc/E4_ACCEPTANCE.md`](doc/E4_ACCEPTANCE.md)), and an emulator is a representative device, not
+physical hardware. Until those runs are executed and recorded, the honest status of all five rows
+is unchanged: `CODE_COMPLETE` at `E2`, production-wired, E4 outstanding.

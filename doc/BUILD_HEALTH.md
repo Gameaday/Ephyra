@@ -43,31 +43,52 @@ This metric is listed here rather than in Tier A precisely so the table above st
 description of what the build actually enforces. A metric that cannot be checked on every change
 is visibility, not a gate.
 
-## E4 device availability (diagnosed 2026-09-25)
+## E4 device availability (re-verified 2026-09-25)
 
-E4 evidence is currently unreachable on this workstation, and the reason is specific rather than
-"no device attached":
+**E4 evidence is reachable on this workstation.** A working emulator is attached and the
+application is installed on it. The previously recorded blocker was a tooling gap that has since
+been closed, and this section supersedes it.
 
-- `ANDROID_HOME` is set and `platform-tools/adb.exe` (37.0.1) and `emulator/emulator.exe` (37.2.10)
-  are installed, so the tooling exists.
-- **No AVD is defined**, and `cmdline-tools` is absent, so there is no `avdmanager` or `sdkmanager`
-  to create one.
-- `system-images/android-36/google_apis_playstore` exists but is **empty**, so there is no image to
-  boot even if an AVD were defined.
-- Hardware acceleration is available: `HypervisorPresent` is true and virtualization firmware is
-  enabled, so WHPX/Hyper-V can host an emulator once an image exists. HAXM is not installed and is
-  not needed under WHPX.
+Verified state:
 
-To unblock E4, install `cmdline-tools` plus one system image (the API 35 emulator the execution
-guide pins, or the API 36 image already scaffolded here), then create an AVD and confirm with:
+| Fact | Value | Command |
+|---|---|---|
+| `adb` | 1.0.41 (37.0.1-15733141) | `adb version` |
+| Emulator | 37.2.11.0 (build 16416033) | `emulator -version` |
+| AVD | `Pixel_10` | `emulator -list-avds` |
+| Device | `emulator-5554`, state `device` | `adb devices` |
+| API / release | 37 / 17 | `adb shell getprop ro.build.version.sdk` |
+| ABI | `x86_64` | `adb shell getprop ro.product.cpu.abi` |
+| Model | `sdk_gphone16k_x86_64` | `adb shell getprop ro.product.model` |
+| Fingerprint | `google/sdk_gphone16k_x86_64/emu64xa16k:17/CP41.260828.004.A7/16296984:user/dev-keys` | `adb shell getprop ro.build.fingerprint` |
+| Display | 1080x2424 @ 420 dpi | `adb shell wm size`, `adb shell wm density` |
+| App installed | `app.ephyra.dev` | `adb shell pm list packages \| findstr ephyra` |
+| Bootloader | emulator (`ro.kernel.qemu` = 1) | `adb shell getprop ro.kernel.qemu` |
 
-```powershell
-adb devices
-adb shell getprop ro.build.version.sdk
-```
+### Residual limitations, stated precisely
 
-Until that happens, every reader claim stays at E2 and no phase may be marked `VERIFIED`. This is
-recorded here because it is a tooling gap with a known fix, not an evidence gap.
+These are still true and must not be reported as solved:
+
+- `cmdline-tools` is **absent**, so there is no `avdmanager` and no `sdkmanager`. A new AVD or a
+  new system image cannot be installed from the command line. The existing `Pixel_10` AVD is the
+  only bootable target here.
+- This is an **emulator on x86_64**, not physical hardware. ADR-0006 reserves E4 for
+  "physical-device or representative-device evidence"; an AVD is a representative device, so E4
+  claims must record the model and ABI and must not be generalised to physical hardware.
+- The API 37 device is **not** the API 35 emulator the execution guide pins and that
+  `connected-instrumentation.yml` boots in CI. Local E4 runs and CI E3 runs therefore cover
+  different API levels. Both must be recorded; neither substitutes for the other.
+
+### What this changes
+
+Seven ledger rows were waiting on evidence that this workspace could not produce. That reason is
+gone, so `TST-002`, `TST-001C3`, and the `E4` acceptance obligation on `DEF-001`, `DEF-002`,
+`DEF-003`, `DEF-005`, and `DEF-008` are actionable now. See [`E4_ACCEPTANCE.md`](E4_ACCEPTANCE.md)
+for the runbook and evidence format.
+
+Recording this is not a licence to claim completion. A device being reachable raises the
+*obligation* to produce device evidence; it does not satisfy it. Until the runs are executed and
+recorded, those rows stay `CODE_COMPLETE` at `E2` with E4 outstanding, and no phase advances.
 
 ### Tier B — timing budgets (measured on a schedule)
 
