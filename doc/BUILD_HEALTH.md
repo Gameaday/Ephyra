@@ -92,7 +92,7 @@ Measured on a cadence, recorded here, never gating a change. Last measured 2026-
 | TODO/FIXME markers | 14 | intentional debt belongs in `REBUILD_STATUS.md` |
 | `@Deprecated` markers | 39 | each is a bridge this programme intends to remove |
 | Release APK per ABI | 30.7 MiB | track release, not the ~126 MiB unminified debug build |
-| Clean build time | not yet measured | `OPS-002` owes this number |
+| Clean build time | **93s** | measured 2026-09-26 on a cold cache; see "Timing budgets" |
 
 These figures are **informational**. A change to any of them is not a reviewable event unless it also
 breaks a structural gate.
@@ -173,7 +173,25 @@ gated per-PR. They still inform every architectural decision.
 | `:feature:reader:testDebugUnitTest` (warm) | 44.0s | 60s | Largest existing suite |
 | `:app:compileDebugKotlin` (warm) | 40.8s | 60s | |
 | Repo-wide `spotlessCheck` | 81.3s | n/a | **Not a budget. See "Agent working rules".** |
-| Clean build | not yet measured | 300s | Establish on a cold cache |
+| Clean build | **93s** | 300s | `:app:assembleDebug`, measured 2026-09-26 |
+
+### How the clean-build number was taken
+
+Recorded because a bare number is not reproducible, and an unreproducible measurement is a
+guess with a decimal point.
+
+- **2026-09-26**, `:app:assembleDebug`, Gradle 9.7.1 on JDK 21.0.12 LTS.
+- **Host:** AMD Ryzen 7 9800X3D (8 cores / 16 threads), 61.6 GB RAM, `-Xmx8g`, `org.gradle.parallel=true`.
+- **Cold means cold:** the Gradle build cache (`~/.gradle/caches/build-cache-1`, 10.4 GB at the
+  time) was deleted *and* every module `build/` directory was removed before the run. The
+  dependency cache (`modules-2`) was left in place, because re-downloading dependencies measures the
+  network, not the build. The cache is repopulated afterwards, so a repeat run is warm and will be
+  far quicker — this number is for the first build on a fresh machine or a cleared cache.
+- **Result:** `BUILD SUCCESSFUL in 1m 33s`, five per-ABI debug APKs written, against a 300s budget.
+
+**Caveat worth stating:** 93s is for a debug assembly on a high-core desktop. It is not a CI figure
+and not a release figure. Treat it as evidence that the budget is generous rather than as a
+performance claim about the project.
 
 ## Agent working rules
 
