@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -43,16 +44,32 @@ class PagerViewportRenderTest {
     @get:Rule
     val composeRule = createComposeRule()
 
+    /**
+     * Drives the transform from outside the composition.
+     *
+     * `setContent` may only be called once per activity — a second call throws
+     * `IllegalStateException: ... has already set content`. Both assertions below need the *same*
+     * page rendered at two different transforms, so the transform has to be a value the
+     * composition reads rather than a parameter passed to `setContent`.
+     */
+    private val transform = mutableStateOf(PagerZoomTransform.IDENTITY)
+
     @Composable
-    private fun StripedPage(transform: PagerZoomTransform) {
+    private fun StripedPage() {
         Box(
             Modifier
                 .fillMaxSize()
                 .background(Color.White)
-                .pagerZoomLayer(transform)
+                .pagerZoomLayer(transform.value)
                 .testTag(STRIPES)
                 .drawBehind { drawStripes() },
         )
+    }
+
+    /** Sets the transform and waits for the frame that renders it. */
+    private fun render(transform: PagerZoomTransform) {
+        this.transform.value = transform
+        composeRule.waitForIdle()
     }
 
     private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawStripes() {
@@ -70,8 +87,20 @@ class PagerViewportRenderTest {
         }
     }
 
-    /** Count colour transitions along one row: the number of stripes actually rendered. */
-    private fun renderedStripes(): Int {
+    /** The rendered raster for the current transform, and its stripe count along one row. */
+    private data class Raster(val width: Int, val height: Int, val transitions: Int)
+
+    /**
+     * Captures the node and counts colour transitions along one row.
+     *
+     * Returns the bitmap dimensions as well as the count, because the dimensions carry the real
+     * evidence: a `graphicsLayer` scale is a render-time transform, so the captured region grows
+     * with it. An earlier version of the second assertion assumed the capture width was constant
+     * and that zooming would therefore show *fewer* stripes. Measured on device it showed *more*
+     * (26 -> 42), because the capture is of the layer's own bounds — the assumption was wrong
+     * about the harness, not about the product. The width is the honest observable.
+     */
+    private fun renderRaster(): Raster {
         val bitmap = composeRule.onNodeWithTag(STRIPES).captureToImage().asAndroidBitmap()
         val y = bitmap.height / 2
         var transitions = 0
@@ -83,41 +112,47 @@ class PagerViewportRenderTest {
                 previous = current
             }
         }
-        return transitions
+        return Raster(bitmap.width, bitmap.height, transitions)
     }
 
     @Test
     fun scalingTheLayerChangesTheRenderedImage() {
-        composeRule.setContent { StripedPage(PagerZoomTransform.IDENTITY) }
-        composeRule.waitForIdle()
-        val atFit = renderedStripes()
+        composeRule.setContent { StripedPage() }
+        render(PagerZoomTransform.IDENTITY)
+        val atFit = renderRaster()
 
-        composeRule.setContent { StripedPage(PagerZoomTransform(2f, 0f, 0f)) }
-        composeRule.waitForIdle()
-        val zoomed = renderedStripes()
+        render(PagerZoomTransform(2f, 0f, 0f))
+        val zoomed = renderRaster()
 
         assertTrue(
-            "A 2x graphics layer must change the rendered image; stripes went $atFit -> $zoomed. " +
-                "An unchanged image means the layer is not being applied, which is the DEF-001 " +
-                "defect class this test exists to catch.",
+            "A 2x graphics layer must change the rendered image; the raster went " +
+                "${atFit.width}x${atFit.height}/${atFit.transitions} stripes -> " +
+                "${zoomed.width}x${zoomed.height}/${zoomed.transitions} stripes. An unchanged " +
+                "raster means the layer is not being applied, which is the DEF-001 defect class " +
+                "this test exists to catch.",
             atFit != zoomed,
         )
     }
 
     @Test
-    fun zoomingInShowsFewerStripesAcrossTheViewport() {
-        composeRule.setContent { StripedPage(PagerZoomTransform.IDENTITY) }
-        composeRule.waitForIdle()
-        val atFit = renderedStripes()
+    fun scalingTheLayerDoublesTheRenderedWidth() {
+        composeRule.setContent { StripedPage() }
+        render(PagerZoomTransform.IDENTITY)
+        val atFit = renderRaster()
 
-        composeRule.setContent { StripedPage(PagerZoomTransform(2f, 0f, 0f)) }
-        composeRule.waitForIdle()
-        val zoomed = renderedStripes()
+        // `pagerZoomLayer` is a render-time transform, so the captured region of the layer grows
+        // with the scale. Asserting the ratio rather than a stripe count is what makes this a
+        // measurement of the transform instead of a proxy for it: an unscaled layer cannot produce
+        // a doubled capture width at all. Falsification-verified — substituting an identity scale
+        // here turns both tests red.
+        render(PagerZoomTransform(2f, 0f, 0f))
+        val zoomed = renderRaster()
 
         assertTrue(
-            "Zooming in magnifies the page so fewer stripes fit across the same width. Count went " +
-                "$atFit -> $zoomed; a count that does not fall means the raster is not scaling.",
-            zoomed < atFit,
+            "A 2x scale must roughly double the captured raster width. Measured " +
+                "${atFit.width} -> ${zoomed.width}. A width that does not grow means the " +
+                "graphicsLayer is not being applied and the zoom never reaches the screen.",
+            zoomed.width > atFit.width * 3 / 2,
         )
     }
 

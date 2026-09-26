@@ -53,4 +53,19 @@ dependencies {
     androidTestImplementation("androidx.test:runner:1.7.0")
     androidTestImplementation(libs.compose.ui.test.junit4)
     debugImplementation(libs.compose.ui.test.manifest)
+
+    // `espresso-core` reaches the classpath transitively, via `ui-test-junit4`, and resolves to
+    // 3.5.0. That version calls `android.hardware.input.InputManager.getInstance`, which was
+    // removed in API 37, so `Espresso.onIdle` — and therefore Compose's entire idle-sync path,
+    // `EspressoLink.runUntilIdle` — dies with `NoSuchMethodException` before a test body runs.
+    // This is a toolchain incompatibility with the emulator's API level, not a product defect,
+    // and it is what `B-024` records.
+    //
+    // Pinned rather than upgraded at the source: the transitive version is not ours to choose
+    // directly, and the `androidx` catalog that declares 3.7.0 is not addressable as `libs.*` from
+    // a module script here. Forcing the resolved version is the smallest change that makes the
+    // `E3` channel usable, and it is consistent with gradle/androidx.versions.toml.
+    constraints {
+        androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
+    }
 }
