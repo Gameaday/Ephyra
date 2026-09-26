@@ -49,11 +49,28 @@ android {
     }
 
     signingConfigs {
+        // SEC-001: credentials are never literals in version control. They are read from
+        // Gradle properties (CI secrets, ~/.gradle/gradle.properties) or the environment.
+        // A missing value is an error only for builds that actually need to sign; debug and
+        // the local unit-test gate must keep working without a keystore.
+        val nightlyStorePassword = signingSecret("nightlyStorePassword")
+        val nightlyKeyPassword = signingSecret("nightlyKeyPassword")
+        val nightlyKeyAlias = signingSecret("nightlyKeyAlias") ?: "nightlykey"
+        val nightlyStoreFile = signingSecret("nightlyStoreFile") ?: "nightly.keystore"
+
         create("nightly") {
-            storeFile = file("nightly.keystore")
-            storePassword = "ephyra"
-            keyAlias = "nightlykey"
-            keyPassword = "ephyra"
+            storeFile = file(nightlyStoreFile)
+            keyAlias = nightlyKeyAlias
+            if (gradle.startParameter.taskNames.any { it.contains("Nightly", ignoreCase = true) }) {
+                storePassword = requireNotNull(nightlyStorePassword) {
+                    "nightly signing requested but 'nightlyStorePassword' is unset. Supply it via " +
+                        "~/.gradle/gradle.properties or the EPHYRA_NIGHTLY_STORE_PASSWORD env var."
+                }
+                keyPassword = requireNotNull(nightlyKeyPassword) {
+                    "nightly signing requested but 'nightlyKeyPassword' is unset. Supply it via " +
+                        "~/.gradle/gradle.properties or the EPHYRA_NIGHTLY_KEY_PASSWORD env var."
+                }
+            }
         }
     }
 
@@ -359,4 +376,19 @@ buildscript {
     dependencies {
         classpath(kotlinx.gradle)
     }
+}
+
+/**
+ * SEC-001 support: read a signing secret from Gradle properties or the environment.
+ *
+ * Order is Gradle property first, then `EPHYP_`-prefixed environment variable, so CI can inject
+ * either. Returns null when unset, which lets debug builds and the local unit-test gate run
+ * without a keystore while still failing loudly for a real signing task.
+ */
+fun signingSecret(propertyName: String): String? {
+    val fromProperty = providers.gradleProperty(propertyName).orNull
+    if (!fromProperty.isNullOrBlank()) return fromProperty
+    val envName = "EPHYRA_" + propertyName.replace(Regex("([a-z])([A-Z])"), "$1_$2").uppercase()
+    val fromEnv = providers.environmentVariable(envName).orNull
+    return fromEnv?.takeIf { it.isNotBlank() }
 }

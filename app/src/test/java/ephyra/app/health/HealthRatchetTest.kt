@@ -113,6 +113,7 @@ class HealthRatchetTest {
                     (it.extension == "kt" || it.extension == "java") &&
                     !it.path.contains(buildPathSegment) &&
                     !it.path.contains(gitPathSegment) &&
+                    !it.path.contains(toolingPathSegment) &&
                     it.name != selfName
             }
             .toList()
@@ -120,7 +121,12 @@ class HealthRatchetTest {
 
     private fun buildFiles(): List<File> = File(root, "")
         .walkTopDown()
-        .filter { it.isFile && it.name == "build.gradle.kts" && !it.path.contains(buildPathSegment) }
+        .filter {
+            it.isFile &&
+                it.name == "build.gradle.kts" &&
+                !it.path.contains(buildPathSegment) &&
+                !it.path.contains(toolingPathSegment)
+        }
         .toList()
 
     private fun repositoryRoot(): File {
@@ -142,6 +148,20 @@ class HealthRatchetTest {
     private companion object {
         val buildPathSegment = "${File.separator}build${File.separator}"
         val gitPathSegment = "${File.separator}.git${File.separator}"
+
+        /**
+         * Agent Manager worktrees live at `.kilo/worktrees/<name>/` and contain a full second copy
+         * of the repository. They are tooling scratch space, not project sources, so counting them
+         * makes every metric report the project as roughly doubled.
+         *
+         * This was not hypothetical: with one worktree present, `mainSourceFiles` read 2432 against
+         * a 1217 ceiling and `projectDependencyEdges` read 332 against a 166 ceiling, while the
+         * real tree measured exactly 1217 and exactly 166. A ceiling ratchet that fires on the mere
+         * existence of a worktree cannot gate anything — it would either block every agent run or
+         * train people to raise ceilings. The fix is to exclude the copy, not to re-baseline
+         * against it.
+         */
+        val toolingPathSegment = "${File.separator}.kilo${File.separator}"
         val mainPathSegment = "${File.separator}src${File.separator}main${File.separator}"
         val testPathSegment = "${File.separator}src${File.separator}test${File.separator}"
         val androidTestPathSegment = "${File.separator}src${File.separator}androidTest${File.separator}"

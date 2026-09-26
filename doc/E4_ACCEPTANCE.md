@@ -23,15 +23,26 @@ record is not a partial pass; it is no record.
 
 ## 2. Preconditions
 
+`adb` must be resolvable. On this workstation the SDK is at
+`%LOCALAPPDATA%\Android\Sdk` (per `local.properties`), but `platform-tools` is **not on `PATH`**, so
+a bare `adb` fails in a non-interactive shell. Resolve it explicitly first:
+
 ```powershell
-adb devices                                  # expect exactly one line, state `device`
-adb shell getprop ro.build.version.sdk       # record
-adb shell getprop ro.product.model           # record
-adb shell getprop ro.product.cpu.abi         # record
-adb shell wm size
-adb shell wm density
-git --no-pager rev-parse HEAD                # record the SHA under test
+$adb = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"   # or wherever your SDK lives
+if (-not (Test-Path $adb)) { $adb = (Get-Command adb -ErrorAction SilentlyContinue).Source }
+if (-not $adb) { throw "adb not found: add platform-tools to PATH or set `$adb above" }
+
+& $adb devices                                  # expect exactly one line, state `device`
+& $adb shell getprop ro.build.version.sdk       # record
+& $adb shell getprop ro.product.model           # record
+& $adb shell getprop ro.product.cpu.abi         # record
+& $adb shell wm size
+& $adb shell wm density
+& $adb shell pm list packages | findstr ephyra  # record applicationId
+git --no-pager rev-parse HEAD                   # record the SHA under test
 ```
+
+Use `& $adb` for the remainder of the run so the resolved path is not re-resolved by `PATH` lookup.
 
 If `adb devices` lists no device, **stop and record the blocker**. Do not substitute a JVM test
 and do not mark the row complete.

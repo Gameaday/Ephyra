@@ -38,6 +38,12 @@ _*.ps1
 .DS_Store
 Thumbs.db
 
+# Agent Manager worktrees. Each `.kilo/worktrees/<name>/` is a full second copy of the
+# repository, so leaving it untracked-by-accident is what put ~1465 duplicate sources in reach
+# of `git add .` — and is the same copy that made every health ratchet report the project as
+# roughly twice its size. HealthRatchetTest excludes this path for the same reason.
+.kilo/
+
 # Project IDX
 # .idx/dev.nix (Keep tracked)
 *.pytroubleshooting/

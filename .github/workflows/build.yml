@@ -43,7 +43,7 @@ jobs:
       - name: Check code format
         run: ./gradlew spotlessCheck --build-cache --parallel --no-daemon
 
-      - name: Architecture fitness â€“ no android.* imports in domain modules
+      - name: Architecture fitness – no android.* imports in domain modules
         run: |
           VIOLATIONS=$(grep -rn --include="*.kt" "^\s*import android\." \
             core/domain/src domain/src 2>/dev/null || true)
@@ -53,7 +53,7 @@ jobs:
             exit 1
           fi
 
-      - name: Architecture fitness â€“ no Injekt.get()
+      - name: Architecture fitness – no Injekt.get()
         run: |
           VIOLATIONS=$(grep -rHn --include="*.kt" --exclude-dir="uy" "Injekt\.get(" . || true)
           if [ -n "$VIOLATIONS" ]; then
@@ -62,7 +62,7 @@ jobs:
             exit 1
           fi
 
-      - name: Architecture fitness â€“ no ephyra.data.* imports in core domain module
+      - name: Architecture fitness – no ephyra.data.* imports in core domain module
         run: |
           VIOLATIONS=$(grep -rn --include="*.kt" "^\s*import ephyra\.data\." \
             core/domain/src 2>/dev/null || true)
@@ -72,7 +72,7 @@ jobs:
             exit 1
           fi
 
-      - name: Architecture fitness â€“ feature module data.* import baseline
+      - name: Architecture fitness – feature module data.* import baseline
         run: |
           BASELINE=0
           VIOLATION_COUNT=$(grep -rn --include="*.kt" "^\s*import ephyra\.data\." feature/*/src 2>/dev/null | wc -l | tr -d ' ')
@@ -102,7 +102,7 @@ jobs:
 
 
 
-      - name: Architecture fitness â€“ all HomeScreen tabs must call signalReady()
+      - name: Architecture fitness – all HomeScreen tabs must call signalReady()
         run: |
           TABS=(
             "feature/library/src/main/kotlin/ephyra/feature/library/LibraryScreen.kt"
