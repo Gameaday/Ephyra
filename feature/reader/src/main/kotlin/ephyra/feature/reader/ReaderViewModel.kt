@@ -30,6 +30,7 @@ import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.model.ChapterUpdate
 import ephyra.domain.chapter.model.toSChapter
 import ephyra.domain.chapter.service.ChapterCache
+import ephyra.domain.chapter.service.ChapterNumber
 import ephyra.domain.chapter.service.getChapterSort
 import ephyra.domain.download.model.Download
 import ephyra.domain.download.service.DownloadManager
@@ -839,7 +840,7 @@ class ReaderViewModel @Inject constructor(
                 if (
                     !chapter.read &&
                     chapter.isRecognizedNumber &&
-                    chapter.chapterNumber == readerChapter.chapter.chapterNumber
+                    ChapterNumber.sameChapterNumber(chapter.chapterNumber, readerChapter.chapter.chapterNumber)
                 ) {
                     ChapterUpdate(id = chapter.id, read = true)
                 } else {

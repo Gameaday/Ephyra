@@ -127,7 +127,9 @@ class MigrateMangaUseCase(
                             )
                         }
 
-                        if (maxChapterRead != null && updatedChapter.chapterNumber <= maxChapterRead) {
+                        if (maxChapterRead != null &&
+                            ChapterNumber.hasReached(updatedChapter.chapterNumber, maxChapterRead)
+                        ) {
                             updatedChapter = updatedChapter.copy(read = true)
                         }
                     }
