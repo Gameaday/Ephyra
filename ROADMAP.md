@@ -71,7 +71,7 @@ Build a modern Android application in which:
 | 0 | Freeze and establish truth | Reproducible baseline and defect ledger |
 | 0A | Technical contracts | Reader, gesture, viewport, media, navigation, motion, source, fixture, budget, and dependency contracts are executable |
 | 1 | Security and platform safety | No hardcoded secrets or unjustified exemptions |
-| 2 | Quality infrastructure | Device, screenshot, instrumentation, and benchmark gates exist |
+| 2 | Quality infrastructure | Format, layering, unit, device and build-budget gates run on every change |
 | 3 | Dependency and state foundations | Target graph and effect model enforced |
 | 4 | Media source and image planning | Stable identity, crop geometry, decode policy |
 | 5 | Bounded working and tile caches | Byte-budgeted ownership |
