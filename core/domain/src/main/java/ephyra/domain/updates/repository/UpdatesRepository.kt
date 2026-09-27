@@ -14,7 +14,10 @@ interface UpdatesRepository {
         started: Boolean?,
         bookmarked: Boolean?,
         hideExcludedScanlators: Boolean = false,
-        libraryOnly: Boolean = false,
+        // DEF-006: the safe value is the default here too. A repository implementation reached
+        // through some other path would otherwise inherit the permissive reading of the
+        // parameter, which is how the default becomes a policy by accident.
+        libraryOnly: Boolean = true,
     ): Flow<List<UpdatesWithRelations>>
 
     fun subscribeWithRead(read: Boolean, after: Long, limit: Long): Flow<List<UpdatesWithRelations>>

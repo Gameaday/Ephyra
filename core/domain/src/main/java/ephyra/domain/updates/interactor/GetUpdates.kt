@@ -19,7 +19,10 @@ class GetUpdates(
         started: Boolean?,
         bookmarked: Boolean?,
         hideExcludedScanlators: Boolean = false,
-        libraryOnly: Boolean = false,
+        // DEF-006: defaults to the *scoped* value, not the permissive one. A caller that omits
+        // this argument previously got every update in the catalogue, which is the shape of the
+        // reported defect one call site away. Opting out is now the explicit thing.
+        libraryOnly: Boolean = true,
     ): Flow<List<UpdatesWithRelations>> {
         return repository.subscribeAll(
             instant.toEpochMilli(),
