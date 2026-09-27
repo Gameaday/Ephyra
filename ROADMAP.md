@@ -104,22 +104,22 @@ recorded `VERIFIED` while a health budget is breached.
 6. `TST-001B` generate deterministic static media artifacts and bind them to crop, slice, and decoder tests — `CODE_COMPLETE`; see `SyntheticMediaFixtures` and `SyntheticMediaFixturesTest`.
 7. `TST-001C1` static WebP fixture — `CODE_COMPLETE` at E2 through Android's bitmap encoder and decoder.
 8. `TST-001C2` immutable animated WebP/GIF fixtures — `CODE_COMPLETE` at E2; app animation-policy detection and Android animated decoding pass.
-9. `TST-001C3` static JXL fixture — `IN_PROGRESS`; the prior `BLOCKED` reason is void since a connected emulator exists, so the Android-native codec can be executed. The fixture binary is immutable: hash-verify before use, do not regenerate.
-10. `TST-002` connected instrumentation infrastructure — `CODE_COMPLETE` at compile level; the pinned API 35 emulator workflow must complete once before E3 evidence is recorded.
+9. `TST-001C3` static JXL artifact through the Coil bridge — **`CODE_COMPLETE` at E3** (2026-09-27). The "no `.jxl` fixture exists" blocker was a false premise: the bundled `jxl-coder` can encode as well as decode, so the test produces its own artifact on the device. See `B-047`; it also records that the encoder emits a *bare codestream*, so the container branch needed its own tests or the original `0x4A` defect would have passed unnoticed.
+10. `TST-002` connected instrumentation infrastructure — **`CODE_COMPLETE` at E3** (2026-09-27). A connected run on `emulator-5554` (API 37) has passed, and device tests now exist in `core:data` (12), `feature:reader` (6) and `app`. **Caveat, `B-050`:** the *CI* workflow cannot run them — the API 35 emulator does not boot on GitHub's runners, so those runs are local-only. That is a CI capability gap, not an evidence gap: `ADR-0009` defines `E4-lab` as agent-driven capture against an attached emulator, which is what these runs are.
 11. `SRC-000A/B/C` verify and classify the source/search compatibility inventory — `CODE_COMPLETE` at E1; see `doc/source/` and `tools/source/source-inventory.json`.
 12. `SRC-001A` capability model and typed source results — `CODE_COMPLETE` at E2; source-api contract tests pass.
 13. `RDR-001` pure reader session state machine — `CODE_COMPLETE` at E2; isolated from production until RDR-002/003 and viewport adapters are proven.
 14. `RDR-002` canonical chapter window and directional navigation policy — `CODE_COMPLETE` at E2; isolated from production until the replacement session/viewport consumes it.
-15. `RDR-003` pure gesture arbiter plus a thin Android pointer adapter — `IN_PROGRESS`; the arbiter and token-based tap sequencer are `CODE_COMPLETE` at E2, while the adapter remains unwired and lacks E4 pointer evidence.
+15. `RDR-003` pure gesture arbiter plus a thin Android pointer adapter — **production-wired for the paged reader** (2026-09-26). `ReaderGesturePointerAdapter` is now the only pointer path in the paged reader: the hand-rolled `detectPagerGestures` and `shouldClaimPagerTransform` are deleted, satisfying non-negotiable rule 7. The row stays `IN_PROGRESS` because the continuous reader has no call site — that is `RDR-005`, blocked on `B-025` — and because the arbiter still lacks `E4-user` evidence, which is deferred by decision.
 16. `SRC-001B` adapt the currently verified legacy extension path.
 17. `SRC-001C` local/native adapter and offline fixtures.
 18. `SRC-001D` controlled native HTTP adapter.
 19. `SRC-002` progressive search session, deduplication, ranking, and cancellation.
 20. `MED-004` pure document viewport and exact tile partition — `CODE_COMPLETE` at E2 with 19 geometry and partition tests. Tile decode/cache integration and the `RDR-005` continuous reader remain open.
 21. `DEF-009` long-strip reading-mode precedence extracted from `ReaderViewModel` into `DefaultReadingModeResolver` with focused tests — `CODE_COMPLETE` at E2. This is an ownership fix, not a behaviour fix: detection already worked for the reported series, so it does not address the user-reported zoom defects below.
-22. `DEF-008` `BorderCropTransformation` corrected for transposed per-edge insets, single-outlier intolerance, and contentless cropping — `CODE_COMPLETE` at E2, with each defect proven by a failing test before the fix. Device acceptance still required.
+22. `DEF-008` `BorderCropTransformation` corrected for transposed per-edge insets, single-outlier intolerance, and contentless cropping — **`CODE_COMPLETE` at E3** (2026-09-26). `core:data` has a working `androidTest` source set; `BorderCropDeviceTest` (4) measures asymmetric insets per edge on a device, which is the case a symmetric fixture cannot detect. Falsified by reintroducing the transposition, which turns the test red.
 23. `MED-001` page source, identity/revision, metadata, content-rect, animation, and decode-plan contracts — `CODE_COMPLETE` at E2 with 43 tests. Pure and not production-wired; the adapters and viewport consumption come later.
-24. `MED-002` byte-budgeted working page store — `CODE_COMPLETE` at E2 with 22 tests. Replaces the unbounded `ReaderPage.cachedBytes` that grows with scroll distance. Pure and not production-wired; retiring the field itself waits on the viewport cutover.
+24. `MED-002` byte-budgeted working page store — `CODE_COMPLETE` at E2 with 22 tests. Replaces the unbounded `ReaderPage.cachedBytes` that grows with scroll distance. Pure and not production-wired. **Correction 2026-09-27 (`DEF-017`), twice-revised:** the first claim was that the number is narrowed on every *database* write; the second was that `DATA-001` is therefore a schema migration. **Both wrong.** `ChapterRepositoryImpl`, the repository bound in `AppModule`, uses `ChapterDao`/`ChapterEntity`, and `ChapterEntity.chapterNumber` is already `Double`; the `Float` entity `ChapterImpl` is legacy and off the live path. The real narrow point is the **source model** — `SChapter.chapter_number` is a `Float` and four call sites assign `.toFloat()` into it — and `ChapterRecognition.parseChapterNumber` returns that widened value whenever it is recognised, so the loss is real for online decimal chapters but happens at the source boundary, not in storage. **So `DATA-001` is not a migration:** no schema change, no data rewrite, no version bump. It reduces to whether to widen `SChapter.chapter_number` to `Double` or to keep the tolerant `ChapterNumber` policy that already compensates correctly. The store's own wiring is separately understood: `cachedBytes` is written at three sites and released only at *chapter* disposal, so a 200-slice webtoon holds 200 pages of encoded bytes. **That wiring must be all-or-nothing** — putting the store in without releasing the field adds a second copy and makes memory worse.
 25. `MED-003` crop-aware render-path, animation, and tile-scale policy — `CODE_COMPLETE` at E2 with 54 tests. Fixes crop disabling webtoon slicing, separates JXL from an animation verdict, and adds scale-bucket hysteresis so zoom settles instead of re-decoding.
 
 26. `DEF-001` paged pinch zoom fixed at the root — the transform was computed but never applied (`graphicsLayer` was imported and unused), and the gesture centroid was discarded. `CODE_COMPLETE` at E2 with 16 tests, **production-wired**. First pass to change reader rendering behaviour; E4 acceptance is now the only thing missing.
@@ -132,10 +132,15 @@ recorded `VERIFIED` while a health budget is breached.
     rewritten with the verified facts and its residual limits: `cmdline-tools` is still absent, so
     no new AVD or system image can be created; the emulator is a *representative* device, not
     physical hardware; and local API 37 is not the API 35 emulator CI boots.
-30. **Device evidence is now the highest-priority work.** Executing it converts seven stalled rows
-    into verified product and gives the `RDR-004`/`RDR-005` rewrite a real device baseline. Adding
-    more contract code while the hardware that would verify seven rows sits attached is the wrong
-    order of work. Runbook: [`doc/E4_ACCEPTANCE.md`](doc/E4_ACCEPTANCE.md).
+30. **Device evidence is no longer the highest-priority work — it is done, and that changed the
+    priority.** *(Superseded 2026-09-27.)* The original claim was that executing it would convert
+    seven stalled rows and that adding more contract code while the hardware sat attached was the
+    wrong order of work. That was right, and it has now been done: five rows reached `E3` and
+    `DEF-001` reached `DEVICE_VERIFIED`. The binding constraint has moved. It is now **wiring** —
+    `B-032`'s 27 contracts with no production consumer — and the unglamorous root cause work that
+    will not visibly pay off for weeks: `DATA-001`'s schema, where the `Float` column makes the
+    chapter number lossy on every write for every user (`DEF-017`). Runbook for the remaining
+    `E4-user` obligation, when it is taken up: [`doc/E4_ACCEPTANCE.md`](doc/E4_ACCEPTANCE.md).
 31. **The phase-gate contradiction is resolved by
     [`ADR-0008`](doc/adr/0008-contract-first-ahead-of-phase-gate.md), not by marking a phase
     `VERIFIED`.** Phases 3–6 were `CODE_COMPLETE` while `Phase 0` read `NOT_STARTED`, contradicting
@@ -168,19 +173,32 @@ Do **not** resume ad hoc reader zoom, crop, transition, or source fallback patch
 
 ## Current truth
 
-The current application is not considered a complete native reader architecture. These user-reported defects remain open at the baseline:
+The current application is not considered a complete native reader architecture. The user-reported
+defects and where they actually stand as of 2026-09-27:
 
-- paged reader zoom was broken at the root and is now fixed in code (`DEF-001`, production-wired); it still needs E4 device acceptance.
-- webtoon pinch only widened content and strips overlapped (`DEF-002`/`DEF-003`); both are now fixed in code and production-wired, pending E4 acceptance.
-- Series-to-Library return motion had mismatched enter/exit durations and no reduced-motion support (`DEF-005`); both are fixed in code and production-wired, pending E4 acceptance.
-- crop-borders behaviour is corrected in code (`DEF-008`) but still requires fresh device acceptance after the Coil 3 rewrite.
+- paged reader zoom was broken at the root (`DEF-001`) — **fixed, production-wired, and
+  `DEVICE_VERIFIED`**, the first row to reach that level.
+- webtoon pinch only widened content and strips overlapped (`DEF-002`/`DEF-003`) — both **fixed,
+  production-wired, and at `E3`**. `DEF-003` is measured by slice-boundary displacement and
+  falsified by moving the transform back onto each item.
+- Series-to-Library return motion had mismatched durations and no reduced-motion support
+  (`DEF-005`) — fixed and production-wired; at `E3`, with the caveat that motion quality is judged
+  from duration and easing arithmetic rather than from frames.
+- crop-borders behaviour (`DEF-008`) — fixed and at `E3` on a real device.
+- `E4-user` acceptance remains outstanding for every row, by owner decision, and is not the same
+  thing as `E4-lab`.
 
-All five reported reader and motion defects (`DEF-001`, `DEF-002`, `DEF-003`, `DEF-005`, `DEF-008`) are now fixed in code and production-wired. Every one of them still needs E4 device acceptance, and the broader `MED` -> `RDR-004`/`RDR-005` replacement sequence is still open. Motion quality in particular is judged from duration and easing arithmetic here, not from frames, so E4 matters more for this item than for the others. The crop fix is a confirmed code defect that is fixed and unit-proven; it is expected to change what you see, but that is only claimable once a device confirms it. See [`doc/REBUILD_STATUS.md`](doc/REBUILD_STATUS.md).
+Five rows are therefore at `E3` and one is `DEVICE_VERIFIED`. That is a real change from the
+previous state of this file, which described all five as awaiting device acceptance that has since
+been produced. `ADR-0009` defines `DEVICE_VERIFIED` as `E3` plus (`E4-user` or `E4-lab`); `E4-lab`
+is agent-driven capture against an attached emulator, and the connected runs in `core:data` and
+`feature/reader` are exactly that. The standing limits still apply: a gesture-anchoring or
+frame-pacing defect cannot be discharged by a still screenshot, and an emulator is a representative
+device rather than physical hardware.
 
-**As of 2026-09-25 that E4 acceptance is no longer blocked.** A working emulator is attached
-(`Pixel_10`, API 37, x86_64) with the app installed, so every "pending E4" item above is now
-executable rather than deferred. Two constraints keep the claims honest: a gesture-anchoring or
-frame-pacing defect cannot be discharged by a still screenshot (see the table in
-[`doc/E4_ACCEPTANCE.md`](doc/E4_ACCEPTANCE.md)), and an emulator is a representative device, not
-physical hardware. Until those runs are executed and recorded, the honest status of all five rows
-is unchanged: `CODE_COMPLETE` at `E2`, production-wired, E4 outstanding.
+**The larger gap is not defects, it is wiring.** `B-032` records that 27 contracts in `core:domain`
+have dedicated tests and zero production consumers. That is the same class of failure the `DEF` audit
+found in `DEF-005`/`006`/`007`, at scale, and it is what actually separates this from 2.0 — not the
+five reader defects, which are fixed. The `MED` -> `RDR-004`/`RDR-005` replacement sequence is still
+open, and `CLEAN-001` has not begun, so the superseded reader, navigation and media code all still
+exist alongside their replacements.
