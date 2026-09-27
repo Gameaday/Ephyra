@@ -1,8 +1,16 @@
 # ADR-0002: One main navigation owner
 
-- **Status:** Accepted
+- **Status:** Accepted, **amended** by [ADR-0011](0011-one-graph-coordinator-not-one-navhost.md) (2026-09-28)
 - **Date:** 2026-09-24
 - **Decision:** The main application uses one typed Navigation Compose graph and one navigation coordinator.
+
+> **Amended 2026-09-28.** The requirement of one coordinator and typed routes is retained. The
+> claim below that nested navigation code is *removed* is **withdrawn**: a nested `NavHost` per
+> bottom tab is the standard Android pattern, because each tab needs an independent back stack.
+> `B-028` checked this against the tree and found the flattening claim unfounded — including its
+> instruction to delete "duplicate string route hierarchies", of which exactly one exists. The
+> defect ADR-0002 was reaching for is duplicate *mutable navigation state*, not physical nesting;
+> removing the global navigation event objects is the real work, and `NAV-001` is re-scoped to it.
 
 ## Context
 
@@ -32,3 +40,8 @@ The current app has an outer `NavHost` in `MainActivity` and a nested bottom-tab
 ## Evidence required
 
 Navigation contract tests, back-stack/deep-link tests, predictive-back tests, and compact/expanded screenshots.
+
+## Supersedes / superseded by
+
+Amended by [ADR-0011](0011-one-graph-coordinator-not-one-navhost.md), which retains the single
+coordinator and typed routes and withdraws only the requirement to collapse nested `NavHost`s.
