@@ -9,6 +9,7 @@ import ephyra.domain.chapter.repository.ChapterRepository
 import ephyra.domain.chapter.service.ChapterNumber
 import ephyra.domain.chapter.service.ChapterRecognition
 import ephyra.domain.chapter.service.ChapterSanitizer
+import ephyra.domain.chapter.service.RemovedChapterState
 import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.download.service.DownloadProvider
 import ephyra.domain.library.service.LibraryPreferences
@@ -155,15 +156,12 @@ class SyncChaptersWithSource(
 
         val changedOrDuplicateReadUrls = mutableSetOf<String>()
 
-        // Chapter numbers are compared by bucketed key rather than as `Double`s. A restore widens
-        // the stored number through a `Float`, so a value in the database can be `12.300000190734863`
-        // where the source reports `12.3`; exact-bit membership against a `TreeSet<Double>` then
-        // misses, and a chapter removed upstream silently keeps its stale read, bookmark and fetch
-        // date. This is `DEF-012`'s root cause a third time over, and `ChapterNumber.bucket` is the
-        // single rule for it.
-        val deletedChapterNumbers = HashSet<String>()
-        val deletedReadChapterNumbers = HashSet<String>()
-        val deletedBookmarkedChapterNumbers = HashSet<String>()
+        // What a newly-seen chapter inherits from a chapter that has disappeared upstream. This is
+        // the `DEF-014` decision, extracted so it can be tested where the decision is made rather
+        // than only where the rule is defined: the removed chapter's number arrives from the source
+        // and the candidate's from the database, and a restored database value is `Float`-widened,
+        // so comparing them as `Double`s is exact-bit and silently misses.
+        val removedState = RemovedChapterState.from(removedChapters)
 
         // Used only for the duplicate-read check below, which compares with `sameChapterNumber`
         // rather than by membership, so the raw numbers are correct here.
@@ -171,16 +169,6 @@ class SyncChaptersWithSource(
             .mapNotNullTo(HashSet()) { chapter ->
                 chapter.chapterNumber.takeIf { chapter.read && chapter.isRecognizedNumber }
             }
-
-        removedChapters.forEach { chapter ->
-            val key = ChapterNumber.bucket(chapter.chapterNumber, chapter.url)
-            if (chapter.read) deletedReadChapterNumbers.add(key)
-            if (chapter.bookmark) deletedBookmarkedChapterNumbers.add(key)
-            deletedChapterNumbers.add(key)
-        }
-
-        val deletedChapterNumberDateFetchMap = removedChapters.sortedByDescending { it.dateFetch }
-            .associate { ChapterNumber.bucket(it.chapterNumber, it.url) to it.dateFetch }
 
         val markDuplicateAsRead = libraryPreferences.markDuplicateReadChapterAsRead().get()
             .contains(LibraryPreferences.MARK_DUPLICATE_CHAPTER_READ_NEW)
@@ -199,19 +187,16 @@ class SyncChaptersWithSource(
                 chapter = chapter.copy(read = true)
             }
 
-            if (!chapter.isRecognizedNumber) return@map chapter
-            val chapterKey = ChapterNumber.bucket(chapter.chapterNumber, chapter.url)
-            if (chapterKey !in deletedChapterNumbers) return@map chapter
+            // A chapter that vanished upstream may have been replaced by this one under a new URL.
+            // Inheriting its state is what stops the user's history resetting on a renumber, and
+            // stops the Updates tab reporting the replacement as newly fetched. Returns null for a
+            // chapter with no recognised number, which is left exactly as the source reported it.
+            val inherited = RemovedChapterState.inherit(chapter, removedState) ?: return@map chapter
 
-            chapter = chapter.copy(
-                read = chapterKey in deletedReadChapterNumbers,
-                bookmark = chapterKey in deletedBookmarkedChapterNumbers,
-            )
-
-            // Try to to use the fetch date of the original entry to not pollute 'Updates' tab
-            deletedChapterNumberDateFetchMap[chapterKey]?.let {
-                chapter = chapter.copy(dateFetch = it)
+            if (inherited.dateFetch != null) {
+                chapter = chapter.copy(dateFetch = inherited.dateFetch)
             }
+            chapter = chapter.copy(read = inherited.read, bookmark = inherited.bookmark)
 
             changedOrDuplicateReadUrls.add(chapter.url)
 
