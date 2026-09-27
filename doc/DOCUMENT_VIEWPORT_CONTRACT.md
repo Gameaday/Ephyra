@@ -1,139 +1,119 @@
 # Document Viewport Contract
 
-> **Status:** binding technical contract. Existing slices are inputs to this model, not the target layout model.
+> **Status:** binding technical contract, rewritten 2026-09-28.
+> **Supersedes:** the tile-pipeline model defined here previously, per
+> [`adr/0010`](adr/0010-region-decoded-slices-not-tile-engine.md).
+
+## Which surface this describes
+
+The continuous reader is a `LazyColumn` of slices, not a canvas. `LazyColumn` owns vertical scroll;
+one graphics-layer transform on the scroll container owns the rendered transform. That arrangement
+is what fixed `DEF-002` and `DEF-003`, and it is unchanged by this rewrite.
+
+The earlier version of this document specified a virtualized tile pipeline (`DocumentViewport`,
+`DocumentTilePartition`) and was wrong about how it would reach production. `B-025` established
+that `DocumentViewport` owns `offset.y` while the shipping `LazyColumn` also owns vertical
+position, so wiring it in would have created two owners of the same axis. Rather than build the
+engine, the programme retired it. The reasoning and the dimension arithmetic are in ADR-0010; this
+document records what the surface actually is.
 
 ## Coordinate model
 
-The document has one coordinate space. Choose one unit at the boundary and never mix it with Compose layout pixels.
-
-Recommended model:
+One coordinate space, chosen at the boundary, never mixed with Compose layout pixels.
 
 ```text
-DocumentPoint   logical document coordinates
-ViewportRect    visible logical document rectangle
-TileKey         sourceId + pageIndex + tileIndex + scaleBucket
+slice source rect   logical source pixels of one region
+viewport size       view units (dp) at scale 1
+sample size         inSampleSize passed to the region decoder
 ```
 
-Device pixel conversion happens only at decode/render boundaries.
+Device pixel conversion happens only at the decode/render boundary.
 
-The pure implementation is `core:domain`'s `DocumentViewport`. It owns the single transform:
+## Bounding memory without a tile scheduler
 
-- `viewToDocument` / `documentToView` are the only coordinate conversion;
-- `panByViewDelta` and `zoomBy` both operate on that same transform, so they cannot disagree;
-- `zoomBy` anchors on the focal document point, keeping it stable under the gesture centroid;
-- `clamped` bounds the scale and keeps the visible rect inside the document at every scale;
-- `resizedTo` preserves the visible centre across configuration changes;
-- `prefetchRect` is the visible rect expanded by a declared viewport margin and clipped to the document.
-
-## Which surface this model is for
-
-**`DocumentViewport` has no concept of an external owner of vertical scroll.** It clamps `offset.y`
-itself. The shipping continuous reader does the opposite: it uses `WebtoonDocumentZoom`
-(`scale` + `offsetX` only) and returns a `scrollCorrection`, because a `LazyColumn` owns vertical
-position and the transform deliberately must not also claim it.
-
-Wiring `DocumentViewport` into `ComposeWebtoonReader` would therefore give the surface **two owners
-of vertical position**. They would fight, and it would surface as content that jumps — on the exact
-surface where `DEF-002` and `DEF-003` are meant to improve. This was found by attempting the cutover
-on 2026-09-26; see `B-025` in the status ledger.
-
-**Decision.** `WebtoonDocumentZoom` remains the correct model for a `LazyColumn`-backed continuous
-surface. `DocumentViewport` is the model for a **canvas-backed** surface, where the renderer owns
-both axes and nothing else scrolls. `REBUILD_PROGRAM.md` leaves open whether a `LazyColumn` is
-retained for logical chapters only or a custom virtualised canvas is used instead; that choice
-determines which model applies, and it is `RDR-005`'s to make.
-
-Until that is decided, `DocumentViewport` and `DocumentTilePartition` are a **canvas-surface
-contract with no production consumer**, which is intentional and recorded rather than an oversight.
-
-
-## Tile partitioning
-
-`DocumentTilePartition.partitionIntoTiles` partitions a region on a fixed grid. Two properties are
-enforced by property tests over random geometry:
-
-- **Exact coverage.** The union of the tiles is the region: no gaps, no interior overlap.
-- **Stable identity.** A document point always lands in the same grid cell, so a tile survives
-  panning and keeps its cache key.
-
-Tile edges are computed from the *grid index*, not from the previous tile's rounded edge. Deriving
-`bottom` from `top + height` instead of `origin + (row + 1) * height` makes neighbouring edges differ
-by float rounding, which reintroduces exactly the sub-pixel overlaps this model exists to prevent.
-
-Callers that paginate a document should pass the document origin as the grid origin so tile indices
-remain comparable across queries.
-
-## Structure
+The reason a tile engine exists is to bound a single allocation. A fixed-height slice plus
+`inSampleSize` bounds it without any scheduler:
 
 ```text
-ReaderDocument
-  ordered source pages
-  page rectangles
-  chapter boundaries
-  source metadata
-  optional animated/unsupported regions
+slice decode cost = sourceWidth × sliceHeight × 4 bytes
 ```
 
-Source page dimensions are immutable once accepted. A page's content rectangle can be updated only by a source revision or an explicit crop/decode-plan change, which produces a new document revision.
+At 800 px slice height and a 1080–1600 px source width that is **3.4–5.1 MB per slice**.
+`LazyColumn` keeps only visible slices plus prefetch composed, so a 250-slice chapter holds roughly
+10–20 MB of decoded pixels — inside the 64 MiB budget in
+[`PERFORMANCE_BUDGETS.md`](PERFORMANCE_BUDGETS.md). Virtualization and disposal come from
+`LazyColumn` rather than from code this project would own forever.
 
-## Viewport
+`BitmapRegionDecoder` and `BitmapFactory.Options.inSampleSize` are platform APIs. They are
+first-party, maintained by Google, and add no dependency.
 
-The viewport owns:
+## Why sample sizing is sufficient here
 
-- document offset;
-- scale;
-- visible rectangle;
-- tile requests;
-- prefetch rectangle;
-- clip;
-- focal-point zoom;
-- cancellation;
-- tile cache integration.
+Tiling solves a problem that sample sizing already solves, for webtoon specifically. Fit-width is
+already approximately 1:1: a 1080-wide source on a 1080-wide screen at fit *is* native resolution.
+Real additional detail exists only when the source is wider than the viewport, and the correct
+response is to choose `inSampleSize` so decoded width never exceeds source width. That is
+`SampleSize`'s job.
 
-Layout code does not scale individual LazyColumn items. The document is virtualized by visible tiles, not by page-item geometry.
+**The deadband is what makes zoom feel sharp rather than stuttering.** Without it, a pinch hovering
+at one threshold flips the sample size every frame, each flip invalidating every cached region at the
+previous scale, and the strip re-decodes continuously for the whole gesture. `SampleSizePolicy`
+holds the current sample between thresholds so a gesture must move decisively to pay a re-decode.
+See `SampleSizePolicyTest`, ported with its assertions intact from the retired `TileScalePolicyTest`.
 
-## Tiles
+## Ownership
 
-Tiles are renderer artifacts. A tile has:
+```text
+LazyColumn          owns vertical scroll position and slice disposal
+one transform       owns the rendered scale/offset, applied once to the scroll container
+sliced image        owns its own decode and sample size for the visible region
+ReaderChapter       owns the bounded encoded-byte working set (PageByteStoreOwner)
+```
 
-- document rectangle;
-- source page identity;
-- source pixel rectangle;
-- target scale bucket;
-- decoder/source identity;
-- state: queued/loading/ready/failed/cancelled.
+Layout code does not scale individual items. The transform is applied once, to the container.
 
-A failed tile is retryable without invalidating the entire document. A source page failure does not create a permanent gap.
+## Gesture ownership
 
-## Geometry rules
+At fit, a vertical gesture scrolls the chapter. Zoomed, the same gesture pans within the enlarged
+content. The reader has exactly one pointer path: `ReaderGestureArbiter` arbitrates and emits
+`DelegateSingleScroll` when the viewport declines a gesture, which is how the outer scroll is handed
+the vertical axis at fit scale. The continuous reader's call site is the remaining wiring in
+`RDR-005`.
 
-- Tile partitions cover the document without gaps or overlap.
-- Pixel rounding preserves document boundaries within a declared tolerance.
-- Tile overlap, if used for seams, is explicit and bounded.
-- Scale changes never change document geometry.
-- Scroll and zoom use the same coordinate transform.
-- Focal zoom keeps the document point under the gesture centroid stable.
-- Chapter boundaries are represented as document regions, not as independent transform owners.
+## Animated, unsupported and corrupt content
 
-## Animated/unsupported content
-
-The document planner declares animation and decode policy per page. Animated pages are not silently passed to a static region decoder. Unsupported codecs use a declared fallback render artifact and remain visible as a stable placeholder/loading/error state.
+The decode plan declares animation and policy per page. Animated pages are not silently passed to a
+static region decoder. An undecided animation verdict is explicit rather than inferred. Crop is
+judged against content size, not intrinsic size, and `DEF-008`'s transposed-inset defect is guarded
+on device by `BorderCropDeviceTest`.
 
 ## Cancellation and memory
 
-- Offscreen tile work is cancelled when no longer useful.
-- Completed bitmap references are disposable by the viewport owner.
-- No bitmap is recycled while a renderer may still read it.
-- Visible tiles are never evicted before nearby prefetch tiles without a policy reason.
+- Offscreen slice decode work is cancelled when it leaves the window.
+- Decoded bitmaps are composition-scoped and are not recycled while Compose may still read them.
+- Encoded working bytes are bounded by `PageByteBudget` and released at chapter disposal.
+- No bitmap is ever allocated for an entire long strip.
 - Memory budget and prefetch distance are measured, not guessed.
+
+## Re-litigation condition
+
+A scan of genuinely extreme dimensions — multi-gigapixel single-image pages — would exceed the
+slice budget and would need re-tiling. No such case is evidenced in this project's fixtures or
+sources. If one appears, the response is a measurement, not a speculative re-architecture.
 
 ## Evidence
 
-- tile partition property tests;
-- document/page rectangle tests;
-- focal-point zoom tests;
-- scroll-after-zoom tests;
-- page/chapter boundary continuity tests;
-- cancellation and failure recovery tests;
-- screenshot sequence tests;
-- low-memory benchmark.
+- decoded working-set measurement against the 64 MiB budget on a long webtoon;
+- continuous scroll at fit and zoomed, with `dumpsys meminfo`;
+- zoom-to-native-resolution check confirming real detail without OOM;
+- `SampleSizePolicyTest` for sample settling (falsification-verified);
+- `WebtoonZoomRenderTest.sliceBoundariesMoveWithTheDocumentTransform` for `DEF-003`;
+- low-memory background/foreground cycle.
+
+## Related
+
+- [`adr/0010`](adr/0010-region-decoded-slices-not-tile-engine.md) — the decision and its arithmetic.
+- [`adr/0003`](adr/0003-document-viewport-zoom.md) — superseded in part; its zoom-ownership
+  principles remain in force.
+- [`READER_GESTURE_CONTRACT.md`](READER_GESTURE_CONTRACT.md) — pointer state machine.
+- [`MEDIA_PIPELINE_CONTRACT.md`](MEDIA_PIPELINE_CONTRACT.md) — source identity and decode plans.

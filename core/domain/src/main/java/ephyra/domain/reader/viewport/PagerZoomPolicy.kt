@@ -37,7 +37,7 @@ data class PagerZoomTransform(
  * Both readers share the interaction thresholds in
  * [ephyra.domain.reader.viewport.ZoomPolicy], but only the pager needs a focal transform: a
  * single page is displayed at a time, so panning it is meaningful in both axes. The continuous
- * reader instead zooms the whole document (see [DocumentViewport]) and must never scale an
+ * reader instead zooms the whole document (see [WebtoonDocumentZoom]) and must never scale an
  * individual item, because LazyColumn retains the unscaled geometry and the painted bounds stop
  * matching the layout.
  */

@@ -13,7 +13,7 @@ package ephyra.domain.reader.viewport
  * Making the transform a value with an explicit owner turns "was it applied" into a question a test
  * answers, and gives the replacement viewport a single place where zoom lives.
  *
- * **This is state, not policy.** [PagerZoomPolicy] owns the arithmetic; [DocumentViewport] owns the
+ * **This is state, not policy.** [PagerZoomPolicy] owns the arithmetic; [WebtoonDocumentZoom] owns the
  * continuous equivalent; this owns only the paged case's current value and the lifecycle around it.
  */
 data class PagerViewportState(
