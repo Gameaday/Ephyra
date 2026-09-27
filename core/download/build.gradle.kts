@@ -35,6 +35,9 @@ dependencies {
     implementation("androidx.datastore:datastore-core:1.2.1")
 
     implementation(kotlinx.bundles.serialization)
+
+    testImplementation(libs.bundles.test)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
 // Suppress warnings for the following:
 
