@@ -3,6 +3,8 @@ package ephyra.feature.reader.viewer.webtoon
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
@@ -18,6 +20,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ephyra.domain.reader.viewport.WebtoonDocumentZoom
 import org.junit.Assert.assertTrue
@@ -96,6 +99,46 @@ class WebtoonZoomRenderTest {
         }
     }
 
+    /**
+     * Strips of a fixed height, each a distinct flat colour.
+     *
+     * Two deliberate differences from [StripedStrips], both required by the measurement:
+     *
+     * - **Flat colour per strip**, not bands. The claim under test is *where the boundaries between
+     *   slices land*, so each slice has to be one unambiguous colour and a boundary is a colour
+     *   change. Banding would put a transition every few pixels and there would be nothing to
+     *   locate.
+     * - **Fixed height rather than `fillMaxSize`.** `fillMaxSize` makes each item a full viewport,
+     *   so the only boundary is at the bottom edge — and at 2x that boundary moves to twice the
+     *   viewport height, which is clipped away. The quantity under test would become unobservable
+     *   exactly when it is most interesting. Fixed-height items keep the first boundary on screen
+     *   at both scales.
+     */
+    @Composable
+    private fun TintedStrips(stripHeightDp: Int) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    scaleX = zoom.value.scale
+                    scaleY = zoom.value.scale
+                    translationX = zoom.value.offsetX
+                    transformOrigin = TransformOrigin(0f, 0f)
+                    clip = true
+                }
+                .testTag(STRIPS),
+        ) {
+            items(List(STRIP_COUNT) { it }) { index ->
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(stripHeightDp.dp)
+                        .background(TINT[index % TINT.size]),
+                )
+            }
+        }
+    }
+
     private data class Raster(val width: Int, val height: Int, val columnTransitions: Int)
 
     /** Captures the container and counts colour transitions down one column. */
@@ -158,8 +201,104 @@ class WebtoonZoomRenderTest {
         )
     }
 
+    @Test
+    fun sliceBoundariesMoveWithTheDocumentTransform() {
+        // `DEF-003`: the transform used to live on each `LazyColumn` item, so a scaled item painted
+        // outside the slot the list still measured and neighbours collided. The distinguishing
+        // measurement is *where the boundaries between slices land*: with one transform on the
+        // container, every boundary is in document space and scales with it; with a per-item
+        // transform, paint and layout disagree and the boundaries land somewhere else.
+        //
+        // Asserting only that "the image changed" cannot see this — a per-item transform changes the
+        // image perfectly well. Asserting the count is unchanged is necessary but not sufficient,
+        // because overlapping slices also preserve the count. The displacement ratio is the claim.
+        composeRule.setContent { TintedStrips(stripHeightDp = STRIP_HEIGHT_DP) }
+        render(WebtoonDocumentZoom.IDENTITY)
+        val fitBitmap = composeRule.onNodeWithTag(STRIPS).captureToImage().asAndroidBitmap()
+        val atFit = boundaries(fitBitmap)
+
+        render(WebtoonDocumentZoom(scale = 2f, offsetX = 0f))
+        val zoomBitmap = composeRule.onNodeWithTag(STRIPS).captureToImage().asAndroidBitmap()
+        val zoomed = boundaries(zoomBitmap)
+
+        assertTrue(
+            "No slice boundary was visible at fit, so the measurement has nothing to track. " +
+                "Strip height $STRIP_HEIGHT_DP produced a single flat column. " +
+                "fit bitmap ${fitBitmap.width}x${fitBitmap.height}, boundaries $atFit.",
+            atFit.isNotEmpty(),
+        )
+        assertTrue(
+            "No slice boundary was visible at 2x. 2x bitmap ${zoomBitmap.width}x${zoomBitmap.height}, " +
+                "boundaries $zoomed (fit bitmap ${fitBitmap.width}x${fitBitmap.height}, $atFit).",
+            zoomed.isNotEmpty(),
+        )
+
+        val firstAtFit = atFit.first().toDouble() / fitBitmap.height
+        val firstZoomed = zoomed.first().toDouble() / zoomBitmap.height
+
+        // Compare *fractions of the raster*, not absolute pixels.
+        //
+        // `captureToImage` returns a bitmap sized to the node's rendered bounds, so a 2x layer
+        // yields a bitmap twice as tall and every boundary inside it sits at twice the pixel
+        // offset. Measuring raw pixels across two bitmaps of different sizes would compare 525
+        // against 2100 and report a 4x ratio for a 2x transform -- a false `DEF-003`. The
+        // measurement has to be scale-invariant, and the ratio of boundary position to raster
+        // height is what carries the meaning.
+        val expected = firstAtFit * 2
+        val tolerance = 0.02
+
+        assertTrue(
+            "A slice boundary must move with the document transform. Normalised first boundary: " +
+                "fit=$firstAtFit, 2x=$firstZoomed, expected about $expected (+/- $tolerance). " +
+                "A boundary that does not scale with the document is the DEF-003 defect, where " +
+                "each item was transformed independently of the slot the list measured for it. " +
+                "fit raster ${fitBitmap.width}x${fitBitmap.height} boundaries $atFit; " +
+                "2x raster ${zoomBitmap.width}x${zoomBitmap.height} boundaries $zoomed.",
+            kotlin.math.abs(firstZoomed - expected) <= tolerance,
+        )
+    }
+
     private companion object {
         const val STRIPS = "webtoon-strips"
         const val STRIP_COUNT = 4
+
+        /**
+         * A quarter of a typical phone viewport, so the first boundary is well inside the screen at
+         * both 1x and 2x. Large enough that raster rounding is negligible next to the displacement a
+         * per-item transform would produce.
+         */
+        const val STRIP_HEIGHT_DP = 200
+
+        /**
+         * Flat, mutually distinguishable colours. Adjacent pairs must differ in every channel so a
+         * boundary is never ambiguous: RED/GREEN, GREEN/BLUE, BLUE/YELLOW, YELLOW/RED.
+         */
+        val TINT = listOf(
+            Color.Red,
+            Color.Green,
+            Color.Blue,
+            Color.Yellow,
+        )
+
+        /**
+         * y positions down the centre column at which the colour changes.
+         *
+         * Each entry is the first row of a new slice, so `[0]` is the first boundary after the
+         * top edge. Empty when the whole column is one colour, which is itself a failure signal for
+         * a test about boundaries.
+         */
+        fun boundaries(bitmap: android.graphics.Bitmap): List<Int> {
+            val x = bitmap.width / 2
+            val found = mutableListOf<Int>()
+            var previous = bitmap.getPixel(x, 0)
+            for (y in 1 until bitmap.height) {
+                val current = bitmap.getPixel(x, y)
+                if (current != previous) {
+                    found.add(y)
+                    previous = current
+                }
+            }
+            return found
+        }
     }
 }

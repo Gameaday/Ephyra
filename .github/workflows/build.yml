@@ -230,9 +230,11 @@ jobs:
         with:
           name: test-report-${{ github.sha }}
           if-no-files-found: warn
+          # `**` not `*`: a single `*` does not cross a path separator, so this never matched
+          # nested modules such as `core/data`.
           path: |
-            */build/reports/tests/testDebugUnitTest
-            */build/test-results/testDebugUnitTest
+            **/build/reports/tests/testDebugUnitTest
+            **/build/test-results/testDebugUnitTest
 
       - name: Upload APK
         if: github.event_name != 'pull_request'

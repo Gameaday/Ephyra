@@ -100,7 +100,10 @@ jobs:
         with:
           name: connected-instrumentation-${{ github.sha }}
           if-no-files-found: warn
+          # `**` not `*`: a single `*` does not cross a path separator, so `*/build/...` matches
+          # `app/build/...` but not `core/data/build/...` -- which is why the first attempt still
+          # uploaded nothing when a nested module failed.
           path: |
-            */build/reports/androidTests/connected/
-            */build/outputs/androidTest-results/connected/
-            */build/outputs/apk/androidTest/debug/
+            **/build/reports/androidTests/connected/
+            **/build/outputs/androidTest-results/connected/
+            **/build/outputs/apk/androidTest/debug/
