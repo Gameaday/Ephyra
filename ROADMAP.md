@@ -196,9 +196,33 @@ is agent-driven capture against an attached emulator, and the connected runs in 
 frame-pacing defect cannot be discharged by a still screenshot, and an emulator is a representative
 device rather than physical hardware.
 
-**The larger gap is not defects, it is wiring.** `B-032` records that 27 contracts in `core:domain`
-have dedicated tests and zero production consumers. That is the same class of failure the `DEF` audit
-found in `DEF-005`/`006`/`007`, at scale, and it is what actually separates this from 2.0 — not the
-five reader defects, which are fixed. The `MED` -> `RDR-004`/`RDR-005` replacement sequence is still
+**The larger gap is not defects, it is wiring — and the wiring gap is smaller and better shaped
+than this file previously claimed.** This paragraph said 27 contracts; that number is retired. It
+was already unreliable when written, because it was produced by a count rather than a wiring audit,
+and the count has since drifted in both directions: the page-byte cluster became wired, and two
+entries in the audit list turned out not to be types at all. The verified remaining surface is
+**~13 symbols in 9 contracts** (`B-032`, corrected 2026-09-28).
+
+What replaced the count is the *shape* of the remaining work, because the shape is what can be
+sequenced and the count cannot:
+
+- **One deletion.** The canvas viewport cluster (`DocumentViewport`, `DocumentTilePartition`,
+  `TileScalePolicy`, `WebtoonViewport`) is the wrong model for this app's `LazyColumn` surface and
+  is being retired rather than wired. See ADR-0010.
+- **Five DI-orphans — the cheapest retirement in the programme.** `TargetSeriesRepository`,
+  `TargetMigrationWriter`, `LegacyRoomMigrationAdapter`, `ReconcileSourceRegistry` and
+  `verifyDownloadArtifact` already have real, tested implementations in `core/data` and
+  `core/download` with **no Hilt binding and no caller**. Retiring them is a binding and a call
+  site, not new logic.
+- **Two migrations.** `StartupReducer` onto `App.kt`'s imperative startup, and `ReaderSession` onto
+  `ReaderViewModel`.
+- **One adapter.** The media tuple (`PageSource`/`PageMetadata`/`DecodePlan`) onto the slice decode
+  path.
+- **One piece of greenfield.** `IngestEngine`.
+
+This is still the same class of failure the `DEF` audit found in `DEF-005`/`006`/`007`, at smaller
+scale: verified work that nothing forces the shipping app to obey. But the reader defects are fixed
+and the wiring is now finite and ordered, which is what makes finishing this programme a matter of
+sequencing rather than of discovery. The `MED` -> `RDR-004`/`RDR-005` replacement sequence is still
 open, and `CLEAN-001` has not begun, so the superseded reader, navigation and media code all still
 exist alongside their replacements.
