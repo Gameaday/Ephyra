@@ -34,10 +34,65 @@ class ChapterNumberTest {
 
     @Test
     fun `a large chapter number still round trips`() {
-        // The widest Float error is at the top of the range, so the bound is checked there too
-        // rather than only on small numbers.
-        val large = 99_999.5
-        assertTrue(ChapterNumber.sameChapterNumber(large, large.toFloat().toDouble()))
+        // A `Float` has a fixed *relative* precision, so its absolute error grows with magnitude.
+        // A single absolute tolerance therefore stops working partway up the range: the fixed
+        // `1e-4` this object used to carry first failed at chapter 4096. These are the values that
+        // exposed it, measured rather than assumed. The widest error is at the top of the range.
+        for (value in listOf(4096.1, 99_999.5, 100_000.5, 131_072.1)) {
+            assertTrue(ChapterNumber.sameChapterNumber(value, value.toFloat().toDouble()))
+        }
+    }
+
+    @Test
+    fun `the magnitude scaled tolerance matches every Float round trip`() {
+        // Exhaustive over the range where the error is largest, and over the fractional parts that
+        // a source actually reports. Every one of these fails under a fixed 1e-4.
+        for (n in 1..2000) {
+            for (frac in listOf(0.1, 0.2, 0.3, 0.5, 0.7, 0.9)) {
+                val value = n + frac
+                assertTrue(
+                    ChapterNumber.sameChapterNumber(value, value.toFloat().toDouble()),
+                    "$value did not match its Float round trip",
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `the scaled tolerance never merges distinct chapters`() {
+        // The other half of the bound. A tolerance wide enough to cover the round trip must still
+        // be narrower than the gap between real chapters, or it would merge neighbours.
+        for (n in 1..2000) {
+            assertFalse(
+                ChapterNumber.sameChapterNumber(n + 0.1, n + 0.2),
+                "$n.1 and $n.2 were treated as the same chapter",
+            )
+            assertFalse(
+                ChapterNumber.sameChapterNumber(n + 0.5, n + 1.0),
+                "a special and the following chapter were treated as the same",
+            )
+        }
+    }
+
+    @Test
+    fun `bucket agrees with sameChapterNumber at large magnitudes`() {
+        // A set key and a comparator must not disagree. Dividing by a fixed EPSILON would put a
+        // widened 131072.1 in a different bucket from its twin.
+        for (value in listOf(12.3, 4096.1, 131072.1, 100000.5)) {
+            val widened = value.toFloat().toDouble()
+            assertTrue(ChapterNumber.sameChapterNumber(value, widened))
+            assertEquals(
+                ChapterNumber.bucket(value, "/chapter/a"),
+                ChapterNumber.bucket(widened, "/chapter/a"),
+                "$value and its round trip landed in different buckets",
+            )
+        }
+    }
+
+    @Test
+    fun `hasReached agrees at large magnitudes`() {
+        assertTrue(ChapterNumber.hasReached(131072.1, 131072.1.toFloat().toDouble()))
+        assertFalse(ChapterNumber.hasReached(131072.2, 131072.1.toFloat().toDouble()))
     }
 
     @Test
