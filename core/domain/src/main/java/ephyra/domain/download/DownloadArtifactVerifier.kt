@@ -45,9 +45,7 @@ fun verifyDownloadArtifact(
         ?: return DownloadArtifactVerification.Invalid(expected.artifactId, "container is unknown")
     val actualPath = probe.relativePath
         ?: return DownloadArtifactVerification.Invalid(expected.artifactId, "relative path is unknown")
-    if (actualPath.isBlank() || actualPath.startsWith('/') || actualPath.startsWith('\\') ||
-        actualPath.split('/', '\\').any { it == ".." }
-    ) {
+    if (!DownloadArtifactPath.isSafe(actualPath)) {
         return DownloadArtifactVerification.Invalid(expected.artifactId, "relative path is unsafe")
     }
     if (probe.pageCount <= 0) {

@@ -37,11 +37,8 @@ data class DownloadArtifactRecord(
         require(seriesId.isNotBlank()) { "Series id must not be blank" }
         require(sourceId.isNotBlank()) { "Source id must not be blank" }
         require(relativePath.isNotBlank()) { "Download relative path must not be blank" }
-        require(!relativePath.startsWith('/') && !relativePath.startsWith('\\')) {
-            "Download path must be relative to the configured downloads root"
-        }
-        require(!relativePath.split('/', '\\').any { it == ".." }) {
-            "Download path must not escape the configured downloads root"
+        require(DownloadArtifactPath.isSafe(relativePath)) {
+            "Download path must be a safe relative path within the configured downloads root"
         }
         require(pageCount > 0) { "Download artifact must contain at least one page" }
         require(byteSize >= 0L) { "Download artifact size must not be negative" }
