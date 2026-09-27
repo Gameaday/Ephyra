@@ -28,6 +28,7 @@ import ephyra.feature.reader.model.NavigationVector
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.source.local.image.LocalCoverManager
+import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -87,6 +88,24 @@ class ReaderReadCompletionWiringTest {
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
+
+        // The mocks above are class-level `val`s, so their recorded calls accumulate across the
+        // whole class. `coVerify(exactly = 1)` then depends on which tests ran first, and JUnit does
+        // not guarantee method order -- so the two tests that expect exactly one read write
+        // intermittently saw two. Verified: the class passes in isolation but failed inside a
+        // multi-module run where ordering differed. Clearing per test removes the dependency.
+        clearMocks(
+            updateChapter,
+            updateManga,
+            trackChapter,
+            downloadManager,
+            getChaptersByMangaId,
+            getNextChapters,
+            chapterCache,
+            libraryPreferences,
+            trackPreferences,
+            downloadPreferences,
+        )
 
         every { defaultReadingModePref.stateIn(any()) } returns MutableStateFlow(0)
         every { readerPreferences.defaultReadingMode() } returns defaultReadingModePref

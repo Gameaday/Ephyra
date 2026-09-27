@@ -44,6 +44,19 @@ class ChapterNumberTest {
     }
 
     @Test
+    fun `the database round trip alone is enough to trigger this`() {
+        // `DEF-017`. The narrowing is not a backup artefact: `SChapter.chapter_number` and
+        // `ChapterImpl.chapter_number` are both `Float`, and `toDbChapter` narrows on every write.
+        // This is the exact chain, with no backup anywhere in it -- so the affected population is
+        // every user with a decimal chapter number, not only people who restored a backup.
+        val fromSource = 12.3
+        val afterDatabase = fromSource.toFloat().toDouble()
+
+        assertFalse(fromSource == afterDatabase, "premise: the round trip is lossy")
+        assertTrue(ChapterNumber.sameChapterNumber(fromSource, afterDatabase))
+    }
+
+    @Test
     fun `the magnitude scaled tolerance matches every Float round trip`() {
         // Exhaustive over the range where the error is largest, and over the fractional parts that
         // a source actually reports. Every one of these fails under a fixed 1e-4.

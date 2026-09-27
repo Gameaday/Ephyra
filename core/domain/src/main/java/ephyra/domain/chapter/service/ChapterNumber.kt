@@ -15,9 +15,13 @@ import kotlin.math.pow
  *
  * - **Parsed from a source** — `ChapterRecognition.parseChapterNumber` reads "12.3" and returns
  *   the `Double` nearest to it. This is the value a fresh sync compares against.
- * - **Round-tripped through backup** — `BackupChapter.chapterNumber` is declared `Float`, so
- *   `toChapterImpl()` widens a narrowed value: `12.3` becomes `12.300000190734863`. A restored
- *   chapter keeps that value in the database from then on.
+ * - **Written to the database** — the source model `SChapter.chapter_number` and the entity column
+ *   `ChapterImpl.chapter_number` are both `Float`, and `toDbChapter` narrows with `.toFloat()`.
+ *   Reading it back widens again: `12.3` becomes `12.300000190734863` and stays that way. This
+ *   happens the first time any chapter is saved, for every user — it needs no backup.
+ * - **Round-tripped through a backup** — `BackupChapter.chapterNumber` is also a `Float`, so a
+ *   restore narrows the same way. That is one more instance of the same narrowing, not the
+ *   cause of it; see `DEF-017` in the status ledger.
  *
  * A `Double` and a `Float` widened back to `Double` are *not* `equals`, because `Double.equals`
  * is exact bit comparison. So after a restore, `readChapterNumbers in SyncChaptersWithSource`
@@ -25,8 +29,9 @@ import kotlin.math.pow
  * number has no exact `Float` representation (0.1, 1.1, 3.3, 12.3 … — most decimal numbers),
  * and `MigrateMangaUseCase`'s chapter pairing misses for the same reason.
  *
- * That is a data-dependent failure: it appears only after a backup restore, only for decimal
- * chapter numbers, and it degrades quietly rather than throwing.
+ * That is a data-dependent failure: it appears only for numbers with no exact `Float`
+ * representation (0.1, 1.1, 3.3, 12.3 … — most decimal numbers), only once the chapter has been
+ * through a database round trip, and it degrades quietly rather than throwing.
  *
  * # The rule
  *
