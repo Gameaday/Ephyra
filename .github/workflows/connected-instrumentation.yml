@@ -1,19 +1,22 @@
 name: Connected Instrumentation
 on:
   workflow_dispatch:
-  pull_request:
-    paths:
-      - '**/src/androidTest/**'
-      - '.github/workflows/connected-instrumentation.yml'
-      - 'gradle/libs.versions.toml'
-      - '**/build.gradle.kts'
-  push:
-    branches: [ main ]
-    paths:
-      - '**/src/androidTest/**'
-      - '.github/workflows/connected-instrumentation.yml'
-      - 'gradle/libs.versions.toml'
-      - '**/build.gradle.kts'
+  # Deliberately NOT on push or pull_request.
+  #
+  # This was broadened to cover both while the emulator provisioned correctly on a
+  # developer's machine, and that was wrong. On GitHub's runners the API 35 emulator
+  # does not boot -- the job fails at "Boot API 35 emulator" before a single test
+  # runs (run #1, 2026-09-27, `Connected Instrumentation` #1 at 238e36c13). The same
+  # provisioning failure is why the macrobenchmark workflow has failed all 24 of its
+  # scheduled runs (`B-043`).
+  #
+  # So a push trigger would mark every commit red for a reason unrelated to the
+  # code. That is the inert-gate failure mode wearing a new hat: worse than no gate,
+  # because it trains everyone to ignore red and then a real failure is invisible too.
+  # A gate that cannot run must be labelled unserviceable, not wired to every push.
+  #
+  # The fix is emulator boot, not the trigger. Until that is resolved this stays on the
+  # weekly schedule, and `B-050` carries the blocker.
   schedule:
     - cron: "30 5 * * 1"  # Weekly at 05:30 UTC
   workflow_call:
