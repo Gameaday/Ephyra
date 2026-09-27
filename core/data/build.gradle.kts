@@ -102,6 +102,9 @@ dependencies {
     constraints {
         androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
     }
+    // `api` above covers the main and unit-test compilations, but the androidTest compilation
+    // does not inherit it, and the encoder is needed to produce the artifact under test.
+    androidTestImplementation(libs.jxl.coder.coil)
 }
 // Suppress warnings for the following:
 
