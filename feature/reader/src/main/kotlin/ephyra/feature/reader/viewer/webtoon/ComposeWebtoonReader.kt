@@ -543,7 +543,7 @@ private fun WebtoonPageItem(
                 }.getOrNull()
             }
             if (bytes != null) {
-                page.cachedBytes = bytes
+                page.chapter.cacheBytes(page, bytes)
                 value = withIOContext {
                     ByteArrayInputStream(bytes).use(ImageUtil::getImageDimensions)
                 }
@@ -648,7 +648,7 @@ private fun WebtoonPageItem(
                         value = withIOContext {
                             try {
                                 page.stream?.invoke()?.use { it.readBytes() }?.also {
-                                    page.cachedBytes = it
+                                    page.chapter.cacheBytes(page, it)
                                 }
                             } catch (e: Exception) {
                                 null

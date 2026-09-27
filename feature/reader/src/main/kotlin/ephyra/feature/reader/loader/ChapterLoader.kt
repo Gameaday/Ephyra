@@ -1,5 +1,6 @@
 package ephyra.feature.reader.loader
 
+import android.app.ActivityManager
 import android.app.Application
 import android.content.Context
 import ephyra.core.archive.archiveReader
@@ -15,6 +16,7 @@ import ephyra.domain.download.service.DownloadManager
 import ephyra.domain.download.service.DownloadPreferences
 import ephyra.domain.manga.model.Manga
 import ephyra.domain.source.model.StubSource
+import ephyra.feature.reader.model.PageByteStoreOwner
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.source.local.LocalSource
 import ephyra.source.local.io.Format
@@ -38,6 +40,20 @@ class ChapterLoader(
     private val performanceTier by lazy { DeviceUtil.performanceTier(context) }
 
     /**
+     * This app's heap ceiling in MB, read once per loader.
+     *
+     * `getMemoryClass()` is the per-app limit, not the device's RAM, and it is what the page byte
+     * budget derives from. Guarded because a lookup failure would otherwise throw out of chapter
+     * load: a slightly conservative budget is the right degradation, whereas a reader that cannot
+     * open a chapter is not.
+     */
+    private val memoryClassMb by lazy {
+        runCatching {
+            (context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).memoryClass
+        }.getOrDefault(DEFAULT_MEMORY_CLASS_MB)
+    }
+
+    /**
      * Unified page pre-processor shared with [HttpPageLoader] so that both immediate
      * (downloaded / local) and incremental (online) filtering use the same pipeline.
      */
@@ -54,6 +70,15 @@ class ChapterLoader(
      *   network bandwidth.
      */
     suspend fun loadChapter(chapter: ReaderChapter, isPreloadOnly: Boolean = false) {
+        // Attach the chapter's bounded page-byte working set on the way in, so every chapter the
+        // reader will ever show has one and no write site can end up caching to the unbounded page
+        // field. The store is chapter-scoped, so a previous chapter's bytes cannot survive into this
+        // one; a chapter loaded twice keeps the store it already had rather than dropping retained
+        // bytes and forcing a re-read.
+        if (chapter.byteStore == null) {
+            chapter.byteStore = PageByteStoreOwner(memoryClassMb)
+        }
+
         if (chapterIsReady(chapter)) {
             // The chapter's page list is already available. If it was previously loaded by a
             // preload-only (single-worker) HttpPageLoader and is now being activated as the
@@ -159,5 +184,17 @@ class ChapterLoader(
             )
             else -> error(context.stringResource(ephyra.app.core.common.R.string.loader_not_implemented_error))
         }
+    }
+
+    private companion object {
+        /**
+         * Heap class assumed when the platform lookup fails.
+         *
+         * Android's documented minimum large-heap-free class is 16 MB and the common floor is
+         * 48-64 MB; 128 MB is a mid-range value. The budget policy clamps and scales from whatever
+         * arrives, so this only decides how conservative a degraded device is — it never produces
+         * an unusable cache.
+         */
+        const val DEFAULT_MEMORY_CLASS_MB = 128
     }
 }

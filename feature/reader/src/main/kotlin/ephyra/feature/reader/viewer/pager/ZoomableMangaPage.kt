@@ -330,7 +330,9 @@ fun ZoomableMangaPage(
                     ) {
                         val resolved = page.mergedBitmap ?: page.cachedBytes ?: withIOContext {
                             try {
-                                page.stream?.invoke()?.use { it.readBytes() }?.also { page.cachedBytes = it }
+                                page.stream?.invoke()?.use { it.readBytes() }?.also {
+                                    page.chapter.cacheBytes(page, it)
+                                }
                             } catch (_: Exception) {
                                 null
                             }
