@@ -241,6 +241,81 @@ class BoundedPageByteStoreTest {
     }
 
     @Test
+    fun `an eviction notifies the owner so its own reference can be dropped`() {
+        // The whole reason the callback exists. A store that drops an entry while the owner still
+        // holds the same array bounds the store and not the memory, so the notification is what
+        // makes the budget describe real retained bytes.
+        val dropped = mutableListOf<PageSourceId>()
+        val store = BoundedPageByteStore(budgetBytes = 200, onEvict = { dropped.add(it) })
+        store.put(id("a"), bytes(100))
+        store.put(id("b"), bytes(100))
+        store.put(id("c"), bytes(100))
+
+        assertEquals(listOf(id("a")), dropped, "the LRU entry should have been reported")
+        assertEquals(200, store.retainedBytes)
+    }
+
+    @Test
+    fun `a value that was never admitted is not reported as evicted`() {
+        // Reporting a refused value would make the owner clear bytes it still legitimately holds.
+        val dropped = mutableListOf<PageSourceId>()
+        val store = BoundedPageByteStore(budgetBytes = 100, onEvict = { dropped.add(it) })
+        assertFalse(store.put(id("huge"), bytes(500)))
+        assertTrue(dropped.isEmpty(), "a refused value was never retained, so nothing was evicted")
+    }
+
+    @Test
+    fun `a pinned entry is not reported while it survives`() {
+        val dropped = mutableListOf<PageSourceId>()
+        val store = BoundedPageByteStore(budgetBytes = 200, onEvict = { dropped.add(it) })
+        store.put(id("keep"), bytes(100))
+        store.pin(id("keep"))
+        store.put(id("a"), bytes(100))
+        store.put(id("b"), bytes(100))
+
+        // Only the pinned page matters here. `a` is legitimately evicted to make room for `b` --
+        // that is the LRU doing its job -- so the assertion is that `keep` was never reported, not
+        // that nothing was evicted at all.
+        assertFalse(dropped.contains(id("keep")), "the pinned entry survived, so it must not be reported")
+        assertTrue(store.contains(id("keep")))
+    }
+
+    @Test
+    fun `clearing reports every dropped entry`() {
+        val dropped = mutableListOf<PageSourceId>()
+        val store = BoundedPageByteStore(budgetBytes = 1000, onEvict = { dropped.add(it) })
+        store.put(id("a"), bytes(100))
+        store.put(id("b"), bytes(100))
+        store.put(id("c"), bytes(100))
+        dropped.clear()
+
+        store.clear()
+        assertEquals(setOf(id("a"), id("b"), id("c")), dropped.toSet())
+    }
+
+    @Test
+    fun `replacing the bytes for an id reports the drop`() {
+        // The path that is easiest to miss: the same id is re-put with new bytes, so the old array
+        // is dropped without any eviction pressure at all.
+        val dropped = mutableListOf<PageSourceId>()
+        val store = BoundedPageByteStore(budgetBytes = 1000, onEvict = { dropped.add(it) })
+        store.put(id("a"), bytes(100))
+        assertTrue(dropped.isEmpty())
+
+        store.put(id("a"), bytes(120))
+        assertEquals(listOf(id("a")), dropped, "the replaced bytes must be reported as dropped")
+    }
+
+    @Test
+    fun `removing an entry reports the drop`() {
+        val dropped = mutableListOf<PageSourceId>()
+        val store = BoundedPageByteStore(budgetBytes = 1000, onEvict = { dropped.add(it) })
+        store.put(id("a"), bytes(100))
+        store.remove(id("a"))
+        assertEquals(listOf(id("a")), dropped)
+    }
+
+    @Test
     fun `different identities do not collide`() {
         val store = BoundedPageByteStore(budgetBytes = 1000)
         store.put(PageSourceId("src", "a", "r1"), bytes(10, fill = 1))

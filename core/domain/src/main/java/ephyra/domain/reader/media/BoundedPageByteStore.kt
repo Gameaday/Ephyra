@@ -18,6 +18,19 @@ package ephyra.domain.reader.media
  */
 class BoundedPageByteStore(
     override val budgetBytes: Int,
+    /**
+     * Invoked for every entry this store drops — by eviction, by [remove], or by [clear].
+     *
+     * This exists because bounding the store is not sufficient on its own. A cache whose only
+     * reference to the bytes is the store bounds the store; a cache that *also* holds the same
+     * array somewhere else — the reader keeps the payload on the page object — bounds nothing at all,
+     * because the second reference keeps the array alive after eviction. The owner of those bytes
+     * must therefore be told when the store lets go, or the budget is a number that describes the
+     * store and not the memory.
+     *
+     * Not called for a value that was never admitted, and not called for a pin that keeps an entry.
+     */
+    private val onEvict: (PageSourceId) -> Unit = {},
 ) : PageByteStore {
 
     init {
@@ -75,6 +88,10 @@ class BoundedPageByteStore(
         if (existing != null) {
             retained -= existing.bytes.size
             entries.remove(id)
+            // The old array is being dropped in favour of a new load of the same id. Notifying is
+            // what lets the owner clear the reference it holds to the *previous* bytes; staying
+            // silent here would leave that reference alive with no store entry to explain it.
+            onEvict(id)
         }
 
         // Preserve an outstanding pin across a byte replacement: the UI may still be reading the
@@ -99,6 +116,7 @@ class BoundedPageByteStore(
     override fun remove(id: PageSourceId): ByteArray? {
         val entry = entries.remove(id) ?: return null
         retained -= entry.bytes.size
+        onEvict(id)
         return entry.bytes
     }
 
@@ -115,9 +133,13 @@ class BoundedPageByteStore(
     }
 
     override fun clear() {
+        // Snapshot the keys first: onEvict may re-enter the store (a listener that writes through
+        // would otherwise mutate the map this is iterating).
+        val dropped = entries.keys.toList()
         entries.clear()
         retained = 0
         blockedByPin = 0
+        dropped.forEach(onEvict)
     }
 
     /**
@@ -137,6 +159,7 @@ class BoundedPageByteStore(
             if (candidate.value.pinned > 0) continue
             retained -= candidate.value.bytes.size
             iterator.remove()
+            onEvict(candidate.key)
             remaining -= candidate.value.bytes.size
         }
     }
