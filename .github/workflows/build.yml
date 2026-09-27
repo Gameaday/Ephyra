@@ -195,15 +195,44 @@ jobs:
         id: unit_tests
         run: ./gradlew testDebugUnitTest
 
+      # A red gate that names nothing is worse than no gate: it cannot be triaged without
+      # authentication, so the failure gets re-run and re-guessed. This writes the failing tests
+      # into the job log itself, so the log is enough to act on.
+      - name: Summarise unit test failures
+        if: always()
+        run: |
+          set -euo pipefail
+          found=0
+          for f in $(find . -path '*/build/test-results/testDebugUnitTest/TEST-*.xml' 2>/dev/null); do
+            if grep -q '<failure' "$f"; then
+              found=1
+              echo "::group::$(echo "$f" | sed 's#^\./##')"
+              grep -o 'testcase name="[^"]*" classname="[^"]*"' "$f" | head -50 || true
+              grep -o '<failure[^>]*message="[^"]*"' "$f" | head -20 || true
+              echo "::endgroup::"
+            fi
+          done
+          if [ "$found" = "0" ]; then
+            echo "No <failure> element in any module's test results."
+            echo "If this step's job failed, the failure was not an assertion in a recorded test"
+            echo "-- most likely a compile error, a Gradle task failure, or a JVM that died."
+            echo "Re-run with '--stacktrace' or read the log for the first 'FAILURE:' line."
+          fi
+
       - name: Compile connected instrumentation APK
         run: ./gradlew :app:assembleDebugAndroidTest --no-daemon
 
+      # Was scoped to :app only, so a failure in any of the other 24 modules uploaded nothing at
+      # all and the run reported zero artifacts -- which is how a red gate became undiagnosable.
       - name: Upload test report
-        if: steps.unit_tests.outcome == 'failure'
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: test-report-${{ github.sha }}
-          path: app/build/reports/tests/testDebugUnitTest
+          if-no-files-found: warn
+          path: |
+            */build/reports/tests/testDebugUnitTest
+            */build/test-results/testDebugUnitTest
 
       - name: Upload APK
         if: github.event_name != 'pull_request'
