@@ -41,8 +41,5 @@ fun List<Chapter>.removeDuplicates(currentChapter: Chapter): List<Chapter> {
         }
 }
 
-private fun duplicateGroupKey(chapter: Chapter): String {
-    val number = chapter.chapterNumber
-    if (!ChapterNumber.isRecognized(number)) return "id:${chapter.id}"
-    return "number:" + "${Math.round(number * 10_000.0)}"
-}
+private fun duplicateGroupKey(chapter: Chapter): String =
+    ChapterNumber.bucket(chapter.chapterNumber, chapter.url)

@@ -1,6 +1,8 @@
 package ephyra.domain.chapter.service
 
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -123,5 +125,40 @@ class ChapterNumberTest {
         // Bias is toward counting, but only within the tolerance.
         assertFalse(ChapterNumber.hasReached(12.5, 12.0))
         assertFalse(ChapterNumber.hasReached(13.0, 12.0))
+    }
+
+    @Test
+    fun `bucket puts a Float round trip in the same bucket as its source`() {
+        // Membership is the third place this precision problem appears. A `TreeSet<Double>` or a
+        // `groupBy { chapterNumber }` compares exact bits, so these two land in different buckets
+        // and a lookup silently misses.
+        assertFalse(12.3 == 12.3.toFloat().toDouble(), "premise: these are not Double.equals")
+        assertEquals(
+            ChapterNumber.bucket(12.3, "/chapter/a"),
+            ChapterNumber.bucket(12.3.toFloat().toDouble(), "/chapter/a"),
+            "a restored chapter must fall in the same bucket as its live twin",
+        )
+    }
+
+    @Test
+    fun `bucket separates genuinely different numbers`() {
+        assertNotEquals(
+            ChapterNumber.bucket(12.3, "/chapter/a"),
+            ChapterNumber.bucket(12.4, "/chapter/a"),
+        )
+    }
+
+    @Test
+    fun `bucket keeps unrecognised numbers apart`() {
+        // Mirrors `sameChapterNumber`, which refuses to call unrecognised numbers equal. If these
+        // shared a bucket, every unnumbered chapter in a series would collapse into one.
+        assertNotEquals(
+            ChapterNumber.bucket(-1.0, "/chapter/a"),
+            ChapterNumber.bucket(-1.0, "/chapter/b"),
+        )
+        assertNotEquals(
+            ChapterNumber.bucket(-1.0, "/chapter/a"),
+            ChapterNumber.bucket(1.0, "/chapter/a"),
+        )
     }
 }

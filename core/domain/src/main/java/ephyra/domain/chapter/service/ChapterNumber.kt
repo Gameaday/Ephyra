@@ -76,4 +76,23 @@ object ChapterNumber {
         if (!isRecognized(chapterNumber) || !isRecognized(lastRead)) return false
         return chapterNumber <= lastRead + EPSILON
     }
+
+    /**
+     * The canonical bucketed form of a chapter number, for use as a `Set`/`Map` key.
+     *
+     * Membership tests are the third place this precision problem appears, after comparisons
+     * ([sameChapterNumber], [hasReached]) and grouping. A `TreeSet<Double>` or a
+     * `groupBy { chapterNumber }` compares by exact bits, so a `Float`-widened value and its
+     * `Double` twin occupy different buckets and a lookup silently misses. Bucketing both sides
+     * through this function makes such a lookup agree with the rest of the app.
+     *
+     * Unrecognised numbers get a key derived from the chapter's own identity rather than a shared
+     * bucket, because [sameChapterNumber] refuses to call them equal and grouping them together
+     * would contradict it — for `SyncChaptersWithSource` that would merge every unnumbered chapter
+     * in a series into one.
+     */
+    fun bucket(chapterNumber: Double, identity: String): String {
+        if (!isRecognized(chapterNumber)) return "unrecognised:$identity"
+        return "number:" + Math.round(chapterNumber / EPSILON)
+    }
 }

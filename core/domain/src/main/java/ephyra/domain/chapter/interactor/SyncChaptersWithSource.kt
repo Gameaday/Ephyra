@@ -155,23 +155,32 @@ class SyncChaptersWithSource(
 
         val changedOrDuplicateReadUrls = mutableSetOf<String>()
 
-        val deletedChapterNumbers = TreeSet<Double>()
-        val deletedReadChapterNumbers = TreeSet<Double>()
-        val deletedBookmarkedChapterNumbers = TreeSet<Double>()
+        // Chapter numbers are compared by bucketed key rather than as `Double`s. A restore widens
+        // the stored number through a `Float`, so a value in the database can be `12.300000190734863`
+        // where the source reports `12.3`; exact-bit membership against a `TreeSet<Double>` then
+        // misses, and a chapter removed upstream silently keeps its stale read, bookmark and fetch
+        // date. This is `DEF-012`'s root cause a third time over, and `ChapterNumber.bucket` is the
+        // single rule for it.
+        val deletedChapterNumbers = HashSet<String>()
+        val deletedReadChapterNumbers = HashSet<String>()
+        val deletedBookmarkedChapterNumbers = HashSet<String>()
 
+        // Used only for the duplicate-read check below, which compares with `sameChapterNumber`
+        // rather than by membership, so the raw numbers are correct here.
         val readChapterNumbers = dbChapters
             .mapNotNullTo(HashSet()) { chapter ->
                 chapter.chapterNumber.takeIf { chapter.read && chapter.isRecognizedNumber }
             }
 
         removedChapters.forEach { chapter ->
-            if (chapter.read) deletedReadChapterNumbers.add(chapter.chapterNumber)
-            if (chapter.bookmark) deletedBookmarkedChapterNumbers.add(chapter.chapterNumber)
-            deletedChapterNumbers.add(chapter.chapterNumber)
+            val key = ChapterNumber.bucket(chapter.chapterNumber, chapter.url)
+            if (chapter.read) deletedReadChapterNumbers.add(key)
+            if (chapter.bookmark) deletedBookmarkedChapterNumbers.add(key)
+            deletedChapterNumbers.add(key)
         }
 
         val deletedChapterNumberDateFetchMap = removedChapters.sortedByDescending { it.dateFetch }
-            .associate { it.chapterNumber to it.dateFetch }
+            .associate { ChapterNumber.bucket(it.chapterNumber, it.url) to it.dateFetch }
 
         val markDuplicateAsRead = libraryPreferences.markDuplicateReadChapterAsRead().get()
             .contains(LibraryPreferences.MARK_DUPLICATE_CHAPTER_READ_NEW)
@@ -190,15 +199,17 @@ class SyncChaptersWithSource(
                 chapter = chapter.copy(read = true)
             }
 
-            if (!chapter.isRecognizedNumber || chapter.chapterNumber !in deletedChapterNumbers) return@map chapter
+            if (!chapter.isRecognizedNumber) return@map chapter
+            val chapterKey = ChapterNumber.bucket(chapter.chapterNumber, chapter.url)
+            if (chapterKey !in deletedChapterNumbers) return@map chapter
 
             chapter = chapter.copy(
-                read = chapter.chapterNumber in deletedReadChapterNumbers,
-                bookmark = chapter.chapterNumber in deletedBookmarkedChapterNumbers,
+                read = chapterKey in deletedReadChapterNumbers,
+                bookmark = chapterKey in deletedBookmarkedChapterNumbers,
             )
 
             // Try to to use the fetch date of the original entry to not pollute 'Updates' tab
-            deletedChapterNumberDateFetchMap[chapter.chapterNumber]?.let {
+            deletedChapterNumberDateFetchMap[chapterKey]?.let {
                 chapter = chapter.copy(dateFetch = it)
             }
 
