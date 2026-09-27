@@ -134,6 +134,50 @@ class PagerGestureInjectTest {
         composeRule.onNodeWithTag(PAGE).captureToImage().asAndroidBitmap()
 
     /**
+     * A capture that retries, for the PixelCopy timeout only.
+     *
+     * [settleFrame] guarantees there *is* a frame to copy, but on a software-rendered emulator
+     * (`-gpu swiftshader_indirect`, which CI uses) the copy itself can exceed Compose's wait and
+     * fail with "Failed waiting for PixelCopy!" even though the frame is there. That is an
+     * infrastructure timeout, not a rendering fault: the four static capture tests in the sibling
+     * suite pass on the same emulator, and only the one that captures *after* an injected gesture
+     * hits it.
+     *
+     * Only the capture is retried. If the copy succeeds and the image is wrong, the assertions
+     * below still fail exactly as before — a retry that could paper over a real defect would be
+     * worse than the flake, so the failure message on exhaustion names the timeout explicitly
+     * rather than letting a later assertion report a misleading value.
+     */
+    private fun rasterRetrying(attempts: Int = 4): Bitmap {
+        var last: Throwable? = null
+        repeat(attempts) { attempt ->
+            try {
+                return raster()
+            } catch (e: Throwable) {
+                if (!e.isPixelCopyTimeout()) throw e
+                last = e
+                settleFrame()
+            }
+        }
+        throw AssertionError(
+            "captureToImage failed with a PixelCopy timeout on all $attempts attempts. " +
+                "This is a capture-timing failure on this renderer, not a rendering defect: the " +
+                "assertions never ran.",
+            last,
+        )
+    }
+
+    private fun Throwable.isPixelCopyTimeout(): Boolean {
+        var current: Throwable? = this
+        while (current != null) {
+            val message = current.message
+            if (message != null && message.contains("PixelCopy")) return true
+            current = current.cause
+        }
+        return false
+    }
+
+    /**
      * Forces a fresh frame before a capture.
      *
      * `captureToImage` is implemented with `PixelCopy`, which waits for a *new* frame. Straight
@@ -183,7 +227,7 @@ class PagerGestureInjectTest {
         composeRule.setContent { ZoomablePage() }
         composeRule.waitForIdle()
 
-        val before = raster()
+        val before = rasterRetrying()
         val beforeScale = latest.transform.scale
         val beforeTransitions = transitions(before)
 
@@ -199,7 +243,7 @@ class PagerGestureInjectTest {
         }
         composeRule.waitForIdle()
         settleFrame()
-        val after = raster()
+        val after = rasterRetrying()
         val afterScale = latest.transform.scale
         val afterTransitions = transitions(after)
 

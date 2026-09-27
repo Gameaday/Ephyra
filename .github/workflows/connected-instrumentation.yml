@@ -1,6 +1,19 @@
 name: Connected Instrumentation
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - '**/src/androidTest/**'
+      - '.github/workflows/connected-instrumentation.yml'
+      - 'gradle/libs.versions.toml'
+      - '**/build.gradle.kts'
+  push:
+    branches: [ main ]
+    paths:
+      - '**/src/androidTest/**'
+      - '.github/workflows/connected-instrumentation.yml'
+      - 'gradle/libs.versions.toml'
+      - '**/build.gradle.kts'
   schedule:
     - cron: "30 5 * * 1"  # Weekly at 05:30 UTC
   workflow_call:
@@ -51,7 +64,35 @@ jobs:
           emulator-options: "-no-snapshot -gpu swiftshader_indirect -no-window -camera-back none"
           emulator-boot-timeout: 600
           script-timeout: 1800
-          script: ./gradlew :app:connectedDebugAndroidTest --no-daemon --stacktrace
+          script: >-
+            ./gradlew
+            :app:connectedDebugAndroidTest
+            :core:data:connectedDebugAndroidTest
+            :feature:reader:connectedDebugAndroidTest
+            --no-daemon --stacktrace
+
+      # Same principle as the unit-test summariser: a red device gate that names nothing cannot be
+      # triaged, and these runs are the only automated proof the E3 claims still hold.
+      - name: Summarise instrumentation failures
+        if: always()
+        run: |
+          set -uo pipefail
+          found=0
+          for f in $(find . -path '*/build/outputs/androidTest-results/connected/*/TEST-*.xml' 2>/dev/null); do
+            if grep -q '<failure' "$f"; then
+              found=1
+              echo "::group::$(echo "$f" | sed 's#^\./##')"
+              grep -o 'tests="[0-9]*" skipped="[0-9]*" failures="[0-9]*" errors="[0-9]*"' "$f" | head -1 || true
+              grep -o '<testcase name="[^"]*"[^>]*>' "$f" | head -60 || true
+              grep -o '<failure[^>]*message="[^"]*"' "$f" | head -20 || true
+              echo "::endgroup::"
+            fi
+          done
+          if [ "$found" = "0" ]; then
+            echo "No recorded instrumentation failure in any module."
+            echo "If the step above failed, it was an install/boot/compile failure rather than a"
+            echo "failing assertion -- check the emulator boot and the Gradle output above."
+          fi
 
       - name: Upload instrumentation reports
         if: always()
@@ -60,6 +101,6 @@ jobs:
           name: connected-instrumentation-${{ github.sha }}
           if-no-files-found: warn
           path: |
-            app/build/reports/androidTests/connected/
-            app/build/outputs/androidTest-results/connected/
-            app/build/outputs/apk/androidTest/debug/
+            */build/reports/androidTests/connected/
+            */build/outputs/androidTest-results/connected/
+            */build/outputs/apk/androidTest/debug/
