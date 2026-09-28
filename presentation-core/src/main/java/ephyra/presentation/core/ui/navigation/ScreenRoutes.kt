@@ -5,11 +5,6 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.navigation.NavHostController
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
 
 val LocalNavController = staticCompositionLocalOf<NavHostController> {
     error("No NavController provided")
@@ -20,38 +15,12 @@ val LocalSharedTransitionScope = staticCompositionLocalOf<SharedTransitionScope?
 
 val LocalNavAnimatedVisibilityScope = staticCompositionLocalOf<AnimatedVisibilityScope?> { null }
 
-/**
- * Provides a way for child screens to communicate bottom navigation bar visibility
- * to the host (HomeScreen). Child screens can call [BottomNavVisibilityController.hide]
- * or [BottomNavVisibilityController.show] to control the bottom bar.
- */
-object BottomNavVisibilityController {
-    private val _isBottomNavVisible = MutableStateFlow(true)
-    val isBottomNavVisible: StateFlow<Boolean> = _isBottomNavVisible.asStateFlow()
-
-    fun hide() {
-        _isBottomNavVisible.value = false
-    }
-    fun show() {
-        _isBottomNavVisible.value = true
-    }
-    fun setVisible(visible: Boolean) {
-        _isBottomNavVisible.value = visible
-    }
-}
-
-val LocalBottomNavVisibilityController = staticCompositionLocalOf<BottomNavVisibilityController> {
-    BottomNavVisibilityController
-}
-
-object NavigationEvents {
-    private val _reselectEvent = MutableSharedFlow<String>(extraBufferCapacity = 1)
-    val reselectEvent = _reselectEvent.asSharedFlow()
-
-    fun triggerReselect(route: String) {
-        _reselectEvent.tryEmit(route)
-    }
-}
+// Bottom-bar visibility and tab reselect used to be global `object` singletons here
+// (`BottomNavVisibilityController` and `NavigationEvents`), each holding a `MutableStateFlow` that
+// any module could mutate and that outlived the Activity meant to own it. `NAV-001`, re-scoped by
+// ADR-0011, replaced them with `NavigationCoordinator` — instance state provided down the
+// composition by the shell, exactly like `AppNavigator` and `LocalNavController`. Both consumers
+// resolve it through `LocalNavigationCoordinator`.
 
 sealed class ScreenRoutes(val route: String) {
     data object Onboarding : ScreenRoutes("onboarding")

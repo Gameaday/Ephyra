@@ -38,7 +38,8 @@ import ephyra.presentation.core.screens.EmptyScreenAction
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.ui.AppReadySignal
 import ephyra.presentation.core.ui.navigation.LocalNavController
-import ephyra.presentation.core.ui.navigation.NavigationEvents
+import ephyra.presentation.core.ui.navigation.LocalNavigationCoordinator
+import ephyra.presentation.core.ui.navigation.NavigationCoordinator
 import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.LocalAppNavigator
@@ -70,6 +71,7 @@ fun LibraryScreen(
     settingsViewModel: LibrarySettingsViewModel,
     navController: NavController,
     searchQuery: String? = null,
+    navigationCoordinator: NavigationCoordinator = LocalNavigationCoordinator.current,
 ) {
     val context = LocalContext.current
     val navigator = LocalAppNavigator.current
@@ -280,9 +282,9 @@ fun LibraryScreen(
 
     LaunchedEffect(state.selectionMode) {
         if (state.selectionMode) {
-            ephyra.presentation.core.ui.navigation.BottomNavVisibilityController.hide()
+            navigationCoordinator.hideBottomNav()
         } else {
-            ephyra.presentation.core.ui.navigation.BottomNavVisibilityController.show()
+            navigationCoordinator.showBottomNav()
         }
     }
 
@@ -299,7 +301,7 @@ fun LibraryScreen(
     }
 
     LaunchedEffect(Unit) {
-        NavigationEvents.reselectEvent
+        navigationCoordinator.reselectEvents
             .filter { it == ScreenRoutes.Library.route }
             .collect { ViewModel.onEvent(LibraryScreenEvent.ShowSettingsDialog) }
     }

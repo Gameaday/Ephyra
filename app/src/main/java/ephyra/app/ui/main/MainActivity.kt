@@ -84,7 +84,9 @@ import ephyra.presentation.core.ui.activity.BaseActivity
 import ephyra.presentation.core.ui.navigation.LocalMotionPreference
 import ephyra.presentation.core.ui.navigation.LocalNavAnimatedVisibilityScope
 import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.LocalNavigationCoordinator
 import ephyra.presentation.core.ui.navigation.LocalSharedTransitionScope
+import ephyra.presentation.core.ui.navigation.NavigationCoordinator
 import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.ui.navigation.rememberSystemReducedMotion
@@ -194,6 +196,11 @@ class MainActivity : BaseActivity(), AppReadySignal {
             // graph shape, so no tab loses its back stack.
             val bottomNavController = rememberNavController()
 
+            // Owns bottom-bar visibility and tab reselect for this Activity. `NAV-001` replaced two
+            // global `object` singletons with this; scoping it to the composition is what stops one
+            // Activity (or one test) from driving another one's navigation state.
+            val navigationCoordinator = remember { NavigationCoordinator() }
+
             LaunchedEffect(navController, didMigration) {
                 if (didMigration != null) {
                     ready = true
@@ -208,6 +215,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
                 ephyra.presentation.core.util.LocalPrivacyPreferences provides privacyPreferences,
                 LocalNavController provides navController,
                 LocalAppNavigator provides appNavigator,
+                LocalNavigationCoordinator provides navigationCoordinator,
             ) {
                 LaunchedEffect(Unit) {
                     val result = try {

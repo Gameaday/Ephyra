@@ -56,9 +56,9 @@ import ephyra.presentation.core.components.material.NavigationRail
 import ephyra.presentation.core.components.material.Scaffold
 import ephyra.presentation.core.i18n.pluralStringResource
 import ephyra.presentation.core.theme.MotionTokens
-import ephyra.presentation.core.ui.navigation.BottomNavVisibilityController
 import ephyra.presentation.core.ui.navigation.LocalNavController
-import ephyra.presentation.core.ui.navigation.NavigationEvents
+import ephyra.presentation.core.ui.navigation.LocalNavigationCoordinator
+import ephyra.presentation.core.ui.navigation.NavigationCoordinator
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.collectAsState
 import ephyra.presentation.core.util.isTabletUi
@@ -104,6 +104,7 @@ fun HomeScreen(
     externalNavController: NavHostController = LocalNavController.current,
     viewModel: HomeViewModel = hiltViewModel(),
     bottomNavController: NavHostController = rememberNavController(),
+    navigationCoordinator: NavigationCoordinator = LocalNavigationCoordinator.current,
 ) {
     // **The controller is a parameter, not created here.** It used to be `rememberNavController()`
     // in this function's body, which made it a child of the `Home` composition: navigating to a
@@ -178,6 +179,7 @@ fun HomeScreen(
                                 bottomNavController,
                                 state.updatesBadgeCount,
                                 state.extensionsBadgeCount,
+                                navigationCoordinator,
                             )
                         }
                     }
@@ -185,7 +187,7 @@ fun HomeScreen(
             },
             bottomBar = {
                 if (!isTabletUi()) {
-                    val bottomNavVisible by BottomNavVisibilityController
+                    val bottomNavVisible by navigationCoordinator
                         .isBottomNavVisible
                         .collectAsStateWithLifecycle()
                     AnimatedVisibility(
@@ -204,6 +206,7 @@ fun HomeScreen(
                                     bottomNavController,
                                     state.updatesBadgeCount,
                                     state.extensionsBadgeCount,
+                                    navigationCoordinator,
                                 )
                             }
                         }
@@ -253,6 +256,7 @@ private fun RowScope.HomeNavigationBarItem(
     navController: NavHostController,
     updatesBadgeCount: Int,
     extensionsBadgeCount: Int,
+    navigationCoordinator: NavigationCoordinator,
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -262,7 +266,7 @@ private fun RowScope.HomeNavigationBarItem(
         selected = selected,
         onClick = {
             if (selected) {
-                NavigationEvents.triggerReselect(tab.route)
+                navigationCoordinator.triggerReselect(tab.route)
             } else {
                 navController.navigate(tab.route) {
                     popUpTo(navController.graph.findStartDestination().id) {
@@ -292,6 +296,7 @@ private fun HomeNavigationRailItem(
     navController: NavHostController,
     updatesBadgeCount: Int,
     extensionsBadgeCount: Int,
+    navigationCoordinator: NavigationCoordinator,
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -301,7 +306,7 @@ private fun HomeNavigationRailItem(
         selected = selected,
         onClick = {
             if (selected) {
-                NavigationEvents.triggerReselect(tab.route)
+                navigationCoordinator.triggerReselect(tab.route)
             } else {
                 navController.navigate(tab.route) {
                     popUpTo(navController.graph.findStartDestination().id) {

@@ -42,7 +42,8 @@ import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.theme.active
 import ephyra.presentation.core.ui.AppReadySignal
 import ephyra.presentation.core.ui.navigation.LocalNavController
-import ephyra.presentation.core.ui.navigation.NavigationEvents
+import ephyra.presentation.core.ui.navigation.LocalNavigationCoordinator
+import ephyra.presentation.core.ui.navigation.NavigationCoordinator
 import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import kotlinx.collections.immutable.persistentListOf
@@ -236,6 +237,7 @@ sealed interface UpdatesUiModel {
 @Composable
 fun UpdatesScreen(
     navController: NavController = LocalNavController.current,
+    navigationCoordinator: NavigationCoordinator = LocalNavigationCoordinator.current,
 ) {
     val context = LocalContext.current
     val viewModel = hiltViewModel<UpdatesViewModel>()
@@ -325,7 +327,7 @@ fun UpdatesScreen(
     }
 
     LaunchedEffect(Unit) {
-        NavigationEvents.reselectEvent
+        navigationCoordinator.reselectEvents
             .filter { it == ScreenRoutes.Updates.route }
             .collect { navController.navigate(ScreenRoutes.DownloadQueue.route) }
     }

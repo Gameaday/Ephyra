@@ -39,7 +39,8 @@ import ephyra.presentation.core.screens.EmptyScreen
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.ui.AppReadySignal
 import ephyra.presentation.core.ui.navigation.LocalNavController
-import ephyra.presentation.core.ui.navigation.NavigationEvents
+import ephyra.presentation.core.ui.navigation.LocalNavigationCoordinator
+import ephyra.presentation.core.ui.navigation.NavigationCoordinator
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.util.animateItemFastScroll
 import ephyra.presentation.theme.EphyraPreviewTheme
@@ -57,6 +58,7 @@ fun HistoryScreen(
     onClickResume: (mangaId: Long, chapterId: Long) -> Unit,
     onClickFavorite: (mangaId: Long) -> Unit,
     onDialogChange: (HistoryViewModel.Dialog?) -> Unit,
+    navigationCoordinator: NavigationCoordinator,
 ) {
     Scaffold(
         topBar = { scrollBehavior ->
@@ -172,6 +174,7 @@ fun HistoryTabScreen(
     val viewModel = hiltViewModel<HistoryViewModel>()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val navigationCoordinator = LocalNavigationCoordinator.current
 
     HistoryScreen(
         state = state,
@@ -187,6 +190,7 @@ fun HistoryTabScreen(
         },
         onDialogChange = { viewModel.onEvent(HistoryScreenEvent.SetDialog(it)) },
         onClickFavorite = { viewModel.onEvent(HistoryScreenEvent.AddFavoriteById(it)) },
+        navigationCoordinator = navigationCoordinator,
     )
 
     val onDismissRequest = { viewModel.onEvent(HistoryScreenEvent.SetDialog(null)) }
@@ -289,7 +293,7 @@ fun HistoryTabScreen(
     }
 
     LaunchedEffect(Unit) {
-        NavigationEvents.reselectEvent
+        navigationCoordinator.reselectEvents
             .filter { it == ScreenRoutes.History.route }
             .collect {
                 val nextChapter = viewModel.getNextChapter()
@@ -320,6 +324,7 @@ internal fun HistoryScreenPreviews(
             onClickResume = { _, _ -> run {} },
             onDialogChange = {},
             onClickFavorite = {},
+            navigationCoordinator = NavigationCoordinator(),
         )
     }
 }
