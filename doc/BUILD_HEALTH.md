@@ -27,7 +27,7 @@ dependency edges is therefore redundant.
 
 ## Gates
 
-| Gate | Rule | Enforced by |
+| Gates | Rule | Enforced by |
 |---|---|---|
 | Module layering | no core→feature, feature→feature, presentation→feature, or →`:app` edges | `ModuleDependencyGraphTest` |
 | Declared debt does not drift | every tolerated edge is declared, and a stale declaration fails | `ModuleDependencyGraphTest`, `SigningSecretTest`, `ManifestPrivilegeTest` |
@@ -35,6 +35,38 @@ dependency edges is therefore redundant.
 | No unwired data shortcuts | bounded `ephyra.data.*` imports in feature modules | CI grep |
 | Signing credentials | no credential literal; no unacknowledged keystore | `SigningSecretTest` |
 | Manifest privileges | no sensitive permission without a written justification and removal condition | `ManifestPrivilegeTest` |
+| Page-byte write sites | page bytes cached only through the chapter's bounded store | `PageByteWriteSiteTest` |
+| Ledger wiring claims | a row asserting production wiring names a file that exists | `LedgerWiringClaimTest` |
+
+### The ledger gate, and why it exists
+
+`LedgerWiringClaimTest` was added on 2026-09-28 after **three** claims in this ledger were falsified
+by opening the file they described, all with the same shape: `MED-002` said "not production-wired"
+when the work was five commits old; `B-034` listed two entries that **are not types at all**; and
+`StartupStep` claimed a 1:1 correspondence with `App.kt` that did not exist — **and that last claim
+survived a correction and was still wrong when written down.**
+
+The common cause is reading a *shape* — a name, a count, an absence of callers — rather than opening
+the governing document. The gate makes such a claim **anchored**: it asserts a cited path exists, so
+a renamed or deleted file takes its citation with it and the row fails until a human updates it.
+
+**It is deliberately narrow.** It cannot verify a claim is still *true* — that is a semantic question
+no regex answers, and this programme has a documented history of name-based checks producing false
+positives. A gate that adjudicated truth would be a count in disguise, which is what the promotion
+rule above forbids. Anchoring is a property of the document's shape, so it is structural, and it does
+not need editing when a legitimate edge is retired.
+
+**Its scope was set by measurement, not taste.** The first honest run reported **10 offending rows**,
+of which 8 were the gate's own parser over-matching (phase-gate and change-log tables discussed in
+prose, anchors and `:line` suffixes left unparsed, member references such as
+`` `ReaderChapter.cacheBytes` `` treated as files). After scoping it to the task-ledger table and
+teaching it to strip anchors and line numbers, **2 remained — and both were real**: `RDR-003` and
+`RDR-004` asserted production wiring while naming only symbols. Both were anchored to real files.
+That is the shape a useful gate has here: the first run's noise was the parser, and the residue was
+genuine rot.
+
+**Falsification-verified.** Substituting a fabricated filename into the `MED-002` row turns
+`every wiring claim in the task ledger cites a file that exists` red and names the row.
 
 ### Every gate must be falsifiable
 
