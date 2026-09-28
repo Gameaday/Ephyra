@@ -1,6 +1,5 @@
 package ephyra.presentation.core.components
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
@@ -46,6 +45,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import ephyra.presentation.core.theme.MotionTokens
+import ephyra.presentation.core.ui.navigation.PredictiveBackDraggableProgress
+import ephyra.presentation.core.ui.navigation.PredictiveBackProgress
 import ephyra.presentation.core.util.isTabletUi
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
@@ -135,9 +136,15 @@ fun AdaptiveSheet(
                 shape = MaterialTheme.shapes.extraLarge,
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 content = {
-                    BackHandler(
+                    // Predictive back on the centred variant: the scrim's alpha is the visual
+                    // position, so the gesture drives that same value rather than a second copy of
+                    // it. Committing replays `internalOnDismissRequest`, which reuses the existing
+                    // fade and therefore the existing motion token.
+                    PredictiveBackProgress(
                         enabled = remember { derivedStateOf { alpha > 0f } }.value,
-                        onBack = internalOnDismissRequest,
+                        onProgress = { progress -> targetAlpha = 1f - progress },
+                        onCommit = internalOnDismissRequest,
+                        onCancelled = { targetAlpha = 1f },
                     )
                     content()
                 },
@@ -220,9 +227,19 @@ fun AdaptiveSheet(
                 shape = MaterialTheme.shapes.extraLarge,
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 content = {
-                    BackHandler(
+                    // The compact sheet already owns its position in an `AnchoredDraggableState`, so the
+                    // back gesture writes that same state rather than animating a parallel copy.
+                    // One owner for one axis is the whole point: two animating copies is the
+                    // `B-025` conflict (two owners of vertical position) reproduced in miniature,
+                    // and it shows up as the sheet jumping when a drag and a back gesture overlap.
+                    //
+                    // `enabled = targetValue == 0` matches the old `BackHandler` exactly — the
+                    // sheet only claims back while it is showing — so the interception semantics are
+                    // unchanged and only the animation is new.
+                    PredictiveBackDraggableProgress(
+                        state = anchoredDraggableState,
                         enabled = anchoredDraggableState.targetValue == 0,
-                        onBack = internalOnDismissRequest,
+                        onCommit = internalOnDismissRequest,
                     )
                     content()
                 },
