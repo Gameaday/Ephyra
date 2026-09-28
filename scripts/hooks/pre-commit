@@ -16,6 +16,34 @@
 
 set -e
 
+# --- Gradle environment -------------------------------------------------------
+# AGP 9 fails at configuration time, before any task runs, when more than one
+# mechanism injects the Android preferences folder. The observed failure was:
+#
+#   Failed to create provider for value source
+#   AndroidLocationsBuildService.AndroidDirectoryCreator
+#   > Several environment variables and/or system properties contain different
+#     paths to the Android Preferences folder.
+#
+# This is NOT a missing-JAVA_HOME problem, and adding JAVA_HOME/ANDROID_HOME does
+# not fix it: the real trigger is two prefs variables being set at once --
+# ANDROID_PREFS_ROOT and ANDROID_USER_HOME -- even when they point at the *same*
+# directory. AGP rejects the ambiguity, not the value. Verified by experiment:
+# unsetting ANDROID_PREFS_ROOT alone makes the identical command succeed.
+#
+# So: if both are set, keep one and drop the other. Never silently unset both --
+# that would change where the user's preferences live. If exactly one is set we
+# leave it alone, and if neither is set we default ANDROID_USER_HOME so a fresh
+# shell does not depend on the caller's environment.
+if [ -n "${ANDROID_PREFS_ROOT:-}" ] && [ -n "${ANDROID_USER_HOME:-}" ]; then
+    echo "==> note: both ANDROID_PREFS_ROOT and ANDROID_USER_HOME are set;" >&2
+    echo "==> unsetting ANDROID_PREFS_ROOT (AGP 9 rejects two prefs paths)." >&2
+    unset ANDROID_PREFS_ROOT
+elif [ -z "${ANDROID_PREFS_ROOT:-}" ] && [ -z "${ANDROID_USER_HOME:-}" ]; then
+    ANDROID_USER_HOME="${USERPROFILE:-$HOME}/.android"
+    export ANDROID_USER_HOME
+fi
+
 # Read through a temp file rather than a pipe so the project list survives the loop
 # (a piped while-loop would run in a subshell). Reading whole lines also tolerates
 # spaces in path names.
