@@ -4,10 +4,12 @@ import app.cash.turbine.test
 import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.release.interactor.GetApplicationRelease
 import ephyra.domain.release.model.Release
+import ephyra.domain.release.service.AppUpdateDownloader
 import ephyra.domain.ui.UiPreferences
 import ephyra.presentation.core.ui.AppInfo
 import io.mockk.coEvery
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -29,6 +31,7 @@ class AboutViewModelTest {
     private val getApplicationRelease = mockk<GetApplicationRelease>()
     private val uiPreferences = mockk<UiPreferences>()
     private val extensionManager = mockk<ExtensionManager>()
+    private val appUpdateDownloader = mockk<AppUpdateDownloader>(relaxed = true)
 
     private val appInfo = object : AppInfo {
         override val isDebug: Boolean = false
@@ -57,6 +60,7 @@ class AboutViewModelTest {
         uiPreferences = uiPreferences,
         appInfo = appInfo,
         extensionManager = extensionManager,
+        appUpdateDownloader = appUpdateDownloader,
     )
 
     @Test
@@ -123,5 +127,68 @@ class AboutViewModelTest {
         val viewModel = createViewModel()
         val versionName = viewModel.getVersionName(withBuildDate = false)
         assertEquals("Stable 1.2.3", versionName)
+    }
+
+    /**
+     * Regression: accepting the update dialog must actually start a download.
+     *
+     * The dialog used to build a broadcast by hand using
+     * `"${context.packageName}.NotificationReceiver.ACTION_START_APP_UPDATE"`, but the receiver
+     * matches on `"$ID.$NAME.ACTION_START_APP_UPDATE"` where `ID` is `BuildConfig.APPLICATION_ID`.
+     * Those two only agree for a plain `release` build, so on `.nightly` / `.debug` / `.dev`
+     * variants the broadcast matched no case and the button silently did nothing. Routing through
+     * the injected downloader removes the duplicated action string entirely.
+     */
+    @Test
+    fun `AcceptUpdate starts the download with the released link and version`() {
+        val viewModel = createViewModel()
+
+        viewModel.onEvent(
+            AboutScreenEvent.AcceptUpdate(
+                downloadLink = "https://github.com/Gameaday/Ephyra/releases/download/v9.9.9/ephyra.apk",
+                versionName = "v9.9.9",
+            ),
+        )
+
+        verify(exactly = 1) {
+            appUpdateDownloader.start(
+                url = "https://github.com/Gameaday/Ephyra/releases/download/v9.9.9/ephyra.apk",
+                title = "v9.9.9",
+            )
+        }
+    }
+
+    /**
+     * The dialog is rendered from state, so accepting an update must clear that state or the
+     * dialog stays up over a result the user has already acted on.
+     *
+     * `checkVersion` dispatches on [launchIO] (`Dispatchers.IO`), which a test dispatcher cannot
+     * pump, so this awaits the state emissions with turbine rather than advancing a scheduler.
+     */
+    @Test
+    fun `AcceptUpdate dismisses the update dialog`() = runTest(testDispatcher) {
+        val viewModel = createViewModel()
+        val result = GetApplicationRelease.Result.NewUpdate(
+            Release("v9.9.9", "info", "https://example.com/v9.9.9", "https://example.com/app.apk"),
+        )
+        coEvery { getApplicationRelease.await(any()) } returns result
+
+        viewModel.state.test {
+            awaitItem() // initial
+
+            viewModel.onEvent(AboutScreenEvent.CheckVersion)
+            awaitItem() // isCheckingUpdates = true
+            val withResult = awaitItem()
+            assertEquals(result, withResult.updateResult)
+            awaitItem() // isCheckingUpdates = false, result still held
+
+            viewModel.onEvent(AboutScreenEvent.AcceptUpdate("https://example.com/app.apk", "v9.9.9"))
+            val dismissed = awaitItem()
+            assertNull(
+                dismissed.updateResult,
+                "the dialog must close once the download has been handed off, or the user re-presses " +
+                    "the button against a stale result",
+            )
+        }
     }
 }

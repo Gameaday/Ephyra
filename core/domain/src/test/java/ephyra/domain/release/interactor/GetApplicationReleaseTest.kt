@@ -197,6 +197,121 @@ class GetApplicationReleaseTest {
     }
 
     @Test
+    fun `When nightly asset SHA is a shorter prefix of the build SHA expect no new update`() = runTest {
+        coEvery { preference.get() } returns 0
+        every { preference.set(any()) }.answers { }
+
+        // The nightly workflow names assets with `${GITHUB_SHA::7}` (7 chars) while
+        // `getGitSha()` bakes `git rev-parse --short HEAD` (9 chars on this repository).
+        // These are the same commit, so this must not be reported as an update.
+        val release = Release(
+            "f516000",
+            "info",
+            "http://example.com/release_link",
+            "http://example.com/release_link.apk",
+        )
+
+        coEvery { releaseService.latest(any()) } returns release
+
+        val result = getApplicationRelease.await(
+            GetApplicationRelease.Arguments(
+                isPreview = false,
+                isNightly = true,
+                commitCount = 0,
+                commitSha = "f516000a0",
+                versionName = "0.19.4-nightly-f516000",
+                repository = "test",
+            ),
+        )
+
+        result shouldBe GetApplicationRelease.Result.NoNewUpdate
+    }
+
+    @Test
+    fun `When nightly asset SHA is a longer form of the build SHA expect no new update`() = runTest {
+        coEvery { preference.get() } returns 0
+        every { preference.set(any()) }.answers { }
+
+        val release = Release(
+            "f516000a0",
+            "info",
+            "http://example.com/release_link",
+            "http://example.com/release_link.apk",
+        )
+
+        coEvery { releaseService.latest(any()) } returns release
+
+        val result = getApplicationRelease.await(
+            GetApplicationRelease.Arguments(
+                isPreview = false,
+                isNightly = true,
+                commitCount = 0,
+                commitSha = "f516000",
+                versionName = "0.19.4-nightly-f516000",
+                repository = "test",
+            ),
+        )
+
+        result shouldBe GetApplicationRelease.Result.NoNewUpdate
+    }
+
+    @Test
+    fun `When nightly SHAs genuinely differ expect new update`() = runTest {
+        coEvery { preference.get() } returns 0
+        every { preference.set(any()) }.answers { }
+
+        val release = Release(
+            "aaaaaaa",
+            "info",
+            "http://example.com/release_link",
+            "http://example.com/release_link.apk",
+        )
+
+        coEvery { releaseService.latest(any()) } returns release
+
+        val result = getApplicationRelease.await(
+            GetApplicationRelease.Arguments(
+                isPreview = false,
+                isNightly = true,
+                commitCount = 0,
+                commitSha = "f516000a0",
+                versionName = "0.19.4-nightly-f516000",
+                repository = "test",
+            ),
+        )
+
+        result shouldBe GetApplicationRelease.Result.NewUpdate(release)
+    }
+
+    @Test
+    fun `When nightly SHAs differ only in case expect no new update`() = runTest {
+        coEvery { preference.get() } returns 0
+        every { preference.set(any()) }.answers { }
+
+        val release = Release(
+            "F516000A0",
+            "info",
+            "http://example.com/release_link",
+            "http://example.com/release_link.apk",
+        )
+
+        coEvery { releaseService.latest(any()) } returns release
+
+        val result = getApplicationRelease.await(
+            GetApplicationRelease.Arguments(
+                isPreview = false,
+                isNightly = true,
+                commitCount = 0,
+                commitSha = "f516000a0",
+                versionName = "0.19.4-nightly-f516000",
+                repository = "test",
+            ),
+        )
+
+        result shouldBe GetApplicationRelease.Result.NoNewUpdate
+    }
+
+    @Test
     fun `When now is before three days expect no new update`() = runTest {
         coEvery { preference.get() } returns Instant.now().toEpochMilli()
         every { preference.set(any()) }.answers { }

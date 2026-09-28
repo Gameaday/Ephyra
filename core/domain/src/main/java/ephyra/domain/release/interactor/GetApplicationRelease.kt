@@ -64,7 +64,15 @@ class GetApplicationRelease(
             isNightly -> {
                 // Nightly builds: version is the short git SHA extracted from the release assets.
                 // A different SHA means a newer nightly is available.
-                versionTag.isNotBlank() && versionTag != commitSha
+                //
+                // The two sides do not necessarily have the same length. The nightly workflow
+                // names assets with a hard-coded 7-character SHA (`${GITHUB_SHA::7}`), whereas
+                // `getGitSha()` bakes `git rev-parse --short HEAD` into BuildConfig, and git
+                // picks the abbreviation length itself — on this repository that is 9 characters.
+                // Comparing them with `!=` would therefore report "different" for the very commit
+                // that produced the release, and nightly users would be told to update forever
+                // with nothing to download. Compare over the shorter of the two instead.
+                versionTag.isNotBlank() && !isSameCommit(versionTag, commitSha)
             }
 
             else -> {
@@ -85,6 +93,20 @@ class GetApplicationRelease(
                 false
             }
         }
+    }
+
+    /**
+     * Whether two (possibly differently abbreviated) commit SHAs identify the same commit.
+     *
+     * A short SHA is only ever a *prefix* of the full hash, so a 7-character abbreviation and a
+     * 9-character one refer to the same commit when they agree over the shorter of the two.
+     * Comparing across the full length of the longer one would report a difference that does not
+     * exist. Both sides are compared case-insensitively because git accepts either.
+     */
+    private fun isSameCommit(a: String, b: String): Boolean {
+        if (a.isBlank() || b.isBlank()) return false
+        val length = minOf(a.length, b.length)
+        return a.regionMatches(0, b, 0, length, ignoreCase = true)
     }
 
     data class Arguments(

@@ -1,6 +1,5 @@
 package ephyra.feature.settings.screen.about
 
-import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -95,18 +94,20 @@ fun AboutScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        try {
-                            val intent = Intent().apply {
-                                setClassName(context.packageName, "ephyra.app.data.notification.NotificationReceiver")
-                                action = "${context.packageName}.NotificationReceiver.ACTION_START_APP_UPDATE"
-                                putExtra("DOWNLOAD_URL", release.downloadLink)
-                                putExtra("DOWNLOAD_TITLE", release.version)
-                            }
-                            context.sendBroadcast(intent)
-                        } catch (e: Exception) {
-                            context.toast(e.message)
-                        }
-                        viewModel.onEvent(AboutScreenEvent.ClearUpdateResult)
+                        // Route the download through the ViewModel rather than hand-building a
+                        // broadcast. The previous version constructed the receiver action as
+                        // "${context.packageName}.NotificationReceiver.ACTION_START_APP_UPDATE",
+                        // but the receiver matches on "$ID.$NAME.ACTION_START_APP_UPDATE" where
+                        // ID is BuildConfig.APPLICATION_ID. Those only agree for a plain release
+                        // build: every suffixed build type (.dev, .nightly, .debug) has a
+                        // packageName the receiver never matches, so the intent was silently
+                        // dropped and the update dialog did nothing when pressed.
+                        viewModel.onEvent(
+                            AboutScreenEvent.AcceptUpdate(
+                                downloadLink = release.downloadLink,
+                                versionName = release.version,
+                            ),
+                        )
                     },
                 ) {
                     Text(stringResource(ephyra.app.core.common.R.string.update_check_confirm))

@@ -7,6 +7,7 @@ import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.toDateTimestampString
 import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.release.interactor.GetApplicationRelease
+import ephyra.domain.release.service.AppUpdateDownloader
 import ephyra.domain.ui.UiPreferences
 import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.presentation.core.ui.AppInfo
@@ -22,6 +23,7 @@ class AboutViewModel @Inject constructor(
     val uiPreferences: UiPreferences,
     val appInfo: AppInfo,
     val extensionManager: ExtensionManager,
+    private val appUpdateDownloader: AppUpdateDownloader,
 ) : BaseUdfViewModel<AboutScreenState, AboutScreenEvent, AboutEffect>(AboutScreenState()) {
 
     val events: Flow<AboutEffect>
@@ -31,7 +33,13 @@ class AboutViewModel @Inject constructor(
         when (event) {
             AboutScreenEvent.CheckVersion -> checkVersion()
             AboutScreenEvent.ClearUpdateResult -> clearUpdateResult()
+            is AboutScreenEvent.AcceptUpdate -> acceptUpdate(event)
         }
+    }
+
+    private fun acceptUpdate(event: AboutScreenEvent.AcceptUpdate) {
+        appUpdateDownloader.start(url = event.downloadLink, title = event.versionName)
+        clearUpdateResult()
     }
 
     fun checkVersion() {
@@ -132,6 +140,15 @@ class AboutViewModel @Inject constructor(
 sealed interface AboutScreenEvent {
     data object CheckVersion : AboutScreenEvent
     data object ClearUpdateResult : AboutScreenEvent
+
+    /**
+     * The user accepted a download from the update dialog.
+     *
+     * [downloadLink] and [versionName] must be the ones carried by the
+     * [GetApplicationRelease.Result.NewUpdate] the dialog was rendered from, so the title shown
+     * on the download notification stays tied to the release actually being fetched.
+     */
+    data class AcceptUpdate(val downloadLink: String, val versionName: String) : AboutScreenEvent
 }
 
 sealed interface AboutEffect {

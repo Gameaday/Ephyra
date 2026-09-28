@@ -53,26 +53,5 @@ class AppUpdateChecker(
                 else -> "Gameaday/Ephyra"
             }
         }
-
-        fun getReleaseTag(context: Context, isPreview: Boolean): String {
-            return if (isPreview) {
-                "r${BuildConfig.COMMIT_COUNT}"
-            } else {
-                val packageInfo = try {
-                    context.packageManager.getPackageInfo(context.packageName, 0)
-                } catch (e: Exception) {
-                    null
-                }
-                "v${packageInfo?.versionName ?: BuildConfig.VERSION_NAME}"
-            }
-        }
-
-        fun getReleaseUrl(context: Context): String {
-            val isPreview = context.packageName.endsWith(".debug")
-            val isNightly = context.packageName.endsWith(".nightly")
-            val repo = getGithubRepo(isPreview, isNightly)
-            val tag = getReleaseTag(context, isPreview)
-            return "https://github.com/$repo/releases/tag/$tag"
-        }
     }
 }

@@ -47,12 +47,36 @@ interface AppInfo {
     val catalogShortcutsEnabled: Boolean get() = false
 
     /**
+     * Tag of the GitHub release this build came from.
+     *
+     * Each build type is published under a different tag scheme, and guessing wrong yields a
+     * link to a tag that does not exist:
+     *
+     * - **preview** — `r<commitCount>`, in the `Ephyra-preview` repository.
+     * - **nightly** — the bare tag `nightly`, because every nightly build *replaces* that one
+     *   release rather than creating a new one. It must **not** be derived from [versionName]:
+     *   nightly appends `-nightly-<sha>` to the version name, so `v$versionName` would address
+     *   `v0.21.0-nightly-abc1234`, a tag the nightly workflow never creates.
+     * - **release** — `v<versionName>`, matching the `v*` tags the release workflow triggers on.
+     */
+    val releaseTag: String
+        get() = when {
+            isPreview -> "r$commitCount"
+            isNightly -> NIGHTLY_RELEASE_TAG
+            else -> "v$versionName"
+        }
+
+    /**
      * URL of the current release tag on GitHub (e.g. the "What's New" link).
-     * Computed from [githubRepo], [versionName], [commitCount], and [isPreview].
+     * Computed from [githubRepo] and [releaseTag].
      */
     val releaseUrl: String
-        get() {
-            val tag = if (isPreview) "r$commitCount" else "v$versionName"
-            return "https://github.com/$githubRepo/releases/tag/$tag"
-        }
+        get() = "https://github.com/$githubRepo/releases/tag/$releaseTag"
+
+    companion object {
+        /**
+         * The single rolling release tag the nightly workflow overwrites on every push to main.
+         */
+        const val NIGHTLY_RELEASE_TAG = "nightly"
+    }
 }
