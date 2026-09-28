@@ -38,6 +38,7 @@ dependency edges is therefore redundant.
 | Page-byte write sites | page bytes cached only through the chapter's bounded store | `PageByteWriteSiteTest` |
 | Page requeue | no path resets a page to `Queue` without offering it to the load queue | `PageRequeueStructuralTest` |
 | Tab controller lifetime | the tab `NavController` is not created inside the composition navigation disposes | `TabNavControllerLifetimeTest` |
+| Reader preferences are read | a preference offered in a settings screen is consulted in production code | `ReaderPreferenceConsumptionTest` |
 | Ledger wiring claims | a row asserting production wiring names a file that exists | `LedgerWiringClaimTest` |
 
 ### The ledger gate, and why it exists

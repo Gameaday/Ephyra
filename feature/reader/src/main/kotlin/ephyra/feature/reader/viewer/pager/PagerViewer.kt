@@ -7,6 +7,7 @@ import android.view.View
 import ephyra.core.common.util.system.ImageUtil
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.download.service.DownloadManager
+import ephyra.domain.reader.pager.StepOriginPolicy
 import ephyra.domain.reader.service.ReaderPreferences
 import ephyra.domain.ui.UiPreferences
 import ephyra.feature.reader.ReaderActivity
@@ -57,8 +58,21 @@ abstract class PagerViewer(
 
     data class TargetPage(val index: Int, val animate: Boolean = false)
 
+    // Conflated to the newest value, deliberately.
+    //
+    // This is a latest-value-wins signal: dragging the seek bar emits dozens of targets per second
+    // and only the final one matters. The previous configuration was a 64-slot buffer, which kept
+    // a *queue* of stale targets for the collector to churn through — and because `scrollToPage` is
+    // suspending, each in-flight scroll was cancelled by the next emission, so the pager chased a
+    // target the user had already dragged past and settled late.
+    //
+    // `replay = 1` is what does the work: the replay cache always holds the most recently emitted
+    // value, so a slow collector skips the stale intermediate targets entirely and acts on the
+    // current one. `DROP_OLDEST` then bounds the *buffer* without discarding the newest value,
+    // which `DROP_LATEST` would do.
     private val _targetPageRequest = MutableSharedFlow<TargetPage>(
-        extraBufferCapacity = 64,
+        replay = 1,
+        extraBufferCapacity = 1,
         onBufferOverflow = BufferOverflow.DROP_OLDEST,
     )
     val targetPageRequest = _targetPageRequest.asSharedFlow()
@@ -207,8 +221,13 @@ abstract class PagerViewer(
     private var pendingTargetIndex: Int? = null
 
     /**
-     * Tells this viewer to move to the given [page]. Programmatic seeks (such as slider scrubbing
-     * or chapter initialization) perform an immediate jump without animation.
+     * Tells this viewer to move to the given [page].
+     *
+     * Whether the jump animates follows the `sliderNavMode` preference. It previously did not: this
+     * method hardcoded `animate = false`, so a user who chose "Smooth" and one who chose "Instant"
+     * got byte-identical behaviour while the settings screen described a distinction that did not
+     * exist. The preference was stored, mirrored into [PagerConfig], surfaced in two settings UIs —
+     * and read by nobody, which a project-wide search for `sliderNavMode` confirmed.
      */
     override fun moveToPage(page: ReaderPage) {
         val items = _itemsState.value
@@ -216,14 +235,16 @@ abstract class PagerViewer(
         if (position != -1) {
             pendingTargetIndex = null
             currentPage = page
-            _targetPageRequest.tryEmit(TargetPage(position, animate = false))
+            _targetPageRequest.tryEmit(
+                TargetPage(position, animate = config.sliderNavMode == ReaderPreferences.SLIDER_NAV_SMOOTH),
+            )
         } else {
             logcat { "Page $page not found in items list" }
         }
     }
 
     override fun moveToNext() {
-        val current = pendingTargetIndex ?: currentItemIndex()
+        val current = stepOriginIndex()
         val count = _itemsState.value.size
         if (current < count - 1) {
             val next = current + 1
@@ -236,7 +257,7 @@ abstract class PagerViewer(
     }
 
     override fun moveToPrevious() {
-        val current = pendingTargetIndex ?: currentItemIndex()
+        val current = stepOriginIndex()
         if (current > 0) {
             val prev = current - 1
             pendingTargetIndex = prev
@@ -275,6 +296,34 @@ abstract class PagerViewer(
             pendingTargetIndex = null
         }
         activity.onPageSelected(page)
+    }
+
+    /**
+     * The index a step should move from.
+     *
+     * `pendingTargetIndex` is cleared only by `onPageSelected` when the settled index happens to
+     * equal it, by `setChapters`, or when [currentPage] is set to a non-page item. A `moveToNext`
+     * that was dropped before it landed therefore left a stale value that nothing would clear, and
+     * every later step advanced from that phantom index — the pager drifted permanently out of sync
+     * with the visible page until the chapter changed.
+     *
+     * Two properties close that. A pending index can never sit outside the current items, so a
+     * stale value from a shorter chapter cannot push a step past the end. And a pending index that
+     * has fallen *behind* [currentPage] is discarded rather than trusted, because the pager has
+     * demonstrably moved past it: a request that no longer describes the pager's position is
+     * discarded, not obeyed.
+     */
+    private fun stepOriginIndex(): Int {
+        val items = _itemsState.value
+        val resolved = StepOriginPolicy.resolve(
+            settledIndex = currentItemIndex(),
+            pendingIndex = pendingTargetIndex,
+            itemCount = items.size,
+        )
+        if (resolved.clearPending) {
+            pendingTargetIndex = null
+        }
+        return resolved.origin
     }
 
     fun onPageAbsorb(parentPage: ReaderPage, absorbedPage: ReaderPage) {

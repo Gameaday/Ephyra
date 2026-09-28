@@ -260,24 +260,56 @@ class ViewerNavigationTest {
         assertTrue(updatedItems.first() is ChapterTransition.Prev, "Prev transition card must persist")
     }
 
+    /**
+     * Rewritten 2026-09-28. This test previously asserted `moveToPage` hardcodes `animate = false`,
+     * and so **was itself protecting the defect**: `sliderNavMode` was read by no production code,
+     * so a user choosing "Instant" and one choosing "Smooth" got identical behaviour while two
+     * settings screens described a distinction that did not exist (`DEF-022`).
+     *
+     * The contract is now that the emitted target follows the preference, in both directions —
+     * which is a stronger claim than the original and fails if the preference is ignored again.
+     */
     @Test
-    fun `PagerViewer moveToPage sets animate false for instant seeks`() = runTest(testDispatcher) {
-        val viewer = L2RPagerViewer(activity, downloadManager, readerPreferences, uiPreferences)
-        val chapters = createViewerChapters(chapterId = 1L, pageCount = 10)
-        viewer.setChapters(chapters)
+    fun `PagerViewer moveToPage animates according to sliderNavMode`() = runTest(testDispatcher) {
+        // The class already holds a real `InMemoryPreferenceStore`, so this writes the actual
+        // preference rather than mocking the getter. That also exercises the
+        // `preferenceStore.getInt("pref_slider_nav_mode", ...)` → `config.sliderNavMode` mirror
+        // that the defect lived behind, so the test would catch a break in either half.
+        fun animateFor(mode: Int): Boolean {
+            preferenceStore.getInt("pref_slider_nav_mode", ReaderPreferences.SLIDER_NAV_SMOOTH).set(mode)
+            val viewer = L2RPagerViewer(activity, downloadManager, readerPreferences, uiPreferences)
+            val chapters = createViewerChapters(chapterId = 1L, pageCount = 10)
+            viewer.setChapters(chapters)
 
-        val targetRequests = mutableListOf<ephyra.feature.reader.viewer.pager.PagerViewer.TargetPage>()
-        backgroundScope.launch {
-            viewer.targetPageRequest.collect { targetRequests.add(it) }
+            val targetRequests =
+                mutableListOf<ephyra.feature.reader.viewer.pager.PagerViewer.TargetPage>()
+            backgroundScope.launch {
+                viewer.targetPageRequest.collect { targetRequests.add(it) }
+            }
+
+            val page5 = chapters.currChapter.pages!![5]
+            targetRequests.clear()
+            viewer.moveToPage(page5)
+
+            // Cleared above rather than asserted empty: `setChapters` emits its own seek, and with
+            // `replay = 1` the new collector sees that replayed value immediately. The first
+            // version of this test asserted `size == 1` and failed on the *second* call with 2,
+            // which read like a leak but was just the replayed chapter-initialisation target. The
+            // property under test is what `moveToPage` emits, so the list is cleared first.
+            assertEquals(1, targetRequests.size, "moveToPage must emit exactly one target")
+            assertEquals(viewer.itemsState.value.indexOf(page5), targetRequests.first().index)
+            return targetRequests.first().animate
         }
 
-        // Programmatic seek (e.g. slider scrubbing) must NOT animate to ensure instant response
-        val page5 = chapters.currChapter.pages!![5]
-        viewer.moveToPage(page5)
-
-        assertEquals(1, targetRequests.size)
-        assertEquals(viewer.itemsState.value.indexOf(page5), targetRequests.first().index)
-        assertEquals(false, targetRequests.first().animate, "moveToPage should specify animate = false for scrubbing")
+        assertFalse(
+            animateFor(ReaderPreferences.SLIDER_NAV_INSTANT),
+            "SLIDER_NAV_INSTANT must seek without animation",
+        )
+        assertTrue(
+            animateFor(ReaderPreferences.SLIDER_NAV_SMOOTH),
+            "SLIDER_NAV_SMOOTH must animate; the settings screen promises this distinction, so " +
+                "reading the preference is the whole contract",
+        )
     }
 
     @Test
