@@ -218,9 +218,20 @@ class ChapterCache(
     @Throws(IOException::class)
     override suspend fun fetchAndCacheImage(imageUrl: String, fetchImage: suspend () -> Response) {
         val key = DiskUtil.hashKeyForDisk(imageUrl)
-        // openEditor() returns null if another edit is already in progress for this key, which
-        // prevents duplicate network requests for the same image.
-        val editor = diskCache.openEditor(key) ?: return
+        // openEditor() returns null when another coroutine already holds an in-progress write for
+        // this key, which is what prevents duplicate network requests for the same image. It can
+        // also return null under eviction pressure, and the two are not interchangeable: treating
+        // the second as the first returns "success" having written nothing, so the caller marks the
+        // page Ready and hands out a stream that yields null forever. That reproduced the blank-page
+        // symptom deterministically rather than by race, so the dedup case is now distinguished
+        // explicitly -- an existing snapshot proves the bytes are already there, and anything else
+        // is a real failure and says so.
+        val editor = diskCache.openEditor(key) ?: run {
+            if (diskCache.openSnapshot(key) == null) {
+                throw IOException("Cache editor unavailable and no existing entry for $imageUrl")
+            }
+            return
+        }
         try {
             val response = fetchImage()
             try {

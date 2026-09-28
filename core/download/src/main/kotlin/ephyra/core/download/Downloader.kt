@@ -8,6 +8,7 @@ import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.storage.extension
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.withIOContext
+import ephyra.core.common.util.network.TransientErrors
 import ephyra.core.common.util.storage.DiskUtil
 import ephyra.core.common.util.storage.DiskUtil.NOMEDIA_FILE
 import ephyra.core.common.util.storage.saveTo
@@ -548,12 +549,10 @@ class Downloader(
             // Retry transient network errors up to 3 times, waiting 2, 4 and 8 seconds between attempts.
             .retryWhen { cause, attempt ->
                 if (cause is CancellationException) return@retryWhen false
-                val isTransient = when (cause) {
-                    is IOException -> true
-                    is HttpException -> cause.code == 429 || cause.code >= 500
-                    else -> false
-                }
-                if (isTransient && attempt < 3) {
+                // Shared with the reader's page loader so the two cannot disagree on what is
+                // worth retrying. They previously carried identical copies, which is the shape that
+                // let the reader's 403-is-permanent rule drift unnoticed.
+                if (TransientErrors.isTransient(cause) && attempt < 3) {
                     delay((2L shl attempt.toInt()) * 1000)
                     true
                 } else {

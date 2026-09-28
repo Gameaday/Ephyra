@@ -2,13 +2,13 @@ package ephyra.feature.reader.loader
 
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.withIOContext
+import ephyra.core.common.util.network.TransientErrors
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.chapter.model.toSChapter
 import ephyra.domain.chapter.service.ChapterCache
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
-import eu.kanade.tachiyomi.network.HttpException
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.CancellationException
@@ -421,6 +421,15 @@ internal class HttpPageLoader(
                 if (page.imageUrl.isNullOrEmpty()) {
                     page.status = Page.State.LoadPage
                     page.imageUrl = source.getImageUrl(page)
+                } else if (retries > 0) {
+                    // On a retry, drop the URL we already failed on so the next attempt asks the
+                    // source again. Image URLs are frequently signed or time-limited, so retrying
+                    // the same one after 403/410 re-requests a URL the source has already revoked
+                    // and burns the whole backoff ladder for nothing. Re-resolving is cheap next to
+                    // a network round-trip and is the only way a retry can succeed.
+                    page.imageUrl = null
+                    page.status = Page.State.LoadPage
+                    page.imageUrl = source.getImageUrl(page)
                 }
                 val imageUrl = requireNotNull(page.imageUrl) { "Image URL is null after being fetched from source" }
 
@@ -435,14 +444,25 @@ internal class HttpPageLoader(
 
                 page.stream = {
                     // getImageFile returns null if the entry was evicted from the disk cache
-                    // (e.g. LRU pressure during a rapid progress-bar seek). In that case, reset
-                    // the page so the loader re-downloads it, and throw IOException so the caller
-                    // (PagerPageHolder / WebtoonPageHolder) can distinguish this from a permanent
-                    // error and avoid showing an error UI.
+                    // (e.g. LRU pressure during a rapid progress-bar seek).
+                    //
+                    // The reset MUST also re-offer the page to the queue. Setting
+                    // `status = Queue` is not enough: `Queue` is a *status*, not an enqueue, and
+                    // the only thing that puts a page in front of a worker is `queue.offer`. The
+                    // pager's load trigger is `LaunchedEffect(page)`, keyed on page *identity*, so
+                    // it cannot re-fire because a status changed. Without the offer below, nothing
+                    // ever picks this page up again and it stays `Queue` forever — silently blank
+                    // rather than errored, which is how this presented as "missed images".
+                    //
+                    // Offering at the same priority this load was dequeued at preserves ordering
+                    // against the other in-flight pages rather than jumping the whole preload
+                    // window. `imageUrl` is deliberately left intact: re-resolving it is a
+                    // separate concern (`DEF-018`) and doing it here would silently change which
+                    // URL a page that was mid-render points at.
                     chapterCache.getImageFile(imageUrl)?.inputStream() ?: run {
-                        page.status = Page.State.Queue
-                        page.stream = null
-                        throw IOException("Image evicted from cache, page queued for re-download: $imageUrl")
+                        prepareForReload(page)
+                        queue.offer(PriorityPage(page, priority))
+                        throw IOException("Image evicted from cache, page re-queued for re-download: $imageUrl")
                     }
                 }
 
@@ -463,12 +483,14 @@ internal class HttpPageLoader(
                 return
             } catch (e: Throwable) {
                 if (e is CancellationException) throw e
-                val isTransient = when (e) {
-                    is IOException -> true
-                    is HttpException -> e.code == 429 || e.code >= 500
-                    else -> false
-                }
-                if (isTransient && retries < MAX_PAGE_LOAD_RETRIES) {
+                // One shared definition, so the reader and the downloader cannot drift on what
+                // counts as retryable. The reader's own copy treated 403 as permanent, which for a
+                // signed or time-limited image URL is exactly backwards: the URL is stale, the
+                // source will issue a different one, and the page failed after a full backoff
+                // ladder for a request that could never succeed. `retries > 0` re-resolves above,
+                // which is what makes the stale-URL case genuinely recoverable rather than merely
+                // retried.
+                if (TransientErrors.isTransient(e) && retries < MAX_PAGE_LOAD_RETRIES) {
                     retries++
                     delay(
                         (PAGE_LOAD_RETRY_DELAY_MS * (1L shl (retries - 1))).coerceAtMost(MAX_PAGE_LOAD_RETRY_DELAY_MS),
