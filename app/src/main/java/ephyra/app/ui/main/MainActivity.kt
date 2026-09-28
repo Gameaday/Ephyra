@@ -179,6 +179,21 @@ class MainActivity : BaseActivity(), AppReadySignal {
                 StartupTracker.complete(StartupTracker.Phase.COMPOSE_STARTED)
             }
             val navController = rememberNavController()
+
+            // The bottom-tab controller is hoisted here, above the `NavHost`, so its lifetime is
+            // the Activity's rather than the `Home` destination's. `HomeScreen` used to create it
+            // with `rememberNavController()` inside its own body, which made it a child of the
+            // `Home` composition — so navigating to a series detail disposed the whole tab back
+            // stack together with every entry `saveState` had saved. Returning rebuilt a controller
+            // at `Library`, and each tab lost its scroll position, filter and search query on every
+            // detail visit.
+            //
+            // This is the concrete form of the problem ADR-0011 describes: the defect was never the
+            // nested `NavHost` (which is the correct pattern for per-tab back stacks) but the
+            // *lifetime* of the controller owning it. Hoisting fixes the cause without touching the
+            // graph shape, so no tab loses its back stack.
+            val bottomNavController = rememberNavController()
+
             LaunchedEffect(navController, didMigration) {
                 if (didMigration != null) {
                     ready = true
@@ -316,7 +331,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                             CompositionLocalProvider(
                                                 LocalNavAnimatedVisibilityScope provides this@composable,
                                             ) {
-                                                HomeScreen(navController)
+                                                HomeScreen(navController, bottomNavController = bottomNavController)
                                             }
                                         }
 

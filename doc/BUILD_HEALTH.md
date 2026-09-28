@@ -36,6 +36,8 @@ dependency edges is therefore redundant.
 | Signing credentials | no credential literal; no unacknowledged keystore | `SigningSecretTest` |
 | Manifest privileges | no sensitive permission without a written justification and removal condition | `ManifestPrivilegeTest` |
 | Page-byte write sites | page bytes cached only through the chapter's bounded store | `PageByteWriteSiteTest` |
+| Page requeue | no path resets a page to `Queue` without offering it to the load queue | `PageRequeueStructuralTest` |
+| Tab controller lifetime | the tab `NavController` is not created inside the composition navigation disposes | `TabNavControllerLifetimeTest` |
 | Ledger wiring claims | a row asserting production wiring names a file that exists | `LedgerWiringClaimTest` |
 
 ### The ledger gate, and why it exists
@@ -67,6 +69,27 @@ genuine rot.
 
 **Falsification-verified.** Substituting a fabricated filename into the `MED-002` row turns
 `every wiring claim in the task ledger cites a file that exists` red and names the row.
+
+### The eighth blind gate, and what it cost
+
+`TabNavControllerLifetimeTest` (2026-09-28) **passed against a tree containing the exact defect it
+was written for.** Its body slice used `substringBefore("\n)")`, which cut at the *parameter list's*
+closing paren and produced an empty string — and no regex can fail on an empty subject. It was caught
+only because the falsification probe was planted *before* the suite was trusted.
+
+Two things follow, and both are now enforced rather than remembered:
+
+1. **A falsification probe is run against the defect, not just described.** A gate that has only ever
+   been seen green has not been tested. Planting the original defect and watching it go red is the
+   only evidence that distinguishes a real gate from a plausible one, and it has now caught **two**
+   gates written in a single session (`PageRequeueStructuralTest`'s `[^=]` matcher and this one).
+2. **A gate that slices source text must assert it located the slice.** `TabNavControllerLifetimeTest`
+   now asserts `body.isNotEmpty()`, so the same empty-slice failure cannot recur silently — which is
+   the same "assert against a non-empty subject" rule already stated above, applied to a case the
+   existing rule did not cover: the subject is not the file list but a slice derived from it.
+
+The general lesson, now the eighth occurrence: **a green run proves nothing until the mechanism has
+been removed and the gate watched to fail.** This programme has found eight gates that could not.
 
 ### Every gate must be falsifiable
 

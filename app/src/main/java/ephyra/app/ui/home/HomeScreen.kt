@@ -1,5 +1,6 @@
 package ephyra.app.ui.home
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -83,12 +84,38 @@ object HomeScreen {
     }
 }
 
+/**
+ * The five tab root routes, in tab order.
+ *
+ * Named once and used both to build the tab strip and to decide whether back should be intercepted.
+ * Duplicating the list would let the two disagree, and the failure would be silent: back would stop
+ * working at a root, or would keep intercepting after the user was already there.
+ */
+private val TAB_ROOT_ROUTES = listOf(
+    ScreenRoutes.Library.route,
+    ScreenRoutes.Updates.route,
+    ScreenRoutes.History.route,
+    ScreenRoutes.Browse.route,
+    ScreenRoutes.More.route,
+)
+
 @Composable
 fun HomeScreen(
     externalNavController: NavHostController = LocalNavController.current,
     viewModel: HomeViewModel = hiltViewModel(),
+    bottomNavController: NavHostController = rememberNavController(),
 ) {
-    val bottomNavController = rememberNavController()
+    // **The controller is a parameter, not created here.** It used to be `rememberNavController()`
+    // in this function's body, which made it a child of the `Home` composition: navigating to a
+    // series detail disposed this whole subtree, destroying the tab back stack and every entry
+    // `saveState` had saved along with it. Returning recreated a controller at `Library`, so every
+    // tab lost its scroll position, filter and search query on every detail visit, and a destination
+    // the user had pushed inside a tab was silently discarded. `MainActivity` now owns this
+    // controller, so it outlives the `Home` composition and `saveState`/`restoreState` actually
+    // mean something.
+    //
+    // The default keeps previews and tests working without a caller, which is why it is a defaulted
+    // parameter rather than a required one.
     val tabs = listOf(
         HomeTab.Library,
         HomeTab.Updates,
@@ -98,6 +125,21 @@ fun HomeScreen(
     )
 
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    // Back inside a tab returns to that tab's own root rather than leaving the app.
+    //
+    // Without this, pressing back while a non-Library tab was showing popped the *app-level* stack
+    // instead: the user left the app from a screen they had only navigated within, which reads as
+    // "back does something arbitrary". Enabled only when the current destination is genuinely not
+    // one of the five tab roots, so a back press at a root falls through to the system and exits
+    // normally.
+    val backStackEntry by bottomNavController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
+    if (currentRoute != null && currentRoute !in TAB_ROOT_ROUTES) {
+        BackHandler {
+            bottomNavController.popBackStack(ScreenRoutes.Library.route, inclusive = false)
+        }
+    }
 
     LaunchedEffect(Unit) {
         HomeScreen.openTabEvent.collect { tab ->
