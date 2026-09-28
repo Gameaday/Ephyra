@@ -147,6 +147,7 @@ class WebtoonViewer(
         currentPage = page
         val pages = page.chapter.pages ?: return
         logcat { "onPageSelected: ${page.number}/${pages.size}" }
+        pinViewportAround(page, pages)
         activity.onPageSelected(page)
 
         val inPreloadRange = pages.size - page.number < 5
@@ -157,6 +158,24 @@ class WebtoonViewer(
                 activity.requestPreloadChapter(nextChapter)
             }
         }
+    }
+
+    /**
+     * Pins the pages around [page] in its chapter's byte store.
+     *
+     * The continuous reader needs this for the same reason the paged one does: the store evicts
+     * least-recently-used, and after a fling through a long strip the pages just scrolled past are
+     * the most recently used, so recency alone evicts what the user is about to reach.
+     *
+     * The window is centred on the settled page rather than on the scroll offset, so it is correct
+     * for the continuous surface without teaching the policy about sub-page scroll position. The
+     * radius already exceeds the continuous path's prefetch depth. Clamps to the chapter and pins
+     * nothing when the index is unknown, so a page can call this unconditionally.
+     */
+    private fun pinViewportAround(page: ReaderPage, pages: List<ReaderPage>) {
+        val index = pages.indexOf(page)
+        if (index == -1) return
+        page.chapter.pinViewport(index, pages.size)
     }
 
     /**

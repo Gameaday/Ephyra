@@ -295,7 +295,28 @@ abstract class PagerViewer(
         if (index != -1 && index == pendingTargetIndex) {
             pendingTargetIndex = null
         }
+        pinViewportAround(page)
         activity.onPageSelected(page)
+    }
+
+    /**
+     * Pins the pages around [page] in its chapter's byte store.
+     *
+     * The store evicts least-recently-used, which is the wrong order for a reader: after a fling the
+     * pages just scrolled past are the most recently used, so pure recency evicts the pages the user
+     * is about to reach. Declaring the visible window is what makes eviction follow distance from
+     * the viewport instead.
+     *
+     * Driven from the settled page rather than from composition, so it happens once per page change
+     * and not on every recomposition. The policy is index-based and clamps to the chapter, so an
+     * unloaded or empty chapter pins nothing rather than throwing. No-op without a store, which is
+     * why a page can call this unconditionally.
+     */
+    private fun pinViewportAround(page: ReaderPage) {
+        val pages = page.chapter.pages ?: return
+        val index = pages.indexOf(page)
+        if (index == -1) return
+        page.chapter.pinViewport(index, pages.size)
     }
 
     /**
