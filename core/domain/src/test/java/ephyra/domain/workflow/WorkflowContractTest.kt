@@ -29,15 +29,15 @@ class WorkflowContractTest {
         val transition = StartupReducer.initial()
         assertEquals(1, transition.effects.size)
         assertEquals("startup.runStep", transition.effects.single().kind)
-        assertEquals(StartupStep.MIGRATE_DATABASE.name, transition.effects.single().payload["step"])
+        assertEquals(StartupStep.LOGGING.name, transition.effects.single().payload["step"])
     }
 
     @Test
     fun `a settled step yields exactly one follow-up effect`() {
         val start = StartupReducer.initial()
-        val after = reducer.reduce(start.state, StartupIntent.Settled("i1", StartupStep.MIGRATE_DATABASE, ok = true))
+        val after = reducer.reduce(start.state, StartupIntent.Settled("i1", StartupStep.LOGGING, ok = true))
         assertEquals(1, after.effects.size)
-        assertEquals(StartupStep.LOAD_PREFERENCES.name, after.effects.single().payload["step"])
+        assertEquals(StartupStep.CRASH_HANDLER.name, after.effects.single().payload["step"])
     }
 
     @Test
@@ -46,7 +46,7 @@ class WorkflowContractTest {
         StartupStep.entries.forEach { step ->
             state = reducer.reduce(state, StartupIntent.Settled("done-$step", step, ok = true)).state
         }
-        val final = reducer.reduce(state, StartupIntent.Settled("last", StartupStep.RECONCILE_SOURCES, ok = true))
+        val final = reducer.reduce(state, StartupIntent.Settled("last", StartupStep.ASYNC_INIT, ok = true))
         assertTrue(final.state.isComplete)
         assertTrue(final.effects.isEmpty(), "A finished workflow must not keep requesting work.")
     }
@@ -56,7 +56,7 @@ class WorkflowContractTest {
     @Test
     fun `reduction is deterministic across repeated identical inputs`() {
         val start = StartupReducer.initial().state
-        val intent = StartupIntent.Settled("i1", StartupStep.MIGRATE_DATABASE, ok = true)
+        val intent = StartupIntent.Settled("i1", StartupStep.LOGGING, ok = true)
 
         val first = reducer.reduce(start, intent)
         val second = reducer.reduce(start, intent)
@@ -70,7 +70,7 @@ class WorkflowContractTest {
     @Test
     fun `reducing the same intent twice from the same state yields equal but independent state`() {
         val start = StartupReducer.initial().state
-        val intent = StartupIntent.Settled("i1", StartupStep.MIGRATE_DATABASE, ok = true)
+        val intent = StartupIntent.Settled("i1", StartupStep.LOGGING, ok = true)
         assertEquals(reducer.reduce(start, intent).state, reducer.reduce(start, intent).state)
     }
 
@@ -93,7 +93,7 @@ class WorkflowContractTest {
             StartupIntent.Settled("second-to-last", secondToLast, ok = true),
         ).effects.single()
 
-        assertEquals(StartupStep.RECONCILE_SOURCES.name, terminalRequest.payload["step"])
+        assertEquals(StartupStep.ASYNC_INIT.name, terminalRequest.payload["step"])
         assertFalse(terminalRequest.cancellable, "A committing step must not be cancellable once issued.")
     }
 
@@ -161,9 +161,9 @@ class WorkflowContractTest {
     @Test
     fun `state survives a snapshot and restore round trip`() {
         var state = StartupReducer.initial().state
-        state = reducer.reduce(state, StartupIntent.Settled("i1", StartupStep.MIGRATE_DATABASE, ok = true)).state
+        state = reducer.reduce(state, StartupIntent.Settled("i1", StartupStep.LOGGING, ok = true)).state
         state =
-            reducer.reduce(state, StartupIntent.Settled("i2", StartupStep.LOAD_PREFERENCES, ok = false, "disk")).state
+            reducer.reduce(state, StartupIntent.Settled("i2", StartupStep.CRASH_HANDLER, ok = false, "disk")).state
 
         val restored = reducer.restore(reducer.snapshot(state))
         assertEquals(state, restored)
@@ -172,9 +172,9 @@ class WorkflowContractTest {
     @Test
     fun `a restored workflow resumes at the same pending step`() {
         var state = StartupReducer.initial().state
-        state = reducer.reduce(state, StartupIntent.Settled("i1", StartupStep.MIGRATE_DATABASE, ok = true)).state
+        state = reducer.reduce(state, StartupIntent.Settled("i1", StartupStep.LOGGING, ok = true)).state
         state =
-            reducer.reduce(state, StartupIntent.Settled("i2", StartupStep.LOAD_PREFERENCES, ok = false, "disk")).state
+            reducer.reduce(state, StartupIntent.Settled("i2", StartupStep.CRASH_HANDLER, ok = false, "disk")).state
 
         val restored = reducer.restore(reducer.snapshot(state))
         assertEquals(state.nextPending, restored.nextPending)
@@ -191,9 +191,9 @@ class WorkflowContractTest {
     @Test
     fun `a restored snapshot does not alias the original state`() {
         var state = StartupReducer.initial().state
-        state = reducer.reduce(state, StartupIntent.Settled("i1", StartupStep.MIGRATE_DATABASE, ok = true)).state
+        state = reducer.reduce(state, StartupIntent.Settled("i1", StartupStep.LOGGING, ok = true)).state
         val restored = reducer.restore(reducer.snapshot(state))
-        val advanced = reducer.reduce(restored, StartupIntent.Settled("i2", StartupStep.LOAD_PREFERENCES, ok = true))
+        val advanced = reducer.reduce(restored, StartupIntent.Settled("i2", StartupStep.CRASH_HANDLER, ok = true))
 
         assertNotEquals(state.steps, advanced.state.steps)
         assertEquals(1, state.steps.size, "The original state must be untouched by a later reduction.")
@@ -205,7 +205,7 @@ class WorkflowContractTest {
     fun `out of order settlement is refused`() {
         val start = StartupReducer.initial().state
         // LOAD_PREFERENCES cannot settle before MIGRATE_DATABASE.
-        val skipped = reducer.reduce(start, StartupIntent.Settled("x", StartupStep.LOAD_PREFERENCES, ok = true))
+        val skipped = reducer.reduce(start, StartupIntent.Settled("x", StartupStep.CRASH_HANDLER, ok = true))
         assertEquals(start, skipped.state, "A step must not settle out of order.")
         assertTrue(skipped.effects.isEmpty())
     }
@@ -213,21 +213,21 @@ class WorkflowContractTest {
     @Test
     fun `skipping a step via a met precondition advances the workflow`() {
         val start = StartupReducer.initial().state
-        val after = reducer.reduce(start, StartupIntent.PreconditionMet("p1", StartupStep.MIGRATE_DATABASE))
-        assertEquals(StepOutcome.Skipped, after.state.steps.getValue(StartupStep.MIGRATE_DATABASE).outcome)
-        assertEquals(StartupStep.LOAD_PREFERENCES.name, after.effects.single().payload["step"])
+        val after = reducer.reduce(start, StartupIntent.PreconditionMet("p1", StartupStep.LOGGING))
+        assertEquals(StepOutcome.Skipped, after.state.steps.getValue(StartupStep.LOGGING).outcome)
+        assertEquals(StartupStep.CRASH_HANDLER.name, after.effects.single().payload["step"])
     }
 
     @Test
     fun `retry re-issues the failed step and clears the failure`() {
         var state = StartupReducer.initial().state
-        state = reducer.reduce(state, StartupIntent.Settled("i1", StartupStep.MIGRATE_DATABASE, ok = true)).state
+        state = reducer.reduce(state, StartupIntent.Settled("i1", StartupStep.LOGGING, ok = true)).state
         state =
-            reducer.reduce(state, StartupIntent.Settled("i2", StartupStep.LOAD_PREFERENCES, ok = false, "disk")).state
+            reducer.reduce(state, StartupIntent.Settled("i2", StartupStep.CRASH_HANDLER, ok = false, "disk")).state
         assertTrue(state.hasFailed)
 
         val retried = reducer.reduce(state, StartupIntent.Retry("r1"))
-        assertEquals(StartupStep.LOAD_PREFERENCES.name, retried.effects.single().payload["step"])
+        assertEquals(StartupStep.CRASH_HANDLER.name, retried.effects.single().payload["step"])
         assertNull(retried.state.failureReason)
     }
 
@@ -243,11 +243,11 @@ class WorkflowContractTest {
     fun `attempt count increases across a retry so a stuck step is observable`() {
         var state = StartupReducer.initial().state
         state =
-            reducer.reduce(state, StartupIntent.Settled("i1", StartupStep.MIGRATE_DATABASE, ok = false, "boom")).state
-        val firstAttempt = state.steps.getValue(StartupStep.MIGRATE_DATABASE).attempt
+            reducer.reduce(state, StartupIntent.Settled("i1", StartupStep.LOGGING, ok = false, "boom")).state
+        val firstAttempt = state.steps.getValue(StartupStep.LOGGING).attempt
         state = reducer.reduce(state, StartupIntent.Retry("r1")).state
-        state = reducer.reduce(state, StartupIntent.Settled("i2", StartupStep.MIGRATE_DATABASE, ok = true)).state
+        state = reducer.reduce(state, StartupIntent.Settled("i2", StartupStep.LOGGING, ok = true)).state
 
-        assertTrue(state.steps.getValue(StartupStep.MIGRATE_DATABASE).attempt > firstAttempt)
+        assertTrue(state.steps.getValue(StartupStep.LOGGING).attempt > firstAttempt)
     }
 }

@@ -21,19 +21,11 @@ import kotlinx.serialization.Serializable
  * The reducer below is the reference for how those are expressed. It is pure: no clock, no I/O, no
  * coroutine scope. Choosing what to actually run is the effect handler's job, and keeping that
  * split is the point of the pattern rather than an incidental detail.
+ *
+ * **The step list is `StartupStep`, in its own file, and was re-derived from the shipping code on
+ * 2026-09-28.** The previous list here was asserted to match `App.kt`'s behaviour without that
+ * being checked, and did not: see the note on `StartupStep`.
  */
-
-/** Ordered startup steps. Order is the contract; adding a step means inserting here deliberately. */
-@Serializable
-enum class StartupStep {
-    MIGRATE_DATABASE,
-    LOAD_PREFERENCES,
-    REGISTER_WORKERS,
-    RECONCILE_SOURCES,
-    ;
-
-    val isTerminal: Boolean get() = this == RECONCILE_SOURCES
-}
 
 @Serializable
 enum class StepOutcome {
