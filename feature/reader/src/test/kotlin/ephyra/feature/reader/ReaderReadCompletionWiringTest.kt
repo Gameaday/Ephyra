@@ -58,7 +58,24 @@ import org.junit.jupiter.api.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class ReaderReadCompletionWiringTest {
 
-    private val savedState = SavedStateHandle()
+    /**
+     * Rebuilt per test rather than shared as a class-level `val`.
+     *
+     * `SavedStateHandle` is **state**, and `ReaderViewModel`'s `init` block writes to it. Sharing
+     * one instance across every test in the class means a ViewModel constructed by one test leaves
+     * keys behind for the next, so the second ViewModel restores a partially-initialised state
+     * instead of a fresh one. That is the `B-046` defect class — a test whose correctness depends
+     * on state it does not own — but through `SavedStateHandle` rather than through mock
+     * recordings, which is why the existing `clearMocks` fix did not cover it.
+     *
+     * It surfaced as an *intermittent* failure of `reaching the genuinely last page marks the
+     * chapter read`, reporting `UpdateChapter(#150) was not called` — zero calls, not two, so the
+     * recorded-call theory did not fit and the real cause was shared restore state. Verified by
+     * stashing the production change and reproducing at baseline: two clean full-module runs, then a
+     * failure once a new test class shifted the ordering. Adding a test must not be able to change
+     * another test's result.
+     */
+    private val savedState: SavedStateHandle get() = SavedStateHandle()
     private val sourceManager: SourceManager = mockk(relaxed = true)
     private val downloadManager: DownloadManager = mockk(relaxed = true)
     private val downloadProvider: DownloadProvider = mockk(relaxed = true)

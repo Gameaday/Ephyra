@@ -96,6 +96,21 @@ class WebtoonZoomState(
         offsetX = 0f
     }
 
+    /**
+     * Restores a previously committed transform verbatim, without clamping.
+     *
+     * [offsetX] is deliberately **not** re-clamped against the current viewport width. The value
+     * being restored was itself produced by [applyZoom] and therefore already satisfied
+     * `maxOffsetX` for the scale it was committed at, so re-clamping could only change it if the
+     * viewport had been resized mid-gesture — and in that case the correct fix belongs to
+     * [setViewportWidth], which already re-clamps on every measurement. Clamping here as well would
+     * mean two owners of the same invariant.
+     */
+    fun restore(scale: Float, offsetX: Float) {
+        this.scale = scale
+        this.offsetX = offsetX
+    }
+
     fun viewportSize(height: Float): ViewportSize = ViewportSize(viewportWidth, height)
 }
 

@@ -62,6 +62,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
@@ -74,6 +75,7 @@ import coil3.size.Precision
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.ImageUtil
+import ephyra.domain.reader.gesture.ReaderGestureEffect
 import ephyra.feature.reader.model.ChapterTransition
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
@@ -558,41 +560,71 @@ private fun WebtoonPageItem(
     val itemModifier = modifier
         .webtoonItemBox(webtoonAspectRatio(layoutDimensions))
 
+    // The item's own size, needed to convert a tap position into container coordinates for the
+    // navigation-zone hit test. Read from layout rather than from the pointer scope's `size`,
+    // which reports the size of the *input* node and is not guaranteed to be the laid-out box on
+    // the first event of a gesture.
+    var itemSize by remember { mutableStateOf(IntSize.Zero) }
+
     Box(
         modifier = itemModifier
             .onGloballyPositioned { coordinates ->
                 // The viewport width is the reference for horizontal pan bounds. Do not derive
                 // bounds from a slice: all slices in this page share the same document width.
                 zoomState.setViewportWidth(coordinates.size.width.toFloat())
+                itemSize = coordinates.size
                 // Track on-screen visibility for the watchdog: actually intersecting the
                 // window (not merely composed nearby via the prefetch window).
                 itemIsVisible = coordinates.isAttached && !coordinates.boundsInWindow().isEmpty
             }
-            .pointerInput(page.index, zoomEnabled to zoomState) {
-                if (!zoomEnabled) {
-                    detectTapGestures(
-                        onTap = { tapOffset -> onSingleTap(tapOffset, size.toSize()) },
-                        onLongPress = { onLongTap() },
-                    )
+            .then(
+                // `doubleTapZoom` off must mean *no pinch zoom at all*, which is what the previous
+                // `if (!zoomEnabled) detectTapGestures(...)` branch did. Dropping the branch because
+                // the arbiter subsumed the gesture handling is what made `zoomEnabled` an unused
+                // parameter -- and an unused parameter here is a silently dead user setting, not a
+                // cosmetic leftover. The compiler flagged it; a settings toggle nobody reads is
+                // exactly the `ROADMAP.md` rule-3 case ("do not preserve an option merely because
+                // it exists", and equally do not ignore one because a refactor stopped reading it).
+                if (zoomEnabled) {
+                    Modifier
                 } else {
-                    val min = zoomState.min
-                    val max = zoomState.max
-                    detectWebtoonGestures(
-                        zoomMin = min,
-                        zoomMax = max,
-                        getScale = { zoomState.scale },
-                        onSingleTap = { tapOffset -> onSingleTap(tapOffset, size.toSize()) },
-                        // The list owns its scroll state, so the focal correction is handed back to
-                        // the caller. Without it the list stays put and the strip jumps under the
-                        // fingers even though the scale arithmetic is correct.
-                        onZoom = { s: Float, p: Float, focal: Offset ->
-                            onZoomFocal(zoomState.applyZoom(s, p, focal.x, focal.y).scrollCorrection)
-                        },
-                        onDoubleTapToggle = { zoomState.toggleFit() },
-                        onLongPress = onLongTap,
-                    )
-                }
-            },
+                    Modifier.pointerInput(page.index) {
+                        detectTapGestures(
+                            onTap = { tapOffset -> onSingleTap(tapOffset, itemSize.toSize()) },
+                            onLongPress = { onLongTap() },
+                        )
+                    }
+                },
+            )
+            .webtoonGestureStream(
+                // Disabled when `doubleTapZoom` is off, so the tap-only branch above owns the
+                // surface. Both cannot be attached at once: two `pointerInput` blocks would each
+                // see the same gesture and the zoom could still start.
+                enabled = zoomEnabled,
+                // The chapter is the document: every strip in a webtoon shares one transform, so
+                // the revision is the chapter identity. Keying it on the page instead would let the
+                // arbiter keep a transform alive across a strip boundary, which is precisely the
+                // "zoom a strip that has already been replaced" case.
+                documentRevision = { page.chapter.chapter.id.toString() },
+                getScale = { zoomState.scale },
+                onEffect = { effect ->
+                    when (val outcome = zoomState.reduceWebtoonEffect(effect, committed = null)) {
+                        is WebtoonGestureOutcome.TransformChanged -> onZoomFocal(outcome.scrollCorrection)
+                        // Delegation is achieved by the adapter *not* consuming, so the LazyColumn
+                        // scrolls on its own. Nothing is applied here, and that is the point: this
+                        // branch is reachable now only because the arbiter runs on this surface.
+                        WebtoonGestureOutcome.DelegatedToParent,
+                        WebtoonGestureOutcome.NoTransformChange,
+                        -> Unit
+                    }
+                    when (effect) {
+                        is ReaderGestureEffect.SingleTap ->
+                            onSingleTap(Offset(effect.x, effect.y), itemSize.toSize())
+                        ReaderGestureEffect.LongPress -> onLongTap()
+                        else -> Unit
+                    }
+                },
+            ),
         contentAlignment = Alignment.Center,
     ) {
         when (val currentStatus = status) {
