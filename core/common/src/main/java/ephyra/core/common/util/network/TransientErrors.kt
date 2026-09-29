@@ -29,6 +29,11 @@ import java.net.UnknownHostException
  *   but [shouldReResolveUrl] reported the URL as fine, so every attempt re-requested the identical
  *   host that had just failed to resolve, and the user's own Retry did exactly the same. A page
  *   whose image CDN host is dead was unrecoverable by construction, which is the `DEF-023` report.
+ * - A URL that **cannot address a host at all** — `MalformedImageUrlException`, raised by
+ *   [ImageUrlPolicy] before any request is sent — is the third member of this family. Like the
+ *   other two it indicts the URL rather than the connection, so it also requires a fresh one; the
+ *   difference is that the identical string provably can never work, which is why the reader stops
+ *   re-resolving rather than re-requesting.
  * - `4xx` otherwise is permanent: a malformed request will fail identically forever.
  *
  * [shouldReResolveUrl] exists so a caller can tell the two transient cases apart, because they need
@@ -73,6 +78,12 @@ object TransientErrors {
                 // hand back a different host on the next resolution, and a fresh URL is the only
                 // thing that can recover from a dead one.
                 is UnknownHostException -> return true
+                // The URL cannot address a host at all — a splicing artifact such as
+                // `cmdx98sb0x3yprd.mangadex.network,https`. Re-requesting it cannot succeed, but
+                // *re-resolving* still can, because the source builds the string that is malformed
+                // and may build a different one next time. That is why this belongs here and not
+                // in the permanent arm, even though the URL itself will never work as it stands.
+                is MalformedImageUrlException -> return true
                 is HttpException -> if (isStale(current)) return true
             }
             candidate = current?.cause

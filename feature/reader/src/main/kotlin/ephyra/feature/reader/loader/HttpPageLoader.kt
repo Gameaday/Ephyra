@@ -2,6 +2,8 @@ package ephyra.feature.reader.loader
 
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.withIOContext
+import ephyra.core.common.util.network.ImageUrlPolicy
+import ephyra.core.common.util.network.MalformedImageUrlException
 import ephyra.core.common.util.network.TransientErrors
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.logcat
@@ -463,6 +465,13 @@ internal class HttpPageLoader(
      */
     private suspend fun internalLoadPage(page: ReaderPage, priority: Int) {
         var retries = 0
+        // A URL this load has already found structurally unusable. Held in the method rather than
+        // on the page because it is a fact about *this attempt sequence*, not about the page: the
+        // page's own answer to "is my URL any good" is that it no longer has one.
+        //
+        // Its only use is to stop asking the source for a string we have already proved cannot
+        // address a host. See the guard below.
+        var rejectedUrl: String? = null
         while (true) {
             try {
                 // Yield to a higher-priority page before starting the URL fetch.
@@ -470,9 +479,28 @@ internal class HttpPageLoader(
 
                 if (page.imageUrl.isNullOrEmpty()) {
                     page.status = Page.State.LoadPage
-                    page.imageUrl = source.getImageUrl(page)
+                    val resolved = source.getImageUrl(page)
+                    // A source that hands back the identical string we have already rejected is not
+                    // going to produce a different one on the next call either, and every call it
+                    // does make is a round-trip spent learning nothing. Reporting the defect now
+                    // ends the ladder sooner and reports the *cause* rather than a resolver error
+                    // about a name that can never exist.
+                    if (resolved == rejectedUrl) {
+                        ImageUrlPolicy.requireUsable(resolved)
+                    }
+                    page.imageUrl = resolved
                 }
                 val imageUrl = requireNotNull(page.imageUrl) { "Image URL is null after being fetched from source" }
+
+                // Ask whether the URL is worth requesting *before* requesting it. A URL that cannot
+                // address a host — `cmxd98sb0x3yprd.mangadex.network,https`, the splicing artifact
+                // behind the missed-image report — is served by OkHttp and handed to DNS, because a
+                // comma is not a forbidden host character. That request can only fail, and its
+                // resolver message is what the user was shown. Classified as a URL fault, it takes
+                // the same path as a revoked signed URL: the URL is dropped and the source is asked
+                // again, which is the one thing that can actually recover it.
+                ImageUrlPolicy.requireUsable(imageUrl)
+                rejectedUrl = null
 
                 // Yield again after the URL fetch (which can be slow) and before the potentially
                 // large image download, giving the urgent page a chance to start promptly.
@@ -555,6 +583,14 @@ internal class HttpPageLoader(
                     // needed for exactly this reason: `cacheHadMissingImageUrls` describes the
                     // list as it was loaded and cannot see a URL dropped here.
                     page.imageUrl = null
+                    // Remember a URL we rejected *structurally*, so the next attempt can tell a
+                    // source that handed back the same unusable string from one that handed back a
+                    // different URL. Both warrant another resolution; only the second can succeed.
+                    // Keyed off the exception rather than off a re-run of the policy so that the
+                    // recorded string is exactly the one that was rejected.
+                    if (e is MalformedImageUrlException) {
+                        rejectedUrl = e.url
+                    }
                 }
                 if (TransientErrors.isTransient(e) && retries < MAX_PAGE_LOAD_RETRIES) {
                     retries++
