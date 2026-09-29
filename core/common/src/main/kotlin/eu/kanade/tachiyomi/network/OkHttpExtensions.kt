@@ -70,6 +70,31 @@ fun Call.asObservableSuccess(): Observable<Response> {
     }
 }
 
+/**
+ * Re-labels [this] with the call site that started the request and returns it.
+ *
+ * **Why the exception is returned rather than a copy.** This used to be
+ * `IOException(e.message, e).apply { stackTrace = callStack }`, which copies the *message* and
+ * nests the original as a `cause` while throwing a plain `IOException`. That silently destroys
+ * the failure's type: an `UnknownHostException` — the app's "this hostname does not resolve"
+ * signal, and the only thing that says a page's *URL* rather than its *connection* is at fault —
+ * arrived at the reader, the retry classifier and the error screen as a bare `IOException` with a
+ * message attached. Nothing downstream could act on it, so a page whose image CDN host did not
+ * resolve was retried against the identical dead URL and then shown the raw resolver string. See
+ * `DEF-023`.
+ *
+ * Mutating and rethrowing the original keeps the type, the message and the cause chain intact, so
+ * a classifier can walk it and a screen can still choose the plain message.
+ *
+ * The stack trace is still replaced, which is the entire reason this helper exists: without it the
+ * frames a reader failure is reported from are OkHttp's internals rather than the `await()` call
+ * that asked for the image.
+ */
+private fun IOException.withCallSite(callStack: Array<StackTraceElement>): IOException {
+    stackTrace = callStack
+    return this
+}
+
 // Based on https://github.com/square/okhttp/blob/master/okhttp-coroutines/src/main/kotlin/okhttp3/coroutines/ExecuteAsync.kt
 // and https://github.com/gildor/kotlin-coroutines-okhttp
 private suspend fun Call.await(callStack: Array<StackTraceElement>): Response {
@@ -86,7 +111,7 @@ private suspend fun Call.await(callStack: Array<StackTraceElement>): Response {
             object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
                     if (continuation.isCancelled) return
-                    val exception = IOException(e.message, e).apply { stackTrace = callStack }
+                    val exception = e.withCallSite(callStack)
                     continuation.resumeWithException(exception)
                 }
 

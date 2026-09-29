@@ -208,9 +208,13 @@ internal class HttpPageLoader(
             prepareForReload(page)
         }
 
-        // Automatically retry failed pages when subscribed to this page
-        if (page.status is Page.State.Error) {
-            prepareForReload(page)
+        // Automatically retry failed pages when subscribed to this page. The status is read into a
+        // local first because `prepareForReload` overwrites it, and a failure that indicts the URL
+        // takes the URL with it, so this retry asks the source rather than repeating the request
+        // that just failed.
+        val failedWith = (page.status as? Page.State.Error)?.error
+        if (failedWith != null) {
+            prepareForReload(page, dropImageUrl = TransientErrors.shouldReResolveUrl(failedWith))
         }
 
         val queuedPages = mutableListOf<PriorityPage>()
@@ -233,10 +237,17 @@ internal class HttpPageLoader(
 
     /**
      * Retries a page. This method is only called from user interaction on the viewer.
+     *
+     * The page's own error decides whether the resolved URL survives the retry, so the button the
+     * user presses is a genuinely new request whenever the URL was what failed. That is the
+     * difference between a Retry that can work and one that re-sends a request known to fail: an
+     * unresolvable image host is not reachable by asking for the same host again, and the source
+     * will hand back a different one.
      */
     override fun retryPage(page: ReaderPage) {
         check(!isRecycled)
-        prepareForReload(page)
+        val failedWith = (page.status as? Page.State.Error)?.error
+        prepareForReload(page, dropImageUrl = failedWith != null && TransientErrors.shouldReResolveUrl(failedWith))
         queue.offer(PriorityPage(page, 2))
     }
 
@@ -385,10 +396,49 @@ internal class HttpPageLoader(
     }
 
     /**
+     * Resets [page] so the next worker attempt re-fetches it.
+     *
+     * [dropImageUrl] decides whether the resolved URL survives the reset, and it is the one place
+     * that decision is made for a user-triggered reload:
+     *
+     * - `false` (the default) keeps the URL. Correct for a cache eviction, where the bytes are
+     *   missing but the URL was never at fault, and re-resolving would silently change which URL a
+     *   page that was mid-render points at.
+     * - `true` drops it, so the next attempt asks the source. Required when the page failed in a
+     *   way that indicts the URL — a revoked signed URL, or a host that does not resolve. Keeping
+     *   it makes the user's Retry a verbatim repeat of the request that just failed, which for an
+     *   unresolvable image host is a permanent failure the user cannot get out of (`DEF-023`).
+     *
+     * Callers pass [TransientErrors.shouldReResolveUrl] of the page's error rather than deciding
+     * for themselves, so the drop [internalLoadPage] makes when a load fails and the drop a
+     * user-triggered reload makes cannot disagree about what a given failure means.
+     */
+    private fun prepareForReload(
+        page: ReaderPage,
+        dropImageUrl: Boolean = false,
+    ) {
+        page.clearLoadedImage()
+        page.stream = null
+        if (dropImageUrl) {
+            page.imageUrl = null
+        }
+        page.status = Page.State.Queue
+    }
+
+    /**
      * Loads the page, retrieving the image URL and downloading the image if necessary.
      * Automatically retries on transient network errors (IO errors, HTTP 429 and 5xx) up to
      * [MAX_PAGE_LOAD_RETRIES] times with exponential backoff before marking the page as failed.
      * Downloaded images are stored in the chapter cache.
+     *
+     * **Why a retry does not always keep the URL.** Whether the next attempt re-requests the same
+     * URL or asks the source for a new one is decided by [TransientErrors.shouldReResolveUrl], not
+     * by a local attempt counter. A counter cannot tell the two apart: it re-resolves after a `429`
+     * (where the same URL is correct and re-resolving costs an extra source round-trip) and it
+     * re-resolves after a `403` or a name that did not resolve only from the *second* attempt — so
+     * the first attempt of a user's own Retry re-requested the URL that had just failed. For a
+     * signed URL or a dead image CDN host that attempt is a verbatim repeat of a request known to
+     * fail, which is what made "even after retry" true: see `DEF-023`.
      *
      * If a higher-priority page enters the queue while this page is still waiting to start or
      * between the URL-fetch and image-download phases, this method yields immediately: the page
@@ -405,12 +455,6 @@ internal class HttpPageLoader(
      * @param page the page whose source image has to be downloaded.
      * @param priority the queue priority at which this page was dequeued.
      */
-    private fun prepareForReload(page: ReaderPage) {
-        page.clearLoadedImage()
-        page.stream = null
-        page.status = Page.State.Queue
-    }
-
     private suspend fun internalLoadPage(page: ReaderPage, priority: Int) {
         var retries = 0
         while (true) {
@@ -419,15 +463,6 @@ internal class HttpPageLoader(
                 if (requeueAndYield(page, priority)) return
 
                 if (page.imageUrl.isNullOrEmpty()) {
-                    page.status = Page.State.LoadPage
-                    page.imageUrl = source.getImageUrl(page)
-                } else if (retries > 0) {
-                    // On a retry, drop the URL we already failed on so the next attempt asks the
-                    // source again. Image URLs are frequently signed or time-limited, so retrying
-                    // the same one after 403/410 re-requests a URL the source has already revoked
-                    // and burns the whole backoff ladder for nothing. Re-resolving is cheap next to
-                    // a network round-trip and is the only way a retry can succeed.
-                    page.imageUrl = null
                     page.status = Page.State.LoadPage
                     page.imageUrl = source.getImageUrl(page)
                 }
@@ -487,9 +522,32 @@ internal class HttpPageLoader(
                 // counts as retryable. The reader's own copy treated 403 as permanent, which for a
                 // signed or time-limited image URL is exactly backwards: the URL is stale, the
                 // source will issue a different one, and the page failed after a full backoff
-                // ladder for a request that could never succeed. `retries > 0` re-resolves above,
-                // which is what makes the stale-URL case genuinely recoverable rather than merely
-                // retried.
+                // ladder for a request that could never succeed.
+                if (TransientErrors.shouldReResolveUrl(e)) {
+                    // The URL, not the connection, is what failed — a revoked signed URL, or a
+                    // host that does not resolve. Drop it, so the next attempt has to ask the
+                    // source; the only way that request can differ from the one that just failed
+                    // is if the URL it uses is not the URL that failed.
+                    //
+                    // Dropping it here, at the point of failure, rather than at the start of the
+                    // next attempt, is what makes this survive a yield: [requeueAndYield] returns
+                    // out of this loop and a fresh call starts with a new attempt counter, so a
+                    // decision held in a local would be lost and the page would go back to the URL
+                    // that just failed. The page simply stops holding a URL known to be bad, and
+                    // every path back in — this ladder, [loadPage], the user's Retry — re-resolves
+                    // for the same reason. [prepareForReload] is the same rule applied when the
+                    // reload starts instead of the failure.
+                    //
+                    // Deliberately not gated on [TransientErrors.isTransient] either. This is a
+                    // verdict on the URL, not on the retry, and the two are not the same question:
+                    // `isTransient` reads only the outermost exception on purpose, so a source
+                    // extension wrapping a resolver failure in its own error type is correctly
+                    // permanent *and* still leaves the page not holding the URL that failed. It
+                    // also keeps a known-bad URL out of the page list [recycle] persists, so the
+                    // next open of this chapter asks the source rather than starting from a URL
+                    // that is already known to be dead.
+                    page.imageUrl = null
+                }
                 if (TransientErrors.isTransient(e) && retries < MAX_PAGE_LOAD_RETRIES) {
                     retries++
                     delay(

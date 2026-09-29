@@ -2,6 +2,7 @@ package ephyra.core.common.util.network
 
 import eu.kanade.tachiyomi.network.HttpException
 import java.io.IOException
+import java.net.UnknownHostException
 
 /**
  * One definition of "this failure is worth retrying".
@@ -23,29 +24,69 @@ import java.io.IOException
  *   report; treating them as transient *without* re-resolving would just repeat the same failure.
  *   `HttpPageLoader` now re-resolves on every retry, which is what makes this classification correct
  *   rather than merely optimistic.
+ * - A **name that does not resolve** (`UnknownHostException`) is the same shape of problem as a
+ *   `403`, and it was missing here. It arrives as an `IOException`, so it was always *retried* —
+ *   but [shouldReResolveUrl] reported the URL as fine, so every attempt re-requested the identical
+ *   host that had just failed to resolve, and the user's own Retry did exactly the same. A page
+ *   whose image CDN host is dead was unrecoverable by construction, which is the `DEF-023` report.
  * - `4xx` otherwise is permanent: a malformed request will fail identically forever.
  *
  * [shouldReResolveUrl] exists so a caller can tell the two transient cases apart, because they need
- * different handling: a `429` should be retried against the same URL after a backoff, while a `403`
- * needs a fresh URL first.
+ * different handling: a `429` should be retried against the same URL after a backoff, while a
+ * `403` — or a name that does not resolve — needs a fresh URL first.
  */
 object TransientErrors {
 
     /** True when [error] is worth retrying, with or without a fresh URL. */
     fun isTransient(error: Throwable): Boolean = when (error) {
+        // Named ahead of the `IOException` arm for the reader of the rule rather than for the
+        // behaviour: an `UnknownHostException` *is* an `IOException`, so either arm returns true.
+        // See [shouldReResolveUrl] for why this one failure additionally needs a new URL.
+        is UnknownHostException -> true
         is IOException -> true
         is HttpException -> error.code == 429 || error.code >= 500 || isStale(error)
         else -> false
     }
 
     /**
-     * True when [error] indicates the URL itself is stale, so the caller must ask the source for a
-     * new one before retrying.
+     * True when [error] indicates the URL itself is stale or unusable, so the caller must ask the
+     * source for a new one before retrying.
+     *
+     * Walks the [Throwable.cause] chain, because the signal is a *type* and layers legitimately
+     * re-wrap: the shared `Call.await()` re-wraps every failure, and the downloader's
+     * `retryWhen` sees whatever its callee threw. A classifier that inspects only the outermost
+     * exception degrades to "no opinion" the moment anything wraps — which is precisely how
+     * `DEF-020` and then `DEF-021` happened. The walk is depth-bounded so a pathological or
+     * cyclic chain terminates rather than spins.
+     *
+     * Only the chain is walked, not [isTransient]'s rule: a `RuntimeException` that merely
+     * *contains* an `IOException` is a bug in a source extension and stays permanent, so widening
+     * the walk to that rule would make real defects look like flaky network.
      */
-    fun shouldReResolveUrl(error: Throwable): Boolean = when (error) {
-        is HttpException -> isStale(error)
-        else -> false
+    fun shouldReResolveUrl(error: Throwable): Boolean {
+        var candidate: Throwable? = error
+        var depth = 0
+        while (candidate != null && depth < MAX_CAUSE_DEPTH) {
+            val current = candidate
+            when (current) {
+                // The name in this URL did not resolve, so the URL is the suspect. The source may
+                // hand back a different host on the next resolution, and a fresh URL is the only
+                // thing that can recover from a dead one.
+                is UnknownHostException -> return true
+                is HttpException -> if (isStale(current)) return true
+            }
+            candidate = current?.cause
+            depth++
+        }
+        return false
     }
 
     private fun isStale(error: HttpException): Boolean = error.code == 403 || error.code == 410
+
+    /**
+     * How far [shouldReResolveUrl] walks a cause chain. A cause chain deeper than this is already
+     * pathological; bounding it keeps the walk provably terminating instead of relying on every
+     * wrapper in the app behaving.
+     */
+    private const val MAX_CAUSE_DEPTH = 8
 }

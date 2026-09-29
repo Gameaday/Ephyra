@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 
 /**
  * Pins the shared retry classification.
@@ -19,6 +20,11 @@ import java.net.SocketTimeoutException
  *   report.
  * - `404` must stay **permanent**. Re-requesting a genuinely absent image three times costs the user
  *   seven seconds and changes nothing, so the fix is not "retry everything".
+ *
+ * And the behaviour that was missing entirely, which is `DEF-023`: a name that does not resolve is
+ * a statement about the *URL*, not the connection, so it has to be retryable **and** have to
+ * require a fresh URL — otherwise every attempt, including the user's own Retry, re-requests the
+ * host that just failed.
  */
 class TransientErrorsTest {
 
@@ -67,6 +73,78 @@ class TransientErrorsTest {
         assertFalse(TransientErrors.shouldReResolveUrl(HttpException(429)), "429 is a wait, not a stale URL")
         assertFalse(TransientErrors.shouldReResolveUrl(HttpException(500)))
         assertFalse(TransientErrors.shouldReResolveUrl(IOException("io")))
+        assertFalse(
+            TransientErrors.shouldReResolveUrl(HttpException(404)),
+            "404 is not a stale URL: the page is missing, and re-resolving will not bring it back",
+        )
+    }
+
+    @Test
+    fun `a name that does not resolve is retried with a fresh URL`() {
+        // The DEF-023 report: pages failed with `Unable to resolve host "<cdn host>": No address
+        // associated with hostname`, and stayed failed "even after retry". Retrying was already
+        // correct (it is an IOException) but re-requesting was not: the host in that URL is what
+        // failed, the source can hand back a different one, and nothing consulted that.
+        val resolutionFailure = UnknownHostException(
+            "Unable to resolve host \"cmxd98sb0x3yprd.mangadex.network\": No address associated with hostname",
+        )
+
+        assertTrue(TransientErrors.isTransient(resolutionFailure), "a resolver failure is worth retrying")
+        assertTrue(
+            TransientErrors.shouldReResolveUrl(resolutionFailure),
+            "the URL named a host that does not resolve, so the URL is the suspect",
+        )
+    }
+
+    @Test
+    fun `a resolution failure is still recognised after something re-wraps it`() {
+        // The signal is a type, and layers legitimately re-wrap: the shared `Call.await()` used to
+        // re-wrap every failure in a plain `IOException`, which is exactly why this case went
+        // unrecognised for as long as it did. A classifier that only reads the outermost exception
+        // degrades to "no opinion" the first time anything wraps it.
+        val wrappedOnce = IOException(
+            "Image failed to write",
+            UnknownHostException("Unable to resolve host \"cdn.example.network\""),
+        )
+        assertTrue(TransientErrors.shouldReResolveUrl(wrappedOnce), "one level of wrapping")
+        assertTrue(TransientErrors.isTransient(wrappedOnce))
+
+        val wrappedTwice = RuntimeException(
+            "outer",
+            IOException("middle", UnknownHostException("Unable to resolve host \"cdn.example.network\"")),
+        )
+        assertTrue(TransientErrors.shouldReResolveUrl(wrappedTwice), "two levels of wrapping")
+    }
+
+    @Test
+    fun `a stale URL is still recognised after something re-wraps it`() {
+        val wrapped = RuntimeException("outer", HttpException(403))
+        assertTrue(
+            TransientErrors.shouldReResolveUrl(wrapped),
+            "the 403 case must survive wrapping too, or DEF-020 returns the moment a layer wraps",
+        )
+    }
+
+    @Test
+    fun `a source extension bug that merely contains a network error is not retried`() {
+        // The counterweight to the cause walk. Widening the walk to `isTransient`'s whole rule would
+        // make a real defect look like flaky network and burn the backoff ladder on every attempt.
+        val extensionBug = RuntimeException("bug in a source extension", IOException("io"))
+        assertFalse(TransientErrors.isTransient(extensionBug))
+        assertFalse(TransientErrors.shouldReResolveUrl(extensionBug))
+    }
+
+    @Test
+    fun `the cause walk is bounded so a pathological chain cannot spin`() {
+        // A chain this deep does not occur; the bound is asserted anyway because the alternative is
+        // a classifier whose termination depends on every wrapper in the app behaving.
+        var error: Throwable = UnknownHostException("Unable to resolve host \"cdn.example.network\"")
+        repeat(16) { level -> error = IOException("wrap$level", error) }
+
+        assertFalse(
+            TransientErrors.shouldReResolveUrl(error),
+            "the walk must give up past its depth bound rather than reach the bottom of any chain",
+        )
     }
 
     @Test
