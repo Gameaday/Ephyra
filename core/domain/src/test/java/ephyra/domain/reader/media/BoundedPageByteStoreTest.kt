@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 class BoundedPageByteStoreTest {
 
@@ -322,5 +324,79 @@ class BoundedPageByteStoreTest {
         store.put(PageSourceId("src", "a", "r2"), bytes(10, fill = 2))
         assertEquals(2, store.entryCount)
         assertEquals(20, store.retainedBytes)
+    }
+
+    @Test
+    fun `concurrent writers cannot corrupt the accounting`() {
+        // The store is a LinkedHashMap and an Int counter, and its callers do NOT confine it to one
+        // thread: the reader retains page bytes from `withIOContext` per visible page, so several
+        // Dispatchers.IO threads put at once, while the viewport pin and chapter disposal arrive from
+        // Main. Unsynchronized, the `retained += size` updates lose each other and the store
+        // reports less than it holds — which is the unbounded growth this class exists to prevent —
+        // and concurrent structural modification can corrupt the map outright.
+        //
+        // Asserted by *running* it, because the failure is a race: the assertion is that the
+        // accounting still equals the real contents afterwards, and `retainedEntryBytes` is
+        // recomputed rather than trusted precisely so the counter cannot vouch for itself.
+        val threads = 8
+        val perThread = 200
+        val valueSize = 64
+        // Budget large enough that nothing is legitimately evicted, so every write below must be
+        // accounted for; otherwise a lost update would be hidden by the eviction arithmetic.
+        val store = BoundedPageByteStore(budgetBytes = threads * perThread * valueSize)
+
+        val start = CountDownLatch(1)
+        val done = CountDownLatch(threads)
+        val workers = (0 until threads).map { thread ->
+            Thread {
+                start.await()
+                repeat(perThread) { i ->
+                    store.put(PageSourceId("src", "t$thread-p$i", "r1"), bytes(valueSize))
+                }
+                done.countDown()
+            }.apply { startWorkersOn(it) }
+        }
+        workers.forEach(Thread::start)
+        start.countDown()
+        assertTrue(done.await(30, TimeUnit.SECONDS), "workers did not finish; the test would be vacuous")
+
+        assertEquals(
+            threads * perThread * valueSize,
+            store.retainedBytes,
+            "the counter must equal the sum of what was actually retained",
+        )
+        assertEquals(
+            store.retainedEntryBytes,
+            store.retainedBytes,
+            "the counter and the real contents disagreed: an update was lost to a data race",
+        )
+        assertEquals(store.entryCount * valueSize, store.retainedEntryBytes)
+    }
+
+    @Test
+    fun `a concurrent clear does not throw`() {
+        // `clear` snapshots the keys before emptying the map. Unsynchronized, a writer mutating the
+        // map at that moment makes the snapshot throw ConcurrentModificationException, and this
+        // callback chain runs from chapter disposal — so the exception escapes `unref()` and leaves
+        // the outgoing chapter's loader unrecycled.
+        val store = BoundedPageByteStore(budgetBytes = 10_000)
+        val writer = Thread {
+            repeat(20_000) { i -> store.put(PageSourceId("src", "p$i", "r1"), bytes(8)) }
+        }.apply { startWorkersOn(it) }
+
+        writer.start()
+        repeat(2_000) { store.clear() }
+        writer.join(30_000)
+
+        assertEquals(
+            store.retainedEntryBytes,
+            store.retainedBytes,
+            "after a concurrent clear the counter must still match the real contents",
+        )
+    }
+
+    /** [Thread.setDaemon] so a failing assertion cannot wedge the test JVM. */
+    private fun startWorkersOn(thread: Thread) {
+        thread.isDaemon = true
     }
 }

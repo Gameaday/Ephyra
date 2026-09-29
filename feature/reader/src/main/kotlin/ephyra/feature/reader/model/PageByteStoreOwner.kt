@@ -5,6 +5,7 @@ import ephyra.domain.reader.media.BoundedPageByteStore
 import ephyra.domain.reader.media.PageByteBudget
 import ephyra.domain.reader.media.PageSourceId
 import ephyra.domain.reader.media.PageViewportPinPolicy
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Owns the reader's encoded page bytes, bounded by [PageByteBudget].
@@ -20,13 +21,19 @@ import ephyra.domain.reader.media.PageViewportPinPolicy
  * cross-chapter retention and no way for a stale chapter's bytes to survive into the next one.
  * That also makes [clear] the whole teardown.
  *
- * Not thread-safe, matching the store: the scroll path owns it, and a lock there would add
- * contention without adding correctness.
+ * **Threading.** The owner's methods are `@Synchronized`, and the two index maps are concurrent.
+ * That is not defensive decoration: this owner is a reader-session singleton reached from the
+ * decode path, which runs `withIOContext` per visible page and so arrives on several
+ * `Dispatchers.IO` threads at once, while the viewport pin is driven from the scroll handlers on
+ * Main and the whole thing is torn down from the view-model scope. Lock order is always
+ * *owner then store* and never the reverse — [onEvict] is the one callback that runs while the
+ * store holds its own lock, so it touches only the concurrent maps and must never re-enter a
+ * synchronized member of this class, or a disposal racing a decode could deadlock.
  */
 class PageByteStoreOwner(
     memoryClassMb: Int,
 ) {
-    private val byId = mutableMapOf<PageSourceId, ReaderPage>()
+    private val byId = ConcurrentHashMap<PageSourceId, ReaderPage>()
 
     /**
      * Page index to identity, so a viewport can be pinned without a reverse scan of [byId].
@@ -34,7 +41,7 @@ class PageByteStoreOwner(
      * The store is keyed by identity and the pin policy speaks indices, so without this the
      * viewport path would have to search the map for every page in the window on every scroll.
      */
-    private val indexToId = mutableMapOf<Int, PageSourceId>()
+    private val indexToId = ConcurrentHashMap<Int, PageSourceId>()
 
     private fun unboundId(index: Int) = PageSourceId(
         sourceKey = UNBOUND_SOURCE,
@@ -75,6 +82,7 @@ class PageByteStoreOwner(
      * retained it: when it did not, [page]'s own reference is left null so the array becomes
      * unreachable as soon as the caller lets go of it.
      */
+    @Synchronized
     fun retain(page: ReaderPage, bytes: ByteArray): ByteArray {
         val id = idFor(page)
         val retained = store.put(id, bytes)
@@ -90,11 +98,13 @@ class PageByteStoreOwner(
      * The convenience form for callers that hold pages rather than identities; the index-based
      * overload exists because the pin policy is defined in indices.
      */
+    @Synchronized
     fun pinViewportAt(index: Int, pageCount: Int) = pinViewportAt(index, pageCount) { i ->
         indexToId[i] ?: unboundId(i)
     }
 
     /** Bytes held for [page], without affecting eviction order. */
+    @Synchronized
     fun peek(page: ReaderPage): ByteArray? {
         val bytes = page.cachedBytes ?: return null
         return if (store.contains(idFor(page))) bytes else null
@@ -110,11 +120,13 @@ class PageByteStoreOwner(
      * identities, so [idFor] bridges them. Resolving to a page that was never offered is harmless:
      * pinning an absent entry is a no-op.
      */
+    @Synchronized
     fun pinViewportAt(index: Int, pageCount: Int, idFor: (Int) -> PageSourceId) {
         pinPolicy.update(store, index, pageCount, idFor)
     }
 
     /** Releases every pin and drops every retained array. Called when the chapter is disposed. */
+    @Synchronized
     fun clear(idFor: (Int) -> PageSourceId) {
         pinPolicy.releaseAll(store, idFor)
         store.clear()
@@ -123,6 +135,7 @@ class PageByteStoreOwner(
     }
 
     /** Releases pins and retained bytes using this owner's own page-index mapping. */
+    @Synchronized
     fun clear() = clear { index -> indexToId[index] ?: unboundId(index) }
 
     /** Bytes currently retained. Exposed for tests and for the on-device measurement. */

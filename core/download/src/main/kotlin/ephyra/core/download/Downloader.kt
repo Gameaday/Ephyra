@@ -436,11 +436,31 @@ class Downloader(
                 download.source,
             )
 
-            // Only rename the directory if it's downloaded
-            if (downloadPreferences.saveChaptersAsCBZ().get()) {
+            // Only rename the directory if it's downloaded. The result is *checked*, because
+            // everything below this line publishes the chapter: the index entry the reader routes on,
+            // and the DOWNLOADED state the library shows. On a SAF-backed root (SD card, OTG) the
+            // rename can fail — provider refuses the name, volume full during the media rescan, the
+            // directory still open — and an unchecked failure indexed a chapter whose directory does
+            // not exist, which the reader then opens as a hard "page list empty" error. A chapter
+            // that could not be published is an error, not a success.
+            val published = if (downloadPreferences.saveChaptersAsCBZ().get()) {
+                // The CBZ path reports failure by throwing, and that is left as it is: the
+                // surrounding catch already turns it into ERROR.
                 archiveChapter(mangaDir, chapterDirname, tmpDir)
+                true
             } else {
-                tmpDir.renameTo(chapterDirname)
+                val renamed = tmpDir.renameTo(chapterDirname)
+                if (!renamed) {
+                    logcat(LogPriority.ERROR) {
+                        "Failed to publish $chapterDirname: rename returned false; " +
+                            "leaving the pages in ${tmpDir.name}"
+                    }
+                }
+                renamed
+            }
+            if (!published) {
+                download.status = Download.State.ERROR
+                return
             }
 
             // Copy CBZ to Jellyfin library folder if sync is enabled and folder is configured

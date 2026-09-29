@@ -118,15 +118,26 @@ class MangaCoverFetcher(
         var snapshot = readFromDiskCache()
         try {
             // Migrate a legacy Coil disk entry into the dedicated durable store once.
-            if (snapshot != null) {
-                val migratedCover = moveSnapshotToCoverCache(snapshot, coverCacheFile)
+            // A local val for the reads, so the nulling below cannot affect this path's own use of
+            // the snapshot; only the enclosing catch cares.
+            val openSnapshot = snapshot
+            if (openSnapshot != null) {
+                val migratedCover = moveSnapshotToCoverCache(openSnapshot, coverCacheFile)
                 if (migratedCover != null) {
+                    // Close before removing. Coil's own `openSnapshot` contract: "An open snapshot
+                    // prevents opening a new Editor or deleting the entry on disk" — so removing
+                    // first was a silent no-op, and an open snapshot also blocks the trim. The
+                    // result was a permanent duplicate of every migrated cover, re-copied on every
+                    // request for that key, plus a handle that was never released.
+                    openSnapshot.close()
+                    snapshot = null
+                    removeLegacyDiskEntry()
                     logcat(LogPriority.DEBUG) { "Cover cache migrated legacy disk entry" }
                     return fileLoader(migratedCover)
                 }
 
                 return SourceFetchResult(
-                    source = snapshot.toImageSource(),
+                    source = openSnapshot.toImageSource(),
                     mimeType = "image/*",
                     dataSource = DataSource.DISK,
                 )
@@ -192,14 +203,22 @@ class MangaCoverFetcher(
         return request.build()
     }
 
+    /**
+     * Copies a legacy Coil disk-cache entry into the durable cover store.
+     *
+     * **Deliberately does not remove the legacy entry.** The caller still holds [snapshot] open, and
+     * Coil's contract is explicit that an open snapshot prevents the entry from being deleted on
+     * disk — so removing here was a silent no-op. The entry then survived, the migration re-ran for
+     * every request for that key forever, and because the snapshot was never closed on the migrated
+     * path the entry could not be trimmed either: a permanent duplicate plus a permanently held
+     * handle. The caller closes the snapshot first and only then removes, via
+     * [removeLegacyDiskEntry].
+     */
     private fun moveSnapshotToCoverCache(snapshot: DiskCache.Snapshot, cacheFile: File?): File? {
         if (cacheFile == null) return null
         return try {
-            imageLoader.diskCache?.run {
-                fileSystem.source(snapshot.data).use { input ->
-                    writeSourceToCoverCache(input, cacheFile)
-                }
-                remove(diskCacheKey)
+            imageLoader.diskCache?.fileSystem?.source(snapshot.data)?.use { input ->
+                writeSourceToCoverCache(input, cacheFile)
             }
             cacheFile.takeIf { it.exists() }
         } catch (e: Exception) {
@@ -208,10 +227,52 @@ class MangaCoverFetcher(
         }
     }
 
+    /**
+     * Deletes the legacy Coil disk entry for [diskCacheKey], now that its snapshot is closed.
+     *
+     * Best effort by design: the bytes are already durably in the cover store, so a failure here
+     * costs a redundant migration later, never a missing cover. Logged rather than thrown for the
+     * same reason.
+     */
+    private fun removeLegacyDiskEntry() {
+        try {
+            // `remove` reports whether the entry went away, so a false here is logged rather than
+            // discovered later as a migration that mysteriously re-runs on every request.
+            if (imageLoader.diskCache?.remove(diskCacheKey) == false) {
+                logcat(LogPriority.WARN) {
+                    "Legacy cover disk entry for this key was not removed after migration; it will be migrated again"
+                }
+            }
+        } catch (e: Exception) {
+            logcat(LogPriority.WARN, e) { "Failed to remove legacy cover disk entry after migration" }
+        }
+    }
+
     private fun writeResponseToCoverCache(response: Response, cacheFile: File?): File? {
         if (cacheFile == null || !options.diskCachePolicy.writeEnabled) return null
         return try {
-            response.peekBody(Long.MAX_VALUE).source().use { input ->
+            // Bounded, deliberately not `peekBody(Long.MAX_VALUE)`. `peekBody` buffers the entire
+            // body into memory *before* the write starts, on a fetcher pool eight requests wide, so
+            // one oversized — or hostile — "cover" is read whole into the heap for no benefit. The
+            // body has to be peeked rather than consumed because the caller still hands the original
+            // to Coil when this returns null, and `peekBody(n)` *truncates* instead of throwing, so
+            // the cap is checked first and truncation is detected: a cover is persisted only when
+            // the whole of it is in hand. An oversized cover is still served from this response and
+            // simply not cached, which costs a re-fetch later and never a corrupt file.
+            val declaredLength = response.body.contentLength()
+            if (declaredLength > MAX_PERSISTED_COVER_BYTES) {
+                logcat(LogPriority.DEBUG) {
+                    "Skipping cover cache write: $declaredLength bytes exceeds the $MAX_PERSISTED_COVER_BYTES byte cap"
+                }
+                return null
+            }
+            val peeked = response.peekBody(MAX_PERSISTED_COVER_BYTES)
+            if (declaredLength < 0L && peeked.contentLength() >= MAX_PERSISTED_COVER_BYTES) {
+                // Unknown length and the cap was reached, so this may be a prefix of a larger body.
+                logcat(LogPriority.DEBUG) { "Skipping cover cache write: unterminated body reached the size cap" }
+                return null
+            }
+            peeked.source().use { input ->
                 writeSourceToCoverCache(input, cacheFile)
             }
             cacheFile.takeIf { it.exists() }
@@ -320,5 +381,15 @@ class MangaCoverFetcher(
         private val CACHE_CONTROL_NO_NETWORK_NO_CACHE = CacheControl.Builder().noCache().onlyIfCached().build()
 
         private const val HTTP_NOT_MODIFIED = 304
+
+        /**
+         * Largest cover body written to the durable cover store: 8 MiB.
+         *
+         * A cover is a thumbnail; nothing legitimate approaches this, so the cap only ever rejects
+         * a source serving something that is not an image (an HTML error page, a full-size page, or
+         * a body that never ends). Generous enough that no real cover is rejected, small enough that
+         * eight concurrent fetches cannot add up to an OOM.
+         */
+        private const val MAX_PERSISTED_COVER_BYTES = 8L * 1024 * 1024
     }
 }

@@ -645,6 +645,14 @@ object ImageUtil {
     var hardwareBitmapThreshold: Int = GLUtil.SAFE_TEXTURE_LIMIT
 
     private fun canUseHardwareBitmap(width: Int, height: Int): Boolean {
+        // Fails **closed** on a size it does not know. `extractImageOptions` leaves the bounds at
+        // -1 when the header cannot be parsed, and `maxOf(-1, -1) <= threshold` is true, so a
+        // do-nothing check here would admit a source of *unknown* size onto the GPU path — the one
+        // input this guard exists to catch. A header the bounds probe cannot read is far more likely
+        // to be oversized than not, and the cost of guessing wrong is a failed hardware decode,
+        // which the software path handles. The alternative — treating unknown as small — makes the
+        // guard unable to fail.
+        if (width <= 0 || height <= 0) return false
         return maxOf(width, height) <= hardwareBitmapThreshold
     }
 

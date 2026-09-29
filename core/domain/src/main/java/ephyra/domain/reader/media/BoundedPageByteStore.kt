@@ -13,8 +13,18 @@ package ephyra.domain.reader.media
  *     the store, so it cannot drift. A drifting counter eventually reports a store as full while it
  *     is nearly empty, which looks like a leak that cannot be fixed by adding memory.
  *
- * Not thread-safe by design: a single reader session owns one store, and a lock here would add
- * contention on the scroll path without adding correctness the callers do not already provide.
+ * **Thread safety.** Every mutator is `@Synchronized`, and that is load-bearing rather than
+ * decorative. The store is a plain [LinkedHashMap] plus an `Int` counter, and it is *not* confined
+ * to one thread by its callers: `PageByteStoreOwner.retain` is reached from the decode path, which
+ * runs `withIOContext` per visible page and therefore on several `Dispatchers.IO` threads at once,
+ * while the viewport pin (`PageViewportPinPolicy`) and the chapter's disposal run on Main and on the
+ * view-model scope. Two concurrent `put`s lose a counter update, so `retainedBytes` under-reports
+ * and the store exceeds its own budget — which is the unbounded growth this class exists to
+ * prevent. Concurrent structural modification of the map can additionally corrupt it, and `clear`
+ * can throw [ConcurrentModificationException] out of chapter disposal, which would leave the old
+ * chapter's loader unrecycled. These are O(1) map operations; the lock is not on any decode's hot
+ * path in a way that matters, and correctness of the budget matters more than the uncontended
+ * speed of a counter.
  */
 class BoundedPageByteStore(
     override val budgetBytes: Int,
@@ -53,13 +63,16 @@ class BoundedPageByteStore(
     /** Entries refused because they were pinned, for diagnostics and tests. */
     private var blockedByPin = 0
 
-    override val retainedBytes: Int get() = retained
+    override val retainedBytes: Int
+        get() = synchronized(this) { retained }
 
     /** How many values were declined to avoid evicting pinned pages. */
-    val refusedForPinnedEntries: Int get() = blockedByPin
+    val refusedForPinnedEntries: Int
+        get() = synchronized(this) { blockedByPin }
 
     /** Number of retained entries. */
-    val entryCount: Int get() = entries.size
+    val entryCount: Int
+        get() = synchronized(this) { entries.size }
 
     /**
      * Sum of the byte lengths of the entries actually held.
@@ -68,8 +81,10 @@ class BoundedPageByteStore(
      * maintained by different code paths on purpose: the counter is what production relies on, and
      * recomputing is the only way to catch it drifting.
      */
-    val retainedEntryBytes: Int get() = entries.values.sumOf { it.bytes.size }
+    val retainedEntryBytes: Int
+        get() = synchronized(this) { entries.values.sumOf { it.bytes.size } }
 
+    @Synchronized
     override fun get(id: PageSourceId): ByteArray? {
         val entry = entries[id] ?: return null
         // Re-insert to mark as most recently used.
@@ -78,8 +93,10 @@ class BoundedPageByteStore(
         return entry.bytes
     }
 
+    @Synchronized
     override fun contains(id: PageSourceId): Boolean = entries.containsKey(id)
 
+    @Synchronized
     override fun put(id: PageSourceId, bytes: ByteArray): Boolean {
         if (bytes.isEmpty()) return false
         if (bytes.size > budgetBytes) return false
@@ -113,6 +130,7 @@ class BoundedPageByteStore(
         return true
     }
 
+    @Synchronized
     override fun remove(id: PageSourceId): ByteArray? {
         val entry = entries.remove(id) ?: return null
         retained -= entry.bytes.size
@@ -120,11 +138,13 @@ class BoundedPageByteStore(
         return entry.bytes
     }
 
+    @Synchronized
     override fun pin(id: PageSourceId) {
         val entry = entries[id] ?: return
         entries[id] = entry.copy(pinned = entry.pinned + 1)
     }
 
+    @Synchronized
     override fun unpin(id: PageSourceId) {
         val entry = entries[id] ?: return
         if (entry.pinned > 0) {
@@ -132,6 +152,7 @@ class BoundedPageByteStore(
         }
     }
 
+    @Synchronized
     override fun clear() {
         // Snapshot the keys first: onEvict may re-enter the store (a listener that writes through
         // would otherwise mutate the map this is iterating).
