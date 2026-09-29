@@ -98,15 +98,20 @@ internal class HttpPageLoader(
 
     /**
      * Whether the page list loaded in [getPages] had any pages with an unresolved image URL
-     * (i.e. [Page.imageUrl] was null or empty). This drives the decision at [recycle] time:
+     * (i.e. [Page.imageUrl] was null or empty). This is one of the two inputs to the decision at
+     * [recycle] time:
      *
      * - `true`  → the cache entry was incomplete when loaded (fresh network fetch, or a
      *             previous session that ended before all URLs were resolved). The [recycle]
      *             save is needed to persist newly-resolved image URLs so the next open can
      *             skip the [HttpSource.getImageUrl] calls.
      * - `false` → every page already had a resolved image URL when loaded from cache. Nothing
-     *             changed during this session that the cache doesn't already reflect, so the
+     *             changed during *loading* that the cache doesn't already reflect, so the
      *             [recycle] disk write is skipped to avoid redundant I/O.
+     *
+     * Describes the list **as it was loaded**, and only that: a URL dropped mid-session because it
+     * was the thing that failed is invisible here, which is why [recycle] re-derives the condition
+     * from the pages as they now stand rather than trusting this flag alone.
      *
      * Starts as `true` so that a conservative save is always attempted if [getPages] never
      * runs (e.g. the loader is recycled before it is used).
@@ -285,10 +290,11 @@ internal class HttpPageLoader(
             pages.forEach { it.stream = null }
 
             // Cache current page list progress for online chapters to allow a faster reopen.
-            // Skip the write if the page list was loaded from cache with all image URLs already
-            // resolved: nothing changed during this session that the cache doesn't already
-            // reflect, so the disk write would be redundant.
-            if (cacheHadMissingImageUrls) {
+            // [needsPageListSave] decides whether that write is redundant; it is not simply the
+            // [cacheHadMissingImageUrls] flag, because that flag describes the list as it was
+            // *loaded* and cannot see a URL dropped mid-session because it was the thing that
+            // failed.
+            if (needsPageListSave(cacheHadMissingImageUrls, pages.map { it.imageUrl })) {
                 val pagesToSave = pages.map { Page(it.index, it.url, it.imageUrl) }
                 persistenceScope.launch {
                     try {
@@ -545,7 +551,9 @@ internal class HttpPageLoader(
                     // permanent *and* still leaves the page not holding the URL that failed. It
                     // also keeps a known-bad URL out of the page list [recycle] persists, so the
                     // next open of this chapter asks the source rather than starting from a URL
-                    // that is already known to be dead.
+                    // that is already known to be dead. [recycle] re-derives whether a save is
+                    // needed for exactly this reason: `cacheHadMissingImageUrls` describes the
+                    // list as it was loaded and cannot see a URL dropped here.
                     page.imageUrl = null
                 }
                 if (TransientErrors.isTransient(e) && retries < MAX_PAGE_LOAD_RETRIES) {
@@ -589,6 +597,25 @@ internal class HttpPageLoader(
     companion object {
         /** Maximum number of automatic retry attempts for transient page-load failures. */
         private const val MAX_PAGE_LOAD_RETRIES = 3
+
+        /**
+         * Whether [recycle] has to write the page list back to the chapter cache.
+         *
+         * **Why this is not just the [cacheHadMissingImageUrls] flag.** That flag answers "was the
+         * list complete when it was loaded?", and a URL *dropped during this session* is invisible
+         * to it. A page drops its URL precisely when the URL is what failed (`DEF-023`: a signed URL
+         * the source has revoked, or an image host that does not resolve), and the one thing that
+         * must not survive into the next open of this chapter is that dead URL — otherwise every
+         * open begins by spending a request on a host already known to be dead. So the decision is
+         * re-derived from the URLs the pages hold *now*.
+         *
+         * Takes the URLs rather than the pages so the rule is a pure function of two values and can
+         * be asserted directly, rather than needing a live chapter to ask.
+         */
+        internal fun needsPageListSave(
+            cacheHadMissingImageUrls: Boolean,
+            imageUrls: List<String?>,
+        ): Boolean = cacheHadMissingImageUrls || imageUrls.any { it.isNullOrEmpty() }
 
         /** Initial delay in milliseconds before the first retry; doubles with each subsequent attempt. */
         private const val PAGE_LOAD_RETRY_DELAY_MS = 1_000L

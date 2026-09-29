@@ -17,12 +17,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import ephyra.presentation.core.util.formattedMessage
 
 /**
  * Shared loading chrome for the pager ([ephyra.feature.reader.viewer.pager.ZoomableMangaPage])
@@ -63,22 +60,6 @@ fun ReaderPageLoadingView(
  * image itself is never rendered here — each reader owns the [Page.State.Ready] branch.
  * Replaces the icon + message + retry blocks that were duplicated in the pager and webtoon
  * status `when`.
- *
- * **Why the message goes through [formattedMessage].** The raw `Throwable.message` of a failed page
- * load is whatever the network stack produced, and for the failure users actually hit — a name that
- * does not resolve — that is a resolver string naming an internal CDN host
- * (`Unable to resolve host "cmxd….network": No address associated with hostname`). The same text
- * appears whether the device has no connectivity, the source is down, or one host is gone, and it
- * tells the reader none of those apart. `formattedMessage` is the app's one formatter for this
- * (already used for browse errors) and does discriminate what it can: a resolution failure on a
- * device with no connectivity becomes "No Internet connection" rather than a resolver string, a
- * `403`/`410` becomes an HTTP status, and a Cloudflare challenge becomes the challenge notice.
- *
- * It does **not** invent a cause it cannot see — with connectivity present and only one host dead,
- * the resolver string is still the honest text, and the value here is the offline case plus the
- * typed failures. A Retry above "No Internet connection" is worth pressing; one above a resolver
- * string is worth pressing *because the URL is re-resolved*, which is the `DEF-023` fix in
- * [ephyra.feature.reader.loader.HttpPageLoader.retryPage] and not something this view can express.
  */
 @Composable
 fun ReaderPageErrorView(
@@ -88,11 +69,6 @@ fun ReaderPageErrorView(
     onRetry: () -> Unit,
     retryContent: (@Composable () -> Unit)? = null,
 ) {
-    val context = LocalContext.current
-    val message = remember(error) {
-        with(context) { error.formattedMessage }
-    }.ifBlank { "Failed to load page $pageNumber" }
-
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -108,7 +84,7 @@ fun ReaderPageErrorView(
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = message,
+            text = error.message ?: "Failed to load page $pageNumber",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
