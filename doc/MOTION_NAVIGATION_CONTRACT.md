@@ -6,7 +6,7 @@
 
 | Route pair | Cover | Non-cover content | Back |
 |---|---|---|---|
-| Library ↔ Series | Shared cover only | Crossfade | Same reverse model |
+| Library ↔ Series | Shared cover only | Held still (no fade) | Same model, shorter timeline |
 | Tab peer | None | Fade through | Tab history model |
 | Hierarchical destination | Optional shared element | Shared axis | Reverse shared axis |
 | Compact pane → expanded pane | Optional item identity | Directional pane | Directional reverse |
@@ -15,10 +15,67 @@
 For Series ↔ Library:
 
 - the cover is the only shared element;
-- source/destination non-cover content crossfades;
-- full-screen content does not independently scale or slide;
-- the same model is used for predictive back;
+- the container does not move, fade, or crossfade — it is held still;
+- both screens use the same background, so there is nothing to crossfade *between*;
+- the series page draws no backdrop of its own;
+- the cover's shape and its shared-element key are identical on both ends;
+- the same model is used for predictive back and for the toolbar's back affordance;
+- the back transition is **shorter** than the forward one, per the M3 shared-element spec;
 - invalid shared-element bounds fall back to a clean crossfade.
+
+## Direction is part of the pair
+
+The return is not the arrival played backwards. Material 3's shared-element spec is deliberately
+asymmetric: the user already knows where back goes, so the cover only has to retrace its path. A
+long reverse reads as sluggish rather than smooth, which is the owner-reported "awkward back" in
+`REBUILD_STATUS.md` (2026-09-28).
+
+`MotionPolicy.plan` therefore takes a `MotionDirection`, and `MotionPlan` carries it. Two facts are
+kept separate on purpose:
+
+- **the pair** — which two screens, and therefore which element is shared (`LIBRARY_SERIES` both ways);
+- **the direction** — which timeline to run on it (`FORWARD` 300ms, `BACKWARD` 200ms).
+
+A direction-free plan conflates them, and the conflation looks like a correctness property: a test
+asserting "enter and exit share one duration" reads as tidiness and is in fact the defect. Direction
+is a required argument rather than a defaulted one, so a call site that forgets it is a compile error
+instead of a silently-wrong duration.
+
+Under reduced motion the asymmetry has nothing to apply to and both directions collapse to instant.
+
+## The cover's geometry must be resolved before it is shared
+
+`MangaCover` applies `.aspectRatio(ratio)` **before** the shared-element modifier. Applied after it,
+the element measures the pre-ratio box rather than the final constrained one, and because the library
+cell and the series header request different sizing the flight interpolates between non-uniform
+shapes — a visible squash rather than a slide. Modifier order is invisible in review and raises no
+compile error, so it is gated.
+
+## Why the series page has no cover backdrop
+
+A blurred, alpha-faded copy of the cover behind the series header is not a shared element — it has
+no counterpart in the library, because nothing in the library has one. It therefore animates on its
+own schedule underneath the one element that is supposed to carry the transition.
+
+On the way in this reads as atmosphere. On the way back it is the defect: three alphas run at once
+(the shared cover shrinking into its cell, the blurry twin fading out over it, and the library grid
+fading in underneath), and the two surfaces never match. The result is a transition that looks
+like it is being pulled away rather than one continuous movement.
+
+So the rule is: **one screen, one copy of the cover.** If a backdrop is ever wanted, it must be
+promoted to a shared element with a counterpart on the library side, or derived from the cover's
+own progress. It may not be a free crossfade.
+
+## Container motion is a decision, not a default
+
+`MotionPolicy` is the single owner of what a route pair does. Screens ask it and then render the
+answer. A screen that reaches for a specific transition by name has re-decided the policy locally,
+which is how a rule can be fully specified and fully unit tested while the layer that actually
+moves things quietly does something else.
+
+`ContainerMotion.NONE` means *nothing happens* — `EnterTransition.None`, not a fade. When the cover
+carries the transition there is nothing left for the container to do, and a crossfade underneath a
+travelling cover is a second competing animation for the same visual moment.
 
 ## Tokens
 

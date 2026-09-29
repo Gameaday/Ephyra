@@ -5,7 +5,6 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.FiniteAnimationSpec
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -16,14 +15,27 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
+import ephyra.domain.navigation.motion.ContainerMotion
+import ephyra.domain.navigation.motion.MotionPolicy
 
 /**
  * Material 3 Expressive motion tokens for Ephyra.
  *
  * Provides consistent animation durations, easing curves, and physics-based spring specs
  * aligned with the latest Material 3 Expressive motion guidelines.
+ *
+ * ## Tokens here do not decide motion
+ *
+ * These are the *vocabulary*; [MotionPolicy] is the decision. A screen picks its tokens by asking
+ * the policy what its route pair should do and then calling [containerEnter] / [containerExit] with
+ * the answer. A screen that reaches for a specific transition by name has re-decided the policy
+ * locally, which is how a rule that is asserted in `:core:domain` ends up unenforced in the layer
+ * that actually moves things.
  */
 object MotionTokens {
+
+    /** Crossfade duration, owned by [MotionPolicy] so the two layers cannot disagree. */
+    private val CROSSFADE_DURATION_MILLIS: Int = MotionPolicy.CROSSFADE_DURATION_MILLIS
 
     // --- Durations (Material 3 Expressive Scale) ---
 
@@ -209,42 +221,73 @@ object MotionTokens {
         )
 
     /**
-     * Container motion for destinations that share a hero element. The non-shared content
-     * crossfades on the same long-form timeline as the shared element, avoiding a short
-     * scale/fade that makes the remainder of the screen disappear before the cover lands.
-     */
-    fun m3SharedElementContainerEnter(reducedMotion: Boolean = false): EnterTransition {
-        if (reducedMotion) return EnterTransition.None
-        return fadeIn(
-            animationSpec = tween(
-                durationMillis = sharedElementContainerDuration(),
-                easing = LinearEasing,
-            ),
-        )
-    }
-
-    /** Matching outgoing container motion for a shared-element destination. */
-    fun m3SharedElementContainerExit(reducedMotion: Boolean = false): ExitTransition {
-        if (reducedMotion) return ExitTransition.None
-        return fadeOut(
-            animationSpec = tween(
-                durationMillis = sharedElementContainerDuration(),
-                easing = LinearEasing,
-            ),
-        )
-    }
-
-    /**
      * Duration shared by both halves of a shared-element transition.
      *
      * Enter and exit must use one value. The previous pair was 300ms in and 200ms out, so the two
      * screens crossed opacity at different points and the cover competed with a container that was
-     * still fading, which reads as a stutter rather than one continuous movement. A linear easing is
-     * used deliberately: an eased container over an eased cover gives two curves competing for the
-     * same visual element.
+     * still fading, which reads as a stutter rather than one continuous movement.
      */
     fun sharedElementContainerDuration(): Int = ephyra.domain.navigation.motion.MotionPolicy
         .SHARED_ELEMENT_DURATION_MILLIS
+
+    /**
+     * Container motion for a transition whose [ContainerMotion.NONE] plan is in force.
+     *
+     * A true no-op, not a fade. This is the change that makes the library <-> series transition read
+     * as one movement: with the blurred cover backdrop gone (see `MangaInfoBox`), the cover is the
+     * only thing that should change, so a crossfade of the two full screens underneath it only
+     * competes with it. Both screens hold their own frame and the cover travels over a stable
+     * background.
+     *
+     * Enter and exit are symmetric, so the two screens never cross opacity at different points and
+     * the pair cannot read as a stutter.
+     */
+    fun containerEnter(motion: ContainerMotion, durationMillis: Int): EnterTransition =
+        when (motion) {
+            ContainerMotion.NONE -> EnterTransition.None
+            ContainerMotion.CROSSFADE -> m3CrossfadeEnter(durationMillis)
+            ContainerMotion.SHARED_AXIS -> m3SharedAxisZEnter()
+        }
+
+    /** Matching outgoing container motion for [containerEnter]. */
+    fun containerExit(motion: ContainerMotion, durationMillis: Int): ExitTransition =
+        when (motion) {
+            ContainerMotion.NONE -> ExitTransition.None
+            ContainerMotion.CROSSFADE -> m3CrossfadeExit(durationMillis)
+            ContainerMotion.SHARED_AXIS -> m3SharedAxisZExit()
+        }
+
+    /**
+     * Fallback crossfade used when a declared shared element turns out to be unusable.
+     *
+     * Slower than the previous 200ms on purpose. It is the *only* motion left when the cover cannot
+     * be matched, so it has to carry the whole transition on its own; a quick dissolve reads as a
+     * glitch between two unrelated screens rather than a deliberate change of place.
+     */
+    fun m3CrossfadeEnter(durationMillis: Int = CROSSFADE_DURATION_MILLIS): EnterTransition =
+        if (durationMillis <= 0) {
+            EnterTransition.None
+        } else {
+            fadeIn(
+                animationSpec = tween(
+                    durationMillis = durationMillis,
+                    easing = EasingStandard,
+                ),
+            )
+        }
+
+    /** Matching outgoing half of [m3CrossfadeEnter]. */
+    fun m3CrossfadeExit(durationMillis: Int = CROSSFADE_DURATION_MILLIS): ExitTransition =
+        if (durationMillis <= 0) {
+            ExitTransition.None
+        } else {
+            fadeOut(
+                animationSpec = tween(
+                    durationMillis = durationMillis,
+                    easing = EasingStandard,
+                ),
+            )
+        }
 
     /**
      * Material 3 Fade Through enter transition for peer navigation (e.g. bottom nav tabs).

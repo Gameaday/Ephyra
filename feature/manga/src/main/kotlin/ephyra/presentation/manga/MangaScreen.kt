@@ -39,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
@@ -131,6 +132,17 @@ fun MangaScreen(
     onChapterSelected: (ChapterList.Item, Boolean, Boolean) -> Unit,
     onAllChapterSelected: (Boolean) -> Unit,
     onInvertSelection: () -> Unit,
+
+    /**
+     * Scale applied to the whole surface by the back gesture.
+     *
+     * Defaults to 1f, i.e. no effect. It is a parameter rather than something the screen reads from
+     * a CompositionLocal so the gesture has exactly one owner of this value — the same
+     * one-owner-per-truth rule the shared cover relies on. The cover itself is *not* scaled here: it
+     * is owned by the NavHost's shared-element transition, and driving its bounds from two places is
+     * what makes a return look wrong.
+     */
+    contentScale: Float = 1f,
 ) {
     val context = LocalContext.current
     val onCopyTagToClipboard: (tag: String) -> Unit = {
@@ -175,6 +187,7 @@ fun MangaScreen(
             onChapterSelected = onChapterSelected,
             onAllChapterSelected = onAllChapterSelected,
             onInvertSelection = onInvertSelection,
+            contentScale = contentScale,
         )
     } else {
         MangaScreenLargeImpl(
@@ -212,6 +225,7 @@ fun MangaScreen(
             onChapterSelected = onChapterSelected,
             onAllChapterSelected = onAllChapterSelected,
             onInvertSelection = onInvertSelection,
+            contentScale = contentScale,
         )
     }
 }
@@ -265,6 +279,7 @@ private fun MangaScreenSmallImpl(
     onChapterSelected: (ChapterList.Item, Boolean, Boolean) -> Unit,
     onAllChapterSelected: (Boolean) -> Unit,
     onInvertSelection: () -> Unit,
+    contentScale: Float,
 ) {
     val chapterListState = rememberLazyListState()
 
@@ -281,6 +296,10 @@ private fun MangaScreenSmallImpl(
     }
 
     Scaffold(
+        modifier = Modifier.graphicsLayer {
+            scaleX = contentScale
+            scaleY = contentScale
+        },
         topBar = {
             val selectedChapterCount: Int = remember(chapters) {
                 chapters.count { it.selected }
@@ -529,6 +548,7 @@ fun MangaScreenLargeImpl(
     onChapterSelected: (ChapterList.Item, Boolean, Boolean) -> Unit,
     onAllChapterSelected: (Boolean) -> Unit,
     onInvertSelection: () -> Unit,
+    contentScale: Float,
 ) {
     val layoutDirection = LocalLayoutDirection.current
     val density = LocalDensity.current
@@ -551,6 +571,10 @@ fun MangaScreenLargeImpl(
     }
 
     Scaffold(
+        modifier = Modifier.graphicsLayer {
+            scaleX = contentScale
+            scaleY = contentScale
+        },
         topBar = {
             val selectedChapterCount = remember(chapters) {
                 chapters.count { it.selected }

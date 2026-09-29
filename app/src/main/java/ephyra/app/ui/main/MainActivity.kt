@@ -70,6 +70,10 @@ import ephyra.data.cache.ChapterCache
 import ephyra.data.updater.AppUpdateChecker
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.library.service.LibraryPreferences
+import ephyra.domain.navigation.motion.MotionDirection
+import ephyra.domain.navigation.motion.MotionPlan
+import ephyra.domain.navigation.motion.MotionPolicy
+import ephyra.domain.navigation.motion.MotionRoutePair
 import ephyra.domain.release.interactor.GetApplicationRelease
 import ephyra.domain.source.interactor.GetIncognitoState
 import ephyra.presentation.core.components.DownloadedOnlyBannerBackgroundColor
@@ -111,6 +115,76 @@ private fun NavBackStackEntry.isMangaDetails(): Boolean = runCatching {
 }.isSuccess
 
 private fun NavBackStackEntry.isHome(): Boolean = destination.route == ScreenRoutes.Home.route
+
+/**
+ * The motion route pair for a transition between [from] and [to], or null when the transition has
+ * no declared rule and should keep the default shared-axis treatment.
+ *
+ * This lives here rather than in `MotionPolicy` because recognising a `NavBackStackEntry` is an
+ * Android-layer concern; the *decision* about what the pair should do is `MotionPolicy`'s, and this
+ * function only names the pair.
+ *
+ * Both directions resolve to [MotionRoutePair.LIBRARY_SERIES] because the cover is the same element
+ * whether it is growing or shrinking. What differs is [MotionDirection], which `MotionPolicy` uses
+ * to pick the timeline: M3's shared-element spec is deliberately asymmetric, with the return
+ * shorter than the arrival. Resolving the pair in one place and the direction in another is what
+ * keeps those two facts from being conflated — an earlier version of this named one pair and then
+ * collapsed both directions onto a single duration.
+ */
+private fun motionRoutePair(from: NavBackStackEntry, to: NavBackStackEntry): MotionRoutePair? = when {
+    from.isHome() && to.isMangaDetails() -> MotionRoutePair.LIBRARY_SERIES
+    from.isMangaDetails() && to.isHome() -> MotionRoutePair.LIBRARY_SERIES
+    else -> null
+}
+
+/**
+ * Which way the user is travelling.
+ *
+ * `popEnter`/`popExit` are the back path, so direction is read from the transitions that are
+ * popping rather than inferred from the entries. `initialState` is the screen being left, so a
+ * transition away from a series page is a return.
+ */
+private fun motionDirectionFor(
+    from: NavBackStackEntry,
+    to: NavBackStackEntry,
+): MotionDirection? = motionRoutePair(from, to)?.let {
+    if (from.isMangaDetails()) MotionDirection.BACKWARD else MotionDirection.FORWARD
+}
+
+/**
+ * The manga whose cover is the shared element for this transition, or null when the transition does
+ * not involve a series page.
+ *
+ * The key is derived from the route argument rather than from whatever the user last tapped, so the
+ * plan cannot name an element the destination is not going to render.
+ */
+private fun NavBackStackEntry.sharedCoverMangaId(): Long? =
+    runCatching { toRoute<Screen.MangaDetails>().mangaId }.getOrNull()
+
+/**
+ * The resolved plan for this transition.
+ *
+ * `sharedElementFound` is reported as true whenever the pair is the library-cover pair, because the
+ * library cell and the series header both render the cover unconditionally. If the element genuinely
+ * fails to resolve, Compose declines to animate it and the container crossfade below is what
+ * remains, which is the documented fallback rather than a broken intermediate state.
+ */
+private fun motionPlanFor(
+    from: NavBackStackEntry,
+    to: NavBackStackEntry,
+    reducedMotion: Boolean,
+): MotionPlan? {
+    val pair = motionRoutePair(from, to) ?: return null
+    val direction = motionDirectionFor(from, to) ?: return null
+    val mangaId = to.sharedCoverMangaId() ?: from.sharedCoverMangaId() ?: return null
+    return MotionPolicy.plan(
+        pair = pair,
+        direction = direction,
+        sharedElementKey = MotionPolicy.mangaCoverKey(mangaId),
+        sharedElementFound = true,
+        reducedMotion = reducedMotion,
+    )
+}
 
 @AndroidEntryPoint
 class MainActivity : BaseActivity(), AppReadySignal {
@@ -275,8 +349,16 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                         navController = navController,
                                         startDestination = ScreenRoutes.Home.route,
                                         enterTransition = {
-                                            if (initialState.isHome() && targetState.isMangaDetails()) {
-                                                MotionTokens.m3SharedElementContainerEnter(reducedMotion)
+                                            val plan = motionPlanFor(
+                                                initialState,
+                                                targetState,
+                                                reducedMotion,
+                                            )
+                                            if (plan != null) {
+                                                MotionTokens.containerEnter(
+                                                    plan.effectiveContainerMotion,
+                                                    plan.effectiveDurationMillis,
+                                                )
                                             } else {
                                                 MotionTokens.m3SharedAxisZEnter() +
                                                     slideIntoContainer(
@@ -290,8 +372,16 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                             }
                                         },
                                         exitTransition = {
-                                            if (initialState.isHome() && targetState.isMangaDetails()) {
-                                                MotionTokens.m3SharedElementContainerExit(reducedMotion)
+                                            val plan = motionPlanFor(
+                                                initialState,
+                                                targetState,
+                                                reducedMotion,
+                                            )
+                                            if (plan != null) {
+                                                MotionTokens.containerExit(
+                                                    plan.effectiveContainerMotion,
+                                                    plan.effectiveDurationMillis,
+                                                )
                                             } else {
                                                 MotionTokens.m3SharedAxisZExit() +
                                                     slideOutOfContainer(
@@ -305,8 +395,16 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                             }
                                         },
                                         popEnterTransition = {
-                                            if (initialState.isMangaDetails() && targetState.isHome()) {
-                                                MotionTokens.m3SharedElementContainerEnter(reducedMotion)
+                                            val plan = motionPlanFor(
+                                                initialState,
+                                                targetState,
+                                                reducedMotion,
+                                            )
+                                            if (plan != null) {
+                                                MotionTokens.containerEnter(
+                                                    plan.effectiveContainerMotion,
+                                                    plan.effectiveDurationMillis,
+                                                )
                                             } else {
                                                 MotionTokens.m3SharedAxisZPopEnter() +
                                                     slideIntoContainer(
@@ -320,8 +418,16 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                             }
                                         },
                                         popExitTransition = {
-                                            if (initialState.isMangaDetails() && targetState.isHome()) {
-                                                MotionTokens.m3SharedElementContainerExit(reducedMotion)
+                                            val plan = motionPlanFor(
+                                                initialState,
+                                                targetState,
+                                                reducedMotion,
+                                            )
+                                            if (plan != null) {
+                                                MotionTokens.containerExit(
+                                                    plan.effectiveContainerMotion,
+                                                    plan.effectiveDurationMillis,
+                                                )
                                             } else {
                                                 MotionTokens.m3SharedAxisZPopExit() +
                                                     slideOutOfContainer(

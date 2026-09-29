@@ -25,6 +25,38 @@ enum class MotionRoutePair {
     UNDECLARED,
 }
 
+/**
+ * Which way the user is travelling through a route pair.
+ *
+ * ## Why this exists
+ *
+ * The policy was originally direction-free: `plan(LIBRARY_SERIES, …)` returned the same duration
+ * whether the user was opening a series or returning to the library, and a test asserted that
+ * symmetry. It reads well — "enter and exit share one duration" — and it is wrong.
+ *
+ * Material 3's shared-element spec is deliberately **asymmetric**. The forward transition is longer
+ * because the user is discovering where they are going; the backward one is shorter because they
+ * already know, and a long reverse reads as sluggish rather than smooth. Running the full forward
+ * timeline in both directions is what made returning from a series page feel "awkward" — the
+ * complaint this pair exists to fix.
+ *
+ * The symmetry was defensible only while the container crossfaded, because then the two halves had
+ * to agree or the screens would cross opacity at different points. Now that the container is held
+ * still and the cover carries the transition outright, that constraint is gone and the asymmetry
+ * costs nothing.
+ */
+enum class MotionDirection {
+    /** Into the destination: the user is arriving somewhere new. */
+    FORWARD,
+
+    /** Back toward the origin: the user is returning somewhere known. */
+    BACKWARD,
+    ;
+
+    /** The other direction, for resolving a transition from whichever end it starts. */
+    fun opposite(): MotionDirection = if (this == FORWARD) BACKWARD else FORWARD
+}
+
 /** How the non-shared content of a transition behaves. */
 enum class ContainerMotion {
     /** No movement at all; content simply changes. */
@@ -47,6 +79,7 @@ enum class ContainerMotion {
  */
 data class MotionPlan(
     val pair: MotionRoutePair,
+    val direction: MotionDirection,
     val sharedElementKey: String?,
     val containerMotion: ContainerMotion,
     val durationMillis: Int,
@@ -78,6 +111,17 @@ data class MotionPlan(
         }
 
     /**
+     * Whether the container should be left completely alone for this transition.
+     *
+     * Distinct from [effectiveContainerMotion] being `NONE` in the sense that matters here: the
+     * Android layer needs a *decision*, not an enum to re-interpret. `MotionTokens.containerEnter`
+     * maps this straight onto `EnterTransition.None`, and this property is what says the absence of
+     * motion is the intended outcome rather than a missing case someone forgot to handle.
+     */
+    val usesNoContainerMotion: Boolean
+        get() = effectiveContainerMotion == ContainerMotion.NONE
+
+    /**
      * Whether a shared element animation should be attempted.
      *
      * Under reduced motion the element still has to be found so the two screens do not briefly
@@ -100,26 +144,61 @@ data class MotionPlan(
 object MotionPolicy {
 
     /**
-     * M3 Expressive duration for a shared-element transition.
+     * M3 Expressive duration for a shared-element transition going **into** a destination.
      *
-     * Enter and exit deliberately share one duration. Asymmetric values (300ms in, 200ms out)
-     * make the two screens cross at a different point, which reads as a stutter or a flash rather
-     * than a single continuous movement.
+     * Longer, because the user is discovering a new screen: the cover travels further and the
+     * content around it has more to say.
      */
     const val SHARED_ELEMENT_DURATION_MILLIS: Int = 300
+
+    /**
+     * Duration for the same transition going **back**.
+     *
+     * Shorter than the forward value, per Material 3's shared-element spec. The destination is one
+     * the user just left and can re-find without help, so the cover only has to retrace its path —
+     * holding the full forward length here is what read as sluggish on the way out.
+     *
+     * Kept above [CROSSFADE_DURATION_MILLIS] so a fast return is still legible as a movement
+     * rather than a cut, and so it never becomes quicker than the no-shared-element path it falls
+     * back to.
+     */
+    const val SHARED_ELEMENT_BACK_DURATION_MILLIS: Int = 200
 
     /** Fallback duration for a crossfade with no shared element. */
     const val CROSSFADE_DURATION_MILLIS: Int = 200
 
     /**
-     * Builds the plan for [pair].
+     * The key both screens use for one manga's cover, so the library grid cell and the series
+     * header agree on which element is shared.
+     *
+     * This is a function rather than a format string at each call site because the two ends live in
+     * different modules. A typo in either one does not fail to compile — it just silently stops the
+     * shared element from matching, and the transition quietly degrades to a crossfade that nobody
+     * can explain.
+     */
+    fun mangaCoverKey(mangaId: Long): String = "manga_cover_$mangaId"
+
+    /**
+     * Whether [MotionRoutePair] is the library-cover pair, i.e. the one route pair in the app that
+     * carries a shared element.
+     */
+    fun MotionRoutePair.usesSharedCover(): Boolean = this == MotionRoutePair.LIBRARY_SERIES
+
+    /**
+     * Builds the plan for [pair] travelling in [direction].
      *
      * [sharedElementKey] is the key both screens use for the same element, or null when there is
      * none to match. [sharedElementFound] reports whether the element actually resolved to bounds;
      * when false the plan degrades to a crossfade instead of animating from nowhere.
+     *
+     * [direction] is required rather than defaulted. A default would let a call site silently get
+     * forward timing for a back navigation, which is precisely the defect this parameter was added
+     * to remove — and it would do so invisibly, because the result would still compile and still
+     * animate.
      */
     fun plan(
         pair: MotionRoutePair,
+        direction: MotionDirection = MotionDirection.FORWARD,
         sharedElementKey: String? = null,
         sharedElementFound: Boolean = true,
         reducedMotion: Boolean = false,
@@ -137,13 +216,18 @@ object MotionPolicy {
         }
 
         val duration = if (declaredSharedElement) {
-            SHARED_ELEMENT_DURATION_MILLIS
+            if (direction == MotionDirection.BACKWARD) {
+                SHARED_ELEMENT_BACK_DURATION_MILLIS
+            } else {
+                SHARED_ELEMENT_DURATION_MILLIS
+            }
         } else {
             CROSSFADE_DURATION_MILLIS
         }
 
         return MotionPlan(
             pair = pair,
+            direction = direction,
             sharedElementKey = sharedElementKey,
             containerMotion = container,
             durationMillis = duration,

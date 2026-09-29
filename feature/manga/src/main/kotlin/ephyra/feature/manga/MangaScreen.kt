@@ -3,11 +3,13 @@
 import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -44,6 +46,7 @@ import ephyra.feature.reader.ReaderActivity
 import ephyra.presentation.core.components.ChangeCategoryDialog
 import ephyra.presentation.core.screens.LoadingScreen
 import ephyra.presentation.core.ui.navigation.LocalNavController
+import ephyra.presentation.core.ui.navigation.PredictiveBackProgress
 import ephyra.presentation.core.ui.navigation.Screen
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import ephyra.presentation.core.ui.viewer.MediaViewerRegistry
@@ -58,6 +61,16 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import logcat.LogPriority
+
+/**
+ * How far the series surface shrinks over a full back gesture.
+ *
+ * Small on purpose. The gesture's job is to show that the screen is *leaving toward* the library,
+ * not to preview the whole shared-cover transition — the cover is still owned by the NavHost and
+ * only travels once the gesture commits. A large shrink here would compete with that cover and put
+ * two things in motion for one gesture, which is the failure this screen is being fixed for.
+ */
+private const val BACK_GESTURE_SCALE = 0.04f
 
 @Composable
 fun MangaDetailsScreen(
@@ -131,6 +144,34 @@ fun MangaDetailsScreen(
             }
         }
     }
+
+    // Predictive back, so the gesture and the toolbar button run the same animation.
+    //
+    // The manifest sets `enableOnBackInvokedCallback="true"`, but this screen used a bare
+    // `popBackStack()`. That split the pair in two: tapping the arrow played the shared-cover
+    // reverse, while swiping back got the system's default back animation — no shared cover, wrong
+    // duration, and no relationship to the screen the user was just looking at. MOTION_NAVIGATION_
+    // CONTRACT requires predictive back to map to the same visual model as completed back.
+    //
+    // The gesture drives a scale on the content *behind* the shared element. The cover itself is
+    // owned by the NavHost's shared-element transition, which only runs on commit; touching the
+    // cover's bounds here as well would give one element two owners and it is exactly that
+    // double-ownership that makes a return look wrong. Disabled while chapters are selected,
+    // because `BackHandler` in the chapter list owns back in that state and must keep it.
+    var backGestureProgress by remember { mutableFloatStateOf(0f) }
+    val backScale by animateFloatAsState(
+        targetValue = 1f - (BACK_GESTURE_SCALE * backGestureProgress),
+        label = "SeriesBackScale",
+    )
+    PredictiveBackProgress(
+        enabled = !successState.isAnySelected,
+        onProgress = { backGestureProgress = it },
+        onCommit = {
+            backGestureProgress = 0f
+            navigateUp()
+        },
+        onCancelled = { backGestureProgress = 0f },
+    )
 
     MangaScreen(
         state = successState,
@@ -253,6 +294,7 @@ fun MangaDetailsScreen(
         },
         onAllChapterSelected = { ViewModel.onEvent(MangaScreenEvent.ToggleAllSelection(it)) },
         onInvertSelection = { ViewModel.onEvent(MangaScreenEvent.InvertSelection) },
+        contentScale = backScale,
     )
 
     var showScanlatorsDialog by remember { mutableStateOf(value = false) }
