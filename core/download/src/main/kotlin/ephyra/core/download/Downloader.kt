@@ -834,18 +834,29 @@ class Downloader(
                 current.delete()
                 next.delete()
                 pageFiles.removeAt(i + 1)
-                mergedTmp.renameTo("$baseName.$ext")
+                // Checked, and fatal on failure. Both source files are already deleted at this
+                // point, so a failed rename cannot be recovered from: the only way to publish
+                // honestly is to not publish. The enclosing catch deliberately swallows *merge*
+                // errors so one undecodable page cannot fail a chapter, but that same tolerance
+                // turned this into silent data loss — a chapter that downloads "successfully" with
+                // two pages missing, which the reader then opens as a short chapter with no error
+                // anywhere. `PageLostException` is the distinction between the two cases.
+                if (!mergedTmp.renameTo("$baseName.$ext")) {
+                    throw PageLostException(
+                        "Merged stub page could not be renamed to $baseName.$ext; " +
+                            "${current.name} and ${next.name} were already deleted",
+                    )
+                }
                 // Update our list to point to the freshly renamed file so the next
                 // iteration can check the merged page against the new next page.
                 val mergedFile = tmpDir.findFile("$baseName.$ext")
-                if (mergedFile != null) {
-                    pageFiles[i] = mergedFile
-                    // Do NOT increment i — check the merged page against the new next page
-                } else {
-                    // Rename succeeded but we cannot locate the file — unusual; skip forward
-                    logcat(LogPriority.WARN) { "Could not locate merged file $baseName.$ext after rename; skipping" }
-                    i++
-                }
+                    ?: throw PageLostException(
+                        "Merged file $baseName.$ext vanished immediately after a successful rename",
+                    )
+                pageFiles[i] = mergedFile
+                // Do NOT increment i — check the merged page against the new next page
+            } catch (e: PageLostException) {
+                throw e
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e) {
                     "Failed to merge stub page ${next.name} into ${current.name} during download"
@@ -1094,4 +1105,15 @@ class Downloader(
         /** Aspect-ratio tolerance for credit page pre-filter (5 %). */
         private const val ASPECT_RATIO_TOLERANCE = 0.05f
     }
+
+    /**
+     * A page was destroyed and could not be replaced, so the chapter is now short.
+     *
+     * [postProcessPages] tolerates a failed *merge* — one undecodable page should not fail a whole
+     * chapter — but it is written in terms of deleting two source files and renaming a third into
+     * their place, and past that delete there is nothing left to fall back on. This separates the
+     * two so the tolerant path cannot swallow the unrecoverable one, and the download fails loudly
+     * instead of publishing a chapter that is quietly missing pages.
+     */
+    private class PageLostException(message: String) : IOException(message)
 }

@@ -86,9 +86,20 @@ class PageByteStoreOwner(
     fun retain(page: ReaderPage, bytes: ByteArray): ByteArray {
         val id = idFor(page)
         val retained = store.put(id, bytes)
-        byId[id] = page
-        indexToId[page.index] = id
-        page.cachedBytes = if (retained) bytes else null
+        if (retained) {
+            // Only recorded when the store actually kept the bytes. An entry recorded for a value
+            // the store declined is a claim the store does not back: `pageCount` would count a page
+            // whose bytes are gone, `byId` would hold a strong reference to it for as long as the
+            // chapter is open, and `indexToId` would point a viewport pin at an entry that does not
+            // exist. The two maps exist to let the store be found, so they must describe the store.
+            byId[id] = page
+            indexToId[page.index] = id
+            page.cachedBytes = bytes
+        } else {
+            byId.remove(id)
+            indexToId.remove(page.index, id)
+            page.cachedBytes = null
+        }
         return bytes
     }
 

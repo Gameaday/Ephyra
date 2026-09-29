@@ -141,7 +141,13 @@ class CoverCache(private val context: Context) : ICoverCache {
         }
 
         val remaining = candidates.filter { it.exists() }.sortedBy { it.lastModified() }
-        var totalBytes = cacheDir.listFiles().orEmpty().sumOf { it.length() }
+        // Recursive, because `File.length()` on a directory reports the directory's own inode size
+        // and nothing about its contents. The custom-cover subtree lives in a subdirectory, so a
+        // flat sum counted it as a single 4 KiB entry and the byte budget never saw those covers at
+        // all — the cache could exceed `maxBytes` by every custom cover it held. Deletion is
+        // deliberately still flat: only real page files are prunable, and a directory is never a
+        // candidate.
+        var totalBytes = cacheDir.walkTopDown().sumOf { if (it.isDirectory) 0L else it.length() }
         for (file in remaining) {
             if (totalBytes <= maxBytes) break
             val size = file.length()

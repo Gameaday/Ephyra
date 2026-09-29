@@ -96,6 +96,26 @@ class PageByteStoreOwnerTest {
     }
 
     @Test
+    fun `a page the store declined is not counted as retained`() {
+        // The two index maps exist so the store can be found by identity and by page index. An
+        // entry recorded for a value the store *declined* is a claim the store does not back:
+        // `pageCount` would count a page whose bytes are gone, and `byId` would hold a strong
+        // reference to that page for as long as the chapter is open — which is the retention the
+        // bounded store exists to prevent, reached through the back door.
+        //
+        // A single value larger than the whole budget is always declined (the store refuses rather
+        // than admitting it), so this needs no eviction timing and cannot be flaky.
+        val owner = PageByteStoreOwner(memoryClassMb = 64)
+        val page = pageOf(chapterOf(), 0)
+
+        owner.retain(page, ByteArray(owner.budgetBytes + 1))
+
+        assertEquals(0, owner.pageCount, "a declined value must not be recorded as a retained page")
+        assertNull("the page must not be left holding bytes the store refused", page.cachedBytes)
+        assertEquals(0, owner.retainedBytes)
+    }
+
+    @Test
     fun `the pinned viewport page survives while others are evicted`() {
         val owner = PageByteStoreOwner(memoryClassMb = 512)
         val budget = owner.budgetBytes

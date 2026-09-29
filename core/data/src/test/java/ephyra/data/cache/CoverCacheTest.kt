@@ -89,6 +89,47 @@ class CoverCacheTest {
     }
 
     @Test
+    fun `size pruning counts the custom cover subtree towards the budget`() {
+        // `File.length()` on a directory reports the directory's own inode size (typically 4 KiB)
+        // and nothing about its contents, so a flat sum made the whole `custom/` subtree look like
+        // one small entry and the byte budget never saw those covers. The cache could then exceed
+        // its own cap by every custom cover it held, which is the thing the cap exists to prevent.
+        //
+        // The numbers are chosen so the two implementations disagree, which is the only kind of
+        // assertion worth having here:
+        //   flat     sees  4 KiB (dir inode) + 8 KiB (remote) = 12 KiB   < 60 KiB  -> prunes nothing
+        //   recursive sees 64 KiB (custom)    + 8 KiB (remote) = 72 KiB   > 60 KiB  -> prunes the remote
+        // The custom cover is never itself prunable, so it is the *remote* cover whose fate proves
+        // which sum was used.
+        val custom = cache.getCustomCoverFile(1L)
+        custom.parentFile?.mkdirs()
+        cache.setCustomCoverToCache(
+            ephyra.domain.manga.model.Manga.create().copy(id = 1L),
+            ByteArrayInputStream(ByteArray(64 * 1024) { 'x'.code.toByte() }),
+        )
+        val remote = cache.getCoverFile("https://example.test/removable.jpg", lastModified = 0L)!!
+        remote.parentFile?.mkdirs()
+        remote.writeBytes(ByteArray(8 * 1024) { 'y'.code.toByte() })
+        remote.setLastModified(1_000L)
+        assertTrue(custom.exists() && remote.exists())
+
+        val pruned = cache.pruneOldCovers(
+            protectedNames = emptySet(),
+            maxAgeMs = Long.MAX_VALUE,
+            maxBytes = 60L * 1024,
+        )
+
+        assertEquals(
+            1,
+            pruned,
+            "the custom cover's bytes must count towards the budget, or the remote cover is " +
+                "considered within budget while the cache is over it",
+        )
+        assertFalse("the unprotected remote cover should have been pruned", remote.exists())
+        assertTrue("custom covers must never be pruned", custom.exists())
+    }
+
+    @Test
     fun `ordinary pruning protects library names and custom covers`() {
         val remote = cache.getCoverFile("https://example.test/library.jpg", lastModified = 0L)!!
         remote.parentFile?.mkdirs()
