@@ -15,10 +15,18 @@ import kotlin.math.min
  * non-uniform edges, and single-colour images, are returned unchanged.
  */
 class BorderCropTransformation : Transformation() {
-    // Bumped to v2 when per-edge measurement and outlier tolerance changed the resulting pixels.
-    // Coil keys its memory cache on this, so a stale value would keep serving bitmaps produced
-    // by the previous algorithm after the fix ships.
-    override val cacheKey: String = "ephyra-border-crop-v2"
+    // Bumped to CACHE_KEY's value when a change alters the resulting pixels. Coil keys its memory
+    // cache on this, so a stale value keeps serving bitmaps produced by the previous algorithm.
+    //
+    // **This is a constant rather than a bare string so the reader can fold it into the cache key
+    // it sets explicitly.** Both reader call sites call `memoryCacheKey(...)`, which *replaces*
+    // Coil's computed key — and that computed key is the only place `Transformation.cacheKey`
+    // would otherwise appear. As an instance property reachable only from the object Coil holds,
+    // this value was in no cache key on any production path, so bumping it could not invalidate
+    // anything: the algorithm could change and every previously cached page would keep serving the
+    // old pixels. `readerPageMemoryCacheKey` now carries [CACHE_KEY]; the two cannot drift because
+    // it is the same constant.
+    override val cacheKey: String = CACHE_KEY
 
     override suspend fun transform(input: Bitmap, size: Size): Bitmap {
         val bounds = findUniformBorderBounds(input) ?: return input
@@ -32,6 +40,17 @@ class BorderCropTransformation : Transformation() {
     }
 
     companion object {
+        /**
+         * The cache-identity of the crop algorithm, and the single place it is bumped.
+         *
+         * Exposed because it is not only Coil's business. Both reader call sites override
+         * `memoryCacheKey` outright, which discards the key Coil would otherwise compute from this
+         * transformation, so nothing on the reader path referenced it at all — an instance property
+         * that no cache key contained, which is a versioning mechanism that cannot invalidate. The
+         * reader's own key now carries this constant instead.
+         */
+        const val CACHE_KEY: String = "ephyra-border-crop-v2"
+
         private const val COLOR_TOLERANCE = 12
         private const val MIN_BORDER = 2
         private const val MAX_BORDER_RATIO = 0.12f
