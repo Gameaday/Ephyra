@@ -73,6 +73,33 @@ object AnimationPolicy {
     }
 
     /**
+     * The verdict implied by a byte probe, or by the absence of one.
+     *
+     * Three outcomes, and the middle one is the whole point:
+     *
+     *  - the probe answered, so that is the verdict;
+     *  - the probe did not answer *and the format cannot hold animation*, so the page is
+     *    statically known to be static. That is an **answer**, not an absence of one, and it is
+     *    why this is not simply `detected?.let { Detected(it) } ?: Indeterminate` -- which would
+     *    refuse to slice every PNG and JPEG on the grounds that nobody checked.
+     *  - the probe did not answer and the format could have held animation, which is the only
+     *    genuinely unknown case, and the one that must block.
+     *
+     * Coercing that last case to "static" is what sliced an animated page down to its first
+     * frame: the strip looked like a loading bug rather than a classification failure.
+     *
+     * Distinct from [verdictFor], which starts from a [SlicingBlocker] rather than a probe. That
+     * one reports `Indeterminate` for a blocker-free page whose format could animate, which is the
+     * right answer when the blocker is the only evidence available and the wrong one here, where
+     * the probe has already spoken.
+     */
+    fun verdictFromProbe(detectedAnimated: Boolean?, format: PageImageFormat): AnimationVerdict = when {
+        detectedAnimated != null -> AnimationVerdict.Detected(detectedAnimated)
+        !canHoldAnimation(format) -> AnimationVerdict.Detected(false)
+        else -> AnimationVerdict.Indeterminate
+    }
+
+    /**
      * Whether a format is even capable of holding animation.
      *
      * A format that cannot animate is statically known to be static, so it does not need byte

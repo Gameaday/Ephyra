@@ -720,29 +720,27 @@ private fun WebtoonPageItem(
                 // was reported as animated, and `getOrDefault(false)` turned a detection that
                 // *threw* into "static", which slices an animated page down to its first frame.
                 //
-                // `detectedAnimated` is deliberately nullable, and null is "could not tell", which
-                // is not the same answer as false. A format that cannot hold animation is not
-                // probed at all -- AnimationPolicy's own stated reason is that a PNG should take
-                // the sliced path without a detection pass.
-                val detectedAnimated = remember(readyBytes) {
-                    readyBytes?.let { bytes ->
-                        val format = ImageUtil.findImageType(bytes.inputStream()).toPageImageFormat()
-                        if (!AnimationPolicy.canHoldAnimation(format)) {
-                            null // statically known to be static; no inspection needed
-                        } else {
-                            runCatching { ImageUtil.isAnimatedAndSupported(Buffer().write(bytes)) }
-                                .getOrNull() // a probe that threw is also "could not tell"
-                        }
-                    }
-                }
+                // The format is sniffed once and both facts derive from it.
                 val imageFormat = remember(readyBytes) {
-                    readyBytes?.let { ImageUtil.findImageType(it.inputStream()).toPageImageFormat() }
+                    readyBytes
+                        ?.let { ImageUtil.findImageType(it.inputStream())?.toPageImageFormat() }
                         ?: PageImageFormat.UNSUPPORTED
                 }
-                val animationVerdict = remember(detectedAnimated) {
-                    detectedAnimated
-                        ?.let { AnimationVerdict.Detected(it) }
-                        ?: AnimationVerdict.Indeterminate
+                // Null means the probe did not answer, which is not the same as false. A format
+                // that cannot hold animation is not probed at all: AnimationPolicy's own stated
+                // reason is that a PNG should take the sliced path without a detection pass, and it
+                // is *known* static rather than undecided.
+                val detectedAnimated = remember(readyBytes, imageFormat) {
+                    val bytes = readyBytes
+                    when {
+                        bytes == null -> null
+                        !AnimationPolicy.canHoldAnimation(imageFormat) -> null
+                        else -> runCatching { ImageUtil.isAnimatedAndSupported(Buffer().write(bytes)) }
+                            .getOrNull() // a probe that threw is also "could not tell"
+                    }
+                }
+                val animationVerdict = remember(detectedAnimated, imageFormat) {
+                    AnimationPolicy.verdictFromProbe(detectedAnimated, imageFormat)
                 }
 
                 // Use the device's actual screen width as the target for image loading.
