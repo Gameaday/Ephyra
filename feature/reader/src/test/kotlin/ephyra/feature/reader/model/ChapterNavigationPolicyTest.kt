@@ -84,8 +84,10 @@ class ChapterNavigationPolicyTest {
      */
     @Test
     fun `an equal instance resolves even when it is not the same object`() {
+        // (3, read) is chapters[2] in this fixture, so its neighbours are chapters[1] and
+        // chapters[3]. Established by running the selectors, not by reading the indices.
         val equalCopy = ChapterNavigationItem(3, read = true)
-        assertEquals(chapters[2], selectPreviousNavigationItem(chapters, equalCopy))
+        assertEquals(chapters[1], selectPreviousNavigationItem(chapters, equalCopy))
         assertEquals(chapters[3], selectNextNavigationItem(chapters, equalCopy) { true })
     }
 
