@@ -244,8 +244,15 @@ interface SourceGateway {
      * exercise it, so a caller who found a source advertising it had to reach for the legacy type to
      * do anything with it. A capability a consumer cannot call is a capability that pulls back the
      * dependency it was meant to remove.
+     *
+     * Defaults to [SourceResult.Unsupported] rather than being abstract, and that is the whole
+     * design point: a gateway without a popular listing says so, and adding the capability does not
+     * force every implementor to write a method it has no answer for. A gateway that *does* have one
+     * overrides it -- `LegacySourceGateway` delegates to `getPopularManga` -- and then
+     * [SourceDescriptor.supports] is a promise the type keeps.
      */
-    suspend fun getPopular(request: SourceCatalogueRequest): SourceResult<SourcePage<SourceContentItem>>
+    suspend fun getPopular(request: SourceCatalogueRequest): SourceResult<SourcePage<SourceContentItem>> =
+        SourceResult.Unsupported(SourceCapability.POPULAR)
 
     /**
      * The source's latest listing.
