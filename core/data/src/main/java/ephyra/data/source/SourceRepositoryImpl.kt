@@ -7,6 +7,7 @@ import ephyra.domain.source.model.StubSource
 import ephyra.domain.source.repository.SourcePagingSource
 import ephyra.domain.source.repository.SourceRepository
 import ephyra.domain.source.service.SourceManager
+import ephyra.source.api.LegacySourceGateway
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.model.FilterList
@@ -78,9 +79,22 @@ class SourceRepositoryImpl @Inject constructor(
         return SourceSearchPagingSource(source, query, filterList, networkToLocalManga)
     }
 
+    /**
+     * The popular listing, through [LegacySourceGateway] rather than a downcast to
+     * [CatalogueSource].
+     *
+     * The first of the three sibling methods here to stop depending on the legacy vocabulary. The
+     * gateway is still *constructed* from a legacy source -- extensions are -- but nothing past this
+     * line speaks `MangasPage` or `SManga`, so when the extension API goes, this method does not
+     * change. Search and latest are the same shape and the same change.
+     */
     override fun getPopular(sourceId: Long): SourcePagingSource {
         val source = sourceManager.get(sourceId) as CatalogueSource
-        return SourcePopularPagingSource(source, networkToLocalManga)
+        return SourcePopularPagingSource(
+            gateway = LegacySourceGateway(source),
+            sourceId = sourceId,
+            networkToLocalManga = networkToLocalManga,
+        )
     }
 
     override fun getLatest(sourceId: Long): SourcePagingSource {
