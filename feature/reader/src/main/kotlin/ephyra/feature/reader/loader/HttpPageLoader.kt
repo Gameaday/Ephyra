@@ -3,7 +3,9 @@ package ephyra.feature.reader.loader
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.network.ImageUrlPolicy
-import ephyra.core.common.util.network.MalformedImageUrlException
+import ephyra.core.common.util.network.PageLoadRecovery
+import ephyra.core.common.util.network.PageLoadRecoveryAction
+import ephyra.core.common.util.network.ReResolvePacer
 import ephyra.core.common.util.network.TransientErrors
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.logcat
@@ -120,6 +122,16 @@ internal class HttpPageLoader(
      */
     @Volatile
     private var cacheHadMissingImageUrls = true
+
+    /**
+     * Spaces re-resolutions across this chapter's pages.
+     *
+     * Per loader rather than per process, because one chapter failing together is the observed
+     * shape; correlating across chapters would need state with a lifetime nobody owns. The work
+     * count is already bounded by the worker pool, so what this prevents is those few workers
+     * asking the source the same question at the same instant.
+     */
+    private val reResolvePacer = ReResolvePacer()
 
     /** Guards [promoteToActive] so the promotion is applied at most once. */
     @OptIn(ExperimentalAtomicApi::class)
@@ -435,18 +447,20 @@ internal class HttpPageLoader(
 
     /**
      * Loads the page, retrieving the image URL and downloading the image if necessary.
-     * Automatically retries on transient network errors (IO errors, HTTP 429 and 5xx) up to
-     * [MAX_PAGE_LOAD_RETRIES] times with exponential backoff before marking the page as failed.
-     * Downloaded images are stored in the chapter cache.
+     * Failed loads are retried on a jittered backoff, up to
+     * [PageLoadRecovery.DEFAULT_MAX_RETRIES] times, before the page is marked failed. Downloaded
+     * images are stored in the chapter cache.
      *
      * **Why a retry does not always keep the URL.** Whether the next attempt re-requests the same
-     * URL or asks the source for a new one is decided by [TransientErrors.shouldReResolveUrl], not
-     * by a local attempt counter. A counter cannot tell the two apart: it re-resolves after a `429`
-     * (where the same URL is correct and re-resolving costs an extra source round-trip) and it
-     * re-resolves after a `403` or a name that did not resolve only from the *second* attempt — so
-     * the first attempt of a user's own Retry re-requested the URL that had just failed. For a
-     * signed URL or a dead image CDN host that attempt is a verbatim repeat of a request known to
-     * fail, which is what made "even after retry" true: see `DEF-023`.
+     * URL or asks the source for a new one is [PageLoadRecovery]'s decision, from
+     * [TransientErrors.shouldReResolveUrl] — not a local attempt counter. A counter cannot tell the
+     * two apart: it re-resolves after a `429` (where the same URL is correct and re-resolving costs
+     * an extra source round-trip) and it re-resolves after a `403` or a name that did not resolve
+     * only from the *second* attempt — so the first attempt of a user's own Retry re-requested the
+     * URL that had just failed. For a signed URL or a dead image CDN host that attempt is a verbatim
+     * repeat of a request known to fail, which is what made "even after retry" true: see `DEF-023`.
+     * The same owner now serves the downloader, which previously re-requested the identical URL no
+     * matter what the classifier said: see `DEF-028`.
      *
      * If a higher-priority page enters the queue while this page is still waiting to start or
      * between the URL-fetch and image-download phases, this method yields immediately: the page
@@ -464,14 +478,11 @@ internal class HttpPageLoader(
      * @param priority the queue priority at which this page was dequeued.
      */
     private suspend fun internalLoadPage(page: ReaderPage, priority: Int) {
-        var retries = 0
-        // A URL this load has already found structurally unusable. Held in the method rather than
-        // on the page because it is a fact about *this attempt sequence*, not about the page: the
-        // page's own answer to "is my URL any good" is that it no longer has one.
-        //
-        // Its only use is to stop asking the source for a string we have already proved cannot
-        // address a host. See the guard below.
-        var rejectedUrl: String? = null
+        // One owner for the decision, so the downloader cannot drift from the reader on what to do
+        // about a failure. It used to: the reader dropped a URL the classifier indicted and asked
+        // the source again, while the downloader retried the identical string against the same
+        // classifier — so a chapter could read and fail to download. See `PageLoadRecovery`.
+        val recovery = PageLoadRecovery()
         while (true) {
             try {
                 // Yield to a higher-priority page before starting the URL fetch.
@@ -479,13 +490,18 @@ internal class HttpPageLoader(
 
                 if (page.imageUrl.isNullOrEmpty()) {
                     page.status = Page.State.LoadPage
+                    // Space re-resolutions out across the chapter's pages. Sources mint signed URLs
+                    // in batches with a common expiry, so a chapter opened near the boundary has
+                    // every page fail at once, and without this each ladder asks the source the same
+                    // question at the same instant.
+                    reResolvePacer.reserve().takeIf { it > 0 }?.let { delay(it) }
                     val resolved = ImageUrlPolicy.resolve(source.getImageUrl(page), source.baseUrl)
                     // A source that hands back the identical string we have already rejected is not
                     // going to produce a different one on the next call either, and every call it
                     // does make is a round-trip spent learning nothing. Reporting the defect now
                     // ends the ladder sooner and reports the *cause* rather than a resolver error
                     // about a name that can never exist.
-                    if (resolved == rejectedUrl) {
+                    if (recovery.isKnownUnusable(resolved)) {
                         ImageUrlPolicy.requireUsable(resolved)
                     }
                     page.imageUrl = resolved
@@ -511,7 +527,7 @@ internal class HttpPageLoader(
                 // the same path as a revoked signed URL: the URL is dropped and the source is asked
                 // again, which is the one thing that can actually recover it.
                 ImageUrlPolicy.requireUsable(imageUrl)
-                rejectedUrl = null
+                recovery.onResolved(imageUrl)
 
                 // Yield again after the URL fetch (which can be slow) and before the potentially
                 // large image download, giving the urgent page a chance to start promptly.
@@ -563,55 +579,40 @@ internal class HttpPageLoader(
                 return
             } catch (e: Throwable) {
                 if (e is CancellationException) throw e
-                // One shared definition, so the reader and the downloader cannot drift on what
-                // counts as retryable. The reader's own copy treated 403 as permanent, which for a
-                // signed or time-limited image URL is exactly backwards: the URL is stale, the
-                // source will issue a different one, and the page failed after a full backoff
-                // ladder for a request that could never succeed.
-                if (TransientErrors.shouldReResolveUrl(e)) {
-                    // The URL, not the connection, is what failed — a revoked signed URL, or a
-                    // host that does not resolve. Drop it, so the next attempt has to ask the
-                    // source; the only way that request can differ from the one that just failed
-                    // is if the URL it uses is not the URL that failed.
-                    //
-                    // Dropping it here, at the point of failure, rather than at the start of the
-                    // next attempt, is what makes this survive a yield: [requeueAndYield] returns
-                    // out of this loop and a fresh call starts with a new attempt counter, so a
-                    // decision held in a local would be lost and the page would go back to the URL
-                    // that just failed. The page simply stops holding a URL known to be bad, and
-                    // every path back in — this ladder, [loadPage], the user's Retry — re-resolves
-                    // for the same reason. [prepareForReload] is the same rule applied when the
-                    // reload starts instead of the failure.
-                    //
-                    // Deliberately not gated on [TransientErrors.isTransient] either. This is a
-                    // verdict on the URL, not on the retry, and the two are not the same question:
-                    // `isTransient` reads only the outermost exception on purpose, so a source
-                    // extension wrapping a resolver failure in its own error type is correctly
-                    // permanent *and* still leaves the page not holding the URL that failed. It
-                    // also keeps a known-bad URL out of the page list [recycle] persists, so the
-                    // next open of this chapter asks the source rather than starting from a URL
-                    // that is already known to be dead. [recycle] re-derives whether a save is
-                    // needed for exactly this reason: `cacheHadMissingImageUrls` describes the
-                    // list as it was loaded and cannot see a URL dropped here.
+
+                // One decision, one owner, shared with the downloader: retry this URL, ask the
+                // source for a different one, or stop. `PageLoadRecovery` also decides whether the
+                // failed URL is dropped from the page — including when the answer is "stop", because
+                // a URL the classifier has indicted is dead either way, and leaving it on the page
+                // would let it reach the list `recycle` persists, so the next open of this chapter
+                // would begin by requesting an address already known to be bad.
+                //
+                // Dropping it here, at the point of failure, rather than at the start of the next
+                // attempt, is what makes this survive a yield: [requeueAndYield] returns out of this
+                // loop and a fresh call starts a fresh attempt sequence, so a decision held in a
+                // local would be lost and the page would go back to the URL that just failed.
+                //
+                // The old `rejectedUrl = null` on every successful resolve is now
+                // `recovery.onResolved(imageUrl)`, at the same point in the same order, so a source
+                // that fixes itself is not refused forever on the strength of an older failure.
+                val decision = recovery.onFailure(page.imageUrl, e)
+                if (decision.dropUrl) {
                     page.imageUrl = null
-                    // Remember a URL we rejected *structurally*, so the next attempt can tell a
-                    // source that handed back the same unusable string from one that handed back a
-                    // different URL. Both warrant another resolution; only the second can succeed.
-                    // Keyed off the exception rather than off a re-run of the policy so that the
-                    // recorded string is exactly the one that was rejected.
-                    if (e is MalformedImageUrlException) {
-                        rejectedUrl = e.url
-                    }
                 }
-                if (TransientErrors.isTransient(e) && retries < MAX_PAGE_LOAD_RETRIES) {
-                    retries++
-                    delay(
-                        (PAGE_LOAD_RETRY_DELAY_MS * (1L shl (retries - 1))).coerceAtMost(MAX_PAGE_LOAD_RETRY_DELAY_MS),
-                    )
-                } else {
-                    page.status = Page.State.Error(e)
+
+                if (decision.action == PageLoadRecoveryAction.GIVE_UP) {
+                    // The only place that knows what was tried. Without it a page that gave up after
+                    // three hosts reports one host's error and the other two are unrecorded anywhere,
+                    // which is what made the original report a puzzle to reason about rather than a
+                    // fault to read.
+                    logcat(LogPriority.WARN, decision.error) {
+                        "Giving up on page ${page.number} of ${chapter.chapter.name} after " +
+                            "${decision.attempt} attempt(s): ${recovery.summary()} (${decision.reason})"
+                    }
+                    page.status = Page.State.Error(decision.error)
                     return
                 }
+                delay(decision.delayMs)
             }
         }
     }
@@ -642,9 +643,6 @@ internal class HttpPageLoader(
     }
 
     companion object {
-        /** Maximum number of automatic retry attempts for transient page-load failures. */
-        private const val MAX_PAGE_LOAD_RETRIES = 3
-
         /**
          * Whether [recycle] has to write the page list back to the chapter cache.
          *
@@ -663,12 +661,6 @@ internal class HttpPageLoader(
             cacheHadMissingImageUrls: Boolean,
             imageUrls: List<String?>,
         ): Boolean = cacheHadMissingImageUrls || imageUrls.any { it.isNullOrEmpty() }
-
-        /** Initial delay in milliseconds before the first retry; doubles with each subsequent attempt. */
-        private const val PAGE_LOAD_RETRY_DELAY_MS = 1_000L
-
-        /** Maximum delay cap in milliseconds between retry attempts. */
-        private const val MAX_PAGE_LOAD_RETRY_DELAY_MS = 8_000L
 
         /**
          * Priority assigned to pages queued by [preloadAllPages]. Set below the nearby-page

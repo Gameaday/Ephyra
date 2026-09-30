@@ -9,7 +9,8 @@ import ephyra.core.common.storage.extension
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.network.ImageUrlPolicy
-import ephyra.core.common.util.network.TransientErrors
+import ephyra.core.common.util.network.PageLoadRecovery
+import ephyra.core.common.util.network.PageLoadRecoveryAction
 import ephyra.core.common.util.storage.DiskUtil
 import ephyra.core.common.util.storage.DiskUtil.NOMEDIA_FILE
 import ephyra.core.common.util.storage.saveTo
@@ -508,6 +509,11 @@ class Downloader(
             return
         }
 
+        // One recovery per page, not per download: pages are downloaded concurrently through
+        // `flatMapMerge`, and this is the per-page attempt sequence the reader's loader also keeps
+        // one of. See `PageLoadRecovery`.
+        val recovery = PageLoadRecovery()
+
         val digitCount = (download.pages?.size ?: 0).toString().length.coerceAtLeast(3)
         val filename = "%0${digitCount}d".format(Locale.ENGLISH, page.number)
         val tmpFile = tmpDir.findFile("$filename.tmp")
@@ -529,9 +535,9 @@ class Downloader(
                 chapterCache.isImageInCache(page.imageUrl!!) ->
                     chapterCache.getImageFile(page.imageUrl!!)
                         ?.let { copyImageFromCache(it, tmpDir, filename) }
-                        ?: downloadImage(page, download.source, tmpDir, filename)
+                        ?: downloadImage(page, download, tmpDir, filename, recovery)
 
-                else -> downloadImage(page, download.source, tmpDir, filename)
+                else -> downloadImage(page, download, tmpDir, filename, recovery)
             }
 
             // When the page is ready, set page path, progress (just in case) and status
@@ -557,7 +563,14 @@ class Downloader(
      * @param tmpDir the temporary directory of the download.
      * @param filename the filename of the image.
      */
-    private suspend fun downloadImage(page: Page, source: HttpSource, tmpDir: UniFile, filename: String): UniFile {
+    private suspend fun downloadImage(
+        page: Page,
+        download: Download,
+        tmpDir: UniFile,
+        filename: String,
+        recovery: PageLoadRecovery,
+    ): UniFile {
+        val source = download.source
         page.status = Page.State.DownloadImage
         page.progress = 0
         return flow {
@@ -575,18 +588,40 @@ class Downloader(
             }
             emit(file)
         }
-            // Retry transient network errors up to 3 times, waiting 2, 4 and 8 seconds between attempts.
-            .retryWhen { cause, attempt ->
+            // One decision, one owner, shared with the reader -- see `PageLoadRecovery`.
+            //
+            // This used to be a second copy of the rule and it had drifted in the way that
+            // mattered: the classifier was shared, so the downloader *knew* a 403 or an unresolvable
+            // host indicted the URL, and then retried the identical string anyway. The backoff had
+            // drifted too, 2s/4s/8s here against the reader's 1s/2s/4s, from its own
+            // `(2L shl attempt) * 1000`. The observable consequence was that a chapter with
+            // short-lived signed image URLs read successfully and failed to download.
+            //
+            // `dropUrl` is applied before the next attempt rather than by the caller, because the
+            // caller is `retryWhen` and the next attempt re-reads `page.imageUrl` through
+            // `HttpSource.imageRequest`. Re-resolving here rather than in `getOrDownloadImage` also
+            // keeps the re-resolved request inside this retry, where a failure to obtain a new URL
+            // is just another failure the budget can answer for.
+            .retryWhen { cause, _ ->
                 if (cause is CancellationException) return@retryWhen false
-                // Shared with the reader's page loader so the two cannot disagree on what is
-                // worth retrying. They previously carried identical copies, which is the shape that
-                // let the reader's 403-is-permanent rule drift unnoticed.
-                if (TransientErrors.isTransient(cause) && attempt < 3) {
-                    delay((2L shl attempt.toInt()) * 1000)
-                    true
-                } else {
-                    false
+
+                val decision = recovery.onFailure(page.imageUrl, cause)
+                if (decision.dropUrl) {
+                    page.imageUrl = ImageUrlPolicy.resolve(source.getImageUrl(page), source.baseUrl)
                 }
+                if (decision.action == PageLoadRecoveryAction.GIVE_UP) {
+                    // Logged, not notified. Returning false rethrows the cause, and the enclosing
+                    // `getOrDownloadImage` catch already reports this page to the user -- notifying
+                    // here as well would report every failed page twice. The user's message stays
+                    // the underlying error; this line is for whoever has to work out why.
+                    logcat(LogPriority.WARN, cause) {
+                        "Gave up on page ${page.number} of ${download.chapter.name} after " +
+                            "${decision.attempt} attempt(s): ${recovery.summary()} (${decision.reason})"
+                    }
+                    return@retryWhen false
+                }
+                delay(decision.delayMs)
+                true
             }
             .first()
     }
