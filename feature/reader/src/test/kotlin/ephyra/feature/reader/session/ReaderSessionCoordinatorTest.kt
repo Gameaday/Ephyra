@@ -64,7 +64,6 @@ class ReaderSessionCoordinatorTest {
         ReaderSessionCoordinator(ReaderSessionId("session-1"), handler)
 
     private val chapterId = ReaderSessionIdentity.chapterId("/chapter/1", 7L)
-    private val pageIds = ReaderSessionIdentity.pageIds(listOf("/a.jpg", "/b.jpg", "/c.jpg"), chapterId)
 
     /** A chapter opening must actually ask for the chapter, or the reader opens nothing. */
     @Test
