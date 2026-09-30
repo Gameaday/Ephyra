@@ -91,3 +91,31 @@ object AnimationPolicy {
         -> false
     }
 }
+
+/**
+ * Whether a format supports region decoding.
+ *
+ * Beside [AnimationPolicy.canHoldAnimation] because it is the same question asked of the other
+ * axis: a format can be static and still not region-decodable (progressive JPEG), animated and
+ * region-decodable in principle (WebP), or neither (JXL). The reader needs both answers and must
+ * not infer one from the other.
+ *
+ * **Conservative by default.** Anything not known to support region decoding is reported as not
+ * supporting it, so an unrecognised format takes the whole-image path rather than a region decode
+ * that returns only the first frame.
+ */
+fun PageImageFormat.supportsRegionDecode(): Boolean = when (this) {
+    // JXL has no region decoder in the platform, and the project's bridge does not expose one.
+    PageImageFormat.JXL -> false
+    // Not an image at all; there is nothing to region-decode.
+    PageImageFormat.UNSUPPORTED -> false
+    // WebP and GIF are region-decodable in principle, but an animated page is never sliced
+    // regardless -- that is the animation axis, decided by [AnimationPolicy.canHoldAnimation] and
+    // the byte probe, not here.
+    PageImageFormat.JPEG,
+    PageImageFormat.PNG,
+    PageImageFormat.WEBP,
+    PageImageFormat.GIF,
+    PageImageFormat.ANIMATED,
+    -> true
+}
