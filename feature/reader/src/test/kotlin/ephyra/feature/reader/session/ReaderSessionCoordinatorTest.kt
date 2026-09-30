@@ -84,6 +84,10 @@ class ReaderSessionCoordinatorTest {
 
     @Test
     fun `closing a chapter persists progress and releases resources`() {
+        // The chapter has to be open before it can be closed: `closeChapter` on a session that
+        // never opened one is a no-op, and a test that skipped the open was asserting against a
+        // session that was still `Closed`.
+        coordinator.openChapterForTest("/chapter/1", 7L)
         coordinator.chapterLoadedForTest("/chapter/1", 7L, listOf("/a.jpg", "/b.jpg"))
         calls.clear()
 
@@ -98,6 +102,7 @@ class ReaderSessionCoordinatorTest {
 
     @Test
     fun `a page failure surfaces the error rather than loading anything`() {
+        coordinator.openChapterForTest("/chapter/1", 7L)
         coordinator.chapterLoadedForTest("/chapter/1", 7L, listOf("/a.jpg"))
         calls.clear()
 
@@ -112,12 +117,49 @@ class ReaderSessionCoordinatorTest {
         assertTrue(calls.any { it.startsWith("showError:") }, "expected the failure to be reported: $calls")
     }
 
+    /**
+     * A loaded chapter settles in `LoadingPage`, not `Ready` — the page bytes are still on their
+     * way. Asserted because "ready" is the intuitive guess and the distinction is the whole point
+     * of a phase: `Ready` means the reader can accept a selection, and claiming it before the page
+     * has loaded is how a reader ends up interactive with nothing to show.
+     */
     @Test
-    fun `the session survives a chapter open with no pages`() {
+    fun `a loaded chapter is awaiting its first page rather than ready`() {
+        coordinator.openChapterForTest("/chapter/1", 7L)
+
+        val state = coordinator.chapterLoadedForTest("/chapter/1", 7L, listOf("/a.jpg", "/b.jpg"))
+
+        assertEquals(2, state.pageIds.size)
+        assertEquals(
+            ReaderSessionPhase.LoadingPage(state.pageIds[0]),
+            state.phase,
+            "the phase must not claim readiness before the page has loaded",
+        )
+    }
+
+    /**
+     * A chapter that loads with no pages is **rejected**, not admitted as an empty ready state.
+     *
+     * The distinction is the whole reason the machine has an `Error` phase: a chapter with nothing
+     * in it is a failure the reader has to show, and admitting it as `Ready` would present an empty
+     * page as a successfully loaded one.
+     */
+    @Test
+    fun `a chapter that loads with no pages is rejected`() {
+        coordinator.openChapterForTest("/chapter/1", 7L)
+        calls.clear()
+
         val state = coordinator.chapterLoadedForTest("/chapter/1", 7L, emptyList())
 
         assertTrue(state.pageIds.isEmpty())
-        assertTrue(state.phase is ReaderSessionPhase.Ready)
+        assertTrue(
+            state.phase !is ReaderSessionPhase.Ready,
+            "a chapter with no pages must not be admitted as ready: ${state.phase}",
+        )
+        assertTrue(
+            calls.any { it.startsWith("showError:") },
+            "and the rejection has to be reported rather than swallowed: $calls",
+        )
     }
 }
 
