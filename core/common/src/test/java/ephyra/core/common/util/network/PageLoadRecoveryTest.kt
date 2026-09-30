@@ -109,6 +109,95 @@ class PageLoadRecoveryTest {
         assertTrue(decision.dropUrl)
     }
 
+    /**
+     * The regression this property exists to prevent, in the form it actually occurred.
+     *
+     * A replacement URL could not be obtained — the source supplies `Page.imageUrl` in
+     * `pageListParse` and never implements `imageUrlParse`, so the base throws. That exception
+     * arrived with no URL in hand, and used to become the error the user was shown, replacing the
+     * `403` that had actually stopped their page. The reader reported the machinery; the cause was
+     * only in the recovery history.
+     */
+    @Test
+    fun `a failure to obtain a replacement does not replace the error the user is shown`() {
+        val recovery = recovery()
+        val refused = HttpException(403)
+        recovery.onFailure("https://cdn-a.example/1.jpg", refused)
+
+        // The resolution attempt fails with nothing in hand: the caller had already dropped the URL.
+        val decision = recovery.onFailure(
+            null,
+            UnsupportedOperationException("Base imageUrlParse not implemented"),
+        )
+
+        assertEquals(PageLoadRecoveryAction.GIVE_UP, decision.action)
+        assertEquals(
+            refused,
+            decision.error,
+            "the user must be told the CDN refused the page, not that our own call was unimplemented",
+        )
+    }
+
+    /** …and the failure is still recorded, because losing it is how this became invisible. */
+    @Test
+    fun `a failure to obtain a replacement is still in the history`() {
+        val recovery = recovery()
+        recovery.onFailure("https://cdn-a.example/1.jpg", HttpException(403))
+        recovery.onFailure(null, UnsupportedOperationException("Base imageUrlParse not implemented"))
+
+        val summary = recovery.summary()
+
+        assertTrue(summary.contains("HTTP 403"), summary)
+        assertTrue(summary.contains("UnsupportedOperationException"), summary)
+    }
+
+    /**
+     * The most recent *load* failure is the one reported, so a page that failed for one reason and
+     * then another is not described by whichever happened to come last among the load failures.
+     */
+    @Test
+    fun `the most recent load failure is the one reported`() {
+        val recovery = recovery()
+        recovery.onFailure("https://cdn-a.example/1.jpg", java.net.SocketTimeoutException("timeout"))
+        recovery.onFailure("https://cdn-b.example/1.jpg", HttpException(403))
+        recovery.onFailure("https://cdn-c.example/1.jpg", HttpException(410))
+
+        val decision = recovery.onFailure("https://cdn-c.example/1.jpg", HttpException(403))
+
+        assertTrue(decision.error is HttpException)
+        assertEquals(403, (decision.error as HttpException).code)
+    }
+
+    /**
+     * The guard that keeps a page's first resolution off the pacing path.
+     *
+     * `ReResolvePacer` was first called on *every* resolution, which put up to 400ms onto the load
+     * of a page that had not failed at all -- a latency tax on every chapter open, paid to solve a
+     * problem that only exists after a failure. This is the property that call sites ask, so it
+     * belongs here with the rest of the attempt-sequence state.
+     */
+    @Test
+    fun `a fresh load is not yet a retry sequence`() {
+        assertFalse(recovery().isRetrySequence, "the first resolution must never be paced")
+    }
+
+    @Test
+    fun `a load that has failed is a retry sequence`() {
+        val recovery = recovery()
+        recovery.onFailure("https://cdn-a.example/1.jpg", HttpException(403))
+
+        assertTrue(recovery.isRetrySequence, "a re-resolution is exactly what the pacer is for")
+    }
+
+    /** A give-up with no load failure at all still surfaces its own error rather than null. */
+    @Test
+    fun `a failure before any URL still surfaces that error`() {
+        val decision = recovery().onFailure(null, HttpException(404))
+
+        assertEquals(PageLoadRecoveryAction.GIVE_UP, decision.action)
+        assertTrue(decision.error is HttpException)
+    }
+
     companion object {
         @JvmStatic
         fun hostFaults(): List<Exception> = listOf(
@@ -314,8 +403,8 @@ class PageLoadRecoveryTest {
     /** Both the reader and the downloader must be able to ask the same delay question. */
     @ParameterizedTest
     @CsvSource(
-        "RETRY_SAME_URL, 1, 1000, 2000",
-        "RETRY_SAME_URL, 2, 2000, 4000",
+        "RETRY_SAME_URL, 1, 1000, 1500",
+        "RETRY_SAME_URL, 2, 2000, 3000",
         "RE_RESOLVE_URL, 1, 250, 500",
         "GIVE_UP, 1, 0, 0",
     )

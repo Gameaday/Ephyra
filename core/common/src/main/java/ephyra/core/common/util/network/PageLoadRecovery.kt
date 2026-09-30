@@ -117,11 +117,27 @@ class PageLoadRecovery(
      */
     private var rejectedUrl: String? = null
 
+    /**
+     * The error a caller should surface if this load gives up: the most recent failure that
+     * happened while *holding* a URL. See [onFailure] for why a resolution failure is excluded.
+     */
+    private var headline: Throwable? = null
+
     /** Every attempt made so far, oldest first. */
     val attempts: List<PageLoadAttempt> get() = recorded.toList()
 
     /** The last failure, or `null` before the first one. */
     val lastError: Throwable? get() = recorded.lastOrNull()?.error
+
+    /**
+     * True once this load has failed and is being retried, so a resolution now is a *re*-resolution.
+     *
+     * Callers must consult this before pacing anything. A page's first resolution is on the hot path
+     * — the user is waiting for the image — and spacing first resolutions out is a latency tax on
+     * every chapter open to solve a problem that only exists after a failure. The distinction is
+     * here, in the object that knows the attempt sequence, rather than inferred at each call site.
+     */
+    val isRetrySequence: Boolean get() = recorded.isNotEmpty()
 
     /**
      * True when [resolved] is a string this load has already rejected as unable to address a host.
@@ -153,10 +169,24 @@ class PageLoadRecovery(
      *
      * Records the attempt either way: a page that gives up having tried three hosts is the case
      * worth being able to explain afterwards, and it is exactly the case that currently cannot be.
+     *
+     * **A `null` [url] means this failed while *resolving*, not while loading**, and that is the
+     * whole signal this method needs. The caller clears the URL before asking the source for a
+     * replacement, so a resolution that then throws arrives here with nothing in hand.
+     *
+     * That is a real fault and it is recorded, but it is not the one the user needs to hear. The
+     * common shape is a source that supplies `Page.imageUrl` in `pageListParse` and never implements
+     * `imageUrlParse`, so the base `UnsupportedOperationException` replaces the `403` that actually
+     * stopped the page — the reader reports the machinery instead of the cause. So only a failure
+     * that happened with a URL in hand becomes the error surfaced on giving up; a resolution failure
+     * is detail, and [summary] carries it.
      */
     fun onFailure(url: String?, error: Throwable): PageLoadRecoveryDecision {
         recorded += PageLoadAttempt(url, error, describe(error))
         val attempt = recorded.size
+        if (url != null) {
+            headline = error
+        }
 
         // Whether the URL is indicted is independent of whether the failure is worth retrying, and
         // the caller needs both: a permanent 404 is not retried, but a 403 is, and both must leave
@@ -190,10 +220,11 @@ class PageLoadRecovery(
     /**
      * The delay before attempt number [retry] (1-based) of the given [action].
      *
-     * Full jitter, drawn between the previous ceiling and the next one, for the reason
+     * Jittered between the previous attempt's delay and half again it, for the reason
      * `RateLimitBackoffInterceptor` gives: pages load in parallel, so a fixed delay has every failed
-     * page retrying at the same instant. Exposed so a caller pacing its own re-resolves can ask the
-     * same question without reaching for a second schedule.
+     * page retrying at the same instant. The floor is the un-jittered schedule, so jitter can only
+     * make a caller wait longer, never less than it would have before. Exposed so a caller pacing
+     * its own re-resolutions can ask the same question without reaching for a second schedule.
      */
     fun backoffMs(action: PageLoadRecoveryAction, retry: Int): Long {
         val base = when (action) {
@@ -203,7 +234,10 @@ class PageLoadRecovery(
         }
         val step = (retry - 1).coerceIn(0, MAX_BACKOFF_EXPONENT)
         val previousCeiling = base shl step
-        val ceiling = (base shl (step + 1)).coerceAtMost(maxDelayMs)
+        // Half again rather than double. Any spread stops the lockstep, so the wider window bought
+        // nothing and cost up to a second of extra waiting on the first retry; the ladder still
+        // escalates, because the floor doubles every attempt.
+        val ceiling = (previousCeiling + previousCeiling / 2).coerceAtMost(maxDelayMs)
         val boundedPrevious = previousCeiling.coerceAtMost(maxDelayMs)
         if (ceiling <= boundedPrevious) return boundedPrevious
         return boundedPrevious + ((ceiling - boundedPrevious) * random()).toLong()
@@ -216,7 +250,10 @@ class PageLoadRecovery(
             delayMs = 0,
             attempt = attempt,
             reason = reason,
-            error = error,
+            // The failure that actually stopped the page, not necessarily the last thing that went
+            // wrong. They differ exactly when a replacement URL could not be obtained, and in that
+            // case the last thing that went wrong is the machinery rather than the cause.
+            error = headline ?: error,
         )
 
     /**

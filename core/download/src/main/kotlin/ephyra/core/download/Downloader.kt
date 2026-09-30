@@ -11,6 +11,7 @@ import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.network.ImageUrlPolicy
 import ephyra.core.common.util.network.PageLoadRecovery
 import ephyra.core.common.util.network.PageLoadRecoveryAction
+import ephyra.core.common.util.network.ReResolvePacer
 import ephyra.core.common.util.storage.DiskUtil
 import ephyra.core.common.util.storage.DiskUtil.NOMEDIA_FILE
 import ephyra.core.common.util.storage.saveTo
@@ -374,6 +375,12 @@ class Downloader(
         val tmpDir = mangaDir.createDirectory(chapterDirname + TMP_DIR_SUFFIX)
             ?: error("Failed to create temporary download directory for chapter ${download.chapter.name}")
 
+        // One pacer per job, the same scope the reader uses per chapter loader. Sources mint signed
+        // URLs in batches with a common expiry, so a download that runs past that boundary has every
+        // page fail at once -- and without this, every page's retry asks the source the same
+        // question at the same instant, at a source that has just signalled it is unhappy.
+        val reResolvePacer = ReResolvePacer()
+
         try {
             // If the page list already exists, start from the file
             val pageList = download.pages ?: run {
@@ -417,7 +424,7 @@ class Downloader(
                         }
                     }
 
-                    withIOContext { getOrDownloadImage(page, download, tmpDir) }
+                    withIOContext { getOrDownloadImage(page, download, tmpDir, reResolvePacer) }
                     emit(page)
                 }
                     .flowOn(ioDispatcher)
@@ -503,7 +510,12 @@ class Downloader(
      * @param download the download of the page.
      * @param tmpDir the temporary directory of the download.
      */
-    private suspend fun getOrDownloadImage(page: Page, download: Download, tmpDir: UniFile) {
+    private suspend fun getOrDownloadImage(
+        page: Page,
+        download: Download,
+        tmpDir: UniFile,
+        reResolvePacer: ReResolvePacer,
+    ) {
         // If the image URL is empty, do nothing
         if (page.imageUrl == null) {
             return
@@ -535,9 +547,9 @@ class Downloader(
                 chapterCache.isImageInCache(page.imageUrl!!) ->
                     chapterCache.getImageFile(page.imageUrl!!)
                         ?.let { copyImageFromCache(it, tmpDir, filename) }
-                        ?: downloadImage(page, download, tmpDir, filename, recovery)
+                        ?: downloadImage(page, download, tmpDir, filename, recovery, reResolvePacer)
 
-                else -> downloadImage(page, download, tmpDir, filename, recovery)
+                else -> downloadImage(page, download, tmpDir, filename, recovery, reResolvePacer)
             }
 
             // When the page is ready, set page path, progress (just in case) and status
@@ -569,6 +581,7 @@ class Downloader(
         tmpDir: UniFile,
         filename: String,
         recovery: PageLoadRecovery,
+        reResolvePacer: ReResolvePacer,
     ): UniFile {
         val source = download.source
         page.status = Page.State.DownloadImage
@@ -597,18 +610,23 @@ class Downloader(
             // `(2L shl attempt) * 1000`. The observable consequence was that a chapter with
             // short-lived signed image URLs read successfully and failed to download.
             //
-            // `dropUrl` is applied before the next attempt rather than by the caller, because the
-            // caller is `retryWhen` and the next attempt re-reads `page.imageUrl` through
-            // `HttpSource.imageRequest`. Re-resolving here rather than in `getOrDownloadImage` also
-            // keeps the re-resolved request inside this retry, where a failure to obtain a new URL
-            // is just another failure the budget can answer for.
+            // `dropUrl` is applied here rather than by the caller, because the caller *is* this
+            // lambda and the next attempt re-reads `page.imageUrl` through
+            // `HttpSource.imageRequest`. The drop is deliberately ahead of the give-up check: a dead
+            // URL must not survive even when nothing follows, and the re-resolution is behind it so
+            // the final attempt never spends a source round-trip on a URL it is about to discard.
             .retryWhen { cause, _ ->
                 if (cause is CancellationException) return@retryWhen false
 
                 val decision = recovery.onFailure(page.imageUrl, cause)
+
+                // Drop before anything else, including on give-up. A URL the classifier has indicted
+                // is dead whether or not another attempt follows, and leaving it on the page would
+                // let it be reused by a later run of this chapter.
                 if (decision.dropUrl) {
-                    page.imageUrl = ImageUrlPolicy.resolve(source.getImageUrl(page), source.baseUrl)
+                    page.imageUrl = null
                 }
+
                 if (decision.action == PageLoadRecoveryAction.GIVE_UP) {
                     // Logged, not notified. Returning false rethrows the cause, and the enclosing
                     // `getOrDownloadImage` catch already reports this page to the user -- notifying
@@ -619,6 +637,39 @@ class Downloader(
                             "${decision.attempt} attempt(s): ${recovery.summary()} (${decision.reason})"
                     }
                     return@retryWhen false
+                }
+
+                if (decision.dropUrl) {
+                    // Paced only on a re-resolution, for the same reason as the reader: a page's
+                    // first URL is on the hot path, and `isRetrySequence` is what distinguishes the
+                    // two rather than a guess at each call site.
+                    if (recovery.isRetrySequence) {
+                        reResolvePacer.paceReResolution().takeIf { it > 0 }?.let { delay(it) }
+                    }
+                    // A source may supply `Page.imageUrl` in `pageListParse` and never implement
+                    // `imageUrlParse`, in which case asking again throws the base
+                    // `UnsupportedOperationException`. Letting that escape would replace the `403`
+                    // that actually stopped the page, and the user would be told about the
+                    // machinery instead of the cause -- the opposite of what the recovery history is
+                    // for. So the resolution failure is recorded as detail and the page stops here,
+                    // still reporting the load failure it actually suffered.
+                    //
+                    // Returning false rather than retrying also avoids spending another attempt on a
+                    // request that has no URL to make: `HttpSource.imageRequest` requires one.
+                    //
+                    // Reached only when a retry follows, so the final attempt never spends a source
+                    // round-trip on a URL it is about to discard.
+                    page.imageUrl = try {
+                        ImageUrlPolicy.resolve(source.getImageUrl(page), source.baseUrl)
+                    } catch (resolutionError: Throwable) {
+                        if (resolutionError is CancellationException) throw resolutionError
+                        recovery.onFailure(null, resolutionError)
+                        logcat(LogPriority.WARN, resolutionError) {
+                            "Could not obtain a replacement URL for page ${page.number} of " +
+                                "${download.chapter.name}: ${recovery.summary()}"
+                        }
+                        return@retryWhen false
+                    }
                 }
                 delay(decision.delayMs)
                 true

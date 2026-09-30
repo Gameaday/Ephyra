@@ -110,6 +110,40 @@ class PageLoadRecoveryStructuralTest {
         )
     }
 
+    /**
+     * The pacing guard, and the regression it was written after.
+     *
+     * `ReResolvePacer` was first called on *every* URL resolution rather than only on a
+     * re-resolution. That put up to 400ms onto the load of any page — including the one the user is
+     * waiting for, which competes with the preload window for the same few workers — to solve a
+     * problem that only exists after something has already failed. Measured on a six-page preload
+     * window it added 1.2s.
+     *
+     * The behavioural answer is `PageLoadRecovery.isRetrySequence`, and this gate is the structural
+     * one: the pacing call may not appear in either module without that guard around it. A regression
+     * here is invisible in review — the line looks harmless, and nothing about it is wrong until it
+     * is measured — which is exactly the class of defect a gate is for.
+     */
+    @Test
+    fun `pacing a resolution is only reachable behind the retry-sequence guard`() {
+        val offenders = TrackedFileNames.inMainSources()
+            .filter { it.endsWith(".kt") }
+            .filter { it.contains("/reader/") || it.contains("/download/") }
+            .map { it to stripComments(File(TrackedFileNames.repositoryRoot(), it).readText()) }
+            .filter { (_, text) -> PACED_RESOLUTION.containsMatchIn(text) }
+            .filter { (_, text) -> !RETRY_GUARD.containsMatchIn(text) }
+            .map { (path, _) -> path }
+
+        assertTrue(
+            offenders.isEmpty(),
+            "a resolution may only be paced when the load has already failed. Pacing a page's first " +
+                "resolution taxes every chapter open -- and the page the user is waiting on most of " +
+                "all -- to solve a failure-path problem. Guard it with " +
+                "PageLoadRecovery.isRetrySequence. Files that pace without it:\n" +
+                offenders.joinToString("\n") { "  $it" },
+        )
+    }
+
     private fun source(path: String): String =
         File(TrackedFileNames.repositoryRoot(), path).readText()
 
@@ -138,6 +172,8 @@ class PageLoadRecoveryStructuralTest {
 
     private companion object {
         val PAGE_LOAD_RECOVERY = Regex("""\bPageLoadRecovery\b""")
+        val PACED_RESOLUTION = Regex("""\.paceReResolution\(""")
+        val RETRY_GUARD = Regex("""\bisRetrySequence\b""")
         val RE_RESOLVE = Regex("""ImageUrlPolicy\.resolve\(\s*source\.getImageUrl\(page\)""")
         /**
          * A `delay(...)` whose argument *computes* a delay: a bit shift, or a named schedule
