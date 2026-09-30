@@ -14,7 +14,6 @@ import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.source.model.MangasPage
 
-
 class SourceSearchPagingSource(
     source: CatalogueSource,
     private val query: String,
