@@ -116,13 +116,12 @@ object ImageUrlPolicy {
      * - no usable [baseUrl] → returned unchanged, so the existing verdict path reports the original
      *   string instead of this function inventing a second, different failure.
      *
-     * Root-relative rather than RFC 3986 relative resolution (`HttpUrl.resolve`) on purpose: this
-     * codebase already treats a stored `manga.url`/`chapter.url` as base-relative — see
-     * `HttpSource.pageListRequest`, which concatenates `baseUrl + chapter.url` — and a source that
-     * emits `a/1.jpg` means it relative to the site, not to whatever directory the current chapter
-     * URL happens to sit in. Where `baseUrl` is an origin, which is its documented contract, the two
-     * rules agree exactly; where it is not, this one matches the convention the rest of the source
-     * layer already follows.
+     * Root-relative rather than RFC 3986 relative resolution (`HttpUrl.resolve`) on purpose. This
+     * codebase already reads a leading `/` as "relative to `baseUrl`": `getUrlWithoutDomain` stores
+     * a manga or chapter URL as `uri.path`, and `pageListRequest` rebuilds it as
+     * `baseUrl + chapter.url`. Resolving against the origin instead would make page resolution
+     * disagree with chapter resolution for every source whose `baseUrl` carries a path — exactly
+     * the set of sources for which the two answers differ.
      */
     fun resolve(url: String?, baseUrl: String?): String {
         if (url.isNullOrBlank()) return url.orEmpty()
@@ -136,18 +135,19 @@ object ImageUrlPolicy {
         // A non-http scheme is a decision, not an omission. Left alone on purpose; see above.
         if (ANY_SCHEME.containsMatchIn(url)) return url
 
+        // The base has to be able to *lend* a scheme, or there is no absolute address to form. A
+        // base that cannot is returned against rather than concatenated, because
+        // `mangadex.org/data/1.jpg` is a different string that still cannot address a host, and
+        // reporting the original is the verdict the caller can act on.
         val base = baseUrl?.trim().orEmpty()
-        if (base.isBlank()) return url
+        val scheme = base.substringBefore("://")
+        if (base.isBlank() || scheme.isBlank() || scheme == base) return url
 
-        if (url.startsWith("//")) {
-            val scheme = base.substringBefore("://")
-            // A base with no scheme cannot lend one. Returning the input keeps the failure the
-            // caller's own verdict produces, rather than inventing a different one here.
-            if (scheme.isBlank() || scheme == base) return url
-            return "$scheme:$url"
+        return if (url.startsWith("//")) {
+            "$scheme:$url"
+        } else {
+            "${base.trimEnd('/')}/${url.trimStart('/')}"
         }
-
-        return "${base.trimEnd('/')}/${url.trimStart('/')}"
     }
 
     /** Returns why [url] is unusable, or `null` when it is worth requesting. */
