@@ -69,8 +69,6 @@ These are not target architecture and must not receive new features:
 | Component | Current role | Classification | Decision |
 |---|---|---|---|
 | `source-api/ContentSource` | Generic content identity/details/units/resources contract | **target foundation** | Keep; evolve into capability-gated contract. |
-| `source-api/ContentCatalogueSource` | Catalogue/search extension of generic source | **adapter/target bridge** | Keep only where it serves native sources; do not make it universal. |
-| `source-api/ContentSourceAdapter` | Tachiyomi/Mihon `Source` → generic content adapter | **compatibility** | Keep only until callers migrate; superseded by the one-way `LegacySourceGateway` boundary. |
 | `source-api/LegacySourceGateway` | Legacy `Source`/`CatalogueSource` → target `SourceGateway` | **temporary compatibility** | Isolate; delete after all product callers use native gateways. |
 | `source-local/LocalSourceGateway` | Canonical `UnifiedContentSource` → target `SourceGateway` | **target native adapter** | Keep; prove offline, SAF, archive, and resource-byte behavior. |
 | `core:data/OpdsSourceGateway` | Existing OPDS 1.2/2.0 HTTP source → target `SourceGateway` | **target native adapter** | Keep; controlled HTTP path with parser/transport contract tests. |
