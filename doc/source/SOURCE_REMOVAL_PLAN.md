@@ -89,7 +89,7 @@ Preconditions:
 
 Delete:
 
-- `ContentSourceAdapter` (after all callers are migrated);
+- ~~`ContentSourceAdapter`~~ — **done 2026-09-30.** The "after all callers are migrated" condition was never going to be met, because it had no callers to migrate: one implementor of `ContentCatalogueSource`, zero consumers of it, and `SOURCE_DISCOVERY_EXECUTION.md` already recorded that the native path does not use it. A removal plan entry with no callers behind it is a queue item that can never be worked, which is worse than no entry at all.
 - `LegacySourceGateway`;
 - `DynamicHttpSource`;
 - `SourceManager` compatibility interface;

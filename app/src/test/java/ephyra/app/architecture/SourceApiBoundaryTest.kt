@@ -16,7 +16,6 @@ class SourceApiBoundaryTest {
     fun `target source-api files do not import legacy source ABI or transitional engine`() {
         val root = repositoryRoot()
         val compatibilityFiles = setOf(
-            "source-api/src/main/kotlin/ephyra/source/api/ContentSourceAdapter.kt",
             "source-api/src/main/kotlin/ephyra/source/api/LegacySourceGateway.kt",
             "source-api/src/main/kotlin/eu/kanade/tachiyomi/source/online/HttpSource.kt",
             "source-api/src/main/kotlin/eu/kanade/tachiyomi/source/online/ParsedHttpSource.kt",

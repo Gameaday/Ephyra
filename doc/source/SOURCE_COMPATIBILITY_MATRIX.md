@@ -6,8 +6,7 @@
 | Path | Classification | Target destination | Removal blocker | Current decision |
 |---|---|---|---|---|
 | `ContentSource` | target foundation | Capability-based `SourceGateway` | None | Keep and evolve. |
-| `ContentCatalogueSource` | adapter/target bridge | Capability-specific contracts | Feature callers still use it | Keep temporarily. |
-| `ContentSourceAdapter` | compatibility | `LegacySourceGateway` (temporary) | Extensions still installed and product callers still use the old bridge | Isolate; migrate callers, then delete. |
+| `ContentCatalogueSource`, `ContentSourceAdapter` | removed 2026-09-30 | `LegacySourceGateway` covers the same direction | none — one implementor, zero consumers | **Deleted.** The native path never used them; `SOURCE_DISCOVERY_EXECUTION.md` records that explicitly. |
 | `LegacySourceGateway` | temporary compatibility | No permanent target model; callers move to native gateways | Product callers still use legacy source types | Keep isolated; delete at R-008. |
 | `LocalSourceGateway` | target native | `SourceGateway` over `UnifiedContentSource` | Product callers have not been migrated yet | Keep; first offline/native source path. |
 | `OpdsSourceGateway` | target native | `SourceGateway` over existing OPDS HTTP source | Product callers have not been migrated; device acceptance pending | Keep; controlled native HTTP path. |
