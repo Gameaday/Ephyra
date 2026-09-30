@@ -13,9 +13,10 @@ import ephyra.source.api.SourceGateway
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.source.model.MangasPage
+import java.io.IOException
 
 class SourceSearchPagingSource(
-    source: CatalogueSource,
+    private val source: CatalogueSource,
     private val query: String,
     private val filters: FilterList,
     networkToLocalManga: NetworkToLocalManga,
@@ -51,22 +52,21 @@ class SourcePopularPagingSource(
         val result = gateway.getPopular(
             ephyra.source.api.SourceCatalogueRequest(cursor = currentPage.toString()),
         )
-        val page = when (result) {
-            is ephyra.source.api.SourceResult.Success -> result.value
-            // Empty is a valid answer and must not be reported as a failure: a source with no
-            // popular listing today is not a broken source, and the paging layer already has a
-            // distinct shape for "no more pages".
-            ephyra.source.api.SourceResult.Empty -> MangasPage(emptyList(), false)
-            is ephyra.source.api.SourceResult.Unsupported -> MangasPage(emptyList(), false)
-            is ephyra.source.api.SourceResult.TransientFailure -> throw java.io.IOException(result.message)
-            is ephyra.source.api.SourceResult.PermanentFailure ->
-                throw java.io.IOException(result.message, result.cause)
-            is ephyra.source.api.SourceResult.RateLimited -> throw java.io.IOException("Source rate limited")
+        return when (result) {
+            is ephyra.source.api.SourceResult.Success -> MangasPage(
+                result.value.items.map { it.toLegacyManga() },
+                result.value.hasMore,
+            )
+            // Empty and Unsupported are both "no more pages", not a failure. A source with no
+            // popular listing is not a broken source, and the paging layer already has a distinct
+            // shape for the end of a listing.
+            ephyra.source.api.SourceResult.Empty,
+            is ephyra.source.api.SourceResult.Unsupported,
+            -> MangasPage(emptyList(), false)
+            is ephyra.source.api.SourceResult.TransientFailure -> throw IOException(result.message)
+            is ephyra.source.api.SourceResult.PermanentFailure -> throw IOException(result.message, result.cause)
+            is ephyra.source.api.SourceResult.RateLimited -> throw IOException("Source rate limited")
         }
-        return MangasPage(
-            page.items.map { it.toLegacyManga() },
-            page.hasMore,
-        )
     }
 }
 
@@ -84,12 +84,12 @@ private fun SourceContentItem.toLegacyManga(): eu.kanade.tachiyomi.source.model.
         artist = this@toLegacyManga.artist
         description = this@toLegacyManga.description
         genre = genres.joinToString(", ")
-        status = this@toLegacyManga.status.toIntOrNull() ?: 0
+        status = this@toLegacyManga.status?.toIntOrNull() ?: 0
         thumbnail_url = this@toLegacyManga.thumbnailUrl
     }
 
 class SourceLatestPagingSource(
-    source: CatalogueSource,
+    private val source: CatalogueSource,
     networkToLocalManga: NetworkToLocalManga,
 ) : BaseSourcePagingSource(source.id, source.name, networkToLocalManga) {
     override suspend fun requestNextPage(currentPage: Int): MangasPage {
