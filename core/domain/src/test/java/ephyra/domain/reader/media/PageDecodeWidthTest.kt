@@ -3,9 +3,9 @@ package ephyra.domain.reader.media
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import kotlin.math.floor
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
+import kotlin.math.floor
 
 /**
  * Pins the decode-width decision both readers now share.
