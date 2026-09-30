@@ -83,6 +83,16 @@ Crop is a geometry operation, not a UI toggle alone. The plan records:
 
 Crop output participates in memory/disk identity. Animated or ambiguous content follows a declared fallback.
 
+Error classification, retry budget, backoff, and the record of what was tried are owned by
+`PageLoadRecovery` (with `TransientErrors` deciding *whether* a failure indicts the URL). The reader
+and the downloader ask the same owner, so they cannot disagree about what to do: the reader used to
+drop an indicted URL and re-resolve while the downloader consulted the same classifier and then
+re-requested the identical string, which is how a chapter could read and fail to download. The
+decision is separated from the action — the caller owns the page and the source, and does the
+dropping and re-resolving. The request budget is one counter, not one per failure kind, so recovery
+cannot raise the worst-case requests per page; only the delay differs, and it is jittered so pages
+that failed together do not retry together (`DEF-020`, `DEF-021`, `DEF-023`, `DEF-028`).
+
 ## Ownership
 
 - Durable source bytes: chapter/download/cache owner.

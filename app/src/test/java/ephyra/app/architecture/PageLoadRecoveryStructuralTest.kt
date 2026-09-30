@@ -144,8 +144,14 @@ class PageLoadRecoveryStructuralTest {
          * constant. `delay(decision.delayMs)` and `delay(250)` are both fine and do not match —
          * the first reads the delay from the owner, the second is a fixed UI tick.
          */
-        val COMPUTED_DELAY = Regex("""delay\([^)]*(?:\bshl\b|\b[A-Z][A-Z_]*(?:DELAY|BACKOFF)[A-Z_]*\b)""", RegexOption.DOT_MATCHES_ALL)
-        val ASSIGNED_BEFORE_USE =
-            Regex("""page\.imageUrl\s*=\s*ImageUrlPolicy\.resolve\(page\.imageUrl.*\)\s*\R\s*val imageUrl\s*=""", RegexOption.DOT_MATCHES_ALL)
+        val COMPUTED_DELAY = Regex(
+            """delay\([^)]*(?:\bshl\b|\b[A-Z][A-Z_]*(?:DELAY|BACKOFF)[A-Z_]*\b)""",
+            RegexOption.DOT_MATCHES_ALL,
+        )
+        val ASSIGNED_BEFORE_USE = Regex(
+            """page\.imageUrl\s*=\s*ImageUrlPolicy\.resolve\(page\.imageUrl.*\)""" +
+                """\s*\R\s*val imageUrl\s*=""",
+            RegexOption.DOT_MATCHES_ALL,
+        )
     }
 }
