@@ -69,7 +69,7 @@ class HttpPageLoaderCdnSwapTest {
      * that URL and ask the source again, and the second host must be the one requested.
      */
     @Test
-    fun `a refused CDN is dropped and the source is asked for a different one`() {
+    fun `a refused CDN is dropped and the source is asked for a different one`() = runBlocking {
         val fixture = Fixture(
             urlsFromSource = listOf("https://cdn-a.example/1.jpg", "https://cdn-b.example/1.jpg"),
             failWith = HttpException(403),
@@ -91,7 +91,7 @@ class HttpPageLoaderCdnSwapTest {
      * the difference between recovering and being rate-limited.
      */
     @Test
-    fun `the source is asked once per attempt, never twice for one retry`() {
+    fun `the source is asked once per attempt, never twice for one retry`() = runBlocking {
         val fixture = Fixture(
             urlsFromSource = listOf("https://cdn-a.example/1.jpg", "https://cdn-b.example/1.jpg"),
             failWith = HttpException(403),
@@ -107,7 +107,7 @@ class HttpPageLoaderCdnSwapTest {
      * the suspect, and a fresh resolution is the only thing that can replace it.
      */
     @Test
-    fun `a CDN whose host does not resolve is replaced rather than retried`() {
+    fun `a CDN whose host does not resolve is replaced rather than retried`() = runBlocking {
         val fixture = Fixture(
             urlsFromSource = listOf("https://cdn-dead.example/1.jpg", "https://cdn-b.example/1.jpg"),
             failWith = UnknownHostException("cdn-dead.example"),
@@ -129,7 +129,7 @@ class HttpPageLoaderCdnSwapTest {
      * dead host that just failed.
      */
     @Test
-    fun `a dropped connection retries the same URL without asking the source again`() {
+    fun `a dropped connection retries the same URL without asking the source again`() = runBlocking {
         val fixture = Fixture(
             urlsFromSource = listOf("https://cdn-a.example/1.jpg", "https://cdn-b.example/1.jpg"),
             failWith = IOException("connection reset"),
@@ -152,7 +152,7 @@ class HttpPageLoaderCdnSwapTest {
      * cannot tell the difference.
      */
     @Test
-    fun `a permanent status is not retried and does not ask the source again`() {
+    fun `a permanent status is not retried and does not ask the source again`() = runBlocking {
         val fixture = Fixture(
             urlsFromSource = listOf("https://cdn-a.example/1.jpg", "https://cdn-b.example/1.jpg"),
             failWith = HttpException(404),
@@ -171,7 +171,7 @@ class HttpPageLoaderCdnSwapTest {
      * so the next open of this chapter would begin by requesting it again.
      */
     @Test
-    fun `a page that exhausts its hosts fails holding no URL`() {
+    fun `a page that exhausts its hosts fails holding no URL`() = runBlocking {
         val fixture = Fixture(
             urlsFromSource = List(8) { "https://cdn-$it.example/1.jpg" },
             failWith = HttpException(403),
@@ -190,7 +190,7 @@ class HttpPageLoaderCdnSwapTest {
      * image request going out.
      */
     @Test
-    fun `a source repeating one refused host is not asked to try again indefinitely`() {
+    fun `a source repeating one refused host is not asked to try again indefinitely`() = runBlocking {
         val fixture = Fixture(
             urlsFromSource = List(8) { "https://cdn-dead.example/1.jpg" },
             failWith = HttpException(403),
@@ -221,7 +221,7 @@ class HttpPageLoaderCdnSwapTest {
         private val chapter = ReaderChapter(Chapter.create().copy(id = 1, name = "Ch 1"))
         private val loader = HttpPageLoader(chapter, source, cache)
 
-        fun loadFirstPage(): ReaderPage {
+        suspend fun loadFirstPage(): ReaderPage {
             val pages = runBlocking { loader.getPages() }
             chapter.state = ReaderChapter.State.Loaded(pages)
             chapter.pageLoader = loader
@@ -288,6 +288,7 @@ class HttpPageLoaderCdnSwapTest {
         override val baseUrl: String = "https://mangadex.org"
         override val name: String = "Test"
         override val lang: String = "en"
+        override val supportsLatest: Boolean = true
 
         var resolutions = 0
             private set

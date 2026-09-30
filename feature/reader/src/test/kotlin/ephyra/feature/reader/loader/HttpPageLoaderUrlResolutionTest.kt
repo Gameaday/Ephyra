@@ -65,14 +65,14 @@ class HttpPageLoaderUrlResolutionTest {
      * that string reached the request layer unchanged, and OkHttp refused to build a request from it.
      */
     @Test
-    fun `a protocol-relative URL from the source is resolved before the image is requested`() {
+    fun `a protocol-relative URL from the source is resolved before the image is requested`() = runBlocking {
         val fixture = Fixture(resolvingTo = "//cdn.example.com/data/1.jpg")
 
         assertEquals("https://cdn.example.com/data/1.jpg", fixture.loadAndRecordRequestedUrl())
     }
 
     @Test
-    fun `a root-relative URL from the source is resolved before the image is requested`() {
+    fun `a root-relative URL from the source is resolved before the image is requested`() = runBlocking {
         val fixture = Fixture(resolvingTo = "/data/1.jpg")
 
         assertEquals("https://mangadex.org/data/1.jpg", fixture.loadAndRecordRequestedUrl())
@@ -85,7 +85,7 @@ class HttpPageLoaderUrlResolutionTest {
      * resolves it.
      */
     @Test
-    fun `a relative image URL supplied with the page list is resolved by the loader`() {
+    fun `a relative image URL supplied with the page list is resolved by the loader`() = runBlocking {
         val fixture = Fixture(pageListImageUrl = "//cdn.example.com/data/1.jpg")
 
         assertEquals("https://cdn.example.com/data/1.jpg", fixture.loadAndRecordRequestedUrl())
@@ -98,7 +98,7 @@ class HttpPageLoaderUrlResolutionTest {
      * stored twice under two spellings.
      */
     @Test
-    fun `a relative URL restored from the page list cache is resolved by the loader`() {
+    fun `a relative URL restored from the page list cache is resolved by the loader`() = runBlocking {
         val fixture = Fixture(cachedPageImageUrl = "/data/1.jpg")
 
         assertEquals("https://mangadex.org/data/1.jpg", fixture.loadAndRecordRequestedUrl())
@@ -110,7 +110,7 @@ class HttpPageLoaderUrlResolutionTest {
      * URLs `DEF-020` exists for, so the exact string is asserted rather than a normalised form.
      */
     @Test
-    fun `an absolute URL reaches the cache exactly as the source spelled it`() {
+    fun `an absolute URL reaches the cache exactly as the source spelled it`() = runBlocking {
         val signed = "https://cdn.example.com/1.jpg?token=aB3%2Fxyz&expires=1893456000"
         val fixture = Fixture(resolvingTo = signed)
 
@@ -123,7 +123,7 @@ class HttpPageLoaderUrlResolutionTest {
      * leave the reader showing an error, which is the symptom being fixed.
      */
     @Test
-    fun `the page reaches Ready rather than an error state`() {
+    fun `the page reaches Ready rather than an error state`() = runBlocking {
         val fixture = Fixture(resolvingTo = "//cdn.example.com/data/1.jpg")
 
         val page = fixture.loadFirstPage()
@@ -152,7 +152,7 @@ class HttpPageLoaderUrlResolutionTest {
          * against a stale recording or report a null for a reason that has nothing to do with the
          * rule under test.
          */
-        fun loadAndRecordRequestedUrl(): String {
+        suspend fun loadAndRecordRequestedUrl(): String {
             val page = loadFirstPage()
             assertEquals(
                 Page.State.Ready,
@@ -162,7 +162,7 @@ class HttpPageLoaderUrlResolutionTest {
             return requireNotNull(cache.requested) { "the image was never requested" }
         }
 
-        fun loadFirstPage(): ReaderPage {
+        suspend fun loadFirstPage(): ReaderPage {
             val pages = runBlocking { loader.getPages() }
             chapter.state = ReaderChapter.State.Loaded(pages)
             chapter.pageLoader = loader
@@ -195,7 +195,7 @@ class HttpPageLoaderUrlResolutionTest {
      */
     private class RecordingChapterCache(
         tempDir: Path,
-        cachedPageImageUrl: String?,
+        private val cachedPageImageUrl: String?,
     ) : ChapterCache {
         private val image = tempDir.resolve("1.jpg").toFile().apply { writeBytes(byteArrayOf(1)) }
 
@@ -238,6 +238,7 @@ class HttpPageLoaderUrlResolutionTest {
         override val baseUrl: String = "https://mangadex.org"
         override val name: String = "Test"
         override val lang: String = "en"
+        override val supportsLatest: Boolean = true
 
         override fun headersBuilder(): Headers.Builder = Headers.Builder()
 
