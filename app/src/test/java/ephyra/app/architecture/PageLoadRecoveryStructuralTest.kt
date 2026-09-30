@@ -75,7 +75,7 @@ class PageLoadRecoveryStructuralTest {
             .map { it to stripComments(File(TrackedFileNames.repositoryRoot(), it).readText()) }
             .flatMap { (path, text) ->
                 COMPUTED_DELAY.findAll(text).map { match ->
-                    val line = text.take(match.range.first).count('\n') + 1
+                    val line = text.take(match.range.first).count { it == '\n' } + 1
                     "$path:$line  ${match.value.replace(Regex("\\s+"), " ")}"
                 }
             }
@@ -150,8 +150,8 @@ class PageLoadRecoveryStructuralTest {
     /**
      * Source with comments removed, because a gate that trips on a comment *explaining what it
      * forbids* is a gate that gets deleted rather than obeyed. Found the hard way: the first
-     * version of [no_module_carries_its_own_backoff] matched this very file's comment quoting the
-     * old `(2L shl attempt) * 1000`, so it was red against correct code.
+     * version of `no module computes its own retry delay` matched this very file's comment
+     * quoting the old `(2L shl attempt) * 1000`, so it was red against correct code.
      *
      * Line comments are removed before block comments, so a `//` inside a block comment cannot
      * unbalance the two. String literals are not handled, and cannot be: doing that correctly needs
