@@ -3,6 +3,7 @@ package ephyra.data.coil
 import android.graphics.Bitmap
 import coil3.size.Size
 import coil3.transform.Transformation
+import ephyra.domain.reader.media.BorderCropCacheKey
 import kotlin.math.max
 import kotlin.math.min
 
@@ -41,15 +42,15 @@ class BorderCropTransformation : Transformation() {
 
     companion object {
         /**
-         * The cache-identity of the crop algorithm, and the single place it is bumped.
+         * The cache-identity of the crop algorithm as this transformation reports it.
          *
-         * Exposed because it is not only Coil's business. Both reader call sites override
-         * `memoryCacheKey` outright, which discards the key Coil would otherwise compute from this
-         * transformation, so nothing on the reader path referenced it at all — an instance property
-         * that no cache key contained, which is a versioning mechanism that cannot invalidate. The
-         * reader's own key now carries this constant instead.
+         * **Delegates to [BorderCropCacheKey.VALUE] rather than restating the string**, because the
+         * reader's own page key needs the same value and `feature:reader` may not import `core:data`.
+         * A second literal here would be the defect this arrangement exists to prevent: the algorithm
+         * would be bumped in one place while the other kept serving the old version's pixels, with
+         * no error anywhere. One definition, two references.
          */
-        const val CACHE_KEY: String = "ephyra-border-crop-v2"
+        const val CACHE_KEY: String = BorderCropCacheKey.VALUE
 
         private const val COLOR_TOLERANCE = 12
         private const val MIN_BORDER = 2

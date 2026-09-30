@@ -1,6 +1,6 @@
 package ephyra.feature.reader.viewer
 
-import ephyra.data.coil.BorderCropTransformation
+import ephyra.domain.reader.media.BorderCropCacheKey
 import ephyra.feature.reader.model.ReaderPage
 
 /**
@@ -18,12 +18,18 @@ import ephyra.feature.reader.model.ReaderPage
  * path: the key could say *cropped* but not *cropped by which algorithm*. Changing the crop
  * algorithm and bumping that constant — the ordinary way to ship a fix to a transformation — would
  * have invalidated nothing, and every page decoded before the upgrade kept serving the old pixels
- * with no error anywhere. Carrying [BorderCropTransformation.CACHE_KEY] here is what makes the
- * bump mean something.
+ * with no error anywhere. Carrying [BorderCropCacheKey.VALUE] here is what makes the bump mean
+ * something.
  *
- * Referenced from `core:data`, which reaches this module through `presentation-core`'s `api`
- * dependency on it. That export is recorded debt (`B-006`); the alternative was a second, hand-kept
- * version string that could drift from the one Coil actually uses, which is the defect being fixed.
+ * **Why the value comes from `core:domain` and not from `core:data`.** The transformation that
+ * produces the pixels lives in `core:data`, and the obvious thing to do was import it for its
+ * constant — which inverted the layering and failed `build.yml`'s "no `ephyra.data.*` imports in
+ * feature production sources" gate. The alternative, keeping a second hand-written copy of the
+ * version string here, is the defect being fixed: two copies of a value that must agree, with
+ * nothing at compile time to stop them drifting, so a bump in one place silently leaves the other
+ * serving the previous algorithm's pixels. `BorderCropCacheKey` is therefore the single definition
+ * and both sides reference it, which satisfies the gate and removes the drift risk at once. The
+ * duplication alternative was considered and rejected on those grounds, not overlooked.
  *
  * The page identity is the owning chapter id, page index, and the source URLs used to
  * resolve the image. The URL component prevents a page whose source identity changes (for
@@ -41,7 +47,7 @@ internal fun readerPageMemoryCacheKey(page: ReaderPage, cropBorders: Boolean): S
     if (cropBorders) {
         // Length-prefixed like every other part, so no two different inputs can concatenate to the
         // same key by accident — the reason the URL parts above carry their lengths.
-        appendKeyPart(BorderCropTransformation.CACHE_KEY)
+        appendKeyPart(BorderCropCacheKey.VALUE)
     }
 }
 
