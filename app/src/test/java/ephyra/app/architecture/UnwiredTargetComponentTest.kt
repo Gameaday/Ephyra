@@ -46,13 +46,16 @@ class UnwiredTargetComponentTest {
     /**
      * The ceiling, as measured on 2026-09-30 after the first retirement
      * (`ContentCatalogueSource` / `ContentSourceAdapter`, one implementor and zero consumers) and
-     * the first wiring (`PageDecodeWidth`).
+     * two wirings (`PageDecodeWidth`; `RenderPathPolicy` / `AnimationVerdict` / `PageRenderPath`).
+     *
+     * Lowered from 66 to 64 by those wirings, in the same commit as the wiring, which is the only
+     * way this number stays trustworthy.
      *
      * Lower it in the same commit that wires or deletes something. A ceiling that only ever rises is
      * a backlog with extra steps.
      */
     private companion object {
-        const val MAX_UNWIRED = 66
+        const val MAX_UNWIRED = 64
 
         /** Directories holding 2.0 target components, per `REBUILD_PROGRAM.md` §3. */
         val TARGET_AREAS = listOf(

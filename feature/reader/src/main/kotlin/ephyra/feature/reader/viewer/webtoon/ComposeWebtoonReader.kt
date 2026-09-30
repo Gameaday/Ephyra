@@ -78,8 +78,13 @@ import ephyra.core.common.util.system.ImageUtil
 import ephyra.domain.reader.gesture.ReaderGestureEffect
 import ephyra.feature.reader.model.ChapterTransition
 import ephyra.feature.reader.model.ReaderChapter
+import ephyra.domain.reader.media.AnimationVerdict
+import ephyra.domain.reader.media.PageAnimationClassifier
+import ephyra.domain.reader.media.PageAnimationFacts
 import ephyra.domain.reader.media.PageDecodeWidth
+import ephyra.domain.reader.media.PageRenderPath
 import ephyra.domain.reader.media.PageZoomPolicy
+import ephyra.domain.reader.media.RenderPathPolicy
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.viewer.ChapterPositionTracker
 import ephyra.feature.reader.viewer.ReaderPageErrorView
@@ -708,19 +713,23 @@ private fun WebtoonPageItem(
                     }
                 }
 
-                // Animated check on buffered bytes (peek-based, no pixel decode). Animated
-                // pages and JXL (unsupported by BitmapRegionDecoder) bypass slicing:
-                // region decode would return the first frame only / fail outright.
-                val animatedHint = remember(readyBytes) {
+                // Animation and region-decodability, as two facts. These were one boolean:
+                // `isAnimatedAndSupported || type == JXL`, so a *static* JXL page was reported
+                // as animated, and `getOrDefault(false)` turned a detection that *threw* into
+                // "static" -- which slices an animated page down to its first frame. Both are
+                // what PageAnimationFacts and RenderPathPolicy exist to prevent, and both were
+                // live here.
+                val animationFacts = remember(readyBytes) {
                     readyBytes?.let { bytes ->
-                        runCatching {
-                            Buffer().write(bytes).let {
-                                ImageUtil.isAnimatedAndSupported(it) ||
-                                    ImageUtil.findImageType(bytes.inputStream()) ==
-                                    ImageUtil.ImageType.JXL
-                            }
-                        }.getOrDefault(false)
-                    } ?: false
+                        PageAnimationClassifier.classify(
+                            isAnimatedAndSupported = {
+                                ImageUtil.isAnimatedAndSupported(Buffer().write(bytes))
+                            },
+                            regionDecodable = {
+                                ImageUtil.findImageType(bytes.inputStream()) != ImageUtil.ImageType.JXL
+                            },
+                        )
+                    } ?: PageAnimationFacts.indeterminate()
                 }
 
                 // Use the device's actual screen width as the target for image loading.
@@ -734,9 +743,31 @@ private fun WebtoonPageItem(
 
                 // Long strips render sliced at full width resolution; everything else (and any
                 // slice failure) uses the single-image path via `fallback`.
-                val shouldAttemptSlices = !cropBorders && !animatedHint &&
-                    page.mergedBitmap == null && readyBytes != null &&
-                    (intrinsicDimensions != null || (page.width > 0 && page.height > 0))
+                //
+                // The decision is RenderPathPolicy's, not an inline conjunction, so it is total
+                // and testable rather than only reachable through a real composition.
+                //
+                // `contentRect` is null because production does not compute a crop rectangle --
+                // `BorderCropTransformation` measures insets during decode and never exposes them
+                // as data, which is *why* the old guard said `!cropBorders`. That exclusion is
+                // preserved here, but it is now visibly a missing input rather than an
+                // unexplained term: with crop requested and no rect, the policy reports
+                // CROP_UNDECIDED and the whole-image path is taken. Slicing a cropped page needs
+                // the rect threaded into `SlicedWebtoonImage`, which is the actual follow-up.
+                val hasKnownSize = intrinsicDimensions != null || (page.width > 0 && page.height > 0)
+                val renderPathKey = animationFacts to cropBorders to page.mergedBitmap to
+                    (readyBytes != null) to hasKnownSize
+                val renderPath = remember(renderPathKey) {
+                    RenderPathPolicy.choose(
+                        verdict = animationFacts.verdict,
+                        regionDecodable = animationFacts.regionDecodable,
+                        cropRequested = cropBorders,
+                        contentRect = null,
+                        hasMergedBitmap = page.mergedBitmap != null,
+                        hasBytes = readyBytes != null,
+                        hasKnownSize = hasKnownSize,
+                    )
+                }
 
                 if (page.mergedBitmap != null && !cropBorders) {
                     Image(
@@ -759,7 +790,7 @@ private fun WebtoonPageItem(
                         bytesSize = 0,
                         onTransformedSize = { transformedDimensions = it },
                     )
-                } else if (shouldAttemptSlices && readyBytes != null) {
+                } else if (renderPath == PageRenderPath.SLICED && readyBytes != null) {
                     val (knownW, knownH) = intrinsicDimensions ?: (page.width to page.height)
                     SlicedWebtoonImage(
                         page = page,
@@ -769,7 +800,7 @@ private fun WebtoonPageItem(
                         targetWidthPx = targetWidthPx,
                         viewportHeightPx = viewportHeightPx,
                         cropBorders = cropBorders,
-                        isAnimated = animatedHint,
+                        isAnimated = animationFacts.verdict == AnimationVerdict.Detected(true),
                         fallback = {
                             SingleWebtoonImage(
                                 page = page,
