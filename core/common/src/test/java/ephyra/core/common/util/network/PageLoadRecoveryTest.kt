@@ -37,7 +37,9 @@ class PageLoadRecoveryTest {
     /** A clock the test advances by hand, so the elapsed bound needs no sleeping. */
     private class FakeClock(var now: Long = 0L) : () -> Long {
         override fun invoke(): Long = now
-        fun advance(ms: Long) { now += ms }
+        fun advance(ms: Long) {
+            now += ms
+        }
     }
 
     private fun recovery(

@@ -1,9 +1,9 @@
 package ephyra.core.common.util.network
 
-import eu.kanade.tachiyomi.network.HttpException
 import ephyra.core.common.util.network.PageLoadRecoveryAction.GIVE_UP
-import ephyra.core.common.util.network.PageLoadRecoveryAction.RE_RESOLVE_URL
 import ephyra.core.common.util.network.PageLoadRecoveryAction.RETRY_SAME_URL
+import ephyra.core.common.util.network.PageLoadRecoveryAction.RE_RESOLVE_URL
+import eu.kanade.tachiyomi.network.HttpException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import kotlin.random.Random
