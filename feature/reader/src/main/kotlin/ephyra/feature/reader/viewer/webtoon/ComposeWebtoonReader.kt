@@ -78,6 +78,8 @@ import ephyra.core.common.util.system.ImageUtil
 import ephyra.domain.reader.gesture.ReaderGestureEffect
 import ephyra.feature.reader.model.ChapterTransition
 import ephyra.feature.reader.model.ReaderChapter
+import ephyra.domain.reader.media.PageDecodeWidth
+import ephyra.domain.reader.media.PageZoomPolicy
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.viewer.ChapterPositionTracker
 import ephyra.feature.reader.viewer.ReaderPageErrorView
@@ -818,7 +820,16 @@ private fun SingleWebtoonImage(
     val context = LocalContext.current
     // Decode at physical pixels (css width * density): decoding at bare screenWidthDp
     // then upscaling via FillWidth is the "blurry strip" bug on high-dpi devices.
-    val decodeWidth = (targetWidthPx * densityScale.coerceAtLeast(1f)).toInt().coerceAtLeast(1)
+    //
+    // Owned by PageDecodeWidth rather than computed here, which also clamps to the source's own
+    // width. The inline version asked for more pixels than the image had and relied on the decoder
+    // to notice, which made the bound invisible and untestable.
+    val decodeWidth = PageDecodeWidth.plan(
+        intrinsicWidth = page.width,
+        displayWidthPx = targetWidthPx,
+        densityScale = densityScale,
+        zoom = PageZoomPolicy.FIXED_SCALE,
+    )
     AsyncImage(
         model = remember(imageModel, cropBorders, decodeWidth, bytesSize) {
             ImageRequest.Builder(context)
