@@ -8,6 +8,7 @@ import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.storage.extension
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.withIOContext
+import ephyra.core.common.util.network.ImageUrlPolicy
 import ephyra.core.common.util.network.TransientErrors
 import ephyra.core.common.util.storage.DiskUtil
 import ephyra.core.common.util.storage.DiskUtil.NOMEDIA_FILE
@@ -401,7 +402,15 @@ class Downloader(
                     if (page.imageUrl.isNullOrEmpty()) {
                         page.status = Page.State.LoadPage
                         try {
-                            page.imageUrl = download.source.getImageUrl(page)
+                            // Resolved against the source's base URL for the same reason the reader
+                            // resolves it: a source may name the image relatively, and a scheme-less
+                            // URL cannot be turned into a request at all. Doing it here means a
+                            // download and a read of the same chapter agree on the cache key, rather
+                            // than storing the same bytes twice under two spellings.
+                            page.imageUrl = ImageUrlPolicy.resolve(
+                                download.source.getImageUrl(page),
+                                download.source.baseUrl,
+                            )
                         } catch (e: Throwable) {
                             page.status = Page.State.Error(e)
                         }

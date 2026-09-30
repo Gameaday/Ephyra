@@ -1,5 +1,6 @@
 package eu.kanade.tachiyomi.source.online
 
+import ephyra.core.common.util.network.ImageUrlPolicy
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.asObservableSuccess
@@ -406,6 +407,16 @@ abstract class HttpSource : CatalogueSource {
      * Returns the request for getting the url to the source image. Override only if it's needed to
      * override the url, send different headers or request method like POST.
      *
+     * [Page.url] is resolved against [baseUrl] here, at the boundary, rather than by each source.
+     * A source that names its page relatively — `img.attr("src")` instead of `absUrl("src")`, or the
+     * protocol-relative `//cdn…` a `<base>`-tagged site emits — is ordinary source code, and OkHttp
+     * answers a scheme-less URL with `Expected URL scheme 'http' or 'https' but no scheme was found
+     * for …` while *building* the request. No request is sent, so the page can be neither retried nor
+     * cached nor blamed on the network, and the reader showed that string to the user verbatim. The
+     * missing half of the address is a value this class already holds, so forming the address is
+     * strictly cheaper than reporting its absence. Overrides that build their own request inherit
+     * nothing from this, which is why `HttpPageLoader` resolves the resolved URL again before use.
+     *
      * @param page the chapter whose page list has to be fetched
      */
     @Deprecated(
@@ -413,7 +424,7 @@ abstract class HttpSource : CatalogueSource {
             "Source developers should make their own implementation according to their needs.",
     )
     protected open fun imageUrlRequest(page: Page): Request {
-        return GET(page.url, headers)
+        return GET(ImageUrlPolicy.resolve(page.url, baseUrl), headers)
     }
 
     /**
@@ -439,7 +450,9 @@ abstract class HttpSource : CatalogueSource {
      * @param page the chapter whose page list has to be fetched
      */
     protected open fun imageRequest(page: Page): Request {
-        return GET(page.imageUrl!!, headers)
+        // `!!` kept deliberately: a null image URL here is a caller that broke the contract, and
+        // failing on that immediately is not the same failure as a URL that cannot address a host.
+        return GET(ImageUrlPolicy.resolve(page.imageUrl!!, baseUrl), headers)
     }
 
     /**

@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi.source.online
 
 import ephyra.core.common.util.getOrThrow
+import ephyra.core.common.util.network.ImageUrlPolicy
 import ephyra.domain.content.model.ContentItem
 import ephyra.domain.content.source.ContentSourceOrchestrator
 import ephyra.domain.content.source.SourceProfile
@@ -34,12 +35,17 @@ class DynamicHttpSource(
         add("Referer", "$baseUrl/")
     }
 
-    private fun resolveUrl(url: String): String {
-        if (url.startsWith("http://") || url.startsWith("https://")) return url
-        val cleanBase = baseUrl.trimEnd('/')
-        val cleanUrl = url.trimStart('/')
-        return "$cleanBase/$cleanUrl"
-    }
+    /**
+     * Absolutises a URL the scraper returned, against this source's base URL.
+     *
+     * Delegates to [ImageUrlPolicy.resolve] rather than keeping a local rule. The local version
+     * treated *any* non-`http` string as a path and trimmed its leading slashes, so a
+     * protocol-relative `//cdn.example.com/1.jpg` became
+     * `https://base.example/cdn.example.com/1.jpg` — a well-formed URL pointing at a host that does
+     * not exist, which is a worse failure than a rejected one because it is spent on a real request.
+     * That is the same class of defect as `DEF-027`, and the fix is the same: one owner for the rule.
+     */
+    private fun resolveUrl(url: String): String = ImageUrlPolicy.resolve(url, baseUrl)
 
     override suspend fun getPopularManga(page: Int): MangasPage {
         val items = orchestrator.getPopular(baseUrl, page).getOrThrow()

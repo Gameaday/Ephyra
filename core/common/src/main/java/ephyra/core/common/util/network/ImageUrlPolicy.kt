@@ -70,6 +70,86 @@ object ImageUrlPolicy {
      */
     private val IPV6_HOST = Regex("^[0-9A-Fa-f:.]+$")
 
+    /**
+     * Any RFC 3986 scheme prefix: `scheme:` at the very start of the string.
+     *
+     * The character class excludes `/`, which is what keeps a relative path containing a colon
+     * (`chapter/1:2.jpg`) from being read as a scheme — the colon is only a scheme delimiter when
+     * nothing that could be a path separator precedes it.
+     */
+    private val ANY_SCHEME = Regex("^[A-Za-z][A-Za-z0-9+.\\-]*:")
+
+    /**
+     * Turns [url] into an absolute `http(s)` address using [baseUrl] when it is not already one.
+     *
+     * **Why this exists.** The reported failure was
+     *
+     * ```
+     * Expected URL scheme 'http' or 'https' but no scheme was found for //cdn.example.com/1.jpg
+     * ```
+     *
+     * thrown by OkHttp while *building* a request — no request was sent, so nothing about the
+     * network, the host, or a rate limit was involved. A source is free to name a page relatively:
+     * `img.attr("src")` rather than `absUrl("src")` is ordinary source code, and a protocol-relative
+     * `//cdn…` is what a `<base>`-tagged site emits. Upstream resolved those against `baseUrl` in
+     * `HttpSource.getImageUrl`; this fork's `getImageUrl` is the deprecated *network* variant, so
+     * that resolution existed nowhere and the raw string went straight to OkHttp.
+     *
+     * **Why resolving rather than rejecting.** [defectOf] already rejects a scheme-less URL, and
+     * rejecting is the right verdict for a URL that *cannot* address a host. But a relative URL is
+     * not broken — it is incomplete, and the missing half is a value the app already holds. Turning
+     * it into an error spends a request's worth of work, a retry ladder and a user-facing message to
+     * arrive at an address we could simply have formed. [defectOf] remains the backstop for what
+     * genuinely cannot be resolved.
+     *
+     * **The rule**, in order:
+     * - already absolute `http(s)` → returned **byte-identical**. Canonicalising here would be a
+     *   regression, not a cleanup: a signed CDN URL is a query string whose exact spelling is the
+     *   credential (`DEF-020`).
+     * - protocol-relative (`//host/path`) → prefixed with [baseUrl]'s scheme only, as a browser does.
+     * - any other scheme (`data:`, `file:`, `javascript:`) → returned **unchanged**, never prefixed.
+     *   A `data:` URL is not a broken path to be completed, it is a payload the source chose to
+     *   inline; prefixing a host onto it would manufacture a request that was never asked for, and
+     *   [defectOf] is what rejects it.
+     * - otherwise → [baseUrl] with its trailing slash and [url]'s leading slash collapsed, so the
+     *   two cannot produce a doubled or missing separator.
+     * - no usable [baseUrl] → returned unchanged, so the existing verdict path reports the original
+     *   string instead of this function inventing a second, different failure.
+     *
+     * Root-relative rather than RFC 3986 relative resolution (`HttpUrl.resolve`) on purpose: this
+     * codebase already treats a stored `manga.url`/`chapter.url` as base-relative — see
+     * `HttpSource.pageListRequest`, which concatenates `baseUrl + chapter.url` — and a source that
+     * emits `a/1.jpg` means it relative to the site, not to whatever directory the current chapter
+     * URL happens to sit in. Where `baseUrl` is an origin, which is its documented contract, the two
+     * rules agree exactly; where it is not, this one matches the convention the rest of the source
+     * layer already follows.
+     */
+    fun resolve(url: String?, baseUrl: String?): String {
+        if (url.isNullOrBlank()) return url.orEmpty()
+
+        // The overwhelmingly common case, and the one that must not be touched: see the signed-URL
+        // note above. Checked before the general scheme test purely to keep this a prefix compare.
+        if (url.startsWith("http://", ignoreCase = true) || url.startsWith("https://", ignoreCase = true)) {
+            return url
+        }
+
+        // A non-http scheme is a decision, not an omission. Left alone on purpose; see above.
+        if (ANY_SCHEME.containsMatchIn(url)) return url
+
+        val base = baseUrl?.trim().orEmpty()
+        if (base.isBlank()) return url
+
+        if (url.startsWith("//")) {
+            val scheme = base.substringBefore("://")
+            // A base with no scheme cannot lend one. Returning the input keeps the failure the
+            // caller's own verdict produces, rather than inventing a different one here.
+            if (scheme.isBlank() || scheme == base) return url
+            return "$scheme:$url"
+        }
+
+        return "${base.trimEnd('/')}/${url.trimStart('/')}"
+    }
+
     /** Returns why [url] is unusable, or `null` when it is worth requesting. */
     fun defectOf(url: String?): String? {
         if (url.isNullOrBlank()) return "the URL is empty"

@@ -479,7 +479,7 @@ internal class HttpPageLoader(
 
                 if (page.imageUrl.isNullOrEmpty()) {
                     page.status = Page.State.LoadPage
-                    val resolved = source.getImageUrl(page)
+                    val resolved = ImageUrlPolicy.resolve(source.getImageUrl(page), source.baseUrl)
                     // A source that hands back the identical string we have already rejected is not
                     // going to produce a different one on the next call either, and every call it
                     // does make is a round-trip spent learning nothing. Reporting the defect now
@@ -490,6 +490,17 @@ internal class HttpPageLoader(
                     }
                     page.imageUrl = resolved
                 }
+                // Resolved here as well as at the `HttpSource` boundary, because two paths never
+                // reach that boundary: a page whose URL was restored from the chapter cache, and a
+                // source that sets `Page.imageUrl` itself in `pageListParse` (a relative
+                // `img.attr("src")` is ordinary source code). A source that overrides `getImageUrl`
+                // also bypasses it. Resolving once more is a prefix compare on the common path and a
+                // string join otherwise, and it is what keeps the guarantee — *the address that is
+                // about to be requested is absolute* — a property of the loader rather than a
+                // property of every source extension. Assigned back to the page, so the URL the page
+                // holds, the one keyed into the disk cache below, and the one persisted on
+                // `recycle` are the same string.
+                page.imageUrl = ImageUrlPolicy.resolve(page.imageUrl, source.baseUrl)
                 val imageUrl = requireNotNull(page.imageUrl) { "Image URL is null after being fetched from source" }
 
                 // Ask whether the URL is worth requesting *before* requesting it. A URL that cannot
