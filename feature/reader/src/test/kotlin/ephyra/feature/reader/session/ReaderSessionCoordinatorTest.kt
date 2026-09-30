@@ -36,7 +36,7 @@ class ReaderSessionCoordinatorTest {
         }
 
         override fun navigateChapter(chapterId: ReaderChapterId, direction: ReaderNavigationDirection) {
-            calls += "navigate:${direction}"
+            calls += "navigate:$direction"
         }
 
         override fun persistProgress(chapterId: ReaderChapterId, pageId: ReaderPageId, pageIndex: Int) {
