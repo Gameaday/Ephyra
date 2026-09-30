@@ -175,6 +175,7 @@ class PageLoadRecoveryStructuralTest {
         val PACED_RESOLUTION = Regex("""\.paceReResolution\(""")
         val RETRY_GUARD = Regex("""\bisRetrySequence\b""")
         val RE_RESOLVE = Regex("""ImageUrlPolicy\.resolve\(\s*source\.getImageUrl\(page\)""")
+
         /**
          * A `delay(...)` whose argument *computes* a delay: a bit shift, or a named schedule
          * constant. `delay(decision.delayMs)` and `delay(250)` are both fine and do not match —
