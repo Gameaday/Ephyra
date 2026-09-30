@@ -354,7 +354,7 @@ class BoundedPageByteStoreTest {
                     store.put(PageSourceId("src", "t$thread-p$i", "r1"), bytes(valueSize))
                 }
                 done.countDown()
-            }.apply { startWorkersOn(it) }
+            }.apply { startWorkersOn(this) }
         }
         workers.forEach(Thread::start)
         start.countDown()
@@ -382,7 +382,7 @@ class BoundedPageByteStoreTest {
         val store = BoundedPageByteStore(budgetBytes = 10_000)
         val writer = Thread {
             repeat(20_000) { i -> store.put(PageSourceId("src", "p$i", "r1"), bytes(8)) }
-        }.apply { startWorkersOn(it) }
+        }.apply { startWorkersOn(this) }
 
         writer.start()
         repeat(2_000) { store.clear() }
