@@ -488,6 +488,14 @@ internal class HttpPageLoader(
                 // Yield to a higher-priority page before starting the URL fetch.
                 if (requeueAndYield(page, priority)) return
 
+                // Clear the previous attempt's progress. `Page.progress` is written by
+                // `ProgressListener` as bytes arrive and is not reset anywhere on this path, so a
+                // download that died at 47% left the retry ladder showing a *frozen determinate*
+                // spinner at 47% -- a status that is confidently wrong. Zero renders as the
+                // indeterminate spinner, which is what is actually true: the next attempt has not
+                // started transferring yet. `Downloader` already does this; the reader did not.
+                page.progress = 0
+
                 if (page.imageUrl.isNullOrEmpty()) {
                     page.status = Page.State.LoadPage
                     // Paced, but *only* when this is a re-resolution. The first resolution of a page

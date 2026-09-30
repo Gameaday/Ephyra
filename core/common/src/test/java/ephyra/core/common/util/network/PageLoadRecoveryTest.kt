@@ -34,10 +34,23 @@ import javax.net.ssl.SSLPeerUnverifiedException
  */
 class PageLoadRecoveryTest {
 
+    /** A clock the test advances by hand, so the elapsed bound needs no sleeping. */
+    private class FakeClock(var now: Long = 0L) : () -> Long {
+        override fun invoke(): Long = now
+        fun advance(ms: Long) { now += ms }
+    }
+
     private fun recovery(
         maxRetries: Int = 3,
         random: () -> Double = { 0.5 },
-    ) = PageLoadRecovery(maxRetries = maxRetries, random = random)
+        clock: () -> Long = FakeClock(),
+        maxRetryElapsedMs: Long = PageLoadRecovery.DEFAULT_MAX_RETRY_ELAPSED_MS,
+    ) = PageLoadRecovery(
+        maxRetries = maxRetries,
+        random = random,
+        clock = clock,
+        maxRetryElapsedMs = maxRetryElapsedMs,
+    )
 
     /**
      * The case the whole extraction exists for: a source whose first resolution names a CDN that
@@ -196,6 +209,115 @@ class PageLoadRecoveryTest {
 
         assertEquals(PageLoadRecoveryAction.GIVE_UP, decision.action)
         assertTrue(decision.error is HttpException)
+    }
+
+    /**
+     * The bound that gives the user a button.
+     *
+     * The page sits behind a spinner for the whole automatic ladder, and the Retry button only
+     * exists in the error state — so an attempt count is also a bound on how long the user is left
+     * with no way to intervene. With the delays alone that was up to 10.5s, and with the requests
+     * themselves around 16s, for a page that was never going to load.
+     */
+    @Test
+    fun `the ladder gives up once it has spent its elapsed budget`() {
+        val clock = FakeClock()
+        // Attempts deliberately *not* the binding constraint here: with a generous retry budget the
+        // clock is the only thing that can stop the ladder, which is the property under test. Set to
+        // the default three, the attempt count would exhaust first and the clock would never be
+        // reached — which is what the first version of this test did, and it passed for the wrong
+        // reason until the assertion on the reason text caught it.
+        val recovery = recovery(maxRetries = 10, clock = clock, maxRetryElapsedMs = 5_000)
+
+        recovery.onFailure("https://cdn-a.example/1.jpg", HttpException(403))
+        clock.advance(5_001)
+        val decision = recovery.onFailure("https://cdn-a.example/1.jpg", HttpException(403))
+
+        assertEquals(
+            PageLoadRecoveryAction.GIVE_UP,
+            decision.action,
+            "past its elapsed budget the ladder must surface the error rather than keep the user waiting",
+        )
+        assertTrue(
+            decision.reason.contains("5001ms"),
+            "the reason must say it was the clock, not the attempt count: ${decision.reason}",
+        )
+    }
+
+    /** The bound is on *our* retrying, not on the source being slow to answer the first request. */
+    @Test
+    fun `a slow first attempt does not consume the budget`() {
+        val clock = FakeClock()
+        val recovery = recovery(clock = clock, maxRetryElapsedMs = 5_000)
+
+        // The first request took 30s — a slow CDN, with a real progress bar on screen.
+        clock.advance(30_000)
+        val first = recovery.onFailure("https://cdn-a.example/1.jpg", HttpException(403))
+
+        assertEquals(
+            PageLoadRecoveryAction.RE_RESOLVE_URL,
+            first.action,
+            "the budget is armed by the first failure, so a slow download is not retry time",
+        )
+    }
+
+    /** …and the ladder keeps working normally inside the budget. */
+    @Test
+    fun `the ladder still retries inside its elapsed budget`() {
+        val clock = FakeClock()
+        val recovery = recovery(clock = clock, maxRetryElapsedMs = 5_000)
+
+        clock.advance(1_000)
+        val decision = recovery.onFailure("https://cdn-a.example/1.jpg", HttpException(403))
+
+        assertEquals(PageLoadRecoveryAction.RE_RESOLVE_URL, decision.action)
+    }
+
+    /**
+     * The capability the bound must not cost: a user's Retry starts a *fresh* recovery, so the
+     * button they are now given is worth exactly what the ladder was.
+     */
+    @Test
+    fun `a fresh recovery is unaffected by another instance having exhausted its budget`() {
+        val clock = FakeClock()
+        val exhausted = recovery(clock = clock, maxRetryElapsedMs = 5_000)
+        repeat(3) { exhausted.onFailure("https://cdn-a.example/1.jpg", HttpException(403)) }
+        clock.advance(5_001)
+        exhausted.onFailure("https://cdn-a.example/1.jpg", HttpException(403))
+
+        val fresh = recovery(clock = clock)
+
+        assertEquals(
+            PageLoadRecoveryAction.RE_RESOLVE_URL,
+            fresh.onFailure("https://cdn-a.example/1.jpg", HttpException(403)).action,
+        )
+        assertEquals(1, fresh.attempts.size)
+    }
+
+    /** A more specific reason still wins over the clock. */
+    @Test
+    fun `a permanent failure reports itself, not the clock`() {
+        val clock = FakeClock()
+        val recovery = recovery(clock = clock, maxRetryElapsedMs = 5_000)
+        recovery.onFailure("https://cdn-a.example/1.jpg", HttpException(403))
+
+        clock.advance(60_000)
+        val decision = recovery.onFailure("https://cdn-b.example/1.jpg", HttpException(404))
+
+        assertEquals(PageLoadRecoveryAction.GIVE_UP, decision.action)
+        assertTrue(decision.reason.contains("not a transient"), decision.reason)
+    }
+
+    /** The bound can be switched off, for a caller that wants the attempts to speak for themselves. */
+    @Test
+    fun `a non-positive budget disables the elapsed bound`() {
+        val clock = FakeClock()
+        val recovery = recovery(clock = clock, maxRetryElapsedMs = 0)
+
+        repeat(3) { recovery.onFailure("https://cdn-a.example/1.jpg", HttpException(403)) }
+        clock.advance(600_000)
+
+        assertEquals(3, recovery.attempts.size, "only the attempt budget applies when elapsed is disabled")
     }
 
     companion object {

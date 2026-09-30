@@ -332,6 +332,10 @@ fun ZoomableMangaPage(
                                 RateLimitedRetry(
                                     page = page,
                                     onRetry = { page.chapter.pageLoader?.retryPage(page) },
+                                    // Re-arm per failure, not per page: a cooldown spent on the
+                                    // first rate-limited failure must not leave every later one
+                                    // with an already-enabled button.
+                                    restartKey = currentStatus,
                                 )
                             }
                         } else {

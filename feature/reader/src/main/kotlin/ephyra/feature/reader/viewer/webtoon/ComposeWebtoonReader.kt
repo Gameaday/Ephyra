@@ -514,10 +514,17 @@ private fun WebtoonPageItem(
     var itemIsVisible by remember(page) { mutableStateOf(false) }
     LaunchedEffect(page, itemIsVisible, status) {
         if (!itemIsVisible) return@LaunchedEffect
-        if (status is Page.State.Ready || status is Page.State.Error) return@LaunchedEffect
+        // Only a *stale* `Queue` is this watchdog's problem, and the test is for that state
+        // specifically rather than for "not Ready". `LoadPage` and `DownloadImage` mean a load is
+        // genuinely in flight -- including the retry ladder, which holds a page off its Retry button
+        // for seconds -- and re-queueing those would fight the attempt rather than rescue anything.
+        // This used to check `Ready`/`Error` and rely on `loadPage` declining to re-queue a page
+        // that was not `Queue`; stating the positive case drops that dependency, and stops the
+        // watchdog triggering pointless neighbour preloads in the middle of a ladder.
+        if (status !is Page.State.Queue) return@LaunchedEffect
         kotlinx.coroutines.delay(WebtoonVisibility.WATCHDOG_GRACE_MS)
         val current = page.status
-        if (current is Page.State.Ready || current is Page.State.Error) return@LaunchedEffect
+        if (current !is Page.State.Queue) return@LaunchedEffect
         if (page.cachedBytes == null && page.mergedBitmap == null) {
             withIOContext {
                 page.chapter.pageLoader?.loadPage(page)
@@ -652,7 +659,16 @@ private fun WebtoonPageItem(
                     // only extends the ban. Debounce with a countdown, matching the
                     // RateLimitBackoffInterceptor's escalation posture.
                     retryContent = if (isRateLimited) {
-                        { RateLimitedRetry(page = page, onRetry = { page.chapter.pageLoader?.retryPage(page) }) }
+                        {
+                            RateLimitedRetry(
+                                page = page,
+                                onRetry = { page.chapter.pageLoader?.retryPage(page) },
+                                // Re-arm per failure, not per page: a cooldown spent on the first
+                                // rate-limited failure must not leave every later one with an
+                                // already-enabled button.
+                                restartKey = currentStatus,
+                            )
+                        }
                     } else {
                         null
                     },

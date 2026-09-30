@@ -98,10 +98,17 @@ data class PageLoadAttempt(val url: String?, val error: Throwable, val errorLabe
 class PageLoadRecovery(
     /** Retries allowed after the first attempt. The default reproduces the reader's previous cap. */
     private val maxRetries: Int = DEFAULT_MAX_RETRIES,
+    /**
+     * How long the automatic ladder may keep a page off the Retry button before it surfaces the
+     * error instead. Zero or less disables the bound.
+     */
+    private val maxRetryElapsedMs: Long = DEFAULT_MAX_RETRY_ELAPSED_MS,
     private val sameUrlBaseDelayMs: Long = DEFAULT_SAME_URL_BASE_DELAY_MS,
     private val reResolveBaseDelayMs: Long = DEFAULT_RE_RESOLVE_BASE_DELAY_MS,
     private val maxDelayMs: Long = DEFAULT_MAX_DELAY_MS,
     private val random: () -> Double = { Random.nextDouble() },
+    /** Monotonic milliseconds; injectable so the elapsed bound is testable without sleeping. */
+    private val clock: () -> Long = { System.nanoTime() / 1_000_000L },
 ) {
 
     private val recorded = mutableListOf<PageLoadAttempt>()
@@ -122,6 +129,14 @@ class PageLoadRecovery(
      * happened while *holding* a URL. See [onFailure] for why a resolution failure is excluded.
      */
     private var headline: Throwable? = null
+
+    /**
+     * When the first failure happened, or `null` before it. Elapsed time is measured *from* here
+     * rather than against a precomputed deadline, so a generous or effectively-infinite budget
+     * cannot overflow the comparison -- adding `Long.MAX_VALUE` to a monotonic clock wraps negative
+     * and would make the bound fire on the very first failure, turning "no bound" into "no retries".
+     */
+    private var retryStartedAtMs: Long? = null
 
     /** Every attempt made so far, oldest first. */
     val attempts: List<PageLoadAttempt> get() = recorded.toList()
@@ -203,6 +218,21 @@ class PageLoadRecovery(
         }
         if (retries >= maxRetries) {
             return giveUp(attempt, dropUrl, error, "retry budget exhausted after $maxRetries retries")
+        }
+        // After the two reasons above, so a page that has been retrying for a while and then meets
+        // something permanent still reports *that*, rather than the clock.
+        if (maxRetryElapsedMs > 0) {
+            val now = clock()
+            val started = retryStartedAtMs
+            if (started != null && now - started >= maxRetryElapsedMs) {
+                return giveUp(
+                    attempt,
+                    dropUrl,
+                    error,
+                    "still failing after ${now - started}ms of automatic retrying",
+                )
+            }
+            if (started == null) retryStartedAtMs = now
         }
 
         retries++
@@ -310,6 +340,36 @@ class PageLoadRecovery(
 
         /** Ceiling for both ladders. Beyond this a retry stops being worth the reader's patience. */
         const val DEFAULT_MAX_DELAY_MS = 8_000L
+
+        /**
+         * How long the automatic ladder may run before the page surfaces its error and a Retry
+         * button instead.
+         *
+         * **Why the user needs this bound and not just an attempt count.** The page is behind a
+         * spinner for the whole ladder, and the Retry button only exists in the error state -- so an
+         * attempt count is also a bound on how long the user is left with no way to intervene.
+         *
+         * **What it does and does not bound, measured rather than assumed.** It bounds *our* retrying,
+         * not the source's response time, and truncating an in-flight request would discard a
+         * transfer that may be about to succeed. So it helps in proportion to how much of the wait
+         * was ours. At 1.5s per request:
+         *
+         * | failure shape                        | unbounded | bounded |
+         * |--------------------------------------|-----------|---------|
+         * | connection reset (same URL, 1s base) | 14.7s     | 8.2s    |
+         * | slow CDN, 4s/request, dead host      | 18.2s     | 12.9s   |
+         * | 403, re-resolving (250ms base)       |  8.2s     | 8.2s    |
+         *
+         * The last row is the one worth being straight about: a re-resolving ladder retries so
+         * quickly that the *attempt* budget binds first, and this bound changes nothing. That is the
+         * deliberate cost of protecting the CDN swap -- four cheap attempts at a possibly different
+         * host beat three -- and it is why the number here is a ceiling on our own behaviour rather
+         * than a promise about how long anyone waits.
+         *
+         * Either way the button the user is given is worth exactly what the ladder was: `retryPage`
+         * starts a *fresh* recovery with a full budget.
+         */
+        const val DEFAULT_MAX_RETRY_ELAPSED_MS = 5_000L
 
         private const val MAX_BACKOFF_EXPONENT = 6
     }
