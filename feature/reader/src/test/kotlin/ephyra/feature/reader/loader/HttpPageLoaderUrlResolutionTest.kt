@@ -22,7 +22,6 @@ import okhttp3.Request
 import okhttp3.Response
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -147,13 +146,21 @@ class HttpPageLoaderUrlResolutionTest {
         private val chapter = ReaderChapter(Chapter.create().copy(id = 1, name = "Ch 1"))
         private val loader = HttpPageLoader(chapter, source, cache)
 
-        fun loadAndRecordRequestedUrl(): String = loadFirstPage().also {
+        /**
+         * Loads the page and returns the address the loader asked for. The status is checked first:
+         * a page that ended in `Error` never issued a request, so a bare URL assertion could pass
+         * against a stale recording or report a null for a reason that has nothing to do with the
+         * rule under test.
+         */
+        fun loadAndRecordRequestedUrl(): String {
+            val page = loadFirstPage()
             assertEquals(
                 Page.State.Ready,
-                it.status,
-                "the page ended in ${it.status} rather than Ready, so no request was ever made",
+                page.status,
+                "the page ended in ${page.status} rather than Ready, so the URL was never requested",
             )
-        }.let { requireNotNull(cache.requested) { "the image was never requested" } }
+            return requireNotNull(cache.requested) { "the image was never requested" }
+        }
 
         fun loadFirstPage(): ReaderPage {
             val pages = runBlocking { loader.getPages() }

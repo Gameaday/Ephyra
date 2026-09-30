@@ -26,6 +26,14 @@ Identifies bytes without owning UI or persistence:
 sourceId, pageIndex, sourceRevision, sourceKind, accessPolicy
 ```
 
+A page's delivery URL is **absolute before it crosses the request boundary**. A source may name a
+page relatively — `img.attr("src")` rather than `absUrl("src")`, or the protocol-relative `//cdn…`
+a `<base>`-tagged site emits — and the missing half is completed against the source's base URL
+(`ImageUrlPolicy.resolve`, one owner for the rule). It is formed rather than rejected: an
+incomplete address is not a broken one, and a request that cannot be built costs a retry ladder
+and a user-facing message to report a fact the app already held. `ImageUrlPolicy.defectOf` remains
+the pre-flight check for what genuinely cannot address a host (`DEF-023`, `DEF-027`).
+
 ### SourceIdentity
 
 Separates logical page identity from delivery URL. The identity must be stable enough to invalidate a changed page without hashing multi-megabyte bytes on every composition.
