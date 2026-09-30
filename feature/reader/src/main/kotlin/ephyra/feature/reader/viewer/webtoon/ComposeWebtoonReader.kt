@@ -76,8 +76,6 @@ import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.ImageUtil
 import ephyra.domain.reader.gesture.ReaderGestureEffect
-import ephyra.feature.reader.model.ChapterTransition
-import ephyra.feature.reader.model.ReaderChapter
 import ephyra.domain.reader.media.AnimationPolicy
 import ephyra.domain.reader.media.AnimationVerdict
 import ephyra.domain.reader.media.PageDecodeWidth
@@ -87,6 +85,8 @@ import ephyra.domain.reader.media.PageZoomPolicy
 import ephyra.domain.reader.media.RenderPathPolicy
 import ephyra.domain.reader.media.supportsRegionDecode
 import ephyra.domain.reader.media.toPageImageFormat
+import ephyra.feature.reader.model.ChapterTransition
+import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import ephyra.feature.reader.viewer.ChapterPositionTracker
 import ephyra.feature.reader.viewer.ReaderPageErrorView
