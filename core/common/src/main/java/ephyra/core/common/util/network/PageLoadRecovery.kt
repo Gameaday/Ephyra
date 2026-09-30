@@ -1,0 +1,279 @@
+package ephyra.core.common.util.network
+
+import eu.kanade.tachiyomi.network.HttpException
+import ephyra.core.common.util.network.PageLoadRecoveryAction.GIVE_UP
+import ephyra.core.common.util.network.PageLoadRecoveryAction.RE_RESOLVE_URL
+import ephyra.core.common.util.network.PageLoadRecoveryAction.RETRY_SAME_URL
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
+import kotlin.random.Random
+
+/** What a caller should do about a page image that failed to load. */
+enum class PageLoadRecoveryAction {
+    /** The connection failed and this URL is still the best one available. Try it again. */
+    RETRY_SAME_URL,
+
+    /**
+     * The URL is what failed. Drop it and ask the source for a different one.
+     *
+     * This is the arm a source with rotating image hosts depends on: the first resolution returns a
+     * CDN that is refusing or unreachable, the second returns a different one, and the page loads.
+     */
+    RE_RESOLVE_URL,
+
+    /** Nothing left to try. Surface [PageLoadRecoveryDecision.error] to the user. */
+    GIVE_UP,
+}
+
+/**
+ * What to do about one failed load, and why.
+ *
+ * @property action the caller's next move.
+ * @property dropUrl whether the failed URL must be cleared from the page before the next attempt,
+ *   *including* when [action] is [PageLoadRecoveryAction.GIVE_UP]. A URL the classifier has
+ *   indicted is dead whether or not we try again, and leaving it on the page would let it reach the
+ *   persisted page list, so the next open of the chapter would start from an address already known
+ *   to be bad.
+ * @property delayMs how long to wait before acting. Zero when [action] is
+ *   [PageLoadRecoveryAction.GIVE_UP], because nothing follows it.
+ * @property attempt the 1-based attempt number this decision was made for.
+ * @property reason a short human-readable cause, for logs and tests.
+ * @property error the throwable to surface if this is [PageLoadRecoveryAction.GIVE_UP].
+ */
+data class PageLoadRecoveryDecision(
+    val action: PageLoadRecoveryAction,
+    val dropUrl: Boolean,
+    val delayMs: Long,
+    val attempt: Int,
+    val reason: String,
+    val error: Throwable,
+)
+
+/**
+ * One attempt at loading a page image, kept so a final failure can say what was tried.
+ *
+ * @property url the URL requested, or `null` when the failure happened before one existed.
+ * @property error what went wrong.
+ * @property errorLabel a short description of [error], safe to put in a log line.
+ */
+data class PageLoadAttempt(val url: String?, val error: Throwable, val errorLabel: String)
+
+/**
+ * The single owner of "a page image failed; what now?" — the retry decision, the budget, the
+ * backoff, the memory of a URL already proved unusable, and the record of what was tried.
+ *
+ * **Why this is one object rather than a helper called at four sites.** The reader and the
+ * downloader each carried their own copy of this decision, and they had already drifted in three
+ * ways that matter in the real world:
+ *
+ * - **Different backoff for the same rule.** The reader waited 1s/2s/4s; the downloader waited
+ *   2s/4s/8s, from `(2L shl attempt) * 1000`. Two schedules, one meaning, no compiler objecting.
+ * - **No jitter in either.** Chapter pages load in parallel, so pages that failed together retried
+ *   together, in lockstep, at the instant the backoff expired. A source that was already
+ *   unhappy received a synchronised burst. The app already knew this — `RateLimitBackoffInterceptor`
+ *   jitters, and its own comment says *"without jitter every in-flight request would retry at the
+ *   same instant and trip the limit again"* — but that interceptor only covers 429/503, and the
+ *   URL-stale family this class is mostly about is 403 and dead hosts.
+ * - **Only the reader could change hosts.** The reader dropped a URL the classifier indicted and
+ *   asked the source again; the downloader retried the identical string. `TransientErrors` was
+ *   shared between them — which is `DEF-021`'s fix — but only the *classification* was shared.
+ *   The *action* was still two copies, so for any source with short-lived signed image URLs the
+ *   same chapter read successfully and failed to download.
+ *
+ * **What is deliberately not here.** This decides; it does not act. Dropping the URL and calling
+ * `getImageUrl` belong to the caller, which owns the page and the source. Putting the action here
+ * too would need a `Source` in `core:common` and would make the rule untestable without one.
+ *
+ * **The budget is one counter, not two.** It is tempting to give "this URL is dead, ask again" a
+ * larger allowance than "the connection wobbled", on the grounds that only the URL changes. That
+ * would raise the worst-case request count for a page. The request budget is held to what it was,
+ * and only the *delay* differs by kind: a re-resolve is answered sooner because the next attempt is
+ * a different request to a possibly different host, while a same-URL retry keeps the longer ramp
+ * because it is the same request again.
+ *
+ * Not thread-safe, and deliberately so: one instance belongs to one page's load, and the pages of
+ * a chapter load concurrently on separate instances. See [ReResolvePacer] for the one piece of
+ * state that genuinely has to be shared.
+ */
+class PageLoadRecovery(
+    /** Retries allowed after the first attempt. The default reproduces the reader's previous cap. */
+    private val maxRetries: Int = DEFAULT_MAX_RETRIES,
+    private val sameUrlBaseDelayMs: Long = DEFAULT_SAME_URL_BASE_DELAY_MS,
+    private val reResolveBaseDelayMs: Long = DEFAULT_RE_RESOLVE_BASE_DELAY_MS,
+    private val maxDelayMs: Long = DEFAULT_MAX_DELAY_MS,
+    private val random: () -> Double = { Random.nextDouble() },
+) {
+
+    private val recorded = mutableListOf<PageLoadAttempt>()
+    private var retries = 0
+
+    /**
+     * A URL this load has already found structurally unusable.
+     *
+     * Held here rather than on the page because it is a fact about *this attempt sequence*, not
+     * about the page: the page's own answer to "is my URL any good" is that it no longer has one.
+     * Its only use is to stop asking the source for a string already proved incapable of addressing
+     * a host — every such call is a round-trip spent learning nothing.
+     */
+    private var rejectedUrl: String? = null
+
+    /** Every attempt made so far, oldest first. */
+    val attempts: List<PageLoadAttempt> get() = recorded.toList()
+
+    /** The last failure, or `null` before the first one. */
+    val lastError: Throwable? get() = recorded.lastOrNull()?.error
+
+    /**
+     * True when [resolved] is a string this load has already rejected as unable to address a host.
+     *
+     * The caller uses this to fail immediately instead of spending a request on an address that
+     * provably cannot work. It reports the *rejection*, not a policy verdict — whether the string is
+     * acceptable in the first place is [ImageUrlPolicy]'s question, and the caller asks that too.
+     */
+    fun isKnownUnusable(resolved: String?): Boolean = resolved != null && resolved == rejectedUrl
+
+    /**
+     * Records that [url] passed the pre-flight check, clearing the unusable-URL memory.
+     *
+     * Called on every attempt that gets past [ImageUrlPolicy.requireUsable], which is what the
+     * loader's `rejectedUrl = null` did — so a URL the source repeats after having produced a good
+     * one is asked for again rather than refused on the strength of an older failure.
+     */
+    fun onResolved(url: String?) {
+        rejectedUrl = null
+    }
+
+    /** Records a structurally unusable [url], so it is not requested a second time. */
+    fun onRejectedUrl(url: String?) {
+        if (url != null) rejectedUrl = url
+    }
+
+    /**
+     * Decides what to do about [error], which was raised while requesting [url].
+     *
+     * Records the attempt either way: a page that gives up having tried three hosts is the case
+     * worth being able to explain afterwards, and it is exactly the case that currently cannot be.
+     */
+    fun onFailure(url: String?, error: Throwable): PageLoadRecoveryDecision {
+        recorded += PageLoadAttempt(url, error, describe(error))
+        val attempt = recorded.size
+
+        // Whether the URL is indicted is independent of whether the failure is worth retrying, and
+        // the caller needs both: a permanent 404 is not retried, but a 403 is, and both must leave
+        // the page without a URL that is known to be bad.
+        val dropUrl = TransientErrors.shouldReResolveUrl(error)
+        if (error is MalformedImageUrlException) {
+            // Keyed off the exception rather than a re-run of the policy, so the remembered string
+            // is exactly the one that was rejected.
+            onRejectedUrl(error.url)
+        }
+
+        if (!TransientErrors.isTransient(error)) {
+            return giveUp(attempt, dropUrl, error, "not a transient failure")
+        }
+        if (retries >= maxRetries) {
+            return giveUp(attempt, dropUrl, error, "retry budget exhausted after $maxRetries retries")
+        }
+
+        retries++
+        val action = if (dropUrl) RE_RESOLVE_URL else RETRY_SAME_URL
+        return PageLoadRecoveryDecision(
+            action = action,
+            dropUrl = dropUrl,
+            delayMs = backoffMs(action, retries),
+            attempt = attempt,
+            reason = if (dropUrl) "the URL is at fault" else "the connection failed",
+            error = error,
+        )
+    }
+
+    /**
+     * The delay before attempt number [retry] (1-based) of the given [action].
+     *
+     * Full jitter, drawn between the previous ceiling and the next one, for the reason
+     * `RateLimitBackoffInterceptor` gives: pages load in parallel, so a fixed delay has every failed
+     * page retrying at the same instant. Exposed so a caller pacing its own re-resolves can ask the
+     * same question without reaching for a second schedule.
+     */
+    fun backoffMs(action: PageLoadRecoveryAction, retry: Int): Long {
+        val base = when (action) {
+            RE_RESOLVE_URL -> reResolveBaseDelayMs
+            RETRY_SAME_URL -> sameUrlBaseDelayMs
+            GIVE_UP -> return 0
+        }
+        val step = (retry - 1).coerceIn(0, MAX_BACKOFF_EXPONENT)
+        val previousCeiling = base shl step
+        val ceiling = (base shl (step + 1)).coerceAtMost(maxDelayMs)
+        val boundedPrevious = previousCeiling.coerceAtMost(maxDelayMs)
+        if (ceiling <= boundedPrevious) return boundedPrevious
+        return boundedPrevious + ((ceiling - boundedPrevious) * random()).toLong()
+    }
+
+    private fun giveUp(attempt: Int, dropUrl: Boolean, error: Throwable, reason: String) =
+        PageLoadRecoveryDecision(
+            action = GIVE_UP,
+            dropUrl = dropUrl,
+            delayMs = 0,
+            attempt = attempt,
+            reason = reason,
+            error = error,
+        )
+
+    /**
+     * A one-line account of every attempt, for the log at the point a page finally fails.
+     *
+     * `tried 3 URLs: cdn-a.example (HTTP error 403), cdn-b.example (timeout), cdn-c.example
+     * (HTTP error 403)`. This is the sentence whose absence made the original report a puzzle: the
+     * page failed, the user could see one error, and nothing anywhere recorded which hosts had been
+     * tried or what each had said.
+     */
+    fun summary(): String {
+        if (recorded.isEmpty()) return "no attempts recorded"
+        return "tried ${recorded.size} attempt(s): " +
+            recorded.joinToString(", ") { attempt ->
+                val host = attempt.url?.let(::hostOf) ?: "<no url>"
+                "$host (${attempt.errorLabel})"
+            }
+    }
+
+    private fun hostOf(url: String): String = url
+        .substringAfter("://", url)
+        .substringBefore('/')
+        .ifBlank { "<unparseable>" }
+
+    /**
+     * A short label for a throwable, for a log line: the status code where there is one, otherwise
+     * the exception type. A stack trace is not wanted in a one-line summary, but `HttpException`
+     * and `ConnectException` are both "an exception happened" to anyone reading a log, and the code
+     * is the whole point of the line.
+     */
+    private fun describe(error: Throwable): String = when (error) {
+        is HttpException -> "HTTP ${error.code}"
+        is SocketTimeoutException -> "timeout"
+        is UnknownHostException -> "host did not resolve"
+        else -> error::class.simpleName ?: "Throwable"
+    }
+
+    /**
+     * Policy defaults, public so a caller can reason about — or a test can assert against — the
+     * same numbers the defaults use, rather than a second copy of them in a test that can drift.
+     */
+    companion object {
+        /** Retries allowed after the first attempt. */
+        const val DEFAULT_MAX_RETRIES = 3
+
+        /** Delay before the first same-URL retry, doubled per attempt up to [DEFAULT_MAX_DELAY_MS]. */
+        const val DEFAULT_SAME_URL_BASE_DELAY_MS = 1_000L
+
+        /**
+         * Delay before the first re-resolve, lower than [DEFAULT_SAME_URL_BASE_DELAY_MS] because
+         * the next attempt is a different request to a possibly different host.
+         */
+        const val DEFAULT_RE_RESOLVE_BASE_DELAY_MS = 250L
+
+        /** Ceiling for both ladders. Beyond this a retry stops being worth the reader's patience. */
+        const val DEFAULT_MAX_DELAY_MS = 8_000L
+
+        private const val MAX_BACKOFF_EXPONENT = 6
+    }
+}
