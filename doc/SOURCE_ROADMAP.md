@@ -150,6 +150,11 @@ would revive.
 - [x] Delete the Content Sourcing hub — the one user-reachable screen that could only ever fail,
       since `discover()` now raises `NoEngineBoundException`. Screen, view model, test, route and
       the Sources-tab button. The button was a dead end in the primary Sources tab
+- [x] Drop `source_profiles.scraper_filename` (Room v3 → v4) — nothing ever wrote it, so it was null
+      on every row; it was the last piece of the JS runtime still in the schema. The migration
+      rebuilds the table, and `testMigrateV3ToV4DropsScraperFilenameAndKeepsProfiles` proves a
+      profile survives with the column gone — verified non-vacuous by mutating the migration to
+      discard rows and watching it fail
 - [ ] **Decide: delete the rest of the profile path, or keep it as Jellyfin's landing pad.** Scoped
       and *not* done here, because it is not the dead code it looks like: `RemoveCustomSource` and
       `UpdateCustomSource` are wired into the working Extensions and Source Management screens,
@@ -175,7 +180,8 @@ last, and only when no shipped source needs them.
 
 ## 7. Open questions needing a decision, not more analysis
 
-- Is `scraperFilename` still worth a Room column now that no source type uses it? Nothing writes it.
+- ~~Is `scraperFilename` still worth a Room column now that no source type uses it?~~ **RESOLVED** —
+      dropped in Room v3 → v4. Nothing ever wrote it.
 - ~~`DEFAULT_DOMAINS`~~ **RESOLVED.** Both hardcoded fallbacks are gone (`SourceProfileCache` and
   `RoomSourceProfileStore`). With no engine they were permanently the answer, so the Sources list
   always showed three sites the app could not serve.
