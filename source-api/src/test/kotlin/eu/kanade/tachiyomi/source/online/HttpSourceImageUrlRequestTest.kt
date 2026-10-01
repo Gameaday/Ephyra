@@ -1,5 +1,6 @@
 package eu.kanade.tachiyomi.source.online
 
+import ephyra.core.common.util.network.MalformedImageUrlException
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.source.model.MangasPage
 import eu.kanade.tachiyomi.source.model.Page
@@ -9,9 +10,11 @@ import okhttp3.Headers
 import okhttp3.Request
 import okhttp3.Response
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
+import org.junit.jupiter.params.provider.ValueSource
 
 /**
  * Pins that the two default `HttpSource` request builders can always build a request.
@@ -88,6 +91,93 @@ class HttpSourceImageUrlRequestTest {
             .imageRequestFor(Page(0, "/page/1.jpg", "//cdn.example.com/1.jpg"))
 
         assertEquals("https://cdn.example.com/1.jpg", request.url.toString())
+    }
+
+    /**
+     * The address the owner actually saw:
+     *
+     * ```
+     * Unable to resolve host "cmdxd98sb0x3yprd.mangadex.network,https"
+     * ```
+     *
+     * A host and a scheme joined by a comma. Nothing in this codebase concatenates two addresses
+     * with `","`, so the string is produced by whatever builds the page list — but the *pipeline*
+     * is what decides whether it is ever requested, and until now only the reader checked. The
+     * downloader reaches `getImage` without consulting that check, so a spliced address was built
+     * into a real [Request], canonicalised by OkHttp into a syntactically valid host, and handed to
+     * DNS, which reported a name-resolution failure about a host that could never exist.
+     *
+     * Asserted at the constructor because that is the seam: the point is that the request is never
+     * built, not that some later stage notices.
+     */
+    @ParameterizedTest
+    @ValueSource(
+        strings = [
+            "https://cmdxd98sb0x3yprd.mangadex.network,https/data/1.jpg",
+            "https://mangadex.org,https/data/1.jpg",
+        ],
+    )
+    fun `a spliced image URL is refused before a request can be built`(spliced: String) {
+        assertThrows(MalformedImageUrlException::class.java) {
+            TestSource("https://mangadex.org").imageRequestFor(Page(0, "", spliced))
+        }
+    }
+
+    /** The same rule on the deprecated builder, which is the chain a legacy source actually reaches. */
+    @Test
+    fun `a spliced page URL is refused before a request can be built`() {
+        assertThrows(MalformedImageUrlException::class.java) {
+            TestSource("https://mangadex.org").imageUrlRequestFor(
+                Page(0, "https://cmdxd98sb0x3yprd.mangadex.network,https/data/1.jpg"),
+            )
+        }
+    }
+
+    /**
+     * An API source that hands back `Page(index, imageUrl = absolute)` and leaves `url` at its `""`
+     * default — the shape `SRC-012` describes, and the only common source whose image host is a
+     * fresh per-request address. Resolving `url` alone yields `""`, which no request can carry.
+     */
+    @Test
+    fun `an API-shaped page is requested by its image URL when its url is empty`() {
+        val atHome = "https://cmdxd98sb0x3yprd.mangadex.network/data/hash/1.jpg"
+
+        val request = TestSource("https://mangadex.org").imageRequestFor(Page(0, "", atHome))
+
+        assertEquals(atHome, request.url.toString())
+    }
+
+    /**
+     * The at-home address shape `SRC-012` describes: host, then an explicit port, then the quality,
+     * hash and filename segments. MangaDex is the one common source whose image host is a fresh
+     * per-request address rather than a stable CDN, so a resolution rule that mangles a host, drops a
+     * path or re-roots it against `baseUrl` shows up here and nowhere else.
+     *
+     * The port is deliberately non-default: on `https` OkHttp canonicalises `:443` away when the
+     * request is built, which is correct but would make the assertion about OkHttp's normalisation
+     * rather than about this pipeline passing the string through untouched.
+     */
+    @Test
+    fun `an at-home address keeps its host, port and path`() {
+        val atHome = "https://cmdxd98sb0x3yprd.mangadex.network:8443/data/hash/1.jpg"
+
+        val request = TestSource("https://mangadex.org").imageRequestFor(Page(0, "", atHome))
+
+        assertEquals(atHome, request.url.toString())
+    }
+
+    /**
+     * The same preference on the deprecated builder, where it is the difference between a real
+     * request and `GET("")`. `Page.imageUrl` is documented as the resolved address, so when both
+     * fields are populated the one that can address a host is the one to use.
+     */
+    @Test
+    fun `the populated image URL wins over an empty page url`() {
+        val atHome = "https://cmdxd98sb0x3yprd.mangadex.network/data/hash/1.jpg"
+
+        val request = TestSource("https://mangadex.org").imageUrlRequestFor(Page(0, "", atHome))
+
+        assertEquals(atHome, request.url.toString())
     }
 
     /**

@@ -417,6 +417,15 @@ abstract class HttpSource : CatalogueSource {
      * strictly cheaper than reporting its absence. Overrides that build their own request inherit
      * nothing from this, which is why `HttpPageLoader` resolves the resolved URL again before use.
      *
+     * When [Page.imageUrl] is already populated it is preferred over [Page.url]. API sources
+     * (MangaDex is the canonical one) build `Page(index, imageUrl = absolute)` with `url` left at
+     * its `""` default, so resolving `url` alone can only produce `""` — which `GET` rejects while
+     * building the request. Preferring the populated field mirrors the documented contract
+     * ("only called if `Page.imageUrl` is null", see [getImageUrl]) and what
+     * `DynamicHttpSource.getImageUrl` already does. Callers that honour the contract always arrive
+     * with `imageUrl == null` and see no behaviour change; callers that arrive with both fields set
+     * get the field that can actually address a host.
+     *
      * @param page the chapter whose page list has to be fetched
      */
     @Deprecated(
@@ -424,7 +433,10 @@ abstract class HttpSource : CatalogueSource {
             "Source developers should make their own implementation according to their needs.",
     )
     protected open fun imageUrlRequest(page: Page): Request {
-        return GET(ImageUrlPolicy.resolve(page.url, baseUrl), headers)
+        val candidate = page.imageUrl?.takeIf { it.isNotBlank() } ?: page.url
+        val imageUrl = ImageUrlPolicy.resolve(candidate, baseUrl)
+        ImageUrlPolicy.requireUsable(imageUrl)
+        return GET(imageUrl, headers)
     }
 
     /**
@@ -452,7 +464,18 @@ abstract class HttpSource : CatalogueSource {
     protected open fun imageRequest(page: Page): Request {
         // `!!` kept deliberately: a null image URL here is a caller that broke the contract, and
         // failing on that immediately is not the same failure as a URL that cannot address a host.
-        return GET(ImageUrlPolicy.resolve(page.imageUrl!!, baseUrl), headers)
+        val imageUrl = ImageUrlPolicy.resolve(page.imageUrl!!, baseUrl)
+        // The same verdict the reader reaches at its own seam, enforced here so that *every* path to
+        // this constructor is covered — `Downloader` never consults the reader's check, and an
+        // override that builds its own request inherits nothing from this. A spliced address such as
+        // `cmdxd98sb0x3yprd.mangadex.network,https` parses well enough for OkHttp to canonicalise and
+        // hand to DNS, so the request would otherwise be built and then fail as
+        // `UnknownHostException` — a network verdict about a host that could never exist. Thrown
+        // before the [Request] exists, `MalformedImageUrlException` is classified by
+        // `TransientErrors.shouldReResolveUrl` as "ask the source again", which is the only thing
+        // that can recover: the source built the string and may build a different one next time.
+        ImageUrlPolicy.requireUsable(imageUrl)
+        return GET(imageUrl, headers)
     }
 
     /**

@@ -164,6 +164,7 @@ class ReaderReadCompletionWiringTest {
     private fun createViewModel(): ReaderViewModel = ReaderViewModel(
         savedState = savedState,
         sourceManager = sourceManager,
+        sourceResolutionDiagnostics = mockk(relaxed = true),
         downloadManager = downloadManager,
         downloadProvider = downloadProvider,
         imageSaver = imageSaver,
