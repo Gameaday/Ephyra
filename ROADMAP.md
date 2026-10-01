@@ -7,6 +7,10 @@
 
 This file is the single entry point for the reconstruction program. If another document disagrees with this file, the disagreement is a documentation defect and must be corrected before implementation continues.
 
+> **Sourcing has its own authority:** [`doc/SOURCE_ROADMAP.md`](doc/SOURCE_ROADMAP.md) decides what is
+> current, compatibility, or planned in content sourcing. Read it before any sourcing work — it
+> supersedes the sourcing sections of the documents listed below.
+
 ## Program documents
 
 1. [`doc/REBUILD_PROGRAM.md`](doc/REBUILD_PROGRAM.md)  complete phased architecture and delivery plan.
@@ -32,6 +36,7 @@ This file is the single entry point for the reconstruction program. If another d
 21. [`doc/source/SOURCE_REMOVAL_PLAN.md`](doc/source/SOURCE_REMOVAL_PLAN.md)  ordered legacy bridge removal gates.
 22. [`doc/E4_ACCEPTANCE.md`](doc/E4_ACCEPTANCE.md)  device-evidence runbook, artifact format, and what a screenshot may and may not prove.
 23. [`doc/BUILD_HEALTH.md`](doc/BUILD_HEALTH.md)  repository health ratchets, timing budgets, and verified device availability.
+ 24. [`doc/SOURCE_ROADMAP.md`](doc/SOURCE_ROADMAP.md)  **sourcing authority** — current vs compatibility vs planned, phases, gates, and what must not be reintroduced.
 
 ## Program outcome
 
@@ -51,6 +56,8 @@ Build a modern Android application in which:
 - search is progressive, cancellable, bounded, provenance-preserving, and deterministically ranked;
 - source health and migration are observable, explicit, reversible, and non-destructive by default;
 - no feature imports legacy source types, service locators, or concrete adapters directly;
+- a **sourcing** authority exists that marks every component current, compatibility, or planned, and
+  says what must not be reintroduced (`doc/SOURCE_ROADMAP.md`);
 - documentation has one authority order; superseded “completed” documents are deleted or clearly historical.
 
 ## Non-negotiable rules

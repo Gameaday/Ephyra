@@ -58,7 +58,7 @@ feature browse
 DynamicHttpSource
   -> ContentSourceOrchestrator
   -> SourceProfile
-  -> ScriptableContentSourceEngine or AdaptiveHeuristicEngine
+  -> AdaptiveHeuristicEngine            (JS_SCRAPER engine removed, ADR-0013)
   -> legacy SManga/SChapter/Page
   -> existing UI
 ```

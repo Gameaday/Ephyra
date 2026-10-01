@@ -102,11 +102,31 @@ class DynamicHttpSource(
         return SMangaUpdate(updatedManga, updatedChapters)
     }
 
+    /**
+     * The crossing from an orchestrator profile into legacy pages.
+     *
+     * **This is the adapter seam** (`ADR-0014`), and it is the first production code to reach the
+     * `ContentAdapter` contract rather than only declaring it. The full extraction — moving every
+     * method here behind the interface — is Phase 4 of `doc/SOURCE_ROADMAP.md`; doing only `getPageList`
+     * now is deliberate, because this is the one method where an unchecked output becomes a request.
+     *
+     * The rest of this class still forwards through `resolveUrl` without a verdict, so a malformed
+     * string is caught downstream by `HttpSource.imageRequest` instead of here. That is a safe
+     * fallback, not an equivalent: the failure is reported as a transport fault rather than an adapter
+     * fault, which is precisely the misdiagnosis that made the MangaDex report expensive.
+     */
     override suspend fun getPageList(chapter: SChapter): List<Page> {
         val fullUrl = resolveUrl(chapter.url)
         val pages = orchestrator.getPages(baseUrl, fullUrl).getOrThrow()
         return pages.mapIndexed { index, imageUrl ->
             val resolvedUrl = resolveUrl(imageUrl)
+            // Ask whether the address is worth requesting *here*, at the point the shape changes from
+            // ours to the ABI's. A spliced address such as `cmxd98sb0x3yprd.mangadex.network,https`
+            // parses well enough for OkHttp to canonicalise and hand to DNS, so without this it costs
+            // a request and surfaces as `UnknownHostException` — a network verdict about a host that
+            // could never exist. `requireUsable` is the single owner of that judgement, so this cannot
+            // drift from what the loader will later enforce.
+            ImageUrlPolicy.requireUsable(resolvedUrl)
             Page(index = index, url = resolvedUrl, imageUrl = resolvedUrl)
         }
     }

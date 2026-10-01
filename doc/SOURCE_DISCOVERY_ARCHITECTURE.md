@@ -116,8 +116,8 @@ The only currently verified working source path is the legacy extension path. It
 | `:source-api` `eu.kanade.tachiyomi.*` | Legacy extension ABI | Temporary adapter boundary | Keep only behind `LegacyExtensionAdapter`; remove after exit gate |
 | `:source-api` `ephyra.source.api.*` | Emerging content-source API | Target contract candidate | Normalize into capability/result contracts; no legacy DTO leakage |
 | `ContentSourceOrchestrator` | Domain orchestration with heuristic fallback | Target policy | Replace empty-list inference with typed outcomes and explicit capabilities |
-| `ScriptableContentSourceEngine` | Script-backed source engine, currently not verified | Deferred experimental adapter | Do not include in the initial product path; repair and test under a separate task before any release claim. |
-| `AdaptiveHeuristicEngine` | Heuristic DOM engine, currently not verified | Deferred discovery assistant | Do not use as an authoritative source. A future task may repair and test it as a proposal/validation tool. |
+| `ScriptableContentSourceEngine` | ~~Script-backed source engine~~ | **REMOVED** | Deleted with the JS runtime (`ADR-0013`). Do not include in any product path; it no longer exists. |
+| `AdaptiveHeuristicEngine` | Heuristic DOM engine — now the only bound engine | Current, and the orchestrator's fallback | Keep. It serves `HEURISTIC` profiles and is the declared fallback for any source type with no engine, so a forgotten binding degrades visibly instead of misrouting. |
 | `DynamicHttpSource` | Legacy-shaped bridge over orchestrator | Temporary adapter | Migrate callers to `SourceGateway`; delete when no callers remain |
 | `ExtensionLoader` | APK install/load/trust boundary | Temporary platform adapter | Isolate trust, credentials, lifecycle, and removal gate |
 | `GlobalSearchViewModel` | Search orchestration/UI state | Target session owner | Replace with progressive `SearchSession` and pure ranking |
