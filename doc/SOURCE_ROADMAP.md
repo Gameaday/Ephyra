@@ -3,7 +3,8 @@
 > **Authority:** this file decides what is current, what is compatibility, and what is planned for
 > content sourcing. Where an older document disagrees, **this file wins** and the other is a defect.
 >
-> **Last updated:** 2026-09-30, after `ADR-0015` (heuristic removal). Supersedes `ADR-0013` (JS) and `ADR-0014`
+> **Last updated:** 2026-09-30, after the dependency-hygiene pass (orphaned QuickJS AAR removed).
+> Supersedes `ADR-0013` (JS) and `ADR-0014`
 > attribution). Supersedes the sourcing sections of `SOURCE_DISCOVERY_ARCHITECTURE.md` and
 > `SOURCE_DISCOVERY_EXECUTION.md`.
 
@@ -140,6 +141,12 @@ would revive.
 - [x] `DynamicHttpSource.getPageList` validates at the adapter seam
 - [x] Remove both hardcoded `DEFAULT_DOMAINS` fallbacks (they were permanently the answer)
 - [x] Orchestrator tolerates an empty registry and raises `NoEngineBoundException`
+- [x] Remove the orphaned QuickJS AAR — `core/common` still declared `libs.bundles.js.engine` after the
+      JS engine was deleted, so a clean build packaged `libquickjs.so` into all five ABIs for a runtime
+      nothing calls. Found with `:app:dependencies --configuration debugRuntimeClasspath`, which showed
+      it as a *direct* dependency rather than transitive. Removed the module dependency, the
+      `keepDebugSymbols` entry, and the two orphaned `libs.versions.toml` lines. Jsoup stays: it is
+      still used by `EpubReader` and `CloudflareInterceptor`
 - [x] Delete the Content Sourcing hub — the one user-reachable screen that could only ever fail,
       since `discover()` now raises `NoEngineBoundException`. Screen, view model, test, route and
       the Sources-tab button. The button was a dead end in the primary Sources tab
