@@ -82,18 +82,21 @@ class PreferenceSourceProfileStore(
     }
 
     /**
-     * Retrieve all profiled domains dynamically, falling back to a pre-populated default set.
+     * Retrieve the domains that actually have a profile, from the preference alone.
+     *
+     * **The hardcoded fallback is gone.** This used to return mangadex.org / manganato.com /
+     * asuratoons.com whenever the preference was empty. That was a hidden default doing two kinds of
+     * damage at once: it made "no sources configured" indistinguishable from "these three", and it
+     * named real sites the app could not actually serve. Since `ADR-0015` removed the only engine
+     * that could create a profile, the real list is now *always* empty — so the fallback was not a
+     * fallback at all, it was the permanent answer, and the Sources list showed three sources that
+     * could never load.
+     *
+     * An empty set is the honest answer, and it is what the rest of the code already handles: the
+     * sources list renders empty and the user installs an extension APK to populate it.
      */
     override suspend fun getAllProfiledDomains(): Set<String> {
-        val customList = preferenceStore.getStringSet("profiled_domains_list", emptySet()).get()
-        if (customList.isEmpty()) {
-            return setOf(
-                "https://mangadex.org",
-                "https://manganato.com",
-                "https://asuratoons.com",
-            )
-        }
-        return customList
+        return preferenceStore.getStringSet("profiled_domains_list", emptySet()).get()
     }
 
     /** Check if a profile exists in cache. */

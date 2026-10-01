@@ -97,8 +97,24 @@ class SourceProfileCacheTest {
         assertEquals(setOf("https://mangadex.org", "https://manganato.com"), all.map { it.baseUrl }.toSet())
     }
 
+    /**
+     * No sources configured is not "these three sites".
+     *
+     * This test used to assert the opposite — that `getAllProfiledDomains` returned 3 defaults
+     * before any profiling — which is how the app came to list mangadex.org, manganato.com and
+     * asuratoons.com as available sources despite having no way to serve them. `ADR-0015` removed the
+     * only engine that could create a profile, so the real list is now always empty, and the fallback
+     * was the permanent answer rather than a fallback.
+     *
+     * An empty answer is the honest one: the Sources list renders empty until the user installs an
+     * extension APK.
+     */
     @Test
-    fun `getAllProfiledDomains returns defaults before any profiling`() = runTest {
-        assertEquals(3, cache.getAllProfiledDomains().size)
+    fun `getAllProfiledDomains is empty when nothing is profiled`() = runTest {
+        assertEquals(
+            emptySet<String>(),
+            cache.getAllProfiledDomains(),
+            "no profile can be created, so inventing domains here would list sources that cannot load",
+        )
     }
 }

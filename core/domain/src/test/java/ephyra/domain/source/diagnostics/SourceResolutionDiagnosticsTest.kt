@@ -63,18 +63,44 @@ class SourceResolutionDiagnosticsTest {
         report.domainsWithIdentityMismatch shouldBe emptySet()
     }
 
+    /**
+     * A profiled domain with no registered source is the DEF-029 signature, and the diagnostic must
+     * report it rather than pass.
+     *
+     * This test used to reach that state through the cache's *hardcoded fallback* — writing no
+     * preference and asserting the invented trio came back unregistered. That fallback is gone
+     * (`ADR-0015` removed the only engine that could create a profile, so it was permanently the
+     * answer rather than a fallback), which means the scenario has to be set up honestly: a domain
+     * really is in the list, and really is absent from the source map. That is the actual defect —
+     * "the resolution machinery claims domains the map does not have" — rather than an artifact of
+     * where the claim came from.
+     */
     @Test
-    fun `the cache's hardcoded fallback is reported as unregistered when the preference is empty`() = runTest {
-        // No preference written: SourceProfileCache answers with its hardcoded trio, which is the
-        // state DEF-029 describes — the resolution machinery claims domains the map does not have.
+    fun `a profiled domain with no registered source is reported as missing`() = runTest {
+        // Written to the preference, and deliberately *not* registered in the source map.
+        store.getStringSet("profiled_domains_list", emptySet()).set(setOf(origin))
+
         val report = diagnostics().inspectRegistration()
 
-        report.profiledDomains shouldBe setOf(
-            "https://mangadex.org",
-            "https://manganato.com",
-            "https://asuratoons.com",
-        )
-        report.domainsWithoutRegisteredSource shouldBe report.profiledDomains
+        report.profiledDomains shouldBe setOf(origin)
+        report.domainsWithoutRegisteredSource shouldBe setOf(origin)
+        report.sourceManagerReady shouldBe true
+    }
+
+    /**
+     * With nothing profiled there is nothing to disagree about.
+     *
+     * Worth pinning separately because the old fallback made this state impossible to reach: the
+     * cache always answered with three domains, so "no sources configured" was never observable and
+     * a healthy install looked identical to a broken one.
+     */
+    @Test
+    fun `an unprofiled install reports no disagreement at all`() = runTest {
+        // No preference written, and the cache now honestly answers empty.
+        val report = diagnostics().inspectRegistration()
+
+        report.profiledDomains shouldBe emptySet()
+        report.domainsWithoutRegisteredSource shouldBe emptySet()
         report.sourceManagerReady shouldBe true
     }
 

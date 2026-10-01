@@ -144,9 +144,11 @@ last, and only when no shipped source needs them.
 ## 7. Open questions needing a decision, not more analysis
 
 - Is `scraperFilename` still worth a Room column now that no source type uses it? Nothing writes it.
-- `RoomSourceProfileStore.DEFAULT_DOMAINS` hardcodes a MangaDex/manganato/asuratoons trio as a fallback
-  for an empty preference set. That makes "no sources configured" indistinguishable from "these three",
-  and it is a hidden default. Delete it with the Phase 4 registry work.
+- ~~`DEFAULT_DOMAINS`~~ **RESOLVED.** Both hardcoded fallbacks are gone (`SourceProfileCache` and
+  `RoomSourceProfileStore`). With no engine they were permanently the answer, so the Sources list
+  always showed three sites the app could not serve.
+- ~~Does the heuristic engine stay a product feature?~~ **RESOLVED** by `ADR-0015`: removed, with a
+  stated re-entry bar.
 - Does the heuristic engine stay a product feature or become an authoring/validation tool? Older docs
   called it "deferred, never authoritative" while it was in fact the only engine. It is now the
   fallback, which is a stronger role than those docs allowed — that contradiction needs resolving.
