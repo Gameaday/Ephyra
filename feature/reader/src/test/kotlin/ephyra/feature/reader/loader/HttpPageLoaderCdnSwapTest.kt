@@ -1,5 +1,8 @@
 package ephyra.feature.reader.loader
 
+import ephyra.core.common.util.network.FailureLayer
+import ephyra.core.common.util.network.LayeredFailure
+import ephyra.core.common.util.network.MalformedImageUrlException
 import ephyra.core.common.util.network.PageLoadRecovery
 import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.service.ChapterCache
@@ -203,6 +206,50 @@ class HttpPageLoaderCdnSwapTest {
             fixture.source.resolutions <= MAX_ATTEMPTS,
             "asked the source ${fixture.source.resolutions} times for a string it had already given; " +
                 "the retry budget is supposed to bound this",
+        )
+    }
+
+    /**
+     * The case this whole investigation started from, pinned as behaviour rather than as prose.
+     *
+     * A source can hand back an address that parses but cannot possibly address a host — the reported
+     * one was a host and a scheme joined by a comma, `cmdxd98sb0x3yprd.mangadex.network,https`. Two
+     * properties matter and both are asserted here:
+     *
+     * 1. **No request is spent on it.** A comma is not a forbidden host character, so without a
+     *    pre-flight check OkHttp canonicalises it, hands it to DNS, and the user is shown
+     *    `UnknownHostException` — a network verdict about a host that never existed.
+     * 2. **The failure is attributed to the adapter, not the network.** The address was already
+     *    impossible when the source produced it; the resolver did its job correctly on a string it
+     *    should never have been handed. Getting this wrong is what made the original report expensive.
+     */
+    @Test
+    fun `a spliced address is refused before a request is sent, and blamed on the adapter`() = runBlocking {
+        val spliced = "https://cmdxd98sb0x3yprd.mangadex.network,https"
+        val fixture = Fixture(
+            urlsFromSource = List(8) { spliced },
+            failWith = IOException("the fetch should never be reached"),
+            failTimes = Int.MAX_VALUE,
+        )
+
+        val page = fixture.loadFirstPage()
+
+        assertTrue(page.status is Page.State.Error, "an unusable address must not resolve to Ready")
+        assertTrue(
+            fixture.cache.requested.isEmpty(),
+            "no request may be spent on an address that cannot address a host, but these were sent: " +
+                fixture.cache.requested,
+        )
+
+        val error = (page.status as Page.State.Error).error
+        assertTrue(
+            error is MalformedImageUrlException,
+            "expected the address to be refused by the owner of that judgement, got: $error",
+        )
+        assertEquals(
+            FailureLayer.ADAPTER,
+            LayeredFailure.classify("image request", spliced, error).layer,
+            "the source produced this string, so the fault is the adapter's — not the network's",
         )
     }
 

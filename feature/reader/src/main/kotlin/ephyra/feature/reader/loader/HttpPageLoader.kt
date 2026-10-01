@@ -3,6 +3,7 @@ package ephyra.feature.reader.loader
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.network.ImageUrlPolicy
+import ephyra.core.common.util.network.LayeredFailure
 import ephyra.core.common.util.network.PageLoadRecovery
 import ephyra.core.common.util.network.PageLoadRecoveryAction
 import ephyra.core.common.util.network.ReResolvePacer
@@ -619,9 +620,22 @@ internal class HttpPageLoader(
                     // three hosts reports one host's error and the other two are unrecorded anywhere,
                     // which is what made the original report a puzzle to reason about rather than a
                     // fault to read.
+                    //
+                    // The line leads with the layer that *owns* the failure, not the one that noticed
+                    // it. A transport failure on an address that could never have worked is an ADAPTER
+                    // failure reported late, and `MalformedImageUrlException` is classified that way on
+                    // purpose — the MangaDex report was `Unable to resolve host "…,https"`, which reads
+                    // as a network fault and sent the investigation to the resolver when the string was
+                    // the defect. Leading with the layer makes this line answer "renderer, source or
+                    // adapter?" before it answers "what happened?".
+                    val failure = LayeredFailure.classify(
+                        operation = "image request",
+                        subject = "page ${page.number} of ${chapter.chapter.name}",
+                        error = decision.error ?: IllegalStateException(decision.reason),
+                    )
                     logcat(LogPriority.WARN, decision.error) {
-                        "Giving up on page ${page.number} of ${chapter.chapter.name} after " +
-                            "${decision.attempt} attempt(s): ${recovery.summary()} (${decision.reason})"
+                        "Giving up: ${failure.describe()} after ${decision.attempt} attempt(s): " +
+                            "${recovery.summary()} (${decision.reason})"
                     }
                     page.status = Page.State.Error(decision.error)
                     return
