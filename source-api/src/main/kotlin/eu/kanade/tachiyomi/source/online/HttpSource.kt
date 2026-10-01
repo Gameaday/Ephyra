@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi.source.online
 
 import ephyra.core.common.util.network.ImageUrlPolicy
+import ephyra.core.common.util.network.MalformedImageUrlException
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.asObservableSuccess
@@ -426,6 +427,15 @@ abstract class HttpSource : CatalogueSource {
      * with `imageUrl == null` and see no behaviour change; callers that arrive with both fields set
      * get the field that can actually address a host.
      *
+     * When both fields are populated, the first one that can actually address a host wins.
+     * [Page.imageUrl] is preferred, because API sources (MangaDex is the canonical one) build
+     * `Page(index, imageUrl = absolute)` with `url` left at its `""` default, so resolving `url`
+     * alone can only produce `""`. But *preferring* is not the same as *trusting*: a source that
+     * sets `imageUrl` to something the contract does not allow — a composite of its own, rather
+     * than an address — must not be able to hide a perfectly good `url` behind it. So the other
+     * field is still tried, and the exception raised when neither works names the preferred one,
+     * because that is the value the source should have fixed.
+     *
      * @param page the chapter whose page list has to be fetched
      */
     @Deprecated(
@@ -433,10 +443,24 @@ abstract class HttpSource : CatalogueSource {
             "Source developers should make their own implementation according to their needs.",
     )
     protected open fun imageUrlRequest(page: Page): Request {
-        val candidate = page.imageUrl?.takeIf { it.isNotBlank() } ?: page.url
-        val imageUrl = ImageUrlPolicy.resolve(candidate, baseUrl)
-        ImageUrlPolicy.requireUsable(imageUrl)
-        return GET(imageUrl, headers)
+        val candidates = listOfNotNull(
+            page.imageUrl?.takeIf { it.isNotBlank() },
+            page.url.takeIf { it.isNotBlank() && it != page.imageUrl },
+        )
+        var firstDefect: String? = null
+        for (candidate in candidates) {
+            val resolved = ImageUrlPolicy.resolve(candidate, baseUrl)
+            val defect = ImageUrlPolicy.defectOf(resolved)
+            if (defect == null) return GET(resolved, headers)
+            if (firstDefect == null) firstDefect = defect
+        }
+        // Nothing usable in either field. Report against the preferred one, or against the empty
+        // string when the source populated neither, which is the same verdict `requireUsable`
+        // would reach on its own.
+        throw MalformedImageUrlException(
+            url = candidates.firstOrNull() ?: page.imageUrl.orEmpty(),
+            reason = firstDefect ?: "the URL is empty",
+        )
     }
 
     /**

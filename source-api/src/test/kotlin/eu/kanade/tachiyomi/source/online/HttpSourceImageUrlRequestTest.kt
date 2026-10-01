@@ -181,6 +181,72 @@ class HttpSourceImageUrlRequestTest {
     }
 
     /**
+     * The exact string the owner's device produced, verbatim from logcat.
+     *
+     * It is a three-part comma-join, not a URL: the at-home server, the API URL that obtained it,
+     * and a timestamp (`1790648354548` = 2026-09-29T02:19:14Z). No URL is ever shaped like that, so
+     * whatever produced it was building a cache key of its own and returning it where an address
+     * belongs. Reproducing it exactly means this test fails on the real defect rather than on a
+     * convenient paraphrase of it.
+     */
+    @Test
+    fun `the reported three-part composite is refused before a request exists`() {
+        val composite = "https://cmdxd98sb0x3yprd.mangadex.network" +
+            ",https://api.mangadex.org/at-home/server/605c371d-904f-4dda-96a0-24ffdd65e642" +
+            ",1790648354548"
+        val source = TestSource("https://mangadex.org")
+
+        val thrown = assertThrows(MalformedImageUrlException::class.java) {
+            source.imageUrlRequestFor(Page(0, url = "", imageUrl = composite))
+        }
+
+        assertEquals(composite, thrown.url)
+        assertEquals(true, thrown.reason.contains("is not a hostname"))
+    }
+
+    /**
+     * A populated `imageUrl` must not be able to hide a usable `url` behind it.
+     *
+     * **Why this is not speculative.** Preferring `imageUrl` is correct for the API sources that
+     * leave `url` empty — but "preferred" had been implemented as "trusted", so a source putting
+     * something that is not an address into `imageUrl` suppressed a perfectly good `url` and failed
+     * without ever attempting the one value that could have worked. Which field the private
+     * extension populated is not observable from here, so resolution tries the other one rather
+     * than assuming.
+     */
+    @Test
+    fun `a good url is still used when imageUrl holds something unusable`() {
+        val source = TestSource("https://mangadex.org")
+        val page = Page(
+            0,
+            url = "https://img-r2.2xstorage.com/data/1.jpg",
+            imageUrl = "https://cmdxd98sb0x3yprd.mangadex.network,https://api.mangadex.org/x,1790648354548",
+        )
+
+        val request = source.imageUrlRequestFor(page)
+
+        assertEquals("https://img-r2.2xstorage.com/data/1.jpg", request.url.toString())
+    }
+
+    /**
+     * The preference still holds in the ordinary case: with both fields usable, `imageUrl` wins,
+     * because that is the contract API sources rely on and `url` is their empty-string default.
+     */
+    @Test
+    fun `imageUrl still wins when both fields are usable`() {
+        val source = TestSource("https://mangadex.org")
+        val page = Page(
+            0,
+            url = "https://img-r2.2xstorage.com/data/from-url-field.jpg",
+            imageUrl = "https://img-r2.2xstorage.com/data/from-image-url-field.jpg",
+        )
+
+        val request = source.imageUrlRequestFor(page)
+
+        assertEquals("https://img-r2.2xstorage.com/data/from-image-url-field.jpg", request.url.toString())
+    }
+
+    /**
      * `headersBuilder` is overridden rather than left alone because the base implementation reads
      * `network.defaultUserAgentProvider()`, and `network` comes from the Injekt service locator.
      * A test that had to stand up a service locator to assert a string join would be a test that
