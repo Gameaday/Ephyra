@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AddLink
-import androidx.compose.material.icons.outlined.CloudSync
 import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.outlined.TravelExplore
 import androidx.compose.material3.AlertDialog
@@ -64,11 +63,6 @@ fun sourcesTab(
                 title = stringResource(ephyra.app.core.common.R.string.action_filter),
                 icon = Icons.Outlined.FilterList,
                 onClick = { navController.navigate(ScreenRoutes.SourcesFilter.route) },
-            ),
-            AppBar.Action(
-                title = "Content Sourcing Hub",
-                icon = Icons.Outlined.CloudSync,
-                onClick = { navController.navigate(ScreenRoutes.ContentSourcing.route) },
             ),
         ),
         content = { contentPadding, snackbarHostState ->

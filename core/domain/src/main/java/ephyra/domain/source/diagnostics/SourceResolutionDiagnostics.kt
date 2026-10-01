@@ -29,7 +29,7 @@ import javax.inject.Singleton
  * reads and reports where they disagree, so one reproduction names the owner that lost the fact. It
  * deliberately re-derives the legacy `hashCode()` identity instead of importing it, because a
  * diagnostic that shares the rule it audits cannot detect a disagreement about that rule. The
- * mapping lookup uses the `baseUrl_scraper_mapping_<origin>` key idiom of `ContentSourcingViewModel`;
+ * mapping lookup uses the `baseUrl_scraper_mapping_<origin>` key idiom the sourcing hub used;
  * `SRC-011` moves that read into the registry and this call site moves with it.
  *
  * **Removal condition.** A defect instrument, not architecture: `DEF-029` closes with a reproduction

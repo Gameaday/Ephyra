@@ -106,10 +106,5 @@ class BrowseFeatureApi @Inject constructor() : FeatureApi {
             val route = backStackEntry.toRoute<Screen.ExtensionDetails>()
             ephyra.feature.browse.extension.details.ExtensionDetailsScreen(route.pkgName, navController)
         }
-
-        // Content Sourcing Hub Screen
-        navGraphBuilder.composable(ScreenRoutes.ContentSourcing.route) {
-            ephyra.feature.browse.presentation.ContentSourcingScreen(navController)
-        }
     }
 }

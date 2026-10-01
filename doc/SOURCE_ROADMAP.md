@@ -140,11 +140,17 @@ would revive.
 - [x] `DynamicHttpSource.getPageList` validates at the adapter seam
 - [x] Remove both hardcoded `DEFAULT_DOMAINS` fallbacks (they were permanently the answer)
 - [x] Orchestrator tolerates an empty registry and raises `NoEngineBoundException`
-- [ ] **Decide: delete the profile path, or keep it as Jellyfin's landing pad.** Deleting simplifies
-      further and needs a Room migration; keeping is waste if Jellyfin's engine wants a different
-      shape. **This is the open decision blocking Phases 2 and 5.**
+- [x] Delete the Content Sourcing hub — the one user-reachable screen that could only ever fail,
+      since `discover()` now raises `NoEngineBoundException`. Screen, view model, test, route and
+      the Sources-tab button. The button was a dead end in the primary Sources tab
+- [ ] **Decide: delete the rest of the profile path, or keep it as Jellyfin's landing pad.** Scoped
+      and *not* done here, because it is not the dead code it looks like: `RemoveCustomSource` and
+      `UpdateCustomSource` are wired into the working Extensions and Source Management screens,
+      `GetAvailableSources` composes the Sources list from the profile cache, and DEF-029's
+      diagnostics read `profiled_domains_list`. Deleting it is a redesign of source management, not
+      a cleanup. **This is the open decision blocking Phases 2 and 5.**
 - [ ] Delete `DEF-029`'s remaining three-owners disagreement (`profiled_domains_list` vs
-      `SourceProfileCache` vs `GetAvailableSources`) per `ADR-0012` — partly moot if the path is deleted
+      `SourceProfileCache` vs `GetAvailableSources`) per `ADR-0012`
 
 ### Phase 5 — Retire the compatibility layer · **BLOCKED ON 2/3/4**
 Only once library and reader call the gateway directly. `DynamicHttpSource` and the Tachiyomi ABI go
