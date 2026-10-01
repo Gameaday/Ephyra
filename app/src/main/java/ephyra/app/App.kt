@@ -55,6 +55,7 @@ import ephyra.data.coil.MangaCoverKeyer
 import ephyra.data.coil.MangaKeyer
 import ephyra.data.notification.Notifications
 import ephyra.domain.base.BasePreferences
+import ephyra.domain.source.diagnostics.SourceResolutionDiagnostics
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.ui.UiPreferences
 import ephyra.domain.updates.interactor.GetUpdates
@@ -113,6 +114,14 @@ class App :
 
     @Inject
     lateinit var sourceManagerProvider: javax.inject.Provider<SourceManager>
+
+    /**
+     * Defect instrument for `DEF-029`: reports where the app's authorities disagree about which
+     * sources exist and what their ids are. Observational only; deleted when `SRC-011` gives that
+     * fact a single owner.
+     */
+    @Inject
+    lateinit var sourceResolutionDiagnostics: SourceResolutionDiagnostics
 
     @Volatile
     private var verboseLoggingEnabled = false
@@ -291,6 +300,12 @@ class App :
                     initializeMigrator()
                 } catch (e: Exception) {
                     logcat(LogPriority.ERROR, e) { "Migration failed — continuing with current data" }
+                }
+
+                try {
+                    sourceResolutionDiagnostics.reportRegistration("startup")
+                } catch (e: Exception) {
+                    logcat(LogPriority.WARN, e) { "Source registration diagnostic failed" }
                 }
             } catch (e: Throwable) {
                 logcat(LogPriority.ERROR, e) { "Async startup initialization failed" }

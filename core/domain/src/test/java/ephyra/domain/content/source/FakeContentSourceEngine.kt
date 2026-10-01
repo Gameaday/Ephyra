@@ -8,8 +8,15 @@ import ephyra.domain.content.model.ContentUnit
  * A lightweight in-test [ContentSourceEngine] with overridable handlers,
  * so [ContentSourceOrchestratorTest] can observe routing and engine invocation
  * without spinning up a real network/script engine.
+ *
+ * [handles] is a constructor parameter because engine selection is now a registry rather than a `when`
+ * (`ADR-0013`): an engine that claims no type is unreachable, which is exactly what the routing tests
+ * need in order to observe fallback.
  */
-class FakeContentSourceEngine(private var profile: SourceProfile? = null) : ContentSourceEngine {
+class FakeContentSourceEngine(
+    private var profile: SourceProfile? = null,
+    override val handles: Set<SourceType> = emptySet(),
+) : ContentSourceEngine {
 
     var discoverHandler: (suspend (String) -> SourceProfile)? = null
     var searchHandler: (suspend (String) -> List<ContentItem>)? = null

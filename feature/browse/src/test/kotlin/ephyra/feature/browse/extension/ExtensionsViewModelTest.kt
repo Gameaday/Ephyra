@@ -5,7 +5,6 @@ import app.cash.turbine.test
 import ephyra.core.common.preference.Preference
 import ephyra.core.common.preference.PreferenceStore
 import ephyra.core.common.util.Result
-import ephyra.domain.content.source.ScraperScriptUpdater
 import ephyra.domain.content.source.SourceType
 import ephyra.domain.content.source.interactor.AddCustomSource
 import ephyra.domain.content.source.interactor.GetAvailableSources
@@ -18,7 +17,6 @@ import ephyra.domain.extension.model.Extension
 import ephyra.domain.extension.model.Extensions
 import ephyra.domain.extension.model.InstallStep
 import ephyra.domain.extension.service.ExtensionManager
-import ephyra.domain.extension.service.ExtensionTranspiler
 import ephyra.domain.extensionrepo.interactor.CreateExtensionRepo
 import ephyra.domain.extensionrepo.interactor.DeleteExtensionRepo
 import ephyra.domain.extensionrepo.interactor.GetExtensionRepo
@@ -59,8 +57,6 @@ class ExtensionsViewModelTest {
     private val deleteExtensionRepo: DeleteExtensionRepo = mockk(relaxed = true)
     private val updateExtensionRepo: UpdateExtensionRepo = mockk(relaxed = true)
     private val getExtensionsByType: GetExtensionsByType = mockk(relaxed = true)
-    private val extensionTranspiler: ExtensionTranspiler = mockk(relaxed = true)
-    private val scraperUpdater: ScraperScriptUpdater = mockk(relaxed = true)
     private val preferenceStore: PreferenceStore = mockk(relaxed = true)
     private val sourcePreferences: SourcePreferences = mockk(relaxed = true)
     private val trustExtension: TrustExtension = mockk(relaxed = true)
@@ -99,8 +95,6 @@ class ExtensionsViewModelTest {
         deleteExtensionRepo,
         updateExtensionRepo,
         getExtensionsByType,
-        extensionTranspiler,
-        scraperUpdater,
         preferenceStore,
         sourcePreferences,
         trustExtension,
@@ -201,7 +195,7 @@ class ExtensionsViewModelTest {
             id = 456L,
             name = "Custom Source",
             baseUrl = "https://custom.example.com",
-            sourceType = SourceType.JS_SCRAPER,
+            sourceType = SourceType.HEURISTIC,
             enabled = true,
             extensionId = null,
             lastHealthCheck = 0L,

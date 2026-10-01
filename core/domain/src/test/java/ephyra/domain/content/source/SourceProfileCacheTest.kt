@@ -32,7 +32,7 @@ class SourceProfileCacheTest {
         val profile = SourceProfile(
             baseUrl = "https://mangadex.org",
             contentType = ContentType.MANGA,
-            sourceType = SourceType.JS_SCRAPER,
+            sourceType = SourceType.REMOTE_EXTENSION,
             displayName = "MangaDex",
             enabled = true,
             verified = true,
@@ -48,7 +48,7 @@ class SourceProfileCacheTest {
         val result = loaded!!
         assertEquals("https://mangadex.org", result.baseUrl)
         assertEquals(ContentType.MANGA, result.contentType)
-        assertEquals(SourceType.JS_SCRAPER, result.sourceType)
+        assertEquals(SourceType.REMOTE_EXTENSION, result.sourceType)
         assertEquals("MangaDex", result.displayName)
         assertEquals(true, result.enabled)
         assertEquals(true, result.verified)

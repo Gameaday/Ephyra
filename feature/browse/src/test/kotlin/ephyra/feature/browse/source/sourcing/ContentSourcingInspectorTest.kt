@@ -9,7 +9,6 @@ import ephyra.domain.content.service.LocalContentScanner
 import ephyra.domain.content.source.ContentSourceOrchestrator
 import ephyra.domain.content.source.Endpoint
 import ephyra.domain.content.source.EndpointPattern
-import ephyra.domain.content.source.ScraperScriptUpdater
 import ephyra.domain.content.source.SourceProfile
 import ephyra.domain.content.source.SourceProfileCache
 import ephyra.domain.content.source.SourceType
@@ -37,7 +36,6 @@ class ContentSourcingInspectorTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
     private val context: Context = mockk(relaxed = true)
-    private val scraperUpdater: ScraperScriptUpdater = mockk(relaxed = true)
     private val localScanner: LocalContentScanner = mockk(relaxed = true)
     private val orchestrator: ContentSourceOrchestrator = mockk(relaxed = true)
     private val profileCache: SourceProfileCache = mockk(relaxed = true)
@@ -49,7 +47,6 @@ class ContentSourcingInspectorTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         coEvery { profileCache.getAllProfiledDomains() } returns emptySet()
-        coEvery { scraperUpdater.listScrapers() } returns emptyList()
 
         val mockPref = mockk<Preference<String>>(relaxed = true)
         coEvery { mockPref.get() } returns ""
@@ -57,7 +54,6 @@ class ContentSourcingInspectorTest {
 
         viewModel = ContentSourcingViewModel(
             context = context,
-            scraperUpdater = scraperUpdater,
             localScanner = localScanner,
             orchestrator = orchestrator,
             profileCache = profileCache,

@@ -40,7 +40,7 @@ class SourceManagementViewModelTest {
         id = 1L,
         name = "Test Source",
         baseUrl = "https://example.com",
-        sourceType = SourceType.JS_SCRAPER,
+        sourceType = SourceType.REMOTE_EXTENSION,
         enabled = true,
         extensionId = null,
         lastHealthCheck = 0,
@@ -77,49 +77,6 @@ class SourceManagementViewModelTest {
     }
 
     @Test
-    fun `AddJsScraper event success reloads sources`() = runTest {
-        coEvery { addCustomSource.addJsScraper(any(), any()) } returns Result.Success(mockk())
-
-        val viewModel = SourceManagementViewModel(
-            getAvailableSources,
-            addCustomSource,
-            updateCustomSource,
-            removeCustomSource,
-        )
-
-        viewModel.onEvent(SourceManagementEvent.AddJsScraper("https://github.com/repo", "test.js"))
-
-        coVerify(atLeast = 1) {
-            addCustomSource.addJsScraper("https://github.com/repo", "test.js")
-            getAvailableSources()
-        }
-        assertNull(viewModel.state.value.error)
-        assertFalse(viewModel.state.value.isLoading)
-    }
-
-    @Test
-    fun `AddJsScraper event error sets error in state and emits ShowSnackbar effect`() = runTest {
-        coEvery { addCustomSource.addJsScraper(any(), any()) } returns Result.Error(Exception("Network error"))
-
-        val viewModel = SourceManagementViewModel(
-            getAvailableSources,
-            addCustomSource,
-            updateCustomSource,
-            removeCustomSource,
-        )
-
-        viewModel.effects.test {
-            viewModel.onEvent(SourceManagementEvent.AddJsScraper("https://github.com/repo", "test.js"))
-
-            val effect = awaitItem()
-            assertEquals(SourceManagementEffect.ShowSnackbar("Network error"), effect)
-
-            assertEquals("Network error", viewModel.state.value.error)
-            assertFalse(viewModel.state.value.isLoading)
-        }
-    }
-
-    @Test
     fun `RemoveSource event removes source and reloads sources`() = runTest {
         coEvery { removeCustomSource.removeSource("https://example.com") } returns Result.Success(Unit)
 
@@ -139,7 +96,7 @@ class SourceManagementViewModelTest {
 
     @Test
     fun `ClearError event resets error to null`() = runTest {
-        coEvery { addCustomSource.addJsScraper(any(), any()) } returns Result.Error(Exception("Fail"))
+        coEvery { addCustomSource.addHeuristicProfile(any(), any()) } returns Result.Error(Exception("Fail"))
 
         val viewModel = SourceManagementViewModel(
             getAvailableSources,
@@ -148,7 +105,7 @@ class SourceManagementViewModelTest {
             removeCustomSource,
         )
 
-        viewModel.onEvent(SourceManagementEvent.AddJsScraper("url", "name"))
+        viewModel.onEvent(SourceManagementEvent.AddHeuristicProfile("https://example.com", "Example"))
         assertEquals("Fail", viewModel.state.value.error)
 
         viewModel.onEvent(SourceManagementEvent.ClearError)

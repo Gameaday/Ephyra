@@ -89,11 +89,7 @@ fun ExtensionScreen(
     state: ExtensionsViewModel.State,
     contentPadding: PaddingValues,
     searchQuery: String?,
-    onAddJsScraper: (String, String) -> Unit,
-    onImportJsScraper: (String, String) -> Unit,
     onAddHeuristic: (String, String?) -> Unit,
-    onLinkScraper: (String, String) -> Unit,
-    onCheckUpdates: (String) -> Unit,
     onForceRediscover: (String) -> Unit,
     onRemoveSource: (String) -> Unit,
     onRefresh: () -> Unit,
@@ -108,23 +104,13 @@ fun ExtensionScreen(
     navController: NavController = LocalNavController.current,
 ) {
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
-    var showAddJsScraperDialog by remember { mutableStateOf(false) }
-    var showImportJsScraperDialog by remember { mutableStateOf(false) }
     var showAddHeuristicDialog by remember { mutableStateOf(false) }
-    var showLinkScraperDialog by remember { mutableStateOf(false) }
     var showRemoveConfirmDialog by remember { mutableStateOf(false) }
     var showAddRepoDialog by remember { mutableStateOf(false) }
     var selectedSourceToRemove by remember { mutableStateOf<UnifiedSource?>(null) }
-    var selectedSourceForLink by remember { mutableStateOf<UnifiedSource?>(null) }
 
-    var githubUrl by remember { mutableStateOf("") }
-    var scraperFilename by remember { mutableStateOf("") }
-    var importFilename by remember { mutableStateOf("") }
-    var importScriptContent by remember { mutableStateOf("") }
     var heuristicUrl by remember { mutableStateOf("") }
     var heuristicName by remember { mutableStateOf("") }
-    var linkBaseUrl by remember { mutableStateOf("") }
-    var linkScraperName by remember { mutableStateOf("") }
 
     LaunchedEffect(state.error) {
         if (state.error != null) {
@@ -190,8 +176,6 @@ fun ExtensionScreen(
             installedExtensions = filteredInstalledExtensions,
             untrustedExtensions = state.untrustedExtensions,
             failedExtensions = state.failedExtensions,
-            onAddJsScraperClick = { showAddJsScraperDialog = true },
-            onImportJsScraperClick = { showImportJsScraperDialog = true },
             onAddHeuristicClick = { showAddHeuristicDialog = true },
             onAddRepoClick = { showAddRepoDialog = true },
             onDeleteRepoClick = onDeleteRepository,
@@ -202,12 +186,6 @@ fun ExtensionScreen(
             onTrustExtensionClick = onTrustExtension,
             onUninstallByPkgName = onUninstallByPkgName,
             onClickExtension = { pkgName -> navController.navigate(Screen.ExtensionDetails(pkgName)) },
-            onLinkScraperClick = { source ->
-                selectedSourceForLink = source
-                linkBaseUrl = source.baseUrl
-                linkScraperName = ""
-                showLinkScraperDialog = true
-            },
             onRefresh = onRefresh,
             onSourceClick = { source ->
                 snackbarMessage = buildString {
@@ -222,9 +200,6 @@ fun ExtensionScreen(
                         appendLine("Extension: ${source.extensionId}")
                     }
                 }
-            },
-            onCheckUpdates = { source ->
-                onCheckUpdates(source.baseUrl)
             },
             onForceRediscover = { source ->
                 onForceRediscover(source.baseUrl)
@@ -307,48 +282,6 @@ fun ExtensionScreen(
         )
     }
 
-    // Add JS Scraper Dialog
-    if (showAddJsScraperDialog) {
-        AddJsScraperDialog(
-            onDismiss = {
-                showAddJsScraperDialog = false
-                githubUrl = ""
-                scraperFilename = ""
-            },
-            onConfirm = { url, name ->
-                onAddJsScraper(url, name)
-                showAddJsScraperDialog = false
-                githubUrl = ""
-                scraperFilename = ""
-            },
-            githubUrl = githubUrl,
-            onGithubUrlChange = { githubUrl = it },
-            scraperFilename = scraperFilename,
-            onScraperFilenameChange = { scraperFilename = it },
-        )
-    }
-
-    // Import JS Scraper Dialog
-    if (showImportJsScraperDialog) {
-        ImportJsScraperDialog(
-            onDismiss = {
-                showImportJsScraperDialog = false
-                importFilename = ""
-                importScriptContent = ""
-            },
-            onConfirm = { name, content ->
-                onImportJsScraper(name, content)
-                showImportJsScraperDialog = false
-                importFilename = ""
-                importScriptContent = ""
-            },
-            filename = importFilename,
-            onFilenameChange = { importFilename = it },
-            scriptContent = importScriptContent,
-            onScriptContentChange = { importScriptContent = it },
-        )
-    }
-
     // Add Heuristic Profile Dialog
     if (showAddHeuristicDialog) {
         AddHeuristicDialog(
@@ -369,32 +302,6 @@ fun ExtensionScreen(
             onNameChange = { heuristicName = it },
         )
     }
-
-    // Link Scraper Dialog
-    if (showLinkScraperDialog) {
-        LinkScraperDialog(
-            onDismiss = {
-                showLinkScraperDialog = false
-                linkBaseUrl = ""
-                linkScraperName = ""
-                selectedSourceForLink = null
-            },
-            onConfirm = { baseUrl, scraperName ->
-                onLinkScraper(baseUrl, scraperName)
-                showLinkScraperDialog = false
-                linkBaseUrl = ""
-                linkScraperName = ""
-                selectedSourceForLink = null
-            },
-            baseUrl = linkBaseUrl,
-            onBaseUrlChange = { linkBaseUrl = it },
-            scraperName = linkScraperName,
-            onScraperNameChange = { linkScraperName = it },
-            availableScrapers = state.sources
-                .filter { it.sourceType == SourceType.JS_SCRAPER }
-                .map { it.name },
-        )
-    }
 }
 
 @Composable
@@ -406,8 +313,6 @@ private fun ExtensionScraperManagementLayout(
     installedExtensions: List<Extension.Installed>,
     untrustedExtensions: List<Extension.Untrusted>,
     failedExtensions: List<Extension.Failed>,
-    onAddJsScraperClick: () -> Unit,
-    onImportJsScraperClick: () -> Unit,
     onAddHeuristicClick: () -> Unit,
     onAddRepoClick: () -> Unit,
     onDeleteRepoClick: (String) -> Unit,
@@ -418,10 +323,8 @@ private fun ExtensionScraperManagementLayout(
     onTrustExtensionClick: (Extension.Untrusted) -> Unit,
     onUninstallByPkgName: (String) -> Unit,
     onClickExtension: (String) -> Unit,
-    onLinkScraperClick: (UnifiedSource) -> Unit,
     onRefresh: () -> Unit,
     onSourceClick: (UnifiedSource) -> Unit,
-    onCheckUpdates: (UnifiedSource) -> Unit,
     onForceRediscover: (UnifiedSource) -> Unit,
     onRemoveSource: (UnifiedSource) -> Unit,
     navController: NavController,
@@ -508,13 +411,9 @@ private fun ExtensionScraperManagementLayout(
             DeveloperToolsSection(
                 isExpanded = showDevTools,
                 onToggleExpand = { showDevTools = !showDevTools },
-                onAddJsScraperClick = onAddJsScraperClick,
-                onImportJsScraperClick = onImportJsScraperClick,
                 onAddHeuristicClick = onAddHeuristicClick,
                 sources = sources,
                 onSourceClick = onSourceClick,
-                onLinkScraper = onLinkScraperClick,
-                onCheckUpdates = onCheckUpdates,
                 onForceRediscover = onForceRediscover,
                 onRemoveSource = onRemoveSource,
             )
@@ -618,13 +517,9 @@ private fun EmptyRepositoriesCard(
 private fun DeveloperToolsSection(
     isExpanded: Boolean,
     onToggleExpand: () -> Unit,
-    onAddJsScraperClick: () -> Unit,
-    onImportJsScraperClick: () -> Unit,
     onAddHeuristicClick: () -> Unit,
     sources: List<UnifiedSource>,
     onSourceClick: (UnifiedSource) -> Unit,
-    onLinkScraper: (UnifiedSource) -> Unit,
-    onCheckUpdates: (UnifiedSource) -> Unit,
     onForceRediscover: (UnifiedSource) -> Unit,
     onRemoveSource: (UnifiedSource) -> Unit,
 ) {
@@ -670,18 +565,6 @@ private fun DeveloperToolsSection(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     QuickActionButton(
-                        icon = Icons.Outlined.Code,
-                        label = "Add JS",
-                        color = MaterialTheme.colorScheme.primary,
-                        onClick = onAddJsScraperClick,
-                    )
-                    QuickActionButton(
-                        icon = Icons.Outlined.UploadFile,
-                        label = "Import",
-                        color = MaterialTheme.colorScheme.secondary,
-                        onClick = onImportJsScraperClick,
-                    )
-                    QuickActionButton(
                         icon = Icons.Outlined.Autorenew,
                         label = "Heuristic",
                         color = MaterialTheme.colorScheme.tertiary,
@@ -690,12 +573,12 @@ private fun DeveloperToolsSection(
                 }
 
                 val devSources = sources.filter {
-                    it.sourceType == SourceType.JS_SCRAPER || it.sourceType == SourceType.HEURISTIC
+                    it.sourceType == SourceType.HEURISTIC
                 }
                 if (devSources.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "Custom Scrapers & Profiles (${devSources.size})",
+                        text = "Custom Profiles (${devSources.size})",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                     )
@@ -705,8 +588,6 @@ private fun DeveloperToolsSection(
                             SourceRow(
                                 source = source,
                                 onClick = { onSourceClick(source) },
-                                onLinkScraper = { onLinkScraper(source) },
-                                onCheckUpdates = { onCheckUpdates(source) },
                                 onForceRediscover = { onForceRediscover(source) },
                                 onRemoveSource = { onRemoveSource(source) },
                             )
@@ -1329,14 +1210,11 @@ private fun SourceTypeSection(
     sourceType: SourceType,
     sources: List<UnifiedSource>,
     onSourceClick: (UnifiedSource) -> Unit,
-    onLinkScraper: (UnifiedSource) -> Unit,
-    onCheckUpdates: (UnifiedSource) -> Unit,
     onForceRediscover: (UnifiedSource) -> Unit,
     onRemoveSource: (UnifiedSource) -> Unit,
 ) {
     val (icon, color) = when (sourceType) {
         SourceType.REMOTE_EXTENSION -> Icons.Outlined.Security to MaterialTheme.colorScheme.primary
-        SourceType.JS_SCRAPER -> Icons.Outlined.Code to MaterialTheme.colorScheme.secondary
         SourceType.HEURISTIC -> Icons.Outlined.Autorenew to MaterialTheme.colorScheme.tertiary
         SourceType.REPOSITORY -> Icons.Outlined.Storage to MaterialTheme.colorScheme.outline
     }
@@ -1399,8 +1277,6 @@ private fun SourceTypeSection(
                     SourceRow(
                         source = source,
                         onClick = { onSourceClick(source) },
-                        onLinkScraper = { onLinkScraper(source) },
-                        onCheckUpdates = { onCheckUpdates(source) },
                         onForceRediscover = { onForceRediscover(source) },
                         onRemoveSource = { onRemoveSource(source) },
                     )
@@ -1414,8 +1290,6 @@ private fun SourceTypeSection(
 private fun SourceRow(
     source: UnifiedSource,
     onClick: () -> Unit,
-    onLinkScraper: () -> Unit,
-    onCheckUpdates: () -> Unit,
     onForceRediscover: () -> Unit,
     onRemoveSource: () -> Unit,
 ) {
@@ -1552,24 +1426,6 @@ private fun SourceRow(
             Column(
                 horizontalAlignment = Alignment.End,
             ) {
-                if (source.sourceType == SourceType.HEURISTIC || source.sourceType == SourceType.REPOSITORY) {
-                    IconButton(onClick = onLinkScraper) {
-                        Icon(
-                            imageVector = Icons.Outlined.Link,
-                            contentDescription = "Link scraper",
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                }
-                if (source.sourceType == SourceType.JS_SCRAPER) {
-                    IconButton(onClick = onCheckUpdates) {
-                        Icon(
-                            imageVector = Icons.Outlined.CloudDownload,
-                            contentDescription = "Check for updates",
-                            tint = MaterialTheme.colorScheme.secondary,
-                        )
-                    }
-                }
                 IconButton(onClick = onForceRediscover) {
                     Icon(
                         imageVector = Icons.Outlined.Refresh,
@@ -1587,113 +1443,6 @@ private fun SourceRow(
             }
         }
     }
-}
-
-@Composable
-private fun AddJsScraperDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (String, String) -> Unit,
-    githubUrl: String,
-    onGithubUrlChange: (String) -> Unit,
-    scraperFilename: String,
-    onScraperFilenameChange: (String) -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Add JS Scraper from GitHub") },
-        text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(
-                    value = githubUrl,
-                    onValueChange = onGithubUrlChange,
-                    label = { Text("GitHub URL") },
-                    placeholder = { Text("https://github.com/user/repo/scraper.js") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = scraperFilename,
-                    onValueChange = onScraperFilenameChange,
-                    label = { Text("Filename") },
-                    placeholder = { Text("mangadex_scraper.js") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "The script will be downloaded and sandboxed. Auto-updates enabled if from GitHub.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = {
-                if (githubUrl.isNotBlank() && scraperFilename.isNotBlank()) {
-                    onConfirm(githubUrl, scraperFilename)
-                }
-            }) {
-                Text("Download")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        },
-    )
-}
-
-@Composable
-private fun ImportJsScraperDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (String, String) -> Unit,
-    filename: String,
-    onFilenameChange: (String) -> Unit,
-    scriptContent: String,
-    onScriptContentChange: (String) -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Import Local JS Script") },
-        text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(
-                    value = filename,
-                    onValueChange = onFilenameChange,
-                    label = { Text("Script Name") },
-                    placeholder = { Text("custom_scraper.js") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = scriptContent,
-                    onValueChange = onScriptContentChange,
-                    label = { Text("JavaScript Content") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    shape = RoundedCornerShape(8.dp),
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = {
-                if (filename.isNotBlank() && scriptContent.isNotBlank()) {
-                    onConfirm(filename, scriptContent)
-                }
-            }) {
-                Text("Import")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        },
-    )
 }
 
 @Composable
@@ -1753,116 +1502,6 @@ private fun AddHeuristicDialog(
 }
 
 @Composable
-private fun LinkScraperDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (String, String) -> Unit,
-    baseUrl: String,
-    onBaseUrlChange: (String) -> Unit,
-    scraperName: String,
-    onScraperNameChange: (String) -> Unit,
-    availableScrapers: List<String>,
-) {
-    var dropdownExpanded by remember { mutableStateOf(false) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Link Scraper to Website") },
-        text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(
-                    value = baseUrl,
-                    onValueChange = onBaseUrlChange,
-                    label = { Text("Website Base URL") },
-                    placeholder = { Text("https://example.com") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                if (availableScrapers.isNotEmpty()) {
-                    Box {
-                        OutlinedTextField(
-                            value = scraperName,
-                            onValueChange = onScraperNameChange,
-                            label = { Text("Select Scraper") },
-                            placeholder = { Text("Choose a scraper...") },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(8.dp),
-                            trailingIcon = {
-                                IconButton(onClick = { dropdownExpanded = true }) {
-                                    Icon(
-                                        imageVector = if (dropdownExpanded) {
-                                            Icons.Outlined.ExpandLess
-                                        } else {
-                                            Icons.Outlined.ExpandMore
-                                        },
-                                        contentDescription = "Show available scrapers",
-                                    )
-                                }
-                            },
-                            readOnly = false,
-                        )
-                        DropdownMenu(
-                            expanded = dropdownExpanded,
-                            onDismissRequest = { dropdownExpanded = false },
-                        ) {
-                            availableScrapers.forEach { name ->
-                                DropdownMenuItem(
-                                    text = { Text(name) },
-                                    onClick = {
-                                        onScraperNameChange(name)
-                                        dropdownExpanded = false
-                                    },
-                                )
-                            }
-                        }
-                    }
-                } else {
-                    OutlinedTextField(
-                        value = scraperName,
-                        onValueChange = onScraperNameChange,
-                        label = { Text("Scraper Filename") },
-                        placeholder = { Text("No JS scrapers available. Add one first.") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = {
-                if (baseUrl.isNotBlank() && scraperName.isNotBlank()) {
-                    onConfirm(baseUrl, scraperName)
-                }
-            }) {
-                Text("Link")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        },
-    )
-}
-
-private val SourceType.displayName: String
-    get() = when (this) {
-        SourceType.REMOTE_EXTENSION -> "Remote Extensions"
-        SourceType.JS_SCRAPER -> "JS Scrapers"
-        SourceType.HEURISTIC -> "Heuristic Profiles"
-        SourceType.REPOSITORY -> "Repositories"
-    }
-
-private val SourceType.color: Color
-    @Composable
-    get() = when (this) {
-        SourceType.REMOTE_EXTENSION -> MaterialTheme.colorScheme.primary
-        SourceType.JS_SCRAPER -> MaterialTheme.colorScheme.secondary
-        SourceType.HEURISTIC -> MaterialTheme.colorScheme.tertiary
-        SourceType.REPOSITORY -> MaterialTheme.colorScheme.outline
-    }
-
-@Composable
 private fun ExtensionSourcesDialog(
     extension: Extension.Available,
     installedSources: List<UnifiedSource>,
@@ -1870,8 +1509,14 @@ private fun ExtensionSourcesDialog(
     onConfirm: (Set<String>) -> Unit,
 ) {
     val initiallySelected = remember(extension, installedSources) {
+        // A source counts as installed when a registered source already claims its origin. This used
+        // to test for `JS_SCRAPER`, which is now gone; an extension-provided source is
+        // `REMOTE_EXTENSION`, and matching on the base URL alone would also count a heuristic profile
+        // for the same site as installed — which it is not.
         val mapped = extension.sources.filter { source ->
-            installedSources.any { it.baseUrl == source.baseUrl && it.sourceType == SourceType.JS_SCRAPER }
+            installedSources.any {
+                it.baseUrl == source.baseUrl && it.sourceType == SourceType.REMOTE_EXTENSION
+            }
         }.map { it.baseUrl }.toSet()
         if (mapped.isEmpty()) {
             extension.sources.map { it.baseUrl }.toSet()
@@ -1975,3 +1620,17 @@ private fun ExtensionSourcesDialog(
         },
     )
 }
+private val SourceType.displayName: String
+    get() = when (this) {
+        SourceType.REMOTE_EXTENSION -> "Extension Sources"
+        SourceType.HEURISTIC -> "Heuristic Profiles"
+        SourceType.REPOSITORY -> "Repositories"
+    }
+
+private val SourceType.color: Color
+    @Composable
+    get() = when (this) {
+        SourceType.REMOTE_EXTENSION -> MaterialTheme.colorScheme.primary
+        SourceType.HEURISTIC -> MaterialTheme.colorScheme.tertiary
+        SourceType.REPOSITORY -> MaterialTheme.colorScheme.outline
+    }

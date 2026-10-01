@@ -49,6 +49,7 @@ import ephyra.domain.reader.model.ReadingMode
 import ephyra.domain.reader.policy.ChapterCompletionPolicy
 import ephyra.domain.reader.policy.DefaultReadingModeResolver
 import ephyra.domain.reader.service.ReaderPreferences
+import ephyra.domain.source.diagnostics.SourceResolutionDiagnostics
 import ephyra.domain.source.interactor.GetIncognitoState
 import ephyra.domain.source.service.SourceManager
 import ephyra.domain.track.interactor.TrackChapter
@@ -91,6 +92,7 @@ import javax.inject.Inject
 class ReaderViewModel @Inject constructor(
     private val savedState: SavedStateHandle,
     private val sourceManager: SourceManager,
+    private val sourceResolutionDiagnostics: SourceResolutionDiagnostics,
     private val downloadManager: DownloadManager,
     private val downloadProvider: DownloadProvider,
     private val imageSaver: ImageSaver,
@@ -341,6 +343,9 @@ class ReaderViewModel @Inject constructor(
                     if (chapterId == -1L) chapterId = initialChapterId
 
                     val source = sourceManager.getOrStub(manga.source)
+                    // DEF-029 instrument: an entry whose source is no longer registered fails later
+                    // and elsewhere, so record how this entry's source id resolves right here.
+                    sourceResolutionDiagnostics.reportEntry(manga.source)
                     loader = ChapterLoader(
                         app,
                         downloadManager,

@@ -70,13 +70,14 @@ data class SourceProfile(
 
 /**
  * The type of content source.
+ *
+ * `JS_SCRAPER` was removed with the sandboxed JS runtime (`ADR-0013`). `fromString` still maps the
+ * stored name onto [REMOTE_EXTENSION] so a profile persisted by an older build resolves to a real
+ * engine instead of silently becoming [HEURISTIC].
  */
 enum class SourceType {
-    /** Remote community extension source running in sandboxed DEX runner. */
+    /** A source provided by an extension APK, from a remote or private repository, or local. */
     REMOTE_EXTENSION,
-
-    /** JavaScript scraper running in QuickJS sandbox. */
-    JS_SCRAPER,
 
     /** Heuristic auto-discovery engine. */
     HEURISTIC,
@@ -91,8 +92,7 @@ enum class SourceType {
         val LEGACY_EXTENSION: SourceType get() = REMOTE_EXTENSION
 
         fun fromString(value: String?): SourceType = when (value?.trim()?.uppercase()) {
-            "REMOTE_EXTENSION", "LEGACY_EXTENSION" -> REMOTE_EXTENSION
-            "JS_SCRAPER" -> JS_SCRAPER
+            "REMOTE_EXTENSION", "LEGACY_EXTENSION", "JS_SCRAPER" -> REMOTE_EXTENSION
             "HEURISTIC" -> HEURISTIC
             "REPOSITORY" -> REPOSITORY
             else -> HEURISTIC

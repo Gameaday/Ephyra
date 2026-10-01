@@ -87,9 +87,7 @@ import ephyra.data.room.daos.UpdateDao
 import ephyra.data.saver.ImageSaverImpl
 import ephyra.data.source.SourceRepositoryImpl
 import ephyra.data.source.StubSourceRepositoryImpl
-import ephyra.data.sourcing.DynamicScraperUpdater
 import ephyra.data.sourcing.RoomSourceProfileStore
-import ephyra.data.sourcing.ScriptableContentSourceEngine
 import ephyra.data.track.TrackRepositoryImpl
 import ephyra.data.track.TrackerManagerImpl
 import ephyra.data.track.TrackingServiceImpl
@@ -228,10 +226,8 @@ import ephyra.presentation.core.ui.delegate.SecureActivityDelegate
 import ephyra.presentation.core.ui.delegate.ThemingDelegate
 import ephyra.presentation.core.util.AppNavigator
 import ephyra.presentation.core.util.CrashLogUtil
-import ephyra.source.api.ScriptableSourceEngine
 import ephyra.source.local.image.LocalCoverManager
 import ephyra.source.local.io.LocalSourceFileSystem
-import eu.kanade.tachiyomi.network.JavaScriptEngine
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.NetworkPreferences
 import eu.kanade.tachiyomi.source.AndroidSourceManager
@@ -472,18 +468,13 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideDynamicScraperUpdater(
-        @ApplicationContext context: Context,
-        networkHelper: NetworkHelper,
-        preferenceStore: PreferenceStore,
-        json: Json,
-    ): DynamicScraperUpdater = DynamicScraperUpdater(context, networkHelper, preferenceStore, json)
-
-    @Provides
-    @Singleton
     fun provideOpportunisticMergeManager(): OpportunisticMergeManager =
         OpportunisticMergeManager()
 
+    /**
+     * The heuristic engine. Claims `SourceType.HEURISTIC`, which is also what makes it the
+     * orchestrator's fallback — see `ContentSourceOrchestrator.fallbackEngine`.
+     */
     @Provides
     @Singleton
     fun provideHeuristicContentSourceEngine(
@@ -493,26 +484,39 @@ object AppModule {
     ): AdaptiveHeuristicEngine =
         AdaptiveHeuristicEngine(ioDispatcher, networkHelper, profileCache)
 
+    /**
+     * The engine set the orchestrator resolves against.
+     *
+     * Built explicitly rather than with `@IntoSet` because this project's KSP/Dagger setup does not
+     * honour the multibinding annotation on an `object` module: it generates the per-method factory
+     * but never wires a set binding, so injecting `List<ContentSourceEngine>` fails with
+     * `MissingBinding`. That is recorded here rather than papered over, because the next person to try
+     * `@IntoSet` will hit the same wall.
+     *
+     * The cost is one line per engine instead of one annotation, and it is a real loss of elegance.
+     * What it does *not* reintroduce is the failure the registry exists to prevent: a `when` over every
+     * source type inside the orchestrator, where a forgotten arm silently routes content to the wrong
+     * engine. Selection is still by each engine's own `handles` declaration, so a type with no engine
+     * here falls back visibly rather than being misrouted by a missing branch.
+     */
     @Provides
     @Singleton
-    fun provideScriptableContentSourceEngine(
-        @IoDispatcher ioDispatcher: CoroutineDispatcher,
-        scraperUpdater: DynamicScraperUpdater,
-        scriptEngine: ScriptableSourceEngine,
-        preferenceStore: PreferenceStore,
-        json: Json,
-    ): ScriptableContentSourceEngine =
-        ScriptableContentSourceEngine(ioDispatcher, scraperUpdater, scriptEngine, preferenceStore, json)
+    fun provideContentSourceEngines(
+        heuristic: AdaptiveHeuristicEngine,
+    ): List<ContentSourceEngine> = listOf(heuristic)
 
     @Provides
     @Singleton
     fun provideContentSourceOrchestrator(
         profileCache: SourceProfileCache,
-        heuristicEngine: AdaptiveHeuristicEngine,
-        scriptEngine: ScriptableContentSourceEngine,
+        // `@JvmSuppressWildcards` is load-bearing, not decorative. Kotlin erases `List<ContentSourceEngine>`
+        // to `List<? extends ContentSourceEngine>` at the injection site, so this parameter's key
+        // differs by exactly that wildcard from `provideContentSourceEngines`'s key and Dagger reports
+        // the binding as missing. Suppressing it on the type makes both sides agree.
+        engines: @JvmSuppressWildcards List<ContentSourceEngine>,
         preferenceStore: PreferenceStore,
     ): ContentSourceOrchestrator =
-        ContentSourceOrchestrator(profileCache, heuristicEngine, scriptEngine, preferenceStore)
+        ContentSourceOrchestrator(profileCache, engines, preferenceStore)
 
     @Provides
     @Singleton
@@ -525,13 +529,6 @@ object AppModule {
     @Singleton
     fun provideNetworkHelper(@ApplicationContext context: Context, networkPreferences: NetworkPreferences) =
         NetworkHelper(context, networkPreferences)
-
-    @Provides
-    @Singleton
-    fun provideJavaScriptEngine(
-        @ApplicationContext context: Context,
-        networkHelper: NetworkHelper,
-    ) = JavaScriptEngine(context, networkHelper)
 
     @Provides
     @Singleton

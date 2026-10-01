@@ -10,7 +10,6 @@ import ephyra.core.common.util.lang.launchIO
 import ephyra.domain.content.model.ContentItem
 import ephyra.domain.content.service.LocalContentScanner
 import ephyra.domain.content.source.ContentSourceOrchestrator
-import ephyra.domain.content.source.ScraperScriptUpdater
 import ephyra.domain.content.source.SourceProfile
 import ephyra.domain.content.source.SourceProfileCache
 import ephyra.presentation.core.udf.BaseUdfViewModel
@@ -23,7 +22,6 @@ import javax.inject.Inject
 @HiltViewModel
 class ContentSourcingViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
-    private val scraperUpdater: ScraperScriptUpdater,
     private val localScanner: LocalContentScanner,
     private val orchestrator: ContentSourceOrchestrator,
     private val profileCache: SourceProfileCache,
@@ -45,17 +43,6 @@ class ContentSourcingViewModel @Inject constructor(
                 profileCache.get(url)
             }
 
-            // Load registered scrapers from sandbox dynamically
-            val scraperFiles = scraperUpdater.listScrapers()
-            val scraperList = scraperFiles.map { name ->
-                val hasUpdateUrl = preferenceStore.getString("scraper_url_$name", "").get().isNotBlank()
-                ScraperItem(
-                    name = name,
-                    hasUpdatesUrl = hasUpdateUrl,
-                    localContent = scraperUpdater.getScraperScript(name),
-                )
-            }
-
             // Load repositories
             val reposString = preferenceStore.getString("custom_repositories", "").get()
             val repoList = if (reposString.isBlank()) {
@@ -75,24 +62,11 @@ class ContentSourcingViewModel @Inject constructor(
                 }
             }
 
-            // Load scraper mappings dynamically
-            val mappingList = profileCache.getAllProfiledDomains().mapNotNull { domain ->
-                val normalized = domain.removePrefix("https://").removePrefix("http://").removeSuffix("/").trim()
-                val scraper = preferenceStore.getString("baseUrl_scraper_mapping_$normalized", "").get()
-                if (scraper.isNotBlank()) {
-                    ScraperMappingItem(baseUrl = domain, scraperName = scraper)
-                } else {
-                    null
-                }
-            }
-
             updateState { state ->
                 state.copy(
                     isLoading = false,
                     learnedProfiles = learnedDomains.toImmutableList(),
-                    scrapers = scraperList.toImmutableList(),
                     repositories = repoList.toImmutableList(),
-                    scraperMappings = mappingList.toImmutableList(),
                 )
             }
         }
@@ -101,11 +75,6 @@ class ContentSourcingViewModel @Inject constructor(
     override fun onEvent(event: Event) {
         when (event) {
             is Event.SelectTab -> updateState { it.copy(selectedTab = event.index) }
-            is Event.UpdateGithubUrl -> updateState { it.copy(githubUrl = event.url) }
-            is Event.UpdateScraperName -> updateState { it.copy(scraperName = event.name) }
-            is Event.DownloadScraper -> downloadScraper(event.url, event.name)
-            is Event.ImportLocalScraper -> importLocalScraper(event.name, event.content)
-            is Event.CheckScraperUpdate -> checkScraperUpdate(event.name)
             is Event.UpdateNetworkConnection -> updateState { it.copy(networkConnectionString = event.conn) }
             is Event.UpdateNetworkPath -> updateState { it.copy(networkPath = event.path) }
             is Event.AddRepository -> addRepository(event.name, event.path)
@@ -118,14 +87,6 @@ class ContentSourcingViewModel @Inject constructor(
             is Event.UpdateRepoName -> updateState { it.copy(repoName = event.name) }
             is Event.UpdateRepoPath -> updateState { it.copy(repoPath = event.path) }
             is Event.UpdateShowNetworkForm -> updateState { it.copy(showNetworkForm = event.show) }
-            is Event.UpdateImportScriptName -> updateState { it.copy(importScriptName = event.name) }
-            is Event.UpdateImportScriptContent -> updateState { it.copy(importScriptContent = event.content) }
-            is Event.ShowImportDialog -> updateState { it.copy(showImportDialog = event.show) }
-
-            is Event.UpdateMapBaseUrl -> updateState { it.copy(mapBaseUrl = event.url) }
-            is Event.UpdateMapScraperName -> updateState { it.copy(mapScraperName = event.name) }
-            is Event.LinkBaseUrlToScraper -> linkBaseUrlToScraper(event.baseUrl, event.scraperName)
-            is Event.RemoveScraperMapping -> removeScraperMapping(event.baseUrl)
 
             is Event.UpdateInspectUrl -> updateState { it.copy(inspectUrl = event.url, inspectError = null) }
             is Event.InspectSource -> inspectSource(event.url)
@@ -137,62 +98,6 @@ class ContentSourcingViewModel @Inject constructor(
                     inspectError = null,
                     isInspecting = false,
                 )
-            }
-        }
-    }
-
-    private fun downloadScraper(url: String, name: String) {
-        viewModelScope.launchIO {
-            try {
-                updateState { it.copy(isLoading = true) }
-                scraperUpdater.downloadScraper(url, name)
-                emitEffect(Effect.ShowSnackbar("Scraper $name downloaded successfully"))
-                loadData()
-            } catch (e: Exception) {
-                emitEffect(Effect.ShowSnackbar("Download failed: ${e.message}"))
-            } finally {
-                updateState { it.copy(isLoading = false, githubUrl = "", scraperName = "") }
-            }
-        }
-    }
-
-    private fun importLocalScraper(name: String, content: String) {
-        viewModelScope.launchIO {
-            try {
-                updateState { it.copy(isLoading = true) }
-                scraperUpdater.importLocalScraperScript(name, content)
-                emitEffect(Effect.ShowSnackbar("Local script $name imported to sandbox"))
-                loadData()
-            } catch (e: Exception) {
-                emitEffect(Effect.ShowSnackbar("Import failed: ${e.message}"))
-            } finally {
-                updateState {
-                    it.copy(
-                        isLoading = false,
-                        importScriptName = "",
-                        importScriptContent = "",
-                        showImportDialog = false,
-                    )
-                }
-            }
-        }
-    }
-
-    private fun checkScraperUpdate(name: String) {
-        viewModelScope.launchIO {
-            try {
-                updateState { it.copy(isLoading = true) }
-                val updated = scraperUpdater.checkForUpdates(name)
-                if (updated) {
-                    emitEffect(Effect.ShowSnackbar("Scraper $name updated successfully"))
-                } else {
-                    emitEffect(Effect.ShowSnackbar("No updates found for $name"))
-                }
-                loadData()
-            } catch (e: Exception) {
-                emitEffect(Effect.ShowSnackbar("Update failed: ${e.message}"))
-            } finally {
-                updateState { it.copy(isLoading = false) }
             }
         }
     }
@@ -290,25 +195,6 @@ class ContentSourcingViewModel @Inject constructor(
         }
     }
 
-    private fun linkBaseUrlToScraper(baseUrl: String, scraperName: String) {
-        viewModelScope.launchIO {
-            val normalized = normalizeUrl(baseUrl)
-            preferenceStore.getString("baseUrl_scraper_mapping_$normalized", "").set(scraperName)
-            emitEffect(Effect.ShowSnackbar("Mapped $baseUrl to $scraperName"))
-            loadData()
-            updateState { it.copy(mapBaseUrl = "", mapScraperName = "") }
-        }
-    }
-
-    private fun removeScraperMapping(baseUrl: String) {
-        viewModelScope.launchIO {
-            val normalized = normalizeUrl(baseUrl)
-            preferenceStore.getString("baseUrl_scraper_mapping_$normalized", "").delete()
-            emitEffect(Effect.ShowSnackbar("Removed scraper mapping for $baseUrl"))
-            loadData()
-        }
-    }
-
     private fun inspectSource(url: String) {
         val trimmed = url.trim()
         if (trimmed.isBlank() || (!trimmed.startsWith("http://") && !trimmed.startsWith("https://"))) {
@@ -384,11 +270,6 @@ class ContentSourcingViewModel @Inject constructor(
 
     sealed interface Event {
         data class SelectTab(val index: Int) : Event
-        data class UpdateGithubUrl(val url: String) : Event
-        data class UpdateScraperName(val name: String) : Event
-        data class DownloadScraper(val url: String, val name: String) : Event
-        data class ImportLocalScraper(val name: String, val content: String) : Event
-        data class CheckScraperUpdate(val name: String) : Event
 
         data class UpdateNetworkConnection(val conn: String) : Event
         data class UpdateNetworkPath(val path: String) : Event
@@ -403,14 +284,6 @@ class ContentSourcingViewModel @Inject constructor(
         data class UpdateRepoName(val name: String) : Event
         data class UpdateRepoPath(val path: String) : Event
         data class UpdateShowNetworkForm(val show: Boolean) : Event
-        data class UpdateImportScriptName(val name: String) : Event
-        data class UpdateImportScriptContent(val content: String) : Event
-        data class ShowImportDialog(val show: Boolean) : Event
-
-        data class UpdateMapBaseUrl(val url: String) : Event
-        data class UpdateMapScraperName(val name: String) : Event
-        data class LinkBaseUrlToScraper(val baseUrl: String, val scraperName: String) : Event
-        data class RemoveScraperMapping(val baseUrl: String) : Event
 
         data class UpdateInspectUrl(val url: String) : Event
         data class InspectSource(val url: String) : Event
@@ -430,11 +303,8 @@ class ContentSourcingViewModel @Inject constructor(
     data class State(
         val isLoading: Boolean = true,
         val selectedTab: Int = 0,
-        val scrapers: ImmutableList<ScraperItem> = persistentListOf(),
         val repositories: ImmutableList<RepositoryItem> = persistentListOf(),
         val learnedProfiles: ImmutableList<SourceProfile> = persistentListOf(),
-        val githubUrl: String = "",
-        val scraperName: String = "",
         val networkConnectionString: String = "",
         val networkPath: String = "",
         val scanResults: ImmutableList<ContentItem> = persistentListOf(),
@@ -442,12 +312,6 @@ class ContentSourcingViewModel @Inject constructor(
         val repoName: String = "",
         val repoPath: String = "",
         val showNetworkForm: Boolean = false,
-        val importScriptName: String = "",
-        val importScriptContent: String = "",
-        val showImportDialog: Boolean = false,
-        val mapBaseUrl: String = "",
-        val mapScraperName: String = "",
-        val scraperMappings: ImmutableList<ScraperMappingItem> = persistentListOf(),
         val inspectUrl: String = "",
         val isInspecting: Boolean = false,
         val inspectedProfile: SourceProfile? = null,
@@ -456,21 +320,8 @@ class ContentSourcingViewModel @Inject constructor(
 }
 
 @Immutable
-data class ScraperItem(
-    val name: String,
-    val hasUpdatesUrl: Boolean,
-    val localContent: String?,
-)
-
-@Immutable
 data class RepositoryItem(
     val name: String,
     val path: String,
     val isNetwork: Boolean,
-)
-
-@Immutable
-data class ScraperMappingItem(
-    val baseUrl: String,
-    val scraperName: String,
 )

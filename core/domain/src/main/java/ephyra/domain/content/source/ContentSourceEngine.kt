@@ -22,6 +22,21 @@ import ephyra.domain.content.model.ContentUnit
 interface ContentSourceEngine {
 
     /**
+     * The [SourceType]s this engine serves.
+     *
+     * **Why the engine declares this rather than the orchestrator switching on it.** Selection used to
+     * be an exhaustive `when` inside `ContentSourceOrchestrator`, which meant a new source type was
+     * incomplete until someone remembered to edit that branch — and nothing failed when they forgot,
+     * because an unmatched type fell through to the heuristic engine and a Jellyfin request would
+     * quietly be scraped as HTML. Declaring the types here makes the set data, so an unbound type is
+     * visible in the registry rather than silently misrouted.
+     *
+     * Overlap is tolerated: the first engine registered for a type wins.
+     */
+    val handles: Set<SourceType>
+        get() = emptySet()
+
+    /**
      * Discover how to interact with a content source at [baseUrl].
      * Returns a [SourceProfile] describing endpoints, patterns, and selectors.
      *

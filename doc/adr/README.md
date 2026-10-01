@@ -17,6 +17,8 @@ These records describe decisions that shape multiple Ephyra 2.0 phases. They are
 | [0009](0009-evidence-channels-match-validation.md) | Evidence levels are defined by producing system; user-device validation is a first-class channel; a missing channel is a blocker, never a pass | Accepted |
 | [0010](0010-region-decoded-slices-not-tile-engine.md) | Continuous reader keeps `LazyColumn` and decodes fixed-height slices via `BitmapRegionDecoder`; the tile engine is retired | Accepted |
 | [0011](0011-one-graph-coordinator-not-one-navhost.md) | One navigation coordinator and typed routes; a nested `NavHost` per bottom tab is retained | Accepted |
+| [0012](0012-source-existence-and-identity-have-one-owner.md) | Source existence and identity are owned by one registry; adapters are directed, named, and removable | Accepted |
+| [0013](0013-source-types-that-exist.md) | Only source types that work ship; Kotlin-to-JS transpilation and the JS scraper runtime are removed | Accepted |
 
 ## ADR protocol
 

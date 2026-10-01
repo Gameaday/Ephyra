@@ -29,6 +29,16 @@ class AdaptiveHeuristicEngine @Inject constructor(
     private val profileCache: SourceProfileCache,
 ) : ContentSourceEngine {
 
+    /**
+     * Claims [SourceType.HEURISTIC] only.
+     *
+     * It is also the orchestrator's fallback for every type with no registered engine, which is a
+     * routing decision rather than a claim — so it does not declare the other types. Were it to, a
+     * Jellyfin profile with no engine would resolve here *through the registry* and stop being
+     * visibly unbound.
+     */
+    override val handles: Set<SourceType> = setOf(SourceType.HEURISTIC)
+
     private val scope = CoroutineScope(ioDispatcher)
 
     override suspend fun discover(baseUrl: String): SourceProfile = withContext(ioDispatcher) {
