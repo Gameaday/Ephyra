@@ -90,13 +90,6 @@ Sources come from two places:
      the APKs it publishes, including private/self-hosted repository formats.
    - **Local installs**: Import an extension APK directly, or install one already on the device.
 
-2. **Heuristic discovery (`AdaptiveHeuristicEngine`)**:
-   - **DOM structure heuristics**: Analyzes web pages on the fly using [Jsoup](https://jsoup.org/) to
-     auto-discover selectors for search grids, item details, titles, covers, chapter lists, and reader
-     images when no extension covers a site.
-   - **Fallbacks & caching**: Caches discovered selector rules into a serialized `SourceProfile` so
-     subsequent requests skip the discovery pass.
-
 There is deliberately no third mechanism. An earlier design translated Kotlin extension sources into
 sandboxed JavaScript at runtime; it could not represent API-based sources faithfully and was removed
 rather than left in the tree half-working. See `doc/adr/0013-source-types-that-exist.md`.

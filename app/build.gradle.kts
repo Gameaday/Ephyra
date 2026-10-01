@@ -150,7 +150,6 @@ android {
                 "libandroidx.graphics.path",
                 "libarchive-jni",
                 "librjxlcoder",
-                "libquickjs",
                 "libsqlite3x",
             )
                 .map { "**/$it.so" }
