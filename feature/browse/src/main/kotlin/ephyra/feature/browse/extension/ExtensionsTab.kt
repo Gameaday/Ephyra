@@ -1,5 +1,4 @@
 package ephyra.feature.browse.extension
-
 import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AddLink
@@ -19,14 +18,12 @@ import ephyra.presentation.core.components.TabContent
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.ScreenRoutes
 import kotlinx.collections.immutable.persistentListOf
-
 @Composable
 fun extensionsTab(
     extensionsViewModel: ExtensionsViewModel,
     navController: NavController = LocalNavController.current,
 ): TabContent {
     var showAddSourceDialog by remember { mutableStateOf(false) }
-
     return TabContent(
         titleRes = ephyra.app.core.common.R.string.label_source_management,
         badgeNumber = null,
@@ -50,16 +47,13 @@ fun extensionsTab(
         ),
         content = { contentPadding, _ ->
             val state by extensionsViewModel.state.collectAsStateWithLifecycle()
-
             BackHandler(enabled = state.searchQuery != null) {
                 extensionsViewModel.search(null)
             }
-
             ExtensionScreen(
                 state = state,
                 contentPadding = contentPadding,
                 searchQuery = state.searchQuery,
-                onAddHeuristic = extensionsViewModel::addHeuristicProfile,
                 onForceRediscover = extensionsViewModel::forceRediscover,
                 onRemoveSource = extensionsViewModel::removeSource,
                 onRefresh = extensionsViewModel::refreshAll,
@@ -73,7 +67,6 @@ fun extensionsTab(
                 onUninstallInstalledExtension = extensionsViewModel::uninstallInstalledExtension,
                 navController = navController,
             )
-
             if (showAddSourceDialog) {
                 UniversalAddSourceDialog(
                     onDismissRequest = { showAddSourceDialog = false },
@@ -81,10 +74,7 @@ fun extensionsTab(
                         extensionsViewModel.addRepository(repoUrl)
                         showAddSourceDialog = false
                     },
-                    onAddWebSource = { url, name ->
-                        extensionsViewModel.addHeuristicProfile(url, name)
-                        showAddSourceDialog = false
-                    },
+                    onAddWebSource = { _, _ -> showAddSourceDialog = false },
                 )
             }
         },

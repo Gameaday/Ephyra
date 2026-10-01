@@ -34,7 +34,7 @@ class RemoveCustomSourceTest {
     private fun heuristicProfile() = SourceProfile(
         baseUrl = baseUrl,
         contentType = ContentType.MANGA,
-        sourceType = SourceType.HEURISTIC,
+        sourceType = SourceType.REMOTE_EXTENSION,
         enabled = true,
     )
 

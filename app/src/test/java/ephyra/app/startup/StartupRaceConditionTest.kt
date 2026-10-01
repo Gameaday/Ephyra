@@ -44,7 +44,7 @@ class StartupRaceConditionTest {
                     displayName = "Example $index",
                     verified = true,
                     enabled = true,
-                    sourceType = SourceType.HEURISTIC,
+                    sourceType = SourceType.REMOTE_EXTENSION,
                     scraperFilename = null,
                     lastUpdated = System.currentTimeMillis(),
                 )

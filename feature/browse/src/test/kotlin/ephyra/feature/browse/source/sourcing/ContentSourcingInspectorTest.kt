@@ -86,7 +86,7 @@ class ContentSourcingInspectorTest {
             baseUrl = testUrl,
             displayName = "Test Manga",
             contentType = ContentType.MANGA,
-            sourceType = SourceType.HEURISTIC,
+            sourceType = SourceType.REMOTE_EXTENSION,
             endpoints = mapOf(Endpoint.SEARCH to EndpointPattern("/search")),
         )
 
@@ -119,7 +119,7 @@ class ContentSourcingInspectorTest {
             baseUrl = testUrl,
             displayName = "Test Novel",
             contentType = ContentType.NOVEL,
-            sourceType = SourceType.HEURISTIC,
+            sourceType = SourceType.REMOTE_EXTENSION,
         )
 
         coEvery { orchestrator.discover(testUrl) } returns Result.Success(expectedProfile)
@@ -143,7 +143,7 @@ class ContentSourcingInspectorTest {
             baseUrl = testUrl,
             displayName = "Test Anime",
             contentType = ContentType.ANIME,
-            sourceType = SourceType.HEURISTIC,
+            sourceType = SourceType.REMOTE_EXTENSION,
         )
 
         coEvery { orchestrator.discover(testUrl) } returns Result.Success(expectedProfile)

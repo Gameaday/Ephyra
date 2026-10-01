@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ephyra.core.common.util.Result
 import ephyra.core.common.util.system.logcat
-import ephyra.domain.content.source.interactor.AddCustomSource
 import ephyra.domain.source.interactor.GetEnabledSources
 import ephyra.domain.source.interactor.ToggleSource
 import ephyra.domain.source.interactor.ToggleSourcePin
@@ -36,7 +35,6 @@ class SourcesViewModel @Inject constructor(
     private val getEnabledSources: GetEnabledSources,
     private val toggleSource: ToggleSource,
     private val toggleSourcePin: ToggleSourcePin,
-    private val addCustomSource: AddCustomSource,
 ) : BaseUdfViewModel<SourcesViewModel.State, SourcesScreenEvent, SourcesViewModel.Effect>(State()) {
 
     init {
@@ -111,22 +109,10 @@ class SourcesViewModel @Inject constructor(
             is SourcesScreenEvent.ShowSourceDialog -> showSourceDialog(event.source)
             SourcesScreenEvent.CloseDialog -> closeDialog()
             is SourcesScreenEvent.Search -> search(event.query)
-            is SourcesScreenEvent.AddWebSource -> addWebSource(event.url, event.name)
-        }
-    }
-
-    fun addWebSource(url: String, name: String? = null) {
-        viewModelScope.launch {
-            try {
-                val result = addCustomSource.addHeuristicProfile(url, name)
-                if (result is Result.Success) {
-                    emitEffect(Effect.WebSourceAdded(result.data.displayName))
-                } else if (result is Result.Error) {
-                    emitEffect(Effect.WebSourceAddFailed(result.exception.message ?: "Failed to discover source"))
-                }
-            } catch (e: Exception) {
-                emitEffect(Effect.WebSourceAddFailed(e.message ?: "Failed to discover source"))
-            }
+            // A web source is added by installing an extension APK. The heuristic path that backed
+            // this event was removed (ADR-0015); the dialog closes without adding rather than
+            // silently doing nothing.
+            is SourcesScreenEvent.AddWebSource -> Unit
         }
     }
 

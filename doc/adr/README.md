@@ -20,6 +20,7 @@ These records describe decisions that shape multiple Ephyra 2.0 phases. They are
 | [0012](0012-source-existence-and-identity-have-one-owner.md) | Source existence and identity are owned by one registry; adapters are directed, named, and removable | Accepted |
 | [0013](0013-source-types-that-exist.md) | Only source types that work ship; Kotlin-to-JS transpilation and the JS scraper runtime are removed | Accepted |
 | [0014](0014-failures-name-the-layer-that-owns-them.md) | A failure names the layer that owns it; the adapter seam is where a provider's shape becomes ours | Accepted |
+| [0015](0015-one-source-type-until-another-works.md) | The heuristic source type is removed; extension APKs are the only working source until Jellyfin | Accepted |
 
 ## ADR protocol
 

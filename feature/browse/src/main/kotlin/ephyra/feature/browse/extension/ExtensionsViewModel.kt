@@ -9,7 +9,6 @@ import ephyra.core.common.util.Result
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.content.source.SourceType
-import ephyra.domain.content.source.interactor.AddCustomSource
 import ephyra.domain.content.source.interactor.GetAvailableSources
 import ephyra.domain.content.source.interactor.RemoveCustomSource
 import ephyra.domain.content.source.interactor.UnifiedSource
@@ -34,7 +33,6 @@ import javax.inject.Inject
 class ExtensionsViewModel @Inject constructor(
     private val context: Application,
     private val getAvailableSources: GetAvailableSources,
-    private val addCustomSource: AddCustomSource,
     private val updateCustomSource: UpdateCustomSource,
     private val removeCustomSource: RemoveCustomSource,
     private val getExtensionRepo: GetExtensionRepo,
@@ -218,21 +216,6 @@ class ExtensionsViewModel @Inject constructor(
         }
     }
 
-    fun addHeuristicProfile(baseUrl: String, displayName: String?) {
-        viewModelScope.launch {
-            updateState { it.copy(isLoading = true) }
-            val result = addCustomSource.addHeuristicProfile(baseUrl, displayName)
-            updateState { it.copy(isLoading = false) }
-            when (result) {
-                is Result.Success -> loadSources()
-                is Result.Error -> updateState {
-                    it.copy(error = result.exception.message ?: "Failed to add profile")
-                }
-                else -> {}
-            }
-        }
-    }
-
     fun forceRediscover(baseUrl: String) {
         viewModelScope.launch {
             updateState { it.copy(isLoading = true) }
@@ -315,7 +298,6 @@ class ExtensionsViewModel @Inject constructor(
             is ExtensionsScreenEvent.UninstallExtension -> uninstallExtension(event.extension)
             ExtensionsScreenEvent.LoadSources -> loadSources()
             ExtensionsScreenEvent.RefreshAll -> refreshAll()
-            is ExtensionsScreenEvent.AddHeuristicProfile -> addHeuristicProfile(event.baseUrl, event.displayName)
             is ExtensionsScreenEvent.ForceRediscover -> forceRediscover(event.baseUrl)
             is ExtensionsScreenEvent.RemoveSource -> removeSource(event.baseUrl)
             is ExtensionsScreenEvent.Search -> search(event.query)
@@ -357,7 +339,6 @@ sealed interface ExtensionsScreenEvent {
     data class UninstallExtension(val extension: Extension.Available) : ExtensionsScreenEvent
     data object LoadSources : ExtensionsScreenEvent
     data object RefreshAll : ExtensionsScreenEvent
-    data class AddHeuristicProfile(val baseUrl: String, val displayName: String?) : ExtensionsScreenEvent
     data class ForceRediscover(val baseUrl: String) : ExtensionsScreenEvent
     data class RemoveSource(val baseUrl: String) : ExtensionsScreenEvent
     data class Search(val query: String?) : ExtensionsScreenEvent

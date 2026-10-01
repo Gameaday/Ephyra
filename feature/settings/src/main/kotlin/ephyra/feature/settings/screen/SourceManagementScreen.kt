@@ -81,12 +81,8 @@ fun SourceManagementScreen(
     val error = state.error
 
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
-    var showAddHeuristicDialog by remember { mutableStateOf(false) }
     var showRemoveConfirmDialog by remember { mutableStateOf(false) }
     var selectedSourceToRemove by remember { mutableStateOf<UnifiedSource?>(null) }
-
-    var heuristicUrl by remember { mutableStateOf("") }
-    var heuristicName by remember { mutableStateOf("") }
 
     LaunchedEffect(error) {
         if (error != null) {
@@ -117,7 +113,7 @@ fun SourceManagementScreen(
             SourceManagementLayout(
                 contentPadding = contentPadding,
                 sources = sources,
-                onAddHeuristic = { showAddHeuristicDialog = true },
+
                 onRefresh = { viewModel.onEvent(SourceManagementEvent.LoadSources) },
                 onSourceClick = { source ->
                     snackbarMessage = buildString {
@@ -199,29 +195,6 @@ fun SourceManagementScreen(
                 },
             )
         }
-
-        // Add Heuristic Profile Dialog
-        if (showAddHeuristicDialog) {
-            AddHeuristicDialog(
-                onDismiss = {
-                    showAddHeuristicDialog = false
-                    heuristicUrl = ""
-                    heuristicName = ""
-                },
-                onConfirm = { url, name ->
-                    viewModel.onEvent(
-                        SourceManagementEvent.AddHeuristicProfile(url, name?.ifBlank { null }),
-                    )
-                    showAddHeuristicDialog = false
-                    heuristicUrl = ""
-                    heuristicName = ""
-                },
-                url = heuristicUrl,
-                onUrlChange = { heuristicUrl = it },
-                name = heuristicName,
-                onNameChange = { heuristicName = it },
-            )
-        }
     }
 }
 
@@ -229,7 +202,7 @@ fun SourceManagementScreen(
 private fun SourceManagementLayout(
     contentPadding: PaddingValues,
     sources: List<UnifiedSource>,
-    onAddHeuristic: () -> Unit,
+
     onRefresh: () -> Unit,
     onSourceClick: (UnifiedSource) -> Unit,
     onSourceLongClick: (UnifiedSource) -> Unit,
@@ -249,12 +222,6 @@ private fun SourceManagementLayout(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             QuickActionButton(
-                icon = Icons.Outlined.Autorenew,
-                label = "Add Heuristic",
-                color = MaterialTheme.colorScheme.tertiary,
-                onClick = onAddHeuristic,
-            )
-            QuickActionButton(
                 icon = Icons.Outlined.Refresh,
                 label = "Refresh All",
                 color = MaterialTheme.colorScheme.outline,
@@ -266,7 +233,6 @@ private fun SourceManagementLayout(
         val grouped = sources.groupBy { it.sourceType }
         val typeOrder = listOf(
             SourceType.REMOTE_EXTENSION,
-            SourceType.HEURISTIC,
             SourceType.REPOSITORY,
         )
 
@@ -377,7 +343,6 @@ private fun SourceTypeSection(
 ) {
     val (icon, color) = when (sourceType) {
         SourceType.REMOTE_EXTENSION -> Icons.Outlined.Security to MaterialTheme.colorScheme.primary
-        SourceType.HEURISTIC -> Icons.Outlined.Autorenew to MaterialTheme.colorScheme.tertiary
         SourceType.REPOSITORY -> Icons.Outlined.Storage to MaterialTheme.colorScheme.outline
     }
 
@@ -677,7 +642,6 @@ private fun AddHeuristicDialog(
 private val SourceType.displayName: String
     get() = when (this) {
         SourceType.REMOTE_EXTENSION -> "Extension Sources"
-        SourceType.HEURISTIC -> "Heuristic Profiles"
         SourceType.REPOSITORY -> "Repositories"
     }
 
@@ -685,6 +649,5 @@ private val SourceType.color: Color
     @Composable
     get() = when (this) {
         SourceType.REMOTE_EXTENSION -> MaterialTheme.colorScheme.primary
-        SourceType.HEURISTIC -> MaterialTheme.colorScheme.tertiary
         SourceType.REPOSITORY -> MaterialTheme.colorScheme.outline
     }

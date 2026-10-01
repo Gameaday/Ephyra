@@ -191,7 +191,10 @@ internal data class SerializableProfile(
             sourceType = try {
                 SourceType.valueOf(sourceType)
             } catch (e: Exception) {
-                SourceType.HEURISTIC
+                // An unrecognised persisted name means a build older than this one wrote it, or a
+                // retired type (`JS_SCRAPER`, `HEURISTIC`). Both map to the extension path via
+                // `fromString`, which is also where the retired names are folded in deliberately.
+                SourceType.fromString(sourceType)
             },
             enabled = enabled,
             endpoints = endpoints.mapKeys {

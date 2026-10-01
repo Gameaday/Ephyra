@@ -3,7 +3,6 @@ package ephyra.feature.settings.screen
 import app.cash.turbine.test
 import ephyra.core.common.util.Result
 import ephyra.domain.content.source.SourceType
-import ephyra.domain.content.source.interactor.AddCustomSource
 import ephyra.domain.content.source.interactor.GetAvailableSources
 import ephyra.domain.content.source.interactor.RemoveCustomSource
 import ephyra.domain.content.source.interactor.UnifiedSource
@@ -30,7 +29,6 @@ import org.junit.jupiter.api.Test
 class SourceManagementViewModelTest {
 
     private val getAvailableSources: GetAvailableSources = mockk()
-    private val addCustomSource: AddCustomSource = mockk(relaxed = true)
     private val updateCustomSource: UpdateCustomSource = mockk(relaxed = true)
     private val removeCustomSource: RemoveCustomSource = mockk(relaxed = true)
     private val testDispatcher = UnconfinedTestDispatcher()
@@ -63,7 +61,6 @@ class SourceManagementViewModelTest {
         sourcesFlow.value = listOf(sampleSource)
         val viewModel = SourceManagementViewModel(
             getAvailableSources,
-            addCustomSource,
             updateCustomSource,
             removeCustomSource,
         )
@@ -82,7 +79,6 @@ class SourceManagementViewModelTest {
 
         val viewModel = SourceManagementViewModel(
             getAvailableSources,
-            addCustomSource,
             updateCustomSource,
             removeCustomSource,
         )
@@ -92,23 +88,5 @@ class SourceManagementViewModelTest {
         coVerify(exactly = 1) {
             removeCustomSource.removeSource("https://example.com")
         }
-    }
-
-    @Test
-    fun `ClearError event resets error to null`() = runTest {
-        coEvery { addCustomSource.addHeuristicProfile(any(), any()) } returns Result.Error(Exception("Fail"))
-
-        val viewModel = SourceManagementViewModel(
-            getAvailableSources,
-            addCustomSource,
-            updateCustomSource,
-            removeCustomSource,
-        )
-
-        viewModel.onEvent(SourceManagementEvent.AddHeuristicProfile("https://example.com", "Example"))
-        assertEquals("Fail", viewModel.state.value.error)
-
-        viewModel.onEvent(SourceManagementEvent.ClearError)
-        assertNull(viewModel.state.value.error)
     }
 }

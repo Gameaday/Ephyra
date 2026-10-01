@@ -3,7 +3,7 @@
 > **Authority:** this file decides what is current, what is compatibility, and what is planned for
 > content sourcing. Where an older document disagrees, **this file wins** and the other is a defect.
 >
-> **Last updated:** 2026-09-30, immediately after `ADR-0013` (JS removal) and `ADR-0014` (failure
+> **Last updated:** 2026-09-30, after `ADR-0015` (heuristic removal). Supersedes `ADR-0013` (JS) and `ADR-0014`
 > attribution). Supersedes the sourcing sections of `SOURCE_DISCOVERY_ARCHITECTURE.md` and
 > `SOURCE_DISCOVERY_EXECUTION.md`.
 
@@ -25,12 +25,16 @@ plainly which parts are real.
 
 ## 1. What ships today
 
-Two source types, and only two. That is the whole product surface.
+**One** working source type. That is the whole product surface until Jellyfin lands.
 
 | Type | Transport | Notes |
 |---|---|---|
 | **CURRENT** Extension APK | Remote repository (incl. private/self-hosted), or local import | Installed into app-private storage, driven through `HttpSource`/`CatalogueSource` |
-| **CURRENT** Heuristic | HTTP + Jsoup | `AdaptiveHeuristicEngine`, the only bound engine; also the declared fallback |
+| **PLANNED** Jellyfin (`REPOSITORY`) | Not implemented | Awaiting 2.0. Declared in `SourceType` so it lands as an addition, not a new concept |
+| ~~**REMOVED** Heuristic~~ | ~~HTTP + Jsoup~~ | `AdaptiveHeuristicEngine`, `AddCustomSource`, `SourceType.HEURISTIC`, and its UI. `ADR-0015`. |
+
+The engine registry is **empty**, and that is the correct state: extension-APK sources never consult
+the orchestrator, and `NoEngineBoundException` names an unbound type rather than substituting a stand-in.
 
 Engine selection is a **registry**, not a `when`: each engine declares the types it serves via
 `ContentSourceEngine.handles`, and `SourceTypeRegistryStructuralTest` fails if that is ever replaced by

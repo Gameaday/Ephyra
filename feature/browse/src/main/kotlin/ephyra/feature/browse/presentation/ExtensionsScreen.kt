@@ -89,7 +89,6 @@ fun ExtensionScreen(
     state: ExtensionsViewModel.State,
     contentPadding: PaddingValues,
     searchQuery: String?,
-    onAddHeuristic: (String, String?) -> Unit,
     onForceRediscover: (String) -> Unit,
     onRemoveSource: (String) -> Unit,
     onRefresh: () -> Unit,
@@ -104,13 +103,9 @@ fun ExtensionScreen(
     navController: NavController = LocalNavController.current,
 ) {
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
-    var showAddHeuristicDialog by remember { mutableStateOf(false) }
     var showRemoveConfirmDialog by remember { mutableStateOf(false) }
     var showAddRepoDialog by remember { mutableStateOf(false) }
     var selectedSourceToRemove by remember { mutableStateOf<UnifiedSource?>(null) }
-
-    var heuristicUrl by remember { mutableStateOf("") }
-    var heuristicName by remember { mutableStateOf("") }
 
     LaunchedEffect(state.error) {
         if (state.error != null) {
@@ -176,7 +171,6 @@ fun ExtensionScreen(
             installedExtensions = filteredInstalledExtensions,
             untrustedExtensions = state.untrustedExtensions,
             failedExtensions = state.failedExtensions,
-            onAddHeuristicClick = { showAddHeuristicDialog = true },
             onAddRepoClick = { showAddRepoDialog = true },
             onDeleteRepoClick = onDeleteRepository,
             onInstallExtensionClick = { ext -> onInstallExtension(ext, null) },
@@ -221,8 +215,9 @@ fun ExtensionScreen(
                 onAddRepository(repoUrl)
                 showAddRepoDialog = false
             },
-            onAddWebSource = { url, name ->
-                onAddHeuristic(url, name)
+            onAddWebSource = { _, _ ->
+                // Web sources are added by installing an extension APK; the heuristic path that used
+                // to back this button was removed (`ADR-0015`), so the dialog closes without adding.
                 showAddRepoDialog = false
             },
         )
@@ -281,27 +276,6 @@ fun ExtensionScreen(
             },
         )
     }
-
-    // Add Heuristic Profile Dialog
-    if (showAddHeuristicDialog) {
-        AddHeuristicDialog(
-            onDismiss = {
-                showAddHeuristicDialog = false
-                heuristicUrl = ""
-                heuristicName = ""
-            },
-            onConfirm = { url, name ->
-                onAddHeuristic(url, name?.ifBlank { null })
-                showAddHeuristicDialog = false
-                heuristicUrl = ""
-                heuristicName = ""
-            },
-            url = heuristicUrl,
-            onUrlChange = { heuristicUrl = it },
-            name = heuristicName,
-            onNameChange = { heuristicName = it },
-        )
-    }
 }
 
 @Composable
@@ -313,7 +287,6 @@ private fun ExtensionScraperManagementLayout(
     installedExtensions: List<Extension.Installed>,
     untrustedExtensions: List<Extension.Untrusted>,
     failedExtensions: List<Extension.Failed>,
-    onAddHeuristicClick: () -> Unit,
     onAddRepoClick: () -> Unit,
     onDeleteRepoClick: (String) -> Unit,
     onInstallExtensionClick: (Extension.Available) -> Unit,
@@ -411,7 +384,6 @@ private fun ExtensionScraperManagementLayout(
             DeveloperToolsSection(
                 isExpanded = showDevTools,
                 onToggleExpand = { showDevTools = !showDevTools },
-                onAddHeuristicClick = onAddHeuristicClick,
                 sources = sources,
                 onSourceClick = onSourceClick,
                 onForceRediscover = onForceRediscover,
@@ -517,7 +489,6 @@ private fun EmptyRepositoriesCard(
 private fun DeveloperToolsSection(
     isExpanded: Boolean,
     onToggleExpand: () -> Unit,
-    onAddHeuristicClick: () -> Unit,
     sources: List<UnifiedSource>,
     onSourceClick: (UnifiedSource) -> Unit,
     onForceRediscover: (UnifiedSource) -> Unit,
@@ -556,44 +527,6 @@ private fun DeveloperToolsSection(
                     contentDescription = if (isExpanded) "Collapse" else "Expand",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-            }
-
-            if (isExpanded) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    QuickActionButton(
-                        icon = Icons.Outlined.Autorenew,
-                        label = "Heuristic",
-                        color = MaterialTheme.colorScheme.tertiary,
-                        onClick = onAddHeuristicClick,
-                    )
-                }
-
-                val devSources = sources.filter {
-                    it.sourceType == SourceType.HEURISTIC
-                }
-                if (devSources.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "Custom Profiles (${devSources.size})",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        devSources.forEach { source ->
-                            SourceRow(
-                                source = source,
-                                onClick = { onSourceClick(source) },
-                                onForceRediscover = { onForceRediscover(source) },
-                                onRemoveSource = { onRemoveSource(source) },
-                            )
-                        }
-                    }
-                }
             }
         }
     }
@@ -1215,7 +1148,6 @@ private fun SourceTypeSection(
 ) {
     val (icon, color) = when (sourceType) {
         SourceType.REMOTE_EXTENSION -> Icons.Outlined.Security to MaterialTheme.colorScheme.primary
-        SourceType.HEURISTIC -> Icons.Outlined.Autorenew to MaterialTheme.colorScheme.tertiary
         SourceType.REPOSITORY -> Icons.Outlined.Storage to MaterialTheme.colorScheme.outline
     }
 
@@ -1446,62 +1378,6 @@ private fun SourceRow(
 }
 
 @Composable
-private fun AddHeuristicDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (String, String?) -> Unit,
-    url: String,
-    onUrlChange: (String) -> Unit,
-    name: String,
-    onNameChange: (String) -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Add Heuristic Profile") },
-        text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(
-                    value = url,
-                    onValueChange = onUrlChange,
-                    label = { Text("Website Base URL") },
-                    placeholder = { Text("https://example.com") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = onNameChange,
-                    label = { Text("Display Name (optional)") },
-                    placeholder = { Text("Auto-detected from page title") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "The adaptive heuristic engine will analyze the page structure on first use.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = {
-                if (url.isNotBlank()) {
-                    onConfirm(url, name.ifBlank { null })
-                }
-            }) {
-                Text("Add")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        },
-    )
-}
-
-@Composable
 private fun ExtensionSourcesDialog(
     extension: Extension.Available,
     installedSources: List<UnifiedSource>,
@@ -1623,7 +1499,6 @@ private fun ExtensionSourcesDialog(
 private val SourceType.displayName: String
     get() = when (this) {
         SourceType.REMOTE_EXTENSION -> "Extension Sources"
-        SourceType.HEURISTIC -> "Heuristic Profiles"
         SourceType.REPOSITORY -> "Repositories"
     }
 
@@ -1631,6 +1506,5 @@ private val SourceType.color: Color
     @Composable
     get() = when (this) {
         SourceType.REMOTE_EXTENSION -> MaterialTheme.colorScheme.primary
-        SourceType.HEURISTIC -> MaterialTheme.colorScheme.tertiary
         SourceType.REPOSITORY -> MaterialTheme.colorScheme.outline
     }

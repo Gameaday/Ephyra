@@ -71,26 +71,39 @@ class SourceTypeRegistryStructuralTest {
     /**
      * A name the app still stores must still resolve to something real.
      *
-     * `JS_SCRAPER` was retired with the JS runtime but kept in `fromString` deliberately — an install
-     * that persisted one would otherwise fall through to `HEURISTIC` and change behaviour with no
-     * error. This pins that it maps to a *live* type and stays out of the enum.
+     * `JS_SCRAPER` and `HEURISTIC` were both retired (`ADR-0013`, `ADR-0015`) but are kept in
+     * `fromString` deliberately — an install that persisted one would otherwise fall through to the
+     * default and change behaviour with no error. This pins that both map to a *live* type and stay
+     * out of the enum.
      */
     @Test
-    fun `the retired JS_SCRAPER name maps to a live source type`() {
+    fun `retired source-type names map to a live source type`() {
         val text = code(SOURCE_PROFILE)
 
         val fromString = text.substringAfter("fun fromString").substringBefore("}")
+        // The retired names share one `when` branch with the live ones, so the check is that each is
+        // present and that nothing maps a retired name to itself or to the other retired name.
+        // Asserting an exact `"NAME" -> TYPE` substring would pass today and fail the moment someone
+        // splits the branch into per-name arms, which would be a harmless refactor.
+        listOf("JS_SCRAPER", "HEURISTIC").forEach { retired ->
+            assertTrue(
+                fromString.contains("\"$retired\""),
+                "the stored name $retired must still be mapped; without this an install that " +
+                    "persisted one resolves to the default and changes behaviour silently",
+            )
+        }
         assertTrue(
-            fromString.contains("\"JS_SCRAPER\" -> REMOTE_EXTENSION"),
-            "the stored name JS_SCRAPER must still map to a live type; without this an install that " +
-                "persisted one resolves to HEURISTIC and changes behaviour silently",
+            !Regex("\"(JS_SCRAPER|HEURISTIC)\"\\s*->\\s*(HEURISTIC|JS_SCRAPER)").containsMatchIn(fromString),
+            "a retired name must never map back to itself, nor to the other retired name",
         )
 
         val enumBody = text.substringAfter("enum class SourceType").substringBefore("companion object")
-        assertTrue(
-            !enumBody.contains("JS_SCRAPER"),
-            "JS_SCRAPER must stay out of the enum; only the persisted-name alias is kept",
-        )
+        listOf("JS_SCRAPER", "HEURISTIC").forEach { retired ->
+            assertTrue(
+                !enumBody.contains(retired),
+                "$retired must stay out of the enum; only the persisted-name alias is kept",
+            )
+        }
     }
 
     /**

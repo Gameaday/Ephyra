@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test
  */
 class ContentSourceOrchestratorTest {
 
-    private val heuristic = FakeContentSourceEngine(handles = setOf(SourceType.HEURISTIC))
+    private val heuristic = FakeContentSourceEngine(handles = setOf(SourceType.REMOTE_EXTENSION))
     private val repository = FakeContentSourceEngine(handles = setOf(SourceType.REPOSITORY))
 
     private val orchestrator = ContentSourceOrchestrator(
@@ -37,7 +37,7 @@ class ContentSourceOrchestratorTest {
         preferenceStore = FakePreferenceStore(),
     )
 
-    private fun profile(baseUrl: String, sourceType: SourceType = SourceType.HEURISTIC) =
+    private fun profile(baseUrl: String, sourceType: SourceType = SourceType.REMOTE_EXTENSION) =
         SourceProfile(baseUrl = baseUrl, contentType = ContentType.MANGA, sourceType = sourceType, enabled = true)
 
     private fun item(title: String) = ContentItem(

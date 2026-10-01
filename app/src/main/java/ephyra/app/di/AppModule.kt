@@ -125,7 +125,6 @@ import ephyra.domain.content.interactor.GetContentUnits
 import ephyra.domain.content.repository.ContentDatabase
 import ephyra.domain.content.repository.ContentRepository
 import ephyra.domain.content.repository.ContentUnitRepository
-import ephyra.domain.content.source.AdaptiveHeuristicEngine
 import ephyra.domain.content.source.ContentSourceEngine
 import ephyra.domain.content.source.ContentSourceOrchestrator
 import ephyra.domain.content.source.RemoteSource
@@ -472,38 +471,26 @@ object AppModule {
         OpportunisticMergeManager()
 
     /**
-     * The heuristic engine. Claims `SourceType.HEURISTIC`, which is also what makes it the
-     * orchestrator's fallback — see `ContentSourceOrchestrator.fallbackEngine`.
+     * The engine set the orchestrator resolves against — currently **empty**.
+     *
+     * The heuristic engine was removed (`ADR-0015`) and it was the only one bound, so there is
+     * deliberately nothing here until Jellyfin lands. That is a normal state rather than a
+     * misconfiguration, and two things make it safe:
+     *
+     * - Extension-APK sources never consult the orchestrator. `AndroidSourceManager` registers them
+     *   straight from the installed extensions; only *profiled* domains went through the profile path,
+     *   and the heuristic engine was the only thing that ever created a profile.
+     * - With no engine bound, the orchestrator raises `NoEngineBoundException` naming the unbound type
+     *   rather than substituting a substitute. A missing binding must be legible, not silently routed.
+     *
+     * Built as an explicit provider rather than `@IntoSet` because this project's KSP/Dagger setup
+     * does not honour the multibinding annotation on an `object` module — it generates the per-method
+     * factory but never wires a set binding. Adding Jellyfin means adding one line here; the
+     * orchestrator does not change.
      */
     @Provides
     @Singleton
-    fun provideHeuristicContentSourceEngine(
-        @IoDispatcher ioDispatcher: CoroutineDispatcher,
-        networkHelper: NetworkHelper,
-        profileCache: SourceProfileCache,
-    ): AdaptiveHeuristicEngine =
-        AdaptiveHeuristicEngine(ioDispatcher, networkHelper, profileCache)
-
-    /**
-     * The engine set the orchestrator resolves against.
-     *
-     * Built explicitly rather than with `@IntoSet` because this project's KSP/Dagger setup does not
-     * honour the multibinding annotation on an `object` module: it generates the per-method factory
-     * but never wires a set binding, so injecting `List<ContentSourceEngine>` fails with
-     * `MissingBinding`. That is recorded here rather than papered over, because the next person to try
-     * `@IntoSet` will hit the same wall.
-     *
-     * The cost is one line per engine instead of one annotation, and it is a real loss of elegance.
-     * What it does *not* reintroduce is the failure the registry exists to prevent: a `when` over every
-     * source type inside the orchestrator, where a forgotten arm silently routes content to the wrong
-     * engine. Selection is still by each engine's own `handles` declaration, so a type with no engine
-     * here falls back visibly rather than being misrouted by a missing branch.
-     */
-    @Provides
-    @Singleton
-    fun provideContentSourceEngines(
-        heuristic: AdaptiveHeuristicEngine,
-    ): List<ContentSourceEngine> = listOf(heuristic)
+    fun provideContentSourceEngines(): List<ContentSourceEngine> = emptyList()
 
     @Provides
     @Singleton

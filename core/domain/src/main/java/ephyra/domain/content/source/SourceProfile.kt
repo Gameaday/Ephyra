@@ -17,7 +17,7 @@ data class SourceProfile(
     val contentType: ContentType,
 
     /** The type of source this profile represents. */
-    val sourceType: SourceType = SourceType.HEURISTIC,
+    val sourceType: SourceType = SourceType.REMOTE_EXTENSION,
 
     /** Whether this source is enabled for content discovery. */
     val enabled: Boolean = true,
@@ -71,18 +71,17 @@ data class SourceProfile(
 /**
  * The type of content source.
  *
- * `JS_SCRAPER` was removed with the sandboxed JS runtime (`ADR-0013`). `fromString` still maps the
- * stored name onto [REMOTE_EXTENSION] so a profile persisted by an older build resolves to a real
- * engine instead of silently becoming [HEURISTIC].
+ * `JS_SCRAPER` and `HEURISTIC` are both retired. `JS_SCRAPER` went with the JS runtime
+ * (`ADR-0013`); `HEURISTIC` went because auto-discovering a site's DOM structure never worked well
+ * enough to ship (`ADR-0015`). `fromString` maps both retired names onto [REMOTE_EXTENSION] so a
+ * profile persisted by an older build resolves to a real engine instead of silently becoming the
+ * default.
  */
 enum class SourceType {
     /** A source provided by an extension APK, from a remote or private repository, or local. */
     REMOTE_EXTENSION,
 
-    /** Heuristic auto-discovery engine. */
-    HEURISTIC,
-
-    /** Local/network media repository (Jellyfin-style). */
+    /** Local/network media repository (Jellyfin-style). Not yet implemented. */
     REPOSITORY,
 
     ;
@@ -92,10 +91,11 @@ enum class SourceType {
         val LEGACY_EXTENSION: SourceType get() = REMOTE_EXTENSION
 
         fun fromString(value: String?): SourceType = when (value?.trim()?.uppercase()) {
-            "REMOTE_EXTENSION", "LEGACY_EXTENSION", "JS_SCRAPER" -> REMOTE_EXTENSION
-            "HEURISTIC" -> HEURISTIC
+            // HEURISTIC is folded into REMOTE_EXTENSION rather than dropped: an install that profiled
+            // a site would otherwise fall through to the default and change behaviour with no error.
+            "REMOTE_EXTENSION", "LEGACY_EXTENSION", "JS_SCRAPER", "HEURISTIC" -> REMOTE_EXTENSION
             "REPOSITORY" -> REPOSITORY
-            else -> HEURISTIC
+            else -> REMOTE_EXTENSION
         }
     }
 }
