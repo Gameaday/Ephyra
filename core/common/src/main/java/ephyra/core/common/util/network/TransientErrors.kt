@@ -1,3 +1,4 @@
+
 package ephyra.core.common.util.network
 
 import eu.kanade.tachiyomi.network.HttpException
