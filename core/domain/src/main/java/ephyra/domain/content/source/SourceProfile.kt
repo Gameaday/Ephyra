@@ -61,9 +61,6 @@ data class SourceProfile(
     /** Number of consecutive failures. */
     val failureCount: Int = 0,
 
-    /** Optional scraper filename if this profile uses a JS scraper. */
-    val scraperFilename: String? = null,
-
     /** Optional repository ID if this profile represents a local repository. */
     val repositoryId: String? = null,
 )

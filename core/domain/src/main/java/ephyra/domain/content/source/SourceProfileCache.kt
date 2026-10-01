@@ -145,7 +145,6 @@ internal data class SerializableProfile(
     val lastHealthCheck: Long = 0,
     val lastUpdated: Long = 0,
     val failureCount: Int = 0,
-    val scraperFilename: String? = null,
     val repositoryId: String? = null,
 ) {
     companion object {
@@ -175,7 +174,6 @@ internal data class SerializableProfile(
                 lastHealthCheck = profile.lastHealthCheck,
                 lastUpdated = profile.lastUpdated,
                 failureCount = profile.failureCount,
-                scraperFilename = profile.scraperFilename,
                 repositoryId = profile.repositoryId,
             )
         }
@@ -275,7 +273,6 @@ internal data class SerializableProfile(
             lastHealthCheck = lastHealthCheck,
             lastUpdated = lastUpdated,
             failureCount = failureCount,
-            scraperFilename = scraperFilename,
             repositoryId = repositoryId,
         )
     }

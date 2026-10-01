@@ -53,9 +53,6 @@ data class SourceProfileEntity(
     @ColumnInfo(name = "last_updated")
     val lastUpdated: Long,
 
-    @ColumnInfo(name = "scraper_filename")
-    val scraperFilename: String?,
-
     @ColumnInfo(name = "repository_id")
     val repositoryId: String?,
 
@@ -177,7 +174,6 @@ data class SourceProfileEntity(
             lastHealthCheck = lastHealthCheck,
             lastUpdated = lastUpdated,
             failureCount = failureCount,
-            scraperFilename = scraperFilename,
             repositoryId = repositoryId,
         )
     }
@@ -212,7 +208,6 @@ data class SourceProfileEntity(
                 verified = profile.verified,
                 lastHealthCheck = profile.lastHealthCheck,
                 lastUpdated = profile.lastUpdated,
-                scraperFilename = profile.scraperFilename,
                 repositoryId = profile.repositoryId,
                 endpointsJson = endpointsStr,
                 selectorsJson = selectorsStr,

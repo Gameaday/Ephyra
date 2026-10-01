@@ -23,7 +23,7 @@ class UpdateCustomSource @Inject constructor(
                 ?: return Result.Error(IllegalArgumentException("Source not found: $baseUrl"))
 
             val updated = profile.copy(displayName = newName)
-            orchestrator.setSourceType(baseUrl, profile.sourceType, profile.scraperFilename)
+            orchestrator.setSourceType(baseUrl, profile.sourceType)
             // Note: We'd need a way to persist displayName changes - for now just return updated
             Result.Success(updated)
         } catch (e: Exception) {

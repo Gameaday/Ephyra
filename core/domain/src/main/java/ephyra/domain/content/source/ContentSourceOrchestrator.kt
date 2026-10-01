@@ -88,7 +88,6 @@ class ContentSourceOrchestrator(
                 profile.copy(
                     sourceType = cached.sourceType,
                     enabled = cached.enabled,
-                    scraperFilename = cached.scraperFilename,
                     repositoryId = cached.repositoryId,
                     lastUpdated = System.currentTimeMillis(),
                 )
@@ -244,19 +243,17 @@ class ContentSourceOrchestrator(
     }
 
     /**
-     * Updates the source type of a profile (e.g., switch from heuristic to JS scraper).
+     * Updates the source type of a profile.
      */
     suspend fun setSourceType(
         baseUrl: String,
         sourceType: SourceType,
-        scraperFilename: String? = null,
     ): Result<SourceProfile> {
         return try {
             val profile =
                 profileCache.get(baseUrl) ?: return Result.Error(IllegalArgumentException("Source not found: $baseUrl"))
             val updated = profile.copy(
                 sourceType = sourceType,
-                scraperFilename = scraperFilename,
                 lastUpdated = System.currentTimeMillis(),
             )
             profileCache.save(updated)

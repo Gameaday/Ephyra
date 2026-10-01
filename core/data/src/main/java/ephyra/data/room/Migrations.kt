@@ -22,6 +22,8 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  *   which also used the `tachiyomi.db` file and left `user_version = 1`) and normalize
  *   everything to the canonical Room-managed shapes — see [MIGRATION_1_2].
  * - **v3**: add the canonical Room-backed `source_profiles` table — see [MIGRATION_2_3].
+ * - **v4**: drop `source_profiles.scraper_filename`, the last trace of the removed JS runtime
+ *   (see [MIGRATION_3_4]).
  */
 object Migrations {
 
@@ -29,7 +31,7 @@ object Migrations {
      * The schema version this registry is aligned with. Must equal the `version` of
      * [EphyraDatabase]'s `@Database` annotation (asserted in `MigrationCoverageTest`).
      */
-    const val DB_VERSION = 3
+    const val DB_VERSION = 4
 
     /**
      * 1 → 2: upgrades legacy SQLDelight-era databases and normalizes Room-v1 databases.
@@ -102,7 +104,69 @@ object Migrations {
         }
     }
 
-    val ALL = arrayOf<Migration>(MIGRATION_1_2, MIGRATION_2_3)
+    /**
+     * 3 → 4: drops `source_profiles.scraper_filename`.
+     *
+     * The column named the JavaScript scraper a profile was served by. Only the QuickJS runtime
+     * ever read it and nothing ever wrote it — every producer passed `null` — so the column was
+     * null for every row on every install, and it was the last piece of the JS runtime still living
+     * in the schema.
+     *
+     * SQLite has supported `ALTER TABLE … DROP COLUMN` only since 3.35, and Room validates the
+     * table against the exported schema either way, so this rebuilds the table. The row data is
+     * preserved by copying every surviving column; only the dropped one is discarded.
+     *
+     * @see ADR-0013 for why the JS runtime was removed.
+     */
+    internal val MIGRATION_3_4 = object : Migration(3, 4) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `source_profiles_new` (
+                    `base_url` TEXT NOT NULL,
+                    `display_name` TEXT NOT NULL,
+                    `content_type` TEXT NOT NULL,
+                    `source_type` TEXT NOT NULL,
+                    `enabled` INTEGER NOT NULL,
+                    `response_type` TEXT NOT NULL,
+                    `pagination` TEXT NOT NULL,
+                    `failure_count` INTEGER NOT NULL,
+                    `verified` INTEGER NOT NULL,
+                    `last_health_check` INTEGER NOT NULL,
+                    `last_updated` INTEGER NOT NULL,
+                    `repository_id` TEXT,
+                    `endpoints_json` TEXT NOT NULL,
+                    `selectors_json` TEXT,
+                    `json_path_json` TEXT,
+                    `headers_json` TEXT NOT NULL,
+                    `auth_type` TEXT NOT NULL,
+                    `rate_limit_ms` INTEGER NOT NULL,
+                    PRIMARY KEY(`base_url`)
+                )
+                """.trimIndent(),
+            )
+            db.execSQL(
+                """
+                INSERT INTO `source_profiles_new` (
+                    `base_url`, `display_name`, `content_type`, `source_type`, `enabled`,
+                    `response_type`, `pagination`, `failure_count`, `verified`, `last_health_check`,
+                    `last_updated`, `repository_id`, `endpoints_json`, `selectors_json`,
+                    `json_path_json`, `headers_json`, `auth_type`, `rate_limit_ms`
+                )
+                SELECT
+                    `base_url`, `display_name`, `content_type`, `source_type`, `enabled`,
+                    `response_type`, `pagination`, `failure_count`, `verified`, `last_health_check`,
+                    `last_updated`, `repository_id`, `endpoints_json`, `selectors_json`,
+                    `json_path_json`, `headers_json`, `auth_type`, `rate_limit_ms`
+                FROM `source_profiles`
+                """.trimIndent(),
+            )
+            db.execSQL("DROP TABLE IF EXISTS `source_profiles`")
+            db.execSQL("ALTER TABLE `source_profiles_new` RENAME TO `source_profiles`")
+        }
+    }
+
+    val ALL = arrayOf<Migration>(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
 
     /**
      * Drops the SQLDelight-named indices and recreates the Room-expected ones. The partial

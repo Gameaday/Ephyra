@@ -68,7 +68,7 @@ class ContentSourceOrchestratorTest {
     fun `a source type with no registered engine falls back to the heuristic engine`() = runTest {
         // `REMOTE_EXTENSION` has no engine in this registry — only REPOSITORY and HEURISTIC are claimed.
         orchestrator.discover("https://unbound.example")
-        orchestrator.setSourceType("https://unbound.example", SourceType.REMOTE_EXTENSION, null)
+        orchestrator.setSourceType("https://unbound.example", SourceType.REMOTE_EXTENSION)
         heuristic.searchHandler = { query -> listOf(item("Heuristic:$query")) }
 
         val result = orchestrator.search("https://unbound.example", "q", 1)
@@ -109,7 +109,7 @@ class ContentSourceOrchestratorTest {
     @Test
     fun `search routes to the registered engine for a REPOSITORY profile`() = runTest {
         orchestrator.discover("https://mangadex.org")
-        orchestrator.setSourceType("https://mangadex.org", SourceType.REPOSITORY, "mangadex.js")
+        orchestrator.setSourceType("https://mangadex.org", SourceType.REPOSITORY)
         repository.searchHandler = { query -> listOf(item("Repo:$query")) }
 
         val result = orchestrator.search("https://mangadex.org", "Naruto", 1)
@@ -143,7 +143,7 @@ class ContentSourceOrchestratorTest {
     @Test
     fun `search falls back to the heuristic engine when the registered engine throws`() = runTest {
         orchestrator.discover("https://mangadex.org")
-        orchestrator.setSourceType("https://mangadex.org", SourceType.REPOSITORY, "broken.js")
+        orchestrator.setSourceType("https://mangadex.org", SourceType.REPOSITORY)
         repository.searchHandler = { throw IllegalStateException("Engine error") }
         heuristic.searchHandler = { listOf(item("Recovered:Heuristic")) }
 
@@ -158,7 +158,7 @@ class ContentSourceOrchestratorTest {
     @Test
     fun `search falls back to the heuristic engine when the registered engine returns empty`() = runTest {
         orchestrator.discover("https://mangadex.org")
-        orchestrator.setSourceType("https://mangadex.org", SourceType.REPOSITORY, "outdated.js")
+        orchestrator.setSourceType("https://mangadex.org", SourceType.REPOSITORY)
         repository.searchHandler = { emptyList() }
         heuristic.searchHandler = { listOf(item("Recovered:Heuristic")) }
 
@@ -173,7 +173,7 @@ class ContentSourceOrchestratorTest {
     @Test
     fun `getItem falls back to the heuristic engine when the registered engine fails`() = runTest {
         orchestrator.discover("https://mangadex.org")
-        orchestrator.setSourceType("https://mangadex.org", SourceType.REPOSITORY, "broken.js")
+        orchestrator.setSourceType("https://mangadex.org", SourceType.REPOSITORY)
         repository.getItemHandler = { throw IllegalStateException("Scraper failed") }
         heuristic.getItemHandler = { item("Recovered Detail") }
 
@@ -186,7 +186,7 @@ class ContentSourceOrchestratorTest {
     @Test
     fun `getChapters falls back to the heuristic engine when the registered engine returns empty`() = runTest {
         orchestrator.discover("https://mangadex.org")
-        orchestrator.setSourceType("https://mangadex.org", SourceType.REPOSITORY, "outdated.js")
+        orchestrator.setSourceType("https://mangadex.org", SourceType.REPOSITORY)
         repository.chaptersHandler = { emptyList() }
         val chapter = ContentUnit(
             id = -1L,

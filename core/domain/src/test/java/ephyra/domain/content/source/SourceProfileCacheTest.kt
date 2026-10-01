@@ -36,7 +36,6 @@ class SourceProfileCacheTest {
             displayName = "MangaDex",
             enabled = true,
             verified = true,
-            scraperFilename = "mangadex_scraper.js",
             rateLimitMs = 500L,
             authType = AuthType.NONE,
         )
@@ -52,7 +51,6 @@ class SourceProfileCacheTest {
         assertEquals("MangaDex", result.displayName)
         assertEquals(true, result.enabled)
         assertEquals(true, result.verified)
-        assertEquals("mangadex_scraper.js", result.scraperFilename)
         assertEquals(500L, result.rateLimitMs)
         assertEquals(AuthType.NONE, result.authType)
     }
