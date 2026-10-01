@@ -99,7 +99,9 @@ Ordered by dependency, not by appeal. Each phase is independently shippable.
 - [x] Validate the image URL at the request boundary, not only in the reader (`HttpSource.imageRequest`)
 - [x] Prefer `Page.imageUrl` when populated (`HttpSource.imageUrlRequest`)
 - [x] Remove the JS confound so the failing path is unambiguous
-- [ ] **Reproduce on device and read the log line** — `Giving up on page N … (the host "…" is not a hostname)`. No path ⇒ host/scheme comma-join. Has a path ⇒ the join is upstream of the whole URL.
+- [x] Reader emits `FailureLayer`; the give-up log reads `Giving up: ADAPTER image request [page N of X]…`
+- [x] Pin the reported case as a behavioural test: no request is spent, and the fault is the adapter's
+- [ ] **Reproduce on device and read the log line** — no path ⇒ host/scheme comma-join. Has a path ⇒ the join is upstream of the whole URL.
 - [ ] Fix the producer, once the seam is known
 
 **Gate:** a MangaDex chapter renders on device, and the reproduction names the layer.
@@ -116,16 +118,33 @@ The first non-APK, non-HTML provider, and the thing that proves the adapter seam
 
 - [ ] `JellyfinEngine` declaring `handles = setOf(REPOSITORY)` — **no orchestrator edit**
 - [ ] `JellyfinAdapter : ContentAdapter`, passing `ContentConformance`
-- [ ] Token auth. `AuthType.TOKEN` exists and is **unused**; `REPOSITORY -> heuristicEngine // for now` is a placeholder that will fail loudly rather than silently
+- [ ] Token auth. `AuthType.TOKEN` exists and is **unused**. `REPOSITORY` currently resolves to
+      `NoEngineBoundException`, which is deliberate: the old `REPOSITORY -> heuristicEngine // for now`
+      placeholder routed Jellyfin to HTML scraping and failed quietly
 - [ ] Cover manga, webtoon, light novel, anime
 
 **Gate:** Jellyfin content renders through the same reader path as an APK source, and
 `ContentConformance` passes for its adapter.
 
-### Phase 4 — Adopt the adapter seam on the existing path · **NOT STARTED**
-- [ ] Wrap `DynamicHttpSource` as the first real `ContentAdapter`
-- [ ] Emit `FailureLayer` from orchestrator, reader and downloader call sites
-- [ ] Delete `DEF-029`'s three-owners situation (`profiled_domains_list` vs `SourceProfileCache` vs `GetAvailableSources`) per `ADR-0012`
+### Phase 4 — Resolve the profile path · **IN PROGRESS · decision needed**
+*The profile machinery is now unreachable, which is a planning fact rather than a bug.*
+
+`AndroidSourceManager` builds `DynamicHttpSource` only for domains in `profiled_domains_list`.
+`ADR-0015` removed the only writer of that preference (the heuristic engine, via `AddCustomSource`),
+so the list is always empty and `DynamicHttpSource` is never constructed. The whole path —
+`SourceProfile` → `SourceProfileCache` → Room → `DynamicHttpSource` — is dead code that only Jellyfin
+would revive.
+
+- [x] Reader emits `FailureLayer`; the give-up log names the owning layer
+- [x] `HttpSource.imageRequest` / `imageUrlRequest` validate before a request exists
+- [x] `DynamicHttpSource.getPageList` validates at the adapter seam
+- [x] Remove both hardcoded `DEFAULT_DOMAINS` fallbacks (they were permanently the answer)
+- [x] Orchestrator tolerates an empty registry and raises `NoEngineBoundException`
+- [ ] **Decide: delete the profile path, or keep it as Jellyfin's landing pad.** Deleting simplifies
+      further and needs a Room migration; keeping is waste if Jellyfin's engine wants a different
+      shape. **This is the open decision blocking Phases 2 and 5.**
+- [ ] Delete `DEF-029`'s remaining three-owners disagreement (`profiled_domains_list` vs
+      `SourceProfileCache` vs `GetAvailableSources`) per `ADR-0012` — partly moot if the path is deleted
 
 ### Phase 5 — Retire the compatibility layer · **BLOCKED ON 2/3/4**
 Only once library and reader call the gateway directly. `DynamicHttpSource` and the Tachiyomi ABI go
