@@ -247,12 +247,69 @@ class HttpSourceImageUrlRequestTest {
     }
 
     /**
+     * The two request builders of the same class must agree on which field to use.
+     *
+     * **Why this needed a test.** `imageUrlRequest` learned to try `imageUrl` and then `url`, while
+     * `imageRequest` kept its original `page.imageUrl!!`. That is not a subtle difference: a source
+     * populating only `url` built a working request through one path and threw a bare
+     * `NullPointerException` through the other — no layer attribution, no recovery, and a crash
+     * shape that reads like an app bug rather than a source-contract one.
+     *
+     * Asserting the two agree is cheaper than asserting each one's behaviour twice, and it fails
+     * the moment one is taught a rule the other has not.
+     */
+    @Test
+    fun `both request builders agree on which field to use`() {
+        val source = TestSource("https://mangadex.org")
+        val cases = listOf(
+            // (url, imageUrl, expected) — the expected value is the same for both builders.
+            Triple("https://img-r2.2xstorage.com/from-url.jpg", null, "https://img-r2.2xstorage.com/from-url.jpg"),
+            Triple(
+                "",
+                "https://img-r2.2xstorage.com/from-image-url.jpg",
+                "https://img-r2.2xstorage.com/from-image-url.jpg",
+            ),
+            Triple(
+                "https://img-r2.2xstorage.com/from-url.jpg",
+                "https://img-r2.2xstorage.com/from-image-url.jpg",
+                "https://img-r2.2xstorage.com/from-image-url.jpg",
+            ),
+            Triple("/relative.jpg", null, "https://mangadex.org/relative.jpg"),
+        )
+
+        cases.forEach { (url, imageUrl, expected) ->
+            val page = Page(0, url = url, imageUrl = imageUrl)
+            assertEquals(
+                expected,
+                source.imageUrlRequestFor(page).url.toString(),
+                "imageUrlRequest disagreed for url=$url imageUrl=$imageUrl",
+            )
+            assertEquals(
+                expected,
+                source.imageRequestFor(page).url.toString(),
+                "imageRequest disagreed for url=$url imageUrl=$imageUrl",
+            )
+        }
+    }
+
+    /** A source populating only `url` must not throw a bare NPE from the *other* builder. */
+    @Test
+    fun `imageRequest falls back to url rather than throwing a NullPointerException`() {
+        val source = TestSource("https://mangadex.org")
+        val page = Page(0, url = "https://img-r2.2xstorage.com/1.jpg", imageUrl = null)
+
+        val request = source.imageRequestFor(page)
+
+        assertEquals("https://img-r2.2xstorage.com/1.jpg", request.url.toString())
+    }
+
+    /**
      * `headersBuilder` is overridden rather than left alone because the base implementation reads
      * `network.defaultUserAgentProvider()`, and `network` comes from the Injekt service locator.
      * A test that had to stand up a service locator to assert a string join would be a test that
      * could fail for reasons unrelated to the rule.
      */
-    private class TestSource(override val baseUrl: String) : HttpSource() {
+    private open class TestSource(override val baseUrl: String) : HttpSource() {
         override val name: String = "Test"
         override val lang: String = "en"
         override val supportsLatest: Boolean = false

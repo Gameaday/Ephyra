@@ -486,20 +486,33 @@ abstract class HttpSource : CatalogueSource {
      * @param page the chapter whose page list has to be fetched
      */
     protected open fun imageRequest(page: Page): Request {
-        // `!!` kept deliberately: a null image URL here is a caller that broke the contract, and
-        // failing on that immediately is not the same failure as a URL that cannot address a host.
-        val imageUrl = ImageUrlPolicy.resolve(page.imageUrl!!, baseUrl)
         // The same verdict the reader reaches at its own seam, enforced here so that *every* path to
-        // this constructor is covered — `Downloader` never consults the reader's check, and an
-        // override that builds its own request inherits nothing from this. A spliced address such as
-        // `cmdxd98sb0x3yprd.mangadex.network,https` parses well enough for OkHttp to canonicalise and
-        // hand to DNS, so the request would otherwise be built and then fail as
-        // `UnknownHostException` — a network verdict about a host that could never exist. Thrown
-        // before the [Request] exists, `MalformedImageUrlException` is classified by
+        // this constructor is covered. `Downloader` never consults the reader's check, and an
+        // override that builds its own request inherits nothing from this. Thrown before the
+        // [Request] exists, `MalformedImageUrlException` is classified by
         // `TransientErrors.shouldReResolveUrl` as "ask the source again", which is the only thing
         // that can recover: the source built the string and may build a different one next time.
-        ImageUrlPolicy.requireUsable(imageUrl)
-        return GET(imageUrl, headers)
+        //
+        // Both fields are tried, in the same preference order as [imageUrlRequest] and for the same
+        // reason. `!!` on `imageUrl` alone was a leftover from before that rule existed, and it meant
+        // the two builders of the same class disagreed: a source that populated only `url` worked
+        // through one path and threw a bare `NullPointerException` through the other, with no layer
+        // attribution and no recovery.
+        val candidates = listOfNotNull(
+            page.imageUrl?.takeIf { it.isNotBlank() },
+            page.url.takeIf { it.isNotBlank() && it != page.imageUrl },
+        )
+        var firstDefect: String? = null
+        for (candidate in candidates) {
+            val resolved = ImageUrlPolicy.resolve(candidate, baseUrl)
+            val defect = ImageUrlPolicy.defectOf(resolved)
+            if (defect == null) return GET(resolved, headers)
+            if (firstDefect == null) firstDefect = defect
+        }
+        throw MalformedImageUrlException(
+            url = candidates.firstOrNull() ?: page.imageUrl.orEmpty(),
+            reason = firstDefect ?: "the URL is empty",
+        )
     }
 
     /**
