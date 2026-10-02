@@ -23,6 +23,7 @@ import okhttp3.Response
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -222,17 +223,97 @@ class HttpPageLoaderUrlResolutionTest {
         )
     }
 
+    /**
+     * The reported MangaDex page, end to end — and the one case where `Page.url` is *not* an address.
+     *
+     * MangaDex keeps an at-home **token cache key** in `Page.url`, by design: its own
+     * `MangaDexHelper` does
+     * ```
+     * val (host, tokenRequestUrl, time) = page.url.split(",")
+     * ```
+     * to recover the three parts, because MangaDex@Home tokens expire after five minutes and the
+     * chapter is re-fetched when the cached one is stale. The reported value is exactly that shape —
+     * `(at-home server, at-home API URL, fetch timestamp)`.
+     *
+     * **Why this is our bug and not the extension's.** The app treats `Page.url` as an image address
+     * in one place only: the deprecated chain, where `imageUrlRequest` *fetches* it and hands the
+     * response to `imageUrlParse`. That is correct for a legacy extension and wrong for this one, and
+     * the difference is invisible until a source uses the field for something else. So the loader now
+     * resolves `page.url` before asking, and reports the contract violation instead of spending a
+     * request on a cache key.
+     *
+     * Asserted in both directions, because either half alone would pass while the app is wrong:
+     *  - a source that **overrides** `getImageUrl` is still asked, whatever `url` holds, because the
+     *    extension knows its own field's meaning;
+     *  - a source that does **not** override it gets a named failure rather than a fetch.
+     */
+    @Test
+    fun `a token cache key in url is reported as a contract violation not fetched`() = runBlocking {
+        val tokenKey = "https://cmdxd98sb0x3yprd.mangadex.network" +
+            ",https://api.mangadex.org/at-home/server/605c371d-904f-4dda-96a0-24ffdd65e642" +
+            ",1790648354548"
+        val fixture = Fixture(
+            resolvingTo = tokenKey,
+            pageListImageUrl = null,
+            pageListUrl = tokenKey,
+            sourceOverridesGetImageUrl = false,
+        )
+
+        val page = fixture.loadFirstPage()
+
+        // The loader records the failure on the page rather than throwing, so the assertion is on the
+        // state the reader would actually render: not Ready, and no image request issued.
+        assertTrue(
+            page.status is Page.State.Error,
+            "expected a contract-violation error state, got ${page.status}",
+        )
+        assertEquals(0, fixture.imageRequestCount, "no request should be spent on a cache key")
+    }
+
+    /**
+     * The counterweight: an extension that provides its own `getImageUrl` is always asked, even when
+     * `url` holds something that is not an address.
+     *
+     * This is the case that keeps the guard from being a blunt "reject `url`" rule. MangaDex-shaped
+     * sources resolve their own `url`; refusing to ask them would be refusing to ask the only party
+     * that knows what the value means.
+     */
+    @Test
+    fun `a source that overrides getImageUrl is still asked`() = runBlocking {
+        val good = "https://uploads.mangadex.org/data/ab/cd/1.jpg"
+        // `imageUrl` left null so the loader actually asks the source, which is the whole point:
+        // a source that overrides `getImageUrl` is the only party that knows what `url` means.
+        val fixture = Fixture(
+            resolvingTo = good,
+            pageListImageUrl = null,
+            sourceOverridesGetImageUrl = true,
+        )
+
+        assertEquals(good, fixture.loadAndRecordRequestedUrl())
+    }
+
     /** One loader, one page, and the recording cache they share. */
     private inner class Fixture(
         resolvingTo: String? = null,
         pageListImageUrl: String? = null,
         cachedPageImageUrl: String? = null,
+        sourceOverridesGetImageUrl: Boolean = true,
+        pageListUrl: String = "/page/1.jpg",
     ) {
         private val cache = RecordingChapterCache(tempDir, cachedPageImageUrl)
-        private val source = TestSource(
-            resolvedImageUrl = resolvingTo,
-            pageListImageUrl = pageListImageUrl,
-        )
+        private val source: HttpSource = if (sourceOverridesGetImageUrl) {
+            TestSource(
+                resolvedImageUrl = resolvingTo,
+                pageListImageUrl = pageListImageUrl,
+                pageListUrl = pageListUrl,
+            )
+        } else {
+            PlainImageUrlSource(
+                resolvedImageUrl = resolvingTo,
+                pageListImageUrl = pageListImageUrl,
+                pageListUrl = pageListUrl,
+            )
+        }
         private val chapter = ReaderChapter(Chapter.create().copy(id = 1, name = "Ch 1"))
         private val loader = HttpPageLoader(chapter, source, cache)
 
@@ -251,6 +332,9 @@ class HttpPageLoaderUrlResolutionTest {
             )
             return requireNotNull(cache.requested) { "the image was never requested" }
         }
+
+        /** Image requests issued by this fixture, for asserting that no request was spent on a bad value. */
+        val imageRequestCount: Int get() = cache.imageRequestCount
 
         suspend fun loadFirstPage(): ReaderPage {
             val pages = runBlocking { loader.getPages() }
@@ -295,6 +379,9 @@ class HttpPageLoaderUrlResolutionTest {
         var requested: String? = null
             private set
 
+        /** How many image requests were issued, so a test can assert that none was spent on a bad value. */
+        val imageRequestCount: Int get() = if (requested == null) 0 else 1
+
         /**
          * Returning a cached list is what selects the "restored from cache" path; throwing sends the
          * loader to the source instead. The distinction is the point — the two routes reach the
@@ -324,9 +411,14 @@ class HttpPageLoaderUrlResolutionTest {
      * `network.defaultUserAgentProvider()`, and `network` comes from the Injekt service locator — a
      * test that had to stand one up to assert a string join could fail for unrelated reasons.
      */
-    private class TestSource(
-        private val resolvedImageUrl: String?,
+    private open class PlainImageUrlSource(
+        /**
+         * `protected`, not `private`: the base class never reads it, but the subclass's `getImageUrl`
+         * does, and a plain constructor parameter would not be visible there.
+         */
+        @Suppress("unused") protected val resolvedImageUrl: String?,
         private val pageListImageUrl: String?,
+        private val pageListUrl: String = "/page/1.jpg",
     ) : HttpSource() {
         override val baseUrl: String = "https://mangadex.org"
         override val name: String = "Test"
@@ -336,10 +428,7 @@ class HttpPageLoaderUrlResolutionTest {
         override fun headersBuilder(): Headers.Builder = Headers.Builder()
 
         override suspend fun getPageList(chapter: SChapter): List<Page> =
-            listOf(Page(0, "/page/1.jpg", pageListImageUrl))
-
-        override suspend fun getImageUrl(page: Page): String =
-            requireNotNull(resolvedImageUrl) { "this fixture was not given a URL to resolve" }
+            listOf(Page(0, pageListUrl, pageListImageUrl))
 
         override suspend fun getPopularManga(page: Int): MangasPage = throw UnsupportedOperationException()
 
@@ -378,5 +467,25 @@ class HttpPageLoaderUrlResolutionTest {
         override fun pageListParse(response: Response): List<Page> = throw UnsupportedOperationException()
 
         override fun imageUrlParse(response: Response): String = throw UnsupportedOperationException()
+    }
+
+    /**
+     * The same source, but declaring its own `getImageUrl` — the shape `HttpSource.providesOwnImageUrl`
+     * is meant to detect.
+     *
+     * **Why this is a subclass rather than a flag on one class.** `providesOwnImageUrl` reads the
+     * declaring class of the `getImageUrl` method at runtime, so a source that must *not* appear to
+     * override it cannot be one that declares the method and then lies about it. Expressing the
+     * distinction the way the compiler expresses it — override, or do not — is the only version of
+     * this fixture that tests the real mechanism rather than a stand-in for it.
+     */
+    private class TestSource(
+        resolvedImageUrl: String?,
+        pageListImageUrl: String?,
+        pageListUrl: String = "/page/1.jpg",
+    ) : PlainImageUrlSource(resolvedImageUrl, pageListImageUrl, pageListUrl) {
+
+        override suspend fun getImageUrl(page: Page): String =
+            requireNotNull(resolvedImageUrl) { "this fixture was not given a URL to resolve" }
     }
 }

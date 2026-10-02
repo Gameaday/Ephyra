@@ -4,6 +4,7 @@ import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.network.ImageUrlPolicy
 import ephyra.core.common.util.network.LayeredFailure
+import ephyra.core.common.util.network.MalformedImageUrlException
 import ephyra.core.common.util.network.PageLoadRecovery
 import ephyra.core.common.util.network.PageLoadRecoveryAction
 import ephyra.core.common.util.network.PageLoadRecoveryDecision
@@ -538,8 +539,35 @@ internal class HttpPageLoader(
                     if (recovery.isRetrySequence) {
                         reResolvePacer.paceReResolution().takeIf { it > 0 }?.let { delay(it) }
                     }
-                    val resolved = ResolvedImageUrl.of(source.getImageUrl(page), source.baseUrl)
-                        .value
+                    // An extension that provides its own `getImageUrl` knows what its `Page.url` means, so it is
+                    // always safe to ask. The inherited default is the deprecated chain, which *fetches*
+                    // `Page.url` and hands the response to `imageUrlParse` — and `url` is not
+                    // universally an image address. MangaDex keeps an at-home token cache key there
+                    // (`host,tokenUrl,fetchTime`, five-minute lifespan) and its own helper splits on
+                    // "," to read it back. Asking the default implementation to fetch that produced
+                    // the reported failure: a request spent on a string that is a cache key.
+                    //
+                    // This is a **gate, not a substitute**. The legacy chain resolves the address out
+                    // of a fetched document, so `page.url` is a page to visit rather than an image to
+                    // download; using the resolved value here would skip `imageUrlParse` entirely and
+                    // quietly break every source that depends on it. So the chain still runs, and the
+                    // only thing added is a check that it is not about to be pointed at a cache key.
+                    if (!source.providesOwnImageUrl) {
+                        try {
+                            ResolvedImageUrl.of(page.url, source.baseUrl)
+                        } catch (e: MalformedImageUrlException) {
+                            throw MalformedImageUrlException(
+                                url = page.url,
+                                reason = "this source did not populate Page.imageUrl, and Page.url " +
+                                    "is not an address the legacy image-URL chain can fetch either " +
+                                    "(${e.reason})",
+                            )
+                        }
+                    }
+                    val resolved = ResolvedImageUrl.of(
+                        source.getImageUrl(page),
+                        source.baseUrl,
+                    ).value
                     // A source that hands back the identical string we have already rejected is not
                     // going to produce a different one on the next call either, and every call it
                     // does make is a round-trip spent learning nothing. Reporting the defect now
