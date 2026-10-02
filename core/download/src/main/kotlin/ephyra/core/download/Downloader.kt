@@ -8,10 +8,10 @@ import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.storage.extension
 import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.withIOContext
-import ephyra.core.common.util.network.ImageUrlPolicy
 import ephyra.core.common.util.network.PageLoadRecovery
 import ephyra.core.common.util.network.PageLoadRecoveryAction
 import ephyra.core.common.util.network.ReResolvePacer
+import ephyra.core.common.util.network.ResolvedImageUrl
 import ephyra.core.common.util.storage.DiskUtil
 import ephyra.core.common.util.storage.DiskUtil.NOMEDIA_FILE
 import ephyra.core.common.util.storage.saveTo
@@ -407,18 +407,24 @@ class Downloader(
             pageList.asFlow().flatMapMerge(concurrency = downloadPreferences.parallelPageLimit().get()) { page ->
                 flow {
                     // Fetch image URL if necessary
-                    if (page.imageUrl.isNullOrEmpty()) {
+                    //
+                    // The emptiness test is [PageImageAddress]'s, not `imageUrl.isNullOrEmpty()`:
+                    // that older test skipped resolution for any page whose address lives in `url`,
+                    // which is how a source that populates the legacy field only got its pages
+                    // downloaded by luck. The reader already reads the page the same way, and a
+                    // download that resolved a different field than the reader read is how the
+                    // same bytes end up cached twice under two spellings.
+                    if (page.imageUrl.isNullOrEmpty() && page.url.isBlank()) {
                         page.status = Page.State.LoadPage
                         try {
-                            // Resolved against the source's base URL for the same reason the reader
-                            // resolves it: a source may name the image relatively, and a scheme-less
-                            // URL cannot be turned into a request at all. Doing it here means a
-                            // download and a read of the same chapter agree on the cache key, rather
-                            // than storing the same bytes twice under two spellings.
-                            page.imageUrl = ImageUrlPolicy.resolve(
+                            // `ResolvedImageUrl` rather than a bare resolve: holding the type means
+                            // resolution *and* judgement both happened, so this line can no longer
+                            // be written as a resolve alone. That omission was made twice in the
+                            // reader and once here, and no test failed when it happened.
+                            page.imageUrl = ResolvedImageUrl.of(
                                 download.source.getImageUrl(page),
                                 download.source.baseUrl,
-                            )
+                            ).value
                         } catch (e: Throwable) {
                             page.status = Page.State.Error(e)
                         }
@@ -660,7 +666,7 @@ class Downloader(
                     // Reached only when a retry follows, so the final attempt never spends a source
                     // round-trip on a URL it is about to discard.
                     page.imageUrl = try {
-                        ImageUrlPolicy.resolve(source.getImageUrl(page), source.baseUrl)
+                        ResolvedImageUrl.of(source.getImageUrl(page), source.baseUrl).value
                     } catch (resolutionError: Throwable) {
                         if (resolutionError is CancellationException) throw resolutionError
                         recovery.onFailure(null, resolutionError)

@@ -1,7 +1,5 @@
 package eu.kanade.tachiyomi.source.online
 
-import ephyra.core.common.util.network.ImageUrlPolicy
-import ephyra.core.common.util.network.MalformedImageUrlException
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.asObservableSuccess
@@ -419,14 +417,6 @@ abstract class HttpSource : CatalogueSource {
      * nothing from this, which is why `HttpPageLoader` resolves the resolved URL again before use.
      *
      * When [Page.imageUrl] is already populated it is preferred over [Page.url]. API sources
-     * (MangaDex is the canonical one) build `Page(index, imageUrl = absolute)` with `url` left at
-     * its `""` default, so resolving `url` alone can only produce `""` — which `GET` rejects while
-     * building the request. Preferring the populated field mirrors the documented contract
-     * ("only called if `Page.imageUrl` is null", see [getImageUrl]) and what
-     * `DynamicHttpSource.getImageUrl` already does. Callers that honour the contract always arrive
-     * with `imageUrl == null` and see no behaviour change; callers that arrive with both fields set
-     * get the field that can actually address a host.
-     *
      * When both fields are populated, the first one that can actually address a host wins.
      * [Page.imageUrl] is preferred, because API sources (MangaDex is the canonical one) build
      * `Page(index, imageUrl = absolute)` with `url` left at its `""` default, so resolving `url`
@@ -434,7 +424,8 @@ abstract class HttpSource : CatalogueSource {
      * sets `imageUrl` to something the contract does not allow — a composite of its own, rather
      * than an address — must not be able to hide a perfectly good `url` behind it. So the other
      * field is still tried, and the exception raised when neither works names the preferred one,
-     * because that is the value the source should have fixed.
+     * because that is the value the source should have fixed. The rule itself lives in
+     * [PageImageAddress]; this is only its use.
      *
      * @param page the chapter whose page list has to be fetched
      */
@@ -443,24 +434,7 @@ abstract class HttpSource : CatalogueSource {
             "Source developers should make their own implementation according to their needs.",
     )
     protected open fun imageUrlRequest(page: Page): Request {
-        val candidates = listOfNotNull(
-            page.imageUrl?.takeIf { it.isNotBlank() },
-            page.url.takeIf { it.isNotBlank() && it != page.imageUrl },
-        )
-        var firstDefect: String? = null
-        for (candidate in candidates) {
-            val resolved = ImageUrlPolicy.resolve(candidate, baseUrl)
-            val defect = ImageUrlPolicy.defectOf(resolved)
-            if (defect == null) return GET(resolved, headers)
-            if (firstDefect == null) firstDefect = defect
-        }
-        // Nothing usable in either field. Report against the preferred one, or against the empty
-        // string when the source populated neither, which is the same verdict `requireUsable`
-        // would reach on its own.
-        throw MalformedImageUrlException(
-            url = candidates.firstOrNull() ?: page.imageUrl.orEmpty(),
-            reason = firstDefect ?: "the URL is empty",
-        )
+        return GET(PageImageAddress.of(page, baseUrl).url.value, headers)
     }
 
     /**
@@ -493,26 +467,12 @@ abstract class HttpSource : CatalogueSource {
         // `TransientErrors.shouldReResolveUrl` as "ask the source again", which is the only thing
         // that can recover: the source built the string and may build a different one next time.
         //
-        // Both fields are tried, in the same preference order as [imageUrlRequest] and for the same
-        // reason. `!!` on `imageUrl` alone was a leftover from before that rule existed, and it meant
-        // the two builders of the same class disagreed: a source that populated only `url` worked
-        // through one path and threw a bare `NullPointerException` through the other, with no layer
-        // attribution and no recovery.
-        val candidates = listOfNotNull(
-            page.imageUrl?.takeIf { it.isNotBlank() },
-            page.url.takeIf { it.isNotBlank() && it != page.imageUrl },
-        )
-        var firstDefect: String? = null
-        for (candidate in candidates) {
-            val resolved = ImageUrlPolicy.resolve(candidate, baseUrl)
-            val defect = ImageUrlPolicy.defectOf(resolved)
-            if (defect == null) return GET(resolved, headers)
-            if (firstDefect == null) firstDefect = defect
-        }
-        throw MalformedImageUrlException(
-            url = candidates.firstOrNull() ?: page.imageUrl.orEmpty(),
-            reason = firstDefect ?: "the URL is empty",
-        )
+        // Deliberately the *same* expression as [imageUrlRequest], not a second copy of the rule.
+        // The two were byte-identical loops until this collapsed, and the fact that duplication was
+        // invisible is the argument against reintroducing it: a source that populated only `url`
+        // used to work through one builder and throw a bare `NullPointerException` through the
+        // other, with no layer attribution and no recovery.
+        return GET(PageImageAddress.of(page, baseUrl).url.value, headers)
     }
 
     /**

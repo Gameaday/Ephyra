@@ -27,6 +27,47 @@ class MalformedImageUrlException(
 ) : IOException("Image URL is not a usable http(s) address ($reason): $url")
 
 /**
+ * An image URL that has been resolved against a base URL **and** judged capable of addressing a
+ * host. Holding one is proof both happened, in that order.
+ *
+ * **Why this is a type and not a function.** The pipeline's repeated defect was a two-step idiom —
+ * resolve, then judge — written by hand at eight call sites, in two orders, and omitted entirely
+ * from one of them. The ordering was never recorded anywhere except in the body of each function,
+ * so a site could not forget the second half without a test failing, and did: `Downloader`
+ * resolved without judging for its entire life. A `String` cannot carry "already judged", so this
+ * makes the omission unrepresentable rather than merely discouraged.
+ *
+ * **What judgement does and does not mean.** See [ImageUrlPolicy] — the verdict is narrow. This
+ * guarantees the value can address a host, not that it is reachable or correct. Nothing here
+ * implies a request will succeed.
+ */
+@JvmInline
+value class ResolvedImageUrl private constructor(val value: String) {
+
+    companion object {
+
+        /**
+         * Resolve [url] against [baseUrl] and judge the result, or throw
+         * [MalformedImageUrlException] naming [url] and why it was rejected.
+         *
+         * The sole constructor. There is no way to obtain one without the check having run.
+         *
+         * @throws MalformedImageUrlException if the resolved value cannot address a host.
+         */
+        fun of(url: String?, baseUrl: String?): ResolvedImageUrl {
+            val resolved = ImageUrlPolicy.resolve(url, baseUrl)
+            // Judged here rather than in each caller, and *after* resolution: a relative URL is
+            // only meaningful once it has a base, so judging the raw value first would reject
+            // shapes that resolve perfectly well.
+            ImageUrlPolicy.requireUsable(resolved)
+            return ResolvedImageUrl(resolved)
+        }
+    }
+
+    override fun toString(): String = value
+}
+
+/**
  * Decides whether an image URL is worth sending a request for, without sending one.
  *
  * **Why the reader needs this at all.** The reported failure was

@@ -6,7 +6,9 @@ import ephyra.core.common.util.network.ImageUrlPolicy
 import ephyra.core.common.util.network.LayeredFailure
 import ephyra.core.common.util.network.PageLoadRecovery
 import ephyra.core.common.util.network.PageLoadRecoveryAction
+import ephyra.core.common.util.network.PageLoadRecoveryDecision
 import ephyra.core.common.util.network.ReResolvePacer
+import ephyra.core.common.util.network.ResolvedImageUrl
 import ephyra.core.common.util.network.TransientErrors
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.logcat
@@ -17,6 +19,7 @@ import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.online.HttpSource
+import eu.kanade.tachiyomi.source.online.PageImageAddress
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -535,12 +538,18 @@ internal class HttpPageLoader(
                     if (recovery.isRetrySequence) {
                         reResolvePacer.paceReResolution().takeIf { it > 0 }?.let { delay(it) }
                     }
-                    val resolved = ImageUrlPolicy.resolve(source.getImageUrl(page), source.baseUrl)
+                    val resolved = ResolvedImageUrl.of(source.getImageUrl(page), source.baseUrl)
+                        .value
                     // A source that hands back the identical string we have already rejected is not
                     // going to produce a different one on the next call either, and every call it
                     // does make is a round-trip spent learning nothing. Reporting the defect now
                     // ends the ladder sooner and reports the *cause* rather than a resolver error
                     // about a name that can never exist.
+                    //
+                    // Re-judged here, redundantly with the resolution above, on purpose: this is
+                    // the branch that decides whether a *repeat* address is worth another round-trip,
+                    // so it must answer the question from the value it is about to store rather
+                    // than inherit an answer computed for a different string.
                     if (recovery.isKnownUnusable(resolved)) {
                         ImageUrlPolicy.requireUsable(resolved)
                     }
@@ -550,23 +559,21 @@ internal class HttpPageLoader(
                 // reach that boundary: a page whose URL was restored from the chapter cache, and a
                 // source that sets `Page.imageUrl` itself in `pageListParse` (a relative
                 // `img.attr("src")` is ordinary source code). A source that overrides `getImageUrl`
-                // also bypasses it. Resolving once more is a prefix compare on the common path and a
-                // string join otherwise, and it is what keeps the guarantee — *the address that is
-                // about to be requested is absolute* — a property of the loader rather than a
-                // property of every source extension. Assigned back to the page, so the URL the page
-                // holds, the one keyed into the disk cache below, and the one persisted on
-                // `recycle` are the same string.
-                page.imageUrl = ImageUrlPolicy.resolve(page.imageUrl, source.baseUrl)
+                // also bypasses it.
+                //
+                // `PageImageAddress` rather than a bare resolve, because by this point a page may
+                // legitimately carry its address in `url` instead of `imageUrl` — a source that
+                // overrides `getImageUrl`, or a page list built by the base implementation — and
+                // reading only `imageUrl` would resolve `""` for those and throw. Holding a
+                // `ResolvedImageUrl` means resolution *and* judgement happened, so this line can no
+                // longer be written as a resolve alone: that omission was made twice in this file
+                // and once in `Downloader`, and no test failed when it happened.
+                //
+                // Assigned back to the page, so the URL the page holds, the one keyed into the disk
+                // cache below, and the one persisted on `recycle` are the same string.
+                page.imageUrl = PageImageAddress.of(page, source.baseUrl).url.value
                 val imageUrl = requireNotNull(page.imageUrl) { "Image URL is null after being fetched from source" }
 
-                // Ask whether the URL is worth requesting *before* requesting it. A URL that cannot
-                // address a host — `cmxd98sb0x3yprd.mangadex.network,https`, the splicing artifact
-                // behind the missed-image report — is served by OkHttp and handed to DNS, because a
-                // comma is not a forbidden host character. That request can only fail, and its
-                // resolver message is what the user was shown. Classified as a URL fault, it takes
-                // the same path as a revoked signed URL: the URL is dropped and the source is asked
-                // again, which is the one thing that can actually recover it.
-                ImageUrlPolicy.requireUsable(imageUrl)
                 recovery.onResolved(imageUrl)
 
                 // Yield again after the URL fetch (which can be slow) and before the potentially
@@ -653,14 +660,8 @@ internal class HttpPageLoader(
                     // as a network fault and sent the investigation to the resolver when the string was
                     // the defect. Leading with the layer makes this line answer "renderer, source or
                     // adapter?" before it answers "what happened?".
-                    val failure = LayeredFailure.classify(
-                        operation = "image request",
-                        subject = "page ${page.number} of ${chapter.chapter.name}",
-                        error = decision.error ?: IllegalStateException(decision.reason),
-                    )
                     logcat(LogPriority.WARN, decision.error) {
-                        "Giving up: ${failure.describe()} after ${decision.attempt} attempt(s): " +
-                            "${recovery.summary()} (${decision.reason})"
+                        giveUpMessage(page.number, chapter.chapter.name, decision, recovery.summary())
                     }
                     page.status = Page.State.Error(decision.error)
                     return
@@ -751,6 +752,30 @@ internal class HttpPageLoader(
                 val url = page.imageUrl
                 url.isNullOrEmpty() || ImageUrlPolicy.isUsable(ImageUrlPolicy.resolve(url, baseUrl))
             }
+
+        /**
+         * The terminal log line for a page that has exhausted its ladder.
+         *
+         * Leads with the layer that **owns** the fault rather than the one that noticed it last.
+         * The reported failure read `Giving up on page 3 after 3 attempt(s): Unable to resolve host
+         * "cmxd98sb0x3yprd.mangadex.network,https"`, which described the resolver — the last thing
+         * touched — when the string was already impossible before it left the adapter. Leading with
+         * the layer is what makes the next line self-diagnosing without a device log.
+         */
+        internal fun giveUpMessage(
+            pageNumber: Int,
+            chapterName: String,
+            decision: PageLoadRecoveryDecision,
+            summary: String,
+        ): String {
+            val failure = LayeredFailure.classify(
+                operation = "image request",
+                subject = "page $pageNumber of $chapterName",
+                error = decision.error,
+            )
+            return "Giving up: ${failure.describe()} after ${decision.attempt} attempt(s): " +
+                "$summary (${decision.reason})"
+        }
 
         /**
          * Priority assigned to pages queued by [preloadAllPages]. Set below the nearby-page

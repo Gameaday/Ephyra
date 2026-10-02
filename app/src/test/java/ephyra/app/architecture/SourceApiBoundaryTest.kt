@@ -20,6 +20,10 @@ class SourceApiBoundaryTest {
             "source-api/src/main/kotlin/eu/kanade/tachiyomi/source/online/HttpSource.kt",
             "source-api/src/main/kotlin/eu/kanade/tachiyomi/source/online/ParsedHttpSource.kt",
             "source-api/src/main/kotlin/eu/kanade/tachiyomi/source/online/ResolvableSource.kt",
+            // Added with the image-address consolidation: it reasons about `Page`'s two URL fields,
+            // so it needs the legacy `Page` type and cannot live under the target package. Same
+            // category as HttpSource above — compatibility code that the boundary may not police.
+            "source-api/src/main/kotlin/eu/kanade/tachiyomi/source/online/PageImageAddress.kt",
             "source-api/src/main/kotlin/eu/kanade/tachiyomi/source/CatalogueSource.kt",
             "source-api/src/main/kotlin/eu/kanade/tachiyomi/source/Source.kt",
         )

@@ -174,7 +174,24 @@ class PageLoadRecoveryStructuralTest {
         val PAGE_LOAD_RECOVERY = Regex("""\bPageLoadRecovery\b""")
         val PACED_RESOLUTION = Regex("""\.paceReResolution\(""")
         val RETRY_GUARD = Regex("""\bisRetrySequence\b""")
-        val RE_RESOLVE = Regex("""ImageUrlPolicy\.resolve\(\s*source\.getImageUrl\(page\)""")
+
+        /**
+         * The re-resolve that replaces an indicted URL.
+         *
+         * Matched on the *pair* — asking the source for a fresh address, and putting it through a
+         * resolution that judges it — rather than on one call, because either alone is gameable: the
+         * bare `getImageUrl(page)` also appears in the first-load path, which replaces nothing, and
+         * `ResolvedImageUrl.of` appears at two other sites. This shape was rewritten when the
+         * pipeline moved to [ResolvedImageUrl]; the first version of this regex named
+         * `ImageUrlPolicy.resolve(source.getImageUrl(page)` and went red against correct code the
+         * moment the type did its job, which is the failure mode the comment on [COMPUTED_DELAY]
+         * describes. The gate is retargeted at the property, and will need retargeting again if the
+         * call is restructured — deliberately louder than silently passing.
+         */
+        val RE_RESOLVE = Regex(
+            """(?:ResolvedImageUrl\.of|ImageUrlPolicy\.resolve)\(\s*[\w.]*\.?getImageUrl\(page\)""",
+            RegexOption.DOT_MATCHES_ALL,
+        )
 
         /**
          * A `delay(...)` whose argument *computes* a delay: a bit shift, or a named schedule
@@ -185,9 +202,24 @@ class PageLoadRecoveryStructuralTest {
             """delay\([^)]*(?:\bshl\b|\b[A-Z][A-Z_]*(?:DELAY|BACKOFF)[A-Z_]*\b)""",
             RegexOption.DOT_MATCHES_ALL,
         )
+
+        /**
+         * The loader's resolution-then-use pairing, retargeted onto [PageImageAddress].
+         *
+         * Rewritten twice now, and both rewrites are the same lesson: this gate was pinned to the
+         * *syntax* of a resolution rather than to the pairing it protects, so it went red the moment
+         * the resolution was expressed correctly — the exact failure mode [COMPUTED_DELAY]'s comment
+         * warns about. The first version named `ImageUrlPolicy.resolve`; the second allowed any
+         * `.of(` but closed with a greedy `.*\)`, which cannot match because the value expression
+         * continues past the call's own `)` as `.url.value`.
+         *
+         * So it is line-scoped now: an assignment whose right-hand side *starts* with a resolution,
+         * followed by a local read back off the page. That is the invariant — the disk-cache key and
+         * `HttpSource.imageRequest` cannot disagree, because both come from the same field the
+         * assignment just wrote — and it holds for any resolver, present or future.
+         */
         val ASSIGNED_BEFORE_USE = Regex(
-            """page\.imageUrl\s*=\s*ImageUrlPolicy\.resolve\(page\.imageUrl.*\)""" +
-                """\s*\R\s*val imageUrl\s*=""",
+            """page\.imageUrl\s*=\s*[\w.]+\.of\(.*\R\s*val imageUrl\s*=\s*requireNotNull\(page\.imageUrl\)""",
             RegexOption.DOT_MATCHES_ALL,
         )
     }
