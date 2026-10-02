@@ -26,7 +26,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import ephyra.feature.browse.presentation.SourceOptionsDialog
 import ephyra.feature.browse.presentation.SourcesScreen
-import ephyra.feature.browse.presentation.components.UniversalAddSourceDialog
+import ephyra.feature.browse.presentation.components.AddExtensionRepositoryDialog
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.TabContent
 import ephyra.presentation.core.i18n.stringResource
@@ -100,13 +100,10 @@ fun sourcesTab(
             }
 
             if (showAddSourceDialog) {
-                UniversalAddSourceDialog(
+                AddExtensionRepositoryDialog(
                     onDismissRequest = { showAddSourceDialog = false },
                     onAddRepo = { repoUrl ->
                         navController.navigate(ScreenRoutes.ExtensionRepos.createRoute(repoUrl))
-                    },
-                    onAddWebSource = { url, name ->
-                        ViewModel.onEvent(SourcesScreenEvent.AddWebSource(url, name))
                     },
                 )
             }
@@ -117,12 +114,6 @@ fun sourcesTab(
                     when (effect) {
                         SourcesViewModel.Effect.FailedFetchingSources -> {
                             launch { snackbarHostState.showSnackbar(internalErrString) }
-                        }
-                        is SourcesViewModel.Effect.WebSourceAdded -> {
-                            launch { snackbarHostState.showSnackbar("Added source: ${effect.name}") }
-                        }
-                        is SourcesViewModel.Effect.WebSourceAddFailed -> {
-                            launch { snackbarHostState.showSnackbar("Failed to add source: ${effect.error}") }
                         }
                     }
                 }

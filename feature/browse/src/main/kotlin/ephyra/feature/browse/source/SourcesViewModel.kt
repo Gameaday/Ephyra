@@ -109,10 +109,6 @@ class SourcesViewModel @Inject constructor(
             is SourcesScreenEvent.ShowSourceDialog -> showSourceDialog(event.source)
             SourcesScreenEvent.CloseDialog -> closeDialog()
             is SourcesScreenEvent.Search -> search(event.query)
-            // A web source is added by installing an extension APK. The heuristic path that backed
-            // this event was removed (ADR-0015); the dialog closes without adding rather than
-            // silently doing nothing.
-            is SourcesScreenEvent.AddWebSource -> Unit
         }
     }
 
@@ -134,8 +130,6 @@ class SourcesViewModel @Inject constructor(
 
     sealed interface Effect {
         data object FailedFetchingSources : Effect
-        data class WebSourceAdded(val name: String) : Effect
-        data class WebSourceAddFailed(val error: String) : Effect
     }
 
     data class Dialog(val source: Source)

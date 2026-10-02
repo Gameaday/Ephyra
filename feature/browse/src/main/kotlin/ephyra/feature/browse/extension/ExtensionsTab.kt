@@ -12,7 +12,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import ephyra.feature.browse.presentation.ExtensionScreen
-import ephyra.feature.browse.presentation.components.UniversalAddSourceDialog
+import ephyra.feature.browse.presentation.components.AddExtensionRepositoryDialog
 import ephyra.presentation.core.components.AppBar
 import ephyra.presentation.core.components.TabContent
 import ephyra.presentation.core.ui.navigation.LocalNavController
@@ -68,13 +68,12 @@ fun extensionsTab(
                 navController = navController,
             )
             if (showAddSourceDialog) {
-                UniversalAddSourceDialog(
+                AddExtensionRepositoryDialog(
                     onDismissRequest = { showAddSourceDialog = false },
                     onAddRepo = { repoUrl ->
                         extensionsViewModel.addRepository(repoUrl)
                         showAddSourceDialog = false
                     },
-                    onAddWebSource = { _, _ -> showAddSourceDialog = false },
                 )
             }
         },

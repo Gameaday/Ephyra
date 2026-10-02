@@ -8,5 +8,4 @@ sealed interface SourcesScreenEvent {
     data class ShowSourceDialog(val source: Source) : SourcesScreenEvent
     data object CloseDialog : SourcesScreenEvent
     data class Search(val query: String?) : SourcesScreenEvent
-    data class AddWebSource(val url: String, val name: String? = null) : SourcesScreenEvent
 }
