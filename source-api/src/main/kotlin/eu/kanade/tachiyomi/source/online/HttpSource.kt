@@ -403,35 +403,38 @@ abstract class HttpSource : CatalogueSource {
     open suspend fun getImageUrl(page: Page): String = fetchImageUrl(page).awaitSingle()
 
     /**
-     * Whether [getImageUrl] on this source is the app's legacy chain or the extension's own logic.
+     * Whether this source customises the image-URL chain in any of its three documented forms.
      *
-     * **Why this distinction decides the reader's behaviour.** The default implementation above is the
-     * *deprecated* chain: it fetches [Page.url] over the network and hands the response to
-     * `imageUrlParse`. That is only correct for extensions old enough to populate `url` with an image
-     * address.
+     * **The three ways to do it, and why all three count.** `getImageUrl` is the modern entry point.
+     * But the deprecated chain has two extension points of its own — `imageUrlRequest` to decide what
+     * to fetch, and `imageUrlParse` to read the image address out of the response — and overriding
+     * either one is a complete customisation on its own.
      *
-     * It is not correct for every extension, because `Page.url` is not universally an image address.
-     * MangaDex uses it as an at-home **token cache key** — its own `MangaDexHelper` does
-     * `page.url.split(",")` to recover `(host, tokenRequestUrl, fetchTime)`, because MangaDex@Home
-     * tokens expire after five minutes and it re-fetches the chapter when the cached one is stale.
-     * Feeding that key to `GET` produces a request for a string that is not an address.
+     * MangaDex is exactly the case that proves it. It overrides neither `getImageUrl` *nor* leaves the
+     * chain alone: it overrides `imageUrlRequest`/`imageUrlParse`, because its `Page.url` is a
+     * `(host, tokenRequestUrl, fetchTime)` cache key that only its own code knows how to read. An
+     * earlier version of this check looked at `getImageUrl` alone, concluded MangaDex did not
+     * customise anything, and refused to let the chain run — blocking the very source it was written
+     * to accommodate.
      *
-     * An extension that *overrides* [getImageUrl] knows its own `url` semantics, so that path is
-     * always safe. Only the inherited default needs the guard below.
-     *
-     * **How it is detected.** Whether the concrete class declares its own `getImageUrl`. Two details
-     * make the obvious version of this wrong: a Kotlin `suspend` function compiles to a JVM method
-     * with a trailing `Continuation` parameter, so the arity is 2 and not 1; and the class also
-     * carries a synthetic bridge whose declaring class is the subclass, so matching on name alone
-     * would report every source as overriding it. Taking the first match by name and comparing its
-     * declaring class against [HttpSource] handles both. Cached per instance: it cannot change, and
-     * reflection on every page would be wasteful.
+     * **How it is detected.** By walking the class hierarchy's *declared* methods, which is what visibility
+     * forces: `imageUrlRequest` and `imageUrlParse` are `protected`, and [Class.getMethods] returns
+     * public members only, so a check written against it silently misses both — which is how this
+     * property first reported MangaDex as uncustomised. `getDeclaredMethods` per class, from the
+     * concrete type up to (but not including) [HttpSource], answers it for all three. Cached per
+     * instance — it cannot change, and reflection per page would be wasteful.
      */
     val providesOwnImageUrl: Boolean by lazy {
-        javaClass.methods
-            .firstOrNull { it.name == "getImageUrl" }
-            ?.declaringClass
-            ?.let { it != HttpSource::class.java } ?: false
+        fun overrides(name: String): Boolean {
+            var type: Class<*>? = javaClass
+            while (type != null && type != HttpSource::class.java) {
+                if (type.declaredMethods.any { it.name == name }) return true
+                type = type.superclass
+            }
+            return false
+        }
+
+        overrides("getImageUrl") || overrides("imageUrlRequest") || overrides("imageUrlParse")
     }
 
     /**

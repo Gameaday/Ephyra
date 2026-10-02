@@ -4,6 +4,7 @@ import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.service.ChapterCache
 import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
+import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.source.model.MangasPage
 import eu.kanade.tachiyomi.source.model.Page
@@ -465,8 +466,61 @@ class HttpPageLoaderUrlResolutionTest {
         override fun chapterListParse(response: Response): List<SChapter> = throw UnsupportedOperationException()
 
         override fun pageListParse(response: Response): List<Page> = throw UnsupportedOperationException()
+    }
 
-        override fun imageUrlParse(response: Response): String = throw UnsupportedOperationException()
+    /**
+     * The three ways to customise the image-URL chain, and each one alone must count.
+     *
+     * **Why all three are tested separately.** The gate in `HttpPageLoader` refuses to spend a request
+     * on a `Page.url` that cannot address a host, but only for a source that customises *nothing*.
+     * An earlier version of `providesOwnImageUrl` checked `getImageUrl` alone, so a source that
+     * customised the chain through `imageUrlRequest` or `imageUrlParse` — both of which are `open` on
+     * `HttpSource` and both of which MangaDex uses — was mistaken for a plain one and blocked. The
+     * symptom was our own error text appearing for a source that was doing everything correctly.
+     *
+     * Each case below customises exactly one entry point and must be recognised, because a source that
+     * overrides only `imageUrlParse` still needs the app to fetch the page and hand it over.
+     */
+    @Test
+    fun `a source that overrides only imageUrlParse is recognised`() {
+        assertTrue(ParseOnlySource("https://cdn.example.com/1.jpg").providesOwnImageUrl)
+    }
+
+    @Test
+    fun `a source that overrides only imageUrlRequest is recognised`() {
+        assertTrue(RequestOnlySource("https://cdn.example.com/1.jpg").providesOwnImageUrl)
+    }
+
+    @Test
+    fun `a source that overrides getImageUrl is recognised`() {
+        assertTrue(ModernSource("https://cdn.example.com/1.jpg").providesOwnImageUrl)
+    }
+
+    /**
+     * The counterweight: a source that customises nothing is not recognised, because the app's own
+     * chain is what will run, and that is the case the gate exists for.
+     */
+    @Test
+    fun `a source that customises nothing is not recognised`() {
+        assertFalse(PlainImageUrlSource("https://cdn.example.com/1.jpg", null).providesOwnImageUrl)
+    }
+
+    private class ModernSource(
+        private val url: String,
+    ) : PlainImageUrlSource(url, null) {
+        override suspend fun getImageUrl(page: Page): String = url
+    }
+
+    private class ParseOnlySource(
+        private val url: String,
+    ) : PlainImageUrlSource(url, null) {
+        override fun imageUrlParse(response: Response): String = url
+    }
+
+    private class RequestOnlySource(
+        private val url: String,
+    ) : PlainImageUrlSource(url, null) {
+        override fun imageUrlRequest(page: Page): Request = GET(url, headers)
     }
 
     /**
