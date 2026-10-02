@@ -2,6 +2,11 @@
 
 ## Overview
 
+> Extension-API compatibility (which `extension-lib` versions are supported, how behaviour keys off probed
+> capabilities rather than the declared version, and how to adopt a new generation) is documented in
+> [`EXTENSION_COMPATIBILITY.md`](EXTENSION_COMPATIBILITY.md). That document is the authority for the extension boundary.
+
+
 Complete the 2.0 rework by resolving the now-dead profile path, unifying the split content
 vocabulary, and hardening the adapter seam so that Jellyfin can be added as a peer rather than a
 fork — while explicitly *not* guessing at the one defect that still requires on-device evidence.

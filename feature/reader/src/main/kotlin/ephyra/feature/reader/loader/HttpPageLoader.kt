@@ -552,7 +552,7 @@ internal class HttpPageLoader(
                     // download; using the resolved value here would skip `imageUrlParse` entirely and
                     // quietly break every source that depends on it. So the chain still runs, and the
                     // only thing added is a check that it is not about to be pointed at a cache key.
-                    if (!source.providesOwnImageUrl) {
+                    if (!source.capabilities.customisesImageUrlChain) {
                         try {
                             ResolvedImageUrl.of(page.url, source.baseUrl)
                         } catch (e: MalformedImageUrlException) {

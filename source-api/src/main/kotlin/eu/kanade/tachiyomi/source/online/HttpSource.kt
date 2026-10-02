@@ -403,39 +403,17 @@ abstract class HttpSource : CatalogueSource {
     open suspend fun getImageUrl(page: Page): String = fetchImageUrl(page).awaitSingle()
 
     /**
-     * Whether this source customises the image-URL chain in any of its three documented forms.
+     * What this source actually implements, probed once per instance.
      *
-     * **The three ways to do it, and why all three count.** `getImageUrl` is the modern entry point.
-     * But the deprecated chain has two extension points of its own — `imageUrlRequest` to decide what
-     * to fetch, and `imageUrlParse` to read the image address out of the response — and overriding
-     * either one is a complete customisation on its own.
+     * **Call sites read a capability, never the declared `extension-lib` version.** The version says
+     * whether the extension could be loaded; the capability says what it will do. They are different
+     * questions, and MangaDex is the case that separates them: it declares 1.6 and overrides
+     * `imageUrlRequest`/`imageUrlParse` — neither of which is the modern `getImageUrl` — because its
+     * `Page.url` is an at-home cache key rather than an image address.
      *
-     * MangaDex is exactly the case that proves it. It overrides neither `getImageUrl` *nor* leaves the
-     * chain alone: it overrides `imageUrlRequest`/`imageUrlParse`, because its `Page.url` is a
-     * `(host, tokenRequestUrl, fetchTime)` cache key that only its own code knows how to read. An
-     * earlier version of this check looked at `getImageUrl` alone, concluded MangaDex did not
-     * customise anything, and refused to let the chain run — blocking the very source it was written
-     * to accommodate.
-     *
-     * **How it is detected.** By walking the class hierarchy's *declared* methods, which is what visibility
-     * forces: `imageUrlRequest` and `imageUrlParse` are `protected`, and [Class.getMethods] returns
-     * public members only, so a check written against it silently misses both — which is how this
-     * property first reported MangaDex as uncustomised. `getDeclaredMethods` per class, from the
-     * concrete type up to (but not including) [HttpSource], answers it for all three. Cached per
-     * instance — it cannot change, and reflection per page would be wasteful.
+     * See [SourceCapabilities] for the probes and what the app must do differently for each.
      */
-    val providesOwnImageUrl: Boolean by lazy {
-        fun overrides(name: String): Boolean {
-            var type: Class<*>? = javaClass
-            while (type != null && type != HttpSource::class.java) {
-                if (type.declaredMethods.any { it.name == name }) return true
-                type = type.superclass
-            }
-            return false
-        }
-
-        overrides("getImageUrl") || overrides("imageUrlRequest") || overrides("imageUrlParse")
-    }
+    val capabilities: SourceCapabilities by lazy { SourceCapabilities(javaClass) }
 
     /**
      * Returns the request for getting the url to the source image. Override only if it's needed to

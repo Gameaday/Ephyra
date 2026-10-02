@@ -473,7 +473,7 @@ class HttpPageLoaderUrlResolutionTest {
      *
      * **Why all three are tested separately.** The gate in `HttpPageLoader` refuses to spend a request
      * on a `Page.url` that cannot address a host, but only for a source that customises *nothing*.
-     * An earlier version of `providesOwnImageUrl` checked `getImageUrl` alone, so a source that
+     * An earlier version of the capability probe checked `getImageUrl` alone, so a source that
      * customised the chain through `imageUrlRequest` or `imageUrlParse` — both of which are `open` on
      * `HttpSource` and both of which MangaDex uses — was mistaken for a plain one and blocked. The
      * symptom was our own error text appearing for a source that was doing everything correctly.
@@ -483,17 +483,17 @@ class HttpPageLoaderUrlResolutionTest {
      */
     @Test
     fun `a source that overrides only imageUrlParse is recognised`() {
-        assertTrue(ParseOnlySource("https://cdn.example.com/1.jpg").providesOwnImageUrl)
+        assertTrue(ParseOnlySource("https://cdn.example.com/1.jpg").capabilities.customisesImageUrlChain)
     }
 
     @Test
     fun `a source that overrides only imageUrlRequest is recognised`() {
-        assertTrue(RequestOnlySource("https://cdn.example.com/1.jpg").providesOwnImageUrl)
+        assertTrue(RequestOnlySource("https://cdn.example.com/1.jpg").capabilities.customisesImageUrlChain)
     }
 
     @Test
     fun `a source that overrides getImageUrl is recognised`() {
-        assertTrue(ModernSource("https://cdn.example.com/1.jpg").providesOwnImageUrl)
+        assertTrue(ModernSource("https://cdn.example.com/1.jpg").capabilities.customisesImageUrlChain)
     }
 
     /**
@@ -502,7 +502,7 @@ class HttpPageLoaderUrlResolutionTest {
      */
     @Test
     fun `a source that customises nothing is not recognised`() {
-        assertFalse(PlainImageUrlSource("https://cdn.example.com/1.jpg", null).providesOwnImageUrl)
+        assertFalse(PlainImageUrlSource("https://cdn.example.com/1.jpg", null).capabilities.customisesImageUrlChain)
     }
 
     private class ModernSource(
@@ -524,10 +524,10 @@ class HttpPageLoaderUrlResolutionTest {
     }
 
     /**
-     * The same source, but declaring its own `getImageUrl` — the shape `HttpSource.providesOwnImageUrl`
+     * The same source, but declaring its own `getImageUrl` — the shape `HttpSource.capabilities.customisesImageUrlChain`
      * is meant to detect.
      *
-     * **Why this is a subclass rather than a flag on one class.** `providesOwnImageUrl` reads the
+     * **Why this is a subclass rather than a flag on one class.** The capability probe reads the
      * declaring class of the `getImageUrl` method at runtime, so a source that must *not* appear to
      * override it cannot be one that declares the method and then lies about it. Expressing the
      * distinction the way the compiler expresses it — override, or do not — is the only version of

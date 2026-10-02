@@ -6,6 +6,69 @@ import ephyra.core.common.util.system.logcat
 import eu.kanade.tachiyomi.source.model.Page
 
 /**
+ * What a source **actually implements**, probed from the loaded class rather than read from metadata.
+ *
+ * **Why this exists, and why it is not the version number.** `ExtensionLoader` already knows each
+ * extension's declared `extension-lib` version and refuses to load anything outside
+ * `SUPPORTED_LIB_VERSIONS`. That answers "can this be loaded at all". It does not answer "what will
+ * this source do when asked for an image URL", and the two are not the same question:
+ *
+ *  - an extension may override whichever chain entry points it likes regardless of the version it
+ *    declares — MangaDex declares 1.6 and overrides `imageUrlRequest`/`imageUrlParse`, neither of
+ *    which is the modern `getImageUrl`;
+ *  - a source declaring 1.4 may equally override any of the three.
+ *
+ * Branching behaviour on the declared version is therefore a guess about code that is already loaded
+ * and inspectable. The reported MangaDex failure is what that guess costs: treating `Page.url` as an
+ * image address, for a source where `url` is an at-home token cache key
+ * (`host,tokenUrl,fetchTime`) that only the source itself can read.
+ *
+ * **How to use it.** Each capability is a named probe with a comment saying what the app must do
+ * differently when it is present. Call sites read `capabilities.customisesImageUrlChain`, never a
+ * version comparison, and a new extension generation adds a probe here rather than another `when` at
+ * each place that has to care.
+ *
+ * **Cost.** One instance per source, computed once. Probes are reflection over the class hierarchy and
+ * are therefore cached per instance: they cannot change for a loaded class, and re-probing per page
+ * would be wasteful on a long chapter.
+ */
+class SourceCapabilities internal constructor(private val type: Class<*>) {
+
+    /**
+     * Whether this source customises the image-URL chain, through any of its three entry points.
+     *
+     * `getImageUrl` is the modern one. The deprecated chain has two of its own — `imageUrlRequest`
+     * chooses what to fetch and `imageUrlParse` reads the address out of the response — and overriding
+     * either is a complete customisation on its own.
+     *
+     * **What the app must do differently.** It must not assume `Page.url` is an image address for such
+     * a source: MangaDex keeps a `(host, tokenRequestUrl, fetchTime)` at-home cache key there, because
+     * MangaDex@Home tokens expire after five minutes, and only its own `imageUrlRequest` knows how to
+     * read it. The app's job is to fetch and parse through the chain, not to second-guess the field.
+     */
+    val customisesImageUrlChain: Boolean by lazy {
+        overrides("getImageUrl") || overrides("imageUrlRequest") || overrides("imageUrlParse")
+    }
+
+    /**
+     * Walks *declared* methods from the concrete class up to — but not including — [HttpSource].
+     *
+     * Declared, not inherited-and-public: `imageUrlRequest` and `imageUrlParse` are `protected`, and
+     * [Class.getMethods] returns public members only. A check written against it silently misses
+     * both even with the right names, which is precisely how an earlier version of this probe reported
+     * MangaDex as uncustomising and blocked the chain it was written to accommodate.
+     */
+    private fun overrides(name: String): Boolean {
+        var current: Class<*>? = type
+        while (current != null && current != HttpSource::class.java) {
+            if (current.declaredMethods.any { it.name == name }) return true
+            current = current.superclass
+        }
+        return false
+    }
+}
+
+/**
  * The one addressable image URL for a [Page], together with where it came from.
  *
  * **Why this exists.** A `Page` has two URL fields and the contract does not say which one to use.
