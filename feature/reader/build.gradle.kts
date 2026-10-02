@@ -33,6 +33,18 @@ android {
                 "fixture.materialise",
                 System.getProperty("fixture.materialise") ?: "false",
             )
+
+            // Robolectric + Compose does not fit Gradle's 512m default test-worker heap. The
+            // worker is killed by the OOM killer before it can flush its results, and Gradle then
+            // reports the symptom rather than the cause:
+            //
+            //   java.nio.file.NoSuchFileException: ...\binary\in-progress-results-generic.bin
+            //
+            // which reads like corrupt output and is not. `:app` has carried `maxHeapSize = "2g"`
+            // for this; this module is the other half of the same problem, since it is the one that
+            // actually runs the heaviest Compose reader tests. Any module with
+            // `isIncludeAndroidResources = true` needs the same heap.
+            it.maxHeapSize = "2g"
         }
     }
 }

@@ -1,0 +1,36 @@
+fix(build): give every Robolectric module a 2g test-worker heap
+
+CI's `Run unit tests` step failed on two consecutive commits while the
+release APK built fine, and it failed the same way each time:
+
+  Execution failed for task ':feature:browse:testDebugUnitTest'.
+  java.nio.file.NoSuchFileException: ...\binary\in-progress-results-generic.bin
+
+That exception is the symptom, not the cause. The results file is absent
+because the test worker JVM was killed before it could flush its results,
+so no assertion ever failed. Gradle then reports the missing file, which
+reads like corrupt output rather than an exhausted worker.
+
+The cause is an asymmetry in our own build config. `:app` sets
+`maxHeapSize = "2g"`; `:feature:browse`, `:feature:reader` and `:core:data`
+all enable `isIncludeAndroidResources = true` for Robolectric and set no
+heap at all, leaving them on Gradle's 512m default while running Compose
+UI tests. The limit was added where the failure first appeared, not where
+it applies.
+
+All three modules now carry the same 2g heap as `:app`, and each comment
+records why, so the next module to enable Robolectric inherits the
+reasoning rather than rediscovering it.
+
+This also explains why the failure was inconsistent locally. `:feature:
+browse` passes when run alone and fails inside the full sweep, because
+peak memory depends on what else is resident at the time \u2014 so it reads
+as a flaky test rather than a deterministic misconfiguration.
+
+Verified with the exact command CI runs (`testDebugUnitTest` across all
+modules, then XML aggregation): BUILD SUCCESSFUL in 5m 55s with 873 tasks
+genuinely re-executed and 1,880 tests, 0 failures across 8 modules. The
+previous local runs were misleading \u2014 they reported BUILD SUCCESSFUL while
+695 to 708 tasks were UP-TO-DATE, so the tests had not actually re-run.
+
+No production code touched; no behaviour change.
