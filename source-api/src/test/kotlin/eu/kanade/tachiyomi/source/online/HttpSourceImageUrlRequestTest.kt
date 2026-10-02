@@ -251,6 +251,42 @@ class HttpSourceImageUrlRequestTest {
     }
 
     /**
+     * The reported MangaDex page, characterised: **both** fields unusable.
+     *
+     * **Why this test exists and what it settles.** The device reports a page whose `imageUrl` is a
+     * three-part composite the source built for its own purposes. The exception above names only the
+     * preferred field, so from the outside there were two live explanations, and they need opposite
+     * fixes:
+     *
+     * 1. the source offered nothing usable, and the fix belongs in the extension; or
+     * 2. the source put a real address in `url` and we preferred the composite — a regression
+     *    introduced when `imageUrl` became the preferred field, because before that the reader's
+     *    path (`imageUrlRequest`) read `page.url`, which is what Mihon still reads from the same APK.
+     *
+     * (2) is already ruled out by the test above: a good `url` is used. So the failure can only
+     * mean `url` was *also* unusable — blank, or equally malformed. This pins that reading so the
+     * next report is not re-litigated from scratch, and it fails loudly if the preference rule ever
+     * changes to something that would produce (2) again.
+     */
+    @Test
+    fun `the reported page fails because url offers nothing usable either`() {
+        val source = TestSource("https://mangadex.org")
+        val composite = "https://cmdxd98sb0x3yprd.mangadex.network," +
+            "https://api.mangadex.org/at-home/server/267e6e0f-c03f-4c15-9608-9a94aebc4ffd," +
+            "1790973083449"
+        val page = Page(0, url = "", imageUrl = composite)
+
+        val thrown = assertThrows(MalformedImageUrlException::class.java) {
+            source.imageUrlRequestFor(page)
+        }
+
+        assertEquals(composite, thrown.url)
+        // If this ever becomes false, `url` is being populated and something is discarding it -
+        // which would be a bug here rather than a defect in the source.
+        assertEquals("", page.url)
+    }
+
+    /**
      * The two request builders of the same class must agree on which field to use.
      *
      * **Why this needed a test.** `imageUrlRequest` learned to try `imageUrl` and then `url`, while

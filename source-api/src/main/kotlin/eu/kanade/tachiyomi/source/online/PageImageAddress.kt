@@ -2,6 +2,7 @@ package eu.kanade.tachiyomi.source.online
 
 import ephyra.core.common.util.network.MalformedImageUrlException
 import ephyra.core.common.util.network.ResolvedImageUrl
+import ephyra.core.common.util.system.logcat
 import eu.kanade.tachiyomi.source.model.Page
 
 /**
@@ -64,6 +65,27 @@ data class PageImageAddress(
                     if (firstDefect == null) firstDefect = e.reason
                 }
             }
+
+            // **Why this exists.** The reported MangaDex failure is a page whose fields both fail:
+            // the `imageUrl` is a composite the source built for its own purposes, not an address.
+            // Knowing *which* other values were available decides whether this is the source's
+            // fault alone or whether a usable address was discarded here — and those need different
+            // fixes. The exception can only name one value, so both are reported here instead.
+            logcat {
+                buildString {
+                    append("PageImageAddress: no field of this page resolved to an address.\n")
+                    append("  baseUrl  = $baseUrl\n")
+                    if (candidates.isEmpty()) {
+                        append("  imageUrl = ${page.imageUrl.orEmpty()} (blank)\n")
+                        append("  url      = ${page.url} (blank)\n")
+                    }
+                    candidates.forEach { (value, field) ->
+                        append("  ${field.name.padEnd(8)} = $value\n")
+                    }
+                    append("  reason   = $firstDefect")
+                }
+            }
+
             throw MalformedImageUrlException(
                 url = candidates.firstOrNull()?.first ?: page.imageUrl.orEmpty(),
                 reason = firstDefect ?: "the URL is empty",
