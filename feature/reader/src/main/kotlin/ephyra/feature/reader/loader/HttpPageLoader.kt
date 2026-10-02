@@ -10,6 +10,7 @@ import ephyra.core.common.util.network.ReResolvePacer
 import ephyra.core.common.util.network.TransientErrors
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.logcat
+import ephyra.domain.chapter.model.Chapter
 import ephyra.domain.chapter.model.toSChapter
 import ephyra.domain.chapter.service.ChapterCache
 import ephyra.feature.reader.model.ReaderChapter
@@ -177,6 +178,29 @@ internal class HttpPageLoader(
     override var isLocal: Boolean = false
 
     /**
+     * Fetches the page list from the source and persists it.
+     *
+     * Extracted from the cache-miss arm of [getPages] because there are now two ways to reach it —
+     * no cached entry, or a cached entry that failed the URL contract — and they must behave
+     * identically. In particular both must persist, so a rejected list is *overwritten* rather than
+     * left on disk to be rejected again on the next open.
+     */
+    private suspend fun fetchAndPersist(domainChapter: Chapter): List<Page> {
+        val networkPages = source.getPageList(chapter.chapter.toSChapter())
+        // Persist immediately so a crash before recycle() doesn't lose the page list.
+        scope.launchIO {
+            try {
+                chapterCache.putPageListToCache(domainChapter, networkPages)
+            } catch (ex: Throwable) {
+                if (ex is CancellationException) throw ex
+                logcat(LogPriority.WARN, ex) { "Failed to persist page list to cache after network fetch" }
+            }
+        }
+        // cacheHadMissingImageUrls stays true (network pages have no imageUrls yet)
+        return networkPages
+    }
+
+    /**
      * Returns the page list for a chapter. It tries to return the page list from the local cache,
      * otherwise fallbacks to network.
      *
@@ -190,25 +214,26 @@ internal class HttpPageLoader(
         val domainChapter = chapter.chapter
         val pages = try {
             val cachedPages = chapterCache.getPageListFromCache(domainChapter)
-            // All image URLs are already resolved: the recycle() save can be skipped.
-            cacheHadMissingImageUrls = cachedPages.any { it.imageUrl.isNullOrEmpty() }
-            cachedPages
+            // A cache hit is only a hit if the list it holds still satisfies the URL contract. The
+            // reported MangaDex failure lived here: a list written by a bad pass was served verbatim
+            // on every subsequent open, the source was never asked, and no fix downstream of the
+            // read could take effect. See `cachedPagesAreUsable`.
+            if (cachedPagesAreUsable(cachedPages, source.baseUrl)) {
+                // All image URLs are already resolved: the recycle() save can be skipped.
+                cacheHadMissingImageUrls = cachedPages.any { it.imageUrl.isNullOrEmpty() }
+                cachedPages
+            } else {
+                logcat(LogPriority.WARN) {
+                    "Discarding a cached page list for '${domainChapter.name}' that fails the URL " +
+                        "contract; refetching from the source"
+                }
+                fetchAndPersist(domainChapter)
+            }
         } catch (e: Throwable) {
             if (e is CancellationException) {
                 throw e
             }
-            val networkPages = source.getPageList(chapter.chapter.toSChapter())
-            // Persist immediately so a crash before recycle() doesn't lose the page list.
-            scope.launchIO {
-                try {
-                    chapterCache.putPageListToCache(domainChapter, networkPages)
-                } catch (ex: Throwable) {
-                    if (ex is CancellationException) throw ex
-                    logcat(LogPriority.WARN, ex) { "Failed to persist page list to cache after network fetch" }
-                }
-            }
-            // cacheHadMissingImageUrls stays true (network pages have no imageUrls yet)
-            networkPages
+            fetchAndPersist(domainChapter)
         }
         return pages.mapIndexed { index, page ->
             // Don't trust sources and use our own indexing
@@ -689,6 +714,43 @@ internal class HttpPageLoader(
             cacheHadMissingImageUrls: Boolean,
             imageUrls: List<String?>,
         ): Boolean = cacheHadMissingImageUrls || imageUrls.any { it.isNullOrEmpty() }
+
+        /**
+         * Whether a page list read back from the chapter cache can be trusted.
+         *
+         * **This is the fix for "it worked a week ago".** The chapter cache is a *provider* of page
+         * data, and until now it was the one provider whose output was never checked. A page list
+         * written by a bad pass — the reported case being a URL that is a three-part composite of a
+         * host, an API URL and a timestamp rather than an address — was read back and used verbatim,
+         * forever, across app updates. Because the poisoned `imageUrl` is non-empty, the loader's
+         * "resolve it from the source" branch is skipped entirely, so `source.getImageUrl` is never
+         * called: fixing the source cannot help, and neither can any fix that runs after the read.
+         * The only way out was clearing the cache by hand.
+         *
+         * That is why the reported failure outlived every URL-policy change: none of them looked here.
+         *
+         * **Why the whole list is discarded rather than the one bad page.** The pages arrived from a
+         * single `putPageListToCache`, so a list containing one unusable URL is evidence that the
+         * write was wrong, not that one page happened to be. Keeping the rest would leave a list the
+         * source never produced.
+         *
+         * A page whose `imageUrl` is null or empty is *not* a failure: that is the ordinary state of
+         * a list fetched from the network and not yet resolved, and it is what
+         * [needsPageListSave] exists to track.
+         *
+         * **Why the check resolves before judging, rather than judging the raw string.** A cached
+         * page holding a *relative* URL is a supported, ordinary state — `img.attr("src")` instead
+         * of `absUrl("src")` is everyday source code, and the loader's job is precisely to complete
+         * it against `baseUrl`. Judging the raw string would reject that and send a perfectly
+         * recoverable page back to the source on every open, which is the same failure as not
+         * caching at all, only slower. So the question is not "is this already an address" but "can
+         * this become one", and only the second is disqualifying.
+         */
+        internal fun cachedPagesAreUsable(pages: List<Page>, baseUrl: String?): Boolean =
+            pages.all { page ->
+                val url = page.imageUrl
+                url.isNullOrEmpty() || ImageUrlPolicy.isUsable(ImageUrlPolicy.resolve(url, baseUrl))
+            }
 
         /**
          * Priority assigned to pages queued by [preloadAllPages]. Set below the nearby-page

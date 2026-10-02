@@ -22,6 +22,7 @@ import okhttp3.Request
 import okhttp3.Response
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -132,6 +133,95 @@ class HttpPageLoaderUrlResolutionTest {
         assertEquals("https://cdn.example.com/data/1.jpg", page.imageUrl)
     }
 
+    /**
+     * The reported MangaDex failure, end to end.
+     *
+     * The owner sent this verbatim from their device's logcat:
+     *
+     * ```
+     * https://cmdxd98sb0x3yprd.mangadex.network
+     * ,https://api.mangadex.org/at-home/server/605c371d-904f-4dda-96a0-24ffdd65e642
+     * ,1790648354548
+     * ```
+     *
+     * Three parts joined by commas — a host, an API URL and a timestamp (`1790648354548` is
+     * 2026-09-29T02:19:14Z). No URL has that shape, so whatever wrote it was returning a cache key
+     * of its own where an address belongs.
+     *
+     * **Why the fix had to be at the cache read, not at the URL policy.** Every earlier fix checked
+     * the URL *after* the page list was restored, and this value passes those checks long enough to
+     * be rejected rather than repaired. The decisive detail is that the poisoned `imageUrl` is
+     * non-empty, so the loader's "the cache gave us an unresolved page, ask the source" branch never
+     * runs and `source.getImageUrl` is never called. The source could be fixed and this chapter
+     * would still fail, on every open, from a file on disk.
+     *
+     * So the cache is given the same contract as every other provider: a hit that fails it is a
+     * miss. The test asserts the address the loader ends up requesting is the source's, which is
+     * only possible if the cached list was discarded and the source consulted.
+     */
+    @Test
+    fun `a cached page list whose URL is not an address is discarded and refetched`() = runBlocking {
+        val composite = "https://cmdxd98sb0x3yprd.mangadex.network" +
+            ",https://api.mangadex.org/at-home/server/605c371d-904f-4dda-96a0-24ffdd65e642" +
+            ",1790648354548"
+        val good = "https://uploads.mangadex.org/data/ab/cd/1.jpg"
+        val fixture = Fixture(resolvingTo = good, cachedPageImageUrl = composite)
+
+        assertEquals(good, fixture.loadAndRecordRequestedUrl())
+    }
+
+    /**
+     * The counterweight, and the reason the check is a contract rather than a rejection rule: an
+     * ordinary cached list must still be a *hit*. If this fails, every chapter is refetching on
+     * every open and the cache has been made useless rather than made safe.
+     *
+     * An empty `imageUrl` is the normal state of a list fetched from the network and not yet
+     * resolved, so it is explicitly not a failure.
+     */
+    @Test
+    fun `an ordinary cached page list is still used without asking the source`() = runBlocking {
+        val cached = "https://uploads.mangadex.org/data/ab/cd/1.jpg"
+        val fixture = Fixture(cachedPageImageUrl = cached)
+
+        assertEquals(cached, fixture.loadAndRecordRequestedUrl())
+    }
+
+    /** An unresolved-but-present list is the network case, and must not be mistaken for a bad one. */
+    @Test
+    fun `a cached list with an empty image URL is not treated as a defect`() {
+        assertTrue(HttpPageLoader.cachedPagesAreUsable(listOf(Page(0, "/page/1.jpg", "")), BASE))
+        assertTrue(HttpPageLoader.cachedPagesAreUsable(listOf(Page(0, "/page/1.jpg", null)), BASE))
+    }
+
+    /**
+     * A cached *relative* URL is a supported state, not a defect, and this is the assertion that
+     * keeps it one.
+     *
+     * The first version of the check judged the raw string, which rejected this — and the
+     * pre-existing test for a relative URL restored from the cache failed as a result. That failure
+     * was the check being wrong, not the test: `img.attr("src")` is ordinary source code, and
+     * sending such a page back to the source on every open makes the cache useless rather than
+     * safe. So the rule is "can this become an address", not "is this already one".
+     */
+    @Test
+    fun `a cached relative URL is kept because it can be resolved, not refetched`() {
+        assertTrue(
+            HttpPageLoader.cachedPagesAreUsable(listOf(Page(0, "/page/1.jpg", "/data/1.jpg")), BASE),
+        )
+    }
+
+    /** The reported value, as a pure rule, so the contract itself is pinned and not just a path. */
+    @Test
+    fun `the URL contract rejects the reported composite`() {
+        val composite = "https://cmxd98sb0x3yprd.mangadex.network" +
+            ",https://api.mangadex.org/at-home/server/605c371d-904f-4dda-96a0-24ffdd65e642" +
+            ",1790648354548"
+
+        assertFalse(
+            HttpPageLoader.cachedPagesAreUsable(listOf(Page(0, "/page/1.jpg", composite)), BASE),
+        )
+    }
+
     /** One loader, one page, and the recording cache they share. */
     private inner class Fixture(
         resolvingTo: String? = null,
@@ -186,6 +276,9 @@ class HttpPageLoaderUrlResolutionTest {
     private companion object {
         const val SETTLE_TIMEOUT_MS = 15_000L
         const val POLL_INTERVAL_MS = 10L
+
+        /** The fixture source's `baseUrl`, so the pure contract checks resolve the same way. */
+        const val BASE = "https://mangadex.org"
     }
 
     /**
