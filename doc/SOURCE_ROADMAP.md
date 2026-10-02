@@ -107,6 +107,10 @@ Ordered by dependency, not by appeal. Each phase is independently shippable.
 
 **Gate:** a MangaDex chapter renders on device, and the reproduction names the layer.
 
+**Related, not a gate:** `IMAGE_PIPELINE_CONSOLIDATION.md` consolidates the eight
+resolve-then-judge call sites into one wrapper type, so a future defect is harder to
+introduce. It is behaviour-neutral and can land before or after the device reproduction.
+
 ### Phase 2 — Unify the content vocabulary · **NOT STARTED · after Jellyfin is scoped**
 - [ ] Fold `CatalogEntry`/`ChapterInfo` into `ContentItem`/`ContentUnit`
 - [ ] Keep `ContentPage` as the page type; migrate the 3 `UnifiedContentSource` consumers
