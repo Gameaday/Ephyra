@@ -80,6 +80,16 @@ object ImageUrlPolicy {
     private val ANY_SCHEME = Regex("^[A-Za-z][A-Za-z0-9+.\\-]*:")
 
     /**
+     * ASCII control characters, which cannot appear in a URL and are what a `src` attribute read
+     * across a line break — or a URL built from a multi-line template — leaves behind.
+     *
+     * Excludes space deliberately: a space inside a path is more likely to be a real, if
+     * unencoded, space than a wrapping artifact, and silently deleting it would join two path
+     * segments into a different file. Surrounding whitespace is handled by trimming instead.
+     */
+    private val CONTROL_CHARACTERS = Regex("[\\u0000-\\u001F\\u007F]")
+
+    /**
      * Turns [url] into an absolute `http(s)` address using [baseUrl] when it is not already one.
      *
      * **Why this exists.** The reported failure was
@@ -126,14 +136,20 @@ object ImageUrlPolicy {
     fun resolve(url: String?, baseUrl: String?): String {
         if (url.isNullOrBlank()) return url.orEmpty()
 
+        // Everything below reasons about the repaired string, never the raw one. An unrepaired value
+        // that starts with `https://` only after trimming would otherwise take the absolute branch
+        // below on the *raw* string and miss it entirely.
+        val repaired = repair(url)
+        if (repaired.isEmpty()) return url
+
         // The overwhelmingly common case, and the one that must not be touched: see the signed-URL
         // note above. Checked before the general scheme test purely to keep this a prefix compare.
-        if (url.startsWith("http://", ignoreCase = true) || url.startsWith("https://", ignoreCase = true)) {
-            return url
+        if (repaired.startsWith("http://", ignoreCase = true) || repaired.startsWith("https://", ignoreCase = true)) {
+            return repaired
         }
 
         // A non-http scheme is a decision, not an omission. Left alone on purpose; see above.
-        if (ANY_SCHEME.containsMatchIn(url)) return url
+        if (ANY_SCHEME.containsMatchIn(repaired)) return repaired
 
         // The base has to be able to *lend* a scheme, or there is no absolute address to form. A
         // base that cannot is returned against rather than concatenated, because
@@ -141,13 +157,50 @@ object ImageUrlPolicy {
         // reporting the original is the verdict the caller can act on.
         val base = baseUrl?.trim().orEmpty()
         val scheme = base.substringBefore("://")
-        if (base.isBlank() || scheme.isBlank() || scheme == base) return url
+        if (base.isBlank() || scheme.isBlank() || scheme == base) return repaired
 
-        return if (url.startsWith("//")) {
-            "$scheme:$url"
+        return if (repaired.startsWith("//")) {
+            "$scheme:$repaired"
         } else {
-            "${base.trimEnd('/')}/${url.trimStart('/')}"
+            "${base.trimEnd('/')}/${repaired.trimStart('/')}"
         }
+    }
+
+    /**
+     * Repairs the ways a source's raw string differs from an address, without touching a string
+     * that is already clean.
+     *
+     * **Why this exists.** Found by probing the shipped policy with the shapes real extensions emit.
+     * Three came back broken, and the worst was broken *silently*:
+     *
+     * - **Surrounding whitespace** — `"  https://cdn/i.jpg  "` no longer looked absolute, so it was
+     *   treated as a relative path and joined onto the base URL, yielding
+     *   `https://example.com/  https://cdn/i.jpg`. That is *usable* by every check in this file: it
+     *   parses, its host is a valid hostname, and it would be requested, cached under that name, and
+     *   fail as a 404 that reads like a missing page rather than a malformed URL. Nothing downstream
+     *   can notice, which is why it had to be caught here.
+     * - **Embedded control characters** — a `src` attribute read across a line break, or a URL built
+     *   from a multi-line template, leaves `\n` or `\t` inside the string. OkHttp tolerates them, so
+     *   the request goes out, but the cleaned and uncleaned spellings are different cache keys: the
+     *   same image stored twice under two names, which is the exact duplication [resolve] exists to
+     *   prevent.
+     * - **`&amp;`** — the HTML-escaped query separator, which is what `attr("src")` returns and
+     *   `absUrl("src")` does not. Left in place it is sent literally, so `?a=1&amp;b=2` reaches the
+     *   server as a parameter named `amp;b`. Decoding is also right for a *signed* URL: the signature
+     *   was computed over the decoded spelling, because that is what a browser sends.
+     *
+     * **Why a signed URL is still safe.** Every branch is a repair of a string that could not have
+     * been an address. A clean URL has no surrounding whitespace, no control characters and no
+     * `&amp;`, so it passes through untouched and [resolve] returns it byte-identical as it always
+     * has. The guarantee is about not *rewriting* a valid address, and none of this rewrites one.
+     */
+    private fun repair(raw: String): String {
+        var out = raw.trim()
+        if (CONTROL_CHARACTERS.containsMatchIn(out)) {
+            out = CONTROL_CHARACTERS.replace(out, "")
+        }
+        if (out.contains("&amp;")) out = out.replace("&amp;", "&")
+        return out
     }
 
     /** Returns why [url] is unusable, or `null` when it is worth requesting. */
