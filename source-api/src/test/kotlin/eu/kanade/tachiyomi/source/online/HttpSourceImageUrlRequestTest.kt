@@ -167,17 +167,22 @@ class HttpSourceImageUrlRequestTest {
     }
 
     /**
-     * The same preference on the deprecated builder, where it is the difference between a real
-     * request and `GET("")`. `Page.imageUrl` is documented as the resolved address, so when both
-     * fields are populated the one that can address a host is the one to use.
+     * The deprecated builder on a page that only populates `imageUrl` fails, as it does in Mihon.
+     *
+     * This previously asserted the opposite — that `imageUrl` "wins" — and that assertion is what
+     * allowed the two builders to be collapsed onto one rule. The comment claimed `Page.imageUrl` is
+     * "documented as the resolved address", but `imageUrlRequest` is not what reads it:
+     * `imageRequest` is. Under the reference contract a source that reaches this path with an empty
+     * `url` gets `GET("")`, and the app's job is to say so clearly rather than quietly substitute a
+     * different field.
      */
     @Test
-    fun `the populated image URL wins over an empty page url`() {
+    fun `the deprecated builder rejects an empty page url instead of substituting imageUrl`() {
         val atHome = "https://cmdxd98sb0x3yprd.mangadex.network/data/hash/1.jpg"
 
-        val request = TestSource("https://mangadex.org").imageUrlRequestFor(Page(0, "", atHome))
-
-        assertEquals(atHome, request.url.toString())
+        assertThrows(MalformedImageUrlException::class.java) {
+            TestSource("https://mangadex.org").imageUrlRequestFor(Page(0, "", atHome))
+        }
     }
 
     /**
@@ -188,6 +193,9 @@ class HttpSourceImageUrlRequestTest {
      * whatever produced it was building a cache key of its own and returning it where an address
      * belongs. Reproducing it exactly means this test fails on the real defect rather than on a
      * convenient paraphrase of it.
+     *
+     * Asserted through [imageRequestFor], because `imageUrl` is the field this value actually lands
+     * in, and the field that builder reads.
      */
     @Test
     fun `the reported three-part composite is refused before a request exists`() {
@@ -197,7 +205,7 @@ class HttpSourceImageUrlRequestTest {
         val source = TestSource("https://mangadex.org")
 
         val thrown = assertThrows(MalformedImageUrlException::class.java) {
-            source.imageUrlRequestFor(Page(0, url = "", imageUrl = composite))
+            source.imageRequestFor(Page(0, url = "", imageUrl = composite))
         }
 
         assertEquals(composite, thrown.url)
@@ -233,40 +241,101 @@ class HttpSourceImageUrlRequestTest {
     }
 
     /**
-     * The preference still holds in the ordinary case: with both fields usable, `imageUrl` wins,
-     * because that is the contract API sources rely on and `url` is their empty-string default.
+     * The two builders read **different fields**, and that is the extension contract rather than an
+     * oversight.
+     *
+     * Mihon's `HttpSource`:
+     * ```
+     * imageUrlRequest -> GET(page.url)
+     * imageRequest    -> GET(page.imageUrl!!)
+     * ```
+     *
+     * An earlier version of this file asserted the opposite — that `imageUrl` won in both — on the
+     * reasoning that "preferred beats wrong". That produced a real divergence: `imageUrlRequest`
+     * drives the deprecated chain, where the request below it is a **live fetch of `page.url`** whose
+     * response is handed to `imageUrlParse`. Reading `imageUrl` there fetches a different URL, so the
+     * source parses a different body and returns a different value than it would in any other host.
+     *
+     * These two assertions exist so the builders cannot quietly collapse into one again. The
+     * consolidation that merged them was well-intentioned, changed no test that existed at the time,
+     * and was wrong.
      */
     @Test
-    fun `imageUrl still wins when both fields are usable`() {
+    fun `imageUrlRequest reads the url field and never substitutes imageUrl`() {
         val source = TestSource("https://mangadex.org")
         val page = Page(
             0,
-            url = "https://img-r2.2xstorage.com/data/from-url-field.jpg",
-            imageUrl = "https://img-r2.2xstorage.com/data/from-image-url-field.jpg",
+            url = "https://cdn.example.com/data/from-url-field.jpg",
+            imageUrl = "https://cdn.example.com/data/from-image-url-field.jpg",
         )
 
-        val request = source.imageUrlRequestFor(page)
+        assertEquals(
+            "https://cdn.example.com/data/from-url-field.jpg",
+            source.imageUrlRequestFor(page).url.toString(),
+        )
+    }
 
-        assertEquals("https://img-r2.2xstorage.com/data/from-image-url-field.jpg", request.url.toString())
+    @Test
+    fun `imageRequest reads the imageUrl field and never substitutes url`() {
+        val source = TestSource("https://mangadex.org")
+        val page = Page(
+            0,
+            url = "https://cdn.example.com/data/from-url-field.jpg",
+            imageUrl = "https://cdn.example.com/data/from-image-url-field.jpg",
+        )
+
+        assertEquals(
+            "https://cdn.example.com/data/from-image-url-field.jpg",
+            source.imageRequestFor(page).url.toString(),
+        )
     }
 
     /**
-     * The reported MangaDex page, characterised: **both** fields unusable.
+     * A blank field fails on its own terms, as it does in Mihon, rather than borrowing the other.
      *
-     * **Why this test exists and what it settles.** The device reports a page whose `imageUrl` is a
-     * three-part composite the source built for its own purposes. The exception above names only the
-     * preferred field, so from the outside there were two live explanations, and they need opposite
-     * fixes:
+     * The fallback this replaces was well-meant — a source putting a non-address in one field should
+     * not hide a good value in the other — but it applies a rule the extension author never agreed to,
+     * and it is invisible in exactly the deprecated path that fetches and parses a response.
+     */
+    @Test
+    fun `imageUrlRequest fails on a blank url rather than borrowing imageUrl`() {
+        val source = TestSource("https://mangadex.org")
+        val page = Page(0, url = "", imageUrl = "https://cdn.example.com/data/1.jpg")
+
+        assertThrows(MalformedImageUrlException::class.java) { source.imageUrlRequestFor(page) }
+    }
+
+    @Test
+    fun `imageRequest fails on a blank imageUrl rather than borrowing url`() {
+        val source = TestSource("https://mangadex.org")
+        val page = Page(0, url = "https://cdn.example.com/data/1.jpg", imageUrl = null)
+
+        assertThrows(MalformedImageUrlException::class.java) { source.imageRequestFor(page) }
+    }
+
+    // Superseded: a usable `url` no longer rescues a page whose `imageUrl` is unusable. The cross-field
+    // fallback was a divergence from Mihon — `imageUrlRequest` reads `page.url` only and
+    // `imageRequest` reads `page.imageUrl` only — and it applied a rule the extension author never
+    // agreed to. It is kept in this comment rather than deleted because the reasoning behind it
+    // ("preferred must not mean trusted") sounds right, and recording where it was wrong is more
+    // useful than pretending the question never came up. The replacement tests assert that each
+    // builder fails on its own field instead.
+
+    /**
+     * The reported MangaDex page, characterised.
      *
-     * 1. the source offered nothing usable, and the fix belongs in the extension; or
-     * 2. the source put a real address in `url` and we preferred the composite — a regression
-     *    introduced when `imageUrl` became the preferred field, because before that the reader's
-     *    path (`imageUrlRequest`) read `page.url`, which is what Mihon still reads from the same APK.
+     * **What this settles.** The device reports a page whose `imageUrl` is a three-part composite:
+     * `(at-home server, at-home API URL, fetch timestamp)`. Full-clear, uninstall, reinstall and a new
+     * series all reproduce it, so it is not persisted state — it is generated on each load.
      *
-     * (2) is already ruled out by the test above: a good `url` is used. So the failure can only
-     * mean `url` was *also* unusable — blank, or equally malformed. This pins that reading so the
-     * next report is not re-litigated from scratch, and it fails loudly if the preference rule ever
-     * changes to something that would produce (2) again.
+     * The composite is a cache-key shape. Upstream MangaDex builds an image address from four DTO
+     * fields (`baseUrl`, `chapter.hash`, `data`/`dataSaver`, filename) and contains no cache, no
+     * timestamp and no comma-join anywhere in its page path, so it cannot be the producer. Our
+     * `ImagePipelineCannotInventAUrlTest` proves `resolve()` cannot build it either, which leaves the
+     * extension running against *our* `source-api` as the only place the two facts can both hold.
+     *
+     * These tests pin the contract that makes that hunt possible: each builder reads exactly the field
+     * the reference implementation reads, so a divergence cannot hide behind a fallback.
      */
     @Test
     fun `the reported page fails because url offers nothing usable either`() {
@@ -277,70 +346,95 @@ class HttpSourceImageUrlRequestTest {
         val page = Page(0, url = "", imageUrl = composite)
 
         val thrown = assertThrows(MalformedImageUrlException::class.java) {
-            source.imageUrlRequestFor(page)
+            source.imageRequestFor(page)
         }
 
         assertEquals(composite, thrown.url)
-        // If this ever becomes false, `url` is being populated and something is discarding it -
-        // which would be a bug here rather than a defect in the source.
+        // If this ever becomes false, `url` is being populated too — which would mean the source does
+        // offer a second address and the builder reading `imageUrl` alone is no longer the whole story.
         assertEquals("", page.url)
     }
 
+    // Superseded: "the two request builders must agree on which field to use". They must not. That test
+    // existed because `imageUrlRequest` had learned to try `imageUrl` then `url` while `imageRequest`
+    // still read `page.imageUrl!!`, and asserting agreement was the wrong remedy — it encoded the
+    // divergence instead of correcting it. The reference implementation reads `page.url` in one and
+    // `page.imageUrl` in the other, and the tests below now assert exactly that.
+
     /**
-     * The two request builders of the same class must agree on which field to use.
+     * The reference implementation's field split, stated as two independent rules.
      *
-     * **Why this needed a test.** `imageUrlRequest` learned to try `imageUrl` and then `url`, while
-     * `imageRequest` kept its original `page.imageUrl!!`. That is not a subtle difference: a source
-     * populating only `url` built a working request through one path and threw a bare
-     * `NullPointerException` through the other — no layer attribution, no recovery, and a crash
-     * shape that reads like an app bug rather than a source-contract one.
+     * **What this replaced.** A previous test asserted that both builders return the *same* value for
+     * any page, on the reasoning that two copies of one rule must not drift. That reasoning was the
+     * defect: Mihon's two builders deliberately read different fields, and asserting they agreed
+     * encoded the divergence rather than catching it.
      *
-     * Asserting the two agree is cheaper than asserting each one's behaviour twice, and it fails
-     * the moment one is taught a rule the other has not.
+     * Each case below populates the **other** field with a poison value. That is what makes these
+     * assertions load-bearing rather than decorative: if either builder ever consults the field it
+     * should not, it builds a request for `MUST-NOT-BE-USED` and fails. A future consolidation that
+     * merges the two builders again fails here instead of shipping.
+     *
+     * Relative values still resolve, which is ours rather than Mihon's and is what makes
+     * `img.attr("src")` requestable (`DEF-027`).
      */
-    @Test
-    fun `both request builders agree on which field to use`() {
+    @ParameterizedTest
+    @CsvSource(
+        "https://cdn.example.com/u.jpg, https://cdn.example.com/u.jpg",
+        "/relative.jpg, https://mangadex.org/relative.jpg",
+        "//cdn.example.com/u.jpg, https://cdn.example.com/u.jpg",
+        "u.jpg, https://mangadex.org/u.jpg",
+    )
+    fun `imageUrlRequest reads page url and ignores imageUrl`(url: String, expected: String) {
         val source = TestSource("https://mangadex.org")
-        val cases = listOf(
-            // (url, imageUrl, expected) — the expected value is the same for both builders.
-            Triple("https://img-r2.2xstorage.com/from-url.jpg", null, "https://img-r2.2xstorage.com/from-url.jpg"),
-            Triple(
-                "",
-                "https://img-r2.2xstorage.com/from-image-url.jpg",
-                "https://img-r2.2xstorage.com/from-image-url.jpg",
-            ),
-            Triple(
-                "https://img-r2.2xstorage.com/from-url.jpg",
-                "https://img-r2.2xstorage.com/from-image-url.jpg",
-                "https://img-r2.2xstorage.com/from-image-url.jpg",
-            ),
-            Triple("/relative.jpg", null, "https://mangadex.org/relative.jpg"),
+        val page = Page(
+            0,
+            url = url,
+            imageUrl = "https://cdn.example.com/MUST-NOT-BE-USED.jpg",
         )
 
-        cases.forEach { (url, imageUrl, expected) ->
-            val page = Page(0, url = url, imageUrl = imageUrl)
-            assertEquals(
-                expected,
-                source.imageUrlRequestFor(page).url.toString(),
-                "imageUrlRequest disagreed for url=$url imageUrl=$imageUrl",
-            )
-            assertEquals(
-                expected,
-                source.imageRequestFor(page).url.toString(),
-                "imageRequest disagreed for url=$url imageUrl=$imageUrl",
-            )
-        }
+        assertEquals(expected, source.imageUrlRequestFor(page).url.toString())
     }
 
-    /** A source populating only `url` must not throw a bare NPE from the *other* builder. */
+    @ParameterizedTest
+    @CsvSource(
+        "https://cdn.example.com/i.jpg, https://cdn.example.com/i.jpg",
+        "/relative.jpg, https://mangadex.org/relative.jpg",
+        "//cdn.example.com/i.jpg, https://cdn.example.com/i.jpg",
+        "i.jpg, https://mangadex.org/i.jpg",
+    )
+    fun `imageRequest reads page imageUrl and ignores url`(imageUrl: String, expected: String) {
+        val source = TestSource("https://mangadex.org")
+        val page = Page(
+            0,
+            url = "https://cdn.example.com/MUST-NOT-BE-USED.jpg",
+            imageUrl = imageUrl,
+        )
+
+        assertEquals(expected, source.imageRequestFor(page).url.toString())
+    }
+
+    /**
+     * A source populating only `url` gets a **classified failure**, not a bare NPE.
+     *
+     * **What is kept and what changed.** This previously asserted that `imageRequest` falls back to
+     * `url`; the fallback is gone, because Mihon's does not have it and a source reaching this path with
+     * a null `imageUrl` is a contract violation the app should name rather than paper over.
+     *
+     * What is deliberately retained is the *shape* of the failure: `MalformedImageUrlException` rather
+     * than `NullPointerException`. Mihon throws NPE here. Ours names the field, attributes a layer, and
+     * is classified as "ask the source again" by `TransientErrors`, so the failure can recover. That is
+     * a genuine improvement over the reference rather than a divergence from it.
+     */
     @Test
-    fun `imageRequest falls back to url rather than throwing a NullPointerException`() {
+    fun `imageRequest on a null imageUrl fails as a named contract violation not an NPE`() {
         val source = TestSource("https://mangadex.org")
         val page = Page(0, url = "https://img-r2.2xstorage.com/1.jpg", imageUrl = null)
 
-        val request = source.imageRequestFor(page)
+        val thrown = assertThrows(MalformedImageUrlException::class.java) {
+            source.imageRequestFor(page)
+        }
 
-        assertEquals("https://img-r2.2xstorage.com/1.jpg", request.url.toString())
+        assertEquals(true, thrown.reason.isNotBlank())
     }
 
     /**

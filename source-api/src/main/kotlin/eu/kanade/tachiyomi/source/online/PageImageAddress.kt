@@ -15,9 +15,19 @@ import eu.kanade.tachiyomi.source.model.Page
  * inside `HttpSource` and **not at all** in the reader and the downloader, which are the two
  * consumers that actually run in production.
  *
- * **The rule.** [Page.imageUrl] first, [Page.url] as the fallback; first that can address a host
- * wins. *Preferring* is not *trusting*: a source that fills `imageUrl` with something that is not
- * an address must not hide a good `url` behind it, so the second field is still tried.
+ * **The rule, and why there is no fallback.** Mihon's `HttpSource` reads two deliberately different
+ * fields: `imageUrlRequest` uses `page.url`, `imageRequest` uses `page.imageUrl`. That is the
+ * extension contract, and it is not an oversight — `imageUrlRequest` serves the deprecated chain in
+ * which the app *fetches* `page.url` and parses the response with `imageUrlParse`, while
+ * `imageRequest` is for a source that already put the address in `imageUrl`.
+ *
+ * An earlier version of this file tried `imageUrl` first and fell back to `url` for both builders.
+ * That is a divergence from the reference implementation with no justification, and it changes the
+ * request an extension actually receives: a source relying on the deprecated path got a different
+ * URL, therefore a different response body, therefore a different `imageUrlParse` result. So each
+ * caller now names the field it is allowed to read, and no field is ever read as a substitute for
+ * another. Resolution and judgement are retained — they are what make a relative `img.attr("src")`
+ * requestable — but they operate on one value and never choose it.
  *
  * **Lives in `source-api` because it needs [Page].** `core/common` cannot depend on `source-api`,
  * so the type that reasons about `Page` fields has to sit above it. The reader and downloader
@@ -43,53 +53,55 @@ data class PageImageAddress(
     companion object {
 
         /**
-         * The address for [page] against [baseUrl], or [MalformedImageUrlException] when neither
-         * field can address a host.
+         * Resolves and judges exactly one named field of [page] against [baseUrl].
          *
-         * The failure names the *preferred* field, because that is the value the source should have
-         * fixed; the reason is the first defect found, so the message describes the value the app
-         * tried first rather than whichever happened to be tried last.
+         * **Which field a caller may read is the extension contract, not a preference.** Passing
+         * [Field.URL] reads [Page.url] and nothing else; passing [Field.IMAGE_URL] reads
+         * [Page.imageUrl] and nothing else. Neither falls back to the other, because the reference
+         * implementation does not and an extension written against it will not be written to tolerate
+         * it.
          *
-         * @throws MalformedImageUrlException if neither field yields a usable address.
+         * @throws MalformedImageUrlException if the named field cannot address a host.
          */
-        fun of(page: Page, baseUrl: String?): PageImageAddress {
-            val candidates = listOfNotNull(
-                page.imageUrl?.takeIf { it.isNotBlank() }?.let { it to Field.IMAGE_URL },
-                page.url.takeIf { it.isNotBlank() && it != page.imageUrl }?.let { it to Field.URL },
-            )
-            var firstDefect: String? = null
-            for ((candidate, field) in candidates) {
-                try {
-                    return PageImageAddress(ResolvedImageUrl.of(candidate, baseUrl), field, candidate)
-                } catch (e: MalformedImageUrlException) {
-                    if (firstDefect == null) firstDefect = e.reason
-                }
+        fun of(page: Page, baseUrl: String?, field: Field): PageImageAddress {
+            val raw = when (field) {
+                Field.IMAGE_URL -> page.imageUrl
+                Field.URL -> page.url
             }
+            return try {
+                PageImageAddress(ResolvedImageUrl.of(raw, baseUrl), field, raw.orEmpty())
+            } catch (e: MalformedImageUrlException) {
+                reportFailure(page, baseUrl, field, raw, e)
+                throw MalformedImageUrlException(url = raw.orEmpty(), reason = e.reason)
+            }
+        }
 
-            // **Why this exists.** The reported MangaDex failure is a page whose fields both fail:
-            // the `imageUrl` is a composite the source built for its own purposes, not an address.
-            // Knowing *which* other values were available decides whether this is the source's
-            // fault alone or whether a usable address was discarded here — and those need different
-            // fixes. The exception can only name one value, so both are reported here instead.
+        /**
+         * Reports why a page yielded no address, naming **both** fields.
+         *
+         * The exception can carry one value, and on the reported MangaDex failure it was not
+         * possible to tell from it whether the unused field held something usable — which decides
+         * whether the defect is the source's alone. Both are printed so the next report does not
+         * have to be re-derived.
+         */
+        private fun reportFailure(
+            page: Page,
+            baseUrl: String?,
+            field: Field,
+            raw: String?,
+            cause: MalformedImageUrlException,
+        ) {
             logcat {
                 buildString {
-                    append("PageImageAddress: no field of this page resolved to an address.\n")
+                    append("PageImageAddress: ${field.name} cannot address a host.\n")
                     append("  baseUrl  = $baseUrl\n")
-                    if (candidates.isEmpty()) {
-                        append("  imageUrl = ${page.imageUrl.orEmpty()} (blank)\n")
-                        append("  url      = ${page.url} (blank)\n")
-                    }
-                    candidates.forEach { (value, field) ->
-                        append("  ${field.name.padEnd(8)} = $value\n")
-                    }
-                    append("  reason   = $firstDefect")
+                    append("  imageUrl = ${page.imageUrl.orEmpty().ifEmpty { "<blank>" }}\n")
+                    append("  url      = ${page.url.ifEmpty { "<blank>" }}\n")
+                    append("  read     = ${field.name}\n")
+                    append("  raw      = ${raw.orEmpty().ifEmpty { "<blank>" }}\n")
+                    append("  reason   = ${cause.reason}")
                 }
             }
-
-            throw MalformedImageUrlException(
-                url = candidates.firstOrNull()?.first ?: page.imageUrl.orEmpty(),
-                reason = firstDefect ?: "the URL is empty",
-            )
         }
     }
 }

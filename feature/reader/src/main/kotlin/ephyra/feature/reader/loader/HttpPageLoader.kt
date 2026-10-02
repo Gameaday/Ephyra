@@ -571,7 +571,12 @@ internal class HttpPageLoader(
                 //
                 // Assigned back to the page, so the URL the page holds, the one keyed into the disk
                 // cache below, and the one persisted on `recycle` are the same string.
-                page.imageUrl = PageImageAddress.of(page, source.baseUrl).url.value
+                // `imageUrl`, and nothing else — this mirrors what [eu.kanade.tachiyomi.source.online.HttpSource.imageRequest]
+                // does, because this value is what that method will later be asked to fetch. Reading
+                // `url` here as a substitute would mean the loader and the source request builder
+                // disagree about which field holds the address, which is the divergence from the
+                // reference implementation this was corrected for.
+                page.imageUrl = PageImageAddress.of(page, source.baseUrl, PageImageAddress.Field.IMAGE_URL).url.value
                 val imageUrl = requireNotNull(page.imageUrl) { "Image URL is null after being fetched from source" }
 
                 recovery.onResolved(imageUrl)

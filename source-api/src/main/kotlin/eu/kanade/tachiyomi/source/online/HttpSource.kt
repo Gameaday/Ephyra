@@ -434,7 +434,12 @@ abstract class HttpSource : CatalogueSource {
             "Source developers should make their own implementation according to their needs.",
     )
     protected open fun imageUrlRequest(page: Page): Request {
-        return GET(PageImageAddress.of(page, baseUrl).url.value, headers)
+        // `page.url`, and nothing else — Mihon's `imageUrlRequest` reads exactly this field. This is
+        // the deprecated chain: the request below is a *real fetch* of `page.url` whose response is
+        // handed to `imageUrlParse`. Substituting `page.imageUrl` here changes which URL is fetched,
+        // therefore what `imageUrlParse` receives, therefore the value the source returns. The
+        // resolution and judgement are ours and are kept; the choice of field is not.
+        return GET(PageImageAddress.of(page, baseUrl, PageImageAddress.Field.URL).url.value, headers)
     }
 
     /**
@@ -472,7 +477,15 @@ abstract class HttpSource : CatalogueSource {
         // invisible is the argument against reintroducing it: a source that populated only `url`
         // used to work through one builder and throw a bare `NullPointerException` through the
         // other, with no layer attribution and no recovery.
-        return GET(PageImageAddress.of(page, baseUrl).url.value, headers)
+        // `page.imageUrl`, and nothing else — Mihon's `imageRequest` reads exactly this field, and
+        // this is the path for a source that already set the address in `getPageList`.
+        //
+        // **Deliberately the same expression shape as [imageUrlRequest] but not the same field.**
+        // These two were once byte-identical, and that is precisely how they drifted from the
+        // reference implementation unnoticed. Mihon reads `url` in one and `imageUrl` in the other,
+        // and that asymmetry is load-bearing rather than an oversight: collapsing it changed which
+        // request a deprecated-path extension actually receives.
+        return GET(PageImageAddress.of(page, baseUrl, PageImageAddress.Field.IMAGE_URL).url.value, headers)
     }
 
     /**
