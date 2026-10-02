@@ -1,5 +1,6 @@
 package ephyra.core.common.util.network
 
+import ephyra.core.common.util.system.logcat
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import java.io.IOException
 
@@ -131,6 +132,20 @@ object ImageUrlPolicy {
     private val CONTROL_CHARACTERS = Regex("[\\u0000-\\u001F\\u007F]")
 
     /**
+     * The scheme separator. A real http(s) URL contains exactly one; a URL that contains more
+     * than one is two URLs run together, whatever the character between them happened to be.
+     *
+     * **Why this check exists.** The reported failure arrived as
+     * `cmdxd98sb0x3yprd.mangadex.networkhttps` — the at-home image server with the scheme of the
+     * API URL glued onto its host, the two joined with no separator at all. Every hostname check
+     * passes on it, because `networkhttps` is a perfectly legal RFC 1123 name. It is not a
+     * hostname problem; it is two URLs where one was expected. Counting separators identifies
+     * that without a heuristic, where "does the host end in `https`" would also reject the
+     * perfectly legitimate `myhttpserver.com`.
+     */
+    private val SCHEME_SEPARATOR = Regex("://")
+
+    /**
      * Turns [url] into an absolute `http(s)` address using [baseUrl] when it is not already one.
      *
      * **Why this exists.** The reported failure was
@@ -238,15 +253,53 @@ object ImageUrlPolicy {
     private fun repair(raw: String): String {
         var out = raw.trim()
         if (CONTROL_CHARACTERS.containsMatchIn(out)) {
-            out = CONTROL_CHARACTERS.replace(out, "")
+            // Diagnostic, and the falsifiable step for the "worked a week ago" question. A control
+            // character inside a URL is one thing; one sitting *between* two URL parts is another,
+            // and only this log distinguishes them. Escaped, because the character that matters is
+            // precisely the one that would be invisible in the message.
+            logcat {
+                "ImageUrlPolicy: source emitted a URL containing control characters.\n" +
+                    "  raw          = ${escapeControlCharacters(out)}\n" +
+                    "  after repair = ${escapeControlCharacters(CONTROL_CHARACTERS.replace(out, ""))}"
+            }
+
+            val stripped = CONTROL_CHARACTERS.replace(out, "")
+            // A control character that separates two URLs is not stray whitespace: deleting it would
+            // splice them into `hosthttps://api.../...`, which parses as a valid URL with the host
+            // `hosthttps` and then fails at DNS, two steps from the cause. Returning the raw value
+            // leaves the verdict to [defectOf] and keeps the reported URL truthful.
+            if (countSchemeSeparators(stripped) > 1) return out
+            out = stripped
         }
         if (out.contains("&amp;")) out = out.replace("&amp;", "&")
         return out
     }
 
+    private fun countSchemeSeparators(value: String): Int =
+        SCHEME_SEPARATOR.findAll(value.takeWhile { it != '?' && it != '#' }).count()
+
+    /** Renders control characters as escapes so they are visible in a log line. */
+    private fun escapeControlCharacters(value: String): String = buildString {
+        value.forEach { c ->
+            when (c) {
+                '\n' -> append("\\n")
+                '\r' -> append("\\r")
+                '\t' -> append("\\t")
+                else -> if (c.isISOControl()) append("\\u%04x".format(c.code)) else append(c)
+            }
+        }
+    }
+
     /** Returns why [url] is unusable, or `null` when it is worth requesting. */
     fun defectOf(url: String?): String? {
         if (url.isNullOrBlank()) return "the URL is empty"
+
+        // Before parsing, and deliberately so: the reported splice parses cleanly, with the second
+        // URL's scheme absorbed into the host. Counting first is what sees the whole string rather
+        // than the part the parser kept.
+        if (countSchemeSeparators(url) > 1) {
+            return "it contains more than one scheme separator, so two URLs have been joined"
+        }
 
         val parsed = url.toHttpUrlOrNull() ?: return "it does not parse as a URL"
 

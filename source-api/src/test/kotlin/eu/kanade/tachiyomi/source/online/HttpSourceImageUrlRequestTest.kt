@@ -201,7 +201,11 @@ class HttpSourceImageUrlRequestTest {
         }
 
         assertEquals(composite, thrown.url)
-        assertEquals(true, thrown.reason.contains("is not a hostname"))
+        // The reason moved from "the host ... is not a hostname" to the scheme-separator count once
+        // that check existed. The new wording is the better one: it names the defect (two URLs were
+        // joined) rather than a symptom of it (a comma in a hostname), which is why this is a
+        // deliberate update rather than a test bent to fit the code.
+        assertEquals(true, thrown.reason.contains("two URLs have been joined"))
     }
 
     /**
