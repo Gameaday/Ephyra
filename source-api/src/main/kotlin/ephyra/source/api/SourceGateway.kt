@@ -61,10 +61,32 @@ data class SourceDescriptor(
     val trustLevel: SourceTrustLevel = SourceTrustLevel.UNKNOWN,
     val compatibilityLevel: SourceCompatibilityLevel = SourceCompatibilityLevel.NATIVE,
     val contentTypes: Set<ContentType> = emptySet(),
+    /**
+     * The source's own web address, when it has one.
+     *
+     * **Why this is here rather than left to the caller.** Opening a source in a web view,
+     * offering "open in browser", and building a share link all need this, and each was
+     * reaching through the legacy `HttpSource` to get it -- which is the dependency this
+     * contract exists to remove. A caller that cannot ask the descriptor has no choice but to
+     * keep the legacy reference alive.
+     *
+     * Null for a source with no web presence, such as a purely local library, which is why it
+     * is nullable rather than defaulted to a placeholder.
+     */
+    val homeUrl: String? = null,
+    /**
+     * Whether requests to this source are exempt from the per-chapter request allowance.
+     *
+     * That decision was being made by checking whether the legacy source implemented
+     * `UnmeteredSource`. It is a property of the source, so it belongs beside the other
+     * declared facts rather than as a type test at the call site.
+     */
+    val unmetered: Boolean = false,
 ) {
     init {
         require(displayName.isNotBlank()) { "Source display name must not be blank" }
         require(revision > 0) { "Source revision must be positive" }
+        require(homeUrl == null || homeUrl.isNotBlank()) { "Home URL must be blank or a real address" }
     }
 
     fun supports(capability: SourceCapability): Boolean = capability in capabilities
@@ -97,6 +119,18 @@ data class SourcePage<T>(
 ) {
     val hasMore: Boolean get() = nextCursor != null
 }
+
+/**
+ * A catalogue listing request: the "popular" and "latest" queries.
+ *
+ * Separate from [SourceSearchRequest] rather than a nullable `query` on it, because browsing popular
+ * and searching for a term are different operations that happen to share a paging shape -- and a
+ * nullable field would let a caller send a search request with no query at all.
+ */
+data class SourceCatalogueRequest(
+    val contentTypes: Set<ContentType> = emptySet(),
+    val cursor: String? = null,
+)
 
 /** Search request independent of legacy FilterList and manga DTOs. */
 data class SourceSearchRequest(
@@ -202,6 +236,33 @@ interface SourceGateway {
     val descriptor: SourceDescriptor
 
     suspend fun search(request: SourceSearchRequest): SourceResult<SourcePage<SourceContentItem>>
+
+    /**
+     * The source's own popular listing.
+     *
+     * [SourceCapability.POPULAR] was declared in the first version of this contract with no way to
+     * exercise it, so a caller who found a source advertising it had to reach for the legacy type to
+     * do anything with it. A capability a consumer cannot call is a capability that pulls back the
+     * dependency it was meant to remove.
+     *
+     * Defaults to [SourceResult.Unsupported] rather than being abstract, and that is the whole
+     * design point: a gateway without a popular listing says so, and adding the capability does not
+     * force every implementor to write a method it has no answer for. A gateway that *does* have one
+     * overrides it -- `LegacySourceGateway` delegates to `getPopularManga` -- and then
+     * [SourceDescriptor.supports] is a promise the type keeps.
+     */
+    suspend fun getPopular(request: SourceCatalogueRequest): SourceResult<SourcePage<SourceContentItem>> =
+        SourceResult.Unsupported(SourceCapability.POPULAR)
+
+    /**
+     * The source's latest listing.
+     *
+     * Defaults to [SourceResult.Unsupported] so a gateway need not implement it to satisfy the
+     * contract, which keeps a descriptor's advertised `LATEST` capability honest rather than
+     * optimistic.
+     */
+    suspend fun getLatest(request: SourceCatalogueRequest): SourceResult<SourcePage<SourceContentItem>> =
+        SourceResult.Unsupported(SourceCapability.LATEST)
 
     suspend fun getDetails(reference: ContentReference): SourceResult<SourceContentItem>
 

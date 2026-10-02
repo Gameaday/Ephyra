@@ -54,6 +54,43 @@ class LegacySourceGateway(
         }
     }
 
+    /**
+     * The popular listing, which the descriptor already advertised and nothing could call.
+     *
+     * Delegates rather than defaulting to `Unsupported`, because a source that declares
+     * [SourceCapability.POPULAR] and then reports the capability as unsupported when asked is lying
+     * twice: once in the descriptor and once here. The default on the interface exists for gateways
+     * that genuinely have no popular listing; this one has one.
+     */
+    override suspend fun getPopular(
+        request: SourceCatalogueRequest,
+    ): SourceResult<SourcePage<SourceContentItem>> {
+        val catalogue = delegate as? CatalogueSource
+            ?: return SourceResult.Unsupported(SourceCapability.POPULAR)
+        val page = request.cursor.toLegacyPage()
+            ?: return SourceResult.PermanentFailure("Invalid catalogue cursor: ${request.cursor}")
+        return outcome(SourceCapability.POPULAR) {
+            catalogue.getPopularManga(page).toTargetPage(page)
+        }
+    }
+
+    /**
+     * The latest listing, gated on the same flag the descriptor reads, so the capability and the
+     * behaviour cannot disagree.
+     */
+    override suspend fun getLatest(
+        request: SourceCatalogueRequest,
+    ): SourceResult<SourcePage<SourceContentItem>> {
+        val catalogue = delegate as? CatalogueSource
+            ?: return SourceResult.Unsupported(SourceCapability.LATEST)
+        if (!catalogue.supportsLatest) return SourceResult.Unsupported(SourceCapability.LATEST)
+        val page = request.cursor.toLegacyPage()
+            ?: return SourceResult.PermanentFailure("Invalid catalogue cursor: ${request.cursor}")
+        return outcome(SourceCapability.LATEST) {
+            catalogue.getLatestUpdates(page).toTargetPage(page)
+        }
+    }
+
     override suspend fun getDetails(reference: ContentReference): SourceResult<SourceContentItem> =
         outcome(SourceCapability.DETAILS) {
             SourceResult.Success(delegate.getMangaDetails(reference.toLegacyManga()).toTargetItem())
