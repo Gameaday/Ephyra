@@ -109,7 +109,13 @@ Ordered by dependency, not by appeal. Each phase is independently shippable.
 
 **Related, not a gate:** `IMAGE_PIPELINE_CONSOLIDATION.md` consolidates the eight
 resolve-then-judge call sites into one wrapper type, so a future defect is harder to
-introduce. It is behaviour-neutral and can land before or after the device reproduction.
+introduce. It is behaviour-neutral and has landed.
+
+**Step-by-step for Phases 2 and 4:** `2_0_CONTENT_MODEL_PLAN.md` is the ten-step
+execution plan for this phase and for the Phase 4 profile-path decision, in dependency order.
+It is subordinate to this document: where the two disagree, this file is right and the plan
+is a defect. It is a forward plan, not a historical record, so it is retained under
+`DOCUMENTATION_GOVERNANCE.md` and deleted when the last step lands.
 
 ### Phase 2 — Unify the content vocabulary · **NOT STARTED · after Jellyfin is scoped**
 - [ ] Fold `CatalogEntry`/`ChapterInfo` into `ContentItem`/`ContentUnit`
