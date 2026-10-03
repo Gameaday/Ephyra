@@ -39,6 +39,7 @@ import eu.kanade.tachiyomi.network.HttpException
 import eu.kanade.tachiyomi.source.UnmeteredSource
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.online.HttpSource
+import eu.kanade.tachiyomi.source.online.resolvePageImage
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -408,23 +409,18 @@ class Downloader(
                 flow {
                     // Fetch image URL if necessary
                     //
-                    // The emptiness test is [PageImageAddress]'s, not `imageUrl.isNullOrEmpty()`:
-                    // that older test skipped resolution for any page whose address lives in `url`,
-                    // which is how a source that populates the legacy field only got its pages
-                    // downloaded by luck. The reader already reads the page the same way, and a
-                    // download that resolved a different field than the reader read is how the
-                    // same bytes end up cached twice under two spellings.
-                    if (page.imageUrl.isNullOrEmpty() && page.url.isBlank()) {
+                    // The emptiness test is the same one the reader makes, and both now come from
+                    // one place. It used to be spelled out here separately, which is how a download
+                    // and a read of the same chapter could end up resolving different fields and
+                    // cache the same bytes twice under two spellings.
+                    if (page.imageUrl.isNullOrEmpty()) {
                         page.status = Page.State.LoadPage
                         try {
-                            // `ResolvedImageUrl` rather than a bare resolve: holding the type means
-                            // resolution *and* judgement both happened, so this line can no longer
-                            // be written as a resolve alone. That omission was made twice in the
-                            // reader and once here, and no test failed when it happened.
-                            page.imageUrl = ResolvedImageUrl.of(
-                                download.source.getImageUrl(page),
-                                download.source.baseUrl,
-                            ).value
+                            // One question, asked of one owner. Which field holds the address, whether
+                            // this source customises the chain, and how to ask it are all inside
+                            // `resolvePageImage`; a Jellyfin or local-archive consumer will not learn
+                            // any of it.
+                            page.imageUrl = download.source.resolvePageImage(page).value
                         } catch (e: Throwable) {
                             page.status = Page.State.Error(e)
                         }
@@ -666,7 +662,7 @@ class Downloader(
                     // Reached only when a retry follows, so the final attempt never spends a source
                     // round-trip on a URL it is about to discard.
                     page.imageUrl = try {
-                        ResolvedImageUrl.of(source.getImageUrl(page), source.baseUrl).value
+                        source.resolvePageImage(page).value
                     } catch (resolutionError: Throwable) {
                         if (resolutionError is CancellationException) throw resolutionError
                         recovery.onFailure(null, resolutionError)

@@ -21,6 +21,8 @@ import ephyra.feature.reader.model.ReaderPage
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.source.online.PageImageAddress
+import eu.kanade.tachiyomi.source.online.resolvePageImage
+import eu.kanade.tachiyomi.source.online.resolvesOwnPageImages
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -238,7 +240,7 @@ internal class HttpPageLoader(
             if (cachedPagesAreUsable(
                     cachedPages,
                     source.baseUrl,
-                    source.capabilities.customisesImageUrlChain,
+                    source.resolvesOwnPageImages,
                 )
             ) {
                 // All image URLs are already resolved: the recycle() save can be skipped.
@@ -557,55 +559,25 @@ internal class HttpPageLoader(
                     if (recovery.isRetrySequence) {
                         reResolvePacer.paceReResolution().takeIf { it > 0 }?.let { delay(it) }
                     }
-                    // An extension that provides its own `getImageUrl` knows what its `Page.url` means, so it is
-                    // always safe to ask. The inherited default is the deprecated chain, which *fetches*
-                    // `Page.url` and hands the response to `imageUrlParse` — and `url` is not
-                    // universally an image address. MangaDex keeps an at-home token cache key there
-                    // (`host,tokenUrl,fetchTime`, five-minute lifespan) and its own helper splits on
-                    // "," to read it back. Asking the default implementation to fetch that produced
-                    // the reported failure: a request spent on a string that is a cache key.
+                    // The extension ABI — which field holds the address, whether this source customises
+                    // the chain, how to ask it — lives in one place, `resolvePageImage`. It used to be
+                    // spelled out here, and separately in `Downloader`, and both had to be corrected
+                    // more than once. A Jellyfin or local-archive consumer will not learn these rules
+                    // at all; it asks one question.
                     //
-                    // This is a **gate, not a substitute**. The legacy chain resolves the address out
-                    // of a fetched document, so `page.url` is a page to visit rather than an image to
-                    // download; using the resolved value here would skip `imageUrlParse` entirely and
-                    // quietly break every source that depends on it. So the chain still runs, and the
-                    // only thing added is a check that it is not about to be pointed at a cache key.
-                    if (!source.capabilities.customisesImageUrlChain) {
-                        try {
-                            ResolvedImageUrl.of(page.url, source.baseUrl)
-                        } catch (e: MalformedImageUrlException) {
-                            // Naming the source and what it overrides is the whole point of this message.
-                            // The reported failure has been chased across several builds because the error
-                            // said only "the URL is bad", which is true of every malformed URL and says
-                            // nothing about which of the three chain entry points — if any — the
-                            // extension actually implements. One line here answers that, and the
-                            // `getPageList` question beside it: an extension that populates
-                            // `Page.imageUrl` never reaches this branch at all, so its presence means
-                            // `getPageList` did not deliver one.
-                            throw MalformedImageUrlException(
-                                url = page.url,
-                                reason = "no image address available (source=${source.javaClass.name}, " +
-                                    "overrides=${source.capabilities.overriddenChainMethods()}, " +
-                                    "pageImageUrl=${page.imageUrl ?: "<null>"}, " +
-                                    "getPageListBy=${source.capabilities.declaringClassOf("getPageList")}, " +
-                                    "baseUrl=${source.baseUrl}, ${e.reason})",
-                            )
-                        }
-                    }
-                    val resolved = ResolvedImageUrl.of(
-                        source.getImageUrl(page),
-                        source.baseUrl,
-                    ).value
+                    // What stays here is page-load *policy*, which depends on state this cannot see:
+                    // pacing above, and the repeat-address check below.
+                    val resolved = source.resolvePageImage(page).value
                     // A source that hands back the identical string we have already rejected is not
                     // going to produce a different one on the next call either, and every call it
                     // does make is a round-trip spent learning nothing. Reporting the defect now
                     // ends the ladder sooner and reports the *cause* rather than a resolver error
                     // about a name that can never exist.
                     //
-                    // Re-judged here, redundantly with the resolution above, on purpose: this is
-                    // the branch that decides whether a *repeat* address is worth another round-trip,
-                    // so it must answer the question from the value it is about to store rather
-                    // than inherit an answer computed for a different string.
+                    // Re-judged here, redundantly, on purpose: this is the branch that decides whether
+                    // a *repeat* address is worth another round-trip, so it must answer from the value
+                    // it is about to store rather than inherit an answer computed for a different
+                    // string.
                     if (recovery.isKnownUnusable(resolved)) {
                         ImageUrlPolicy.requireUsable(resolved)
                     }

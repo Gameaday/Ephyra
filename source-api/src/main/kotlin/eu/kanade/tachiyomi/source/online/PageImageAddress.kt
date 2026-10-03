@@ -6,6 +6,92 @@ import ephyra.core.common.util.system.logcat
 import eu.kanade.tachiyomi.source.model.Page
 
 /**
+ * Whether this source can produce an image address for a page that arrives without one.
+ *
+ * Two consumers need this and neither should be reaching into [SourceCapabilities]:
+ * `resolvePageImage` below, and the reader's cache gate — which asks the same question about a
+ * *stored* page list, to decide whether a cached list can ever be read. Naming it here keeps
+ * "extensions have two image paths" inside the module that owns extensions.
+ */
+val HttpSource.resolvesOwnPageImages: Boolean
+    get() = capabilities.customisesImageUrlChain
+
+/**
+ * Resolves the one addressable image URL for [page], asking this source when it has to.
+ *
+ * **Why this exists.** Everything an extension consumer needs to know about the extension ABI lived in
+ * the consumers: which of `Page.url` and `Page.imageUrl` holds the address, whether this source
+ * customises the image-URL chain, and how to ask it. `HttpPageLoader` and `Downloader` each spelled
+ * that out, and both had to be corrected separately more than once. With Jellyfin and local archives
+ * arriving next, a third consumer would have learned the same rules and drifted the same way.
+ *
+ * So the rules live here, once, and a consumer asks one question.
+ *
+ * **The steps, and why each exists.**
+ *
+ * 1. `Page.imageUrl` when populated. This is the 1.6 contract: `getPageList` puts the address there.
+ * 2. Otherwise, if this source customises *none* of the four chain entry points, `page.url` is not an
+ *    image address and asking the inherited default would spend a request on it. That produced the
+ *    reported failure — a request on a `(host, tokenUrl, fetchTime)` at-home cache key, reported as a
+ *    DNS error. So the value is checked first and the failure is reported here, where the source and
+ *    its overrides are known.
+ * 3. Otherwise ask [HttpSource.getImageUrl]. The inherited default runs the deprecated chain, which
+ *    *fetches* `page.url` and parses the response — so a source that relies on `imageUrlParse` still
+ *    works, and its result is judged here rather than trusted.
+ *
+ * **What the caller still owns.** Page-load policy — pacing, retry classification, whether a repeat
+ * address is worth another round-trip — belongs to the reader and the downloader, because it depends
+ * on state this function does not have. This function answers only "what address does this page
+ * have", and it answers it identically for every consumer.
+ *
+ * @throws MalformedImageUrlException naming the source and what it overrides, when the page yields
+ *   no address. Classified as `ADAPTER`, so the failure is attributed to the source that produced it
+ *   rather than to the transport about to carry it.
+ */
+suspend fun HttpSource.resolvePageImage(page: Page): ResolvedImageUrl {
+    val populated = page.imageUrl
+    if (!populated.isNullOrEmpty()) {
+        return ResolvedImageUrl.of(populated, baseUrl)
+    }
+
+    if (!capabilities.customisesImageUrlChain) {
+        // Gate, not a substitute. The chain would still fetch and parse; this only refuses to point it
+        // at a value that cannot address a host. Using `page.url` as the answer instead would skip
+        // `imageUrlParse` and quietly break every source that depends on it.
+        try {
+            ResolvedImageUrl.of(page.url, baseUrl)
+        } catch (cause: MalformedImageUrlException) {
+            reportNoImageAddress(page, cause)
+            throw cause
+        }
+    }
+
+    return ResolvedImageUrl.of(getImageUrl(page), baseUrl)
+}
+
+/**
+ * Reports why a page yielded no address, naming the source and what it actually declares.
+ *
+ * "The URL is bad" is true of every malformed URL and distinguishes nothing. The reported MangaDex
+ * failure was chased across several builds because the error did not say which of the four chain
+ * entry points — if any — the extension implements, or whether `getPageList` ran at all.
+ */
+private fun HttpSource.reportNoImageAddress(page: Page, cause: MalformedImageUrlException) {
+    logcat {
+        buildString {
+            append("PageImageAddress: no image address available\n")
+            append("  source          = ${javaClass.name}\n")
+            append("  overrides       = ${capabilities.overriddenChainMethods()}\n")
+            append("  pageImageUrl    = ${page.imageUrl ?: "<null>"}\n")
+            append("  getPageListBy   = ${capabilities.declaringClassOf("getPageList")}\n")
+            append("  baseUrl         = $baseUrl\n")
+            append("  page.url        = ${page.url.ifEmpty { "<blank>" }}\n")
+            append("  reason          = ${cause.reason}")
+        }
+    }
+}
+
+/**
  * What a source **actually implements**, probed from the loaded class rather than read from metadata.
  *
  * **Why this exists, and why it is not the version number.** `ExtensionLoader` already knows each
