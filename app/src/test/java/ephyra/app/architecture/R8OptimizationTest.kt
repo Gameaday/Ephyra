@@ -68,7 +68,6 @@ class R8OptimizationTest {
             "ephyra.presentation.core.util.SourceUtilEntryPoint",
             "ephyra.presentation.core.util.view.ViewExtensionsEntryPoint",
             "ephyra.presentation.widget.WidgetEntryPoint",
-            "app.cash.quickjs.QuickJs",
         )
 
         criticalClassesToKeep.forEach { className ->
