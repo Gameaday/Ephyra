@@ -1,13 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Hierarchical push, incoming side: the destination arrives from the right.
+
+  This is the Activity-level half of the same transition MotionTokens.m3SharedAxisXEnter renders in
+  Compose. The two used to disagree — these files moved 5% of the viewport over a flat 300ms while
+  the Compose token moved 30% with an asymmetric fade — so pushing into the reader or a WebView felt
+  like a different, much smaller gesture than pushing into a nav destination. Travel, easing and
+  duration are now the token values.
+
+  Keep in step with:
+    - MotionTokens.m3SharedAxisXEnter (presentation-core/.../theme/Motion.kt)
+    - SHARED_AXIS_X_TRAVEL in the same file
+    - doc/MOTION_NAVIGATION_CONTRACT.md
+-->
 <set xmlns:android="http://schemas.android.com/apk/res/android">
     <translate
-        android:duration="300"
-        android:fromXDelta="5%p"
+        android:duration="450"
+        android:fromXDelta="30%p"
         android:interpolator="@android:interpolator/fast_out_slow_in"
         android:toXDelta="0" />
     <alpha
-        android:duration="195"
+        android:duration="300"
         android:fromAlpha="0"
-        android:interpolator="@android:interpolator/linear_out_slow_in"
+        android:interpolator="@android:interpolator/fast_out_slow_in"
+        android:startOffset="100"
         android:toAlpha="1" />
 </set>

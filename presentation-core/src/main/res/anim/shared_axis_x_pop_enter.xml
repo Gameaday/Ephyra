@@ -1,13 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Hierarchical pop, incoming side: the parent screen returns from the left.
+
+  Activity-level half of MotionTokens.m3SharedAxisXPopEnter. Deliberately shorter than the push leg —
+  the user already knows where back goes, and a full-length reverse reads as sluggish rather than
+  smooth. See doc/MOTION_NAVIGATION_CONTRACT.md.
+-->
 <set xmlns:android="http://schemas.android.com/apk/res/android">
     <translate
-        android:duration="300"
-        android:fromXDelta="-5%p"
+        android:duration="350"
+        android:fromXDelta="-30%p"
         android:interpolator="@android:interpolator/fast_out_slow_in"
         android:toXDelta="0" />
     <alpha
-        android:duration="195"
+        android:duration="200"
         android:fromAlpha="0"
-        android:interpolator="@android:interpolator/linear_out_slow_in"
+        android:interpolator="@android:interpolator/fast_out_slow_in"
         android:toAlpha="1" />
 </set>
