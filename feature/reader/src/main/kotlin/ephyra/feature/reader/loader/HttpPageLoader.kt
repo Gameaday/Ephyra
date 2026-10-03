@@ -8,7 +8,6 @@ import ephyra.core.common.util.network.PageLoadRecovery
 import ephyra.core.common.util.network.PageLoadRecoveryAction
 import ephyra.core.common.util.network.PageLoadRecoveryDecision
 import ephyra.core.common.util.network.ReResolvePacer
-import ephyra.core.common.util.network.ResolvedImageUrl
 import ephyra.core.common.util.network.TransientErrors
 import ephyra.core.common.util.network.withContext
 import ephyra.core.common.util.system.DeviceUtil

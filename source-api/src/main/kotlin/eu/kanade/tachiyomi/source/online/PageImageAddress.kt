@@ -38,10 +38,13 @@ object PageListDiagnostics {
 /**
  * Whether this source can produce an image address for a page that arrives without one.
  *
- * Two consumers need this and neither should be reaching into [SourceCapabilities]:
- * `resolvePageImage` below, and the reader's cache gate — which asks the same question about a
- * *stored* page list, to decide whether a cached list can ever be read. Naming it here keeps
- * "extensions have two image paths" inside the module that owns extensions.
+ * **Currently unused — kept for the next consumer, deliberately public.** It was written for two
+ * consumers that no longer exist: `resolvePageImage` below no longer gates on it (the gate was
+ * removed because both of its failure directions broke working sources — see
+ * `SourceCapabilities.customisesImageUrlChain`), and the reader's cache gate was replaced by
+ * `needsFreshPageList`, which answers the same question about a *stored* list from the page values
+ * alone. When a future consumer needs "will this source answer `getImageUrl` itself", read this
+ * rather than re-deriving it from the probe list.
  */
 val HttpSource.resolvesOwnPageImages: Boolean
     get() = capabilities.customisesImageUrlChain
@@ -59,15 +62,18 @@ val HttpSource.resolvesOwnPageImages: Boolean
  *
  * **The steps, and why each exists.**
  *
- * 1. `Page.imageUrl` when populated. This is the 1.6 contract: `getPageList` puts the address there.
- * 2. Otherwise, if this source customises *none* of the four chain entry points, `page.url` is not an
- *    image address and asking the inherited default would spend a request on it. That produced the
- *    reported failure — a request on a `(host, tokenUrl, fetchTime)` at-home cache key, reported as a
- *    DNS error. So the value is checked first and the failure is reported here, where the source and
- *    its overrides are known.
- * 3. Otherwise ask [HttpSource.getImageUrl]. The inherited default runs the deprecated chain, which
+ * 1. `Page.imageUrl` when populated — passed through **opaquely** (`ResolvedImageUrl.opaque`), not
+ *    resolved and not judged. This is the MangaDex contract: a 1.6 source may put a *relative path*
+ *    there that only its own `imageRequest` can join onto a host, so the host must not touch it.
+ * 2. Otherwise ask [HttpSource.getImageUrl]. The inherited default runs the deprecated chain, which
  *    *fetches* `page.url` and parses the response — so a source that relies on `imageUrlParse` still
- *    works, and its result is judged here rather than trusted.
+ *    works. A source that customises none of the chain and populates neither field will hand back
+ *    something unusable, and that is caught at the next step rather than spent on a request.
+ * 3. The value `getImageUrl` returned is resolved against `baseUrl` and judged here, because it is
+ *    the answer to *our* question and the app is the one about to request it. This is where the
+ *    old gate's protection lives now: a `(host, tokenUrl, fetchTime)` at-home cache key fetched by
+ *    the inherited default is rejected here, with the source and its overrides named, instead of
+ *    producing a DNS error the reader cannot attribute.
  *
  * **What the caller still owns.** Page-load policy — pacing, retry classification, whether a repeat
  * address is worth another round-trip — belongs to the reader and the downloader, because it depends
@@ -138,11 +144,11 @@ suspend fun HttpSource.resolvePageImage(page: Page, listOrigin: String? = null):
  * `Page.imageUrl` itself, where `Page.url` is **not** an address and asking cannot help. Only the second
  * is stale, and the page itself says which — no probe and no recorded flag.
  *
- * The second case is exactly what the reported failure was. MangaDex overrides none of the four chain
- * entry points — it cannot, because upstream removed that chain from the extension API — so it puts the
- * address in `Page.imageUrl` and keeps an at-home token cache key in `Page.url`. A list whose
- * `imageUrl` was empty therefore could not be repaired: `getImageUrl` ran the inherited chain, fetched
- * the cache key, and threw from a method the source does not implement.
+ * The second case is exactly what the reported failure was. MangaDex does not override the
+ * URL-resolving chain at all — it overrides `pageListParse` and `imageRequest` — so it puts a
+ * **relative path** in `Page.imageUrl` and keeps an at-home token cache key in `Page.url`. A list
+ * whose `imageUrl` was empty therefore could not be repaired: `getImageUrl` ran the inherited
+ * chain, fetched the cache key, and threw from a method the source does not implement.
  *
  * A *populated* `imageUrl` is judged on its own merits and does not consult `Page.url` at all, so a list
  * carrying a malformed address is discarded whether or not its `url` happens to be fetchable. Both
@@ -204,9 +210,9 @@ fun HttpSource.describePageImageRejection(
  * this source do when asked for an image URL", and the two are not the same question:
  *
  *  - an extension may override whichever chain entry points it likes regardless of the version it
- *    declares — MangaDex declares 1.6 and overrides `imageUrlRequest`/`imageUrlParse`, neither of
+ *    declares — MangaDex declares 1.6 and overrides `pageListParse`/`imageRequest`, neither of
  *    which is the modern `getImageUrl`;
- *  - a source declaring 1.4 may equally override any of the three.
+ *  - a source declaring 1.4 may equally override any of the others.
  *
  * Branching behaviour on the declared version is therefore a guess about code that is already loaded
  * and inspectable. The reported MangaDex failure is what that guess costs: treating `Page.url` as an
@@ -273,12 +279,27 @@ class SourceCapabilities internal constructor(private val type: Class<*>) {
 
     private companion object {
         /**
-         * Every entry point into the image-URL chain, not just the ones the reader calls directly.
+         * Every entry point an extension can override on the image path, not just the ones the
+         * reader calls directly.
          *
-         * Kept as one list so the probe and the diagnostic cannot disagree — the mismatch is what let
-         * a customising source be reported as `none`.
+         * **`imageRequest` is in the list even though it is not URL-resolving**, because the
+         * diagnostic reports what the source *overrides*, and a source that overrides it —
+         * MangaDex, the canonical case, joins an at-home host onto a relative `Page.imageUrl`
+         * there — is precisely a source whose `imageUrl` the host must not interpret. When this
+         * list named only the four chain entry points, the real MangaDex was reported as
+         * `overrides = none` in the on-screen rejection diagnostic, which contradicted the
+         * failure it was explaining.
+         *
+         * Kept as one list so the probe and the diagnostic cannot disagree — the mismatch is what
+         * let a customising source be reported as `none`.
          */
-        val CHAIN_ENTRY_POINTS = listOf("getImageUrl", "fetchImageUrl", "imageUrlRequest", "imageUrlParse")
+        val CHAIN_ENTRY_POINTS = listOf(
+            "getImageUrl",
+            "fetchImageUrl",
+            "imageUrlRequest",
+            "imageUrlParse",
+            "imageRequest",
+        )
 
         /**
          * Identifies [HttpSource] by name rather than by reference, because a delegated class loader
@@ -322,9 +343,10 @@ class SourceCapabilities internal constructor(private val type: Class<*>) {
  * The one addressable image URL for a [Page], together with where it came from.
  *
  * **Why this exists.** A `Page` has two URL fields and the contract does not say which one to use.
- * API sources (MangaDex is the canonical one) build `Page(index, imageUrl = absolute)` with `url`
- * left at its `""` default; HTML sources do the opposite. Reading the wrong one yields either `""`
- * or an NPE depending on which method you happened to write — so the rule was implemented twice
+ * API sources (MangaDex is the canonical one) build `Page(index, url = cacheKey, imageUrl = "/data/…")`
+ * — a **relative path**, not an absolute one — while HTML sources put the fetchable address in
+ * `url` and leave `imageUrl` empty. Reading the wrong one yields either `""` or an NPE depending on
+ * which method you happened to write — so the rule was implemented twice
  * inside `HttpSource` and **not at all** in the reader and the downloader, which are the two
  * consumers that actually run in production.
  *

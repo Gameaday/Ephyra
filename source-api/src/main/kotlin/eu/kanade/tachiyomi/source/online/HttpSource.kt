@@ -408,8 +408,9 @@ abstract class HttpSource : CatalogueSource {
      * **Call sites read a capability, never the declared `extension-lib` version.** The version says
      * whether the extension could be loaded; the capability says what it will do. They are different
      * questions, and MangaDex is the case that separates them: it declares 1.6 and overrides
-     * `imageUrlRequest`/`imageUrlParse` — neither of which is the modern `getImageUrl` — because its
-     * `Page.url` is an at-home cache key rather than an image address.
+     * `pageListParse` and `imageRequest` — not the URL-resolving chain at all — because its
+     * `Page.url` is an at-home cache key and its `Page.imageUrl` a relative path, which only its own
+     * `imageRequest` knows how to join.
      *
      * See [SourceCapabilities] for the probes and what the app must do differently for each.
      */

@@ -32,19 +32,27 @@ its own: read the "adopting a new generation" section below first.
 An extension may override whichever methods it likes regardless of the version it declares.
 
 MangaDex is the worked example. It declares `libVersion = "1.6"`, yet it does **not** override the
-modern `getImageUrl`. It overrides `fetchImageUrl` instead, because its `Page.url` is not an image
-address at all:
+modern `getImageUrl`, nor any of the deprecated URL-resolving chain. What it overrides is
+`pageListParse` — which builds `Page(index, url = "$host,$tokenRequestUrl,$now", imageUrl = "/data/…")`,
+a **relative path** — and `imageRequest`, which is the only code that knows how to read both:
 
 ```kotlin
 val (host, tokenRequestUrl, time) = page.url.split(",")
+…
+GET(mdAtHomeServerUrl + page.imageUrl, headers)
 ```
 
-That is a `(host, tokenUrl, fetchTime)` **at-home token cache key**, stored in `Page.url` by design -
+`Page.url` is a `(host, tokenUrl, fetchTime)` **at-home token cache key**, stored in `Page.url` by design -
 MangaDex@Home tokens expire after five minutes, so the extension caches the server, the URL that
-refreshes it, and when it was fetched. Only its own code knows how to read that.
+refreshes it, and when it was fetched. `Page.imageUrl` is deliberately left relative, because the
+host half of the address is only known at request time. Only its own code knows how to read either.
 
 An app that assumed `Page.url` was an image address would fetch the key, get a DNS failure for a host
-that could never exist, and report a network fault for what is a contract misunderstanding.
+that could never exist, and report a network fault for what is a contract misunderstanding. An app
+that "helpfully" resolved `Page.imageUrl` against `baseUrl` — which is what broke MangaDex completely
+here, see "`Page.imageUrl` is opaque to the host once populated" below — spliced a second host onto
+the path and failed **every** page. Both halves of that failure, and the fact that `imageRequest`
+itself is an override point the app must respect, are why the diagnostic probe enumerates it too.
 ## The image-URL chain: four entry points, and upstream is deleting them
 
 | Entry point | Signature | Role | Upstream status |
@@ -259,7 +267,10 @@ to hit the first breakage.
 
 Upstream `[Unreleased]` removes `fetchImageUrl`, `imageUrlRequest` and `imageUrlParse` with no
 replacement, and drops RxJava entirely. After that lands, an extension can only populate
-`Page.imageUrl` in `getPageList` or override `getImageUrl`. MangaDex already does the latter.
+`Page.imageUrl` in `getPageList` or override `getImageUrl` — and, as ever, override `imageRequest`,
+which upstream keeps. MangaDex already populates `Page.imageUrl` (a relative path) and overrides
+`imageRequest`; it overrides none of the removed members, which is why it kept working on upstream
+through the removal.
 
 Ephyra's `source-api` keeps the dead chain, which is correct while we support 1.4 and 1.5. When the
 minimum supported version rises, these go **together**:
@@ -272,7 +283,12 @@ minimum supported version rises, these go **together**:
 3. Drop `PageImageAddress`'s per-builder field selection with them, since `imageUrlRequest` was the
    only builder reading `page.url`.
 
-**Until then the four-entry-point probe is the correct shape, not a leftover.**
+**Until then the five-entry-point probe is the correct shape, not a leftover.** (`imageRequest` is
+in the probe list even though it is not URL-resolving: the diagnostic reports what a source
+overrides, and the sources that override `imageRequest` are precisely the ones whose `Page.imageUrl`
+the host must not interpret. When the list named only the four URL-chain entry points, the real
+MangaDex was reported as `overrides = none` in the on-screen rejection diagnostic — a claim the
+failure itself contradicted.)
 
 ## Why this is a capability model and not a flag
 

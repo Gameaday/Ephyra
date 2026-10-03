@@ -282,23 +282,15 @@ class PageLoadRecoveryStructuralTest {
         )
 
         /**
-         * The loader's resolution-then-use pairing, retargeted onto [PageImageAddress].
-         *
-         * Rewritten twice now, and both rewrites are the same lesson: this gate was pinned to the
-         * *syntax* of a resolution rather than to the pairing it protects, so it went red the moment
-         * the resolution was expressed correctly — the exact failure mode [COMPUTED_DELAY]'s comment
-         * warns about. The first version named `ImageUrlPolicy.resolve`; the second allowed any
-         * `.of(` but closed with a greedy `.*\)`, which cannot match because the value expression
-         * continues past the call's own `)` as `.url.value`.
-         *
-         * So it is line-scoped now: an assignment whose right-hand side *starts* with a resolution,
-         * followed by a local read back off the page. That is the invariant — the disk-cache key and
-         * `HttpSource.imageRequest` cannot disagree, because both come from the same field the
-         * assignment just wrote — and it holds for any resolver, present or future.
+         * **Retired with the loader-side rewrite it pinned.** `ASSIGNED_BEFORE_USE` asserted that the
+         * loader resolved `page.imageUrl` and read it back — the pairing that, correctly applied to a
+         * *populated* source field, spliced two URLs together and broke MangaDex completely (see
+         * `doc/EXTENSION_COMPATIBILITY.md`, "`Page.imageUrl` is opaque to the host once populated").
+         * The invariant it gestures at survives in the test above as its shadow: the cache key and
+         * the request are the same *raw* string read back off the page, and the loader resolves
+         * nothing. A regex cannot express "nothing writes into this field", so that is asserted
+         * directly — `!text.contains("PageImageAddress")` — instead of pinning the syntax of an
+         * assignment that must no longer exist.
          */
-        val ASSIGNED_BEFORE_USE = Regex(
-            """page\.imageUrl\s*=\s*[\w.]+\.of\(.*\R\s*val imageUrl\s*=\s*requireNotNull\(page\.imageUrl\)""",
-            RegexOption.DOT_MATCHES_ALL,
-        )
     }
 }
