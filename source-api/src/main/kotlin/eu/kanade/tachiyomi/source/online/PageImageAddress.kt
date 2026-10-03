@@ -88,12 +88,27 @@ suspend fun HttpSource.resolvePageImage(page: Page): ResolvedImageUrl {
         try {
             ResolvedImageUrl.of(page.url, baseUrl)
         } catch (cause: MalformedImageUrlException) {
-            reportNoImageAddress(page, cause)
+            reportNoImageAddress(page, returned = null, fromSource = "gate", cause = cause)
             throw cause
         }
     }
 
-    return ResolvedImageUrl.of(getImageUrl(page), baseUrl)
+    // Whatever the source hands back is judged here rather than trusted, and the failure reports what
+    // it actually returned. Previously this path threw bare, which made the two ways it can go wrong
+    // indistinguishable: a source that returns an unusable address, and a source whose override is
+    // never reached because our inherited chain ran instead. Both surface as the same sentence.
+    val returned = try {
+        getImageUrl(page)
+    } catch (e: Throwable) {
+        reportNoImageAddress(page, e, fromSource = null, cause = e)
+        throw e
+    }
+    return try {
+        ResolvedImageUrl.of(returned, baseUrl)
+    } catch (e: MalformedImageUrlException) {
+        reportNoImageAddress(page, returned, fromSource = "getImageUrl", cause = e)
+        throw e
+    }
 }
 
 /**
@@ -103,18 +118,27 @@ suspend fun HttpSource.resolvePageImage(page: Page): ResolvedImageUrl {
  * failure was chased across several builds because the error did not say which of the four chain
  * entry points — if any — the extension implements, or whether `getPageList` ran at all.
  */
-private fun HttpSource.reportNoImageAddress(page: Page, cause: MalformedImageUrlException) {
+private fun HttpSource.reportNoImageAddress(
+    page: Page,
+    returned: Any?,
+    fromSource: String?,
+    cause: Throwable,
+) {
     logcat {
         buildString {
             append("PageImageAddress: no image address available\n")
             append("  source          = ${javaClass.name}\n")
             append("  overrides       = ${capabilities.overriddenChainMethods()}\n")
+            append("  resolvedVia     = ${fromSource ?: "failed before returning"}\n")
             append("  pageImageUrl    = ${page.imageUrl ?: "<null>"}\n")
             append("  getPageList     = ${PageListDiagnostics.lastFetchSummary}\n")
             append("  getPageListBy   = ${capabilities.declaringClassOf("getPageList")}\n")
             append("  baseUrl         = $baseUrl\n")
             append("  page.url        = ${page.url.ifEmpty { "<blank>" }}\n")
-            append("  reason          = ${cause.reason}")
+            if (fromSource != null) {
+                append("  returned        = $returned\n")
+            }
+            append("  reason          = ${(cause as? MalformedImageUrlException)?.reason ?: cause::class.simpleName}")
         }
     }
 }
