@@ -325,19 +325,7 @@ object MotionTokens {
             ),
         )
 
-    /**
-     * Material 3 Fade Through enter transition for peer navigation (e.g. bottom nav tabs).
-     * Smoothly scales up from 96% with slight entry delay to let the departing screen clear.
-     *
-     * Retained as the fallback for route pairs that are not two peers on the tab axis (a nested
-     * screen reached inside a tab), where a horizontal slide would imply an ordering that does not
-     * exist.
-     */
-    fun m3FadeThroughEnter(): EnterTransition =
-        fadeIn(
-            animationSpec = tween(
-                durationMillis = DURATION_MEDIUM_2,
-// --- Hierarchical (shared axis X) ---
+    // --- Hierarchical (shared axis X) ---
 
     /**
      * How far a hierarchical page travels, as a fraction of the viewport.
@@ -410,6 +398,9 @@ object MotionTokens {
      * exist.
      */
     fun m3FadeThroughEnter(): EnterTransition =
+        fadeIn(
+            animationSpec = tween(
+                durationMillis = DURATION_MEDIUM_2,
                 delayMillis = DURATION_SHORT_2,
                 easing = EasingEmphasizedDecelerate,
             ),

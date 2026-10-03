@@ -126,9 +126,6 @@ internal fun tabSlideForward(fromRoute: String?, toRoute: String?): Boolean? {
     return to > from
 }
 
-
-)
-
 @Composable
 fun HomeScreen(
     externalNavController: NavHostController = LocalNavController.current,
