@@ -10,10 +10,19 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 
 /**
- * Default debounce for reactive search queries (mirrors the historic
- * SEARCH_DEBOUNCE_MILLIS values used across feature modules).
+ * The one debounce value for reactive search queries.
+ *
+ * There used to be two: this operator defaulted to 300ms while `SEARCH_DEBOUNCE_MILLIS` in the app
+ * bar was 250ms, and Library and Sources used the app-bar constant while everything routed through
+ * this operator used 300ms. Two numbers for the same interaction means the same typing speed feels
+ * different depending on which screen you are on, and neither value is visible where the other is
+ * defined. Both names now resolve to this constant so there is exactly one place to change it.
  */
-const val DEFAULT_SEARCH_DEBOUNCE_MILLIS = 300L
+const val SEARCH_DEBOUNCE_MILLIS = 300L
+
+/** @deprecated Use [SEARCH_DEBOUNCE_MILLIS]; kept so existing call sites keep compiling. */
+@Deprecated("Use SEARCH_DEBOUNCE_MILLIS", ReplaceWith("SEARCH_DEBOUNCE_MILLIS"))
+const val DEFAULT_SEARCH_DEBOUNCE_MILLIS = SEARCH_DEBOUNCE_MILLIS
 
 /**
  * Reactive search operator — the debounced, distinct-until-changed, flatMapLatest
@@ -36,7 +45,7 @@ const val DEFAULT_SEARCH_DEBOUNCE_MILLIS = 300L
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 fun <T> Flow<String?>.searchResults(
-    debounce: Long = DEFAULT_SEARCH_DEBOUNCE_MILLIS,
+    debounce: Long = SEARCH_DEBOUNCE_MILLIS,
     transform: suspend (query: String) -> Flow<T>,
 ): Flow<T> = this
     .map { it.orEmpty() }
