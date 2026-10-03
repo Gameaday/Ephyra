@@ -238,6 +238,7 @@ internal class HttpPageLoader(
     override suspend fun getPages(): List<ReaderPage> {
         check(!isRecycled)
         val domainChapter = chapter.chapter
+        var isCacheHit = false
         val pages = try {
             val cachedPages = chapterCache.getPageListFromCache(domainChapter)
             // A cache hit is only a hit if the list it holds still satisfies the URL contract. The
@@ -251,6 +252,7 @@ internal class HttpPageLoader(
                 )
             ) {
                 // All image URLs are already resolved: the recycle() save can be skipped.
+                isCacheHit = true
                 cacheHadMissingImageUrls = cachedPages.any { it.imageUrl.isNullOrEmpty() }
                 cachedPages
             } else {
@@ -266,6 +268,16 @@ internal class HttpPageLoader(
             }
             fetchAndPersist(domainChapter)
         }
+        // Which list the reader ended up holding, recorded rather than inferred from `getPageList`:
+        // the fetch summary and the page in hand need not be the same list, and nothing on screen
+        // said which one this was. "cache" with pages lacking addresses is the case worth naming.
+        PageListDiagnostics.recordOrigin(
+            buildString {
+                append("from ").append(if (isCacheHit) "cache" else "source fetch")
+                append(", ").append(pages.size).append(" page(s) held, ")
+                append(pages.count { !it.imageUrl.isNullOrEmpty() }).append(" with an address")
+            },
+        )
         return pages.mapIndexed { index, page ->
             // Don't trust sources and use our own indexing
             ReaderPage(index, page.url, page.imageUrl)

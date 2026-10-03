@@ -32,6 +32,23 @@ object PageListDiagnostics {
     fun record(total: Int, withAddress: Int) {
         lastFetchSummary = "$total page(s), $withAddress with an address"
     }
+
+    /**
+     * Which list the reader is actually holding, recorded by the loader when it chooses.
+     *
+     * Needed because `lastFetchSummary` describes a *fetch* while the failure describes a *page*, and
+     * the two need not be the same list: a list persisted by an earlier open can be the one in hand.
+     * Without this, "21 pages with an address" and "this page has none" could each be true of
+     * different objects, with nothing on screen saying which list is which.
+     */
+    @Volatile
+    @JvmStatic
+    var lastListOrigin: String = "<no page list chosen>"
+
+    @JvmStatic
+    fun recordOrigin(origin: String) {
+        lastListOrigin = origin
+    }
 }
 
 /**
@@ -136,7 +153,10 @@ fun HttpSource.describePageImageRejection(
 ): String = buildString {
     append("Why this was rejected:")
     append("\n  at            = $at")
-    append("\n  source        = ${javaClass.name}")
+    // `javaClass` must name the source explicitly: inside `buildString` the receiver is the
+    // StringBuilder, so a bare `javaClass` reported `java.lang.StringBuilder` — the one field that
+    // was wrong in every report, and the one that identifies which source failed.
+    append("\n  source        = ${this@describePageImageRejection.javaClass.name}")
     append("\n  overrides     = ${capabilities.overriddenChainMethods()}")
     append("\n  resolvedVia   = ${resolvedVia ?: "not consulted"}")
     append("\n  pageImageUrl  = ${page.imageUrl ?: "<null>"}")
@@ -145,6 +165,7 @@ fun HttpSource.describePageImageRejection(
         append("\n  returned      = $returned")
     }
     append("\n  getPageList   = ${PageListDiagnostics.lastFetchSummary}")
+    append("\n  listOrigin    = ${PageListDiagnostics.lastListOrigin}")
     append("\n  getPageListBy = ${capabilities.declaringClassOf("getPageList")}")
     append("\n  baseUrl       = $baseUrl")
 }
