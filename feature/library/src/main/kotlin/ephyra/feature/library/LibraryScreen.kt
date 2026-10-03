@@ -174,6 +174,7 @@ fun LibraryScreen(
                     selection = state.selection,
                     contentPadding = contentPadding,
                     currentPage = state.coercedActiveCategoryIndex,
+                    categoryIndexLoaded = state.isActiveCategoryIndexLoaded,
                     hasActiveFilters = state.hasActiveFilters,
                     showPageTabs = state.showCategoryTabs || !state.searchQuery.isNullOrEmpty(),
                     deadSourceCount = state.deadSourceCount,

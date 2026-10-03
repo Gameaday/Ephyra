@@ -156,7 +156,16 @@ class LibraryViewModel @Inject constructor(
         // The combine block below will re-emit with the correct index once loaded.
         viewModelScope.launchIO {
             val index = libraryPreferences.lastUsedCategory().get()
-            updateState { it.copy(activeCategoryIndex = index) }
+            updateState {
+                it.copy(
+                    activeCategoryIndex = index,
+                    // Only now is [activeCategoryIndex] the persisted value rather than the default.
+                    // The pager uses this to decide when it may follow the index and when it may
+                    // persist it: before this is true, page 0 is just the un-loaded default and
+                    // echoing it back would overwrite the category the user last used.
+                    isActiveCategoryIndexLoaded = true,
+                )
+            }
         }
 
         viewModelScope.launchIO {
@@ -1011,6 +1020,7 @@ class LibraryViewModel @Inject constructor(
         val filterCompleted: TriState = TriState.DISABLED,
         val filterSourceHealthDead: TriState = TriState.DISABLED,
         private val activeCategoryIndex: Int = 0,
+        val isActiveCategoryIndexLoaded: Boolean = false,
         private val groupedFavorites: PersistentMap<Category, PersistentList<Long>> = persistentMapOf(),
     ) {
         val displayedCategories: PersistentList<Category> = groupedFavorites.keys.toPersistentList()
