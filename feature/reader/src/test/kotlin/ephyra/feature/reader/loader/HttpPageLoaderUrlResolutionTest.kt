@@ -11,6 +11,7 @@ import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.model.SChapter
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.online.HttpSource
+import eu.kanade.tachiyomi.source.online.PageImageAddress
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -41,11 +42,19 @@ import java.nio.file.Path
  * being available at the source site is not in tension with it.
  *
  * **Why the other two tests are not enough.** `ImageUrlPolicyResolveTest` pins the rule and
- * `HttpSourceImageUrlRequestTest` pins the default request builders, but neither proves the *loader*
- * applies it — and three paths reach the loader without passing through either: a source that
+ * `HttpSourceImageUrlRequestTest` pins the default request builders, but neither proves the whole
+ * path applies it — and three routes reach a request without passing through either: a source that
  * overrides `getImageUrl` and returns a relative string, a source that sets `Page.imageUrl` itself in
  * `pageListParse`, and a page whose URL was restored from the chapter cache by a previous session.
  * Each is one `imageUrl` away from the reported crash, so each is a case here.
+ *
+ * **Where resolution happens — and where it must not.** The loader never rewrites a populated
+ * `Page.imageUrl` (it is opaque to the host; see `MangaDexOpaqueImageUrlContractTest` for the source
+ * whose own `imageRequest` depends on the raw value), so the recorded address in these tests is the
+ * *raw* spelling, and the resolved request is asserted separately through the boundary
+ * `HttpSource.imageRequest` applies. That split is the contract: the page, the disk-cache key, and
+ * the persisted page list all carry the source's exact string, and the request — and only the
+ * request — is resolved.
  *
  * **What is asserted.** The address recorded by [ChapterCache.fetchAndCacheImage] — the last point
  * before bytes are requested, and the string the disk cache is keyed on. Asserting there rather than
@@ -84,29 +93,57 @@ class HttpPageLoaderUrlResolutionTest {
 
     /**
      * A source may hand back the image URL directly from `pageListParse` — `img.attr("src")` rather
-     * than `absUrl("src")` is ordinary source code — in which case `getImageUrl` is never called and
-     * the `HttpSource` request builders are never reached. The loader has to be the one that
-     * resolves it.
+     * than `absUrl("src")` is ordinary source code — in which case `getImageUrl` is never called.
+     * The loader must not resolve it itself (a populated `Page.imageUrl` is opaque to the host —
+     * MangaDex's is a relative path its own `imageRequest` joins onto an at-home host), but the
+     * request must still end up absolute, so both halves are asserted: the loader carries the value
+     * to the cache exactly as the source spelled it, and the boundary `HttpSource.imageRequest` —
+     * what `source.getImage` actually runs for a source that does not override it — resolves it.
      */
     @Test
-    fun `a relative image URL supplied with the page list is resolved by the loader`() = runBlocking {
-        val fixture = Fixture(pageListImageUrl = "//cdn.example.com/data/1.jpg")
+    fun `a relative image URL supplied with the page list is resolved by the request builder`() =
+        runBlocking {
+            val fixture = Fixture(pageListImageUrl = "//cdn.example.com/data/1.jpg")
 
-        assertEquals("https://cdn.example.com/data/1.jpg", fixture.loadAndRecordRequestedUrl())
-    }
+            // The cache key is the raw spelling the source produced — never rewritten by the loader.
+            assertEquals("//cdn.example.com/data/1.jpg", fixture.loadAndRecordRequestedUrl())
+            // And the request the base imageRequest will build from that page is the resolved one.
+            assertEquals(
+                "https://cdn.example.com/data/1.jpg",
+                PageImageAddress.of(
+                    fixture.pageForTheResolvedAssertion(),
+                    BASE,
+                    PageImageAddress.Field.IMAGE_URL,
+                ).url.value,
+            )
+        }
 
     /**
-     * The page list is cached across sessions, so a URL stored by a build that did not resolve is
-     * read back by one that does. The reader must not need its cache cleared to benefit from the
-     * fix, and the disk-cache key has to be the absolute string either way or the same bytes are
-     * stored twice under two spellings.
+     * The page list is cached across sessions, so a URL stored by an earlier build is read back by
+     * this one. The loader does not rewrite a restored value either — for the same reason as above,
+     * it cannot know which of the two fields the source's own `imageRequest` will interpret — but
+     * the boundary resolves it, so the request is absolute and the page still reaches `Ready`.
+     *
+     * The key spelling being the raw string also means the same bytes are keyed consistently within
+     * a build: whatever `page.imageUrl` holds is what `isImageInCache` and `getImageFile` are both
+     * asked. The one cost is historical — a cache written by the build that resolved in the loader
+     * holds the absolute spelling — and the chapter cache is a transient store, so it pays once.
      */
     @Test
-    fun `a relative URL restored from the page list cache is resolved by the loader`() = runBlocking {
-        val fixture = Fixture(cachedPageImageUrl = "/data/1.jpg")
+    fun `a relative URL restored from the page list cache is resolved by the request builder`() =
+        runBlocking {
+            val fixture = Fixture(cachedPageImageUrl = "/data/1.jpg")
 
-        assertEquals("https://mangadex.org/data/1.jpg", fixture.loadAndRecordRequestedUrl())
-    }
+            assertEquals("/data/1.jpg", fixture.loadAndRecordRequestedUrl())
+            assertEquals(
+                "https://mangadex.org/data/1.jpg",
+                PageImageAddress.of(
+                    fixture.pageForTheResolvedAssertion(),
+                    BASE,
+                    PageImageAddress.Field.IMAGE_URL,
+                ).url.value,
+            )
+        }
 
     /**
      * The counterweight: an address that already works is passed through untouched. A fix that
@@ -366,8 +403,19 @@ class HttpPageLoaderUrlResolutionTest {
             return requireNotNull(cache.requested) { "the image was never requested" }
         }
 
+        /**
+         * The page as the loader left it, for asserting what the boundary `HttpSource.imageRequest`
+         * would build from it. The loader must have run first; the value the loader left in
+         * `imageUrl` is the whole subject of the split these tests pin.
+         */
+        fun pageForTheResolvedAssertion(): Page =
+            requireNotNull(lastPage) { "loadAndRecordRequestedUrl must run before the page is read" }
+
         /** Image requests issued by this fixture, for asserting that no request was spent on a bad value. */
         val imageRequestCount: Int get() = cache.imageRequestCount
+
+        /** The page the last `loadFirstPage` settled, held for `pageForTheResolvedAssertion`. */
+        private var lastPage: ReaderPage? = null
 
         suspend fun loadFirstPage(): ReaderPage {
             val pages = runBlocking { loader.getPages() }
@@ -386,6 +434,7 @@ class HttpPageLoaderUrlResolutionTest {
                 delay(POLL_INTERVAL_MS)
             }
             loader.recycle()
+            lastPage = page
             return page
         }
     }
