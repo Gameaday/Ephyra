@@ -35,19 +35,30 @@ import eu.kanade.tachiyomi.source.model.Page
 class SourceCapabilities internal constructor(private val type: Class<*>) {
 
     /**
-     * Whether this source customises the image-URL chain, through any of its three entry points.
+     * Whether this source customises the image-URL chain, through any of its four entry points.
      *
-     * `getImageUrl` is the modern one. The deprecated chain has two of its own — `imageUrlRequest`
-     * chooses what to fetch and `imageUrlParse` reads the address out of the response — and overriding
-     * either is a complete customisation on its own.
+     * `getImageUrl` is the modern one. The deprecated chain has **three** of its own, and this list
+     * was short by one until the reported failure proved it:
+     *
+     * - `fetchImageUrl` — the whole chain, replaced wholesale. The most direct override available,
+     *   and the one a source that resolves its own addressing reaches for first.
+     * - `imageUrlRequest` — chooses what to fetch.
+     * - `imageUrlParse` — reads the address out of the response.
+     *
+     * **How the fourth was found.** The probe listed three and reported MangaDex as `overrides=none`,
+     * so the reader refused its pages. But MangaDex does customise — through `fetchImageUrl`, which
+     * reads the `(host, tokenRequestUrl, fetchTime)` at-home cache key it keeps in `Page.url`. A
+     * probe that answers "no" for a source that answers "yes" is worse than no probe at all: it
+     * turns a working source into a refusal, and it does so with a confident diagnostic attached.
      *
      * **What the app must do differently.** It must not assume `Page.url` is an image address for such
-     * a source: MangaDex keeps a `(host, tokenRequestUrl, fetchTime)` at-home cache key there, because
-     * MangaDex@Home tokens expire after five minutes, and only its own `imageUrlRequest` knows how to
-     * read it. The app's job is to fetch and parse through the chain, not to second-guess the field.
+     * a source: MangaDex keeps that at-home cache key there, because MangaDex@Home tokens expire after
+     * five minutes, and only its own override knows how to read it. The app's job is to fetch and
+     * parse through the chain, not to second-guess the field.
      */
     val customisesImageUrlChain: Boolean by lazy {
-        overrides("getImageUrl") || overrides("imageUrlRequest") || overrides("imageUrlParse")
+        overrides("getImageUrl") || overrides("fetchImageUrl") ||
+            overrides("imageUrlRequest") || overrides("imageUrlParse")
     }
 
     /**
@@ -79,7 +90,13 @@ class SourceCapabilities internal constructor(private val type: Class<*>) {
     }
 
     private companion object {
-        val CHAIN_ENTRY_POINTS = listOf("getImageUrl", "imageUrlRequest", "imageUrlParse")
+        /**
+         * Every entry point into the image-URL chain, not just the ones the reader calls directly.
+         *
+         * Kept as one list so the probe and the diagnostic cannot disagree — the mismatch is what let
+         * a customising source be reported as `none`.
+         */
+        val CHAIN_ENTRY_POINTS = listOf("getImageUrl", "fetchImageUrl", "imageUrlRequest", "imageUrlParse")
     }
 
     /**

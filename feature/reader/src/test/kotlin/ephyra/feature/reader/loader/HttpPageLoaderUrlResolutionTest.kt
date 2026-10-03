@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import rx.Observable
 import java.io.File
 import java.nio.file.Path
 
@@ -536,6 +537,39 @@ class HttpPageLoaderUrlResolutionTest {
     }
 
     /**
+     * The fourth entry point, and the one the reported failure turned on.
+     *
+     * `fetchImageUrl` replaces the entire chain — no request is built, no response is parsed — so a
+     * source resolving its own addressing reaches for it first. MangaDex does, to read the at-home
+     * cache key it keeps in `Page.url`.
+     *
+     * The probe omitted it, so MangaDex was reported as `overrides=none` and the reader refused pages
+     * that were perfectly readable. A probe that answers "no" for a source that answers "yes" is
+     * worse than no probe: it breaks a working source and does so while sounding confident.
+     */
+    @Test
+    fun `a source that overrides only fetchImageUrl is recognised`() {
+        assertTrue(FetchOnlySource("https://cdn.example.com/1.jpg").capabilities.customisesImageUrlChain)
+    }
+
+    /** The counterweight: a source that customises nothing is still reported as not customising. */
+    @Test
+    fun `a source that overrides nothing in the chain is not reported as customising`() {
+        assertFalse(
+            PlainImageUrlSource("https://cdn.example.com/1.jpg", null)
+                .capabilities.customisesImageUrlChain,
+        )
+    }
+
+    /** The probe and the diagnostic read the same list, so they cannot disagree. */
+    @Test
+    fun `the reported entry points include fetchImageUrl`() {
+        val reported = FetchOnlySource("https://cdn.example.com/1.jpg")
+            .capabilities.overriddenChainMethods()
+        assertTrue(reported.contains("fetchImageUrl"), "reported entry points were: $reported")
+    }
+
+    /**
      * The counterweight: a source that customises nothing is not recognised, because the app's own
      * chain is what will run, and that is the case the gate exists for.
      */
@@ -560,6 +594,26 @@ class HttpPageLoaderUrlResolutionTest {
         private val url: String,
     ) : PlainImageUrlSource(url, null) {
         override fun imageUrlRequest(page: Page): Request = GET(url, headers)
+    }
+
+    /**
+     * A source that replaces the whole chain by overriding `fetchImageUrl`.
+     *
+     * **This is the shape that was missed, and the reason the reported MangaDex failure happened.**
+     * The capability probe originally listed three entry points and omitted this one, so a source
+     * resolving its own addressing this way was reported as `overrides=none`. The reader then refused
+     * its pages as unreadable — the probe did not merely fail to help, it converted a working source
+     * into a failure and attached a confident diagnostic saying no customisation existed.
+     *
+     * It is the most direct override available: no request is built and no response is parsed, so it
+     * is what a source reaches for when it already knows the address from its own state. MangaDex
+     * does exactly this to read the at-home cache key it keeps in `Page.url`.
+     */
+    private class FetchOnlySource(
+        private val url: String,
+    ) : PlainImageUrlSource(url, null) {
+        @Suppress("DEPRECATION")
+        override fun fetchImageUrl(page: Page): Observable<String> = Observable.just(url)
     }
 
     /**
