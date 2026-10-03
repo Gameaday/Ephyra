@@ -7,8 +7,10 @@
 | Route pair | Cover | Non-cover content | Back |
 |---|---|---|---|
 | Library ↔ Series | Shared cover only | Held still (no fade) | Same model, shorter timeline |
+| Any cover list ↔ Series | Shared cover only | Held still (no fade) | Same model, shorter timeline |
 | Tab peer | None | Directional horizontal slide | Tab history model, same slide reversed |
-| Hierarchical destination | Optional shared element | Shared axis | Reverse shared axis |
+| Hierarchical destination | Optional shared element | Shared axis X | Reverse shared axis X |
+| Activity destination (reader, WebView) | None | Shared axis X, same tokens | Reverse shared axis X, shorter |
 | Compact pane → expanded pane | Optional item identity | Directional pane | Directional reverse |
 | Sheet/dialog → parent | None | Component motion | Parent state |
 
@@ -31,6 +33,46 @@ direction helper is therefore tri-state — forward, backward, or *not a tab pai
 pair" can never be silently folded into "backward".
 
 Under reduced motion the slide collapses to an instant state change, like every other transition.
+
+## A series is reachable from every list that shows its cover
+
+The shared-cover pair is not "Library to Series". It is **any destination that both renders
+`MangaCover` with the manga's id and provides an animated-visibility scope**, to Series and back.
+`MainActivity.hostsSharedCover` names that set.
+
+Two obligations make a destination a host, and a destination that satisfies only one of them is a
+defect rather than a partial success:
+
+- it must render the cover with the id it will open, or the shared element has no counterpart;
+- it must provide `LocalNavAnimatedVisibilityScope`, or the element cannot participate at all.
+
+When only one end has the element the transition does **not** degrade gracefully: the pair's
+container motion is a deliberate no-op, so with nothing left to animate the whole change becomes a
+cut. That is why the pair was widened from the tab shell to source results and global search, and why
+each host's scope is asserted.
+
+`MangaDetails` is deliberately excluded even though it satisfies both obligations, because the
+direction rule reads "leaving a series page" as backward and a forward move to a *related* series
+would then take the shorter return timeline.
+
+## An Activity destination uses the same tokens as a Compose one
+
+The reader (and the WebView) are separate Activities, so they cannot use the Compose transition. The
+window animation is the only motion available, and it must be the same movement: same travel, same
+easing, same durations.
+
+Two rules follow:
+
+- **both halves are set.** A destination that overrides only its close transition cuts on the way in
+  and slides on the way out. `ReaderActivity` did exactly that — `OVERRIDE_TRANSITION_OPEN` was
+  never registered — which is invisible in review because the code that *is* present looks correct.
+- **the XML is a rendering of the token, not a second definition.** Travel is `SHARED_AXIS_X_TRAVEL`;
+  the four `shared_axis_x_*.xml` files moved 5% of the viewport over a flat 300ms while the Compose
+  token moved 30% with an asymmetric fade, so pushing into the reader was a smaller gesture than
+  pushing into a nav destination. The distance is now asserted against the token in both places.
+
+Reduced motion needs no branch in the Activity path: the platform honours the animator scale and
+collapses these to an instant change on its own.
 
 For Series ↔ Library:
 
@@ -128,3 +170,15 @@ Each transition pair records:
 - predictive-back behavior;
 - reduced-motion behavior;
 - screenshot/frame evidence.
+
+## Gates
+
+Two structural tests read the source for the rules above, because each one is a fact about what the
+code does *not* do and no unit test can drive the transition:
+
+- `LibrarySeriesTransitionTest` — the container is a real no-op, the cover's ratio is resolved before
+  it is shared, `MainActivity` consults `MotionPolicy` rather than re-deciding, and both directions of
+  the pair resolve over one predicate.
+- `MotionConsistencyTest` — the reader animates both halves; the Activity animations travel the token
+  distance; every shared-cover host provides an animated-visibility scope; and each list that opens a
+  series keys its cover on the id it opens.
