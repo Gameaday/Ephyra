@@ -100,7 +100,12 @@ suspend fun HttpSource.resolvePageImage(page: Page, listOrigin: String? = null):
         getImageUrl(page)
     } catch (e: Throwable) {
         throw e.asContextualised(
-            describePageImageRejection(page, at = "resolvePageImage/getImageUrl", resolvedVia = "getImageUrl (threw)"),
+            describePageImageRejection(
+                page,
+                at = "resolvePageImage/getImageUrl",
+                resolvedVia = "getImageUrl (threw)",
+                listOrigin = listOrigin,
+            ),
         )
     }
     return try {
@@ -112,6 +117,7 @@ suspend fun HttpSource.resolvePageImage(page: Page, listOrigin: String? = null):
                 at = "resolvePageImage/getImageUrl",
                 returned = returned,
                 resolvedVia = "getImageUrl",
+                listOrigin = listOrigin,
             ),
         )
     }
