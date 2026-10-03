@@ -46,17 +46,46 @@ class InjectableViewModelDispatcherTest {
     fun `the allowlist matches the code rather than drifting from it`() {
         ALLOWED.forEach { name ->
             assertTrue(
-                File(repositoryRoot(), "feature").walkTopDown()
-                    .any { it.name == "$name.kt" && it.absolutePath.contains("\\src\\main\\") },
+                productionViewModels().any { it.name == "$name.kt" },
                 "allowlist names '$name' but no such production ViewModel exists; remove the entry",
             )
         }
     }
 
-    private fun newViolations(): List<String> =
+    /**
+     * The predicate these gates are built on has to work on the runner that executes them.
+     *
+     * **Why this test exists.** Both gates matched `\\src\\main\\` — Windows separators — against
+     * `File.absolutePath`. On a Linux runner that string never occurs, so `walkTopDown()` matched
+     * nothing: the violation gate passed having inspected zero files, and the allowlist gate failed
+     * on every entry for the same reason. Both looked authoritative and were checking nothing. It
+     * surfaced only because CI is not Windows.
+     *
+     * Asserted against a file that definitely exists, so a future edit that makes this inert again
+     * fails here rather than passing silently.
+     */
+    @Test
+    fun `production sources are recognised on any platform`() {
+        val recognised = productionViewModels()
+        assertTrue(
+            recognised.isNotEmpty(),
+            "the production-source filter matched nothing, so every gate using it is inert",
+        )
+        assertTrue(
+            recognised.all { it.path.replace(File.separatorChar, '/').contains("/src/main/") },
+            "the filter let a non-production file through",
+        )
+    }
+
+    /** Production ViewModels under `feature`, wherever the build is running. */
+    private fun productionViewModels(): List<File> =
         File(repositoryRoot(), "feature").walkTopDown()
             .filter { it.isFile && it.extension == "kt" && it.name.endsWith("ViewModel.kt") }
-            .filter { it.absolutePath.contains("\\src\\main\\") }
+            .filter { it.path.replace(File.separatorChar, '/').contains("/src/main/") }
+            .toList()
+
+    private fun newViolations(): List<String> =
+        productionViewModels()
             .filter { file ->
                 val body = file.readText()
                 val launchesHardcoded = Regex("""viewModelScope\.launch(IO|\(Dispatchers\.)""").containsMatchIn(body)
