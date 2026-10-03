@@ -12,6 +12,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
@@ -290,8 +292,46 @@ object MotionTokens {
         }
 
     /**
+     * Material 3 shared-axis X enter transition for peer tab navigation.
+     *
+     * The five bottom-nav destinations are ordered peers, so a tab change is a horizontal move
+     * between adjacent pages rather than an unrelated destination swap. Sliding in from the side
+     * that matches the tab order makes the tab bar and the content read as one surface, and makes
+     * returning to a previous tab a deliberate reverse move instead of a second fade.
+     *
+     * [forward] is true when the target tab sits to the right of the origin tab (higher index), so
+     * the incoming page arrives from the right edge; false reverses it.
+     *
+     * Enter and exit share one duration and complementary easing so the two pages travel together
+     * and settle at the same instant — the failure mode of the old fade-through was that the two
+     * halves resolved at different points and read as discrete rather than cohesive.
+     */
+    fun m3TabSlideEnter(forward: Boolean): EnterTransition =
+        slideInHorizontally(
+            initialOffsetX = { width -> if (forward) width else -width },
+            animationSpec = tween(
+                durationMillis = DURATION_MEDIUM_2,
+                easing = EasingEmphasizedDecelerate,
+            ),
+        )
+
+    /** Matching outgoing half of [m3TabSlideEnter]; travels the opposite way across the viewport. */
+    fun m3TabSlideExit(forward: Boolean): ExitTransition =
+        slideOutHorizontally(
+            targetOffsetX = { width -> if (forward) -width else width },
+            animationSpec = tween(
+                durationMillis = DURATION_MEDIUM_2,
+                easing = EasingEmphasizedAccelerate,
+            ),
+        )
+
+    /**
      * Material 3 Fade Through enter transition for peer navigation (e.g. bottom nav tabs).
      * Smoothly scales up from 96% with slight entry delay to let the departing screen clear.
+     *
+     * Retained as the fallback for route pairs that are not two peers on the tab axis (a nested
+     * screen reached inside a tab), where a horizontal slide would imply an ordering that does not
+     * exist.
      */
     fun m3FadeThroughEnter(): EnterTransition =
         fadeIn(

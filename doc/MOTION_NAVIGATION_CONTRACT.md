@@ -7,10 +7,30 @@
 | Route pair | Cover | Non-cover content | Back |
 |---|---|---|---|
 | Library ↔ Series | Shared cover only | Held still (no fade) | Same model, shorter timeline |
-| Tab peer | None | Fade through | Tab history model |
+| Tab peer | None | Directional horizontal slide | Tab history model, same slide reversed |
 | Hierarchical destination | Optional shared element | Shared axis | Reverse shared axis |
 | Compact pane → expanded pane | Optional item identity | Directional pane | Directional reverse |
 | Sheet/dialog → parent | None | Component motion | Parent state |
+
+## Tab peers slide along the bar, they do not fade
+
+The five bottom-nav destinations are ordered, not merely adjacent, so a tab change is a move along
+one axis rather than a swap of unrelated screens. A fade-through is the right answer for peers with
+no order; here it made each tab read as a discrete screen that happened to replace the previous one,
+and made going back a second dissolve instead of a reversal.
+
+The direction is derived from each tab's index in the bar, so the incoming page always enters from
+the side the tapped button sits on and returning to an earlier tab is the same movement played the
+other way. Enter and exit share one duration with complementary easing, so the two pages travel
+together and settle at the same instant — two halves resolving at different points is what reads as
+discrete rather than cohesive.
+
+A destination that is not a tab root (a nested screen reached inside a tab) keeps the fade-through:
+it has no position on the tab axis, and sliding it would imply an ordering that does not exist. The
+direction helper is therefore tri-state — forward, backward, or *not a tab pair* — so "not a tab
+pair" can never be silently folded into "backward".
+
+Under reduced motion the slide collapses to an instant state change, like every other transition.
 
 For Series ↔ Library:
 
