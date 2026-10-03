@@ -22,6 +22,7 @@ import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.source.online.PageImageAddress
 import eu.kanade.tachiyomi.source.online.PageListDiagnostics
+import eu.kanade.tachiyomi.source.online.reportPageImageRejected
 import eu.kanade.tachiyomi.source.online.resolvePageImage
 import eu.kanade.tachiyomi.source.online.resolvesOwnPageImages
 import kotlinx.coroutines.CancellationException
@@ -609,7 +610,18 @@ internal class HttpPageLoader(
                 // `url` here as a substitute would mean the loader and the source request builder
                 // disagree about which field holds the address, which is the divergence from the
                 // reference implementation this was corrected for.
-                page.imageUrl = PageImageAddress.of(page, source.baseUrl, PageImageAddress.Field.IMAGE_URL).url.value
+                page.imageUrl = try {
+                    PageImageAddress.of(page, source.baseUrl, PageImageAddress.Field.IMAGE_URL).url.value
+                } catch (cause: MalformedImageUrlException) {
+                    // The other two judgement sites live inside `resolvePageImage` and report there.
+                    // This one is reached from a page whose `imageUrl` was already populated — restored
+                    // from the chapter cache, or set by the source — so the resolve-and-ask branch above
+                    // never runs and nothing else would explain the failure. The reported MangaDex case
+                    // arrived here: the page carried an address that cannot address a host, and the only
+                    // thing reported was the bare reason, with nothing saying where it came from.
+                    source.reportPageImageRejected(page, cause, "restored page")
+                    throw cause
+                }
                 val imageUrl = requireNotNull(page.imageUrl) { "Image URL is null after being fetched from source" }
 
                 recovery.onResolved(imageUrl)

@@ -88,7 +88,7 @@ suspend fun HttpSource.resolvePageImage(page: Page): ResolvedImageUrl {
         try {
             ResolvedImageUrl.of(page.url, baseUrl)
         } catch (cause: MalformedImageUrlException) {
-            reportNoImageAddress(page, returned = null, fromSource = "gate", cause = cause)
+            reportPageImageRejected(page, cause, at = "resolvePageImage/gate")
             throw cause
         }
     }
@@ -100,45 +100,63 @@ suspend fun HttpSource.resolvePageImage(page: Page): ResolvedImageUrl {
     val returned = try {
         getImageUrl(page)
     } catch (e: Throwable) {
-        reportNoImageAddress(page, e, fromSource = null, cause = e)
+        reportPageImageRejected(
+            page,
+            e as? MalformedImageUrlException
+                ?: MalformedImageUrlException(
+                    page.imageUrl ?: "<null>",
+                    "getImageUrl threw ${e::class.simpleName}",
+                ),
+            at = "resolvePageImage/getImageUrl",
+            resolvedVia = "getImageUrl (threw)",
+        )
         throw e
     }
     return try {
         ResolvedImageUrl.of(returned, baseUrl)
     } catch (e: MalformedImageUrlException) {
-        reportNoImageAddress(page, returned, fromSource = "getImageUrl", cause = e)
+        reportPageImageRejected(
+            page,
+            e,
+            at = "resolvePageImage/getImageUrl",
+            returned = returned,
+            resolvedVia = "getImageUrl",
+        )
         throw e
     }
 }
 
 /**
- * Reports why a page yielded no address, naming the source and what it actually declares.
+ * Reports a page that yielded no usable address, naming the source and where the value came from.
  *
- * "The URL is bad" is true of every malformed URL and distinguishes nothing. The reported MangaDex
- * failure was chased across several builds because the error did not say which of the four chain
- * entry points — if any — the extension implements, or whether `getPageList` ran at all.
+ * Every judgement site must route through here. Two of the three did not, and the third is the one
+ * that was actually throwing: a page whose `imageUrl` was already populated skips the resolve-and-ask
+ * branch entirely, so a failure there reported nothing beyond the bare reason — which is why several
+ * rounds of device reports described a value without ever showing where it had come from.
  */
-private fun HttpSource.reportNoImageAddress(
+fun HttpSource.reportPageImageRejected(
     page: Page,
-    returned: Any?,
-    fromSource: String?,
-    cause: Throwable,
+    cause: MalformedImageUrlException,
+    at: String,
+    returned: String? = null,
+    resolvedVia: String? = null,
 ) {
     logcat {
         buildString {
             append("PageImageAddress: no image address available\n")
+            append("  at              = $at\n")
             append("  source          = ${javaClass.name}\n")
             append("  overrides       = ${capabilities.overriddenChainMethods()}\n")
-            append("  resolvedVia     = ${fromSource ?: "failed before returning"}\n")
+            append("  resolvedVia     = ${resolvedVia ?: "not consulted"}\n")
             append("  pageImageUrl    = ${page.imageUrl ?: "<null>"}\n")
             append("  getPageList     = ${PageListDiagnostics.lastFetchSummary}\n")
             append("  getPageListBy   = ${capabilities.declaringClassOf("getPageList")}\n")
             append("  baseUrl         = $baseUrl\n")
             append("  page.url        = ${page.url.ifEmpty { "<blank>" }}\n")
-            if (fromSource != null) {
+            if (returned != null) {
                 append("  returned        = $returned\n")
             }
-            append("  reason          = ${(cause as? MalformedImageUrlException)?.reason ?: cause::class.simpleName}")
+            append("  reason          = ${cause.reason}")
         }
     }
 }
