@@ -65,6 +65,8 @@ import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import logcat.LogPriority
 import nl.adaptivity.xmlutil.serialization.XML
 import okhttp3.Response
@@ -410,6 +412,10 @@ class Downloader(
                 ?.filter { it.extension == "tmp" }
                 ?.forEach { it.delete() }
 
+            // One per download run, shared by every page: pages download concurrently, and a signed URL that
+            // expired should cost one page-list fetch for the chapter, not one per page.
+            val freshAddresses = FreshPageAddresses(download)
+
             download.status = Download.State.DOWNLOADING
 
             // Start downloading images, consider we can have downloaded images already
@@ -428,13 +434,16 @@ class Downloader(
                             // this source customises the chain, and how to ask it are all inside
                             // `resolvePageImage`; a Jellyfin or local-archive consumer will not learn
                             // any of it.
-                            page.imageUrl = download.source.resolvePageImage(page).value
+                            page.imageUrl = download.source
+                                .resolvePageImage(page, "download/first attempt").value
                         } catch (e: Throwable) {
                             page.status = Page.State.Error(e)
                         }
                     }
 
-                    withIOContext { getOrDownloadImage(page, download, tmpDir, reResolvePacer) }
+                    withIOContext {
+                        getOrDownloadImage(page, download, tmpDir, reResolvePacer, freshAddresses)
+                    }
                     emit(page)
                 }
                     .flowOn(ioDispatcher)
@@ -513,18 +522,47 @@ class Downloader(
         }
     }
 
+    // Gets the image from the filesystem if it exists or downloads it otherwise.
+    //
+    // @param page the page to download.
+    // @param download the download of the page.
+    // @param tmpDir the temporary directory of the download.
+
     /**
-     * Gets the image from the filesystem if it exists or downloads it otherwise.
+     * Fresh page addresses for one download run, fetched at most once.
      *
-     * @param page the page to download.
-     * @param download the download of the page.
-     * @param tmpDir the temporary directory of the download.
+     * **Why a refetch and not `getImageUrl`.** When the recovery ladder drops an indicted URL it leaves
+     * the page with a blank `imageUrl`, and the next attempt asks the source for a replacement. For a
+     * source that populates `Page.imageUrl` in `getPageList` — which is every 1.6 extension, since
+     * upstream removed the per-page chain from the extension API — there is **no per-page call that
+     * returns an address**. Making one runs an inherited default that throws, from a method the source
+     * does not implement. The addresses only exist in a page list.
+     *
+     * This is the reported failure in full: a page whose address expired was dropped, and the attempt to
+     * replace it called a method MangaDex does not have. Dropping the URL was correct — a dead signed URL
+     * should not be reused — but there was no way back from it.
+     *
+     * Memoised per run because pages download concurrently: without this, one expired signed URL costs a
+     * page-list fetch per page instead of one per chapter.
      */
+    private class FreshPageAddresses(private val download: Download) {
+        private val mutex = Mutex()
+        private var pages: List<Page>? = null
+
+        suspend fun at(index: Int): String? {
+            val list = mutex.withLock {
+                pages ?: download.source.getPageList(download.chapter.toSChapter()).also { pages = it }
+            }
+            return list.getOrNull(index)?.imageUrl
+        }
+    }
+
     private suspend fun getOrDownloadImage(
         page: Page,
         download: Download,
         tmpDir: UniFile,
         reResolvePacer: ReResolvePacer,
+        freshAddresses: FreshPageAddresses,
     ) {
         // If the image URL is empty, do nothing
         if (page.imageUrl == null) {
@@ -557,9 +595,9 @@ class Downloader(
                 chapterCache.isImageInCache(page.imageUrl!!) ->
                     chapterCache.getImageFile(page.imageUrl!!)
                         ?.let { copyImageFromCache(it, tmpDir, filename) }
-                        ?: downloadImage(page, download, tmpDir, filename, recovery, reResolvePacer)
+                        ?: downloadImage(page, download, tmpDir, filename, recovery, reResolvePacer, freshAddresses)
 
-                else -> downloadImage(page, download, tmpDir, filename, recovery, reResolvePacer)
+                else -> downloadImage(page, download, tmpDir, filename, recovery, reResolvePacer, freshAddresses)
             }
 
             // When the page is ready, set page path, progress (just in case) and status
@@ -592,6 +630,7 @@ class Downloader(
         filename: String,
         recovery: PageLoadRecovery,
         reResolvePacer: ReResolvePacer,
+        freshAddresses: FreshPageAddresses,
     ): UniFile {
         val source = download.source
         page.status = Page.State.DownloadImage
@@ -634,7 +673,12 @@ class Downloader(
                 // is dead whether or not another attempt follows, and leaving it on the page would
                 // let it be reused by a later run of this chapter.
                 if (decision.dropUrl) {
-                    page.imageUrl = null
+                    // Replaced rather than merely cleared. Clearing leaves the page asking
+                    // `getImageUrl` for a new address, which for a source that populates
+                    // `Page.imageUrl` in `getPageList` is a call it does not implement — the reported
+                    // failure. The replacement has to come from a page list, which is the only place
+                    // those addresses exist.
+                    page.imageUrl = freshAddresses.at(page.index)
                 }
 
                 if (decision.action == PageLoadRecoveryAction.GIVE_UP) {
@@ -670,7 +714,7 @@ class Downloader(
                     // Reached only when a retry follows, so the final attempt never spends a source
                     // round-trip on a URL it is about to discard.
                     page.imageUrl = try {
-                        source.resolvePageImage(page).value
+                        source.resolvePageImage(page, "download/retry").value
                     } catch (resolutionError: Throwable) {
                         if (resolutionError is CancellationException) throw resolutionError
                         recovery.onFailure(null, resolutionError)
