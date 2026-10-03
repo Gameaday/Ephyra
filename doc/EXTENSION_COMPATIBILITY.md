@@ -77,31 +77,41 @@ names — the enumeration comes from the upstream class, not from what this app 
 Both classes of bug were caught by a fixture shaped like the extension in question, not by reading
 the code. That is the argument for step 5 below.
 
-## Model fields we do not have, and why it matters
+## Model fields, and how they were closed
 
-The `library.api` audit above covers `HttpSource`. The **data models** diverge further, and this is
-the more consequential gap: an extension assigning a field we do not declare fails at runtime with
-`NoSuchFieldError` — after it has loaded, mid-browse, with no useful message.
+The `library.api` audit above covers `HttpSource`. The **data models** diverged further, and this was
+the more consequential gap: an extension assigning a field we did not declare failed with
+`NoSuchFieldError` - after it had loaded, mid-browse, with no useful message.
 
-| Model | Upstream has | We have | Risk |
-|---|---|---|---|
-`SManga` | `genres: List<String>`, `banner`, `altTitles`, `contentRating`, `score`, `readingMode`, `language` | `genre: String?` (deprecated upstream) and none of the others | An extension setting `manga.genres` or `manga.contentRating` fails |
-`SChapter` | `number: String`, `volume: String`, `scanlators: List<String>`, `note`, `language`, `locked` | `chapter_number: Float` (deprecated upstream), `scanlator: String?` (deprecated), none of the others | An extension setting `chapter.number` fails — and `number` is a **String** upstream, so our `Float` cannot stand in |
-`SMangaUpdate` | three constructors, two taking suspend lambdas | only `(SManga, List<SChapter>)` | An extension using deferred fetching cannot link |
+**Now closed.** Upstream declares, and this fork now declares:
 
-**Why this has not broken yet.** MangaDex uses `memo` and `update_strategy`, which we do have. The
-extensions most likely to hit this are the ones that expose richer metadata, and they fail one field
-at a time rather than all at once.
+| Model | Fields added |
+|---|---|
+`SManga` | `genres`, `banner`, `altTitles`, `contentRating`, `score`, `readingMode`, `language` |
+`SChapter` | `number`, `volume`, `scanlators`, `note`, `language`, `locked` |
+`SMangaUpdate` | primary constructor taking two suspending lambdas, plus the eager secondary form |
 
-**Why the deprecated fields are not a substitute.** Upstream deprecates `genre`/`scanlator` and
-`chapter_number` rather than removing them, and keeps the new field authoritative. `chapter_number` is
-a `Float` and `number` is a `String` — a chapter labelled `"12.5a"` cannot round-trip through a
-`Float`, so this is a data-loss gap, not just a naming one.
+**The deprecated fields are not a substitute, and upstream does not mirror between them.** It
+deprecates `genre`/`scanlator` and `chapter_number` rather than removing them and keeps the new field
+authoritative - but the two are independent `var`s. A source compiled against 1.4 leaves `genres`
+null; one compiled against 1.7 leaves `genre` null.
 
-**Deliberately not implemented yet.** Adding these needs a decision about how the deprecated and new
-fields stay in sync, and that should be read off the upstream source rather than inferred from an ABI
-dump — inferring it is how the compatibility record was wrong three times before. The shapes above
-are the verified finding; the fix needs one more read.
+That was not hypothetical: `SManga.getGenres()` read **only** the deprecated field, so it returned
+`null` for every extension compiled against 1.7. The field existed upstream and was invisible here.
+`effectiveGenres()` and `effectiveNumber()` now consult the current field first and fall back, so
+neither generation of source has its data silently vanish.
+
+`chapter_number` is a `Float` and `number` a `String`, deliberately - a chapter labelled `"12.5a"`
+cannot round-trip through a `Float`. That is data loss, not a rename, and it is why the fallback
+reads the float rather than the other way round.
+
+**Read from source, not inferred.** These shapes came from `tachiyomix` master's `SManga.kt`,
+`SChapter.kt` and `SMangaUpdate.kt`. An earlier attempt inferred `SMangaUpdate` from the ABI dump and
+put `runBlocking` inside a getter; it was reverted rather than shipped. Inferring from a dump is how
+this document was wrong three times before - see *Tracking upstream mechanically*.
+
+`ExtensionModelCompatibilityTest` covers the assignments, both-field reads, the string numbering, and
+that a deferred chapters fetch does not run until it is awaited.
 
 ## Adopting a new extension generation
 
