@@ -3,6 +3,8 @@ package eu.kanade.tachiyomi.source.model
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -164,4 +166,85 @@ class ExtensionModelCompatibilityTest {
         assertEquals(manga, update.manga())
         assertEquals(1, update.chapters().size)
     }
+
+    /**
+     * The blocking accessors must exist at the *JVM* level, not merely in source.
+     *
+     * Upstream declares these `DeprecationLevel.HIDDEN` with `@JvmName("getManga")`. HIDDEN strips
+     * them from Kotlin source while leaving the method in the compiled API — the mechanism by which
+     * an already-compiled extension keeps working after it migrates to the suspend properties.
+     *
+     * Removing them changed the primary constructor's property return type from `SManga` to
+     * `suspend () -> SManga`, so `getManga()` changed signature with it. Every extension failed with
+     * `NoSuchMethodError: No virtual method getManga(...)` as soon as it tried to update chapters.
+     *
+     * This asserts by reflection, because a source-level reference would not catch a missing
+     * `@JvmName` — the method would compile as `getMangaLegacy` and the runtime call would still
+     * fail.
+     */
+    @Test
+    fun `the legacy blocking accessors exist under the names compiled extensions call`() {
+        listOf(
+            "getManga" to SManga::class.java,
+            "getChapters" to List::class.java,
+        ).forEach { (name, returnType) ->
+            val method = declaredLegacy(name, returnType)
+            assertNotNull(
+                method,
+                "SMangaUpdate is missing `$name() : ${returnType.simpleName}`, which compiled " +
+                    "extensions call. Its absence is a NoSuchMethodError at runtime, not a compile " +
+                    "error here.",
+            )
+            // `synthetic` is expected, not a problem: Kotlin marks a `@JvmName`-renamed HIDDEN member
+            // synthetic because it cannot be written in source. Synthetic methods are ordinary
+            // methods in the bytecode and are called normally, so asserting otherwise would be
+            // asserting an implementation detail that is correct as it stands.
+            assertEquals(
+                0,
+                method!!.parameterCount,
+                "`$name` takes no parameters; an already-compiled caller passes none.",
+            )
+        }
+    }
+
+    /**
+     * Selects by name **and** return type.
+     *
+     * Both `getManga` names exist: the suspend property generates `getManga()Lkotlin/jvm/functions/
+     * Function1;` and the legacy accessor generates `getManga()L…/SManga;`. The JVM distinguishes
+     * them by descriptor, so a compiled caller is fine — and upstream has exactly this pair. But
+     * `getDeclaredMethod(name)` resolves by name alone and returns an arbitrary one of the two, so a
+     * name-only lookup would silently assert against the wrong method.
+     */
+    private fun declaredLegacy(name: String, returnType: Class<*>): java.lang.reflect.Method? =
+        SMangaUpdate::class.java.declaredMethods
+            .firstOrNull { it.name == name && it.returnType == returnType }
+            ?.apply { isAccessible = true }
+
+    /** The legacy accessor must return the value, not upstream's `"Stub!"`. */
+    @Test
+    fun `the legacy accessor returns the value rather than throwing`() {
+        val manga = SManga.create().apply { url = "/manga/1" }
+        val update = SMangaUpdate(manga, listOf(SChapter.create()))
+        // Called reflectively because `DeprecationLevel.HIDDEN` makes these invisible to Kotlin
+        // source — including this test — which is precisely how an extension compiled against an
+        // older ABI still reaches them. Calling them by name would not compile, which is why a
+        // source-level test cannot cover this at all.
+        assertEquals(manga, invokeLegacy(update, "getManga"))
+        assertEquals(1, (invokeLegacy(update, "getChapters") as List<*>).size)
+    }
+
+    @Test
+    fun `the legacy accessor resolves a deferred update too`() {
+        val manga = SManga.create().apply { url = "/manga/1" }
+        val update = SMangaUpdate(manga) { listOf(SChapter.create()) }
+        assertEquals(manga, invokeLegacy(update, "getManga"))
+        assertEquals(1, (invokeLegacy(update, "getChapters") as List<*>).size)
+    }
+
+    private fun invokeLegacy(target: SMangaUpdate, method: String): Any? =
+        SMangaUpdate::class.java.declaredMethods
+            .first { it.name == method && !it.returnType.name.startsWith("kotlin.jvm.functions") }
+            .apply { isAccessible = true }
+            .invoke(target)
 }
