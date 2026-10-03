@@ -32,23 +32,6 @@ object PageListDiagnostics {
     fun record(total: Int, withAddress: Int) {
         lastFetchSummary = "$total page(s), $withAddress with an address"
     }
-
-    /**
-     * Which list the reader is actually holding, recorded by the loader when it chooses.
-     *
-     * Needed because `lastFetchSummary` describes a *fetch* while the failure describes a *page*, and
-     * the two need not be the same list: a list persisted by an earlier open can be the one in hand.
-     * Without this, "21 pages with an address" and "this page has none" could each be true of
-     * different objects, with nothing on screen saying which list is which.
-     */
-    @Volatile
-    @JvmStatic
-    var lastListOrigin: String = "<no page list chosen>"
-
-    @JvmStatic
-    fun recordOrigin(origin: String) {
-        lastListOrigin = origin
-    }
 }
 
 /**
@@ -94,27 +77,24 @@ val HttpSource.resolvesOwnPageImages: Boolean
  *   no address. Classified as `ADAPTER`, so the failure is attributed to the source that produced it
  *   rather than to the transport about to carry it.
  */
-suspend fun HttpSource.resolvePageImage(page: Page): ResolvedImageUrl {
+suspend fun HttpSource.resolvePageImage(page: Page, listOrigin: String? = null): ResolvedImageUrl {
     val populated = page.imageUrl
     if (!populated.isNullOrEmpty()) {
         return ResolvedImageUrl.of(populated, baseUrl)
     }
 
-    if (!capabilities.customisesImageUrlChain) {
-        // Gate, not a substitute. The chain would still fetch and parse; this only refuses to point it
-        // at a value that cannot address a host. Using `page.url` as the answer instead would skip
-        // `imageUrlParse` and quietly break every source that depends on it.
-        try {
-            ResolvedImageUrl.of(page.url, baseUrl)
-        } catch (cause: MalformedImageUrlException) {
-            throw cause.withContext(describePageImageRejection(page, at = "resolvePageImage/gate"))
-        }
-    }
-
-    // Whatever the source hands back is judged here rather than trusted, and the failure reports what
-    // it actually returned. Previously this path threw bare, which made the two ways it can go wrong
-    // indistinguishable: a source that returns an unusable address, and a source whose override is
-    // never reached because our inherited chain ran instead. Both surface as the same sentence.
+    // Ask the source. A page that arrives without an address is the normal state of a source that
+    // resolves one itself, and the pre-regression code asked rather than refused — `getImageUrl`
+    // runs the chain that fetches `page.url` and parses the response. Refusing first is what made a
+    // page with no address a hard failure instead of a question for the source, and that is a
+    // behavioural regression independent of any one source: it fails fast on pages it should have
+    // asked about. There was a gate here to avoid pointing the chain at a value that cannot address a
+    // host; it is removed, and the value the source returns is judged instead — which is the same
+    // check, applied to the answer rather than to a guess about what the answer would be.
+    //
+    // `Page.url` is not read as an image address anywhere on this path. That is upstream's rule, and
+    // it is not merely conventional: MangaDex keeps an at-home token cache key there, and only its
+    // own override knows how to read it.
     val returned = try {
         getImageUrl(page)
     } catch (e: Throwable) {
@@ -150,6 +130,7 @@ fun HttpSource.describePageImageRejection(
     at: String,
     returned: String? = null,
     resolvedVia: String? = null,
+    listOrigin: String? = null,
 ): String = buildString {
     append("Why this was rejected:")
     append("\n  at            = $at")
@@ -165,7 +146,11 @@ fun HttpSource.describePageImageRejection(
         append("\n  returned      = $returned")
     }
     append("\n  getPageList   = ${PageListDiagnostics.lastFetchSummary}")
-    append("\n  listOrigin    = ${PageListDiagnostics.lastListOrigin}")
+    // Reported by the caller rather than read from a static. These were `@Volatile` fields on
+    // `PageListDiagnostics`, and the reader prefetches neighbouring chapters — so they described
+    // whichever list was fetched most recently, not the chapter whose page had just failed. Two
+    // lines of a report then contradicted each other while both were true of different objects.
+    append("\n  listOrigin    = ${listOrigin ?: "not reported by this caller"}")
     append("\n  getPageListBy = ${capabilities.declaringClassOf("getPageList")}")
     append("\n  baseUrl       = $baseUrl")
 }
@@ -200,26 +185,18 @@ fun HttpSource.describePageImageRejection(
 class SourceCapabilities internal constructor(private val type: Class<*>) {
 
     /**
-     * Whether this source customises the image-URL chain, through any of its four entry points.
+     * **Measurement only — nothing in the app branches on this.**
      *
-     * `getImageUrl` is the modern one. The deprecated chain has **three** of its own, and this list
-     * was short by one until the reported failure proved it:
+     * It was a gate, and that was the mistake. A name-based probe of a loaded class hierarchy has two
+     * failure directions and both break sources that work: reporting "does not customise" for a
+     * source that does refuses pages that were readable, and the reverse lets the inherited chain treat
+     * `page.url` as an address. It failed both ways in one day — once for an entry point missing from
+     * the enumeration, once because `getMethods` returns only public methods while two entry points
+     * are `protected`.
      *
-     * - `fetchImageUrl` — the whole chain, replaced wholesale. The most direct override available,
-     *   and the one a source that resolves its own addressing reaches for first.
-     * - `imageUrlRequest` — chooses what to fetch.
-     * - `imageUrlParse` — reads the address out of the response.
-     *
-     * **How the fourth was found.** The probe listed three and reported MangaDex as `overrides=none`,
-     * so the reader refused its pages. But MangaDex does customise — through `fetchImageUrl`, which
-     * reads the `(host, tokenRequestUrl, fetchTime)` at-home cache key it keeps in `Page.url`. A
-     * probe that answers "no" for a source that answers "yes" is worse than no probe at all: it
-     * turns a working source into a refusal, and it does so with a confident diagnostic attached.
-     *
-     * **What the app must do differently.** It must not assume `Page.url` is an image address for such
-     * a source: MangaDex keeps that at-home cache key there, because MangaDex@Home tokens expire after
-     * five minutes, and only its own override knows how to read it. The app's job is to fetch and
-     * parse through the chain, not to second-guess the field.
+     * It is kept because a diagnostic nobody can see is not a diagnostic, and this one now appears in
+     * the exception the reader shows on screen. It costs the same whether or not anything reads it, and
+     * measurement cannot break a source the way a decision can.
      */
     val customisesImageUrlChain: Boolean by lazy {
         overrides("getImageUrl") || overrides("fetchImageUrl") ||

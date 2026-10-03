@@ -215,24 +215,24 @@ class HttpPageLoaderUrlResolutionTest {
     @Test
     fun `a cached list with no addresses is discarded when the source cannot resolve them`() {
         val cached = listOf(Page(0, "/page/1.jpg", null), Page(1, "/page/2.jpg", ""))
-        assertFalse(HttpPageLoader.cachedPagesAreUsable(cached, BASE, sourceCustomisesImageChain = false))
+        assertFalse(HttpPageLoader.cachedPagesAreUsable(cached, BASE, sourcePopulatesAddresses = false))
     }
 
     /** The counterweight: a source that fills them in itself is unaffected by the rule above. */
     @Test
     fun `a source that resolves addresses itself keeps its cached list`() {
         val cached = listOf(Page(0, "/page/1.jpg", null))
-        assertTrue(HttpPageLoader.cachedPagesAreUsable(cached, BASE, sourceCustomisesImageChain = true))
+        assertTrue(HttpPageLoader.cachedPagesAreUsable(cached, BASE, sourcePopulatesAddresses = true))
     }
 
     /** A populated address is judged the same either way. */
     @Test
     fun `a cached address is judged independently of who could resolve it`() {
         val good = listOf(Page(0, "/page/1.jpg", "https://cdn.example.com/1.jpg"))
-        assertTrue(HttpPageLoader.cachedPagesAreUsable(good, BASE, sourceCustomisesImageChain = false))
+        assertTrue(HttpPageLoader.cachedPagesAreUsable(good, BASE, sourcePopulatesAddresses = false))
 
         val bad = listOf(Page(0, "/page/1.jpg", "https://a.example.com,https://b.example.com"))
-        assertFalse(HttpPageLoader.cachedPagesAreUsable(bad, BASE, sourceCustomisesImageChain = true))
+        assertFalse(HttpPageLoader.cachedPagesAreUsable(bad, BASE, sourcePopulatesAddresses = true))
     }
 
     /**

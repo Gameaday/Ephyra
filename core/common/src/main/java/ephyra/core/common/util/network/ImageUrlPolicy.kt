@@ -260,57 +260,23 @@ object ImageUrlPolicy {
     }
 
     /**
-     * Repairs the ways a source's raw string differs from an address, without touching a string
-     * that is already clean.
+     * Trims surrounding whitespace, and changes nothing else.
      *
-     * **Why this exists.** Found by probing the shipped policy with the shapes real extensions emit.
-     * Three came back broken, and the worst was broken *silently*:
+     * **Why nothing else.** Rewriting what a source produced is not the app's job, and the other two
+     * repairs were actively harmful:
      *
-     * - **Surrounding whitespace** — `"  https://cdn/i.jpg  "` no longer looked absolute, so it was
-     *   treated as a relative path and joined onto the base URL, yielding
-     *   `https://example.com/  https://cdn/i.jpg`. That is *usable* by every check in this file: it
-     *   parses, its host is a valid hostname, and it would be requested, cached under that name, and
-     *   fail as a 404 that reads like a missing page rather than a malformed URL. Nothing downstream
-     *   can notice, which is why it had to be caught here.
-     * - **Embedded control characters** — a `src` attribute read across a line break, or a URL built
-     *   from a multi-line template, leaves `\n` or `\t` inside the string. OkHttp tolerates them, so
-     *   the request goes out, but the cleaned and uncleaned spellings are different cache keys: the
-     *   same image stored twice under two names, which is the exact duplication [resolve] exists to
-     *   prevent.
-     * - **`&amp;`** — the HTML-escaped query separator, which is what `attr("src")` returns and
-     *   `absUrl("src")` does not. Left in place it is sent literally, so `?a=1&amp;b=2` reaches the
-     *   server as a parameter named `amp;b`. Decoding is also right for a *signed* URL: the signature
-     *   was computed over the decoded spelling, because that is what a browser sends.
+     *  - *Stripping control characters* deleted the character separating two URLs, turning a visibly
+     *    malformed composite into a well-formed one whose host then failed at DNS. Guarding that
+     *    hazard was worse than not having it.
+     *  - *Decoding `&amp;`* is right in a query, where a signature is computed over the decoded form,
+     *    and wrong in a path segment, where a literal `&amp;` is a literal.
      *
-     * **Why a signed URL is still safe.** Every branch is a repair of a string that could not have
-     * been an address. A clean URL has no surrounding whitespace, no control characters and no
-     * `&amp;`, so it passes through untouched and [resolve] returns it byte-identical as it always
-     * has. The guarantee is about not *rewriting* a valid address, and none of this rewrites one.
+     * Trimming stays because the alternative is demonstrated and bad: leading whitespace stops the
+     * value *looking* absolute, so it is treated as a relative path and joined onto `baseUrl`. The
+     * result parses, has a valid host, and passes every check — then 404s, reading as a missing page
+     * rather than a malformed URL. Silent corruption that nothing downstream can catch.
      */
-    private fun repair(raw: String): String {
-        var out = raw.trim()
-        if (CONTROL_CHARACTERS.containsMatchIn(out)) {
-            // Diagnostic, and the falsifiable step for the "worked a week ago" question. A control
-            // character inside a URL is one thing; one sitting *between* two URL parts is another,
-            // and only this log distinguishes them. Escaped, because the character that matters is
-            // precisely the one that would be invisible in the message.
-            logcat {
-                "ImageUrlPolicy: source emitted a URL containing control characters.\n" +
-                    "  raw          = ${escapeControlCharacters(out)}\n" +
-                    "  after repair = ${escapeControlCharacters(CONTROL_CHARACTERS.replace(out, ""))}"
-            }
-
-            val stripped = CONTROL_CHARACTERS.replace(out, "")
-            // A control character that separates two URLs is not stray whitespace: deleting it would
-            // splice them into `hosthttps://api.../...`, which parses as a valid URL with the host
-            // `hosthttps` and then fails at DNS, two steps from the cause. Returning the raw value
-            // leaves the verdict to [defectOf] and keeps the reported URL truthful.
-            if (countSchemeSeparators(stripped) > 1) return out
-            out = stripped
-        }
-        if (out.contains("&amp;")) out = out.replace("&amp;", "&")
-        return out
-    }
+    private fun repair(raw: String): String = raw.trim()
 
     private fun countSchemeSeparators(value: String): Int =
         SCHEME_SEPARATOR.findAll(value.takeWhile { it != '?' && it != '#' }).count()

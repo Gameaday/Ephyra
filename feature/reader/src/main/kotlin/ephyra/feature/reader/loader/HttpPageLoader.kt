@@ -135,6 +135,26 @@ internal class HttpPageLoader(
     private var cacheHadMissingImageUrls = true
 
     /**
+     * Describes the page list this loader holds, for the rejection report.
+     *
+     * An instance field rather than a static because the reader prefetches neighbouring chapters: a
+     * shared counter describes whichever chapter was fetched last, not the one that failed. Two lines
+     * of one device report contradicted each other while both were true of different objects, because
+     * they came from different chapters.
+     */
+    private var pageListOrigin: String = "<no page list loaded yet>"
+
+    /**
+     * Whether the last `getPageList` returned pages carrying their own addresses.
+     *
+     * Recorded rather than probed. It answers the same question the removed class probe did — can this
+     * source fill in a missing address? — from what the source actually did, rather than from what its
+     * class hierarchy appears to declare. `null` until the first fetch.
+     */
+    @Volatile
+    private var sourceLastFetchPopulatedAddresses: Boolean? = null
+
+    /**
      * Spaces re-resolutions across this chapter's pages.
      *
      * Per loader rather than per process, because one chapter failing together is the observed
@@ -207,6 +227,7 @@ internal class HttpPageLoader(
         // answerable only by someone reading logcat; putting it on the diagnostic means the *next
         // error message* carries the answer with it.
         val withAddress = networkPages.count { !it.imageUrl.isNullOrEmpty() }
+        sourceLastFetchPopulatedAddresses = withAddress == networkPages.size && networkPages.isNotEmpty()
         PageListDiagnostics.record(networkPages.size, withAddress)
         logcat(LogPriority.INFO) {
             "getPageList returned ${networkPages.size} page(s) for '${domainChapter.name}', " +
@@ -239,6 +260,7 @@ internal class HttpPageLoader(
         check(!isRecycled)
         val domainChapter = chapter.chapter
         var isCacheHit = false
+
         val pages = try {
             val cachedPages = chapterCache.getPageListFromCache(domainChapter)
             // A cache hit is only a hit if the list it holds still satisfies the URL contract. The
@@ -248,7 +270,7 @@ internal class HttpPageLoader(
             if (cachedPagesAreUsable(
                     cachedPages,
                     source.baseUrl,
-                    source.resolvesOwnPageImages,
+                    sourceLastFetchPopulatedAddresses,
                 )
             ) {
                 // All image URLs are already resolved: the recycle() save can be skipped.
@@ -268,16 +290,16 @@ internal class HttpPageLoader(
             }
             fetchAndPersist(domainChapter)
         }
-        // Which list the reader ended up holding, recorded rather than inferred from `getPageList`:
-        // the fetch summary and the page in hand need not be the same list, and nothing on screen
-        // said which one this was. "cache" with pages lacking addresses is the case worth naming.
-        PageListDiagnostics.recordOrigin(
-            buildString {
-                append("from ").append(if (isCacheHit) "cache" else "source fetch")
-                append(", ").append(pages.size).append(" page(s) held, ")
-                append(pages.count { !it.imageUrl.isNullOrEmpty() }).append(" with an address")
-            },
-        )
+        // Which list this loader ended up holding. Reported by the loader rather than read from a
+        // static on `PageListDiagnostics`, because the reader prefetches neighbouring chapters and a
+        // static describes whichever list was fetched most recently — not the chapter whose page had
+        // just failed. Two lines of one report then contradicted each other while both were true of
+        // different objects.
+        pageListOrigin = buildString {
+            append("from ").append(if (isCacheHit) "cache" else "source fetch")
+            append(", ").append(pages.size).append(" page(s) held, ")
+            append(pages.count { !it.imageUrl.isNullOrEmpty() }).append(" with an address")
+        }
         return pages.mapIndexed { index, page ->
             // Don't trust sources and use our own indexing
             ReaderPage(index, page.url, page.imageUrl)
@@ -586,7 +608,7 @@ internal class HttpPageLoader(
                     //
                     // What stays here is page-load *policy*, which depends on state this cannot see:
                     // pacing above, and the repeat-address check below.
-                    val resolved = source.resolvePageImage(page).value
+                    val resolved = source.resolvePageImage(page, pageListOrigin).value
                     // A source that hands back the identical string we have already rejected is not
                     // going to produce a different one on the next call either, and every call it
                     // does make is a round-trip spent learning nothing. Reporting the defect now
@@ -635,7 +657,11 @@ internal class HttpPageLoader(
                     // Carried in the message, not logcat: the only reader of this
                     // failure sees the screen, so a diagnostic written anywhere else is invisible.
                     throw cause.withContext(
-                        source.describePageImageRejection(page, at = "loader/restored page"),
+                        source.describePageImageRejection(
+                            page,
+                            at = "loader/restored page",
+                            listOrigin = pageListOrigin,
+                        ),
                     )
                 }
                 val imageUrl = requireNotNull(page.imageUrl) { "Image URL is null after being fetched from source" }
@@ -816,21 +842,28 @@ internal class HttpPageLoader(
         internal fun cachedPagesAreUsable(
             pages: List<Page>,
             baseUrl: String?,
-            sourceCustomisesImageChain: Boolean = true,
+            /**
+             * Whether the source, when it last ran, produced pages carrying their own addresses.
+             *
+             * **A recorded fact, not a second inference.** This parameter used to be
+             * `sourceCustomisesImageUrlChain` — the same name-based class probe that was removed as a
+             * gate, kept here where it would have made the same kind of wrong guess about a source
+             * nobody had inspected. The loader already knows what the last fetch returned; asking it is
+             * free of that risk, and unlike a probe it cannot be wrong about a class it never loaded.
+             *
+             * `null` before the first fetch, which is the only case that needs the conservative
+             * answer: an unknown provenance is treated as "cannot resolve them itself".
+             */
+            sourcePopulatesAddresses: Boolean? = null,
         ): Boolean =
             pages.all { page ->
                 val url = page.imageUrl
                 if (url.isNullOrEmpty()) {
-                    // Acceptable only where the source can produce an address itself. For a source
-                    // that customises none of getImageUrl / imageUrlRequest / imageUrlParse - which
-                    // is what a 1.6 extension populating Page.imageUrl in getPageList does, and what
-                    // Mihon's Source, having no getImageUrl at all, requires - an empty imageUrl
-                    // means the list can never produce an address. The reported MangaDex failure was
-                    // exactly that: a list persisted without addresses stayed a cache *hit* on every
-                    // open, so getPageList was never consulted again and the source's own addresses
-                    // never arrived. The device reported `pageImageUrl=<null>` beside
-                    // `getPageListBy=MangaDex`, which is the declaring class, not proof of a call.
-                    sourceCustomisesImageChain
+                    // Empty is the normal state of a list whose source resolves addresses itself, so
+                    // it is accepted on that basis and refused otherwise — a list with no addresses
+                    // that the source cannot fill in can never be read, and serving it from cache is
+                    // serving a chapter that will never open.
+                    sourcePopulatesAddresses == true
                 } else {
                     ImageUrlPolicy.isUsable(ImageUrlPolicy.resolve(url, baseUrl))
                 }

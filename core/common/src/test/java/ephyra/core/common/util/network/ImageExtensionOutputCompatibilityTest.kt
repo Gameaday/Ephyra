@@ -50,16 +50,36 @@ class ImageExtensionOutputCompatibilityTest {
         )
     }
 
+    /**
+     * A control character inside a URL is **passed through unchanged, not repaired**.
+     *
+     * This asserted the opposite until the repair was narrowed to trimming, and that change was
+     * deliberate: rewriting what a source produced is not the app's job, and this particular repair
+     * deleted the character separating two URLs — turning a visibly malformed composite into a
+     * well-formed one that then failed at DNS. A URL with a stray newline is unusual, and it now
+     * fails *visibly and immediately* at this boundary instead of being reshaped into something that
+     * looks like a different, equally broken URL. Both are failures; only one is honest about the
+     * value the source actually produced.
+     */
     @Test
-    fun `a line break inside a URL is removed`() {
-        assertEquals("https://cdn.example.com/i.jpg", resolved("https://cdn.example.com/i\n.jpg"))
+    fun `a line break inside a URL is passed through, not removed`() {
+        val withBreak = "https://cdn.example.com/i\n.jpg"
+        assertEquals(withBreak, resolved(withBreak))
+        // Deliberately asserting *nothing* about whether this is usable. `defectOf` accepts it,
+        // because OkHttp's parser strips the newline from the path — so it is requestable, and it
+        // requests the file the source almost certainly meant. That is a reasonable outcome, reached
+        // by passing the value through rather than by rewriting it. The contract under test is the
+        // pass-through; the verdict belongs to the parser.
     }
 
     @Test
-    fun `an escaped query separator is decoded`() {
-        // `attr("src")` returns the escaped spelling; `absUrl("src")` does not. Left alone the server
-        // receives a parameter named `amp;b`.
-        assertEquals("https://cdn.example.com/i.jpg?a=1&b=2", resolved("https://cdn.example.com/i.jpg?a=1&amp;b=2"))
+    fun `an escaped query separator is left exactly as the source wrote it`() {
+        // This previously decoded `&amp;` to `&`, on the reasoning that a signature is computed over
+        // the decoded spelling. That holds in a query and is wrong in a path segment, where a literal
+        // `&amp;` is a literal — so it corrupted real URLs to help other real URLs, on a guess. A
+        // source that wants the decoded spelling should emit it.
+        val escaped = "https://cdn.example.com/i.jpg?a=1&amp;b=2"
+        assertEquals(escaped, resolved(escaped))
     }
 
     @Test
@@ -137,11 +157,17 @@ class ImageExtensionOutputCompatibilityTest {
         )
     }
 
+    /**
+     * Every control character is passed through, including one that is not separating two URLs.
+     *
+     * This was the counterpart to the guard above — "only a *second* scheme separator disqualifies a
+     * repair" — and it is gone with it. There is no longer a distinction to make: the app does not
+     * reshape a source's output, and `defectOf` decides whether what came back is usable.
+     */
     @Test
-    fun `a genuinely single URL with a control character is still repaired`() {
-        // The other half of the guard: refusing every repair would break the `attr("src")` shapes
-        // the repair exists for. Only a *second* scheme separator disqualifies it.
-        assertEquals("https://cdn.example.com/i.jpg", resolved("https://cdn.example.com/i\n.jpg"))
+    fun `a control character is never removed, joining two URLs or not`() {
+        val single = "https://cdn.example.com/i\n.jpg"
+        assertEquals(single, resolved(single))
     }
 
     @Test
