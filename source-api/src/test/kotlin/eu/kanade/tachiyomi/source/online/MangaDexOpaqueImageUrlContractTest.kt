@@ -43,11 +43,6 @@ import org.junit.jupiter.api.Test
  */
 class MangaDexOpaqueImageUrlContractTest {
 
-    private val relativePageUrl = "/data/0200a52e6f6f4b6c8c6c8e6c6e6f4a2b/P1.png"
-    private val atHomeHost = "https://cmdxd98sb0x3yprd.mangadex.network"
-    private val atHomeCacheKey =
-        "$atHomeHost,https://api.mangadex.org/at-home/server/733233d4-19fa-4cd9-9e8d-8dbcdfaa5bf4,1791046242118"
-
     /** The MangaDex shape: `imageUrl` relative, `url` an at-home cache key. */
     private fun mangadexPage() = Page(0, url = atHomeCacheKey, imageUrl = relativePageUrl)
 
@@ -116,6 +111,10 @@ class MangaDexOpaqueImageUrlContractTest {
     /**
      * A source shaped exactly like the real MangaDex extension: `imageUrl` is a relative path,
      * `url` is an at-home cache key, and `imageRequest` — which it overrides — joins them.
+     *
+     * Not `inner`: a nested `inner` class would hold an implicit reference to the test instance,
+     * and the values it shares with the tests live in the [Companion] below, which a nested class
+     * can read without any outer receiver.
      */
     private open class MangaDexShapedSource : HttpSource() {
         override val name: String = "MangaDex-shaped"
@@ -162,5 +161,12 @@ class MangaDexOpaqueImageUrlContractTest {
         override fun chapterListParse(response: Response): List<SChapter> = throw UnsupportedOperationException()
         override fun pageListParse(response: Response): List<Page> = throw UnsupportedOperationException()
         override fun imageUrlParse(response: Response): String = throw UnsupportedOperationException()
+    }
+
+    private companion object {
+        val relativePageUrl = "/data/0200a52e6f6f4b6c8c6c8e6c6e6f4a2b/P1.png"
+        val atHomeHost = "https://cmdxd98sb0x3yprd.mangadex.network"
+        val atHomeCacheKey =
+            "$atHomeHost,https://api.mangadex.org/at-home/server/733233d4-19fa-4cd9-9e8d-8dbcdfaa5bf4,1791046242118"
     }
 }
