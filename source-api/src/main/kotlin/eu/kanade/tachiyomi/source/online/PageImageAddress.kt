@@ -81,7 +81,13 @@ val HttpSource.resolvesOwnPageImages: Boolean
 suspend fun HttpSource.resolvePageImage(page: Page, listOrigin: String? = null): ResolvedImageUrl {
     val populated = page.imageUrl
     if (!populated.isNullOrEmpty()) {
-        return ResolvedImageUrl.of(populated, baseUrl)
+        // A populated `Page.imageUrl` is opaque to the host. MangaDex — the canonical 1.6
+        // source — puts a *relative path* there (`/data/<hash>/<file>`) and its own overridden
+        // `imageRequest` joins it onto an at-home host it reads from `Page.url`. Resolving it
+        // against `baseUrl` here, as this branch once did, splices two URLs into one and fails
+        // every page of every chapter; upstream Mihon never rewrites a populated field, and the
+        // value is handed on untouched for the source's own request builder to interpret.
+        return ResolvedImageUrl.opaque(populated)
     }
 
     // Ask the source. A page that arrives without an address is the normal state of a source that

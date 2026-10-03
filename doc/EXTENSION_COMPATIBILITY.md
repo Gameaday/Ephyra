@@ -77,6 +77,73 @@ names — the enumeration comes from the upstream class, not from what this app 
 Both classes of bug were caught by a fixture shaped like the extension in question, not by reading
 the code. That is the argument for step 5 below.
 
+## `Page.imageUrl` is opaque to the host once populated
+
+**This is the rule that broke MangaDex 1.6 completely** — a chapter listed, was selected, and *no
+page loaded*, for every chapter, with the failure reading as a DNS error. It is recorded here in
+full because the defect was not a missing feature; it was an over-eager one.
+
+What a real MangaDex extension does (verified against `keiyoushi/extensions-source`,
+`MangaDex.kt` / `MangaDexHelper.kt`):
+
+```kotlin
+// getPageList — Page.url is an MD@Home cache key, Page.imageUrl is a RELATIVE path:
+Page(index, "$host,$atHomeRequestUrl,$now", "/data/$hash/$file")
+
+// its own imageRequest override — the source joins them:
+override fun imageRequest(page: Page) = GET(mdAtHomeServerUrl + page.imageUrl, headers)
+```
+
+The at-home host expires in ~30 minutes, so the extension keeps the path *relative* and resolves
+the host at request time, from `Page.url`. Only the source's overridden `imageRequest` knows how to
+interpret a populated `Page.imageUrl`. **The host must therefore never rewrite it**: upstream
+Mihon's reader reads it back and hands the page verbatim to `source.getImage`. Resolution against
+`baseUrl` belongs exactly at the request boundary — the base `HttpSource.imageRequest` — where a
+source override inherits nothing by design.
+
+**What went wrong here.** `HttpPageLoader.internalLoadPage` resolved `page.imageUrl` against
+`source.baseUrl` and wrote the result back *before* fetching, "to mirror what `HttpSource.imageRequest`
+does". That justification was false for any source that overrides `imageRequest`: the rewrite turned
+MangaDex's relative path into `https://mangadex.org/data/...` (the wrong host — the website, not the
+MD@Home image server), and MangaDex's own request builder then produced
+
+```
+https://cmdxd98sb0x3yprd.mangadex.networkhttps://mangadex.org/data/...
+```
+
+two URLs spliced into a host that can never resolve. Every page of every chapter took that path, so
+every page failed identically — and the recovery ladder could not escape, because
+`FreshPageAddresses` restored a fresh *relative* address that the loader immediately rewrote again.
+The failure surfaced as `Unable to resolve host "…mangadex.network,https"`, which read as a network
+or source defect. The same rewrite existed in `resolvePageImage`'s populated branch, so the
+downloader's retry path (`Downloader`) corrupted the field the same way.
+
+**The fix, and the invariants that keep it fixed:**
+
+1. `resolvePageImage` passes a populated `Page.imageUrl` through untouched as
+   `ResolvedImageUrl.opaque(value)` — not resolved against `baseUrl`, not judged (a relative path
+   is *incomplete*, not broken; the missing half is knowledge only the source's `imageRequest`
+   holds). The `getImageUrl` fallback path — a page that arrived *without* an address — still
+   resolves and judges the value the source returned in answer to our question.
+2. `HttpPageLoader` never assigns a baseUrl-resolved value into `page.imageUrl`; the disk-cache key
+   and the request are both the raw string the source produced, read back off the page.
+3. Guarded by tests:
+   - `MangaDexOpaqueImageUrlContractTest` (source-api) — a source shaped exactly like the real
+     MangaDex extension: relative `imageUrl`, at-home cache key in `url`, overridden
+     `imageRequest`. The "loader write-back pattern" test drives resolve → write back →
+     `imageRequest` and asserts the request URL is the correctly joined MD@Home URL; under the
+     old rewrite it was the spliced, never-resolvable string.
+   - `PageLoadRecoveryStructuralTest` (app) — the loader must not contain `PageImageAddress` at
+     all, and `resolvePageImage` must contain the `ResolvedImageUrl.opaque(populated)` passthrough.
+
+**The general lesson, worth stating once and applying everywhere:** fields an extension writes are
+the extension's. The host may *judge* what it can judge and may resolve what *it* is about to
+request itself, at the boundary where a source override takes over — but it must never write an
+interpretation back into a field whose producer is still going to read it. A "helpful" normalisation
+on the host side is indistinguishable from corruption on the extension side, and the failure it
+produces is always attributed to the wrong layer, because the string the source produced is never
+the string that failed.
+
 ## Model fields, and how they were closed
 
 The `library.api` audit above covers `HttpSource`. The **data models** diverged further, and this was

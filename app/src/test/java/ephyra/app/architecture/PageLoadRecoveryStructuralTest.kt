@@ -116,34 +116,62 @@ class PageLoadRecoveryStructuralTest {
      * come from two different places. `fetchAndCacheImage(imageUrl) { source.getImage(page) }` keys
      * on the argument and fetches through `page.imageUrl`.
      *
-     * They are the same string today — the loader assigns one from the other two lines earlier — but
-     * nothing enforces it. If resolution ever moves so the two can differ, bytes are written under
-     * one key having been fetched from another, which presents as random cache misses and a page
-     * that re-downloads what it already has, with no error anywhere.
+     * They must remain the same string — the value read back off the page, unmodified. The
+     * original version of this test required the loader to *resolve* `page.imageUrl` through
+     * `PageImageAddress` before fetching, and that requirement is the defect it now exists to
+     * prevent: a populated `Page.imageUrl` is opaque to the host. MangaDex stores a **relative
+     * path** there and its own overridden `imageRequest` joins it onto an at-home host read from
+     * `Page.url`; a loader-side baseUrl-join produced
+     * `"<at-home-host>https://mangadex.org/data/..."` — a host that can never resolve — and every
+     * page of every MangaDex chapter failed identically. Upstream Mihon never writes into a
+     * populated `Page.imageUrl`, and resolution belongs at the request boundary
+     * (`HttpSource.imageRequest`), where a source override inherits nothing by design.
      */
     @Test
     fun `the cache key and the requested URL are the same string in the loader`() {
         val text = code("feature/reader/src/main/kotlin/ephyra/feature/reader/loader/HttpPageLoader.kt")
 
-        // Asserted as an ordering over two independent facts rather than as one regex over the
-        // assignment. The original pinned a single expression — `page.imageUrl = X.of(...)` on the
-        // same line — and so failed the moment the assignment grew a `try`/`catch` around it, which
-        // changed nothing about the property it exists to protect. That is the failure mode this file
-        // already warns about elsewhere: a gate pinned to past syntax passes until someone writes it
-        // differently, and then fails for no reason anyone can act on.
-        val assigned = text.indexOf("page.imageUrl =")
-        val readBack = text.indexOf("requireNotNull(page.imageUrl)")
-        val resolved = text.indexOf("PageImageAddress.of(")
-
-        assertTrue(resolved >= 0, "the loader must resolve the page's address through PageImageAddress")
+        // Read back off the page, so the cache key and the request cannot disagree.
         assertTrue(
-            readBack >= 0,
+            text.indexOf("requireNotNull(page.imageUrl)") >= 0,
             "the URL used for the cache key and the request must be read back off the page, not " +
                 "kept in a local that could disagree with it",
         )
+
+        // And never rewritten once populated: the loader resolves nothing against `baseUrl` on
+        // the image path. `PageImageAddress` has no business in this file at all.
         assertTrue(
-            assigned in 0 until readBack,
-            "the page must be assigned before the value is read back from it",
+            !text.contains("PageImageAddress"),
+            "the loader must not resolve a page's image URL against baseUrl. `Page.imageUrl` is " +
+                "opaque to the host once populated — a source's own imageRequest (MangaDex's " +
+                "joins an at-home host onto a relative path) interprets it, and a loader-side " +
+                "resolve-and-write-back splices two URLs into a host that can never resolve. " +
+                "Resolution belongs at the request boundary in HttpSource.imageRequest.",
+        )
+    }
+
+    /**
+     * The passthrough that makes the loader's rule enforceable: a populated `Page.imageUrl` is
+     * handed on untouched by [resolvePageImage] — the one owner of the resolution rules — rather
+     * than resolved against `baseUrl`.
+     *
+     * The reader and the downloader both assign `resolvePageImage(...).value` back into the page,
+     * so if the owner resolved a populated field, both consumers would corrupt it for any source
+     * that overrides `imageRequest`. This pins the opaque passthrough (`ResolvedImageUrl.opaque`)
+     * so the rewrite cannot come back through the shared owner after being removed from the
+     * loader.
+     */
+    @Test
+    fun `a populated page imageUrl is passed through opaquely, never baseUrl-resolved`() {
+        val text = code("source-api/src/main/kotlin/eu/kanade/tachiyomi/source/online/PageImageAddress.kt")
+
+        assertTrue(
+            text.contains("ResolvedImageUrl.opaque(populated)"),
+            "resolvePageImage must pass a populated Page.imageUrl through as opaque " +
+                "(ResolvedImageUrl.opaque). Resolving it against baseUrl splices a second host " +
+                "onto a value the source's own imageRequest interprets — the reported MangaDex " +
+                "failure in which every page of every chapter requested a host that could " +
+                "never resolve.",
         )
     }
 

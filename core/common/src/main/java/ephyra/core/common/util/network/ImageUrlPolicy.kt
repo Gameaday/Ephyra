@@ -100,6 +100,25 @@ value class ResolvedImageUrl private constructor(val value: String) {
             ImageUrlPolicy.requireUsable(resolved)
             return ResolvedImageUrl(resolved)
         }
+
+        /**
+         * A value the *source* produced, passed to the source's own `imageRequest` untouched.
+         *
+         * **Why this exists — the MangaDex contract.** A populated `Page.imageUrl` is opaque to
+         * the host. MangaDex puts a **relative path** there (`"/data/<hash>/<file>"`) and its own
+         * overridden `imageRequest` joins it onto an at-home host it reads out of `Page.url`
+         * (`GET(mdAtHomeServerUrl + page.imageUrl)`). Resolving that path against `baseUrl` here
+         * — or anywhere above the request builder — would splice two URLs into one
+         * (`"<at-home-host>https://mangadex.org/data/..."`), a host that can never resolve, and
+         * every page of every chapter would fail identically. Upstream Mihon never writes into a
+         * populated `Page.imageUrl`; neither do we.
+         *
+         * Not judged, deliberately: a relative path is *incomplete*, not broken — the missing
+         * half is knowledge only the source's `imageRequest` holds. Judging it as the host would
+         * reject the majority of 1.6 extensions' pages for a rule the source is about to
+         * supersede. The source that produced it owns both the resolution and the verdict.
+         */
+        fun opaque(value: String): ResolvedImageUrl = ResolvedImageUrl(value)
     }
 
     override fun toString(): String = value

@@ -4,7 +4,6 @@ import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.network.ImageUrlPolicy
 import ephyra.core.common.util.network.LayeredFailure
-import ephyra.core.common.util.network.MalformedImageUrlException
 import ephyra.core.common.util.network.PageLoadRecovery
 import ephyra.core.common.util.network.PageLoadRecoveryAction
 import ephyra.core.common.util.network.PageLoadRecoveryDecision
@@ -21,9 +20,7 @@ import ephyra.feature.reader.model.ReaderChapter
 import ephyra.feature.reader.model.ReaderPage
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.online.HttpSource
-import eu.kanade.tachiyomi.source.online.PageImageAddress
 import eu.kanade.tachiyomi.source.online.PageListDiagnostics
-import eu.kanade.tachiyomi.source.online.describePageImageRejection
 import eu.kanade.tachiyomi.source.online.needsFreshPageList
 import eu.kanade.tachiyomi.source.online.resolvePageImage
 import eu.kanade.tachiyomi.source.online.resolvesOwnPageImages
@@ -657,46 +654,23 @@ internal class HttpPageLoader(
                     }
                     page.imageUrl = resolved
                 }
-                // Resolved here as well as at the `HttpSource` boundary, because two paths never
-                // reach that boundary: a page whose URL was restored from the chapter cache, and a
-                // source that sets `Page.imageUrl` itself in `pageListParse` (a relative
-                // `img.attr("src")` is ordinary source code). A source that overrides `getImageUrl`
-                // also bypasses it.
+                // **`page.imageUrl` is opaque to the host once populated.** It is *not* resolved or
+                // rewritten here, and nothing else in this loader may write into it. The source
+                // that produced it owns its interpretation: MangaDex — the canonical 1.6
+                // extension — stores a **relative path** (`/data/<hash>/<file>`) in `imageUrl`
+                // and an at-home cache key in `url`, and its own overridden `imageRequest` joins
+                // them (`GET(mdAtHomeServerUrl + page.imageUrl)`). A previous version of this
+                // loader resolved `imageUrl` against `baseUrl` and wrote the result back before
+                // fetching, so MangaDex's request became
+                // `"<at-home-host>https://mangadex.org/data/..."` — two URLs spliced into a host
+                // that can never resolve — and **every page of every chapter failed identically**.
+                // Upstream Mihon never writes into a populated `Page.imageUrl`, and neither do we.
                 //
-                // `PageImageAddress` rather than a bare resolve, because by this point a page may
-                // legitimately carry its address in `url` instead of `imageUrl` — a source that
-                // overrides `getImageUrl`, or a page list built by the base implementation — and
-                // reading only `imageUrl` would resolve `""` for those and throw. Holding a
-                // `ResolvedImageUrl` means resolution *and* judgement happened, so this line can no
-                // longer be written as a resolve alone: that omission was made twice in this file
-                // and once in `Downloader`, and no test failed when it happened.
-                //
-                // Assigned back to the page, so the URL the page holds, the one keyed into the disk
-                // cache below, and the one persisted on `recycle` are the same string.
-                // `imageUrl`, and nothing else — this mirrors what [eu.kanade.tachiyomi.source.online.HttpSource.imageRequest]
-                // does, because this value is what that method will later be asked to fetch. Reading
-                // `url` here as a substitute would mean the loader and the source request builder
-                // disagree about which field holds the address, which is the divergence from the
-                // reference implementation this was corrected for.
-                page.imageUrl = try {
-                    PageImageAddress.of(page, source.baseUrl, PageImageAddress.Field.IMAGE_URL).url.value
-                } catch (cause: MalformedImageUrlException) {
-                    // The other two judgement sites live inside `resolvePageImage` and report there.
-                    // This one is reached from a page whose `imageUrl` was already populated — restored
-                    // from the chapter cache, or set by the source — so the resolve-and-ask branch above
-                    // never runs and nothing else would explain the failure. The reported MangaDex case
-                    // arrived here: the page carried an address that cannot address a host, and the only
-                    // thing reported was the bare reason, with nothing saying where it came from.
-                    // Carried in the message, not logcat: the only reader of this
-                    // failure sees the screen, so a diagnostic written anywhere else is invisible.
-                    throw cause.withContext(
-                        source.describePageImageRejection(
-                            page,
-                            at = "loader/restored page",
-                            listOrigin = pageListOrigin,
-                        ),
-                    )
-                }
+                // Sources that do *not* override `imageRequest` lose nothing: the base
+                // `HttpSource.imageRequest` resolves at the request boundary (see
+                // `PageImageAddress`), where a source override inherits nothing by design. The
+                // only consumers of the raw value below are the cache key and the persisted page
+                // list, which must both be the same string the source produced.
                 val imageUrl = requireNotNull(page.imageUrl) { "Image URL is null after being fetched from source" }
 
                 recovery.onResolved(imageUrl)
