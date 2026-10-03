@@ -1,7 +1,5 @@
 package ephyra.feature.reader
 
-import android.content.ClipData
-import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,11 +22,35 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalClipboard
-import androidx.compose.ui.platform.toClipEntry
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import ephyra.presentation.core.util.system.copyToClipboard
+import ephyra.presentation.core.util.system.readRecentLog
 import kotlinx.coroutines.launch
+
+/**
+ * Composes a pasted failure report: the exception, then the log that led to it.
+ *
+ * **Why the log is copied rather than summarised.** Every attempt to diagnose a source from the
+ * exception message alone failed, because the message says what was rejected while the log says what
+ * happened on the way there — which list was fetched, how many addresses it carried, whether a cached
+ * list was discarded, what the retry ladder decided. Maintaining those fields inside the exception
+ * means remembering to add each one; copying the log means they are all there by default.
+ *
+ * The message leads, so the report is still readable if the log could not be read at all. When it
+ * cannot, no heading is emitted — a report claiming evidence it does not contain is worse than none.
+ */
+fun buildErrorReport(message: String, log: String): String {
+    val trimmedLog = log.trim()
+    return when {
+        message.isBlank() -> trimmedLog
+        trimmedLog.isEmpty() -> message
+        else -> "$message\n\n$LOG_HEADING\n$trimmedLog"
+    }
+}
+
+private const val LOG_HEADING = "--- recent log ---"
 
 /**
  * The reader's failure state, shown as a card rather than as the raw exception text.
@@ -53,8 +75,8 @@ fun ReaderErrorCard(
 
     var expanded by rememberSaveable(message) { mutableStateOf(false) }
     var copied by remember(message) { mutableStateOf(false) }
-    val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -80,10 +102,10 @@ fun ReaderErrorCard(
             // Full report on the clipboard: the diagnosis is worthless if it has to be retyped.
             OutlinedButton(
                 onClick = {
-                    // `setClipEntry` suspends on this Compose version; the existing copy affordance in
-                    // tracker search launches a coroutine for the same call.
+                    // The whole report, not the message: `logcat` read on IO, then copied through the
+                    // shared helper so the failure toast and error handling come with it.
                     scope.launch {
-                        clipboard.setClipEntry(ClipData.newPlainText("Reader error", message).toClipEntry())
+                        context.copyToClipboard("Reader error", buildErrorReport(message, readRecentLog()))
                     }
                     copied = true
                 },
