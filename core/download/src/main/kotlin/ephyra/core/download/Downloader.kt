@@ -39,6 +39,7 @@ import eu.kanade.tachiyomi.network.HttpException
 import eu.kanade.tachiyomi.source.UnmeteredSource
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.online.HttpSource
+import eu.kanade.tachiyomi.source.online.needsFreshPageList
 import eu.kanade.tachiyomi.source.online.resolvePageImage
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -383,19 +384,26 @@ class Downloader(
         val reResolvePacer = ReResolvePacer()
 
         try {
-            // If the page list already exists, start from the file
-            val pageList = download.pages ?: run {
-                // Otherwise, pull page list from network and add them to download object
-                val pages = download.source.getPageList(download.chapter.toSChapter())
+            // If the page list already exists, start from the file — unless it is a copy that can no longer
+            // produce an address, in which case the source is asked again. Refetching is the only
+            // repair for that case: it replaces the bad copy, where resolving it cannot, because
+            // `Page.url` is not an address and the source does not implement the chain that would
+            // read it. See `needsFreshPageList`.
+            val pageList = download.pages?.takeUnless { it.needsFreshPageList(download.source.baseUrl) }
+                ?: run {
+                    // Otherwise, pull page list from network and add them to download object
+                    val pages = download.source.getPageList(download.chapter.toSChapter())
 
-                if (pages.isEmpty()) {
-                    throw Exception(context.stringResource(ephyra.app.core.common.R.string.page_list_empty_error))
+                    if (pages.isEmpty()) {
+                        throw Exception(context.stringResource(ephyra.app.core.common.R.string.page_list_empty_error))
+                    }
+                    // Don't trust index from source
+                    val reIndexedPages = pages.mapIndexed { index, page ->
+                        Page(index, page.url, page.imageUrl, page.uri)
+                    }
+                    download.pages = reIndexedPages
+                    reIndexedPages
                 }
-                // Don't trust index from source
-                val reIndexedPages = pages.mapIndexed { index, page -> Page(index, page.url, page.imageUrl, page.uri) }
-                download.pages = reIndexedPages
-                reIndexedPages
-            }
 
             // Delete all temporary (unfinished) files
             tmpDir.listFiles()

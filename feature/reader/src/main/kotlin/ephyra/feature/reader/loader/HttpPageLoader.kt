@@ -24,6 +24,7 @@ import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.source.online.PageImageAddress
 import eu.kanade.tachiyomi.source.online.PageListDiagnostics
 import eu.kanade.tachiyomi.source.online.describePageImageRejection
+import eu.kanade.tachiyomi.source.online.needsFreshPageList
 import eu.kanade.tachiyomi.source.online.resolvePageImage
 import eu.kanade.tachiyomi.source.online.resolvesOwnPageImages
 import kotlinx.coroutines.CancellationException
@@ -145,16 +146,6 @@ internal class HttpPageLoader(
     private var pageListOrigin: String = "<no page list loaded yet>"
 
     /**
-     * Whether the last `getPageList` returned pages carrying their own addresses.
-     *
-     * Recorded rather than probed. It answers the same question the removed class probe did — can this
-     * source fill in a missing address? — from what the source actually did, rather than from what its
-     * class hierarchy appears to declare. `null` until the first fetch.
-     */
-    @Volatile
-    private var sourceLastFetchPopulatedAddresses: Boolean? = null
-
-    /**
      * Spaces re-resolutions across this chapter's pages.
      *
      * Per loader rather than per process, because one chapter failing together is the observed
@@ -227,7 +218,6 @@ internal class HttpPageLoader(
         // answerable only by someone reading logcat; putting it on the diagnostic means the *next
         // error message* carries the answer with it.
         val withAddress = networkPages.count { !it.imageUrl.isNullOrEmpty() }
-        sourceLastFetchPopulatedAddresses = withAddress == networkPages.size && networkPages.isNotEmpty()
         PageListDiagnostics.record(networkPages.size, withAddress)
         logcat(LogPriority.INFO) {
             "getPageList returned ${networkPages.size} page(s) for '${domainChapter.name}', " +
@@ -267,12 +257,7 @@ internal class HttpPageLoader(
             // reported MangaDex failure lived here: a list written by a bad pass was served verbatim
             // on every subsequent open, the source was never asked, and no fix downstream of the
             // read could take effect. See `cachedPagesAreUsable`.
-            if (cachedPagesAreUsable(
-                    cachedPages,
-                    source.baseUrl,
-                    sourceLastFetchPopulatedAddresses,
-                )
-            ) {
+            if (cachedPagesAreUsable(cachedPages, source.baseUrl)) {
                 // All image URLs are already resolved: the recycle() save can be skipped.
                 isCacheHit = true
                 cacheHadMissingImageUrls = cachedPages.any { it.imageUrl.isNullOrEmpty() }
@@ -842,32 +827,7 @@ internal class HttpPageLoader(
         internal fun cachedPagesAreUsable(
             pages: List<Page>,
             baseUrl: String?,
-            /**
-             * Whether the source, when it last ran, produced pages carrying their own addresses.
-             *
-             * **A recorded fact, not a second inference.** This parameter used to be
-             * `sourceCustomisesImageUrlChain` — the same name-based class probe that was removed as a
-             * gate, kept here where it would have made the same kind of wrong guess about a source
-             * nobody had inspected. The loader already knows what the last fetch returned; asking it is
-             * free of that risk, and unlike a probe it cannot be wrong about a class it never loaded.
-             *
-             * `null` before the first fetch, which is the only case that needs the conservative
-             * answer: an unknown provenance is treated as "cannot resolve them itself".
-             */
-            sourcePopulatesAddresses: Boolean? = null,
-        ): Boolean =
-            pages.all { page ->
-                val url = page.imageUrl
-                if (url.isNullOrEmpty()) {
-                    // Empty is the normal state of a list whose source resolves addresses itself, so
-                    // it is accepted on that basis and refused otherwise — a list with no addresses
-                    // that the source cannot fill in can never be read, and serving it from cache is
-                    // serving a chapter that will never open.
-                    sourcePopulatesAddresses == true
-                } else {
-                    ImageUrlPolicy.isUsable(ImageUrlPolicy.resolve(url, baseUrl))
-                }
-            }
+        ): Boolean = !pages.needsFreshPageList(baseUrl)
 
         /**
          * The terminal log line for a page that has exhausted its ladder.

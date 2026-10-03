@@ -1,5 +1,6 @@
 package eu.kanade.tachiyomi.source.online
 
+import ephyra.core.common.util.network.ImageUrlPolicy
 import ephyra.core.common.util.network.MalformedImageUrlException
 import ephyra.core.common.util.network.ResolvedImageUrl
 import ephyra.core.common.util.network.asContextualised
@@ -115,6 +116,33 @@ suspend fun HttpSource.resolvePageImage(page: Page, listOrigin: String? = null):
         )
     }
 }
+
+/**
+ * Whether this page list cannot yield a usable image address, and so must be refetched.
+ *
+ * **The distinction this draws.** A blank `Page.imageUrl` means two opposite things depending on the
+ * page: a source that resolves lazily, where the app asks `getImageUrl` per page and the value in
+ * `Page.url` is a fetchable address; and a copy of a list from a source that populates
+ * `Page.imageUrl` itself, where `Page.url` is **not** an address and asking cannot help. Only the second
+ * is stale, and the page itself says which — no probe and no recorded flag.
+ *
+ * The second case is exactly what the reported failure was. MangaDex overrides none of the four chain
+ * entry points — it cannot, because upstream removed that chain from the extension API — so it puts the
+ * address in `Page.imageUrl` and keeps an at-home token cache key in `Page.url`. A list whose
+ * `imageUrl` was empty therefore could not be repaired: `getImageUrl` ran the inherited chain, fetched
+ * the cache key, and threw from a method the source does not implement.
+ *
+ * A *populated* `imageUrl` is judged on its own merits and does not consult `Page.url` at all, so a list
+ * carrying a malformed address is discarded whether or not its `url` happens to be fetchable. Both
+ * halves are needed: dropping the first would serve a chapter whose pages cannot be requested, and
+ * dropping the second would refetch a list that was fine.
+ */
+fun List<Page>.needsFreshPageList(baseUrl: String?): Boolean =
+    any { page ->
+        val populated = page.imageUrl
+        val candidate = if (!populated.isNullOrEmpty()) populated else page.url
+        !ImageUrlPolicy.isUsable(ImageUrlPolicy.resolve(candidate, baseUrl))
+    }
 
 /**
  * Describes a rejected page address: where the value came from, and what the source actually returns.
