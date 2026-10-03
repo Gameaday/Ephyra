@@ -129,12 +129,28 @@ class LibrarySeriesTransitionTest {
         val pair = activity
             .substringAfter("fun motionRoutePair(")
             .substringBefore("private fun NavBackStackEntry.sharedCoverMangaId")
+
+        // Both directions, named in one `when`, over one predicate. The predicate is
+        // `hostsSharedCover()` rather than a route equality test so that every list which carries
+        // the cover — the tab shell, a source's results, global search — is one end of the same
+        // pair; matching on `Home` alone silently dropped the last two.
         assertTrue(
-            Regex("""isMangaDetails\(\)\s*&&\s*to\.isHome\(\)\s*->\s*MotionRoutePair\.LIBRARY_SERIES""")
+            Regex("""hostsSharedCover\(\)\s*&&\s*to\.isMangaDetails\(\)\s*->\s*MotionRoutePair\.LIBRARY_SERIES""")
+                .containsMatchIn(pair),
+            "The forward direction must resolve to LIBRARY_SERIES.",
+        )
+        assertTrue(
+            Regex("""isMangaDetails\(\)\s*&&\s*to\.hostsSharedCover\(\)\s*->\s*MotionRoutePair\.LIBRARY_SERIES""")
                 .containsMatchIn(pair),
             "The back direction must resolve to LIBRARY_SERIES, the same pair as the forward " +
-                "direction. Predictive back reuses this model, so a pair that differs on the way " +
-                "out gives the gesture a different animation from the toolbar button.",
+                "direction, over the same predicate. Predictive back reuses this model, so a pair " +
+                "that differs on the way out gives the gesture a different animation from the " +
+                "toolbar button.",
+        )
+        assertTrue(
+            Regex("""MotionRoutePair\.LIBRARY_SERIES""").findAll(pair).count() == 2,
+            "Exactly two branches may name LIBRARY_SERIES: one in, one out. A third is a pair " +
+                "that was special-cased without a direction.",
         )
     }
 

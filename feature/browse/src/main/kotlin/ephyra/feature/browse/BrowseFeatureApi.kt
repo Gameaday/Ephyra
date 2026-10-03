@@ -77,15 +77,30 @@ class BrowseFeatureApi @Inject constructor() : FeatureApi {
         }
 
         // Global Search Screen
+        //
+        // Both this and the source results below provide an animated-visibility scope, because both
+        // list manga covers that are the shared element when a series is opened from them. Without
+        // the scope the covers here cannot participate in the shared transition, and the series
+        // page's copy of the cover would then have no counterpart — which, since that pair's
+        // container motion is a deliberate no-op, leaves the transition with nothing to animate.
+        // `MainActivity.motionRoutePair` reads `hostsSharedCover`, which names the same set.
         navGraphBuilder.composable<Screen.GlobalSearch> { backStackEntry ->
             val route = backStackEntry.toRoute<Screen.GlobalSearch>()
-            ephyra.feature.browse.source.globalsearch.GlobalSearchScreen(route.query ?: "", null, navController)
+            androidx.compose.runtime.CompositionLocalProvider(
+                ephyra.presentation.core.ui.navigation.LocalNavAnimatedVisibilityScope provides this@composable,
+            ) {
+                ephyra.feature.browse.source.globalsearch.GlobalSearchScreen(route.query ?: "", null, navController)
+            }
         }
 
         // Browse Source Screen
         navGraphBuilder.composable<Screen.BrowseSource> { backStackEntry ->
             val route = backStackEntry.toRoute<Screen.BrowseSource>()
-            ephyra.feature.browse.source.browse.BrowseSourceScreen(route.sourceId, route.query, navController)
+            androidx.compose.runtime.CompositionLocalProvider(
+                ephyra.presentation.core.ui.navigation.LocalNavAnimatedVisibilityScope provides this@composable,
+            ) {
+                ephyra.feature.browse.source.browse.BrowseSourceScreen(route.sourceId, route.query, navController)
+            }
         }
 
         // Source Preferences Screen

@@ -52,6 +52,11 @@ fun HistoryItem(
         MangaCover.Book(
             modifier = Modifier.fillMaxHeight(),
             data = history.coverData,
+            // Named so this cover is the shared element for History -> Series, like the library
+            // grid cell. Without it the series page declared a shared element with no counterpart
+            // here, and because the pair's container motion is a deliberate no-op the whole
+            // transition had nothing left to animate — it cut.
+            mangaId = history.mangaId,
             onClick = onClickCover,
         )
         Column(

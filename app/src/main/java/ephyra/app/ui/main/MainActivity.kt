@@ -114,6 +114,36 @@ private fun NavBackStackEntry.isMangaDetails(): Boolean = runCatching {
 
 private fun NavBackStackEntry.isHome(): Boolean = destination.route == ScreenRoutes.Home.route
 
+private fun NavBackStackEntry.isBrowseSource(): Boolean = runCatching {
+    toRoute<Screen.BrowseSource>()
+}.isSuccess
+
+private fun NavBackStackEntry.isGlobalSearch(): Boolean = runCatching {
+    toRoute<Screen.GlobalSearch>()
+}.isSuccess
+
+/**
+ * Whether this destination can be one end of the shared-cover transition.
+ *
+ * A destination qualifies only if it *both* renders `MangaCover` with the manga's id for its list
+ * items *and* provides `LocalNavAnimatedVisibilityScope`. The shared element needs a scope at each
+ * end inside the same `SharedTransitionLayout`; a screen that renders the cover but provides no
+ * scope cannot match, and the element then has no counterpart — which, because the pair's container
+ * motion is a deliberate no-op, leaves the whole transition with nothing to animate.
+ *
+ * This predicate is the "and" of those two obligations written down once. It used to be
+ * `destination.route == Home`, which was too narrow: `Home` is the whole tab shell, so any series
+ * opened from a source's results or from global search took the generic fallback even though those
+ * lists carry the same cover.
+ *
+ * `MangaDetails` is deliberately **not** a host. It renders covers and provides the scope, but the
+ * direction rule below reads "leaving a series page" as BACKWARD, so listing it would give a
+ * forward navigation to a related series the shorter return timeline. Details-to-details keeps the
+ * generic shared-axis treatment until that direction can be told apart.
+ */
+private fun NavBackStackEntry.hostsSharedCover(): Boolean =
+    isHome() || isBrowseSource() || isGlobalSearch()
+
 /**
  * The motion route pair for a transition between [from] and [to], or null when the transition has
  * no declared rule and should keep the default shared-axis treatment.
@@ -122,16 +152,16 @@ private fun NavBackStackEntry.isHome(): Boolean = destination.route == ScreenRou
  * Android-layer concern; the *decision* about what the pair should do is `MotionPolicy`'s, and this
  * function only names the pair.
  *
- * Both directions resolve to [MotionRoutePair.LIBRARY_SERIES] because the cover is the same element
- * whether it is growing or shrinking. What differs is [MotionDirection], which `MotionPolicy` uses
- * to pick the timeline: M3's shared-element spec is deliberately asymmetric, with the return
- * shorter than the arrival. Resolving the pair in one place and the direction in another is what
- * keeps those two facts from being conflated — an earlier version of this named one pair and then
- * collapsed both directions onto a single duration.
+ * Both directions are named in one `when`, over one predicate, because they must resolve to the same
+ * pair: the cover is the same element whether it is growing or shrinking, and predictive back
+ * replays this model, so a pair that differed on the way out would give the gesture a different
+ * animation from the toolbar arrow. What differs is [MotionDirection], which `MotionPolicy` uses to
+ * pick the timeline: M3's shared-element spec is deliberately asymmetric, with the return shorter
+ * than the arrival.
  */
 private fun motionRoutePair(from: NavBackStackEntry, to: NavBackStackEntry): MotionRoutePair? = when {
-    from.isHome() && to.isMangaDetails() -> MotionRoutePair.LIBRARY_SERIES
-    from.isMangaDetails() && to.isHome() -> MotionRoutePair.LIBRARY_SERIES
+    from.hostsSharedCover() && to.isMangaDetails() -> MotionRoutePair.LIBRARY_SERIES
+    from.isMangaDetails() && to.hostsSharedCover() -> MotionRoutePair.LIBRARY_SERIES
     else -> null
 }
 
