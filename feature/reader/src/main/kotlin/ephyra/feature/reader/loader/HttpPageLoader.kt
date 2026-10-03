@@ -38,6 +38,8 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import logcat.LogPriority
 import java.io.IOException
 import java.util.concurrent.PriorityBlockingQueue
@@ -46,6 +48,37 @@ import kotlin.concurrent.atomics.AtomicInt
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.concurrent.atomics.incrementAndFetch
 import kotlin.math.min
+
+/**
+ * Fresh page addresses for one chapter load, fetched at most once.
+ *
+ * **Why a refetch and not `getImageUrl`.** When the recovery ladder drops an indicted URL the page is
+ * left with no address, and the next attempt asks the source for a replacement. For a source that
+ * populates `Page.imageUrl` in `getPageList` — which is every 1.6 extension, because upstream removed
+ * the per-page chain from the extension API — **there is no per-page call that returns one**. Making
+ * one runs an inherited default that throws, from a method the source does not implement.
+ *
+ * This is the reported MangaDex failure, in full: its at-home tokens expire after five minutes, so a
+ * long read drops them. Clearing the field was correct — a dead token should not be reused — but there
+ * was no way back from it, and a chapter that had listed perfectly could not be finished.
+ *
+ * Memoised because pages load concurrently: one expired token should cost a page-list fetch for the
+ * chapter, not one per page.
+ */
+private class FreshPageAddresses(
+    private val source: HttpSource,
+    private val chapter: Chapter,
+) {
+    private val mutex = Mutex()
+    private var pages: List<Page>? = null
+
+    suspend fun at(index: Int): String? {
+        val list = mutex.withLock {
+            pages ?: source.getPageList(chapter.toSChapter()).also { pages = it }
+        }
+        return list.getOrNull(index)?.imageUrl
+    }
+}
 
 /**
  * Loader used to load chapters from an online source.
@@ -294,9 +327,21 @@ internal class HttpPageLoader(
     /**
      * Loads a page through the queue. Handles re-enqueueing pages if they were evicted from the cache.
      */
+    // One per chapter load, shared by every page: pages load concurrently, and an expired at-home
+    // token should cost a page-list fetch for the chapter rather than one per page.
+    private val freshAddresses = FreshPageAddresses(source, chapter.chapter)
+
     override suspend fun loadPage(page: ReaderPage) = withIOContext {
         check(!isRecycled)
         val imageUrl = page.imageUrl
+
+        // A page whose address the ladder has indicted gets a replacement from a fresh page list,
+        // before anything else looks at it. This is the only place a 1.6 source keeps addresses:
+        // `getImageUrl` would be a call the source does not implement.
+        if (page.needsFreshAddress) {
+            page.imageUrl = freshAddresses.at(page.index)
+            page.needsFreshAddress = false
+        }
 
         // Check if the image has been deleted
         if (page.status == Page.State.Ready && imageUrl != null && !chapterCache.isImageInCache(imageUrl)) {
@@ -516,7 +561,10 @@ internal class HttpPageLoader(
         page.clearLoadedImage()
         page.stream = null
         if (dropImageUrl) {
-            page.imageUrl = null
+            // Flagged rather than cleared: the address is replaced from a fresh page list when the
+            // page is next loaded, which is the only place a 1.6 source keeps them. Clearing it
+            // instead leaves the page asking a method the source does not implement.
+            page.needsFreshAddress = true
         }
         page.status = Page.State.Queue
     }
@@ -721,7 +769,13 @@ internal class HttpPageLoader(
                 // that fixes itself is not refused forever on the strength of an older failure.
                 val decision = recovery.onFailure(page.imageUrl, e)
                 if (decision.dropUrl) {
-                    page.imageUrl = null
+                    // Replaced rather than cleared, and flagged as well: clearing leaves the page
+                    // asking `getImageUrl` for a new address, which for a source that populates
+                    // `Page.imageUrl` in `getPageList` is a call it does not implement — the reported
+                    // failure. The replacement has to come from a page list, the only place those
+                    // addresses exist.
+                    page.imageUrl = freshAddresses.at(page.index)
+                    page.needsFreshAddress = false
                 }
 
                 if (decision.action == PageLoadRecoveryAction.GIVE_UP) {

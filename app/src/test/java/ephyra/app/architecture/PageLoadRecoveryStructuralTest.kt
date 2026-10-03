@@ -51,9 +51,31 @@ class PageLoadRecoveryStructuralTest {
         val text = code("core/download/src/main/kotlin/ephyra/core/download/Downloader.kt")
 
         assertTrue(
-            RE_RESOLVE.containsMatchIn(text),
-            "a URL the recovery decision drops must be replaced with a freshly resolved one, or " +
-                "the retry re-requests the address that just failed",
+            REPLACES_FROM_PAGE_LIST.containsMatchIn(text),
+            "a URL the recovery decision drops must be replaced from a fresh page list — the only " +
+                "place a source populating Page.imageUrl keeps them — or the retry re-requests the " +
+                "address that just failed, or asks getImageUrl for a call this source does not have",
+        )
+    }
+
+    /**
+     * The reader does the same, and additionally flags rather than clears.
+     *
+     * The flag matters because `retryPage` is not a suspending function: it cannot fetch anything,
+     * so clearing there would leave the page unrecoverable before any suspending code runs. It marks
+     * the page instead, and `loadPage` replaces the address on the way in.
+     */
+    @Test
+    fun `the reader replaces a URL its own classifier indicted`() {
+        val text = code("feature/reader/src/main/kotlin/ephyra/feature/reader/loader/HttpPageLoader.kt")
+
+        assertTrue(
+            REPLACES_FROM_PAGE_LIST.containsMatchIn(text),
+            "the reader must draw a replacement from a page list for the same reason the downloader does",
+        )
+        assertTrue(
+            text.contains("needsFreshAddress = true"),
+            "the non-suspending reload path must flag the page rather than clear its address",
         )
     }
 
@@ -103,10 +125,25 @@ class PageLoadRecoveryStructuralTest {
     fun `the cache key and the requested URL are the same string in the loader`() {
         val text = code("feature/reader/src/main/kotlin/ephyra/feature/reader/loader/HttpPageLoader.kt")
 
+        // Asserted as an ordering over two independent facts rather than as one regex over the
+        // assignment. The original pinned a single expression — `page.imageUrl = X.of(...)` on the
+        // same line — and so failed the moment the assignment grew a `try`/`catch` around it, which
+        // changed nothing about the property it exists to protect. That is the failure mode this file
+        // already warns about elsewhere: a gate pinned to past syntax passes until someone writes it
+        // differently, and then fails for no reason anyone can act on.
+        val assigned = text.indexOf("page.imageUrl =")
+        val readBack = text.indexOf("requireNotNull(page.imageUrl)")
+        val resolved = text.indexOf("PageImageAddress.of(")
+
+        assertTrue(resolved >= 0, "the loader must resolve the page's address through PageImageAddress")
         assertTrue(
-            ASSIGNED_BEFORE_USE.containsMatchIn(text),
-            "page.imageUrl must be assigned from the resolved value and the local read back from " +
-                "the page, so the disk-cache key and HttpSource.imageRequest cannot disagree",
+            readBack >= 0,
+            "the URL used for the cache key and the request must be read back off the page, not " +
+                "kept in a local that could disagree with it",
+        )
+        assertTrue(
+            assigned in 0 until readBack,
+            "the page must be assigned before the value is read back from it",
         )
     }
 
@@ -192,6 +229,19 @@ class PageLoadRecoveryStructuralTest {
             """(?:ResolvedImageUrl\.of|ImageUrlPolicy\.resolve)\(\s*[\w.]*\.?getImageUrl\(page\)""",
             RegexOption.DOT_MATCHES_ALL,
         )
+
+        /**
+         * A replacement address drawn from a page list rather than from a per-page call.
+         *
+         * **Why this replaced `getImageUrl` as the thing to look for.** Replacing a URL the
+         * classifier indicted used to mean "ask the source for another address for this page". That
+         * is wrong for a source populating `Page.imageUrl` in `getPageList` — every 1.6 extension —
+         * which implements no per-page call at all, so the inherited default throws. The addresses
+         * exist only in a page list, so that is where the replacement has to come from.
+         *
+         * The `getImageUrl` form is still matched below, as the *shape that must not be relied on*.
+         */
+        val REPLACES_FROM_PAGE_LIST = Regex("""\.imageUrl\s*=\s*\w*fresh\w*\.at\(""", RegexOption.DOT_MATCHES_ALL)
 
         /**
          * A `delay(...)` whose argument *computes* a delay: a bit shift, or a named schedule
