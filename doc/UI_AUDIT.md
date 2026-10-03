@@ -7,6 +7,25 @@ and the shared presentation layer (theme, navigation, components, effects).
 Every finding below was verified by reading the cited code. "Verified OK" sections list things
 checked and found correct, to prevent re-auditing.
 
+## Status: resolved in follow-up commits
+
+The findings below were triaged and implemented in phases (see the commits on `cline/ezxqydet`):
+
+- **Phase 1** (`fix(ui): phase 1 - data-loss/state-loss defects`) — R-H1, R-H2, L-H3, L-H4, L-H5,
+  L-H6, L-H1, L-H7.
+- **Phase 2** (`fix(settings): phase 2 ...`) — S-H1, S-H3, S-H4, S-H2, list keys, localized errors.
+- **Tab transitions** (`feat(nav): slide main tab area by tab order ...`) — the P-H1 reduced-motion gap
+  in the main area, plus the owner-reported "discrete fade" navigation; recorded in
+  `MOTION_NAVIGATION_CONTRACT.md`.
+- **Hierarchical transitions + extensions loading** (`perf(extensions) ... ; feat(nav) ...`) — the
+  back-transition quality and the slow available-extensions scroll.
+- **Cache and cover art** (`fix(cache): ...`) — L-6 and the cover placeholder theming, with the
+  remaining items in `doc/CACHE_AND_COVER_AUDIT.md`.
+- **Search** (`refactor(search): ...`) — the divergent debounce constants, with the full inventory in
+  `doc/SEARCH_SYSTEM_AUDIT.md`.
+
+Findings not listed above remain open; they are unchanged below.
+
 ---
 
 ## 1. Settings & More
