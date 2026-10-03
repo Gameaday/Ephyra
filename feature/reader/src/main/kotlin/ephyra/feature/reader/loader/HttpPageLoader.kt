@@ -191,6 +191,19 @@ internal class HttpPageLoader(
      */
     private suspend fun fetchAndPersist(domainChapter: Chapter): List<Page> {
         val networkPages = source.getPageList(chapter.chapter.toSChapter())
+        // What the source actually returned, counted rather than asserted. Every fixture in
+        // `HttpPageLoaderUrlResolutionTest` builds `Page` with an image URL in `getPageList`, so
+        // passing tests only proved the app agrees with a model — never that a real 1.6 source
+        // populates the field the way the fixtures assume it does. MangaDex reports
+        // `pageImageUrl=<null>` beside `overrides=none`, which under the 1.6 contract should be
+        // impossible: a source that customises no chain entry point must populate `imageUrl` in
+        // `getPageList`. One of those two facts is wrong, and this line says which.
+        logcat(LogPriority.INFO) {
+            val withAddress = networkPages.count { !it.imageUrl.isNullOrEmpty() }
+            "getPageList returned ${networkPages.size} page(s) for '${domainChapter.name}', " +
+                "$withAddress with an image address, source=${source.javaClass.name}, " +
+                "declaresGetPageList=${source.capabilities.declaringClassOf("getPageList")}"
+        }
         // Persist immediately so a crash before recycle() doesn't lose the page list.
         scope.launchIO {
             try {
