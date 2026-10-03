@@ -9,9 +9,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.structuralEqualityPolicy
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -88,16 +93,29 @@ internal fun PreferenceItem(
             }
 
             is Preference.PreferenceItem.SliderPreference -> {
+                // The slider tracks its value locally while the user is dragging and only commits
+                // on release. Persisting on every tick wrote to DataStore dozens of times per drag
+                // and, because the thumb was drawn from the round-tripped preference, a fast drag
+                // could visibly lag or drop its final value. Local state keeps the thumb tied to the
+                // finger; one write happens when the gesture ends.
+                var localValue by remember(item) { mutableIntStateOf(item.value) }
+                var dragging by remember(item) { mutableStateOf(false) }
+                LaunchedEffect(item.value) {
+                    if (!dragging) localValue = item.value
+                }
                 BaseSliderItem(
-                    value = item.value,
+                    value = localValue,
                     valueRange = item.valueRange,
                     steps = item.steps,
                     title = item.title,
                     subtitle = item.subtitle,
-                    valueString = item.valueString.takeUnless { it.isNullOrEmpty() } ?: item.value.toString(),
-                    onChange = {
+                    valueString = item.valueString.takeUnless { it.isNullOrEmpty() } ?: localValue.toString(),
+                    onChange = { localValue = it },
+                    onValueChangeStart = { dragging = true },
+                    onValueChangeFinished = {
+                        dragging = false
                         scope.launch {
-                            item.onValueChanged(it)
+                            item.onValueChanged(localValue)
                         }
                     },
                     titleStyle = MaterialTheme.typography.titleLarge.copy(fontSize = TitleFontSize),

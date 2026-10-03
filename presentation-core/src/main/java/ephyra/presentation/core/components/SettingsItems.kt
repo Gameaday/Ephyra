@@ -215,6 +215,8 @@ fun BaseSliderItem(
     titleStyle: TextStyle = MaterialTheme.typography.titleLarge,
     subtitleStyle: TextStyle = MaterialTheme.typography.bodySmall,
     pillColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
+    onValueChangeStart: () -> Unit = {},
+    onValueChangeFinished: (() -> Unit)? = null,
 ) {
     val haptic = LocalHapticFeedback.current
     Column(
@@ -250,9 +252,11 @@ fun BaseSliderItem(
             value = value,
             onValueChange = f@{
                 if (it == value) return@f
+                onValueChangeStart()
                 onChange(it)
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
             },
+            onValueChangeFinished = onValueChangeFinished,
             valueRange = valueRange,
             steps = steps,
         )

@@ -41,6 +41,7 @@ import kotlinx.collections.immutable.persistentListOf
 fun SettingsMainScreen(
     twoPane: Boolean,
     navController: NavController = LocalNavController.current,
+    onRouteSelected: ((String) -> Boolean)? = null,
 ) {
     val containerColor = if (twoPane) getPalerSurface() else MaterialTheme.colorScheme.surface
     val topBarState = rememberTopAppBarState()
@@ -57,7 +58,11 @@ fun SettingsMainScreen(
                             AppBar.Action(
                                 title = stringResource(ephyra.app.core.common.R.string.action_search),
                                 icon = Icons.Outlined.Search,
-                                onClick = { navController.navigate(ScreenRoutes.SettingsSearch.route) },
+                                onClick = {
+                                    navController.navigate(ScreenRoutes.SettingsSearch.route) {
+                                        launchSingleTop = true
+                                    }
+                                },
                             ),
                         ),
                     )
@@ -91,8 +96,11 @@ fun SettingsMainScreen(
                             subtitle = item.formatSubtitle(),
                             icon = item.icon,
                             onPreferenceClick = {
-                                navController.navigate(item.route) {
-                                    launchSingleTop = true
+                                val handledInPane = onRouteSelected?.invoke(item.route) == true
+                                if (!handledInPane) {
+                                    navController.navigate(item.route) {
+                                        launchSingleTop = true
+                                    }
                                 }
                             },
                         )

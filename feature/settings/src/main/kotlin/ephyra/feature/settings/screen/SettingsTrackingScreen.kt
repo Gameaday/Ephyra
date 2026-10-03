@@ -31,7 +31,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,7 +48,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ephyra.core.common.i18n.stringResource
-import ephyra.core.common.util.lang.launchIO
 import ephyra.core.common.util.system.logcat
 import ephyra.core.common.util.system.openInBrowser
 import ephyra.domain.track.interactor.AddTracks
@@ -106,7 +104,6 @@ object SettingsTrackingScreen : SearchableSettings {
         val trackerListImporter = viewModel.trackerListImporter
         val matchUnlinkedJobRunner = viewModel.matchUnlinkedJobRunner
 
-        val scope = rememberCoroutineScope()
 
         var dialog by remember { mutableStateOf<Any?>(null) }
         var importingTrackerId by remember { mutableStateOf<Long?>(null) }
@@ -135,7 +132,7 @@ object SettingsTrackingScreen : SearchableSettings {
                         onConfirm = {
                             dialog = null
                             importingTrackerId = targetTrackerId
-                            scope.launchIO {
+                            viewModel.launchPersistent {
                                 val result = trackerListImporter.importFromTracker(targetTrackerId)
                                 withContext(Dispatchers.Main) {
                                     importingTrackerId = null
@@ -689,7 +686,7 @@ object SettingsTrackingScreen : SearchableSettings {
                                     jellyfinLibraryName ?: currentLibraryId
                                 },
                                 onClick = {
-                                    scope.launchIO {
+                                    viewModel.launchPersistent {
                                         try {
                                             val serverUrl =
                                                 (
@@ -750,7 +747,7 @@ object SettingsTrackingScreen : SearchableSettings {
                                     ephyra.app.core.common.R.string.jellyfin_test_connection_summary,
                                 ),
                                 onClick = {
-                                    scope.launchIO {
+                                    viewModel.launchPersistent {
                                         try {
                                             val info = (
                                                 trackerManager.get(
@@ -842,8 +839,8 @@ object SettingsTrackingScreen : SearchableSettings {
         uNameStringRes: Int,
         onDismissRequest: () -> Unit,
     ) {
+        val viewModel = hiltViewModel<SettingsTrackingViewModel>()
         val context = LocalContext.current
-        val scope = rememberCoroutineScope()
 
         var username by remember { mutableStateOf(TextFieldValue("")) }
         var password by remember { mutableStateOf(TextFieldValue("")) }
@@ -924,7 +921,7 @@ object SettingsTrackingScreen : SearchableSettings {
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !processing && username.text.isNotBlank() && password.text.isNotBlank(),
                     onClick = {
-                        scope.launchIO {
+                        viewModel.launchPersistent {
                             processing = true
                             val result = checkLogin(
                                 context = context,
@@ -950,14 +947,14 @@ object SettingsTrackingScreen : SearchableSettings {
         tracker: Tracker,
         onDismissRequest: () -> Unit,
     ) {
-        val scope = rememberCoroutineScope()
+        val viewModel = hiltViewModel<SettingsTrackingViewModel>()
         AlertDialog(
             onDismissRequest = onDismissRequest,
             title = { Text(stringResource(ephyra.app.core.common.R.string.logout_title, tracker.name)) },
             confirmButton = {
                 Button(
                     onClick = {
-                        scope.launchIO {
+                        viewModel.launchPersistent {
                             tracker.logout()
                             withContext(Dispatchers.Main) { onDismissRequest() }
                         }
@@ -1002,8 +999,8 @@ object SettingsTrackingScreen : SearchableSettings {
         tracker: ephyra.data.track.jellyfin.Jellyfin,
         onDismissRequest: () -> Unit,
     ) {
+        val viewModel = hiltViewModel<SettingsTrackingViewModel>()
         val context = LocalContext.current
-        val scope = rememberCoroutineScope()
 
         var serverUrl by remember { mutableStateOf(TextFieldValue(tracker.getServerUrl())) }
         var username by remember { mutableStateOf(TextFieldValue("")) }
@@ -1084,7 +1081,7 @@ object SettingsTrackingScreen : SearchableSettings {
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !processing && serverUrl.text.isNotBlank() && username.text.isNotBlank(),
                     onClick = {
-                        scope.launchIO {
+                        viewModel.launchPersistent {
                             processing = true
                             try {
                                 tracker.loginWithCredentials(
@@ -1095,7 +1092,9 @@ object SettingsTrackingScreen : SearchableSettings {
                                 withContext(Dispatchers.Main) { onDismissRequest() }
                             } catch (e: Exception) {
                                 inputError = true
-                                withContext(Dispatchers.Main) { context.toast(e.message ?: "") }
+                                withContext(Dispatchers.Main) {
+                                    context.toast(ephyra.app.core.common.R.string.tracker_login_error)
+                                }
                             }
                             processing = false
                         }
@@ -1116,8 +1115,8 @@ object SettingsTrackingScreen : SearchableSettings {
         jellyfin: ephyra.data.track.jellyfin.Jellyfin,
         onDismissRequest: () -> Unit,
     ) {
+        val viewModel = hiltViewModel<SettingsTrackingViewModel>()
         val context = LocalContext.current
-        val scope = rememberCoroutineScope()
 
         var newUrl by remember { mutableStateOf(TextFieldValue(jellyfin.getServerUrl())) }
         var processing by remember { mutableStateOf(false) }
@@ -1139,7 +1138,7 @@ object SettingsTrackingScreen : SearchableSettings {
                 Button(
                     enabled = !processing && newUrl.text.isNotBlank(),
                     onClick = {
-                        scope.launchIO {
+                        viewModel.launchPersistent {
                             processing = true
                             try {
                                 jellyfin.updateServerUrl(newUrl.text)
@@ -1148,7 +1147,9 @@ object SettingsTrackingScreen : SearchableSettings {
                                     onDismissRequest()
                                 }
                             } catch (e: Exception) {
-                                withContext(Dispatchers.Main) { context.toast(e.message ?: "") }
+                                withContext(Dispatchers.Main) {
+                                    context.toast(ephyra.app.core.common.R.string.unknown_error)
+                                }
                             }
                             processing = false
                         }
@@ -1175,7 +1176,9 @@ object SettingsTrackingScreen : SearchableSettings {
             tracker.login(username, password)
             true
         } catch (e: Exception) {
-            withContext(Dispatchers.Main) { context.toast(e.message ?: "") }
+            withContext(Dispatchers.Main) {
+                context.toast(ephyra.app.core.common.R.string.tracker_login_error)
+            }
             false
         }
     }

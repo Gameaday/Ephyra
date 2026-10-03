@@ -52,18 +52,23 @@ fun PreferenceScreen(
                 is Preference.PreferenceGroup -> {
                     if (!preference.enabled) return@fastForEachIndexed
 
-                    item {
+                    item(key = "group-$i-header") {
                         Column {
                             PreferenceGroupHeader(title = preference.title)
                         }
                     }
-                    items(preference.preferenceItems) { item ->
+                    items(
+                        items = preference.preferenceItems,
+                        // Stable key so a preference write (which rebuilds the whole preference tree)
+                        // does not re-create and re-lay-out every row on the screen.
+                        key = { item -> "group-${preference.title}-${item.title}" },
+                    ) { item ->
                         PreferenceItem(
                             item = item,
                             highlightKey = highlightKey,
                         )
                     }
-                    item {
+                    item(key = "group-$i-spacer") {
                         if (i < items.lastIndex) {
                             Spacer(modifier = Modifier.height(12.dp))
                         }
@@ -71,7 +76,7 @@ fun PreferenceScreen(
                 }
 
                 // Create Preference Item
-                is Preference.PreferenceItem<*, *> -> item {
+                is Preference.PreferenceItem<*, *> -> item(key = "item-$i-${preference.title}") {
                     PreferenceItem(
                         item = preference,
                         highlightKey = highlightKey,
