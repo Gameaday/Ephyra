@@ -378,10 +378,12 @@ class MangaViewModel @Inject constructor(
                 LibraryPreferences.ChapterSwipeAction.Download -> {
                     when (item.downloadState) {
                         Download.State.DOWNLOADED -> {
-                            mangaChapterInteractor.deleteChapters(
-                                chapters = listOf(item.chapter),
-                                manga = success.manga,
-                                source = success.source,
+                            // Deleting downloaded chapters is destructive; route through the
+                            // confirmation dialog instead of deleting immediately.
+                            onEvent(
+                                MangaScreenEvent.ShowDeleteChapterDialog(
+                                    chapters = listOf(item.chapter),
+                                ),
                             )
                         }
                         Download.State.NOT_DOWNLOADED, Download.State.ERROR -> {
@@ -652,7 +654,8 @@ class MangaViewModel @Inject constructor(
                 }
             }
             ChapterDownloadAction.DELETE -> {
-                deleteChapters(chapters)
+                // Route through the confirmation dialog before deleting downloaded chapters.
+                onEvent(MangaScreenEvent.ShowDeleteChapterDialog(chapters))
             }
         }
     }

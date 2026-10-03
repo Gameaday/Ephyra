@@ -243,6 +243,9 @@ class ReaderActivity : BaseActivity() {
     }
 
     override fun onDestroy() {
+        if (isFinishing) {
+            sendActivityFinish()
+        }
         currentViewer?.destroy()
         super.onDestroy()
         config = null
@@ -251,7 +254,6 @@ class ReaderActivity : BaseActivity() {
     }
 
     override fun onPause() {
-        viewModel.onEvent(ReaderEvent.ActivityFinish)
         super.onPause()
     }
 
@@ -272,8 +274,21 @@ class ReaderActivity : BaseActivity() {
         assistUrl?.let { outContent.webUri = it.toUri() }
     }
 
-    override fun finish() {
+    private var activityFinishSent = false
+
+    /**
+     * Sends [ReaderEvent.ActivityFinish] exactly once, either from [finish] or from [onDestroy]
+     * when the activity is finishing. Never on a plain [onPause] to avoid deleting
+     * remove-after-read chapters on every pause.
+     */
+    private fun sendActivityFinish() {
+        if (activityFinishSent) return
+        activityFinishSent = true
         viewModel.onEvent(ReaderEvent.ActivityFinish)
+    }
+
+    override fun finish() {
+        sendActivityFinish()
         super.finish()
         overrideTransitionCompat(
             Activity.OVERRIDE_TRANSITION_CLOSE,

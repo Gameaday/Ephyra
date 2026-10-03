@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
@@ -89,6 +90,22 @@ fun LibraryContent(
             ),
     ) {
         val pagerState = rememberPagerState(currentPage) { categories.size }
+
+        // Whether the pager has followed the (possibly async-loaded) [currentPage] at least once.
+        // Until then, page-change events are suppressed so the initial page 0 isn't echoed back to
+        // the ViewModel as the last-used category, clobbering the persisted restore value.
+        var initialPageSynced by rememberSaveable { mutableStateOf(false) }
+
+        // Follow the async-loaded current page once the pager isn't mid-scroll and it differs.
+        LaunchedEffect(currentPage, pagerState.isScrollInProgress) {
+            if (initialPageSynced) return@LaunchedEffect
+            if (!pagerState.isScrollInProgress && pagerState.currentPage != currentPage) {
+                pagerState.scrollToPage(currentPage)
+            }
+            if (pagerState.currentPage == currentPage) {
+                initialPageSynced = true
+            }
+        }
 
         val scope = rememberCoroutineScope()
         var isRefreshing by remember(pagerState.currentPage) { mutableStateOf(false) }
@@ -169,6 +186,7 @@ fun LibraryContent(
         }
 
         LaunchedEffect(pagerState.currentPage) {
+            if (!initialPageSynced) return@LaunchedEffect
             onChangeCurrentPage(pagerState.currentPage)
         }
     }

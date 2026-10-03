@@ -318,6 +318,16 @@ class ReaderViewModel @Inject constructor(
      * trigger deletion of the downloaded chapters.
      */
     private fun onActivityFinish() {
+        // Persist the final chapter's history (read-at time + session duration) before exiting,
+        // as [updateHistory] is otherwise only invoked when switching chapters.
+        viewModelScope.launchNonCancellable {
+            try {
+                updateHistory()
+            } catch (e: Throwable) {
+                if (e is CancellationException) throw e
+                logcat(LogPriority.ERROR, e) { "Failed to update history on activity finish" }
+            }
+        }
         deletePendingChapters()
     }
 

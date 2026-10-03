@@ -106,6 +106,10 @@ fun ExtensionScreen(
     var showRemoveConfirmDialog by remember { mutableStateOf(false) }
     var showAddRepoDialog by remember { mutableStateOf(false) }
     var selectedSourceToRemove by remember { mutableStateOf<UnifiedSource?>(null) }
+    var showUninstallConfirmDialog by remember { mutableStateOf(false) }
+    var selectedExtensionToUninstall by remember { mutableStateOf<Extension.Installed?>(null) }
+    var showDeleteRepoConfirmDialog by remember { mutableStateOf(false) }
+    var selectedRepoToDelete by remember { mutableStateOf<ExtensionRepo?>(null) }
 
     LaunchedEffect(state.error) {
         if (state.error != null) {
@@ -172,11 +176,17 @@ fun ExtensionScreen(
             untrustedExtensions = state.untrustedExtensions,
             failedExtensions = state.failedExtensions,
             onAddRepoClick = { showAddRepoDialog = true },
-            onDeleteRepoClick = onDeleteRepository,
+            onDeleteRepoClick = { url ->
+                selectedRepoToDelete = state.repos.firstOrNull { it.baseUrl == url }
+                showDeleteRepoConfirmDialog = true
+            },
             onInstallExtensionClick = { ext -> onInstallExtension(ext, null) },
             onUninstallExtensionClick = onUninstallExtension,
             onUpdateExtension = onUpdateExtension,
-            onUninstallInstalledExtension = onUninstallInstalledExtension,
+            onUninstallInstalledExtension = { ext ->
+                selectedExtensionToUninstall = ext
+                showUninstallConfirmDialog = true
+            },
             onTrustExtensionClick = onTrustExtension,
             onUninstallByPkgName = onUninstallByPkgName,
             onClickExtension = { pkgName -> navController.navigate(Screen.ExtensionDetails(pkgName)) },
@@ -264,6 +274,86 @@ fun ExtensionScreen(
                     onClick = {
                         showRemoveConfirmDialog = false
                         selectedSourceToRemove = null
+                    },
+                ) {
+                    Text("Cancel")
+                }
+            },
+        )
+    }
+
+    // Uninstall installed extension confirmation dialog
+    if (showUninstallConfirmDialog && selectedExtensionToUninstall != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showUninstallConfirmDialog = false
+                selectedExtensionToUninstall = null
+            },
+            title = { Text("Uninstall Extension") },
+            text = {
+                Text(
+                    "Are you sure you want to uninstall \"${selectedExtensionToUninstall!!.name}\"? " +
+                        "This action cannot be undone.",
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        selectedExtensionToUninstall?.let { ext ->
+                            onUninstallInstalledExtension(ext)
+                        }
+                        showUninstallConfirmDialog = false
+                        selectedExtensionToUninstall = null
+                    },
+                ) {
+                    Text("Uninstall", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showUninstallConfirmDialog = false
+                        selectedExtensionToUninstall = null
+                    },
+                ) {
+                    Text("Cancel")
+                }
+            },
+        )
+    }
+
+    // Delete repository confirmation dialog
+    if (showDeleteRepoConfirmDialog && selectedRepoToDelete != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showDeleteRepoConfirmDialog = false
+                selectedRepoToDelete = null
+            },
+            title = { Text("Delete Repository") },
+            text = {
+                Text(
+                    "Are you sure you want to delete the repository \"${selectedRepoToDelete!!.name}\"? " +
+                        "This action cannot be undone.",
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        selectedRepoToDelete?.let { repo ->
+                            onDeleteRepository(repo.baseUrl)
+                        }
+                        showDeleteRepoConfirmDialog = false
+                        selectedRepoToDelete = null
+                    },
+                ) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteRepoConfirmDialog = false
+                        selectedRepoToDelete = null
                     },
                 ) {
                     Text("Cancel")

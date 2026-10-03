@@ -13,6 +13,8 @@ import ephyra.domain.category.model.Category
 import ephyra.presentation.core.udf.BaseUdfViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -73,8 +75,14 @@ class CategoryViewModel @Inject constructor(
         }
     }
 
+    private var reorderJob: Job? = null
+
     private fun changeOrder(category: Category, newIndex: Int) {
-        viewModelScope.launch {
+        // Dragging emits a move event per drag frame; debounce the DB write so the order is
+        // persisted only once dragging settles instead of on every frame.
+        reorderJob?.cancel()
+        reorderJob = viewModelScope.launch {
+            delay(REORDER_DEBOUNCE_MILLIS)
             when (reorderCategory.await(category, newIndex)) {
                 is ReorderCategory.Result.InternalError -> emitEffect(CategoryEvent.InternalError)
                 else -> {}
@@ -120,6 +128,8 @@ sealed interface CategoryEvent {
     sealed class LocalizedMessage(val stringRes: Int) : CategoryEvent
     data object InternalError : LocalizedMessage(ephyra.app.core.common.R.string.internal_error)
 }
+
+private const val REORDER_DEBOUNCE_MILLIS = 500L
 
 sealed interface CategoryScreenState {
 
