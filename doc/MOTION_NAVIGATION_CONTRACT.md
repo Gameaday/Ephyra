@@ -43,6 +43,17 @@ For Series ↔ Library:
 - the back transition is **shorter** than the forward one, per the M3 shared-element spec;
 - invalid shared-element bounds fall back to a clean crossfade.
 
+## Hierarchy runs on the horizontal axis
+
+A hierarchical destination slides on the **X** axis, not on scale. Scale (shared axis Z) is the
+transition for entering or leaving a modal state; using it for ordinary forward navigation made a
+push read as the screen being zoomed at rather than moved to, and made back the reverse of a zoom.
+
+The forward leg travels a third of the viewport and the back leg is shorter, for the same reason the
+shared cover's return is shorter: the user already knows where back goes. The fallback previously
+composed a scale-up *and* a 10% slide at the same time, which is neither a shared axis nor a slide and
+is the muddle this section exists to remove.
+
 ## Direction is part of the pair
 
 The return is not the arrival played backwards. Material 3's shared-element spec is deliberately

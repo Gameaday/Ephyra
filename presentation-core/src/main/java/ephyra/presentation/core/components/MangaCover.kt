@@ -3,6 +3,7 @@ package ephyra.presentation.core.components
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -79,7 +80,7 @@ enum class MangaCover(val ratio: Float) {
 
         AsyncImage(
             model = model,
-            placeholder = ColorPainter(CoverPlaceholderColor),
+            placeholder = ColorPainter(coverPlaceholderColor()),
             error = rememberResourceBitmapPainter(id = R.drawable.cover_error),
             contentDescription = contentDescription,
             // Order matters here, and it was wrong.
@@ -118,4 +119,13 @@ enum class MangaCover(val ratio: Float) {
     }
 }
 
-private val CoverPlaceholderColor = Color(0x1F888888)
+/**
+ * Placeholder painted while a cover loads.
+ *
+ * Derived from the theme rather than a fixed translucent grey. The literal was the same in all
+ * themes, so on the Monochrome and Monet palettes the placeholder was the one surface in the grid
+ * that did not belong to the palette it was sitting in.
+ */
+@Composable
+private fun coverPlaceholderColor(): Color =
+    MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f)

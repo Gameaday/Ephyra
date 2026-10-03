@@ -337,8 +337,19 @@ class App :
         }
     }
 
+/**
+     * The loader's configured memory-cache size, captured when the loader is built.
+     *
+     * Trimming used to halve whatever the cache currently held, so each trim halved the previous
+     * trim: a long session that hit memory pressure a few times ratcheted the cache down towards
+     * nothing and never put it back, even after the pressure cleared. Remembering the configured
+     * size makes the trim idempotent and lets [onStart] restore it when the app is foregrounded
+     * again.
+     */
+    private var imageCacheBaselineMaxSize: Long? = null
+
     override fun newImageLoader(context: Context): ImageLoader {
-        return ImageLoader.Builder(this).apply {
+        val loader = ImageLoader.Builder(this).apply {
             val callFactoryLazy = lazy { networkHelper.client }
             components {
                 // NetworkFetcher.Factory
@@ -410,10 +421,29 @@ class App :
             decoderCoroutineContext(Dispatchers.IO.limitedParallelism(3))
         }
             .build()
+        // Captured once, before any trim has had a chance to shrink it, so a trim always computes
+        // from the configured size rather than from the previous trim's result.
+        imageCacheBaselineMaxSize = loader.memoryCache?.maxSize
+        return loader
     }
 
     override fun onStart(owner: LifecycleOwner) {
         SecureActivityDelegateState.onApplicationStart(securityPreferences)
+        restoreImageCacheSize()
+    }
+
+    /**
+     * Restores the memory cache to its configured size after a trim.
+     *
+     * Coming back to the foreground is the point at which the reason for trimming is gone. Without
+     * this the shrink was permanent for the life of the process: the cache stayed at half (or a
+     * quarter, or an eighth) of its configured size, so every cover and page scrolled past after a
+     * memory warning was decoded again instead of being found in memory.
+     */
+    private fun restoreImageCacheSize() {
+        val baseline = imageCacheBaselineMaxSize ?: return
+        val memoryCache = SingletonImageLoader.get(this).memoryCache ?: return
+        if (memoryCache.maxSize < baseline) memoryCache.maxSize = baseline
     }
 
     override fun onStop(owner: LifecycleOwner) {
@@ -423,11 +453,14 @@ class App :
     /**
      * Called by the system when it determines that memory is running low.
      *
-     * Foreground pressure is handled by shrinking Coil's memory cache to half its current
-     * size (Coil 3 [MemoryCache] sizes itself by percent of app memory, so halving the max
-     * evicts the least-recently-used decoded bitmaps). Background trimming is handled
-     * automatically by the lifecycle-aware [memoryCacheMaxSizePercentWhileInBackground]
-     * policy configured in [newImageLoader].
+     * Foreground pressure is handled by shrinking Coil's memory cache to half its *configured*
+     * size (Coil 3 [MemoryCache] sizes itself by percent of app memory, so lowering the max evicts
+     * the least-recently-used decoded bitmaps). Computing from the configured size rather than the
+     * current one makes the trim idempotent — halving the current value meant every warning halved
+     * the previous result, and the cache crept towards zero for the rest of the process.
+     * [restoreImageCacheSize] puts it back the next time the app is foregrounded. Background
+     * trimming is handled automatically by the lifecycle-aware
+     * [memoryCacheMaxSizePercentWhileInBackground] policy configured in [newImageLoader].
      *
      * Why LOW matters: long webtoon sessions pin chapter bytes + decoded strips in RAM,
      * and waiting for RUNNING_CRITICAL meant the reader appeared "full" (stalled loads)
@@ -440,7 +473,10 @@ class App :
         super.onTrimMemory(level)
         val memoryCache = SingletonImageLoader.get(this).memoryCache
         if (level >= TRIM_MEMORY_RUNNING_LOW && memoryCache != null) {
-            memoryCache.maxSize = (memoryCache.maxSize / 2).coerceAtLeast(16L * 1024 * 1024)
+            // Half of the *configured* size, so repeated trims land on the same value instead of
+            // compounding; [restoreImageCacheSize] puts it back on the next foreground.
+            val baseline = imageCacheBaselineMaxSize ?: memoryCache.maxSize
+            memoryCache.maxSize = (baseline / 2).coerceAtLeast(16L * 1024 * 1024)
         }
         if (level >= TRIM_MEMORY_RUNNING_CRITICAL) {
             memoryCache?.clear()
