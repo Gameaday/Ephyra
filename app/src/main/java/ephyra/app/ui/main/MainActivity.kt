@@ -9,10 +9,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -360,15 +358,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                     plan.effectiveDurationMillis,
                                                 )
                                             } else {
-                                                MotionTokens.m3SharedAxisZEnter() +
-                                                    slideIntoContainer(
-                                                        AnimatedContentTransitionScope.SlideDirection.Start,
-                                                        initialOffset = { (it * 0.10f).toInt() },
-                                                        animationSpec = tween(
-                                                            durationMillis = MotionTokens.DURATION_LONG_1,
-                                                            easing = MotionTokens.EasingEmphasizedDecelerate,
-                                                        ),
-                                                    )
+                                                MotionTokens.m3SharedAxisXEnter()
                                             }
                                         },
                                         exitTransition = {
@@ -383,15 +373,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                     plan.effectiveDurationMillis,
                                                 )
                                             } else {
-                                                MotionTokens.m3SharedAxisZExit() +
-                                                    slideOutOfContainer(
-                                                        AnimatedContentTransitionScope.SlideDirection.Start,
-                                                        targetOffset = { (it * 0.10f).toInt() },
-                                                        animationSpec = tween(
-                                                            durationMillis = MotionTokens.DURATION_MEDIUM_3,
-                                                            easing = MotionTokens.EasingEmphasizedAccelerate,
-                                                        ),
-                                                    )
+                                                MotionTokens.m3SharedAxisXExit()
                                             }
                                         },
                                         popEnterTransition = {
@@ -406,15 +388,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                     plan.effectiveDurationMillis,
                                                 )
                                             } else {
-                                                MotionTokens.m3SharedAxisZPopEnter() +
-                                                    slideIntoContainer(
-                                                        AnimatedContentTransitionScope.SlideDirection.End,
-                                                        initialOffset = { (it * 0.10f).toInt() },
-                                                        animationSpec = tween(
-                                                            durationMillis = MotionTokens.DURATION_MEDIUM_4,
-                                                            easing = MotionTokens.EasingEmphasizedDecelerate,
-                                                        ),
-                                                    )
+                                                MotionTokens.m3SharedAxisXPopEnter()
                                             }
                                         },
                                         popExitTransition = {
@@ -429,15 +403,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                     plan.effectiveDurationMillis,
                                                 )
                                             } else {
-                                                MotionTokens.m3SharedAxisZPopExit() +
-                                                    slideOutOfContainer(
-                                                        AnimatedContentTransitionScope.SlideDirection.End,
-                                                        targetOffset = { (it * 0.10f).toInt() },
-                                                        animationSpec = tween(
-                                                            durationMillis = MotionTokens.DURATION_MEDIUM_2,
-                                                            easing = MotionTokens.EasingEmphasizedAccelerate,
-                                                        ),
-                                                    )
+                                                MotionTokens.m3SharedAxisXPopExit()
                                             }
                                         },
                                     ) {

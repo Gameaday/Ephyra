@@ -389,6 +389,10 @@ private fun ExtensionScraperManagementLayout(
     searchQuery: String? = null,
 ) {
     var showDevTools by remember { mutableStateOf(false) }
+    // O(1) lookup per row; the previous per-row firstOrNull was O(n*m) across the section.
+    val installedByPackage = remember(installedExtensions) {
+        installedExtensions.associateBy { it.pkgName }
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -448,18 +452,30 @@ private fun ExtensionScraperManagementLayout(
             }
         }
 
-        // Available Extensions (from connected repos)
+        // Available Extensions (from connected repos).
+        //
+        // The header is one item and the extensions are lazy items, so a large repository only
+        // composes the rows near the viewport instead of every row at once.
         if (repos.isNotEmpty()) {
-            item {
-                AvailableExtensionsSection(
-                    availableExtensions = availableExtensions,
-                    installedExtensions = installedExtensions,
-                    onInstall = onInstallExtensionClick,
-                    onUninstallInstalled = onUninstallInstalledExtension,
-                    onUpdate = onUpdateExtension,
-                    onClickExtension = onClickExtension,
+            item(key = "available_extensions_header") {
+                AvailableExtensionsHeader(
+                    availableExtensionCount = availableExtensions.size,
                     onRefresh = onRefresh,
                     searchQuery = searchQuery,
+                )
+            }
+            items(
+                items = availableExtensions,
+                key = { it.pkgName },
+            ) { ext ->
+                val installedExt = installedByPackage[ext.pkgName]
+                ExtensionItemRow(
+                    extension = ext,
+                    installedExtension = installedExt,
+                    onInstall = { onInstallExtensionClick(ext) },
+                    onUninstall = { installedExt?.let(onUninstallInstalledExtension) },
+                    onUpdate = { installedExt?.let(onUpdateExtension) },
+                    onClickExtension = { onClickExtension(ext.pkgName) },
                 )
             }
         }
@@ -971,14 +987,18 @@ private fun RepoRow(
     }
 }
 
+/**
+ * Header for the available-extensions section.
+ *
+ * The rows are emitted as lazy items by the parent `LazyColumn`, not rendered here. This section
+ * used to be one `item { }` containing a `forEach` over every available extension, so a repository
+ * with a few hundred extensions composed and measured all of them the moment the section scrolled
+ * into view -- the reported "slow loading when scrolling into available extensions". Only the
+ * header is eager now; rows compose as they approach the viewport.
+ */
 @Composable
-private fun AvailableExtensionsSection(
-    availableExtensions: List<Extension.Available>,
-    installedExtensions: List<Extension.Installed>,
-    onInstall: (Extension.Available) -> Unit,
-    onUninstallInstalled: (Extension.Installed) -> Unit,
-    onUpdate: (Extension.Installed) -> Unit,
-    onClickExtension: (String) -> Unit,
+private fun AvailableExtensionsHeader(
+    availableExtensionCount: Int,
     onRefresh: () -> Unit,
     searchQuery: String? = null,
 ) {
@@ -1014,7 +1034,7 @@ private fun AvailableExtensionsSection(
                         .padding(horizontal = 8.dp, vertical = 4.dp),
                 ) {
                     Text(
-                        text = availableExtensions.size.toString(),
+                        text = availableExtensionCount.toString(),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.secondary,
                         fontWeight = FontWeight.Bold,
@@ -1022,7 +1042,7 @@ private fun AvailableExtensionsSection(
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))
-            if (availableExtensions.isEmpty()) {
+            if (availableExtensionCount == 0) {
                 val message = if (!searchQuery.isNullOrBlank()) {
                     "No extensions match \"$searchQuery\""
                 } else {
@@ -1051,20 +1071,6 @@ private fun AvailableExtensionsSection(
                             Spacer(modifier = Modifier.width(6.dp))
                             Text("Refresh Repositories")
                         }
-                    }
-                }
-            } else {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    availableExtensions.forEach { ext ->
-                        val installedExt = installedExtensions.firstOrNull { it.pkgName == ext.pkgName }
-                        ExtensionItemRow(
-                            extension = ext,
-                            installedExtension = installedExt,
-                            onInstall = { onInstall(ext) },
-                            onUninstall = { installedExt?.let(onUninstallInstalled) },
-                            onUpdate = { installedExt?.let(onUpdate) },
-                            onClickExtension = { onClickExtension(ext.pkgName) },
-                        )
                     }
                 }
             }
