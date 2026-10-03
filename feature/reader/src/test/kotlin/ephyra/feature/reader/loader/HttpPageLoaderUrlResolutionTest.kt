@@ -191,8 +191,47 @@ class HttpPageLoaderUrlResolutionTest {
     /** An unresolved-but-present list is the network case, and must not be mistaken for a bad one. */
     @Test
     fun `a cached list with an empty image URL is not treated as a defect`() {
-        assertTrue(HttpPageLoader.cachedPagesAreUsable(listOf(Page(0, "/page/1.jpg", "")), BASE))
-        assertTrue(HttpPageLoader.cachedPagesAreUsable(listOf(Page(0, "/page/1.jpg", null)), BASE))
+        // Only where the source can produce an address itself - see the parameterised case below for
+        // the other side, which is the reported MangaDex failure.
+        assertTrue(HttpPageLoader.cachedPagesAreUsable(listOf(Page(0, "/page/1.jpg", "")), BASE, true))
+        assertTrue(HttpPageLoader.cachedPagesAreUsable(listOf(Page(0, "/page/1.jpg", null)), BASE, true))
+    }
+
+    /**
+     * A cached list with no addresses is a permanent failure when the source cannot fill them in.
+     *
+     * **Why this is the reported MangaDex failure.** MangaDex declares its own `getPageList` and
+     * customises none of `getImageUrl` / `imageUrlRequest` / `imageUrlParse`, so `Page.imageUrl` is the
+     * only place an address can arrive - which is also true of every 1.6 extension, and of Mihon,
+     * whose `Source` interface has no `getImageUrl` at all. An empty `imageUrl` in that world means the
+     * list can never be read.
+     *
+     * Accepting it anyway made the cache permanently authoritative: the list stayed a *hit* on every
+     * open, `getPageList` was never consulted again, and the addresses the source would have supplied
+     * never arrived. The device said so directly - `pageImageUrl=<null>` beside `getPageListBy=MangaDex`,
+     * which is the declaring class, not proof of a call.
+     */
+    @Test
+    fun `a cached list with no addresses is discarded when the source cannot resolve them`() {
+        val cached = listOf(Page(0, "/page/1.jpg", null), Page(1, "/page/2.jpg", ""))
+        assertFalse(HttpPageLoader.cachedPagesAreUsable(cached, BASE, sourceCustomisesImageChain = false))
+    }
+
+    /** The counterweight: a source that fills them in itself is unaffected by the rule above. */
+    @Test
+    fun `a source that resolves addresses itself keeps its cached list`() {
+        val cached = listOf(Page(0, "/page/1.jpg", null))
+        assertTrue(HttpPageLoader.cachedPagesAreUsable(cached, BASE, sourceCustomisesImageChain = true))
+    }
+
+    /** A populated address is judged the same either way. */
+    @Test
+    fun `a cached address is judged independently of who could resolve it`() {
+        val good = listOf(Page(0, "/page/1.jpg", "https://cdn.example.com/1.jpg"))
+        assertTrue(HttpPageLoader.cachedPagesAreUsable(good, BASE, sourceCustomisesImageChain = false))
+
+        val bad = listOf(Page(0, "/page/1.jpg", "https://a.example.com,https://b.example.com"))
+        assertFalse(HttpPageLoader.cachedPagesAreUsable(bad, BASE, sourceCustomisesImageChain = true))
     }
 
     /**

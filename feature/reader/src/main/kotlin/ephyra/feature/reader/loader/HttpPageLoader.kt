@@ -222,7 +222,12 @@ internal class HttpPageLoader(
             // reported MangaDex failure lived here: a list written by a bad pass was served verbatim
             // on every subsequent open, the source was never asked, and no fix downstream of the
             // read could take effect. See `cachedPagesAreUsable`.
-            if (cachedPagesAreUsable(cachedPages, source.baseUrl)) {
+            if (cachedPagesAreUsable(
+                    cachedPages,
+                    source.baseUrl,
+                    source.capabilities.customisesImageUrlChain,
+                )
+            ) {
                 // All image URLs are already resolved: the recycle() save can be skipped.
                 cacheHadMissingImageUrls = cachedPages.any { it.imageUrl.isNullOrEmpty() }
                 cachedPages
@@ -790,10 +795,27 @@ internal class HttpPageLoader(
          * caching at all, only slower. So the question is not "is this already an address" but "can
          * this become one", and only the second is disqualifying.
          */
-        internal fun cachedPagesAreUsable(pages: List<Page>, baseUrl: String?): Boolean =
+        internal fun cachedPagesAreUsable(
+            pages: List<Page>,
+            baseUrl: String?,
+            sourceCustomisesImageChain: Boolean = true,
+        ): Boolean =
             pages.all { page ->
                 val url = page.imageUrl
-                url.isNullOrEmpty() || ImageUrlPolicy.isUsable(ImageUrlPolicy.resolve(url, baseUrl))
+                if (url.isNullOrEmpty()) {
+                    // Acceptable only where the source can produce an address itself. For a source
+                    // that customises none of getImageUrl / imageUrlRequest / imageUrlParse - which
+                    // is what a 1.6 extension populating Page.imageUrl in getPageList does, and what
+                    // Mihon's Source, having no getImageUrl at all, requires - an empty imageUrl
+                    // means the list can never produce an address. The reported MangaDex failure was
+                    // exactly that: a list persisted without addresses stayed a cache *hit* on every
+                    // open, so getPageList was never consulted again and the source's own addresses
+                    // never arrived. The device reported `pageImageUrl=<null>` beside
+                    // `getPageListBy=MangaDex`, which is the declaring class, not proof of a call.
+                    sourceCustomisesImageChain
+                } else {
+                    ImageUrlPolicy.isUsable(ImageUrlPolicy.resolve(url, baseUrl))
+                }
             }
 
         /**
