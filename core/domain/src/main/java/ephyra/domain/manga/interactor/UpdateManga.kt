@@ -120,7 +120,7 @@ class UpdateManga(
             remoteManga.description == localManga.description -> null
             else -> remoteManga.description
         }
-        val remoteGenres = remoteManga.getGenres()
+        val remoteGenres = remoteManga.effectiveGenres()
         val genre = when {
             shouldPreserve(LockedField.GENRE, !localManga.genre.isNullOrEmpty()) -> null
             remoteGenres == localManga.genre -> null

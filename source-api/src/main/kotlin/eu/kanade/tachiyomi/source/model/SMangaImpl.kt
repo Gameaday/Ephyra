@@ -18,6 +18,23 @@ class SMangaImpl : SManga {
 
     override var genre: String? = null
 
+    override var genres: List<String> = emptyList()
+
+    override var readingMode: SManga.ReadingMode? = null
+
+    override var banner: String? = null
+
+    override var altTitles: List<String> = emptyList()
+
+    override var language: String? = null
+
+    override var score: Int? = null
+
+    // SAFE, not null: upstream declares this non-null because an app that blurs covers has to read
+    // it without a null check, and an unset field would otherwise mean "unknown", which is the one
+    // reading a blur filter must not default to.
+    override var contentRating: SManga.ContentRating = SManga.ContentRating.SAFE
+
     override var status: Int = 0
 
     override var thumbnail_url: String? = null
