@@ -3,7 +3,7 @@ package ephyra.feature.settings.screen.about
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import ephyra.core.common.util.lang.launchIO
+import ephyra.core.common.di.IoDispatcher
 import ephyra.core.common.util.lang.toDateTimestampString
 import ephyra.domain.extension.service.ExtensionManager
 import ephyra.domain.release.interactor.GetApplicationRelease
@@ -11,7 +11,10 @@ import ephyra.domain.release.service.AppUpdateDownloader
 import ephyra.domain.ui.UiPreferences
 import ephyra.presentation.core.udf.BaseUdfViewModel
 import ephyra.presentation.core.ui.AppInfo
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -24,6 +27,23 @@ class AboutViewModel @Inject constructor(
     val appInfo: AppInfo,
     val extensionManager: ExtensionManager,
     private val appUpdateDownloader: AppUpdateDownloader,
+    /**
+     * Where the update check runs.
+     *
+     * **Why this is injectable.** It used to be `viewModelScope.launchIO`, and `launchIO` is
+     * `launch(Dispatchers.IO)` — a real thread pool that `Dispatchers.setMain` and
+     * `advanceUntilIdle` cannot reach. So `AboutViewModelTest` was a genuine race: the coroutine ran on
+     * an uncontrolled thread and the effect might or might not have been emitted by the time
+     * `awaitItem()` ran. It passed locally and failed on CI, on a test nobody had changed.
+     *
+     * A timing-dependent test is not a slow test, it is a broken one — it fails eventually on a
+     * developer's machine with nothing in the diff to explain it. Injecting the dispatcher puts the
+     * coroutine on the test scheduler, where `advanceUntilIdle()` deterministically runs it.
+     *
+     * Production behaviour is unchanged: this binds `@IoDispatcher`, which is `Dispatchers.IO`.
+     */
+    @IoDispatcher
+    private val updateCheckDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : BaseUdfViewModel<AboutScreenState, AboutScreenEvent, AboutEffect>(AboutScreenState()) {
 
     val events: Flow<AboutEffect>
@@ -47,7 +67,7 @@ class AboutViewModel @Inject constructor(
 
         updateState { it.copy(isCheckingUpdates = true) }
 
-        viewModelScope.launchIO {
+        viewModelScope.launch(updateCheckDispatcher) {
             try {
                 val result = getApplicationRelease.await(
                     GetApplicationRelease.Arguments(

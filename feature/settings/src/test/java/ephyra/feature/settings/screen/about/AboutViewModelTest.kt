@@ -61,6 +61,11 @@ class AboutViewModelTest {
         appInfo = appInfo,
         extensionManager = extensionManager,
         appUpdateDownloader = appUpdateDownloader,
+        // The ViewModel used to hardcode `launchIO`, i.e. `Dispatchers.IO`, which
+        // `Dispatchers.setMain` and `advanceUntilIdle` cannot reach — so `awaitItem()` raced a
+        // coroutine on a real thread. It passed locally and failed on CI with no diff to explain it.
+        // Injecting the scheduler is what makes the advance below mean anything.
+        updateCheckDispatcher = testDispatcher,
     )
 
     @Test
