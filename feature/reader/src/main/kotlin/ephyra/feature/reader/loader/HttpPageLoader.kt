@@ -21,6 +21,7 @@ import ephyra.feature.reader.model.ReaderPage
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.source.online.PageImageAddress
+import eu.kanade.tachiyomi.source.online.PageListDiagnostics
 import eu.kanade.tachiyomi.source.online.resolvePageImage
 import eu.kanade.tachiyomi.source.online.resolvesOwnPageImages
 import kotlinx.coroutines.CancellationException
@@ -196,12 +197,16 @@ internal class HttpPageLoader(
         // What the source actually returned, counted rather than asserted. Every fixture in
         // `HttpPageLoaderUrlResolutionTest` builds `Page` with an image URL in `getPageList`, so
         // passing tests only proved the app agrees with a model — never that a real 1.6 source
-        // populates the field the way the fixtures assume it does. MangaDex reports
-        // `pageImageUrl=<null>` beside `overrides=none`, which under the 1.6 contract should be
-        // impossible: a source that customises no chain entry point must populate `imageUrl` in
-        // `getPageList`. One of those two facts is wrong, and this line says which.
+        // populates the field the way the fixtures assume it does.
+        //
+        // Recorded on `PageListDiagnostics` rather than only logged, because the reported failure is
+        // a contradiction between two facts about this call — `getPageList` is declared, yet the pages
+        // carry no address — and the resolver cannot see this one. Logging it left the question
+        // answerable only by someone reading logcat; putting it on the diagnostic means the *next
+        // error message* carries the answer with it.
+        val withAddress = networkPages.count { !it.imageUrl.isNullOrEmpty() }
+        PageListDiagnostics.record(networkPages.size, withAddress)
         logcat(LogPriority.INFO) {
-            val withAddress = networkPages.count { !it.imageUrl.isNullOrEmpty() }
             "getPageList returned ${networkPages.size} page(s) for '${domainChapter.name}', " +
                 "$withAddress with an image address, source=${source.javaClass.name}, " +
                 "declaresGetPageList=${source.capabilities.declaringClassOf("getPageList")}"

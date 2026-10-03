@@ -6,6 +6,33 @@ import ephyra.core.common.util.system.logcat
 import eu.kanade.tachiyomi.source.model.Page
 
 /**
+ * Where the loader last saw what `getPageList` actually returned.
+ *
+ * **Why this is static state.** The reported failure is a contradiction between two facts about one
+ * call: `getPageList` is declared on the source, yet the pages carry no address. Only the loader can
+ * count what came back and only the resolver can report the failure, so one has to leave a trace for
+ * the other. It is a diagnostic deliberately — read-only, overwritten each fetch, and consulted by
+ * no decision.
+ *
+ * **Why the count goes in the user-visible error and not only to logcat.** Every round of this
+ * investigation stalled on the same request — "send me the logcat line" — because the fact lived in a
+ * log while the person reporting the bug was reading the error on screen. Putting it in the message
+ * means the next report carries the answer with it.
+ */
+object PageListDiagnostics {
+    /** Set by the loader immediately after each `getPageList` call. */
+    @Volatile
+    @JvmStatic
+    var lastFetchSummary: String = "<getPageList has not been called>"
+
+    /** Records [total] pages returned, of which [withAddress] carried an image address. */
+    @JvmStatic
+    fun record(total: Int, withAddress: Int) {
+        lastFetchSummary = "$total page(s), $withAddress with an address"
+    }
+}
+
+/**
  * Whether this source can produce an image address for a page that arrives without one.
  *
  * Two consumers need this and neither should be reaching into [SourceCapabilities]:
@@ -83,6 +110,7 @@ private fun HttpSource.reportNoImageAddress(page: Page, cause: MalformedImageUrl
             append("  source          = ${javaClass.name}\n")
             append("  overrides       = ${capabilities.overriddenChainMethods()}\n")
             append("  pageImageUrl    = ${page.imageUrl ?: "<null>"}\n")
+            append("  getPageList     = ${PageListDiagnostics.lastFetchSummary}\n")
             append("  getPageListBy   = ${capabilities.declaringClassOf("getPageList")}\n")
             append("  baseUrl         = $baseUrl\n")
             append("  page.url        = ${page.url.ifEmpty { "<blank>" }}\n")
