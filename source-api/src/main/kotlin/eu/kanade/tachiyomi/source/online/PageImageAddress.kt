@@ -2,6 +2,8 @@ package eu.kanade.tachiyomi.source.online
 
 import ephyra.core.common.util.network.MalformedImageUrlException
 import ephyra.core.common.util.network.ResolvedImageUrl
+import ephyra.core.common.util.network.asContextualised
+import ephyra.core.common.util.network.withContext
 import ephyra.core.common.util.system.logcat
 import eu.kanade.tachiyomi.source.model.Page
 
@@ -88,8 +90,7 @@ suspend fun HttpSource.resolvePageImage(page: Page): ResolvedImageUrl {
         try {
             ResolvedImageUrl.of(page.url, baseUrl)
         } catch (cause: MalformedImageUrlException) {
-            reportPageImageRejected(page, cause, at = "resolvePageImage/gate")
-            throw cause
+            throw cause.withContext(describePageImageRejection(page, at = "resolvePageImage/gate"))
         }
     }
 
@@ -100,65 +101,52 @@ suspend fun HttpSource.resolvePageImage(page: Page): ResolvedImageUrl {
     val returned = try {
         getImageUrl(page)
     } catch (e: Throwable) {
-        reportPageImageRejected(
-            page,
-            e as? MalformedImageUrlException
-                ?: MalformedImageUrlException(
-                    page.imageUrl ?: "<null>",
-                    "getImageUrl threw ${e::class.simpleName}",
-                ),
-            at = "resolvePageImage/getImageUrl",
-            resolvedVia = "getImageUrl (threw)",
+        throw e.asContextualised(
+            describePageImageRejection(page, at = "resolvePageImage/getImageUrl", resolvedVia = "getImageUrl (threw)"),
         )
-        throw e
     }
     return try {
         ResolvedImageUrl.of(returned, baseUrl)
     } catch (e: MalformedImageUrlException) {
-        reportPageImageRejected(
-            page,
-            e,
-            at = "resolvePageImage/getImageUrl",
-            returned = returned,
-            resolvedVia = "getImageUrl",
+        throw e.withContext(
+            describePageImageRejection(
+                page,
+                at = "resolvePageImage/getImageUrl",
+                returned = returned,
+                resolvedVia = "getImageUrl",
+            ),
         )
-        throw e
     }
 }
 
 /**
- * Reports a page that yielded no usable address, naming the source and where the value came from.
+ * Describes a rejected page address: where the value came from, and what the source actually returns.
  *
- * Every judgement site must route through here. Two of the three did not, and the third is the one
- * that was actually throwing: a page whose `imageUrl` was already populated skips the resolve-and-ask
- * branch entirely, so a failure there reported nothing beyond the bare reason — which is why several
- * rounds of device reports described a value without ever showing where it had come from.
+ * **This returns text for the exception message, deliberately.** Three earlier commits added these
+ * fields to `logcat`, and the only person reading the failure had no logcat — so the instrumented
+ * build and the uninstrumented one produced an identical on-screen error, and "the error did not
+ * change" could not be told apart from "the error changed". A diagnostic nobody can see is not a
+ * diagnostic. `url` and `reason` are untouched, so classification is unaffected.
  */
-fun HttpSource.reportPageImageRejected(
+fun HttpSource.describePageImageRejection(
     page: Page,
-    cause: MalformedImageUrlException,
     at: String,
     returned: String? = null,
     resolvedVia: String? = null,
-) {
-    logcat {
-        buildString {
-            append("PageImageAddress: no image address available\n")
-            append("  at              = $at\n")
-            append("  source          = ${javaClass.name}\n")
-            append("  overrides       = ${capabilities.overriddenChainMethods()}\n")
-            append("  resolvedVia     = ${resolvedVia ?: "not consulted"}\n")
-            append("  pageImageUrl    = ${page.imageUrl ?: "<null>"}\n")
-            append("  getPageList     = ${PageListDiagnostics.lastFetchSummary}\n")
-            append("  getPageListBy   = ${capabilities.declaringClassOf("getPageList")}\n")
-            append("  baseUrl         = $baseUrl\n")
-            append("  page.url        = ${page.url.ifEmpty { "<blank>" }}\n")
-            if (returned != null) {
-                append("  returned        = $returned\n")
-            }
-            append("  reason          = ${cause.reason}")
-        }
+): String = buildString {
+    append("Why this was rejected:")
+    append("\n  at            = $at")
+    append("\n  source        = ${javaClass.name}")
+    append("\n  overrides     = ${capabilities.overriddenChainMethods()}")
+    append("\n  resolvedVia   = ${resolvedVia ?: "not consulted"}")
+    append("\n  pageImageUrl  = ${page.imageUrl ?: "<null>"}")
+    append("\n  page.url      = ${page.url.ifEmpty { "<blank>" }}")
+    if (returned != null) {
+        append("\n  returned      = $returned")
     }
+    append("\n  getPageList   = ${PageListDiagnostics.lastFetchSummary}")
+    append("\n  getPageListBy = ${capabilities.declaringClassOf("getPageList")}")
+    append("\n  baseUrl       = $baseUrl")
 }
 
 /**

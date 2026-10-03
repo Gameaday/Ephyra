@@ -21,11 +21,48 @@ import java.io.IOException
  * two together would either give up on recoverable hosts or keep hammering the unrecoverable one.
  */
 class MalformedImageUrlException(
-    /** The rejected URL, exactly as the source produced it. Carried so a caller can compare it. */
     val url: String,
-    /** Human-readable reason, from [ImageUrlPolicy.defectOf]. */
     val reason: String,
-) : IOException("Image URL is not a usable http(s) address ($reason): $url")
+    /**
+     * Diagnostic detail about *where this value came from*, appended to the message.
+     *
+     * Temporary and deliberately user-visible. There is no release audience for this build, and the
+     * alternative was three commits of instrumentation that nobody could see: the reports were going
+     * to logcat while the only reader had no logcat, so every round of "the error is unchanged" was
+     * indistinguishable from "the error did not change". `url` and `reason` are unchanged, so
+     * classification in `TransientErrors` and every existing assertion still hold.
+     */
+    val context: String? = null,
+) : IOException(
+    "Image URL is not a usable http(s) address ($reason): $url" +
+        if (context == null) "" else "\n\n$context",
+)
+
+/**
+ * Returns a copy of this failure carrying [details] as its visible context.
+ *
+ * Reconstructs rather than mutates so the exception stays immutable and the original is still the one
+ * classification code matches on.
+ */
+fun MalformedImageUrlException.withContext(details: String): MalformedImageUrlException =
+    MalformedImageUrlException(url, reason, details)
+
+/**
+ * Attaches [details] when this is already a malformed-URL failure, and otherwise wraps it in one.
+ *
+ * The wrapper is deliberately a `MalformedImageUrlException` so a source that throws something else
+ * from `getImageUrl` still classifies as "ask the source again" rather than as an opaque crash —
+ * but the original is kept as the cause, so nothing is lost.
+ */
+fun Throwable.asContextualised(details: String): Throwable =
+    when (this) {
+        is MalformedImageUrlException -> withContext(details)
+        else -> MalformedImageUrlException(
+            url = message ?: toString(),
+            reason = "the source threw $javaClass.simpleName while resolving a page image",
+            context = details,
+        ).also { it.initCause(this) }
+    }
 
 /**
  * An image URL that has been resolved against a base URL **and** judged capable of addressing a

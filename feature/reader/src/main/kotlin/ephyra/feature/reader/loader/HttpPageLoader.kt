@@ -11,6 +11,7 @@ import ephyra.core.common.util.network.PageLoadRecoveryDecision
 import ephyra.core.common.util.network.ReResolvePacer
 import ephyra.core.common.util.network.ResolvedImageUrl
 import ephyra.core.common.util.network.TransientErrors
+import ephyra.core.common.util.network.withContext
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.logcat
 import ephyra.domain.chapter.model.Chapter
@@ -22,7 +23,7 @@ import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.source.online.PageImageAddress
 import eu.kanade.tachiyomi.source.online.PageListDiagnostics
-import eu.kanade.tachiyomi.source.online.reportPageImageRejected
+import eu.kanade.tachiyomi.source.online.describePageImageRejection
 import eu.kanade.tachiyomi.source.online.resolvePageImage
 import eu.kanade.tachiyomi.source.online.resolvesOwnPageImages
 import kotlinx.coroutines.CancellationException
@@ -619,8 +620,11 @@ internal class HttpPageLoader(
                     // never runs and nothing else would explain the failure. The reported MangaDex case
                     // arrived here: the page carried an address that cannot address a host, and the only
                     // thing reported was the bare reason, with nothing saying where it came from.
-                    source.reportPageImageRejected(page, cause, "restored page")
-                    throw cause
+                    // Carried in the message, not logcat: the only reader of this
+                    // failure sees the screen, so a diagnostic written anywhere else is invisible.
+                    throw cause.withContext(
+                        source.describePageImageRejection(page, at = "loader/restored page"),
+                    )
                 }
                 val imageUrl = requireNotNull(page.imageUrl) { "Image URL is null after being fetched from source" }
 
