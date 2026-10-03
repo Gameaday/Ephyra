@@ -4,10 +4,15 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -51,6 +56,48 @@ fun buildErrorReport(message: String, log: String): String {
 }
 
 private const val LOG_HEADING = "--- recent log ---"
+
+/**
+ * The one-line summary of a failure, without the diagnosis.
+ *
+ * A message from this pipeline is `"<what> (<why>):\n<value>"`, optionally followed by a blank line
+ * and a `"Why this was rejected:"` block. The first part is what failed; the rest is evidence. Both
+ * hosts — the chapter-level card and the per-page view — split it the same way, which is why this is
+ * one function rather than two parsers that can disagree.
+ */
+fun errorHeadline(message: String): String =
+    message.substringBefore("\n\n").substringBefore("\n:").trim()
+        .ifEmpty { "Something went wrong loading this." }
+
+/** The diagnostic block, or empty when the message carries none. */
+fun errorDetails(message: String): String = message.substringAfter("\n\n", "").trim()
+
+/**
+ * Copies a failure report — the message plus the recent log — to the clipboard.
+ *
+ * Shared by both hosts so the report is defined once. Everything about it lives in [buildErrorReport]
+ * and [readRecentLog]; this is only the affordance.
+ */
+@Composable
+fun ReaderCopyReportButton(
+    message: String,
+    modifier: Modifier = Modifier,
+) {
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    OutlinedButton(
+        modifier = modifier,
+        onClick = {
+            scope.launch {
+                context.copyToClipboard("Reader error", buildErrorReport(message, readRecentLog()))
+            }
+        },
+    ) {
+        Icon(Icons.Outlined.ContentCopy, contentDescription = null)
+        Spacer(Modifier.size(8.dp))
+        Text("Copy report")
+    }
+}
 
 /**
  * The reader's failure state, shown as a card rather than as the raw exception text.
