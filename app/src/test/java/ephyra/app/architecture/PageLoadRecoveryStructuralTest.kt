@@ -281,16 +281,15 @@ class PageLoadRecoveryStructuralTest {
             RegexOption.DOT_MATCHES_ALL,
         )
 
-        /**
-         * **Retired with the loader-side rewrite it pinned.** `ASSIGNED_BEFORE_USE` asserted that the
-         * loader resolved `page.imageUrl` and read it back — the pairing that, correctly applied to a
-         * *populated* source field, spliced two URLs together and broke MangaDex completely (see
-         * `doc/EXTENSION_COMPATIBILITY.md`, "`Page.imageUrl` is opaque to the host once populated").
-         * The invariant it gestures at survives in the test above as its shadow: the cache key and
-         * the request are the same *raw* string read back off the page, and the loader resolves
-         * nothing. A regex cannot express "nothing writes into this field", so that is asserted
-         * directly — `!text.contains("PageImageAddress")` — instead of pinning the syntax of an
-         * assignment that must no longer exist.
-         */
+        // **Retired with the loader-side rewrite it pinned.** `ASSIGNED_BEFORE_USE` asserted that the
+        // loader resolved `page.imageUrl` and read it back — the pairing that, correctly applied to a
+        // *populated* source field, spliced two URLs together and broke MangaDex completely (see
+        // `doc/EXTENSION_COMPATIBILITY.md`, "`Page.imageUrl` is opaque to the host once populated").
+        // The invariant it gestures at survives in the test above as its shadow: the cache key and
+        // the request are the same *raw* string read back off the page, and the loader resolves
+        // nothing. A regex cannot express "nothing writes into this field", so that is asserted
+        // directly — `!text.contains("PageImageAddress")` — instead of pinning the syntax of an
+        // assignment that must no longer exist. Kept as a comment rather than deleted so the next
+        // gate author reads why pinning an assignment's *syntax* is the wrong shape here.
     }
 }
