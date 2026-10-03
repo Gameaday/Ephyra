@@ -81,7 +81,7 @@ class SourceCapabilities internal constructor(private val type: Class<*>) {
      */
     fun declaringClassOf(name: String): String {
         var current: Class<*>? = type
-        while (current != null && current != HttpSource::class.java) {
+        while (current != null && current.name != HTTP_SOURCE_CLASS_NAME) {
             current.declaredMethods.firstOrNull { it.name == name }
                 ?.let { return it.declaringClass.simpleName }
             current = current.superclass
@@ -97,6 +97,12 @@ class SourceCapabilities internal constructor(private val type: Class<*>) {
          * a customising source be reported as `none`.
          */
         val CHAIN_ENTRY_POINTS = listOf("getImageUrl", "fetchImageUrl", "imageUrlRequest", "imageUrlParse")
+
+        /**
+         * Identifies [HttpSource] by name rather than by reference, because a delegated class loader
+         * can hand the extension a *different* `Class` with the same name. See [overrides].
+         */
+        const val HTTP_SOURCE_CLASS_NAME = "eu.kanade.tachiyomi.source.online.HttpSource"
     }
 
     /**
@@ -104,12 +110,25 @@ class SourceCapabilities internal constructor(private val type: Class<*>) {
      *
      * Declared, not inherited-and-public: `imageUrlRequest` and `imageUrlParse` are `protected`, and
      * [Class.getMethods] returns public members only. A check written against it silently misses
-     * both even with the right names, which is precisely how an earlier version of this probe reported
-     * MangaDex as uncustomising and blocked the chain it was written to accommodate.
+     * both even with the right names, which is precisely how an earlier version of this probe
+     * reported MangaDex as uncustomising and blocked the chain it was written to accommodate.
+     *
+     * **Compared by name, not by identity.** Extensions load through
+     * `DelegateLastClassLoaderCompat`, which consults the extension's own dex *before* the host's.
+     * So if an extension ever bundles its own copy of `HttpSource` — which is exactly what a plugin
+     * that shades or relocates dependencies would do — then `MangaDex`'s superclass chain ends at a
+     * `Class` that is not `HttpSource::class.java`, and an identity comparison never terminates
+     * where it should. The walk would run into the bundled copy's own `getImageUrl` and
+     * `fetchImageUrl` and report **every** source as customising, silently disabling the gate and
+     * letting `Page.url` be fetched as an image address.
+     *
+     * That failure is the opposite direction from the one this probe already had, and worse: the
+     * gate is what stops the app sending a cache key to DNS. Name comparison is immune to there
+     * being two copies, and loses nothing when there is only one.
      */
     private fun overrides(name: String): Boolean {
         var current: Class<*>? = type
-        while (current != null && current != HttpSource::class.java) {
+        while (current != null && current.name != HTTP_SOURCE_CLASS_NAME) {
             if (current.declaredMethods.any { it.name == name }) return true
             current = current.superclass
         }
