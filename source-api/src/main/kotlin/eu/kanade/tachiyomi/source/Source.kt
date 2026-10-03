@@ -97,7 +97,7 @@ interface Source {
      * @since extensions-lib 1.5
      */
     suspend fun getMangaDetails(manga: SManga): SManga =
-        getMangaUpdate(manga, emptyList(), fetchDetails = true, fetchChapters = false).manga
+        getMangaUpdate(manga, emptyList(), fetchDetails = true, fetchChapters = false).manga()
 
     /**
      * Get all the available chapters for a manga.
@@ -105,7 +105,7 @@ interface Source {
      * @since extensions-lib 1.5
      */
     suspend fun getChapterList(manga: SManga): List<SChapter> =
-        getMangaUpdate(manga, emptyList(), fetchDetails = false, fetchChapters = true).chapters
+        getMangaUpdate(manga, emptyList(), fetchDetails = false, fetchChapters = true).chapters()
 
     /**
      * Get the list of pages a chapter has. Pages should be returned

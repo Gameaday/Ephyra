@@ -326,12 +326,12 @@ class LibraryUpdateJob(
             )
             if (autoUpdateMetadata) {
                 try {
-                    updateManga.awaitUpdateFromSource(manga, update.manga, manualFetch = false)
+                    updateManga.awaitUpdateFromSource(manga, update.manga(), manualFetch = false)
                 } catch (e: Exception) {
                     logcat(LogPriority.WARN, e) { "Metadata update failed for '${manga.title}'" }
                 }
             }
-            update.chapters
+            update.chapters()
         } catch (e: Exception) {
             logcat(LogPriority.WARN, e) { "Update failed for '${manga.title}'" }
             emptyList()

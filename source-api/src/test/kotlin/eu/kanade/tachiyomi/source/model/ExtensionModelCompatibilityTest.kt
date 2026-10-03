@@ -1,5 +1,6 @@
 package eu.kanade.tachiyomi.source.model
 
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
@@ -116,5 +117,51 @@ class ExtensionModelCompatibilityTest {
         assertEquals(original.score, copy.score)
         assertEquals(original.contentRating, copy.contentRating)
         assertEquals(original.readingMode, copy.readingMode)
+    }
+
+    /**
+     * The deferred update shape upstream declares.
+     *
+     * An extension compiled against a `tachiyomix` with these constructors calls them; with only the
+     * eager form it cannot link, and the failure surfaces as a source that will not load rather than as
+     * a missing method.
+     */
+    @Test
+    fun `the eager update constructor still reads back as both parts`() = runBlocking {
+        val manga = SManga.create().apply { url = "/manga/1" }
+        val update = SMangaUpdate(manga, listOf(SChapter.create()))
+        assertEquals(manga, update.manga())
+        assertEquals(1, update.chapters().size)
+    }
+
+    /**
+     * The case the shape exists for: details and chapters from separate endpoints.
+     *
+     * The point is that the chapters lambda is *not* run until it is awaited — that is what lets the
+     * caller show details before the chapter list arrives.
+     */
+    @Test
+    fun `a deferred chapters fetch does not run until it is awaited`() = runBlocking {
+        var fetched = false
+        val manga = SManga.create().apply { url = "/manga/1" }
+        val update = SMangaUpdate(manga) {
+            fetched = true
+            listOf(SChapter.create())
+        }
+
+        assertFalse(fetched, "constructing the update must not perform the chapter fetch")
+        assertEquals(manga, update.manga())
+
+        assertFalse(fetched, "reading only the manga must not perform the chapter fetch")
+        update.chapters()
+        assertTrue(fetched, "awaiting the chapters must run the fetch")
+    }
+
+    @Test
+    fun `an entirely deferred update resolves both parts on await`() = runBlocking {
+        val manga = SManga.create().apply { url = "/manga/1" }
+        val update = SMangaUpdate({ manga }, { listOf(SChapter.create()) })
+        assertEquals(manga, update.manga())
+        assertEquals(1, update.chapters().size)
     }
 }
