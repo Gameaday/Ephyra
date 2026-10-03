@@ -556,11 +556,21 @@ internal class HttpPageLoader(
                         try {
                             ResolvedImageUrl.of(page.url, source.baseUrl)
                         } catch (e: MalformedImageUrlException) {
+                            // Naming the source and what it overrides is the whole point of this message.
+                            // The reported failure has been chased across several builds because the error
+                            // said only "the URL is bad", which is true of every malformed URL and says
+                            // nothing about which of the three chain entry points — if any — the
+                            // extension actually implements. One line here answers that, and the
+                            // `getPageList` question beside it: an extension that populates
+                            // `Page.imageUrl` never reaches this branch at all, so its presence means
+                            // `getPageList` did not deliver one.
                             throw MalformedImageUrlException(
                                 url = page.url,
-                                reason = "this source did not populate Page.imageUrl, and Page.url " +
-                                    "is not an address the legacy image-URL chain can fetch either " +
-                                    "(${e.reason})",
+                                reason = "no image address available (source=${source.javaClass.name}, " +
+                                    "overrides=${source.capabilities.overriddenChainMethods()}, " +
+                                    "pageImageUrl=${page.imageUrl ?: "<null>"}, " +
+                                    "getPageListBy=${source.capabilities.declaringClassOf("getPageList")}, " +
+                                    "baseUrl=${source.baseUrl}, ${e.reason})",
                             )
                         }
                     }

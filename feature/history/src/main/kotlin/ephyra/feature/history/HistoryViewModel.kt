@@ -31,6 +31,7 @@ import ephyra.presentation.core.util.lang.searchResults
 import eu.kanade.tachiyomi.source.Source
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -52,12 +53,30 @@ class HistoryViewModel @Inject constructor(
     private val setMangaCategories: SetMangaCategories,
     private val updateManga: UpdateManga,
     private val sourceManager: SourceManager,
+    /**
+     * The scope [init]'s long-lived collection runs in.
+     *
+     * **Why this is a constructor parameter rather than something tests reach in and cancel.** The
+     * collector launched here runs for the lifetime of the ViewModel. Under `runTest` the test scope
+     * is not its parent, so nothing owned by the test ever waits for it or stops it: it survives its
+     * own test and reports into the shared uncaught-exception collector, which makes a *later* test
+     * fail with `UncaughtExceptionsBeforeTest` before executing a line. That is how
+     * `HistoryViewModelTest` came to fail on `clearing all history emits HistoryCleared effect` — a
+     * test with no relationship to whatever actually threw — and only on CI, where timing lets the
+     * leak land between two tests rather than after the last one.
+     *
+     * Production passes `null` and gets [viewModelScope]. A test passes the `backgroundScope` of its
+     * `runTest`, which is cancelled automatically when that test ends: the collector stops *because
+     * the test finished*, not because the test remembered to stop it. That is the property a shared
+     * scheduler cannot provide — it isolates coroutines without ever ending them.
+     */
+    private val collectionScope: CoroutineScope? = null,
 ) : BaseUdfViewModel<HistoryViewModel.State, HistoryScreenEvent, HistoryViewModel.Effect>(State()) {
 
     fun getSource(sourceId: Long): Source = sourceManager.getOrStub(sourceId)
 
     init {
-        viewModelScope.launch {
+        (collectionScope ?: viewModelScope).launch {
             state.map { it.searchQuery }
                 .searchResults(debounce = 0L) { query ->
                     historyRepository.getHistory(query)

@@ -231,11 +231,13 @@ import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.NetworkPreferences
 import eu.kanade.tachiyomi.source.AndroidSourceManager
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf
 import nl.adaptivity.xmlutil.XmlDeclMode
 import nl.adaptivity.xmlutil.core.XmlVersion
 import nl.adaptivity.xmlutil.serialization.XML
+import javax.annotation.Nullable
 import javax.inject.Provider
 import javax.inject.Singleton
 
@@ -1622,4 +1624,16 @@ object AppModule {
             override val catalogShortcutsEnabled: Boolean = ephyra.app.BuildConfig.INCLUDE_CATALOG_SHORTCUTS
         }
     }
+
+    /**
+     * Binds the scope a ViewModel's long-lived collection runs in.
+     *
+     * `null` means "use `viewModelScope`", which is what every production ViewModel wants and what
+     * every Hilt-constructed one gets. The parameter exists so a test can pass its own
+     * `runTest.backgroundScope` instead, because a collector launched into `viewModelScope` outlives
+     * `runTest` and fails whichever *later* test shares the JVM with it. See `HistoryViewModel`.
+     */
+    @Provides
+    @Nullable
+    fun provideViewModelCollectionScope(): CoroutineScope? = null
 }

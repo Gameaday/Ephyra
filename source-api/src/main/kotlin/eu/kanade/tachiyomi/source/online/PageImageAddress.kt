@@ -51,6 +51,38 @@ class SourceCapabilities internal constructor(private val type: Class<*>) {
     }
 
     /**
+     * Which of the chain entry points this source declares, for a diagnostic.
+     *
+     * Reported rather than assumed, because "the URL is bad" is true of every malformed URL and
+     * distinguishes nothing. A source that overrides none of them is the one case where the app''s own
+     * chain runs, and therefore the only case where Page.url has to be fetchable — which is what the
+     * reported failure turned on, and what its error message did not say.
+     */
+    fun overriddenChainMethods(): String =
+        CHAIN_ENTRY_POINTS.filter { overrides(it) }.ifEmpty { listOf("none") }.joinToString("+")
+
+    /**
+     * The class that declares [name], or `"<base>"` when nothing overrides it, for a diagnostic.
+     *
+     * Answering "did our own base implementation run, or the extension's?" is the question a value
+     * cannot answer. An extension that overrides `getPageList` and populates `Page.imageUrl` never
+     * reaches the reader's image-URL fallback at all, so reaching it is itself the finding.
+     */
+    fun declaringClassOf(name: String): String {
+        var current: Class<*>? = type
+        while (current != null && current != HttpSource::class.java) {
+            current.declaredMethods.firstOrNull { it.name == name }
+                ?.let { return it.declaringClass.simpleName }
+            current = current.superclass
+        }
+        return "<base>"
+    }
+
+    private companion object {
+        val CHAIN_ENTRY_POINTS = listOf("getImageUrl", "imageUrlRequest", "imageUrlParse")
+    }
+
+    /**
      * Walks *declared* methods from the concrete class up to — but not including — [HttpSource].
      *
      * Declared, not inherited-and-public: `imageUrlRequest` and `imageUrlParse` are `protected`, and
