@@ -108,6 +108,47 @@ probe. An enumeration derived from memory is a list of the cases someone remembe
 Image URLs are validated at the request boundary | Gives a named layer instead of a DNS error for a host that cannot exist | Only rejects values that could never be requested. |
 `PageImageAddress` reads one field per builder | Collapsing them onto one `imageUrl`-preferring rule diverged from upstream and changed what a deprecated-path extension receives | None: the reference reads `page.url` in `imageUrlRequest` and `page.imageUrl` in `imageRequest`. |
 
+## Tracking upstream mechanically
+
+Reading blog posts and inferring from method signatures is how this document was wrong three times.
+There is a better source, and it is diffable.
+
+Upstream publishes a binary-compatibility-validator dump at
+`library/api/library.api` in [`mihonapp/tachiyomix`](https://github.com/mihonapp/tachiyomix). It is a
+flat, one-member-per-line listing of the **entire public ABI** an extension is compiled against.
+
+```
+https://raw.githubusercontent.com/mihonapp/tachiyomix/master/library/api/library.api
+```
+
+Three things make this the right thing to track:
+
+1. **It is authoritative.** It is generated from the code upstream actually ships, not described in
+   prose. `CHANGELOG.md` says *what changed and why*; this says *what exists now*.
+2. **It is diffable.** Two fetches and a diff is the whole procedure.
+3. **It cannot omit a method.** The omission that caused the reported failure — `fetchImageUrl`
+   missing from the probe's enumeration — is a single grep against this file.
+
+As of the fetch this document was written from, upstream `HttpSource` exposes exactly:
+
+```
+getBaseUrl  getChapterUrl  getClient  getFilterList  getHeaders  getHomeUrl  getId
+getImageUrl  getLanguage  getMangaUrl  getNetwork  getVersionId  headersBuilder
+imageRequest  setUrlWithoutDomain x2  toString
+```
+
+Note what is **absent**: `fetchImageUrl`, `imageUrlRequest`, `imageUrlParse`, `prepareNewChapter`,
+and every `fetch*` catalogue method — those moved to `CatalogueSource`/`Source`. Our `source-api`
+still carries all of them, which is the concrete measure of how far behind we are.
+
+**Procedure when checking for drift:**
+
+1. Fetch `library.api` and `CHANGELOG.md` from `master`.
+2. Diff the `HttpSource` / `Source` / `CatalogueSource` / `Page` blocks against ours.
+3. Anything removed upstream that we still carry is a candidate for removal *with* the version bump
+   that makes it legal — see "When upstream finishes the removal".
+4. Anything added upstream needs a decision: implement, or record as a known divergence.
+
 ## When upstream finishes the removal
 
 Recorded now because it is a **decision**, not a task, and it should not be made by whoever happens
