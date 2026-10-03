@@ -77,6 +77,32 @@ names — the enumeration comes from the upstream class, not from what this app 
 Both classes of bug were caught by a fixture shaped like the extension in question, not by reading
 the code. That is the argument for step 5 below.
 
+## Model fields we do not have, and why it matters
+
+The `library.api` audit above covers `HttpSource`. The **data models** diverge further, and this is
+the more consequential gap: an extension assigning a field we do not declare fails at runtime with
+`NoSuchFieldError` — after it has loaded, mid-browse, with no useful message.
+
+| Model | Upstream has | We have | Risk |
+|---|---|---|---|
+`SManga` | `genres: List<String>`, `banner`, `altTitles`, `contentRating`, `score`, `readingMode`, `language` | `genre: String?` (deprecated upstream) and none of the others | An extension setting `manga.genres` or `manga.contentRating` fails |
+`SChapter` | `number: String`, `volume: String`, `scanlators: List<String>`, `note`, `language`, `locked` | `chapter_number: Float` (deprecated upstream), `scanlator: String?` (deprecated), none of the others | An extension setting `chapter.number` fails — and `number` is a **String** upstream, so our `Float` cannot stand in |
+`SMangaUpdate` | three constructors, two taking suspend lambdas | only `(SManga, List<SChapter>)` | An extension using deferred fetching cannot link |
+
+**Why this has not broken yet.** MangaDex uses `memo` and `update_strategy`, which we do have. The
+extensions most likely to hit this are the ones that expose richer metadata, and they fail one field
+at a time rather than all at once.
+
+**Why the deprecated fields are not a substitute.** Upstream deprecates `genre`/`scanlator` and
+`chapter_number` rather than removing them, and keeps the new field authoritative. `chapter_number` is
+a `Float` and `number` is a `String` — a chapter labelled `"12.5a"` cannot round-trip through a
+`Float`, so this is a data-loss gap, not just a naming one.
+
+**Deliberately not implemented yet.** Adding these needs a decision about how the deprecated and new
+fields stay in sync, and that should be read off the upstream source rather than inferred from an ABI
+dump — inferring it is how the compatibility record was wrong three times before. The shapes above
+are the verified finding; the fix needs one more read.
+
 ## Adopting a new extension generation
 
 When a new `extension-lib` version ships:
