@@ -248,7 +248,11 @@ object MotionTokens {
         when (motion) {
             ContainerMotion.NONE -> EnterTransition.None
             ContainerMotion.CROSSFADE -> m3CrossfadeEnter(durationMillis)
-            ContainerMotion.SHARED_AXIS -> m3SharedAxisZEnter()
+            // X, not Z. Shared axis Z is a scale (zoom) transition, which M3 reserves for
+            // entering/leaving a modal state; using it for ordinary hierarchical navigation
+            // made every push feel like the screen was being zoomed at. The hierarchical
+            // axis is horizontal.
+            ContainerMotion.SHARED_AXIS -> m3SharedAxisXEnter()
         }
 
     /** Matching outgoing container motion for [containerEnter]. */
@@ -256,7 +260,7 @@ object MotionTokens {
         when (motion) {
             ContainerMotion.NONE -> ExitTransition.None
             ContainerMotion.CROSSFADE -> m3CrossfadeExit(durationMillis)
-            ContainerMotion.SHARED_AXIS -> m3SharedAxisZExit()
+            ContainerMotion.SHARED_AXIS -> m3SharedAxisXExit()
         }
 
     /**
@@ -376,9 +380,12 @@ object MotionTokens {
 
     /** Matching outgoing half of [m3SharedAxisXEnter]; the outgoing page leaves to the left. */
     fun m3SharedAxisXExit(): ExitTransition =
+        // 200ms, not the enter leg's 450. The outgoing screen is already understood, so holding
+        // it for the full incoming timeline just delays the transition and leaves two
+        // full-screen layers animating together for nearly half a second.
         slideOutHorizontally(
             targetOffsetX = { width -> -(width * SHARED_AXIS_X_TRAVEL).toInt() },
-            animationSpec = tween(durationMillis = DURATION_LONG_1, easing = EasingEmphasizedAccelerate),
+            animationSpec = tween(durationMillis = DURATION_SHORT_4, easing = EasingEmphasizedAccelerate),
         ) + fadeOut(
             animationSpec = tween(durationMillis = DURATION_SHORT_4, easing = EasingEmphasizedAccelerate),
         )
