@@ -54,4 +54,27 @@ object TitleNormalizer {
         if (a.length <= 4 || b.length <= 4) return a == b
         return similarity(a, b) >= threshold
     }
+
+    /**
+     * The single canonical identity key for a work: normalized title + author + genres,
+     * SHA-256 hashed so it is stable, reproducible, and source-independent.
+     *
+     * **This is the load-bearing definition for RFC-0001.** Every component goes
+     * through [forEquality], so "Attack on Titan!" ingested from a filename, an
+     * extension, and Jellyfin all produce the same key. Previously the ingest-side
+     * hash (`CanonicalDeduplicator`) used bare lowercase/trim, so the same work keyed
+     * differently depending on which path produced it — the exact divergence this
+     * function exists to end. Callers needing a work key must use this; nothing else
+     * may hash titles.
+     */
+    fun canonicalKey(title: String, author: String?, genres: List<String>): String {
+        val rawInput = buildString {
+            append(forEquality(title))
+            author?.let { append(forEquality(it)) }
+            genres.sortedBy { forEquality(it) }.forEach { append(forEquality(it)) }
+        }
+        val digest = java.security.MessageDigest.getInstance("SHA-256")
+        val hashBytes = digest.digest(rawInput.toByteArray(Charsets.UTF_8))
+        return hashBytes.joinToString("") { "%02x".format(it) }
+    }
 }
