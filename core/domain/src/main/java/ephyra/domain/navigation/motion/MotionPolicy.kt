@@ -12,17 +12,13 @@ enum class MotionRoutePair {
     /** Library grid to series detail. Cover is the only shared element. */
     LIBRARY_SERIES,
 
-    /** A reader entry point that is not a cover, e.g. a continue-reading shortcut. */
-    READER_ENTRY,
-
-    /** Peer tab switch. */
-    TAB_PEER,
-
-    /** A dialog or sheet returning to its parent. */
-    SHEET_PARENT,
-
-    /** Anything with no declared motion rule. */
-    UNDECLARED,
+    // NOTE: this enum deliberately has one entry. It used to declare TAB_PEER, READER_ENTRY,
+    // SHEET_PARENT and UNDECLARED, but no production call site ever named them: tab motion is
+    // owned by HomeScreen's tab NavHost (order-aware slides), reader entry by Activity window
+    // animations, sheets by the predictive-back drag, and undeclared routes by the root
+    // NavHost's shared-axis-X fallback. Declaring pairs no caller can produce is worse than no
+    // declaration: the policy looks like it governs motion it does not, and the tests for those
+    // branches asserted rules nothing executed. A pair is added here when a call site names it.
 }
 
 /**
@@ -209,10 +205,6 @@ object MotionPolicy {
 
         val container = when (pair) {
             MotionRoutePair.LIBRARY_SERIES -> ContainerMotion.NONE
-            MotionRoutePair.TAB_PEER -> ContainerMotion.CROSSFADE
-            MotionRoutePair.READER_ENTRY -> ContainerMotion.SHARED_AXIS
-            MotionRoutePair.SHEET_PARENT -> ContainerMotion.CROSSFADE
-            MotionRoutePair.UNDECLARED -> ContainerMotion.CROSSFADE
         }
 
         val duration = if (declaredSharedElement) {
