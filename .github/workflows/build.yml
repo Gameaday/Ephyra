@@ -149,10 +149,21 @@ jobs:
           fi
           echo "All ${#TABS[@]} HomeScreen tabs correctly reference AppReadySignal."
 
-  # Build and test (runs after quality checks pass)
+  # Build and test.
+  #
+  # Deliberately does NOT `needs: quality`. That dependency meant a formatting
+  # failure in the lint job marked this job `skipped`, so the entire unit-test
+  # suite never ran and no run reported a result. It is not hypothetical: on
+  # 579c7ba32 `Quality Checks` failed at `Check code format` and this job was
+  # `skipped`, hiding two genuinely failing tests (see B-063/B-064). Lint and
+  # tests are independent signals and are allowed to fail independently; a lint
+  # failure must never decide whether the tests are executed.
+  #
+  # The cost is real and accepted: a pull request with a lint failure still spends
+  # the runner minutes to compile and run the suite. Paying that is what buys the
+  # guarantee that a red test suite is visible rather than inferred.
   build:
     name: Build & Test App
-    needs: quality
     runs-on: 'ubuntu-24.04'
     env:
       GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
@@ -183,7 +194,10 @@ jobs:
         if: ${{ env.GOOGLE_SERVICES_JSON != '' }}
         run: echo "$GOOGLE_SERVICES_JSON" | base64 --decode > app/google-services.json
 
-      # Quality checks (spotless + architecture fitness) run in the `quality` job
+      # Lint/architecture checks (spotless + architecture fitness) are a separate,
+      # independent job. They are not re-run here: duplicating the gate would make
+      # two authorities for the same rule, which is the redundancy `ci.yml` was
+      # deleted for.
       - name: Build app
         if: github.event_name != 'pull_request'
         run: |
