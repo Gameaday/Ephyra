@@ -9,6 +9,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.fadeIn
@@ -407,7 +409,15 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                     plan.effectiveDurationMillis,
                                                 )
                                             } else {
-                                                MotionTokens.m3SharedAxisXEnter()
+                                                // Fallback path (no declared pair, or no cover id).
+                                                // Must honour reduced motion too: the plan path
+                                                // does, so a fallback that animates anyway would
+                                                // make the setting inconsistent per route.
+                                                if (reducedMotion) {
+                                                    EnterTransition.None
+                                                } else {
+                                                    MotionTokens.m3SharedAxisXEnter()
+                                                }
                                             }
                                         },
                                         exitTransition = {
@@ -423,7 +433,11 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                     plan.effectiveDurationMillis,
                                                 )
                                             } else {
-                                                MotionTokens.m3SharedAxisXExit()
+                                                if (reducedMotion) {
+                                                    ExitTransition.None
+                                                } else {
+                                                    MotionTokens.m3SharedAxisXExit()
+                                                }
                                             }
                                         },
                                         popEnterTransition = {
@@ -439,7 +453,11 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                     plan.effectiveDurationMillis,
                                                 )
                                             } else {
-                                                MotionTokens.m3SharedAxisXPopEnter()
+                                                if (reducedMotion) {
+                                                    EnterTransition.None
+                                                } else {
+                                                    MotionTokens.m3SharedAxisXPopEnter()
+                                                }
                                             }
                                         },
                                         popExitTransition = {
@@ -455,7 +473,11 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                     plan.effectiveDurationMillis,
                                                 )
                                             } else {
-                                                MotionTokens.m3SharedAxisXPopExit()
+                                                if (reducedMotion) {
+                                                    ExitTransition.None
+                                                } else {
+                                                    MotionTokens.m3SharedAxisXPopExit()
+                                                }
                                             }
                                         },
                                     ) {
