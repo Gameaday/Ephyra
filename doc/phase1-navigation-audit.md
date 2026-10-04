@@ -39,3 +39,30 @@ Date: session branch `cline/0crpxa7t`.
 ## Deferred to device validation
 - 60fps check on S24 with macrobenchmark; flash-of-blank on back press cannot be
   verified without a device/emulator run (no JDK in this sandbox for local tests).
+
+## Motion rework (second pass, owner-reported issues)
+
+Six defects found and fixed against current Material 3 guidance:
+
+1. **Tab slides travelled the full viewport with no fade** (M2 carousel anti-pattern:
+   both screens fully swapped at midpoint, double overdraw, incoming page arrives from
+   off-screen which is a hierarchy cue, not a peer cue). Now 30% axis travel + fade.
+2. **Reduced-motion check ran after the fade-through branch** in HomeScreen, so nested
+   destinations animated (fade + scale) even with animations disabled. Reordered.
+3. **Fade-through carried a scale-in** — M2 leftover; a full-page scale reads as a zoom
+   (modal cue) and forces full-screen re-rasterisation every frame. Now fade-only.
+4. **`containerEnter(SHARED_AXIS)` used shared-axis-Z (zoom)** for hierarchical
+   navigation — the anti-pattern Motion.kt's own docs describe. Now shared-axis-X.
+5. **Shared-axis-X exit leg was 450ms**, as long as the enter leg; M3 outgoing legs are
+   short (200ms). Fixed in the token and in `shared_axis_x_push_exit.xml` (Activity half).
+6. **Dead policy pairs**: `TAB_PEER`, `READER_ENTRY`, `SHEET_PARENT`, `UNDECLARED` had
+   no production call site — rules asserted by tests but executed by nothing. Removed;
+   `MotionRoutePair` now declares only pairs a caller can actually name, with a note
+   documenting where each removed pair's motion genuinely lives.
+
+Commits: `bb0b4a8`, `d4b9492`, `3f1c6ed`.
+
+## Still open
+- `m3SharedAxisZ*` token functions are now unreferenced; retained as vocabulary for a
+  future modal/sheet use, but delete if nothing claims them within a release or two.
+- Device validation (60fps, overdraw on S24) still pending hardware.
