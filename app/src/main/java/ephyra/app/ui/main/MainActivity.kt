@@ -407,7 +407,19 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                     plan.effectiveDurationMillis,
                                                 )
                                             } else {
-                                                MotionTokens.m3SharedAxisXEnter()
+                                                // Undeclared pairs go through MotionPolicy so the
+                                                // layer that decides motion and the layer that plays
+                                                // it agree — the policy says UNDECLARED crossfades,
+                                                // and a sibling push must not slide horizontally.
+                                                val fallback = MotionPolicy.plan(
+                                                    pair = MotionRoutePair.UNDECLARED,
+                                                    direction = if (isPop) MotionDirection.BACKWARD else MotionDirection.FORWARD,
+                                                    reducedMotion = reducedMotion,
+                                                )
+                                                MotionTokens.containerEnter(
+                                                    fallback.effectiveContainerMotion,
+                                                    fallback.effectiveDurationMillis,
+                                                )
                                             }
                                         },
                                         exitTransition = {
@@ -423,7 +435,14 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                     plan.effectiveDurationMillis,
                                                 )
                                             } else {
-                                                MotionTokens.m3SharedAxisXExit()
+                                                MotionTokens.containerExit(
+                                                    MotionPolicy.plan(
+                                                        pair = MotionRoutePair.UNDECLARED,
+                                                        direction = if (isPop) MotionDirection.BACKWARD else MotionDirection.FORWARD,
+                                                        reducedMotion = reducedMotion,
+                                                    ).effectiveContainerMotion,
+                                                    MotionPolicy.CROSSFADE_DURATION_MILLIS,
+                                                )
                                             }
                                         },
                                         popEnterTransition = {
@@ -439,7 +458,14 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                     plan.effectiveDurationMillis,
                                                 )
                                             } else {
-                                                MotionTokens.m3SharedAxisXPopEnter()
+                                                MotionTokens.containerEnter(
+                                                    MotionPolicy.plan(
+                                                        pair = MotionRoutePair.UNDECLARED,
+                                                        direction = if (isPop) MotionDirection.BACKWARD else MotionDirection.FORWARD,
+                                                        reducedMotion = reducedMotion,
+                                                    ).effectiveContainerMotion,
+                                                    MotionPolicy.CROSSFADE_DURATION_MILLIS,
+                                                )
                                             }
                                         },
                                         popExitTransition = {
@@ -455,7 +481,14 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                     plan.effectiveDurationMillis,
                                                 )
                                             } else {
-                                                MotionTokens.m3SharedAxisXPopExit()
+                                                MotionTokens.containerExit(
+                                                    MotionPolicy.plan(
+                                                        pair = MotionRoutePair.UNDECLARED,
+                                                        direction = if (isPop) MotionDirection.BACKWARD else MotionDirection.FORWARD,
+                                                        reducedMotion = reducedMotion,
+                                                    ).effectiveContainerMotion,
+                                                    MotionPolicy.CROSSFADE_DURATION_MILLIS,
+                                                )
                                             }
                                         },
                                     ) {

@@ -45,6 +45,7 @@ import com.hippo.unifile.UniFile
 import ephyra.core.common.i18n.stringResource
 import ephyra.core.common.storage.displayablePath
 import ephyra.core.common.util.lang.launchNonCancellable
+import ephyra.core.common.util.lang.withIOContext
 import ephyra.core.common.util.storage.BackupStaging
 import ephyra.core.common.util.system.DeviceUtil
 import ephyra.core.common.util.system.logcat
@@ -343,7 +344,7 @@ object SettingsDataScreen : SearchableSettings {
                     onClick = {
                         scope.launchNonCancellable {
                             try {
-                                val deletedFiles = chapterCache.clear()
+                                val deletedFiles = withIOContext { chapterCache.clear() }
                                 withContext(Dispatchers.Main) {
                                     context.toast(
                                         context.stringResource(

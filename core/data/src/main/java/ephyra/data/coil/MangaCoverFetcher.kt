@@ -83,11 +83,14 @@ class MangaCoverFetcher(
     }
 
     private fun fileLoader(file: File): FetchResult {
+        // Deliberately no `diskCacheKey`: this file *is* the durable store (custom cover,
+        // durable cover hit, or a local source's own file). Handing Coil a disk cache key
+        // made it copy the same bytes into `image_cache` as well, so every cover was stored
+        // twice on disk and the same logical cover could occupy two cache spots.
         return SourceFetchResult(
             source = ImageSource(
                 file = file.toOkioPath(),
                 fileSystem = FileSystem.SYSTEM,
-                diskCacheKey = diskCacheKey,
             ),
             mimeType = "image/*",
             dataSource = DataSource.DISK,

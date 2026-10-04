@@ -161,11 +161,16 @@ fun HomeScreen(
     // "back does something arbitrary". Enabled only when the current destination is genuinely not
     // one of the five tab roots, so a back press at a root falls through to the system and exits
     // normally.
+    // Pops exactly one entry within the active tab: back from a nested screen inside a tab returns
+    // to the previous screen in that same tab, and only a tab *root* falls through to the system.
+    // The previous version targeted Library unconditionally, which leapt to a different tab's
+    // root — a tab switch disguised as a back press — and discarded any deeper entries on the
+    // current tab's stack.
     val backStackEntry by bottomNavController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     if (currentRoute != null && currentRoute !in TAB_ROOT_ROUTES) {
         BackHandler {
-            bottomNavController.popBackStack(ScreenRoutes.Library.route, inclusive = false)
+            bottomNavController.popBackStack()
         }
     }
 

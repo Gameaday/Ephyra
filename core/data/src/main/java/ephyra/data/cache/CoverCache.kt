@@ -50,6 +50,22 @@ class CoverCache(private val context: Context) : ICoverCache {
     override fun getCoverFile(manga: Manga): File? = getCoverFile(manga.thumbnailUrl, manga.coverLastModified)
 
     /**
+     * Whether the manga has a custom cover, memoized in memory.
+     *
+     * The Coil keyers call this for every grid cell on every request; going to disk each
+     * time meant hundreds of external-storage `File.exists()` stats per fling. The memo
+     * is invalidated by [setCustomCoverToCache], [deleteCustomCoverInternal] and
+     * [deleteAll], which are the only ways this fact can change.
+     */
+    fun hasCustomCover(mangaId: Long?): Boolean {
+        return customCoverExistence.getOrPut(mangaId) {
+            getCustomCoverFile(mangaId).exists()
+        }
+    }
+
+    private val customCoverExistence = java.util.concurrent.ConcurrentHashMap<Long?, Boolean>()
+
+    /**
      * Returns the custom cover from cache.
      *
      * @param mangaId the manga id.
@@ -73,6 +89,7 @@ class CoverCache(private val context: Context) : ICoverCache {
                 }
             }
         }
+        customCoverExistence[manga.id] = true
     }
 
     /**
@@ -101,6 +118,7 @@ class CoverCache(private val context: Context) : ICoverCache {
         customCoverCacheDir.deleteRecursively()
         cacheDir.mkdirs()
         customCoverCacheDir.mkdirs()
+        customCoverExistence.clear()
     }
 
     override fun deleteCustomCover(mangaId: Long) {
@@ -115,9 +133,11 @@ class CoverCache(private val context: Context) : ICoverCache {
     }
 
     private fun deleteCustomCoverInternal(mangaId: Long?): Boolean {
-        return getCustomCoverFile(mangaId).let {
+        val deleted = getCustomCoverFile(mangaId).let {
             it.exists() && it.delete()
         }
+        if (deleted) customCoverExistence.remove(mangaId)
+        return deleted
     }
 
     /**

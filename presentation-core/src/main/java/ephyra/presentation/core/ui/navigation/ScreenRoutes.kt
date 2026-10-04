@@ -1,5 +1,6 @@
 package ephyra.presentation.core.ui.navigation
 
+import android.net.Uri
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -56,7 +57,7 @@ sealed class ScreenRoutes(val route: String) {
     object MigrationList : ScreenRoutes("migration_list/{mangaIds}?query={query}") {
         fun createRoute(mangaIds: Collection<Long>, query: String? = null): String {
             return "migration_list/${mangaIds.joinToString(",")}" +
-                (if (query != null) "?query=$query" else "")
+                (if (query != null) "?query=${Uri.encode(query)}" else "")
         }
     }
 
@@ -69,10 +70,10 @@ sealed class ScreenRoutes(val route: String) {
     }
 
     object RestoreBackup : ScreenRoutes("restore_backup?uri={uri}") {
-        fun createRoute(uri: String) = "restore_backup?uri=$uri"
+        fun createRoute(uri: String) = "restore_backup?uri=${Uri.encode(uri)}"
     }
     object ExtensionRepos : ScreenRoutes("extension_repos?url={url}") {
-        fun createRoute(url: String?) = "extension_repos" + (if (url != null) "?url=$url" else "")
+        fun createRoute(url: String?) = "extension_repos" + (if (url != null) "?url=${Uri.encode(url)}" else "")
     }
 
     object SourcePreferences : ScreenRoutes("source_preferences/{sourceId}") {
@@ -84,7 +85,7 @@ sealed class ScreenRoutes(val route: String) {
     object About : ScreenRoutes("about")
     object OpenSourceLicenses : ScreenRoutes("open_source_licenses")
     object OpenSourceLibraryLicense : ScreenRoutes("open_source_library_license/{name}") {
-        fun createRoute(name: String) = "open_source_library_license/$name"
+        fun createRoute(name: String) = "open_source_library_license/${Uri.encode(name)}"
     }
 
     object ClearDatabase : ScreenRoutes("clear_database")

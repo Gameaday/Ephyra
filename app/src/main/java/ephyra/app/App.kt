@@ -113,6 +113,15 @@ class App :
     lateinit var coverCache: CoverCache
 
     @Inject
+    lateinit var chapterCache: ephyra.data.cache.ChapterCache
+
+    @Inject
+    lateinit var getLibraryManga: ephyra.domain.manga.interactor.GetLibraryManga
+
+    @Inject
+    lateinit var libraryPreferences: ephyra.domain.library.service.LibraryPreferences
+
+    @Inject
     lateinit var sourceManagerProvider: javax.inject.Provider<SourceManager>
 
     /**
@@ -182,7 +191,10 @@ class App :
         }
 
         super<Application>.onCreate()
-        ephyra.app.data.work.CoverCacheMaintenanceWorker.setupTask(this)
+        // WorkManager init plus the enqueue do disk-backed work; doing them on the main
+        // thread in onCreate added avoidable cold-start latency on every launch. The
+        // scheduling itself is idempotent (KEEP), so deferring it to the IO scope is safe.
+        StartupGuard.completePhase("app_created")
         ephyra.app.startup.StartupTracker.complete(ephyra.app.startup.StartupTracker.Phase.APP_CREATED)
 
         // Phase 4: Telemetry (non-critical)
@@ -303,6 +315,27 @@ class App :
                 }
 
                 try {
+                    ephyra.app.data.work.CoverCacheMaintenanceWorker.setupTask(this@App)
+                } catch (e: Exception) {
+                    logcat(LogPriority.WARN, e) { "Failed to schedule cover cache maintenance" }
+                }
+
+                try {
+                    if (ephyra.app.data.work.StartupCacheAudit.isDue(preferenceStore)) {
+                        ephyra.app.data.work.StartupCacheAudit(
+                            coverCache = coverCache,
+                            chapterCache = chapterCache,
+                            getLibraryManga = getLibraryManga,
+                            libraryPreferences = libraryPreferences,
+                            preferenceStore = preferenceStore,
+                        ).run()
+                        ephyra.app.data.work.StartupCacheAudit.markDone(preferenceStore)
+                    }
+                } catch (e: Exception) {
+                    logcat(LogPriority.WARN, e) { "Startup cache audit failed" }
+                }
+
+                try {
                     sourceResolutionDiagnostics.reportRegistration("startup")
                 } catch (e: Exception) {
                     logcat(LogPriority.WARN, e) { "Source registration diagnostic failed" }
@@ -384,13 +417,13 @@ class App :
                     .build(),
             )
             // Coil 3 lifecycle-aware background trimming: when the app moves to the
-            // background, the memory cache is evicted down to 10% of its capacity and
-            // grown back on demand once resumed. Dropping the working set this aggressively
-            // yields graphics memory to the rest of the system; the entries that are
-            // discarded are re-decoded cheaply on return, which is the right trade while the
-            // reader is not on screen. This replaces the old manual onTrimMemory
-            // "clear everything on UI hidden" behaviour.
-            memoryCacheMaxSizePercentWhileInBackground(0.1)
+            // background, the memory cache is evicted down to 30% of its capacity and
+            // grown back on demand once resumed. The previous floor of 10% evicted the
+            // *entire* cover working set on every background trip, so returning to the
+            // app re-decoded every library/updates/history cover from disk — the visible
+            // "covers pop in after coming back" effect. 30% still returns most of the
+            // graphics memory to the system while keeping the hottest working set warm.
+            memoryCacheMaxSizePercentWhileInBackground(0.3)
 
             diskCache {
                 DiskCache.Builder()
