@@ -337,7 +337,7 @@ class App :
         }
     }
 
-/**
+    /**
      * The loader's configured memory-cache size, captured when the loader is built.
      *
      * Trimming used to halve whatever the cache currently held, so each trim halved the previous

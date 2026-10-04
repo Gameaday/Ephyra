@@ -159,24 +159,41 @@ private fun NavBackStackEntry.hostsSharedCover(): Boolean =
  * pick the timeline: M3's shared-element spec is deliberately asymmetric, with the return shorter
  * than the arrival.
  */
-private fun motionRoutePair(from: NavBackStackEntry, to: NavBackStackEntry): MotionRoutePair? = when {
-    from.hostsSharedCover() && to.isMangaDetails() -> MotionRoutePair.LIBRARY_SERIES
-    from.isMangaDetails() && to.hostsSharedCover() -> MotionRoutePair.LIBRARY_SERIES
+private fun motionRoutePair(
+    from: NavBackStackEntry,
+    to: NavBackStackEntry,
+    isPop: Boolean,
+): MotionRoutePair? = when {
+    // Pushing into a series from a list that carries its cover.
+    !isPop && from.hostsSharedCover() && to.isMangaDetails() -> MotionRoutePair.LIBRARY_SERIES
+
+    // Popping out of a series back to the list that carries its cover.
+    //
+    // The two branches are kept separate on purpose: a series page can also navigate *forward* into
+    // a cover list (e.g. "browse more from this source"), and that is not a return. Letting it name
+    // the pair would hold the container still, look for a shared cover the target does not
+    // necessarily render, and run the shorter backward timeline for a forward move. Only a real pop
+    // out of the series page is a return.
+    isPop && from.isMangaDetails() && to.hostsSharedCover() -> MotionRoutePair.LIBRARY_SERIES
+
     else -> null
 }
 
 /**
  * Which way the user is travelling.
  *
- * `popEnter`/`popExit` are the back path, so direction is read from the transitions that are
- * popping rather than inferred from the entries. `initialState` is the screen being left, so a
- * transition away from a series page is a return.
+ * Direction comes from [isPop], not from which entry is the series page. The entries alone cannot
+ * answer it, because a series page can navigate forward *into* a cover list as well as back out of
+ * one; only the transition that fired (push vs pop) separates the two. Reading direction from the
+ * entry roles was correct only while the pair could not form in the forward direction, which the
+ * wider [hostsSharedCover] set changed.
  */
 private fun motionDirectionFor(
     from: NavBackStackEntry,
     to: NavBackStackEntry,
-): MotionDirection? = motionRoutePair(from, to)?.let {
-    if (from.isMangaDetails()) MotionDirection.BACKWARD else MotionDirection.FORWARD
+    isPop: Boolean,
+): MotionDirection? = motionRoutePair(from, to, isPop)?.let {
+    if (isPop) MotionDirection.BACKWARD else MotionDirection.FORWARD
 }
 
 /**
@@ -201,9 +218,10 @@ private fun motionPlanFor(
     from: NavBackStackEntry,
     to: NavBackStackEntry,
     reducedMotion: Boolean,
+    isPop: Boolean,
 ): MotionPlan? {
-    val pair = motionRoutePair(from, to) ?: return null
-    val direction = motionDirectionFor(from, to) ?: return null
+    val pair = motionRoutePair(from, to, isPop) ?: return null
+    val direction = motionDirectionFor(from, to, isPop) ?: return null
     val mangaId = to.sharedCoverMangaId() ?: from.sharedCoverMangaId() ?: return null
     return MotionPolicy.plan(
         pair = pair,
@@ -381,6 +399,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                 initialState,
                                                 targetState,
                                                 reducedMotion,
+                                                isPop = false,
                                             )
                                             if (plan != null) {
                                                 MotionTokens.containerEnter(
@@ -396,6 +415,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                 initialState,
                                                 targetState,
                                                 reducedMotion,
+                                                isPop = false,
                                             )
                                             if (plan != null) {
                                                 MotionTokens.containerExit(
@@ -411,6 +431,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                 initialState,
                                                 targetState,
                                                 reducedMotion,
+                                                isPop = true,
                                             )
                                             if (plan != null) {
                                                 MotionTokens.containerEnter(
@@ -426,6 +447,7 @@ class MainActivity : BaseActivity(), AppReadySignal {
                                                 initialState,
                                                 targetState,
                                                 reducedMotion,
+                                                isPop = true,
                                             )
                                             if (plan != null) {
                                                 MotionTokens.containerExit(

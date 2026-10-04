@@ -157,6 +157,44 @@ class MotionConsistencyTest {
     }
 
     /**
+     * The pair must only be claimed by a push into a series or a pop out of one.
+     *
+     * A series page can navigate *forward* into a cover list ("browse more from this source"). When
+     * the pair was keyed only on which entry is the series page, that forward move was treated as a
+     * return: the container held still, the shorter backward timeline ran, and a shared cover was
+     * expected on a target that does not necessarily render it. Direction must come from whether the
+     * transition fired on the push or the pop path.
+     */
+    @Test
+    fun `the shared cover pair is pop aware`() {
+        val activity = codeOf(mainActivity)
+        val pair = activity
+            .substringAfter("fun motionRoutePair(")
+            .substringBefore("private fun NavBackStackEntry.sharedCoverMangaId")
+
+        assertTrue(
+            pair.contains("!isPop && from.hostsSharedCover()"),
+            "The forward branch of the pair must be push-gated (`!isPop`). Without the gate a " +
+                "forward move out of a series page into a cover list is mistaken for a return, " +
+                "and the pair's deliberate no-op container leaves that move with nothing to " +
+                "animate.",
+        )
+        assertTrue(
+            pair.contains("isPop && from.isMangaDetails()"),
+            "The backward branch of the pair must be pop-gated (`isPop`), for the same reason.",
+        )
+
+        val direction = activity
+            .substringAfter("fun motionDirectionFor(")
+            .substringBefore("private fun NavBackStackEntry.sharedCoverMangaId")
+        assertTrue(
+            direction.contains("if (isPop)"),
+            "Direction must be read from push vs pop, not from which entry is the series page. " +
+                "Reading it from entry roles silently gave a forward move the backward timeline.",
+        )
+    }
+
+    /**
      * A list item that opens a series must name its cover with the id it is going to open.
      *
      * The shared element matches by key. A key built from anything other than the id passed to
@@ -181,4 +219,5 @@ class MotionConsistencyTest {
                 "Updates could not share the cover.",
         )
     }
+
 }
