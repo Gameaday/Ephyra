@@ -49,21 +49,24 @@ enum class MangaCover(val ratio: Float) {
         onClick: (() -> Unit)? = null,
     ) {
         val context = LocalContext.current
+        val sharedTransitionScope = LocalSharedTransitionScope.current
+        val animatedVisibilityScope = LocalNavAnimatedVisibilityScope.current
+        val isSharedElement = mangaId != null && sharedTransitionScope != null &&
+            animatedVisibilityScope != null
         val model = if (data is ImageRequest) {
             data
         } else {
             ImageRequest.Builder(context)
                 .data(data)
-                .crossfade(true)
+                // No Coil crossfade on a shared element. While the element flies, both ends draw
+                // the same image; a crossfade re-runs the placeholder-to-image blend underneath
+                // the flight, which reads as the cover flashing mid-transition (M3 guidance:
+                // shared elements must be settled content, not animating content).
+                .crossfade(!isSharedElement)
                 .precision(Precision.EXACT)
                 .build()
         }
-
-        val sharedTransitionScope = LocalSharedTransitionScope.current
-        val animatedVisibilityScope = LocalNavAnimatedVisibilityScope.current
-        val sharedElementModifier = if (mangaId != null && sharedTransitionScope != null &&
-            animatedVisibilityScope != null
-        ) {
+        val sharedElementModifier = if (isSharedElement) {
             with(sharedTransitionScope) {
                 Modifier.sharedElement(
                     // Key comes from MotionPolicy so the library cell and the series header cannot
