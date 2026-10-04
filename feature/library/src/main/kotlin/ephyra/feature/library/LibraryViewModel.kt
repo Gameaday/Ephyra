@@ -1170,8 +1170,18 @@ class LibraryViewModel @Inject constructor(
             return getItemsForCategory(category)
         }
 
+        /**
+         * Memoized per category. This is called from composition per grid/list cell query,
+         * and re-mapping `groupedFavorites` each time gave the layout a brand-new list
+         * identity on every unrelated state change (search keystroke, download tick),
+         * forcing a full item-scope recomposition.
+         */
+        private val itemsForCategoryCache by lazy { HashMap<Category, PersistentList<LibraryItem>>() }
+
         fun getItemsForCategory(category: Category): PersistentList<LibraryItem> {
-            return groupedFavorites[category].orEmpty().mapNotNull { libraryData.favoritesById[it] }.toPersistentList()
+            return itemsForCategoryCache.getOrPut(category) {
+                groupedFavorites[category].orEmpty().mapNotNull { libraryData.favoritesById[it] }.toPersistentList()
+            }
         }
 
         fun getItemCountForCategory(category: Category): Int? {

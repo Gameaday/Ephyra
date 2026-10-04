@@ -14,12 +14,32 @@ import ephyra.feature.browse.migration.sources.migrateSourceTab
 import ephyra.feature.browse.source.SourcesViewModel
 import ephyra.feature.browse.source.authority.discoverTab
 import ephyra.feature.browse.source.sourcesTab
+import ephyra.presentation.core.components.TabContent
 import ephyra.presentation.core.components.TabbedScreen
 import ephyra.presentation.core.ui.AppReadySignal
 import ephyra.presentation.core.ui.navigation.LocalNavController
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
+
+/**
+ * Declarative per-tab search wiring. Adding a tab with a search bar means adding one
+ * [TabSearchBinding] here — no index-coupled `when (state.currentPage)` routing to edit,
+ * which is exactly how the old pager/search-bar mapping drifted out of sync before.
+ */
+data class TabSearchBinding(
+    val query: () -> String?,
+    val onQueryChange: (String?) -> Unit,
+)
+
+/** One Browse pager tab: its [TabContent] plus the optional search binding above. */
+data class BrowseTabSpec(
+    val key: String,
+    val tab: TabContent,
+    val search: TabSearchBinding? = null,
+)
 
 @Composable
 fun BrowseTabScreen(
@@ -35,44 +55,66 @@ fun BrowseTabScreen(
     val sourcesViewModel = hiltViewModel<SourcesViewModel>()
     val sourcesState by sourcesViewModel.state.collectAsStateWithLifecycle()
 
-    val tabs = persistentListOf(
-        discoverTab(navController),
-        sourcesTab(sourcesViewModel, navController),
-        extensionsTab(extensionsViewModel, navController),
-        migrateSourceTab(navController),
+    val tabs: ImmutableList<BrowseTabSpec> = persistentListOf(
+        BrowseTabSpec(
+            key = KEY_DISCOVER,
+            tab = discoverTab(navController),
+        ),
+        BrowseTabSpec(
+            key = KEY_SOURCES,
+            tab = sourcesTab(sourcesViewModel, navController),
+            search = TabSearchBinding(
+                query = { sourcesState.searchQuery },
+                onQueryChange = { sourcesViewModel.search(it) },
+            ),
+        ),
+        BrowseTabSpec(
+            key = KEY_EXTENSIONS,
+            tab = extensionsTab(extensionsViewModel, navController),
+            search = TabSearchBinding(
+                query = { extensionsState.searchQuery },
+                onQueryChange = { extensionsViewModel.search(it) },
+            ),
+        ),
+        BrowseTabSpec(
+            key = KEY_MIGRATE,
+            tab = migrateSourceTab(navController),
+        ),
     )
 
     val state = rememberPagerState { tabs.size }
 
-    val currentQuery = when (state.currentPage) {
-        1 -> sourcesState.searchQuery
-        2 -> extensionsState.searchQuery
-        else -> null
-    }
-
-    val onQueryChange: (String?) -> Unit = { query ->
-        when (state.currentPage) {
-            1 -> sourcesViewModel.search(query)
-            2 -> extensionsViewModel.search(query)
-        }
-    }
+    // Search-bar routing is data-driven from the current tab's binding instead of a
+    // hand-maintained page-index switch.
+    val currentBinding = tabs[state.currentPage].search
 
     TabbedScreen(
         titleRes = ephyra.app.core.common.R.string.label_discover,
-        tabs = tabs,
+        tabs = tabs.map(BrowseTabSpec::tab).toPersistentList(),
         state = state,
-        searchQuery = currentQuery,
-        onChangeSearchQuery = onQueryChange,
+        searchQuery = currentBinding?.query(),
+        onChangeSearchQuery = { query -> currentBinding?.onQueryChange(query) },
     )
     LaunchedEffect(Unit) {
         BrowseTab.switchToExtensionTabChannel.receiveAsFlow()
-            .collectLatest { state.scrollToPage(2) }
+            .collectLatest {
+                // Resolve the page from the spec list rather than a hard-coded index, so
+                // reordering tabs can't silently point this at the wrong page.
+                val extensionsPage = tabs.indexOfFirst { it.key == KEY_EXTENSIONS }
+                if (extensionsPage >= 0) state.scrollToPage(extensionsPage)
+            }
     }
 
     LaunchedEffect(Unit) {
         (context as? AppReadySignal)?.signalReady()
     }
 }
+
+private const val KEY_DISCOVER = "discover"
+private const val KEY_SOURCES = "sources"
+private const val KEY_EXTENSIONS = "extensions"
+private const val KEY_MIGRATE = "migrate"
+
 
 object BrowseTab {
     val switchToExtensionTabChannel = kotlinx.coroutines.channels.Channel<Unit>(capacity = 1)

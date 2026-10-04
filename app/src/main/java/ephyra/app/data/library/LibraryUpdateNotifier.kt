@@ -3,6 +3,7 @@ package ephyra.app.data.library
 import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
+import android.os.SystemClock
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -49,6 +50,14 @@ class LibraryUpdateNotifier(
         maximumFractionDigits = 0
     }
 
+    /** See the throttle note in [showProgressNotification]. */
+    @Volatile
+    private var lastProgressPostAt = 0L
+
+    private companion object {
+        const val PROGRESS_THROTTLE_MS = 500L
+    }
+
     /**
      * Pending intent of action that cancels the library update
      */
@@ -89,6 +98,14 @@ class LibraryUpdateNotifier(
      * @param total the total progress.
      */
     override suspend fun showProgressNotification(manga: List<Manga>, current: Int, total: Int) {
+        // Throttled to ~2 posts/second: `showProgressNotification` fires on entry and exit
+        // of every manga, so a 500-title refresh used to post ~1000 notifications in quick
+        // succession. Notification posting is binder traffic with per-post overhead, and the
+        // progress bar is indistinguishable to the user past this rate.
+        val now = SystemClock.elapsedRealtime()
+        if (current < total && now - lastProgressPostAt < PROGRESS_THROTTLE_MS) return
+        lastProgressPostAt = now
+
         progressNotificationBuilder
             .setContentTitle(
                 context.stringResource(

@@ -875,6 +875,10 @@
     <string name="search_recent_queries">Recent searches</string>
     <string name="search_library_suggestions">From your library</string>
     <string name="search_merged_banner">Smart Merge removed %1$d duplicate result(s) from other sources</string>
+    <string name="search_merged_banner_short">Found in %1$d sources</string>
+    <string name="search_view_merged">Merged</string>
+    <string name="search_view_by_source">By source</string>
+    <string name="native_source_label">Native source</string>
     <string name="local_source">Local source</string>
     <string name="other_source">Other</string>
     <string name="last_used_source">Last used</string>

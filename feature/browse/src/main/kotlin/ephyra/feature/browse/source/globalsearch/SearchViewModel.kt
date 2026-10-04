@@ -131,6 +131,7 @@ abstract class SearchViewModel(
             is SearchScreenEvent.UpdateSearchQuery -> updateSearchQuery(event.query)
             is SearchScreenEvent.SetSourceFilter -> setSourceFilter(event.filter)
             is SearchScreenEvent.ToggleFilterResults -> toggleFilterResults()
+            is SearchScreenEvent.ToggleResultsView -> toggleResultsView()
             is SearchScreenEvent.Search -> search()
             is SearchScreenEvent.SetMigrateDialog -> setMigrateDialog(event.currentId, event.target)
             is SearchScreenEvent.ClearDialog -> clearDialog()
@@ -149,6 +150,19 @@ abstract class SearchViewModel(
     protected fun toggleFilterResults() {
         viewModelScope.launch { sourcePreferences.globalSearchFilterState().toggle() }
     }
+
+    /**
+     * Toggles between the merged (deduped cross-source) view and the classic
+     * per-source rows. Pure UI state — no re-search needed, both views derive
+     * from the same [State.items] map.
+     */
+    protected fun toggleResultsView() {
+        updateState { it.copy(showMergedResults = !it.showMergedResults) }
+    }
+
+    /** Display name of a legacy catalogue source, for the merged view's per-source chips. */
+    fun getSourceName(sourceId: Long): String? =
+        sourceManager.getCatalogueSources().firstOrNull { it.id == sourceId }?.name
 
     protected open fun search() {
         val query = state.value.searchQuery
@@ -262,6 +276,9 @@ abstract class SearchViewModel(
         val onlyShowHasResults: Boolean = false,
         val items: PersistentMap<CatalogueSource, SearchItemResult> = persistentMapOf(),
         val dialog: Dialog? = null,
+        // Default false so migration search (which never renders the merged view) is
+        // unaffected; the global-search VMs opt in during init.
+        val showMergedResults: Boolean = false,
     ) {
         val progress: Int = items.count { it.value !is SearchItemResult.Loading }
         val total: Int = items.size

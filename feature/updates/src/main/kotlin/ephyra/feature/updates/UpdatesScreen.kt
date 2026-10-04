@@ -120,7 +120,11 @@ fun UpdateScreen(
                         updatesLastUpdatedItem(lastUpdated)
 
                         updatesUiItems(
-                            uiModels = state.getUiModel(),
+                            // Hoisted out of the lazy scope: `getUiModel()` maps and
+                            // insert-separates the whole list, and it used to re-run on
+                            // every recomposition — every download-progress tick and
+                            // selection change rebuilt the entire UI model list.
+                            uiModels = remember(state.items) { state.getUiModel() },
                             selectionMode = state.selectionMode,
                             onUpdateSelected = onUpdateSelected,
                             onClickCover = onClickCover,

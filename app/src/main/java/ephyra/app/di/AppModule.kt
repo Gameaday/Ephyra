@@ -88,9 +88,14 @@ import ephyra.data.saver.ImageSaverImpl
 import ephyra.data.source.SourceRepositoryImpl
 import ephyra.data.source.StubSourceRepositoryImpl
 import ephyra.data.sourcing.RoomSourceProfileStore
+import ephyra.data.sourcing.jellyfin.JellyfinContentSource
+import ephyra.data.sourcing.jellyfin.JellyfinContentSourceEngine
+import ephyra.data.sourcing.jellyfin.JellyfinSourceGateway
 import ephyra.data.track.TrackRepositoryImpl
 import ephyra.data.track.TrackerManagerImpl
 import ephyra.data.track.TrackingServiceImpl
+import ephyra.data.track.jellyfin.JellyfinCredentials
+import ephyra.data.track.jellyfin.PreferenceJellyfinCredentials
 import ephyra.data.updater.AppUpdateChecker
 import ephyra.data.updates.UpdatesRepositoryImpl
 import ephyra.domain.backup.service.BackupFileValidator
@@ -209,6 +214,7 @@ import ephyra.domain.track.interactor.TrackChapter
 import ephyra.domain.track.interactor.TrackerListImporter
 import ephyra.domain.track.repository.TrackRepository
 import ephyra.domain.track.service.TrackPreferences
+import ephyra.source.api.NativeSourceRegistry
 import ephyra.domain.track.service.TrackerManager
 import ephyra.domain.track.service.TrackingJobScheduler
 import ephyra.domain.track.service.TrackingService
@@ -473,11 +479,40 @@ object AppModule {
         OpportunisticMergeManager()
 
     /**
-     * The engine set the orchestrator resolves against — currently **empty**.
+     * Shared Jellyfin connection values for the content-source stack (Phase 3).
      *
-     * The heuristic engine was removed (`ADR-0015`) and it was the only one bound, so there is
-     * deliberately nothing here until Jellyfin lands. That is a normal state rather than a
-     * misconfiguration, and two things make it safe:
+     * Reads the same preferences the Jellyfin tracker wrote at login — server URL, user id, server
+     * name, access token, and the user's chosen library — so a server configured through the
+     * tracker settings is immediately browsable with no second setup flow.
+     */
+    @Provides
+    @Singleton
+    fun provideJellyfinCredentials(
+        trackPreferences: TrackPreferences,
+        libraryPreferences: LibraryPreferences,
+    ): JellyfinCredentials = PreferenceJellyfinCredentials(trackPreferences, libraryPreferences)
+
+    /**
+     * Jellyfin as a [UnifiedContentSource][ephyra.domain.content.source.UnifiedContentSource].
+     *
+     * Uses the plain network client (not the tracker's) — the source attaches its own token
+     * interceptor reading [JellyfinCredentials], keeping the sourcing stack decoupled from
+     * tracker-internal machinery (see `JellyfinTokenInterceptor`).
+     */
+    @Provides
+    @Singleton
+    fun provideJellyfinContentSource(
+        credentials: JellyfinCredentials,
+        networkHelper: NetworkHelper,
+        json: Json,
+    ): JellyfinContentSource = JellyfinContentSource(credentials, networkHelper.client, json)
+
+    /**
+     * The engine set the orchestrator resolves against — the Jellyfin engine, which binds
+     * `SourceType.REPOSITORY` (the type `EngineId.REPOSITORY` was reserved for).
+     *
+     * Before Phase 3 this was deliberately empty: the heuristic engine was removed (`ADR-0015`)
+     * and it was the only one bound. An empty registry was a normal state, made safe because:
      *
      * - Extension-APK sources never consult the orchestrator. `AndroidSourceManager` registers them
      *   straight from the installed extensions; only *profiled* domains went through the profile path,
@@ -487,12 +522,41 @@ object AppModule {
      *
      * Built as an explicit provider rather than `@IntoSet` because this project's KSP/Dagger setup
      * does not honour the multibinding annotation on an `object` module — it generates the per-method
-     * factory but never wires a set binding. Adding Jellyfin means adding one line here; the
+     * factory but never wires a set binding. Adding an engine means adding one line here; the
      * orchestrator does not change.
      */
     @Provides
     @Singleton
-    fun provideContentSourceEngines(): List<ContentSourceEngine> = emptyList()
+    fun provideContentSourceEngines(
+        jellyfinEngine: JellyfinContentSourceEngine,
+    ): List<ContentSourceEngine> = listOf(jellyfinEngine)
+
+    /** The [ContentSourceEngine] that routes Jellyfin repository URLs for the orchestrator. */
+    @Provides
+    @Singleton
+    fun provideJellyfinContentSourceEngine(
+        source: JellyfinContentSource,
+    ): JellyfinContentSourceEngine = JellyfinContentSourceEngine(source)
+
+    /**
+     * Native source registry entry point: Jellyfin participates in unified/global search via its
+     * [JellyfinSourceGateway], alongside any future native gateways. OPDS has a gateway
+     * (`OpdsSourceGateway`) but no configured instance to register yet — wiring it is a follow-up
+     * once OPDS sources gain user configuration.
+     */
+    @Provides
+    @Singleton
+    fun provideNativeSourceRegistry(
+        jellyfinGateway: JellyfinSourceGateway,
+    ): NativeSourceRegistry = NativeSourceRegistry(listOf(jellyfinGateway))
+
+    /** Gateway projection of the Jellyfin source for the native source protocol. */
+    @Provides
+    @Singleton
+    fun provideJellyfinSourceGateway(
+        source: JellyfinContentSource,
+    ): JellyfinSourceGateway = JellyfinSourceGateway(source)
+
 
     @Provides
     @Singleton

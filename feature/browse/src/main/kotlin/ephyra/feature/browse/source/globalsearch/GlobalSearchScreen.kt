@@ -20,11 +20,13 @@ fun GlobalSearchScreen(
     extensionFilter: String? = null,
     navController: NavController = LocalNavController.current,
 ) {
-    val viewModel = hiltViewModel<GlobalSearchViewModel>()
+    // Unified search: extension CatalogueSource fan-out plus native gateways (Jellyfin/OPDS).
+    val viewModel = hiltViewModel<UnifiedSearchViewModel>()
     LaunchedEffect(searchQuery, extensionFilter) {
         viewModel.init(searchQuery, extensionFilter)
     }
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val nativeItems by viewModel.nativeItems.collectAsStateWithLifecycle()
     var showSingleLoadingScreen by remember {
         mutableStateOf(searchQuery.isNotEmpty() && !extensionFilter.isNullOrEmpty() && state.total == 1)
     }
@@ -68,6 +70,14 @@ fun GlobalSearchScreen(
                 viewModel.onEvent(SearchScreenEvent.Search)
             },
             mergedDuplicateCount = state.mergedResults.count { it.sourceIds.size > 1 },
+            showMergedResults = state.showMergedResults,
+            onToggleResultsView = {
+                viewModel.onEvent(SearchScreenEvent.ToggleResultsView)
+            },
+            mergedResults = state.mergedResults,
+            sourceNames = viewModel::getSourceName,
+            nativeItems = nativeItems,
+            nativeSourceNames = viewModel.nativeSourceNames,
         )
     }
 }

@@ -21,8 +21,12 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/**
+ * Open so [UnifiedSearchViewModel] can extend it and add the native-gateway fan-out on
+ * top of the inherited extension-source search, caching, and suggestions behavior.
+ */
 @HiltViewModel
-class GlobalSearchViewModel @Inject constructor(
+open class GlobalSearchViewModel @Inject constructor(
     val savedStateHandle: SavedStateHandle = SavedStateHandle(),
     sourcePreferences: SourcePreferences,
     sourceManager: SourceManager,
@@ -80,6 +84,10 @@ class GlobalSearchViewModel @Inject constructor(
         if (!navQuery.isNullOrBlank()) {
             init(navQuery)
         }
+        // Merged (deduped cross-source) results are the primary presentation for global
+        // search; the per-source view stays one toggle away. Migration search keeps the
+        // per-source default because it deliberately ranks sources.
+        updateState { it.copy(showMergedResults = true) }
     }
 
     override fun search() {

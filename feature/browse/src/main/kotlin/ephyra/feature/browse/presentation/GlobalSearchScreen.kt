@@ -7,6 +7,10 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
@@ -25,6 +29,10 @@ import ephyra.feature.browse.presentation.components.GlobalSearchErrorResultItem
 import ephyra.feature.browse.presentation.components.GlobalSearchLoadingResultItem
 import ephyra.feature.browse.presentation.components.GlobalSearchResultItem
 import ephyra.feature.browse.presentation.components.GlobalSearchToolbar
+import ephyra.feature.browse.presentation.components.MergedSearchResultCard
+import ephyra.feature.browse.presentation.components.NativeSearchResultItem
+import ephyra.feature.browse.source.globalsearch.MergedSearchResult
+import ephyra.feature.browse.source.globalsearch.NativeSourceResult
 import ephyra.feature.browse.source.globalsearch.SearchItemResult
 import ephyra.feature.browse.source.globalsearch.SearchViewModel
 import ephyra.feature.browse.source.globalsearch.SourceFilter
@@ -46,6 +54,14 @@ fun GlobalSearchScreen(
     suggestions: List<String> = emptyList(),
     onSuggestionClick: (String) -> Unit = {},
     mergedDuplicateCount: Int = 0,
+    // Merged (deduped cross-source) presentation — the primary view for global search.
+    // Migration search leaves these at their defaults and keeps the per-source list.
+    showMergedResults: Boolean = false,
+    onToggleResultsView: () -> Unit = {},
+    mergedResults: List<MergedSearchResult> = emptyList(),
+    sourceNames: (Long) -> String? = { null },
+    nativeItems: Map<String, NativeSourceResult> = emptyMap(),
+    nativeSourceNames: Map<String, String> = emptyMap(),
 ) {
     Scaffold(
         topBar = { scrollBehavior ->
@@ -62,22 +78,41 @@ fun GlobalSearchScreen(
                 onlyShowHasResults = state.onlyShowHasResults,
                 onToggleResults = onToggleResults,
                 scrollBehavior = scrollBehavior,
+                showMergedResults = showMergedResults,
+                onToggleResultsView = onToggleResultsView,
             )
         },
     ) { paddingValues ->
-        GlobalSearchContent(
-            items = state.filteredItems,
-            contentPadding = paddingValues,
-            getManga = getManga,
-            onClickSource = onClickSource,
-            onClickItem = onClickItem,
-            onLongClickItem = onLongClickItem,
-            suggestions = suggestions,
-            onSuggestionClick = onSuggestionClick,
-            mergedDuplicateCount = mergedDuplicateCount,
-        )
+        if (showMergedResults) {
+            GlobalSearchMergedContent(
+                mergedResults = mergedResults,
+                nativeItems = nativeItems,
+                nativeSourceNames = nativeSourceNames,
+                sourceNames = sourceNames,
+                contentPadding = paddingValues,
+                getManga = getManga,
+                onClickItem = onClickItem,
+                onLongClickItem = onLongClickItem,
+                suggestions = suggestions,
+                onSuggestionClick = onSuggestionClick,
+                mergedDuplicateCount = mergedDuplicateCount,
+            )
+        } else {
+            GlobalSearchContent(
+                items = state.filteredItems,
+                contentPadding = paddingValues,
+                getManga = getManga,
+                onClickSource = onClickSource,
+                onClickItem = onClickItem,
+                onLongClickItem = onLongClickItem,
+                suggestions = suggestions,
+                onSuggestionClick = onSuggestionClick,
+                mergedDuplicateCount = mergedDuplicateCount,
+            )
+        }
     }
 }
+
 
 /**
  * One-tap suggestion chips (recent queries + library title matches) shown above the
@@ -186,3 +221,69 @@ internal fun GlobalSearchContent(
         }
     }
 }
+
+/**
+ * Primary unified-search body: a single grid of deduped works (Smart Merge) with
+ * per-source chips, plus full-span rows for native-gateway (Jellyfin/OPDS) results.
+ *
+ * The suggestions/banner header and the native rows span the full grid width so the
+ * adaptive card columns stay intact for the merged works.
+ */
+@Composable
+internal fun GlobalSearchMergedContent(
+    mergedResults: List<MergedSearchResult>,
+    nativeItems: Map<String, NativeSourceResult>,
+    nativeSourceNames: Map<String, String>,
+    sourceNames: (Long) -> String?,
+    contentPadding: PaddingValues,
+    getManga: @Composable (Manga) -> State<Manga>,
+    onClickItem: (Manga) -> Unit,
+    onLongClickItem: (Manga) -> Unit,
+    suggestions: List<String>,
+    onSuggestionClick: (String) -> Unit,
+    mergedDuplicateCount: Int,
+) {
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(minSize = 104.dp),
+        contentPadding = contentPadding,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        if (suggestions.isNotEmpty() || mergedDuplicateCount > 0) {
+            item(key = "search-suggestions", contentType = "search-suggestions", span = { GridItemSpan(maxLineSpan) }) {
+                GlobalSearchMergedBanner(mergedDuplicateCount)
+                GlobalSearchSuggestions(
+                    suggestions = suggestions,
+                    onSuggestionClick = onSuggestionClick,
+                )
+            }
+        }
+
+        nativeItems.forEach { (sourceId, result) ->
+            item(key = "native-$sourceId", contentType = "native-search-result", span = { GridItemSpan(maxLineSpan) }) {
+                GlobalSearchResultItem(
+                    title = nativeSourceNames[sourceId] ?: sourceId,
+                    subtitle = stringResource(ephyra.app.core.common.R.string.native_source_label),
+                    onClick = {},
+                ) {
+                    NativeSearchResultItem(result = result)
+                }
+            }
+        }
+
+        items(
+            mergedResults,
+            key = { "${it.manga.source}:${it.manga.url}" },
+            contentType = { "merged-search-result" },
+        ) { entry ->
+            MergedSearchResultCard(
+                entry = entry,
+                sourceNames = sourceNames,
+                getManga = getManga,
+                onClick = onClickItem,
+                onLongClick = onLongClickItem,
+            )
+        }
+    }
+}
+

@@ -45,6 +45,9 @@ fun GlobalSearchToolbar(
     onlyShowHasResults: Boolean,
     onToggleResults: () -> Unit,
     scrollBehavior: TopAppBarScrollBehavior,
+    // Null hides the merged/per-source toggle; migration search keeps the classic view only.
+    showMergedResults: Boolean? = null,
+    onToggleResultsView: (() -> Unit)? = null,
 ) {
     Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
         Box {
@@ -123,6 +126,34 @@ fun GlobalSearchToolbar(
                     Text(text = stringResource(ephyra.app.core.common.R.string.has_results))
                 },
             )
+
+            // Merged ⇄ per-source presentation switch. Selected = the deduped cross-source
+            // list is the primary view; unselected = classic one-row-per-source layout.
+            if (showMergedResults != null && onToggleResultsView != null) {
+                FilterChip(
+                    selected = showMergedResults,
+                    onClick = onToggleResultsView,
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Outlined.DoneAll,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(FilterChipDefaults.IconSize),
+                        )
+                    },
+                    label = {
+                        Text(
+                            text = stringResource(
+                                if (showMergedResults) {
+                                    ephyra.app.core.common.R.string.search_view_merged
+                                } else {
+                                    ephyra.app.core.common.R.string.search_view_by_source
+                                },
+                            ),
+                        )
+                    },
+                )
+            }
         }
 
         HorizontalDivider()

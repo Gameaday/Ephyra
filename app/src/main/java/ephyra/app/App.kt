@@ -516,7 +516,20 @@ class App :
         }
     }
 
+    /**
+     * Set once Chromium's WebView has been observed asking for the package name. Chromium
+     * calls this from the same sites repeatedly, and each call used to walk the entire
+     * main-thread stack trace — a fresh `StackTraceElement[]` allocation plus string scans
+     * per WebView resource request. Only positive detections are memoized: a plain
+     * (non-Chromium) caller must never poison the answer for a later Chromium one.
+     */
+    @Volatile
+    private var chromiumSpoofDetected = false
+
     override fun getPackageName(): String {
+        if (chromiumSpoofDetected) {
+            return WebViewUtil.spoofedPackageName(applicationContext)
+        }
         try {
             // Override the value passed as X-Requested-With in WebView requests
             val stackTrace = Looper.getMainLooper().thread.stackTrace
@@ -525,7 +538,10 @@ class App :
                     (trace.methodName.lowercase() in setOf("getall", "getpackagename", "<init>"))
             }
 
-            if (isChromiumCall) return WebViewUtil.spoofedPackageName(applicationContext)
+            if (isChromiumCall) {
+                chromiumSpoofDetected = true
+                return WebViewUtil.spoofedPackageName(applicationContext)
+            }
         } catch (_: Exception) {
         }
 

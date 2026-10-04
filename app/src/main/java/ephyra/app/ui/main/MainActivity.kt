@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -583,10 +584,10 @@ class MainActivity : BaseActivity(), AppReadySignal {
             }
         }
 
-        val startTime = System.currentTimeMillis()
+        val startTime = SystemClock.elapsedRealtime()
         splashScreen?.setKeepOnScreenCondition {
-            val elapsed = System.currentTimeMillis() - startTime
-            (elapsed <= SPLASH_MIN_DURATION) || (!ready && (elapsed <= SPLASH_MAX_DURATION))
+            val elapsed = SystemClock.elapsedRealtime() - startTime
+            !ready && (elapsed <= SPLASH_MAX_DURATION)
         }
     }
 
@@ -607,6 +608,8 @@ class MainActivity : BaseActivity(), AppReadySignal {
     private fun CheckForUpdates() {
         val context = LocalContext.current
         LaunchedEffect(Unit) {
+            if (updateChecksDoneThisProcess) return@LaunchedEffect
+            updateChecksDoneThisProcess = true
             if (updaterEnabled) {
                 try {
                     appUpdateChecker.checkForUpdate(context)
@@ -614,8 +617,6 @@ class MainActivity : BaseActivity(), AppReadySignal {
                     logcat(LogPriority.ERROR, e)
                 }
             }
-        }
-        LaunchedEffect(Unit) {
             try {
                 extensionApi.checkForUpdates(context)
             } catch (e: Exception) {
@@ -727,8 +728,16 @@ class MainActivity : BaseActivity(), AppReadySignal {
     }
 
     companion object {
-        private const val SPLASH_MIN_DURATION = 500
         private const val SPLASH_MAX_DURATION = 3000
         private val MIGRATION_TIMEOUT_MS = 30.seconds
+
+        /**
+         * One-shot guard for the update checks in `CheckForUpdates`: the effects fire on
+         * every Activity composition (rotation, theme change, process restore), and each
+         * firing duplicated the 24-hour periodic workers' network checks. A per-process
+         * flag keeps the cold-start check and suppresses the recreation repeats.
+         */
+        @Volatile
+        private var updateChecksDoneThisProcess = false
     }
 }

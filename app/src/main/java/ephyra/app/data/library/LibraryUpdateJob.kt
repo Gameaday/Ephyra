@@ -94,14 +94,17 @@ class LibraryUpdateJob(
 
         setForegroundSafely()
 
-        libraryPreferences.lastUpdatedTimestamp().set(Instant.now().toEpochMilli())
-
         val categoryId = inputData.getLong(KEY_CATEGORY, -1L)
         addMangaToQueue(categoryId)
 
         return withIOContext {
             try {
                 updateChapterList()
+                // Written on success only: writing at job *start* meant every retry
+                // loop advanced the "library last updated" clock without any update
+                // actually happening, and the Updates tab reported a refresh that never
+                // occurred.
+                libraryPreferences.lastUpdatedTimestamp().set(Instant.now().toEpochMilli())
                 Result.success()
             } catch (e: Exception) {
                 if (e is CancellationException) {

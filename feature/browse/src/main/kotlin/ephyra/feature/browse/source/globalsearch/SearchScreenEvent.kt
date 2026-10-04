@@ -14,6 +14,7 @@ sealed interface SearchScreenEvent {
     data class UpdateSearchQuery(val query: String?) : SearchScreenEvent
     data class SetSourceFilter(val filter: SourceFilter) : SearchScreenEvent
     data object ToggleFilterResults : SearchScreenEvent
+    data object ToggleResultsView : SearchScreenEvent
     data object Search : SearchScreenEvent
     data class SetMigrateDialog(val currentId: Long, val target: Manga) : SearchScreenEvent
     data object ClearDialog : SearchScreenEvent

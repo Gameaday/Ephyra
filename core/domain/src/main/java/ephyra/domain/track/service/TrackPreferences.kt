@@ -26,9 +26,20 @@ class TrackPreferences(
      * `privateKey` prefix kept them out of backups, which is a different property — the bytes on
      * disk were still readable.
      */
-    fun trackPassword(tracker: Tracker) = protect(
+    fun trackPassword(tracker: Tracker) = trackPassword(tracker.id)
+
+    /**
+     * Id-based variant of [trackPassword].
+     *
+     * **Why the overload exists.** Jellyfin browsing (Phase 3 content source) must read the
+     * tracker's stored access token without constructing a [Tracker] — the tracker type lives in
+     * the data layer with Android dependencies, and the content-source stack must stay JVM-pure
+     * for tests. Reading by id keeps the key format defined in exactly one place (here) instead of
+     * the sourcing package re-deriving `"pref_mangasync_password_${…}"` and drifting from it.
+     */
+    fun trackPassword(trackerId: Long) = protect(
         preferenceStore.getString(
-            Preference.privateKey("pref_mangasync_password_${tracker.id}"),
+            Preference.privateKey("pref_mangasync_password_$trackerId"),
             "",
         ),
         secretCipher,
