@@ -219,5 +219,4 @@ class MotionConsistencyTest {
                 "Updates could not share the cover.",
         )
     }
-
 }

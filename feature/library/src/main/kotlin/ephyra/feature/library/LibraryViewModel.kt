@@ -173,12 +173,21 @@ class LibraryViewModel @Inject constructor(
                 state.map { it.searchQuery }.distinctUntilChanged().debounce(SEARCH_DEBOUNCE_MILLIS),
                 getCategories.subscribe(),
                 getFavoritesFlow(),
-                combine(getTracksPerManga.subscribe(), getTrackingFiltersFlow(), ::Pair),
+                combine(
+                    combine(
+                        getTracksPerManga.subscribe(),
+                        getTrackingFiltersFlow(),
+                        ::Pair,
+                    ),
+                    getLibrarySortPreferencesFlow(),
+                ) { (tracksMap, trackingFilters), sortPreferences ->
+                    LibraryInputs(tracksMap, trackingFilters, sortPreferences)
+                },
                 getLibraryItemPreferencesFlow(),
-            ) { searchQuery, categories, favorites, (tracksMap, trackingFilters), itemPreferences ->
+            ) { searchQuery, categories, favorites, inputs, itemPreferences ->
                 val showSystemCategory = favorites.any { it.libraryManga.categories.contains(0) }
                 val filteredFavorites = favorites
-                    .applyFilters(tracksMap, trackingFilters, itemPreferences)
+                    .applyFilters(inputs.tracksMap, inputs.trackingFilters, itemPreferences)
                     .let { if (searchQuery == null) it else it.filter { m -> m.matches(searchQuery) } }
 
                 LibraryData(
@@ -186,8 +195,9 @@ class LibraryViewModel @Inject constructor(
                     showSystemCategory = showSystemCategory,
                     categories = categories.toPersistentList(),
                     favorites = filteredFavorites.toPersistentList(),
-                    tracksMap = tracksMap.mapValues { it.value.toPersistentList() }.toPersistentMap(),
-                    loggedInTrackerIds = trackingFilters.keys.toPersistentSet(),
+                    tracksMap = inputs.tracksMap.mapValues { it.value.toPersistentList() }.toPersistentMap(),
+                    loggedInTrackerIds = inputs.trackingFilters.keys.toPersistentSet(),
+                    sortPreferences = inputs.sortPreferences,
                 )
             }
                 .distinctUntilChanged()
@@ -206,7 +216,12 @@ class LibraryViewModel @Inject constructor(
                 .map { data ->
                     data.favorites
                         .applyGrouping(data.categories, data.showSystemCategory)
-                        .applySort(data.favoritesById, data.tracksMap, data.loggedInTrackerIds)
+                        .applySort(
+                            data.favoritesById,
+                            data.tracksMap,
+                            data.loggedInTrackerIds,
+                            data.sortPreferences,
+                        )
                         .mapValues { it.value.toPersistentList() }
                         .toPersistentMap()
                 }
@@ -387,6 +402,7 @@ class LibraryViewModel @Inject constructor(
         favoritesById: Map<Long, LibraryItem>,
         trackMap: Map<Long, List<Track>>,
         loggedInTrackerIds: Set<Long>,
+        sortPreferences: LibrarySortPreferences,
     ): Map<Category, List</* LibraryItem */ Long>> {
         val sortAlphabetically: (LibraryItem, LibraryItem) -> Int = { manga1, manga2 ->
             // No .lowercase() needed: collator is configured with Collator.PRIMARY strength,
@@ -452,27 +468,55 @@ class LibraryViewModel @Inject constructor(
                     item1Score.compareTo(item2Score)
                 }
 
+                // Random is applied by shuffling the id list above, seeded so the order is stable
+                // across recompositions. Reaching here means a new sort type was added without a
+                // comparator, so fall back to alphabetical rather than throwing: a crash in a
+                // sort is strictly worse than an imperfect one.
                 LibrarySort.Type.Random -> {
-                    error("Why Are We Still Here? Just To Suffer?")
+                    sortAlphabetically(manga1, manga2)
                 }
             }
         }
 
         return mapValues { (key, value) ->
-            if (key.sort.type == LibrarySort.Type.Random) {
-                val seed = libraryPreferences.randomSortSeed().getSync()
-                return@mapValues value.shuffled(Random(seed))
+            val sort = sortModeFor(key, sortPreferences)
+
+            if (sort.type == LibrarySort.Type.Random) {
+                // Seeded from the reactive seed carried in [LibraryData], not a direct `getSync()`
+                // read. The previous direct read happened outside the flow, so picking Random wrote a
+                // new seed that nothing ever re-emitted on: the grid kept the old order and tapping
+                // Random did nothing.
+                return@mapValues value.shuffled(Random(sortPreferences.randomSortSeed))
             }
 
             val manga = value.mapNotNull { favoritesById[it] }
 
-            val comparator = key.sort.comparator()
-                .let { if (key.sort.isAscending) it else it.reversed() }
+            val comparator = sort.comparator()
+                .let { if (sort.isAscending) it else it.reversed() }
                 .thenComparator(sortAlphabetically)
 
             manga.sortedWith(comparator).map { it.id }
         }
     }
+
+    /**
+     * The sort that applies to [category], given the observed [sortPreferences].
+     *
+     * When per-category display settings are on, a real category owns its sort in its own flags.
+     * Otherwise every category follows the global sort -- which is also what the Default tab uses,
+     * since it has no database row to carry flags.
+     *
+     * This is the single owner of that rule. The grid and the sort dialog both resolve through it, so
+     * the highlighted option cannot disagree with the order actually rendered. When the dialog read
+     * `category.sort` directly, the Default tab showed "Alphabetical, descending" as selected
+     * regardless of the stored sort, because its flags are always 0.
+     */
+    private fun sortModeFor(category: Category?, sortPreferences: LibrarySortPreferences): LibrarySort =
+        if (sortPreferences.categorizedDisplay && category != null && !category.isSystemCategory) {
+            category.sort
+        } else {
+            sortPreferences.sortMode
+        }
 
     private fun getLibraryItemPreferencesFlow(): Flow<ItemPreferences> {
         return combine(
@@ -576,6 +620,23 @@ class LibraryViewModel @Inject constructor(
                 combine(filterFlows) { it.toMap() }
             }
         }
+    }
+
+    /**
+     * Flow of the sort inputs the grid ordering depends on.
+     *
+     * All three are observed, and each one has to be: [LibrarySort.randomSortSeed] because re-tapping
+     * Random writes a new seed, and `categorizedDisplaySettings` because it decides whose sort wins.
+     * Reading any of them straight from the preference instead leaves it invisible to
+     * `distinctUntilChanged`, which is exactly how the sort came to be unresponsive in the first
+     * place.
+     */
+    private fun getLibrarySortPreferencesFlow(): Flow<LibrarySortPreferences> = combine(
+        libraryPreferences.sortingMode().changes(),
+        libraryPreferences.randomSortSeed().changes(),
+        libraryPreferences.categorizedDisplaySettings().changes(),
+    ) { sortMode, randomSortSeed, categorizedDisplay ->
+        LibrarySortPreferences(sortMode, randomSortSeed, categorizedDisplay)
     }
 
     /**
@@ -989,6 +1050,31 @@ class LibraryViewModel @Inject constructor(
         val filterContentTypeManga: TriState,
     )
 
+    /**
+     * The sort inputs observed by the library grid.
+     *
+     * Held as one immutable value so it can be combined into [LibraryData] as a single flow item.
+     */
+    @Immutable
+    data class LibrarySortPreferences(
+        val sortMode: LibrarySort,
+        val randomSortSeed: Int,
+        val categorizedDisplay: Boolean,
+    )
+
+    /**
+     * Groups the flow inputs that share a combine slot.
+     *
+     * `kotlinx.coroutines.flow.combine` has overloads for up to five flows. The library needs six,
+     * so the track data and the sort inputs are combined into one holder rather than the call
+     * silently falling back to the `Array<Any?>` overload, which cannot destructure its arguments.
+     */
+    private data class LibraryInputs(
+        val tracksMap: Map<Long, List<Track>>,
+        val trackingFilters: Map<Long, TriState>,
+        val sortPreferences: LibrarySortPreferences,
+    )
+
     @Immutable
     data class LibraryData(
         val isInitialized: Boolean = false,
@@ -997,6 +1083,15 @@ class LibraryViewModel @Inject constructor(
         val favorites: PersistentList<LibraryItem> = persistentListOf(),
         val tracksMap: PersistentMap<Long, PersistentList<Track>> = persistentMapOf(),
         val loggedInTrackerIds: PersistentSet<Long> = persistentSetOf(),
+        // Carried here rather than read directly from the preference inside `applySort` so that
+        // changing the sort produces a new LibraryData. The re-sort pipeline is keyed on this
+        // object's equality, so a sort read outside the flow was invisible to `distinctUntilChanged`
+        // and the grid never re-ordered until the library contents happened to change.
+        val sortPreferences: LibrarySortPreferences = LibrarySortPreferences(
+            sortMode = LibrarySort.default,
+            randomSortSeed = 0,
+            categorizedDisplay = false,
+        ),
     ) {
         val favoritesById by lazy { favorites.associateBy { it.id } }
     }
@@ -1031,6 +1126,23 @@ class LibraryViewModel @Inject constructor(
         )
 
         val activeCategory: Category? = displayedCategories.getOrNull(coercedActiveCategoryIndex)
+
+        /**
+         * The sort currently applied to [category].
+         *
+         * Mirrors the rule `applySort` uses, so the sort dialog highlights the option that produced
+         * the order on screen. Reading `category.sort` instead showed "Alphabetical, descending" for
+         * the Default tab whatever the user had chosen, because that tab is synthesized with flags 0.
+         */
+        fun sortFor(category: Category?): LibrarySort =
+            if (libraryData.sortPreferences.categorizedDisplay &&
+                category != null &&
+                !category.isSystemCategory
+            ) {
+                category.sort
+            } else {
+                libraryData.sortPreferences.sortMode
+            }
 
         val isLibraryEmpty = libraryData.favorites.isEmpty()
 

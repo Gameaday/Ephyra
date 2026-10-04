@@ -104,7 +104,6 @@ object SettingsTrackingScreen : SearchableSettings {
         val trackerListImporter = viewModel.trackerListImporter
         val matchUnlinkedJobRunner = viewModel.matchUnlinkedJobRunner
 
-
         var dialog by remember { mutableStateOf<Any?>(null) }
         var importingTrackerId by remember { mutableStateOf<Long?>(null) }
         var resolveResultText by remember { mutableStateOf<String?>(null) }

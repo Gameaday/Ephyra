@@ -15,7 +15,14 @@ class SetSortModeForCategory(
 
     suspend fun await(categoryId: Long?, type: LibrarySort.Type, direction: LibrarySort.Direction) {
         val category = categoryId?.let { categoryRepository.get(it) }
-        val flags = (category?.flags ?: 0) + type + direction
+        // Base the new flags on what is already persisted rather than on `0`.
+        //
+        // The Default tab is presented as a real `Category` but has no database row, so the lookup
+        // misses and the old code rebuilt the flags from `0`, discarding the persisted mode and any
+        // other flag bits carried alongside the sort. Starting from the stored value keeps the write
+        // idempotent for a miss instead of lossy.
+        val currentFlags = category?.flags ?: preferences.sortingMode().get().flag
+        val flags = currentFlags + type + direction
         if (type == LibrarySort.Type.Random) {
             preferences.randomSortSeed().set(Random.nextInt())
         }

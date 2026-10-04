@@ -242,6 +242,9 @@ fun LibraryScreen(
                 onDismissRequest = onDismissRequest,
                 ViewModel = settingsViewModel,
                 category = state.activeCategory,
+                // The sort actually applied, not `activeCategory.sort`: the Default tab carries no
+                // flags of its own, so deriving the selection from them highlighted the wrong option.
+                sort = state.sortFor(state.activeCategory),
             )
         }
 
