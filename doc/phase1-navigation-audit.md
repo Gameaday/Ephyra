@@ -62,6 +62,15 @@ Six defects found and fixed against current Material 3 guidance:
 
 Commits: `bb0b4a8`, `d4b9492`, `3f1c6ed`.
 
+## Third pass (final)
+7. **Coil crossfade ran inside the shared element** — the cover flashed placeholder-to-image
+   underneath its own flight. Disabled for shared-element participants (`bf96fd0`).
+   Caveat: call sites that pass a pre-built `ImageRequest` bypass this; Phase 4's shared
+   request builder should make crossfade-off-for-shared-elements the default there too.
+- Verified: ReaderActivity open/close window anims match token travel/durations; shared
+   element key single-sourced via `MotionPolicy.mangaCoverKey`; aspect-ratio ordering in
+   the modifier chain already fixed upstream.
+
 ## Still open
 - `m3SharedAxisZ*` token functions are now unreferenced; retained as vocabulary for a
   future modal/sheet use, but delete if nothing claims them within a release or two.
