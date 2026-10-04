@@ -308,9 +308,18 @@ object MotionTokens {
      */
     fun m3TabSlideEnter(forward: Boolean): EnterTransition =
         slideInHorizontally(
-            initialOffsetX = { width -> if (forward) width else -width },
+            // 30% travel, not the full viewport. A full-width peer slide is the M2 carousel
+            // anti-pattern: both screens are fully swapped at the midpoint, doubling overdraw
+            // for the whole gesture, and the incoming page arrives from off-screen (a hierarchy
+            // cue) rather than from beside its peer. M3 peer motion is a short axis move + fade.
+            initialOffsetX = { width -> (width * TAB_AXIS_X_TRAVEL).toInt() * (if (forward) 1 else -1) },
             animationSpec = tween(
                 durationMillis = DURATION_MEDIUM_2,
+                easing = EasingEmphasizedDecelerate,
+            ),
+        ) + fadeIn(
+            animationSpec = tween(
+                durationMillis = DURATION_SHORT_4,
                 easing = EasingEmphasizedDecelerate,
             ),
         )
@@ -318,9 +327,14 @@ object MotionTokens {
     /** Matching outgoing half of [m3TabSlideEnter]; travels the opposite way across the viewport. */
     fun m3TabSlideExit(forward: Boolean): ExitTransition =
         slideOutHorizontally(
-            targetOffsetX = { width -> if (forward) -width else width },
+            targetOffsetX = { width -> (width * TAB_AXIS_X_TRAVEL).toInt() * (if (forward) -1 else 1) },
             animationSpec = tween(
                 durationMillis = DURATION_MEDIUM_2,
+                easing = EasingEmphasizedAccelerate,
+            ),
+        ) + fadeOut(
+            animationSpec = tween(
+                durationMillis = DURATION_SHORT_4,
                 easing = EasingEmphasizedAccelerate,
             ),
         )
@@ -336,6 +350,9 @@ object MotionTokens {
      * the hierarchical pair is meant to avoid.
      */
     private const val SHARED_AXIS_X_TRAVEL = 0.30f
+
+    /** Peer-axis travel for tab switches; same 30% language as the hierarchical axis. */
+    private const val TAB_AXIS_X_TRAVEL = 0.30f
 
     /**
      * Shared axis X enter: a hierarchical destination arriving from the right.
@@ -398,14 +415,10 @@ object MotionTokens {
      * exist.
      */
     fun m3FadeThroughEnter(): EnterTransition =
+        // Fade only. The scale-in this used to carry is an M2 leftover: scaling a whole page
+        // reads as a zoom (a modal/hierarchy cue), which is wrong for an unordered destination
+        // swap, and it forces a full-screen layer to be re-rasterised every frame it runs.
         fadeIn(
-            animationSpec = tween(
-                durationMillis = DURATION_MEDIUM_2,
-                delayMillis = DURATION_SHORT_2,
-                easing = EasingEmphasizedDecelerate,
-            ),
-        ) + scaleIn(
-            initialScale = 0.96f,
             animationSpec = tween(
                 durationMillis = DURATION_MEDIUM_2,
                 delayMillis = DURATION_SHORT_2,

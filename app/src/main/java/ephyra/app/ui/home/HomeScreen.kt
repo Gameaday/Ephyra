@@ -262,32 +262,32 @@ fun HomeScreen(
                     enterTransition = {
                         val forward = tabSlideForward(initialState.destination.route, targetState.destination.route)
                         when {
-                            forward == null -> MotionTokens.m3FadeThroughEnter()
                             reducedMotion -> EnterTransition.None
+                            forward == null -> MotionTokens.m3FadeThroughEnter()
                             else -> MotionTokens.m3TabSlideEnter(forward)
                         }
                     },
                     exitTransition = {
                         val forward = tabSlideForward(initialState.destination.route, targetState.destination.route)
                         when {
-                            forward == null -> MotionTokens.m3FadeThroughExit()
                             reducedMotion -> ExitTransition.None
+                            forward == null -> MotionTokens.m3FadeThroughExit()
                             else -> MotionTokens.m3TabSlideExit(forward)
                         }
                     },
                     popEnterTransition = {
                         val forward = tabSlideForward(initialState.destination.route, targetState.destination.route)
                         when {
-                            forward == null -> MotionTokens.m3FadeThroughEnter()
                             reducedMotion -> EnterTransition.None
+                            forward == null -> MotionTokens.m3FadeThroughEnter()
                             else -> MotionTokens.m3TabSlideEnter(forward)
                         }
                     },
                     popExitTransition = {
                         val forward = tabSlideForward(initialState.destination.route, targetState.destination.route)
                         when {
-                            forward == null -> MotionTokens.m3FadeThroughExit()
                             reducedMotion -> ExitTransition.None
+                            forward == null -> MotionTokens.m3FadeThroughExit()
                             else -> MotionTokens.m3TabSlideExit(forward)
                         }
                     },
