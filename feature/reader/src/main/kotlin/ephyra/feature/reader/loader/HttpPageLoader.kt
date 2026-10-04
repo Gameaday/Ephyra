@@ -334,9 +334,27 @@ internal class HttpPageLoader(
         // A page whose address the ladder has indicted gets a replacement from a fresh page list,
         // before anything else looks at it. This is the only place a 1.6 source keeps addresses:
         // `getImageUrl` would be a call the source does not implement.
+        //
+        // **The fetch is network I/O and must not be fatal to the reader.** It is made here, on
+        // the viewer's own coroutine, so an exception that escapes — a connection reset by the
+        // source's API being the reported one — killed that coroutine and with it the reader
+        // activity, presenting as a dialog and a kick back to the series screen rather than a
+        // failed page. A page that cannot get a replacement stays flagged and falls back to the
+        // ladder's own resolution inside `internalLoadPage`, whose recovery ladder is the one
+        // place that already knows how to fail a *page* rather than a *reader*.
         if (page.needsFreshAddress) {
-            page.imageUrl = freshAddresses.at(page.index)
-            page.needsFreshAddress = false
+            runCatching { freshAddresses.at(page.index) }
+                .onSuccess { replacement ->
+                    page.imageUrl = replacement
+                    page.needsFreshAddress = false
+                }
+                .onFailure { e ->
+                    if (e is CancellationException) throw e
+                    logcat(LogPriority.WARN, e) {
+                        "Could not obtain a replacement address for page ${page.number} of " +
+                            "${chapter.chapter.name}; leaving it to the recovery ladder"
+                    }
+                }
         }
 
         // Check if the image has been deleted

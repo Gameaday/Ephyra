@@ -63,19 +63,30 @@ class PageLoadRecoveryStructuralTest {
      *
      * The flag matters because `retryPage` is not a suspending function: it cannot fetch anything,
      * so clearing there would leave the page unrecoverable before any suspending code runs. It marks
-     * the page instead, and `loadPage` replaces the address on the way in.
+     * the page instead, and `loadPage` replaces the address on the way in — inside a `runCatching`,
+     * so a failed replacement fetch (network I/O on the viewer's own coroutine) fails the *page*
+     * rather than the reader.
      */
     @Test
     fun `the reader replaces a URL its own classifier indicted`() {
         val text = code("feature/reader/src/main/kotlin/ephyra/feature/reader/loader/HttpPageLoader.kt")
 
         assertTrue(
-            REPLACES_FROM_PAGE_LIST.containsMatchIn(text),
-            "the reader must draw a replacement from a page list for the same reason the downloader does",
+            text.contains("freshAddresses.at(page.index)"),
+            "the reader must draw a replacement from a fresh page list for the same reason the " +
+                "downloader does",
         )
         assertTrue(
             text.contains("needsFreshAddress = true"),
             "the non-suspending reload path must flag the page rather than clear its address",
+        )
+        // The reader's replacement fetch is network I/O on the viewer's coroutine: unguarded, an
+        // exception escaping it killed the reader activity (reported as a dialog and a kick back
+        // to the series screen). It must stay guarded.
+        assertTrue(
+            text.contains("runCatching { freshAddresses.at("),
+            "the reader's fresh-address fetch must not be able to escape loadPage and kill the " +
+                "reader; a failed replacement falls back to the recovery ladder",
         )
     }
 
