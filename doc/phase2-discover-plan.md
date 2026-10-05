@@ -96,3 +96,9 @@ Follow-ups still open:
     consequently unreachable — silent enrichment replaces it.
   - Remaining authority mentions are intentionally retained: MangaInfoHeader badge for
     already-linked entries, LibraryBadges brand colors, background chapter generation.
+
+- [x] D14 add-time duplicate check (`c575253`): the series page already had a
+  confirm-or-bypass duplicate dialog; its matching now also runs an exact
+  normalized-title pass (`TitleNormalizer.forEquality`) so punctuation/spacing
+  variants across sources collide. Fuzzy deliberately excluded from the blocking
+  prompt (suggestion-grade only).
