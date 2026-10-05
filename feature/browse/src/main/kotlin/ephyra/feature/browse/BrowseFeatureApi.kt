@@ -81,11 +81,6 @@ class BrowseFeatureApi @Inject constructor() : FeatureApi {
             ephyra.feature.browse.extension.ExtensionFilterScreen(navController)
         }
 
-        // Match Results Screen
-        navGraphBuilder.composable(ScreenRoutes.MatchResults.route) {
-            ephyra.feature.browse.source.authority.MatchResultsScreen(navController)
-        }
-
         // Global Search Screen
         //
         // Both this and the source results below provide an animated-visibility scope, because both
