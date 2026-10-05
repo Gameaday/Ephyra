@@ -66,7 +66,6 @@ import ephyra.core.common.util.system.logcat
 import ephyra.core.common.util.system.openInBrowser
 import ephyra.core.download.DownloadCache
 import ephyra.core.migration.Migrator
-import ephyra.data.cache.ChapterCache
 import ephyra.data.updater.AppUpdateChecker
 import ephyra.domain.base.BasePreferences
 import ephyra.domain.library.service.LibraryPreferences
@@ -245,9 +244,6 @@ class MainActivity : BaseActivity(), AppReadySignal {
 
     @Inject
     lateinit var downloadCache: DownloadCache
-
-    @Inject
-    lateinit var chapterCache: ChapterCache
 
     @Inject
     lateinit var getIncognitoState: GetIncognitoState
