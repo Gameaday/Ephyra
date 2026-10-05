@@ -66,6 +66,9 @@ fun LibraryScreen(
 }
 
 @Composable
+/** Covers prefetched per library load — roughly two grid screenfuls at 3-4 columns. */
+private const val COVER_PREFETCH_COUNT = 24
+
 fun LibraryScreen(
     ViewModel: LibraryViewModel,
     settingsViewModel: LibrarySettingsViewModel,
@@ -79,6 +82,24 @@ fun LibraryScreen(
     val haptic = LocalHapticFeedback.current
 
     val state by ViewModel.state.collectAsStateWithLifecycle()
+
+    // Hot-tier prefetch (doc/cache-retention-policy.md rule 2): when the library
+    // loads, warm the durable cover cache for the first screenfuls so initial scroll
+    // never waits on the network. Bounded (one small batch per library change),
+    // deduped by Coil against in-flight requests, and a durable hit is a cheap no-op.
+    val imageLoader = coil3.imageLoader(context)
+    LaunchedEffect(state.libraryData.favorites) {
+        state.libraryData.favorites
+            .asSequence()
+            .mapNotNull { it.libraryManga.manga.thumbnailUrl }
+            .distinct()
+            .take(COVER_PREFETCH_COUNT)
+            .forEach { url ->
+                imageLoader.enqueue(
+                    coil3.request.ImageRequest.Builder(context).data(url).build(),
+                )
+            }
+    }
 
     val snackbarHostState = remember { SnackbarHostState() }
 
