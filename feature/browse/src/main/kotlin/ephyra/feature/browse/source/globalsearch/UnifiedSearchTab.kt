@@ -1,7 +1,6 @@
 package ephyra.feature.browse.source.globalsearch
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ElevatedAssistChip
 import androidx.compose.material3.Text
