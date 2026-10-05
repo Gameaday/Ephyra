@@ -33,6 +33,7 @@ class GlobalSearchViewModel @Inject constructor(
     private val recentSearches: RecentSearches,
     private val getLibraryManga: GetLibraryManga,
     unifiedSearchEngine: ephyra.domain.manga.interactor.UnifiedSearchEngine,
+    extensionUpdateManager: ExtensionManager,
 ) : SearchViewModel(
     sourcePreferences = sourcePreferences,
     sourceManager = sourceManager,
@@ -115,6 +116,21 @@ class GlobalSearchViewModel @Inject constructor(
         return super.getEnabledSources()
             .filter { state.value.sourceFilter != SourceFilter.PinnedOnly || it.id in pinnedSourceIds }
     }
+
+    /**
+     * Count of installed extensions with an update waiting, from the locally cached
+     * extension list (populated by the background update checker). Reading it costs
+     * no network: it exists so the Discover search page can badge "updates available"
+     * without waking the network-heavy `ExtensionsViewModel` (which refreshes
+     * repositories on init) just to render a chip.
+     */
+    val extensionUpdateCount: StateFlow<Int> = extensionUpdateManager.installedExtensionsFlow
+        .map { installed -> installed.count { it.hasUpdate } }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = 0,
+        )
 
     private companion object {
         const val SUGGESTION_LIMIT = 6
