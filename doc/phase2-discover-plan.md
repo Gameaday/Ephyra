@@ -85,3 +85,14 @@ Follow-ups still open:
 - Add-time duplicate check (D14) not yet wired.
 - Steps 3 (update chip), 5 (etiquette hardening: debounce, per-source timeout surfacing),
   6 (structural tests) pending.
+
+- [x] Authority retraction cleanup (D13) — `13f93b9`:
+  - Series page: manual Identify/Refresh-from-authority action removed from
+    EditMetadataDialog (`onIdentify = null`); authority badge + Unlink kept (unlink is
+    the reversible escape hatch for existing/future links).
+  - Dead `match_results` route unregistered (nothing navigated to it post-retraction).
+  - Settings → Tracking: authority group (tracker ordering, match-unlinked job,
+    import/link) gated off with a salvage note; the manual MatchUnlinkedJob is
+    consequently unreachable — silent enrichment replaces it.
+  - Remaining authority mentions are intentionally retained: MangaInfoHeader badge for
+    already-linked entries, LibraryBadges brand colors, background chapter generation.
