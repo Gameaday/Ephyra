@@ -61,6 +61,16 @@ class BrowseFeatureApi @Inject constructor() : FeatureApi {
             )
         }
 
+        // Extensions (source/extension management), standalone route — Settings entry point.
+        navGraphBuilder.composable(ScreenRoutes.Extensions.route) {
+            ephyra.feature.browse.extension.ExtensionsRouteScreen(navController)
+        }
+
+        // Source migration, standalone route — Settings entry point.
+        navGraphBuilder.composable(ScreenRoutes.SourceMigration.route) {
+            ephyra.feature.browse.migration.sources.MigrateSourceRouteScreen(navController)
+        }
+
         // Sources Filter Screen
         navGraphBuilder.composable(ScreenRoutes.SourcesFilter.route) {
             ephyra.feature.browse.source.SourcesFilterScreen(navController)
