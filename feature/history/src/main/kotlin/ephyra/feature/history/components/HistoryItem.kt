@@ -72,7 +72,9 @@ fun HistoryItem(
                 overflow = TextOverflow.Ellipsis,
                 style = textStyle,
             )
-            val readAt = remember { history.readAt?.toTimestampString() ?: "" }
+            // Keyed: in a LazyColumn the same slot is reused as items scroll, so a keyless
+            // remember would show the previous item's timestamp here — and never update it.
+            val readAt = remember(history.readAt) { history.readAt?.toTimestampString() ?: "" }
             Text(
                 text = if (history.chapterNumber > -1) {
                     stringResource(
