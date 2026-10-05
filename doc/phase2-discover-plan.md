@@ -69,3 +69,19 @@ bar that changes meaning per tab.
   problem D1 rejects. Step 4 must merge these into one field with grouped sections
   (Library / Authority / Sources), not just restyle one of them.
 - [ ] Steps 5–6 pending.
+
+- [x] Step 4 (revised per v1 spec + D13) — **Stage A landed** (`df25f94`): the
+  Discover tab's search page is now the unified global-search fan-out hosted in the
+  tab chrome (`UnifiedSearchTab`), replacing the authority search page. One toolbar
+  field; submit-only fan-out (D5). Authority code preserved but no longer reachable
+  from the tab.
+
+Follow-ups still open:
+- Library section as full rows with reading progress (currently library matches
+  appear via the suggestions row only).
+- `Screen.GlobalSearch` standalone route still exists for deep links (manga details
+  "search globally"); keep for now, but it shares the engine so no second front door
+  is exposed in UI chrome.
+- Add-time duplicate check (D14) not yet wired.
+- Steps 3 (update chip), 5 (etiquette hardening: debounce, per-source timeout surfacing),
+  6 (structural tests) pending.
