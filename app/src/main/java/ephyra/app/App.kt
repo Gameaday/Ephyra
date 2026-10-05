@@ -381,7 +381,19 @@ class App :
 
             memoryCache(
                 MemoryCache.Builder()
-                    .maxSizePercent(context)
+                    // Tiered like the chapter/disk caches: on high-RAM devices (S24 class)
+                    // a larger decoded-bitmap working set means library/updates grids
+                    // recompose from memory instead of re-decoding from disk, which is
+                    // where scroll jitter at 120Hz actually comes from. LOW keeps Coil's
+                    // conservative default so memory pressure decides eviction there.
+                    .maxSizePercent(
+                        context,
+                        when (DeviceUtil.performanceTier(this@App)) {
+                            DeviceUtil.PerformanceTier.LOW -> 0.20
+                            DeviceUtil.PerformanceTier.MEDIUM -> 0.25
+                            DeviceUtil.PerformanceTier.HIGH -> 0.30
+                        },
+                    )
                     .build(),
             )
             // Coil 3 lifecycle-aware background trimming: when the app moves to the

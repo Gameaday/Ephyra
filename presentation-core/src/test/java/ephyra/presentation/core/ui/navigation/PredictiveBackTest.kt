@@ -46,6 +46,43 @@ class PredictiveBackTest {
     }
 
     /**
+     * Regression: the handler contract requires the progress flow to be collected on EVERY path.
+     *
+     * The early return for a fully settled surface (offset == 0) originally skipped collection,
+     * which crashed any back swipe begun over a settled sheet with "You must collect the
+     * progress flow" (user report: series page -> chapter filter/sort sheet -> swipe back).
+     * This is a source-structure gate, following MotionConsistencyTest's pattern: the failure
+     * only reproduces with a real edge gesture, which a unit test cannot drive.
+     */
+    @Test
+    fun `every path through the handler collects the progress flow`() {
+        var dir = java.io.File(".").absoluteFile
+        var source: java.io.File? = null
+        while (dir != null) {
+            val candidate = java.io.File(
+                dir,
+                "presentation-core/src/main/java/ephyra/presentation/core/ui/navigation/PredictiveBack.kt",
+            )
+            if (candidate.exists()) {
+                source = candidate
+                break
+            }
+            dir = dir.parentFile
+        }
+        checkNotNull(source) { "PredictiveBack.kt not found" }
+        val handler = source.readText()
+            .substringAfter("PredictiveBackHandler(enabled = enabled) { flow ->")
+            .substringBefore("internal fun backGestureOffset")
+        assertTrue(
+            handler.contains("flow.collect { }") &&
+                handler.indexOf("flow.collect { }") < handler.indexOf("return@PredictiveBackHandler"),
+            "The zero-offset early return must drain the flow (flow.collect { }) before " +
+                "returning — PredictiveBackHandler throws 'You must collect the progress flow' " +
+                "when any path skips collection.",
+        )
+    }
+
+    /**
      * A surface already partly displaced must have its gesture seeded from where it actually is.
      *
      * This is why [PredictiveBackDraggableProgress] reads `state.offset` rather than assuming a
