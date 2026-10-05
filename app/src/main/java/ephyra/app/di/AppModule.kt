@@ -1391,6 +1391,12 @@ object AppModule {
         GetExtensionsByType(sourcePreferences, extensionManager)
 
     @Provides
+    fun provideGetExtensionUpdateCount(
+        extensionManager: ephyra.domain.extension.service.ExtensionManager,
+    ) =
+        ephyra.domain.extension.interactor.GetExtensionUpdateCount(extensionManager)
+
+    @Provides
     fun provideGetExtensionSources(sourcePreferences: SourcePreferences) =
         GetExtensionSources(sourcePreferences)
 

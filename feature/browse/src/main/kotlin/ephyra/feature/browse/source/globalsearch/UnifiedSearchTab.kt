@@ -1,21 +1,13 @@
 package ephyra.feature.browse.source.globalsearch
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ElevatedAssistChip
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import ephyra.feature.browse.presentation.GlobalSearchContent
 import ephyra.presentation.core.components.TabContent
-import androidx.compose.material3.MaterialTheme
-import ephyra.presentation.core.components.material.padding
 import ephyra.presentation.core.ui.navigation.LocalNavController
 import ephyra.presentation.core.ui.navigation.Screen
-import ephyra.presentation.core.ui.navigation.ScreenRoutes
 
 /**
  * The Discover tab's search page: the app's single search front door (D1/D13).
@@ -34,31 +26,12 @@ fun unifiedSearchTab(
 ): TabContent {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val suggestions by viewModel.suggestions.collectAsStateWithLifecycle()
-    val extensionUpdates by viewModel.extensionUpdateCount.collectAsStateWithLifecycle()
 
     return TabContent(
         titleRes = ephyra.app.core.common.R.string.label_search,
         searchEnabled = true,
         content = { contentPadding, _ ->
-            Column {
-                // Extension updates chip (D8): extension management lives in Settings,
-                // so discoverability of waiting updates has to come to the user. Shown
-                // only when nothing is typed — during a search the results own the space.
-                if (extensionUpdates > 0 && state.searchQuery.isNullOrBlank()) {
-                    ElevatedAssistChip(
-                        onClick = { navController.navigate(ScreenRoutes.Extensions.route) },
-                        label = {
-                            Text(
-                                text = "%d extension update%s available — tap to review"
-                                    .format(extensionUpdates, if (extensionUpdates == 1) "" else "s"),
-                            )
-                        },
-                        modifier = Modifier.padding(
-                            horizontal = MaterialTheme.padding.medium,
-                        ),
-                    )
-                }
-                GlobalSearchContent(
+            GlobalSearchContent(
                 items = state.filteredItems,
                 contentPadding = contentPadding,
                 getManga = { viewModel.getManga(it) },
@@ -73,7 +46,6 @@ fun unifiedSearchTab(
                     viewModel.onEvent(SearchScreenEvent.Search)
                 },
             )
-            }
         },
     )
 }
