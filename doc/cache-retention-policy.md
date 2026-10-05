@@ -22,6 +22,10 @@ the rare backward jump. Retention follows revisit probability, not arrival order
 1. **Sliding reading window.** The reader keeps the current chapter ±2 hot. Anything
    that falls out of the window is evicted (page list + its images). Backward jumps
    within the window are free; beyond it cost one re-fetch — the right trade.
+   **Reader exit keeps one.** The window only slides within a series and each series
+   has its own reader ViewModel, so on `onCleared` (genuine exit, not rotation) every
+   windowed chapter except the current one is decached: reading the latest chapter
+   of N series leaves N chapters cached (for instant resume), not N × window.
 2. **Front-facing prefetch.** Library/Updates grids prefetch covers for visible±N
    items once scrolling *settles* (no prefetch storm mid-fling). Coil dedupes in-flight
    requests; durable hits make prefetches cheap no-ops.
@@ -36,7 +40,8 @@ the rare backward jump. Retention follows revisit probability, not arrival order
 ## Validation plan (objective check)
 
 - Unit: `ChapterCache.removeChapter` removes list + images, leaves others intact;
-  window logic keeps ±2, evicts the 3-away chapter.
+  window logic keeps ±2, evicts the 3-away chapter; reader exit keeps only the
+  current chapter.
 - Manual: read 5 chapters forward, confirm cache size drops after each window slide;
   re-open previous chapter inside window = instant; outside = one re-fetch.
 - Size invariants: chapter cache ≤ tier cap; cover cache ≤ 256MB after audit.
