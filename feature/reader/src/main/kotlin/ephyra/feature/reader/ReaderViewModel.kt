@@ -298,7 +298,6 @@ class ReaderViewModel @Inject constructor(
         }
     }
 
-
     override fun onCleared() {
         val currentChapters = state.value.viewerChapters
         if (currentChapters != null) {
